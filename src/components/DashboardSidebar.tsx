@@ -28,19 +28,19 @@ export const DashboardSidebar = ({ children }: { children: React.ReactNode }) =>
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
-        <Sidebar className="border-r border-border w-48">
+        <Sidebar className="border-r border-border/50 w-56 bg-card/50 backdrop-blur-sm">
           <SidebarContent>
             <div className="p-4 pt-20">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">Dashboard</h2>
-                <SidebarTrigger />
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-foreground">Dashboard</h2>
+                <SidebarTrigger className="h-8 w-8" />
               </div>
             </div>
             
             <SidebarGroup>
-              <SidebarGroupLabel>Main Navigation</SidebarGroupLabel>
+              <SidebarGroupLabel className="text-muted-foreground font-medium mb-2">Navigation</SidebarGroupLabel>
               <SidebarGroupContent>
-                <SidebarMenu>
+                <SidebarMenu className="space-y-1">
                   {navigationItems.map((item) => (
                     <SidebarMenuItem key={item.path}>
                       <SidebarMenuButton asChild>
@@ -48,14 +48,14 @@ export const DashboardSidebar = ({ children }: { children: React.ReactNode }) =>
                           to={item.path}
                           end={item.path === '/dashboard'}
                           className={({ isActive }) =>
-                            `flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${
+                            `flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 hover:bg-muted/70 ${
                               isActive 
-                                ? 'bg-primary text-primary-foreground shadow-sm font-medium' 
-                                : 'hover:bg-muted hover:text-foreground'
+                                ? 'bg-primary/10 text-primary border-l-4 border-primary font-semibold' 
+                                : 'text-muted-foreground hover:text-foreground'
                             }`
                           }
                         >
-                          <item.icon className="h-4 w-4" />
+                          <item.icon className="h-5 w-5" />
                           <span>{item.title}</span>
                         </NavLink>
                       </SidebarMenuButton>
@@ -67,8 +67,8 @@ export const DashboardSidebar = ({ children }: { children: React.ReactNode }) =>
           </SidebarContent>
         </Sidebar>
 
-        <main className="flex-1 pt-16">
-          <div className="p-6 max-w-7xl mx-auto">
+        <main className="flex-1 pt-16 bg-background">
+          <div className="p-8 max-w-7xl mx-auto">
             {children}
           </div>
         </main>
