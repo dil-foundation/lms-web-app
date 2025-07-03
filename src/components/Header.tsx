@@ -47,22 +47,24 @@ export const Header = () => {
     <header 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled 
-          ? 'glass bg-background/80 border-b border-border shadow-sm' 
+          ? 'glass bg-background/80 border-b border-border shadow-sm animate-fade-in' 
           : 'bg-transparent'
       }`}
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <Link to="/" className="text-xl font-semibold text-foreground hover:text-primary transition-colors">
+          <Link to="/" className="text-xl font-semibold text-foreground hover:text-primary transition-all duration-300 hover-scale">
             DIL
           </Link>
 
           <nav className="hidden md:flex items-center space-x-8">
-            <Link to="/" className="text-foreground hover:text-primary transition-colors">
+            <Link to="/" className="text-foreground hover:text-primary transition-all duration-300 relative group">
               Home
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
             </Link>
-            <Link to="/dashboard" className="text-foreground hover:text-primary transition-colors">
+            <Link to="/dashboard" className="text-foreground hover:text-primary transition-all duration-300 relative group">
               Dashboard
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
             </Link>
           </nav>
 
@@ -71,14 +73,14 @@ export const Header = () => {
               variant="ghost"
               size="icon"
               onClick={toggleTheme}
-              className="transition-theme"
+              className="transition-all duration-300 hover-scale"
             >
               {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
 
             {!isAuthPage && (
               <Link to="/auth">
-                <Button variant="default" className="bg-primary hover:bg-primary/90">
+                <Button variant="default" className="bg-primary hover:bg-primary/90 hover-scale transition-all duration-300">
                   Sign In
                 </Button>
               </Link>

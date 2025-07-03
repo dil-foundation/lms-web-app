@@ -13,23 +13,23 @@ const Home = () => {
       {/* Hero Section */}
       <section className="pt-32 pb-20 px-4">
         <div className="container mx-auto text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6">
+          <h1 className="text-4xl md:text-6xl font-bold mb-6 animate-fade-in-up">
             Master English with{' '}
             <span className="text-primary">AI-Powered Learning</span>
           </h1>
-          <p className="text-xl text-muted-foreground mb-12 max-w-4xl mx-auto leading-relaxed">
+          <p className="text-xl text-muted-foreground mb-12 max-w-4xl mx-auto leading-relaxed animate-fade-in-delayed">
             Your personalized English tutor powered by artificial intelligence. Learn 
             at your own pace with interactive lessons, real-time feedback, and 
             cultural context.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-delayed stagger-2">
             <Link to="/auth">
-              <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-lg px-8 py-4 rounded-full">
+              <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-lg px-8 py-4 rounded-full hover-scale transition-all duration-300">
                 Start Learning
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <Button variant="outline" size="lg" className="border-primary text-primary hover:bg-primary/10 text-lg px-8 py-4 rounded-full">
+            <Button variant="outline" size="lg" className="border-primary text-primary hover:bg-primary/10 text-lg px-8 py-4 rounded-full hover-scale transition-all duration-300">
               Watch Demo
             </Button>
           </div>
@@ -40,17 +40,17 @@ const Home = () => {
       <section className="py-20 px-4">
         <div className="container mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6 text-primary">
+            <h2 className="text-3xl md:text-4xl font-bold mb-6 text-primary animate-fade-in-up">
               Everything You Need To Master English
             </h2>
-            <p className="text-xl text-muted-foreground max-w-4xl mx-auto">
+            <p className="text-xl text-muted-foreground max-w-4xl mx-auto animate-fade-in-delayed">
               Comprehensive features designed to make English learning effective, enjoyable, and accessible for young minds.
             </p>
           </div>
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            <Card className="bg-card border-border text-card-foreground">
+            <Card className="bg-card border-border text-card-foreground hover-lift animate-fade-in-up stagger-1">
               <CardHeader className="text-center">
-                <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10">
+                <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10 hover-scale transition-all duration-300">
                   <Brain className="h-8 w-8 text-primary" />
                 </div>
                 <CardTitle className="text-xl">Personalized Learning</CardTitle>
@@ -62,9 +62,9 @@ const Home = () => {
               </CardContent>
             </Card>
 
-            <Card className="bg-card border-border text-card-foreground">
+            <Card className="bg-card border-border text-card-foreground hover-lift animate-fade-in-up stagger-2">
               <CardHeader className="text-center">
-                <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10">
+                <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10 hover-scale transition-all duration-300">
                   <MessageCircle className="h-8 w-8 text-primary" />
                 </div>
                 <CardTitle className="text-xl">Interactive Conversations</CardTitle>
@@ -76,9 +76,9 @@ const Home = () => {
               </CardContent>
             </Card>
 
-            <Card className="bg-card border-border text-card-foreground">
+            <Card className="bg-card border-border text-card-foreground hover-lift animate-fade-in-up stagger-3">
               <CardHeader className="text-center">
-                <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10">
+                <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10 hover-scale transition-all duration-300">
                   <Globe className="h-8 w-8 text-primary" />
                 </div>
                 <CardTitle className="text-xl">Cultural Context</CardTitle>
@@ -90,9 +90,9 @@ const Home = () => {
               </CardContent>
             </Card>
 
-            <Card className="bg-card border-border text-card-foreground">
+            <Card className="bg-card border-border text-card-foreground hover-lift animate-fade-in-up stagger-4">
               <CardHeader className="text-center">
-                <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10">
+                <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10 hover-scale transition-all duration-300">
                   <Headphones className="h-8 w-8 text-primary" />
                 </div>
                 <CardTitle className="text-xl">Pronunciation Practice</CardTitle>
@@ -104,9 +104,9 @@ const Home = () => {
               </CardContent>
             </Card>
 
-            <Card className="bg-card border-border text-card-foreground">
+            <Card className="bg-card border-border text-card-foreground hover-lift animate-fade-in-up stagger-5">
               <CardHeader className="text-center">
-                <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10">
+                <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10 hover-scale transition-all duration-300">
                   <Languages className="h-8 w-8 text-primary" />
                 </div>
                 <CardTitle className="text-xl">Dual Language Support</CardTitle>
@@ -118,9 +118,9 @@ const Home = () => {
               </CardContent>
             </Card>
 
-            <Card className="bg-card border-border text-card-foreground">
+            <Card className="bg-card border-border text-card-foreground hover-lift animate-fade-in-up stagger-6">
               <CardHeader className="text-center">
-                <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10">
+                <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10 hover-scale transition-all duration-300">
                   <Target className="h-8 w-8 text-primary" />
                 </div>
                 <CardTitle className="text-xl">Progress Tracking</CardTitle>
@@ -139,18 +139,18 @@ const Home = () => {
       <section className="py-20 px-4">
         <div className="container mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6 text-primary">
+            <h2 className="text-3xl md:text-4xl font-bold mb-6 text-primary animate-fade-in-up">
               Loved By Learners Worldwide
             </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto animate-fade-in-delayed">
               Join thousands of satisfied students who have transformed their English skills
             </p>
           </div>
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            <Card className="bg-card border-border text-card-foreground">
+            <Card className="bg-card border-border text-card-foreground hover-lift animate-slide-in-left stagger-1">
               <CardHeader>
                 <div className="flex items-center mb-4">
-                  <div className="w-2 h-2 bg-primary rounded-full mr-3"></div>
+                  <div className="w-2 h-2 bg-primary rounded-full mr-3 smooth-bounce"></div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -165,10 +165,10 @@ const Home = () => {
               </CardContent>
             </Card>
 
-            <Card className="bg-card border-border text-card-foreground">
+            <Card className="bg-card border-border text-card-foreground hover-lift animate-fade-in-up stagger-2">
               <CardHeader>
                 <div className="flex items-center mb-4">
-                  <div className="w-2 h-2 bg-primary rounded-full mr-3"></div>
+                  <div className="w-2 h-2 bg-primary rounded-full mr-3 smooth-bounce"></div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -184,10 +184,10 @@ const Home = () => {
               </CardContent>
             </Card>
 
-            <Card className="bg-card border-border text-card-foreground">
+            <Card className="bg-card border-border text-card-foreground hover-lift animate-slide-in-right stagger-3">
               <CardHeader>
                 <div className="flex items-center mb-4">
-                  <div className="w-2 h-2 bg-primary rounded-full mr-3"></div>
+                  <div className="w-2 h-2 bg-primary rounded-full mr-3 smooth-bounce"></div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -209,15 +209,15 @@ const Home = () => {
       {/* CTA Section */}
       <section className="py-20 px-4">
         <div className="container mx-auto text-center">
-          <div className="max-w-4xl mx-auto bg-gradient-to-r from-primary to-secondary rounded-3xl p-12">
+          <div className="max-w-4xl mx-auto bg-gradient-to-r from-primary to-secondary rounded-3xl p-12 hover-scale transition-all duration-500 animate-scale-in">
             <h2 className="text-3xl md:text-4xl font-bold mb-6 text-primary-foreground">
               Start Your English Learning Journey Today
             </h2>
             <p className="text-xl text-primary-foreground/80 mb-8 max-w-2xl mx-auto">
-              Join thousands of learners who have achieved fluency with AI Tutor
+              Join thousands of learners who have achieved fluency with DIL
             </p>
             <Link to="/auth">
-              <Button size="lg" className="bg-background text-foreground hover:bg-background/90 font-semibold text-lg px-8 py-4 rounded-full">
+              <Button size="lg" className="bg-background text-foreground hover:bg-background/90 font-semibold text-lg px-8 py-4 rounded-full hover-scale transition-all duration-300">
                 Get Started Free
               </Button>
             </Link>
