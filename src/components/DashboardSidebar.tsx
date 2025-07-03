@@ -28,10 +28,10 @@ export const DashboardSidebar = ({ children }: { children: React.ReactNode }) =>
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
-        <Sidebar className="border-r border-border w-56">
+        <Sidebar className="border-r border-border w-48">
           <SidebarContent>
-            <div className="p-4 pt-6">
-              <div className="flex items-center justify-between">
+            <div className="p-4 pt-20">
+              <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold">Dashboard</h2>
                 <SidebarTrigger />
               </div>
@@ -50,7 +50,7 @@ export const DashboardSidebar = ({ children }: { children: React.ReactNode }) =>
                           className={({ isActive }) =>
                             `flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${
                               isActive 
-                                ? 'bg-primary text-primary-foreground shadow-sm' 
+                                ? 'bg-primary text-primary-foreground shadow-sm font-medium' 
                                 : 'hover:bg-muted hover:text-foreground'
                             }`
                           }
@@ -68,7 +68,7 @@ export const DashboardSidebar = ({ children }: { children: React.ReactNode }) =>
         </Sidebar>
 
         <main className="flex-1 pt-16">
-          <div className="p-6">
+          <div className="p-6 max-w-7xl mx-auto">
             {children}
           </div>
         </main>
