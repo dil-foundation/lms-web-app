@@ -15,22 +15,22 @@ import {
   SidebarTrigger,
   useSidebar
 } from '@/components/ui/sidebar';
-import { Home, User, Menu } from 'lucide-react';
+import { Home, BookOpen, FileQuestion, TrendingUp } from 'lucide-react';
 
 const navigationItems = [
   { title: 'Overview', path: '/dashboard', icon: Home },
-  { title: 'Courses', path: '/dashboard/courses', icon: User },
-  { title: 'Quizzes', path: '/dashboard/quizzes', icon: User },
-  { title: 'Progress', path: '/dashboard/progress', icon: User },
+  { title: 'Courses', path: '/dashboard/courses', icon: BookOpen },
+  { title: 'Quizzes', path: '/dashboard/quizzes', icon: FileQuestion },
+  { title: 'Progress', path: '/dashboard/progress', icon: TrendingUp },
 ];
 
 export const DashboardSidebar = ({ children }: { children: React.ReactNode }) => {
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
-        <Sidebar className="border-r border-border">
+        <Sidebar className="border-r border-border w-56">
           <SidebarContent>
-            <div className="p-4">
+            <div className="p-4 pt-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold">Dashboard</h2>
                 <SidebarTrigger />
@@ -48,10 +48,10 @@ export const DashboardSidebar = ({ children }: { children: React.ReactNode }) =>
                           to={item.path}
                           end={item.path === '/dashboard'}
                           className={({ isActive }) =>
-                            `flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                            `flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${
                               isActive 
-                                ? 'bg-primary text-primary-foreground' 
-                                : 'hover:bg-muted'
+                                ? 'bg-primary text-primary-foreground shadow-sm' 
+                                : 'hover:bg-muted hover:text-foreground'
                             }`
                           }
                         >
@@ -67,8 +67,10 @@ export const DashboardSidebar = ({ children }: { children: React.ReactNode }) =>
           </SidebarContent>
         </Sidebar>
 
-        <main className="flex-1 p-6">
-          {children}
+        <main className="flex-1 pt-16">
+          <div className="p-6">
+            {children}
+          </div>
         </main>
       </div>
     </SidebarProvider>
