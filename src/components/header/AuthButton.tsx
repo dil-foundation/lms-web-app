@@ -41,7 +41,7 @@ export const AuthButton = ({ user, loading, signOut, isMobile = false, onButtonC
         variant="default" 
         className={`bg-primary hover:bg-primary/90 hover-scale transition-all duration-300 ${isMobile ? 'w-full' : ''}`}
       >
-        Logout ({user.email?.split('@')[0]})
+        Logout
       </Button>
     );
   }

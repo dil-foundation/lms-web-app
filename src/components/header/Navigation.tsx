@@ -26,13 +26,6 @@ export const Navigation = ({ user, isMobile = false, onLinkClick }: NavigationPr
 
   return (
     <nav className={isMobile ? "space-y-1" : "flex items-center space-x-6"}>
-      {!isHomePage && (
-        <Link to="/" className={linkClass} onClick={onLinkClick}>
-          Home
-          {underlineSpan}
-        </Link>
-      )}
-      
       {user && showBackToDashboard && (
         <Link to="/dashboard" className={linkClass} onClick={onLinkClick}>
           Go back to Dashboard
@@ -40,7 +33,7 @@ export const Navigation = ({ user, isMobile = false, onLinkClick }: NavigationPr
         </Link>
       )}
       
-      {user && !showBackToDashboard && (
+      {user && !showBackToDashboard && !isHomePage && (
         <Link to="/dashboard" className={linkClass} onClick={onLinkClick}>
           Dashboard
           {underlineSpan}
