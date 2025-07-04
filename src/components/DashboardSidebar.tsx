@@ -8,8 +8,7 @@ import {
   SidebarGroupLabel, 
   SidebarMenu, 
   SidebarMenuButton, 
-  SidebarMenuItem,
-  SidebarTrigger
+  SidebarMenuItem
 } from '@/components/ui/sidebar';
 import { getRoleNavigation, getRoleDisplayName, type UserRole } from '@/config/roleNavigation';
 
@@ -20,21 +19,13 @@ interface DashboardSidebarProps {
 
 export const DashboardSidebar = ({ children, userRole }: DashboardSidebarProps) => {
   const navigationItems = getRoleNavigation(userRole);
-  const roleDisplayName = getRoleDisplayName(userRole);
 
   return (
     <>
       <Sidebar className="border-r border-border">
         <SidebarContent>
-          <div className="p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">{roleDisplayName} Dashboard</h2>
-              <SidebarTrigger />
-            </div>
-          </div>
-          
           <SidebarGroup>
-            <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+            <SidebarGroupLabel className="mb-3">Navigation</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {navigationItems.map((item) => (
