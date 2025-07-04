@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -152,6 +152,14 @@ const TeacherAuth = () => {
                     >
                       {isLoading ? 'Signing in...' : 'Sign In'}
                     </Button>
+                    <div className="text-center">
+                      <Link 
+                        to="/forgot-password?role=teacher"
+                        className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        Forgot Password?
+                      </Link>
+                    </div>
                   </form>
                 </TabsContent>
                 

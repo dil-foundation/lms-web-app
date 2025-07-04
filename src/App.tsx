@@ -8,6 +8,8 @@ import Home from "./pages/Home";
 import RoleSelection from "./pages/RoleSelection";
 import StudentAuth from "./pages/StudentAuth";
 import TeacherAuth from "./pages/TeacherAuth";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 
@@ -24,6 +26,8 @@ const App = () => (
           <Route path="/auth" element={<RoleSelection />} />
           <Route path="/auth/student" element={<StudentAuth />} />
           <Route path="/auth/teacher" element={<TeacherAuth />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/dashboard/*" element={<Dashboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
