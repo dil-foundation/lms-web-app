@@ -14,7 +14,7 @@ interface AuthButtonProps {
 export const AuthButton = ({ user, loading, signOut, isMobile = false, onButtonClick }: AuthButtonProps) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const isAuthPage = location.pathname === '/auth';
+  const isAuthPage = location.pathname.startsWith('/auth');
 
   const handleSignOut = async () => {
     await signOut();

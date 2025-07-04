@@ -1,16 +1,16 @@
 
-import { Header } from '@/components/Header';
-import { AuthTabs } from '@/components/AuthTabs';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const Auth = () => {
-  return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="pt-16">
-        <AuthTabs />
-      </div>
-    </div>
-  );
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Redirect to the new role selection page
+    navigate('/auth', { replace: true });
+  }, [navigate]);
+
+  return null;
 };
 
 export default Auth;
