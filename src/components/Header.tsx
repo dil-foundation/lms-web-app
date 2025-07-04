@@ -7,15 +7,11 @@ import { ThemeToggle } from './header/ThemeToggle';
 import { Navigation } from './header/Navigation';
 import { AuthButton } from './header/AuthButton';
 import { MobileMenu } from './header/MobileMenu';
-import { SidebarTrigger } from '@/components/ui/sidebar';
 
 export const Header = () => {
   const location = useLocation();
   const { user, loading, signOut } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
-
-  // Check if we're on the dashboard route to show the sidebar trigger
-  const isDashboardRoute = location.pathname.startsWith('/dashboard');
 
   useEffect(() => {
     const handleScroll = () => {
@@ -27,15 +23,14 @@ export const Header = () => {
   }, []);
 
   return (
-    <header className={`fixed top-0 left-0 right-0 border-b border-border relative z-50 transition-all duration-300 ${
+    <header className={`fixed top-0 left-0 right-0 border-b border-border relative z-10 transition-all duration-300 ${
       isScrolled 
         ? 'bg-background/80 backdrop-blur-lg glass' 
         : 'bg-background'
     }`}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center space-x-4">
-            {isDashboardRoute && <SidebarTrigger />}
+          <div className="flex items-center">
             <Logo />
           </div>
 
