@@ -11,6 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { 
+  validateFirstName, 
+  validateLastName, 
+  validateEmail, 
+  validatePassword, 
+  validateConfirmPassword, 
+  validateGrade 
+} from '@/utils/validation';
 
 const StudentAuth = () => {
   const navigate = useNavigate();
@@ -34,6 +42,57 @@ const StudentAuth = () => {
     confirmPassword: '',
     grade: ''
   });
+
+  // Validation error states
+  const [validationErrors, setValidationErrors] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    grade: ''
+  });
+
+  // Handle field validation
+  const handleFieldValidation = (field: string, value: string) => {
+    let validation;
+    
+    switch (field) {
+      case 'firstName':
+        validation = validateFirstName(value);
+        break;
+      case 'lastName':
+        validation = validateLastName(value);
+        break;
+      case 'email':
+        validation = validateEmail(value);
+        break;
+      case 'password':
+        validation = validatePassword(value);
+        // Also re-validate confirm password if it exists
+        if (signupData.confirmPassword) {
+          const confirmValidation = validateConfirmPassword(value, signupData.confirmPassword);
+          setValidationErrors(prev => ({
+            ...prev,
+            confirmPassword: confirmValidation.isValid ? '' : confirmValidation.error || ''
+          }));
+        }
+        break;
+      case 'confirmPassword':
+        validation = validateConfirmPassword(signupData.password, value);
+        break;
+      case 'grade':
+        validation = validateGrade(value);
+        break;
+      default:
+        validation = { isValid: true };
+    }
+    
+    setValidationErrors(prev => ({
+      ...prev,
+      [field]: validation.isValid ? '' : validation.error || ''
+    }));
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,18 +124,31 @@ const StudentAuth = () => {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (signupData.password !== signupData.confirmPassword) {
-      toast.error('Passwords do not match');
-      return;
-    }
+    // Validate all fields before submission
+    const firstNameValidation = validateFirstName(signupData.firstName);
+    const lastNameValidation = validateLastName(signupData.lastName);
+    const emailValidation = validateEmail(signupData.email);
+    const passwordValidation = validatePassword(signupData.password);
+    const confirmPasswordValidation = validateConfirmPassword(signupData.password, signupData.confirmPassword);
+    const gradeValidation = validateGrade(signupData.grade);
 
-    if (!signupData.grade) {
-      toast.error('Please select your grade');
-      return;
-    }
+    const hasErrors = !firstNameValidation.isValid || 
+                     !lastNameValidation.isValid || 
+                     !emailValidation.isValid || 
+                     !passwordValidation.isValid || 
+                     !confirmPasswordValidation.isValid || 
+                     !gradeValidation.isValid;
 
-    if (!signupData.firstName.trim() || !signupData.lastName.trim()) {
-      toast.error('Please enter both first and last name');
+    if (hasErrors) {
+      setValidationErrors({
+        firstName: firstNameValidation.error || '',
+        lastName: lastNameValidation.error || '',
+        email: emailValidation.error || '',
+        password: passwordValidation.error || '',
+        confirmPassword: confirmPasswordValidation.error || '',
+        grade: gradeValidation.error || ''
+      });
+      toast.error('Please fix the validation errors before submitting');
       return;
     }
 
@@ -210,9 +282,16 @@ const StudentAuth = () => {
                           type="text"
                           placeholder="First name"
                           value={signupData.firstName}
-                          onChange={(e) => setSignupData({ ...signupData, firstName: e.target.value })}
+                          onChange={(e) => {
+                            setSignupData({ ...signupData, firstName: e.target.value });
+                            handleFieldValidation('firstName', e.target.value);
+                          }}
+                          className={validationErrors.firstName ? 'border-red-500' : ''}
                           required
                         />
+                        {validationErrors.firstName && (
+                          <p className="text-sm text-red-500">{validationErrors.firstName}</p>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="signup-lastname">Last Name</Label>
@@ -221,9 +300,16 @@ const StudentAuth = () => {
                           type="text"
                           placeholder="Last name"
                           value={signupData.lastName}
-                          onChange={(e) => setSignupData({ ...signupData, lastName: e.target.value })}
+                          onChange={(e) => {
+                            setSignupData({ ...signupData, lastName: e.target.value });
+                            handleFieldValidation('lastName', e.target.value);
+                          }}
+                          className={validationErrors.lastName ? 'border-red-500' : ''}
                           required
                         />
+                        {validationErrors.lastName && (
+                          <p className="text-sm text-red-500">{validationErrors.lastName}</p>
+                        )}
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -233,14 +319,27 @@ const StudentAuth = () => {
                         type="email"
                         placeholder="Enter your email"
                         value={signupData.email}
-                        onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
+                        onChange={(e) => {
+                          setSignupData({ ...signupData, email: e.target.value });
+                          handleFieldValidation('email', e.target.value);
+                        }}
+                        className={validationErrors.email ? 'border-red-500' : ''}
                         required
                       />
+                      {validationErrors.email && (
+                        <p className="text-sm text-red-500">{validationErrors.email}</p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="grade">Grade</Label>
-                      <Select value={signupData.grade} onValueChange={(value) => setSignupData({ ...signupData, grade: value })}>
-                        <SelectTrigger>
+                      <Select 
+                        value={signupData.grade} 
+                        onValueChange={(value) => {
+                          setSignupData({ ...signupData, grade: value });
+                          handleFieldValidation('grade', value);
+                        }}
+                      >
+                        <SelectTrigger className={validationErrors.grade ? 'border-red-500' : ''}>
                           <SelectValue placeholder="Select your grade" />
                         </SelectTrigger>
                         <SelectContent>
@@ -258,6 +357,9 @@ const StudentAuth = () => {
                           <SelectItem value="12">12th Grade</SelectItem>
                         </SelectContent>
                       </Select>
+                      {validationErrors.grade && (
+                        <p className="text-sm text-red-500">{validationErrors.grade}</p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="signup-password">Password</Label>
@@ -267,9 +369,12 @@ const StudentAuth = () => {
                           type={showSignupPassword ? "text" : "password"}
                           placeholder="Create a password"
                           value={signupData.password}
-                          onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
+                          onChange={(e) => {
+                            setSignupData({ ...signupData, password: e.target.value });
+                            handleFieldValidation('password', e.target.value);
+                          }}
+                          className={validationErrors.password ? 'border-red-500 pr-10' : 'pr-10'}
                           required
-                          className="pr-10"
                         />
                         <Button
                           type="button"
@@ -285,6 +390,9 @@ const StudentAuth = () => {
                           )}
                         </Button>
                       </div>
+                      {validationErrors.password && (
+                        <p className="text-sm text-red-500">{validationErrors.password}</p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="confirm-password">Confirm Password</Label>
@@ -294,9 +402,12 @@ const StudentAuth = () => {
                           type={showConfirmPassword ? "text" : "password"}
                           placeholder="Confirm your password"
                           value={signupData.confirmPassword}
-                          onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })}
+                          onChange={(e) => {
+                            setSignupData({ ...signupData, confirmPassword: e.target.value });
+                            handleFieldValidation('confirmPassword', e.target.value);
+                          }}
+                          className={validationErrors.confirmPassword ? 'border-red-500 pr-10' : 'pr-10'}
                           required
-                          className="pr-10"
                         />
                         <Button
                           type="button"
@@ -312,6 +423,9 @@ const StudentAuth = () => {
                           )}
                         </Button>
                       </div>
+                      {validationErrors.confirmPassword && (
+                        <p className="text-sm text-red-500">{validationErrors.confirmPassword}</p>
+                      )}
                     </div>
                     <Button 
                       type="submit" 
