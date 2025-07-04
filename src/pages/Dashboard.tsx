@@ -62,11 +62,11 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Header />
-      
-      <div className="flex-1">
-        <SidebarProvider>
+    <SidebarProvider>
+      <div className="min-h-screen bg-background flex flex-col w-full">
+        <Header />
+        
+        <div className="flex-1">
           <div className="flex min-h-full w-full">
             <DashboardSidebar userRole={userRole}>
               <Routes>
@@ -106,9 +106,9 @@ const Dashboard = () => {
               </Routes>
             </DashboardSidebar>
           </div>
-        </SidebarProvider>
+        </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 
