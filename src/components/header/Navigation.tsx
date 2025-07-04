@@ -30,7 +30,7 @@ export const Navigation = ({ user, isMobile = false, onLinkClick }: NavigationPr
         </Link>
       )}
       
-      {showBackToDashboard && user && (
+      {user && showBackToDashboard && (
         <Link to="/dashboard" className={linkClass} onClick={onLinkClick}>
           Go back to Dashboard
           {underlineSpan}

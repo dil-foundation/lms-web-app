@@ -24,7 +24,7 @@ export const Logo = ({ className = "" }: LogoProps) => {
       className={`flex items-center hover-scale transition-all duration-300 ${className}`}
     >
       <img 
-        src="/lovable-uploads/a57a9111-68d4-4579-88d1-e5416fca8758.png" 
+        src="/dil-logo.png" 
         alt="DIL" 
         className="h-8 w-auto"
       />
