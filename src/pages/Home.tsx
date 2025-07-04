@@ -2,7 +2,8 @@ import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
-import { Brain, MessageCircle, Globe, Headphones, Languages, Target, ArrowRight } from 'lucide-react';
+import { Star, MessageCircle, Globe, Headphones, Languages, Target, ArrowRight } from 'lucide-react';
+
 const Home = () => {
   return <div className="min-h-screen bg-background text-foreground">
       <Header />
@@ -48,7 +49,7 @@ const Home = () => {
             <Card className="bg-card border-border text-card-foreground hover-lift animate-fade-in-up stagger-1">
               <CardHeader className="text-center">
                 <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10 hover-scale transition-all duration-300">
-                  <Brain className="h-8 w-8 text-primary" />
+                  <Star className="h-8 w-8 text-primary" />
                 </div>
                 <CardTitle className="text-xl">Personalized Learning</CardTitle>
               </CardHeader>
