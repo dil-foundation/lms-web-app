@@ -6,6 +6,7 @@ import { StudentDashboard } from '@/components/dashboard/StudentDashboard';
 import { TeacherDashboard } from '@/components/dashboard/TeacherDashboard';
 import { AdminDashboard } from '@/components/dashboard/AdminDashboard';
 import { RolePlaceholder } from '@/components/dashboard/RolePlaceholder';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { BookOpen, Users, ClipboardList, TrendingUp, BarChart3, Settings, GraduationCap, Award } from 'lucide-react';
@@ -60,51 +61,53 @@ const Dashboard = () => {
     }
   };
 
-  // Role-specific placeholder components for different routes
-  const getPlaceholderComponent = (title: string, description: string, icon: any) => {
-    return () => <RolePlaceholder title={title} description={description} icon={icon} />;
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <DashboardSidebar userRole={userRole}>
-        <Routes>
-          <Route path="/" element={<DashboardOverview />} />
-          
-          {/* Student Routes */}
-          {userRole === 'student' && (
-            <>
-              <Route path="/courses" element={<RolePlaceholder title="My Courses" description="View and manage your enrolled courses" icon={BookOpen} />} />
-              <Route path="/assignments" element={<RolePlaceholder title="Assignments" description="View and complete your assignments" icon={ClipboardList} />} />
-              <Route path="/progress" element={<RolePlaceholder title="Progress Tracking" description="Monitor your learning progress and achievements" icon={TrendingUp} />} />
-              <Route path="/ai-tutor" element={<RolePlaceholder title="AI Tutor" description="Get personalized AI-powered learning assistance" icon={GraduationCap} />} />
-            </>
-          )}
-          
-          {/* Teacher Routes */}
-          {userRole === 'teacher' && (
-            <>
-              <Route path="/classes" element={<RolePlaceholder title="My Classes" description="Manage your classes and students" icon={Users} />} />
-              <Route path="/courses" element={<RolePlaceholder title="Course Management" description="Create and manage your courses" icon={BookOpen} />} />
-              <Route path="/student-progress" element={<RolePlaceholder title="Student Progress" description="Monitor individual student performance" icon={TrendingUp} />} />
-              <Route path="/assignments" element={<RolePlaceholder title="Assignment Management" description="Create and grade assignments" icon={ClipboardList} />} />
-              <Route path="/resources" element={<RolePlaceholder title="Teaching Resources" description="Access and manage teaching materials" icon={Award} />} />
-            </>
-          )}
-          
-          {/* Admin Routes */}
-          {userRole === 'admin' && (
-            <>
-              <Route path="/users" element={<RolePlaceholder title="User Management" description="Manage system users and permissions" icon={Users} />} />
-              <Route path="/courses" element={<RolePlaceholder title="Course Administration" description="Oversee all courses in the system" icon={BookOpen} />} />
-              <Route path="/analytics" element={<RolePlaceholder title="System Analytics" description="View comprehensive system analytics" icon={BarChart3} />} />
-              <Route path="/reports" element={<RolePlaceholder title="Reports & Data" description="Generate and view system reports" icon={ClipboardList} />} />
-              <Route path="/settings" element={<RolePlaceholder title="System Settings" description="Configure system-wide settings" icon={Settings} />} />
-            </>
-          )}
-        </Routes>
-      </DashboardSidebar>
+      
+      <div className="pt-16">
+        <SidebarProvider>
+          <div className="flex min-h-[calc(100vh-4rem)] w-full">
+            <DashboardSidebar userRole={userRole}>
+              <Routes>
+                <Route path="/" element={<DashboardOverview />} />
+                
+                {/* Student Routes */}
+                {userRole === 'student' && (
+                  <>
+                    <Route path="/courses" element={<RolePlaceholder title="My Courses" description="View and manage your enrolled courses" icon={BookOpen} />} />
+                    <Route path="/assignments" element={<RolePlaceholder title="Assignments" description="View and complete your assignments" icon={ClipboardList} />} />
+                    <Route path="/progress" element={<RolePlaceholder title="Progress Tracking" description="Monitor your learning progress and achievements" icon={TrendingUp} />} />
+                    <Route path="/ai-tutor" element={<RolePlaceholder title="AI Tutor" description="Get personalized AI-powered learning assistance" icon={GraduationCap} />} />
+                  </>
+                )}
+                
+                {/* Teacher Routes */}
+                {userRole === 'teacher' && (
+                  <>
+                    <Route path="/classes" element={<RolePlaceholder title="My Classes" description="Manage your classes and students" icon={Users} />} />
+                    <Route path="/courses" element={<RolePlaceholder title="Course Management" description="Create and manage your courses" icon={BookOpen} />} />
+                    <Route path="/student-progress" element={<RolePlaceholder title="Student Progress" description="Monitor individual student performance" icon={TrendingUp} />} />
+                    <Route path="/assignments" element={<RolePlaceholder title="Assignment Management" description="Create and grade assignments" icon={ClipboardList} />} />
+                    <Route path="/resources" element={<RolePlaceholder title="Teaching Resources" description="Access and manage teaching materials" icon={Award} />} />
+                  </>
+                )}
+                
+                {/* Admin Routes */}
+                {userRole === 'admin' && (
+                  <>
+                    <Route path="/users" element={<RolePlaceholder title="User Management" description="Manage system users and permissions" icon={Users} />} />
+                    <Route path="/courses" element={<RolePlaceholder title="Course Administration" description="Oversee all courses in the system" icon={BookOpen} />} />
+                    <Route path="/analytics" element={<RolePlaceholder title="System Analytics" description="View comprehensive system analytics" icon={BarChart3} />} />
+                    <Route path="/reports" element={<RolePlaceholder title="Reports & Data" description="Generate and view system reports" icon={ClipboardList} />} />
+                    <Route path="/settings" element={<RolePlaceholder title="System Settings" description="Configure system-wide settings" icon={Settings} />} />
+                  </>
+                )}
+              </Routes>
+            </DashboardSidebar>
+          </div>
+        </SidebarProvider>
+      </div>
     </div>
   );
 };
