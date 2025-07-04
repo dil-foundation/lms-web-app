@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Header } from '@/components/Header';
@@ -223,7 +222,6 @@ const StudentAuth = () => {
                           <SelectValue placeholder="Select your grade" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="K">Kindergarten</SelectItem>
                           <SelectItem value="1">1st Grade</SelectItem>
                           <SelectItem value="2">2nd Grade</SelectItem>
                           <SelectItem value="3">3rd Grade</SelectItem>
