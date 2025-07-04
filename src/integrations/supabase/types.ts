@@ -13,9 +13,11 @@ export type Database = {
         Row: {
           created_at: string | null
           email: string
+          first_name: string | null
           full_name: string | null
           grade: string | null
           id: string
+          last_name: string | null
           role: Database["public"]["Enums"]["app_role"]
           teacher_id: string | null
           updated_at: string | null
@@ -23,9 +25,11 @@ export type Database = {
         Insert: {
           created_at?: string | null
           email: string
+          first_name?: string | null
           full_name?: string | null
           grade?: string | null
           id: string
+          last_name?: string | null
           role: Database["public"]["Enums"]["app_role"]
           teacher_id?: string | null
           updated_at?: string | null
@@ -33,9 +37,11 @@ export type Database = {
         Update: {
           created_at?: string | null
           email?: string
+          first_name?: string | null
           full_name?: string | null
           grade?: string | null
           id?: string
+          last_name?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           teacher_id?: string | null
           updated_at?: string | null

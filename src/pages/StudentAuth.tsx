@@ -22,7 +22,8 @@ const StudentAuth = () => {
   });
   
   const [signupData, setSignupData] = useState({ 
-    fullName: '',
+    firstName: '',
+    lastName: '',
     email: '', 
     password: '', 
     confirmPassword: '',
@@ -69,6 +70,11 @@ const StudentAuth = () => {
       return;
     }
 
+    if (!signupData.firstName.trim() || !signupData.lastName.trim()) {
+      toast.error('Please enter both first and last name');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -80,7 +86,8 @@ const StudentAuth = () => {
           emailRedirectTo: `${window.location.origin}/dashboard`,
           data: {
             role: 'student',
-            full_name: signupData.fullName,
+            first_name: signupData.firstName,
+            last_name: signupData.lastName,
             grade: signupData.grade
           }
         }
@@ -174,16 +181,29 @@ const StudentAuth = () => {
                 
                 <TabsContent value="signup" className="space-y-4 mt-6">
                   <form onSubmit={handleSignup} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-name">Full Name</Label>
-                      <Input
-                        id="signup-name"
-                        type="text"
-                        placeholder="Enter your full name"
-                        value={signupData.fullName}
-                        onChange={(e) => setSignupData({ ...signupData, fullName: e.target.value })}
-                        required
-                      />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-firstname">First Name</Label>
+                        <Input
+                          id="signup-firstname"
+                          type="text"
+                          placeholder="First name"
+                          value={signupData.firstName}
+                          onChange={(e) => setSignupData({ ...signupData, firstName: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-lastname">Last Name</Label>
+                        <Input
+                          id="signup-lastname"
+                          type="text"
+                          placeholder="Last name"
+                          value={signupData.lastName}
+                          onChange={(e) => setSignupData({ ...signupData, lastName: e.target.value })}
+                          required
+                        />
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="signup-email">Email</Label>
