@@ -209,15 +209,15 @@ const Home = () => {
       {/* CTA Section */}
       <section className="py-20 px-4">
         <div className="container mx-auto text-center">
-          <div className="max-w-4xl mx-auto bg-gradient-to-r from-primary to-secondary rounded-3xl p-12 hover-scale transition-all duration-500 animate-scale-in">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6 text-primary-foreground">
+          <div className="max-w-6xl mx-auto bg-gradient-to-br from-primary via-primary to-blue-600 rounded-3xl p-16 hover-scale transition-all duration-500 animate-scale-in">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white">
               Start Your English Learning Journey Today
             </h2>
-            <p className="text-xl text-primary-foreground/80 mb-8 max-w-2xl mx-auto">
-              Join thousands of learners who have achieved fluency with DIL
+            <p className="text-xl text-white/90 mb-10 max-w-3xl mx-auto">
+              Join thousands of learners who have achieved fluency with AI Tutor
             </p>
             <Link to="/auth">
-              <Button size="lg" className="bg-background text-foreground hover:bg-background/90 font-semibold text-lg px-8 py-4 rounded-full hover-scale transition-all duration-300">
+              <Button size="lg" className="bg-blue-800 hover:bg-blue-900 text-white font-semibold text-lg px-10 py-6 rounded-xl hover-scale transition-all duration-300">
                 Get Started Free
               </Button>
             </Link>
