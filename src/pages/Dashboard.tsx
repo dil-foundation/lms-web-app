@@ -62,12 +62,12 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header />
       
-      <div className="pt-16">
+      <div className="flex-1">
         <SidebarProvider>
-          <div className="flex min-h-[calc(100vh-4rem)] w-full">
+          <div className="flex min-h-full w-full">
             <DashboardSidebar userRole={userRole}>
               <Routes>
                 <Route path="/" element={<DashboardOverview />} />
