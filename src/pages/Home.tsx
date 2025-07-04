@@ -1,13 +1,10 @@
-
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
 import { Brain, MessageCircle, Globe, Headphones, Languages, Target, ArrowRight } from 'lucide-react';
-
 const Home = () => {
-  return (
-    <div className="min-h-screen bg-background text-foreground">
+  return <div className="min-h-screen bg-background text-foreground">
       <Header />
       
       {/* Hero Section */}
@@ -209,7 +206,7 @@ const Home = () => {
       {/* CTA Section */}
       <section className="py-20 px-4">
         <div className="container mx-auto text-center">
-          <div className="max-w-6xl mx-auto bg-gradient-to-br from-primary via-primary to-blue-600 rounded-3xl p-16 hover-scale transition-all duration-500 animate-scale-in">
+          <div className="max-w-4xl mx-auto bg-gradient-to-br from-primary via-primary to-blue-600 rounded-3xl p-12 hover-scale transition-all duration-500 animate-scale-in">
             <h2 className="text-4xl md:text-5xl font-bold mb-6 text-black">
               Start Your English Learning Journey Today
             </h2>
@@ -224,8 +221,6 @@ const Home = () => {
           </div>
         </div>
       </section>
-    </div>
-  );
+    </div>;
 };
-
 export default Home;
