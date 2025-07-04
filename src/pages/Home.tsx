@@ -8,7 +8,7 @@ const Home = () => {
       <Header />
       
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4">
+      <section className="pt-48 pb-20 px-4">
         <div className="container mx-auto text-center">
           <h1 className="text-4xl md:text-6xl font-bold mb-6 animate-fade-in-up">
             Master English with{' '}
