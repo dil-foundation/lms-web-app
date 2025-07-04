@@ -1,7 +1,5 @@
 
-import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 import { 
   Sidebar, 
   SidebarContent, 
@@ -12,19 +10,19 @@ import {
   SidebarMenuButton, 
   SidebarMenuItem,
   SidebarProvider,
-  SidebarTrigger,
-  useSidebar
+  SidebarTrigger
 } from '@/components/ui/sidebar';
-import { Home, BookOpen, FileQuestion, TrendingUp } from 'lucide-react';
+import { getRoleNavigation, getRoleDisplayName, type UserRole } from '@/config/roleNavigation';
 
-const navigationItems = [
-  { title: 'Overview', path: '/dashboard', icon: Home },
-  { title: 'Courses', path: '/dashboard/courses', icon: BookOpen },
-  { title: 'Quizzes', path: '/dashboard/quizzes', icon: FileQuestion },
-  { title: 'Progress', path: '/dashboard/progress', icon: TrendingUp },
-];
+interface DashboardSidebarProps {
+  children: React.ReactNode;
+  userRole: UserRole;
+}
 
-export const DashboardSidebar = ({ children }: { children: React.ReactNode }) => {
+export const DashboardSidebar = ({ children, userRole }: DashboardSidebarProps) => {
+  const navigationItems = getRoleNavigation(userRole);
+  const roleDisplayName = getRoleDisplayName(userRole);
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
@@ -32,13 +30,13 @@ export const DashboardSidebar = ({ children }: { children: React.ReactNode }) =>
           <SidebarContent>
             <div className="p-4 pt-20">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">Dashboard</h2>
+                <h2 className="text-lg font-semibold">{roleDisplayName} Dashboard</h2>
                 <SidebarTrigger />
               </div>
             </div>
             
             <SidebarGroup>
-              <SidebarGroupLabel>Main Navigation</SidebarGroupLabel>
+              <SidebarGroupLabel>Navigation</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   {navigationItems.map((item) => (
