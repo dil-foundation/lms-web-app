@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Moon, Sun, Menu, X } from 'lucide-react';
@@ -86,7 +85,7 @@ export const Header = () => {
           {/* Logo */}
           <button onClick={handleLogoClick} className="flex items-center hover-scale transition-all duration-300">
             <img 
-              src="/dil-logo.png" 
+              src="/lovable-uploads/a57a9111-68d4-4579-88d1-e5416fca8758.png" 
               alt="DIL" 
               className="h-8 w-auto"
             />
@@ -120,7 +119,7 @@ export const Header = () => {
                 </Link>
               )}
               
-              {user && !showBackToDashboard && !isHomePage && (
+              {user && !showBackToDashboard && (
                 <Link to="/dashboard" className="text-foreground hover:text-primary transition-all duration-300 relative group">
                   Dashboard
                   <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
@@ -196,7 +195,7 @@ export const Header = () => {
                 </Link>
               )}
               
-              {user && !showBackToDashboard && !isHomePage && (
+              {user && !showBackToDashboard && (
                 <Link 
                   to="/dashboard" 
                   className="block px-3 py-2 text-foreground hover:text-primary transition-colors"
