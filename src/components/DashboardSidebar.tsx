@@ -23,7 +23,7 @@ export const DashboardSidebar = ({ children, userRole }: DashboardSidebarProps) 
   return (
     <>
       <Sidebar className="border-r border-border">
-        <SidebarContent>
+        <SidebarContent className="pt-4">
           <SidebarGroup>
             <SidebarGroupLabel className="mb-3">Navigation</SidebarGroupLabel>
             <SidebarGroupContent>
