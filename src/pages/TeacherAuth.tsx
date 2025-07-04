@@ -33,6 +33,7 @@ const TeacherAuth = () => {
     setIsLoading(true);
 
     try {
+      console.log('🔐 Attempting teacher login...');
       const { data, error } = await supabase.auth.signInWithPassword({
         email: loginData.email,
         password: loginData.password,
@@ -41,10 +42,13 @@ const TeacherAuth = () => {
       if (error) throw error;
       
       if (data.user) {
+        console.log('🔐 Teacher login successful:', data.user.email);
         toast.success('Welcome back!');
-        navigate('/dashboard');
+        // Force page refresh to ensure clean state
+        window.location.href = '/dashboard';
       }
     } catch (error: any) {
+      console.error('🔐 Teacher login error:', error);
       toast.error(error.message || 'Failed to sign in');
     } finally {
       setIsLoading(false);
@@ -67,6 +71,7 @@ const TeacherAuth = () => {
     setIsLoading(true);
 
     try {
+      console.log('🔐 Attempting teacher signup...');
       const { data, error } = await supabase.auth.signUp({
         email: signupData.email,
         password: signupData.password,
@@ -83,10 +88,13 @@ const TeacherAuth = () => {
       if (error) throw error;
       
       if (data.user) {
-        toast.success('Account created successfully! Please check your email to verify your account.');
-        navigate('/dashboard');
+        console.log('🔐 Teacher signup successful:', data.user.email);
+        toast.success('Account created successfully!');
+        // Force page refresh to ensure clean state
+        window.location.href = '/dashboard';
       }
     } catch (error: any) {
+      console.error('🔐 Teacher signup error:', error);
       toast.error(error.message || 'Failed to create account');
     } finally {
       setIsLoading(false);

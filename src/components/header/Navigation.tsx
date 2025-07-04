@@ -21,6 +21,9 @@ export const Navigation = ({ user, isMobile = false, onLinkClick }: NavigationPr
     <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
   );
 
+  // Debug logging
+  console.log('🧭 Navigation render - User:', user ? 'exists' : 'null', 'showBackToDashboard:', showBackToDashboard);
+
   return (
     <nav className={isMobile ? "space-y-1" : "flex items-center space-x-6"}>
       {!isHomePage && (

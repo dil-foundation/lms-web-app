@@ -22,7 +22,17 @@ export const AuthButton = ({ user, loading, signOut, isMobile = false, onButtonC
     onButtonClick?.();
   };
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <Button 
+        variant="outline" 
+        disabled
+        className={`${isMobile ? 'w-full' : ''}`}
+      >
+        Loading...
+      </Button>
+    );
+  }
 
   if (user) {
     return (
@@ -31,7 +41,7 @@ export const AuthButton = ({ user, loading, signOut, isMobile = false, onButtonC
         variant="default" 
         className={`bg-primary hover:bg-primary/90 hover-scale transition-all duration-300 ${isMobile ? 'w-full' : ''}`}
       >
-        Logout
+        Logout ({user.email?.split('@')[0]})
       </Button>
     );
   }
