@@ -34,7 +34,7 @@ export const DashboardSidebar = ({
       </Sidebar>
 
       <main className="flex-1 min-h-0">
-        <div className="p-6 pt-2 max-w-7xl h-full">
+        <div className="p-6 pt-2 max-w-7xl ms-5 h-full">
           {children}
         </div>
       </main>
