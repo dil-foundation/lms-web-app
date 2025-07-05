@@ -1,3 +1,4 @@
+
 import { Routes, Route } from 'react-router-dom';
 import { useState } from 'react';
 import { Header } from '@/components/Header';
@@ -9,6 +10,7 @@ import { RolePlaceholder } from '@/components/dashboard/RolePlaceholder';
 import { RoleSwitcher } from '@/components/dashboard/RoleSwitcher';
 import { UsersManagement } from '@/components/admin/UsersManagement';
 import { CourseManagement } from '@/components/admin/CourseManagement';
+import { ReportsOverview } from '@/components/admin/ReportsOverview';
 import CourseBuilder from './CourseBuilder';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/useAuth';
@@ -146,7 +148,7 @@ const Dashboard = () => {
                       <Route path="/courses" element={<CourseManagement />} />
                       <Route path="/courses/builder/:courseId" element={<CourseBuilder />} />
                       <Route path="/analytics" element={<RolePlaceholder title="System Analytics" description="View comprehensive system analytics" icon={BarChart3} />} />
-                      <Route path="/reports" element={<RolePlaceholder title="Reports" description="Generate and view system reports" icon={ClipboardList} />} />
+                      <Route path="/reports" element={<ReportsOverview />} />
                       <Route path="/observation-reports" element={<RolePlaceholder title="Observation Reports" description="View and manage observation reports" icon={Eye} />} />
                       <Route path="/secure-links" element={<RolePlaceholder title="Secure Links" description="Manage secure links and access controls" icon={Link} />} />
                       <Route path="/settings" element={<RolePlaceholder title="Settings" description="Configure system-wide settings" icon={Settings} />} />
