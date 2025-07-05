@@ -2,7 +2,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Flame, Award, BookOpen, Clock } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Flame, Award, BookOpen, Clock, Lock } from 'lucide-react';
 
 interface StudentDashboardProps {
   userProfile: any;
@@ -12,6 +13,45 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
   const getInitials = (firstName?: string, lastName?: string) => {
     return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
   };
+
+  const courses = [
+    {
+      id: 1,
+      title: "Stage 0 - Beginner English for Urdu Speakers",
+      progress: 65,
+      status: "available",
+      image: "/lovable-uploads/b2bd7d9b-8202-432c-b8e8-00f5808291b9.png",
+      duration: "Duration not set",
+      buttonText: "Continue"
+    },
+    {
+      id: 2,
+      title: "Stage 1 - Building Confidence",
+      progress: 0,
+      status: "locked",
+      image: "/lovable-uploads/b2bd7d9b-8202-432c-b8e8-00f5808291b9.png",
+      duration: "Duration not set",
+      buttonText: "Locked"
+    },
+    {
+      id: 3,
+      title: "Stage 2 - Elementary English",
+      progress: 0,
+      status: "locked",
+      image: "/lovable-uploads/b2bd7d9b-8202-432c-b8e8-00f5808291b9.png",
+      duration: "Duration not set",
+      buttonText: "Locked"
+    },
+    {
+      id: 4,
+      title: "Stage 3 - Intermediate English",
+      progress: 0,
+      status: "locked",
+      image: "/lovable-uploads/b2bd7d9b-8202-432c-b8e8-00f5808291b9.png",
+      duration: "Duration not set",
+      buttonText: "Locked"
+    }
+  ];
 
   return (
     <div className="space-y-6">
@@ -86,36 +126,42 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
       {/* Continue Learning Section */}
       <div>
         <h2 className="text-xl font-semibold mb-4">Continue Learning</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Card className="cursor-pointer hover:shadow-md transition-shadow">
-            <CardHeader>
-              <CardTitle className="text-base">English Fundamentals</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-3">Progress: 65%</p>
-              <Button className="w-full">Continue</Button>
-            </CardContent>
-          </Card>
-
-          <Card className="cursor-pointer hover:shadow-md transition-shadow">
-            <CardHeader>
-              <CardTitle className="text-base">Mathematics Basics</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-3">Progress: 40%</p>
-              <Button className="w-full">Continue</Button>
-            </CardContent>
-          </Card>
-
-          <Card className="cursor-pointer hover:shadow-md transition-shadow">
-            <CardHeader>
-              <CardTitle className="text-base">Science Exploration</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-3">Progress: 20%</p>
-              <Button className="w-full">Start</Button>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {courses.map((course) => (
+            <Card key={course.id} className="overflow-hidden hover:shadow-lg transition-shadow bg-card border border-border">
+              <div className="relative">
+                <img 
+                  src={course.image} 
+                  alt={course.title}
+                  className="w-full h-32 object-cover"
+                />
+                <Badge 
+                  className="absolute top-2 left-2 bg-green-600 hover:bg-green-700 text-white border-0"
+                >
+                  AI Tutor
+                </Badge>
+              </div>
+              <CardContent className="p-4">
+                <h3 className="font-semibold text-sm mb-2 text-card-foreground line-clamp-2">
+                  {course.title}
+                </h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  {course.duration}
+                </p>
+                <Button 
+                  className={`w-full text-sm ${
+                    course.status === 'locked' 
+                      ? 'bg-muted hover:bg-muted text-muted-foreground cursor-not-allowed' 
+                      : 'bg-green-600 hover:bg-green-700 text-white'
+                  }`}
+                  disabled={course.status === 'locked'}
+                >
+                  {course.status === 'locked' && <Lock className="w-4 h-4 mr-2" />}
+                  {course.buttonText}
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     </div>
