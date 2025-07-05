@@ -17,9 +17,18 @@ export const AuthButton = ({ user, loading, signOut, isMobile = false, onButtonC
   const isAuthPage = location.pathname.startsWith('/auth');
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
-    onButtonClick?.();
+    try {
+      console.log('🔐 AuthButton: Starting sign out...');
+      await signOut();
+      console.log('🔐 AuthButton: Sign out completed, navigating to home...');
+      navigate('/');
+      onButtonClick?.();
+    } catch (error) {
+      console.error('🔐 AuthButton: Sign out error:', error);
+      // Still navigate away even if sign out fails
+      navigate('/');
+      onButtonClick?.();
+    }
   };
 
   if (loading) {
