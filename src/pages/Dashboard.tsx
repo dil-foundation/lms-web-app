@@ -1,4 +1,3 @@
-
 import { Routes, Route } from 'react-router-dom';
 import { useState } from 'react';
 import { Header } from '@/components/Header';
@@ -14,6 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { BookOpen, Users, ClipboardList, TrendingUp, BarChart3, Settings, GraduationCap, Award, Shield, MessageSquare, Link, Eye } from 'lucide-react';
 import { type UserRole } from '@/config/roleNavigation';
+import { CourseManagement } from '@/components/admin/CourseManagement';
 
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
@@ -142,7 +142,7 @@ const Dashboard = () => {
                   {userRole === 'admin' && (
                     <>
                       <Route path="/users" element={<UsersManagement />} />
-                      <Route path="/courses" element={<RolePlaceholder title="Courses" description="Oversee all courses in the system" icon={BookOpen} />} />
+                      <Route path="/courses" element={<CourseManagement />} />
                       <Route path="/analytics" element={<RolePlaceholder title="System Analytics" description="View comprehensive system analytics" icon={BarChart3} />} />
                       <Route path="/reports" element={<RolePlaceholder title="Reports" description="Generate and view system reports" icon={ClipboardList} />} />
                       <Route path="/observation-reports" element={<RolePlaceholder title="Observation Reports" description="View and manage observation reports" icon={Eye} />} />
