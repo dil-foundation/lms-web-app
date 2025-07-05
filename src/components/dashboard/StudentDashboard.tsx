@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -20,7 +19,7 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
       title: "Stage 0 - Beginner English for Urdu Speakers",
       progress: 65,
       status: "available",
-      image: "/lovable-uploads/b2bd7d9b-8202-432c-b8e8-00f5808291b9.png",
+      image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=6000&q=80",
       duration: "Duration not set",
       buttonText: "Continue"
     },
@@ -29,7 +28,7 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
       title: "Stage 1 - Building Confidence",
       progress: 0,
       status: "locked",
-      image: "/lovable-uploads/b2bd7d9b-8202-432c-b8e8-00f5808291b9.png",
+      image: "https://images.unsplash.com/photo-1518770660439-4636190af475?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=5530&q=80",
       duration: "Duration not set",
       buttonText: "Locked"
     },
@@ -38,7 +37,7 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
       title: "Stage 2 - Elementary English",
       progress: 0,
       status: "locked",
-      image: "/lovable-uploads/b2bd7d9b-8202-432c-b8e8-00f5808291b9.png",
+      image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=3543&q=80",
       duration: "Duration not set",
       buttonText: "Locked"
     },
@@ -47,7 +46,7 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
       title: "Stage 3 - Intermediate English",
       progress: 0,
       status: "locked",
-      image: "/lovable-uploads/b2bd7d9b-8202-432c-b8e8-00f5808291b9.png",
+      image: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=4076&q=80",
       duration: "Duration not set",
       buttonText: "Locked"
     }
