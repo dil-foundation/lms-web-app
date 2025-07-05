@@ -1,14 +1,12 @@
-
 import { useLocation, useNavigate } from 'react-router-dom';
-
 interface LogoProps {
   className?: string;
 }
-
-export const Logo = ({ className = "" }: LogoProps) => {
+export const Logo = ({
+  className = ""
+}: LogoProps) => {
   const location = useLocation();
   const navigate = useNavigate();
-
   const handleLogoClick = () => {
     if (location.pathname === '/dashboard' || location.pathname.startsWith('/dashboard/')) {
       localStorage.setItem('cameFromDashboard', 'true');
@@ -17,17 +15,7 @@ export const Logo = ({ className = "" }: LogoProps) => {
     }
     navigate('/');
   };
-
-  return (
-    <button 
-      onClick={handleLogoClick} 
-      className={`flex items-center hover-scale transition-all duration-300 ${className}`}
-    >
-      <img 
-        src="/lovable-uploads/016ec8c7-bb16-4595-ab96-d96c8c779aa2.png"
-        alt="DIL" 
-        className="h-8 w-auto"
-      />
-    </button>
-  );
+  return <button onClick={handleLogoClick} className={`flex items-center hover-scale transition-all duration-300 ${className}`}>
+      <img src="/lovable-uploads/016ec8c7-bb16-4595-ab96-d96c8c779aa2.png" alt="DIL" className="h-14 w-auto" />
+    </button>;
 };
