@@ -31,9 +31,17 @@ export const DashboardSidebar = ({
               <SidebarMenu>
                 {navigationItems.map(item => <SidebarMenuItem key={item.path}>
                     <SidebarMenuButton asChild>
-                      <NavLink to={item.path} end={item.path === '/dashboard'} className={({
-                    isActive
-                  }) => `flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${isActive ? 'bg-green-50 text-green-600 border-r-2 border-green-500 font-medium' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'}`}>
+                      <NavLink 
+                        to={item.path} 
+                        end={item.path === '/dashboard'} 
+                        className={({ isActive }) => 
+                          `flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${
+                            isActive 
+                              ? 'bg-green-50 text-green-600 border-r-2 border-green-500 font-medium' 
+                              : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                          }`
+                        }
+                      >
                         <item.icon className="h-5 w-5" />
                         <span className="font-medium">{item.title}</span>
                       </NavLink>
