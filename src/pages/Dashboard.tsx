@@ -66,7 +66,7 @@ const Dashboard = () => {
       <div className="min-h-screen bg-background flex flex-col w-full">
         <Header />
         
-        <div className="flex-1 pt-0">
+        <div className="flex-1 pt-16">
           <div className="flex min-h-full w-full">
             <DashboardSidebar userRole={userRole}>
               <Routes>
