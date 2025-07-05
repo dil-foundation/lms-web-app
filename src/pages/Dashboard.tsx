@@ -9,7 +9,7 @@ import { RolePlaceholder } from '@/components/dashboard/RolePlaceholder';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { BookOpen, Users, ClipboardList, TrendingUp, BarChart3, Settings, GraduationCap, Award } from 'lucide-react';
+import { BookOpen, Users, ClipboardList, TrendingUp, BarChart3, Settings, GraduationCap, Award, Shield, MessageSquare, Link, Eye } from 'lucide-react';
 import { type UserRole } from '@/config/roleNavigation';
 
 const Dashboard = () => {
@@ -68,7 +68,7 @@ const Dashboard = () => {
         
         <div className="flex-1 pt-16">
           <div className="flex min-h-full w-full">
-            <DashboardSidebar userRole={userRole}>
+            <DashboardSidebar userRole={userRole} userProfile={profile}>
               <Routes>
                 <Route path="/" element={<DashboardOverview />} />
                 
@@ -96,11 +96,16 @@ const Dashboard = () => {
                 {/* Admin Routes */}
                 {userRole === 'admin' && (
                   <>
-                    <Route path="/users" element={<RolePlaceholder title="User Management" description="Manage system users and permissions" icon={Users} />} />
-                    <Route path="/courses" element={<RolePlaceholder title="Course Administration" description="Oversee all courses in the system" icon={BookOpen} />} />
+                    <Route path="/users" element={<RolePlaceholder title="Users" description="Manage system users and permissions" icon={Users} />} />
+                    <Route path="/courses" element={<RolePlaceholder title="Courses" description="Oversee all courses in the system" icon={BookOpen} />} />
                     <Route path="/analytics" element={<RolePlaceholder title="System Analytics" description="View comprehensive system analytics" icon={BarChart3} />} />
-                    <Route path="/reports" element={<RolePlaceholder title="Reports & Data" description="Generate and view system reports" icon={ClipboardList} />} />
-                    <Route path="/settings" element={<RolePlaceholder title="System Settings" description="Configure system-wide settings" icon={Settings} />} />
+                    <Route path="/reports" element={<RolePlaceholder title="Reports" description="Generate and view system reports" icon={ClipboardList} />} />
+                    <Route path="/observation-reports" element={<RolePlaceholder title="Observation Reports" description="View and manage observation reports" icon={Eye} />} />
+                    <Route path="/secure-links" element={<RolePlaceholder title="Secure Links" description="Manage secure links and access controls" icon={Link} />} />
+                    <Route path="/settings" element={<RolePlaceholder title="Settings" description="Configure system-wide settings" icon={Settings} />} />
+                    <Route path="/security" element={<RolePlaceholder title="Security" description="Manage security settings and protocols" icon={Shield} />} />
+                    <Route path="/discussion" element={<RolePlaceholder title="Discussion" description="Moderate discussions and forums" icon={MessageSquare} />} />
+                    <Route path="/grade-assignments" element={<RolePlaceholder title="Grade Assignments" description="Review and grade student assignments" icon={Award} />} />
                   </>
                 )}
               </Routes>

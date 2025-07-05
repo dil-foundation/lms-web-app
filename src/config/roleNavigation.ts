@@ -1,5 +1,5 @@
 
-import { Home, BookOpen, FileQuestion, TrendingUp, Users, Settings, BarChart3, GraduationCap, ClipboardList, Award, UserCheck, Database } from 'lucide-react';
+import { Home, BookOpen, FileQuestion, TrendingUp, Users, Settings, BarChart3, GraduationCap, ClipboardList, Award, UserCheck, Database, Shield, MessageSquare, Link, Eye } from 'lucide-react';
 
 export type UserRole = 'student' | 'teacher' | 'admin';
 
@@ -7,6 +7,7 @@ export interface NavigationItem {
   title: string;
   path: string;
   icon: any;
+  badge?: string;
 }
 
 export const getRoleNavigation = (role: UserRole): NavigationItem[] => {
@@ -32,12 +33,16 @@ export const getRoleNavigation = (role: UserRole): NavigationItem[] => {
     
     case 'admin':
       return [
-        { title: 'Overview', path: '/dashboard', icon: Home },
-        { title: 'User Management', path: '/dashboard/users', icon: Users },
-        { title: 'Course Administration', path: '/dashboard/courses', icon: BookOpen },
-        { title: 'System Analytics', path: '/dashboard/analytics', icon: BarChart3 },
+        { title: 'Dashboard', path: '/dashboard', icon: Home },
+        { title: 'Users', path: '/dashboard/users', icon: Users, badge: 'new' },
+        { title: 'Courses', path: '/dashboard/courses', icon: BookOpen },
         { title: 'Reports', path: '/dashboard/reports', icon: FileQuestion },
+        { title: 'Observation Reports', path: '/dashboard/observation-reports', icon: Eye },
+        { title: 'Secure Links', path: '/dashboard/secure-links', icon: Link, badge: 'new' },
         { title: 'Settings', path: '/dashboard/settings', icon: Settings },
+        { title: 'Security', path: '/dashboard/security', icon: Shield },
+        { title: 'Discussion', path: '/dashboard/discussion', icon: MessageSquare },
+        { title: 'Grade Assignments', path: '/dashboard/grade-assignments', icon: Award },
       ];
     
     default:

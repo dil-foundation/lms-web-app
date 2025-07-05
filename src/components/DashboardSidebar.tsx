@@ -1,17 +1,29 @@
+
 import { NavLink } from 'react-router-dom';
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import { Badge } from '@/components/ui/badge';
 import { getRoleNavigation, getRoleDisplayName, type UserRole } from '@/config/roleNavigation';
+import { UserProfileSection } from '@/components/sidebar/UserProfileSection';
+import { Database } from '@/integrations/supabase/types';
+
+type Profile = Database['public']['Tables']['profiles']['Row'];
+
 interface DashboardSidebarProps {
   children: React.ReactNode;
   userRole: UserRole;
+  userProfile: Profile;
 }
+
 export const DashboardSidebar = ({
   children,
-  userRole
+  userRole,
+  userProfile
 }: DashboardSidebarProps) => {
   const navigationItems = getRoleNavigation(userRole);
+  
   return <>
       <Sidebar className="border-r border-border">
+        <UserProfileSection profile={userProfile} />
         <SidebarContent className="pt-4">
           <SidebarGroup>
             <SidebarGroupLabel className="mb-3">Navigation</SidebarGroupLabel>
@@ -21,9 +33,16 @@ export const DashboardSidebar = ({
                     <SidebarMenuButton asChild>
                       <NavLink to={item.path} end={item.path === '/dashboard'} className={({
                     isActive
-                  }) => `flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${isActive ? 'bg-primary text-primary-foreground shadow-sm font-medium' : 'hover:bg-muted hover:text-foreground'}`}>
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
+                  }) => `flex items-center justify-between space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${isActive ? 'bg-primary text-primary-foreground shadow-sm font-medium' : 'hover:bg-muted hover:text-foreground'}`}>
+                        <div className="flex items-center space-x-3">
+                          <item.icon className="h-4 w-4" />
+                          <span>{item.title}</span>
+                        </div>
+                        {item.badge && (
+                          <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-white text-xs px-2 py-0.5">
+                            {item.badge}
+                          </Badge>
+                        )}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>)}
