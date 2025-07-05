@@ -33,12 +33,12 @@ export const getRoleNavigation = (role: UserRole): NavigationItem[] => {
     
     case 'admin':
       return [
-        { title: 'Dashboard', path: '/dashboard', icon: Home },
-        { title: 'Users', path: '/dashboard/users', icon: Users, badge: 'new' },
+        { title: 'Overview', path: '/dashboard', icon: Home },
+        { title: 'Users', path: '/dashboard/users', icon: Users },
         { title: 'Courses', path: '/dashboard/courses', icon: BookOpen },
         { title: 'Reports', path: '/dashboard/reports', icon: FileQuestion },
         { title: 'Observation Reports', path: '/dashboard/observation-reports', icon: Eye },
-        { title: 'Secure Links', path: '/dashboard/secure-links', icon: Link, badge: 'new' },
+        { title: 'Secure Links', path: '/dashboard/secure-links', icon: Link },
         { title: 'Settings', path: '/dashboard/settings', icon: Settings },
         { title: 'Security', path: '/dashboard/security', icon: Shield },
         { title: 'Discussion', path: '/dashboard/discussion', icon: MessageSquare },

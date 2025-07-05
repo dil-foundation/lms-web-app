@@ -1,8 +1,7 @@
 
 import { NavLink } from 'react-router-dom';
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { Badge } from '@/components/ui/badge';
-import { getRoleNavigation, getRoleDisplayName, type UserRole } from '@/config/roleNavigation';
+import { getRoleNavigation, type UserRole } from '@/config/roleNavigation';
 import { UserProfileSection } from '@/components/sidebar/UserProfileSection';
 import { Database } from '@/integrations/supabase/types';
 
@@ -33,16 +32,9 @@ export const DashboardSidebar = ({
                     <SidebarMenuButton asChild>
                       <NavLink to={item.path} end={item.path === '/dashboard'} className={({
                     isActive
-                  }) => `flex items-center justify-between space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${isActive ? 'bg-primary text-primary-foreground shadow-sm font-medium' : 'hover:bg-muted hover:text-foreground'}`}>
-                        <div className="flex items-center space-x-3">
-                          <item.icon className="h-4 w-4" />
-                          <span>{item.title}</span>
-                        </div>
-                        {item.badge && (
-                          <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-white text-xs px-2 py-0.5">
-                            {item.badge}
-                          </Badge>
-                        )}
+                  }) => `flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${isActive ? 'bg-primary text-primary-foreground shadow-sm font-medium' : 'hover:bg-muted hover:text-foreground'}`}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>)}
