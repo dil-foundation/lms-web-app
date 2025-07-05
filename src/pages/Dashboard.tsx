@@ -8,6 +8,7 @@ import { TeacherDashboard } from '@/components/dashboard/TeacherDashboard';
 import { AdminDashboard } from '@/components/dashboard/AdminDashboard';
 import { RolePlaceholder } from '@/components/dashboard/RolePlaceholder';
 import { RoleSwitcher } from '@/components/dashboard/RoleSwitcher';
+import { UsersManagement } from '@/components/admin/UsersManagement';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -140,7 +141,7 @@ const Dashboard = () => {
                   {/* Admin Routes */}
                   {userRole === 'admin' && (
                     <>
-                      <Route path="/users" element={<RolePlaceholder title="Users" description="Manage system users and permissions" icon={Users} />} />
+                      <Route path="/users" element={<UsersManagement />} />
                       <Route path="/courses" element={<RolePlaceholder title="Courses" description="Oversee all courses in the system" icon={BookOpen} />} />
                       <Route path="/analytics" element={<RolePlaceholder title="System Analytics" description="View comprehensive system analytics" icon={BarChart3} />} />
                       <Route path="/reports" element={<RolePlaceholder title="Reports" description="Generate and view system reports" icon={ClipboardList} />} />
