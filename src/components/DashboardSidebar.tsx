@@ -1,4 +1,5 @@
 
+
 import { NavLink } from 'react-router-dom';
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { getRoleNavigation, type UserRole } from '@/config/roleNavigation';
@@ -32,9 +33,9 @@ export const DashboardSidebar = ({
                     <SidebarMenuButton asChild>
                       <NavLink to={item.path} end={item.path === '/dashboard'} className={({
                     isActive
-                  }) => `flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${isActive ? 'bg-primary text-primary-foreground shadow-sm font-medium' : 'hover:bg-muted hover:text-foreground'}`}>
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
+                  }) => `flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${isActive ? 'bg-green-50 text-green-600 border-r-2 border-green-500 font-medium' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'}`}>
+                        <item.icon className="h-5 w-5" />
+                        <span className="font-medium">{item.title}</span>
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>)}
@@ -51,3 +52,4 @@ export const DashboardSidebar = ({
       </main>
     </>;
 };
+
