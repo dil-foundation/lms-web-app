@@ -1,5 +1,4 @@
 
-
 import { NavLink } from 'react-router-dom';
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { getRoleNavigation, type UserRole } from '@/config/roleNavigation';
@@ -29,24 +28,27 @@ export const DashboardSidebar = ({
             <SidebarGroupLabel className="mb-3">Navigation</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {navigationItems.map(item => <SidebarMenuItem key={item.path}>
+                {navigationItems.map(item => (
+                  <SidebarMenuItem key={item.path}>
                     <SidebarMenuButton asChild>
                       <NavLink 
                         to={item.path} 
-                        end={item.path === '/dashboard'} 
-                        className={({ isActive }) => 
-                          `flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${
+                        end={item.path === '/dashboard'}
+                      >
+                        {({ isActive }) => (
+                          <div className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${
                             isActive 
                               ? 'bg-green-50 text-green-600 border-r-2 border-green-500 font-medium' 
                               : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                          }`
-                        }
-                      >
-                        <item.icon className="h-5 w-5" />
-                        <span className="font-medium">{item.title}</span>
+                          }`}>
+                            <item.icon className="h-5 w-5" />
+                            <span className="font-medium">{item.title}</span>
+                          </div>
+                        )}
                       </NavLink>
                     </SidebarMenuButton>
-                  </SidebarMenuItem>)}
+                  </SidebarMenuItem>
+                ))}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -60,4 +62,3 @@ export const DashboardSidebar = ({
       </main>
     </>;
 };
-
