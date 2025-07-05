@@ -55,7 +55,7 @@ export const DashboardSidebar = ({ children, userRole }: DashboardSidebarProps) 
       </Sidebar>
 
       <main className="flex-1 min-h-0">
-        <div className="p-6 max-w-7xl mx-auto h-full">
+        <div className="p-6 pt-2 max-w-7xl mx-auto h-full">
           {children}
         </div>
       </main>
