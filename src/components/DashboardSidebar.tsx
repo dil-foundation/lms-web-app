@@ -36,10 +36,10 @@ export const DashboardSidebar = ({
                         end={item.path === '/dashboard'}
                       >
                         {({ isActive }) => (
-                          <div className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${
+                          <div className={`flex items-center space-x-3 px-3 py-2 mx-2 rounded-lg transition-all duration-200 ${
                             isActive 
-                              ? 'bg-green-50 text-green-600 border-r-2 border-green-500 font-medium' 
-                              : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                              ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 font-medium shadow-sm' 
+                              : 'text-foreground hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-foreground'
                           }`}>
                             <item.icon className="h-5 w-5" />
                             <span className="font-medium">{item.title}</span>
