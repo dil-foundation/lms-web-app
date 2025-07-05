@@ -11,6 +11,7 @@ import TeacherAuth from "./pages/TeacherAuth";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
+import CourseBuilder from "./pages/CourseBuilder";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/dashboard/*" element={<Dashboard />} />
+          <Route path="/course-builder/:courseId" element={<CourseBuilder />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

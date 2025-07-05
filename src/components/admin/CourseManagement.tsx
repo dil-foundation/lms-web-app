@@ -1,5 +1,5 @@
-
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,14 +11,6 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
 import { 
   Plus, 
   Search, 
@@ -38,6 +30,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export const CourseManagement = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -118,6 +111,14 @@ export const CourseManagement = () => {
     return matchesSearch && matchesStatus && matchesCategory;
   });
 
+  const handleCreateCourse = () => {
+    navigate('/dashboard/courses/builder/new');
+  };
+
+  const handleEditCourse = (courseId: number) => {
+    navigate(`/dashboard/courses/builder/${courseId}`);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -127,28 +128,13 @@ export const CourseManagement = () => {
           <p className="text-muted-foreground">Manage all courses in the system</p>
         </div>
         
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button className="bg-green-600 hover:bg-green-700 text-white">
-              <Plus className="w-4 h-4 mr-2" />
-              Create Course
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Create New Course</DialogTitle>
-              <DialogDescription>
-                You'll be redirected to the Course Builder to create a new course.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex justify-end gap-2 mt-4">
-              <Button variant="outline">Cancel</Button>
-              <Button className="bg-green-600 hover:bg-green-700 text-white">
-                Open Course Builder
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button 
+          className="bg-green-600 hover:bg-green-700 text-white"
+          onClick={handleCreateCourse}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Create Course
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -269,7 +255,7 @@ export const CourseManagement = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleEditCourse(course.id)}>
                       <Edit className="w-4 h-4 mr-2" />
                       Edit Course
                     </DropdownMenuItem>
@@ -311,10 +297,7 @@ export const CourseManagement = () => {
               
               <Button 
                 className="w-full text-sm bg-green-600 hover:bg-green-700 text-white"
-                onClick={() => {
-                  // Navigate to course builder with course ID
-                  console.log(`Edit course ${course.id}`);
-                }}
+                onClick={() => handleEditCourse(course.id)}
               >
                 <Edit className="w-4 h-4 mr-2" />
                 Edit Course
@@ -335,28 +318,13 @@ export const CourseManagement = () => {
               : 'Get started by creating your first course.'}
           </p>
           {(!searchTerm && statusFilter === 'all' && categoryFilter === 'all') && (
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button className="bg-green-600 hover:bg-green-700 text-white">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Your First Course
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Create New Course</DialogTitle>
-                  <DialogDescription>
-                    You'll be redirected to the Course Builder to create a new course.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="flex justify-end gap-2 mt-4">
-                  <Button variant="outline">Cancel</Button>
-                  <Button className="bg-green-600 hover:bg-green-700 text-white">
-                    Open Course Builder
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+            <Button 
+              className="bg-green-600 hover:bg-green-700 text-white"
+              onClick={handleCreateCourse}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create Your First Course
+            </Button>
           )}
         </div>
       )}

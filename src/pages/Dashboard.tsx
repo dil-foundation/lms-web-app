@@ -8,12 +8,13 @@ import { AdminDashboard } from '@/components/dashboard/AdminDashboard';
 import { RolePlaceholder } from '@/components/dashboard/RolePlaceholder';
 import { RoleSwitcher } from '@/components/dashboard/RoleSwitcher';
 import { UsersManagement } from '@/components/admin/UsersManagement';
+import { CourseManagement } from '@/components/admin/CourseManagement';
+import CourseBuilder from './CourseBuilder';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { BookOpen, Users, ClipboardList, TrendingUp, BarChart3, Settings, GraduationCap, Award, Shield, MessageSquare, Link, Eye } from 'lucide-react';
 import { type UserRole } from '@/config/roleNavigation';
-import { CourseManagement } from '@/components/admin/CourseManagement';
 
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
@@ -143,6 +144,7 @@ const Dashboard = () => {
                     <>
                       <Route path="/users" element={<UsersManagement />} />
                       <Route path="/courses" element={<CourseManagement />} />
+                      <Route path="/courses/builder/:courseId" element={<CourseBuilder />} />
                       <Route path="/analytics" element={<RolePlaceholder title="System Analytics" description="View comprehensive system analytics" icon={BarChart3} />} />
                       <Route path="/reports" element={<RolePlaceholder title="Reports" description="Generate and view system reports" icon={ClipboardList} />} />
                       <Route path="/observation-reports" element={<RolePlaceholder title="Observation Reports" description="View and manage observation reports" icon={Eye} />} />
