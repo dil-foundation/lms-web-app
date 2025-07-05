@@ -1,11 +1,13 @@
 
 import { Routes, Route } from 'react-router-dom';
+import { useState } from 'react';
 import { Header } from '@/components/Header';
 import { DashboardSidebar } from '@/components/DashboardSidebar';
 import { StudentDashboard } from '@/components/dashboard/StudentDashboard';
 import { TeacherDashboard } from '@/components/dashboard/TeacherDashboard';
 import { AdminDashboard } from '@/components/dashboard/AdminDashboard';
 import { RolePlaceholder } from '@/components/dashboard/RolePlaceholder';
+import { RoleSwitcher } from '@/components/dashboard/RoleSwitcher';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -15,6 +17,9 @@ import { type UserRole } from '@/config/roleNavigation';
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading } = useUserProfile(user);
+  
+  // Dev mode state for role switching
+  const [devRole, setDevRole] = useState<UserRole | null>(null);
 
   // Show loading state while fetching auth and profile data
   if (authLoading || profileLoading) {
@@ -45,17 +50,49 @@ const Dashboard = () => {
     );
   }
 
-  const userRole = profile.role as UserRole;
+  // Use dev role if set, otherwise use actual user role
+  const userRole = devRole || (profile.role as UserRole);
+
+  // Create a mock profile for different roles
+  const getMockProfile = (role: UserRole) => {
+    const baseProfile = { ...profile, role };
+    
+    switch (role) {
+      case 'student':
+        return { 
+          ...baseProfile, 
+          first_name: 'Alex', 
+          last_name: 'Student',
+          grade: '10th'
+        };
+      case 'teacher':
+        return { 
+          ...baseProfile, 
+          first_name: 'Sarah', 
+          last_name: 'Teacher'
+        };
+      case 'admin':
+        return { 
+          ...baseProfile, 
+          first_name: 'John', 
+          last_name: 'Admin'
+        };
+      default:
+        return baseProfile;
+    }
+  };
+
+  const displayProfile = getMockProfile(userRole);
 
   // Role-specific dashboard overview component
   const DashboardOverview = () => {
     switch (userRole) {
       case 'student':
-        return <StudentDashboard userProfile={profile} />;
+        return <StudentDashboard userProfile={displayProfile} />;
       case 'teacher':
-        return <TeacherDashboard userProfile={profile} />;
+        return <TeacherDashboard userProfile={displayProfile} />;
       case 'admin':
-        return <AdminDashboard userProfile={profile} />;
+        return <AdminDashboard userProfile={displayProfile} />;
       default:
         return <RolePlaceholder title="Dashboard" description="Welcome to your dashboard" icon={BookOpen} />;
     }
@@ -68,47 +105,55 @@ const Dashboard = () => {
         
         <div className="flex-1 pt-16">
           <div className="flex min-h-full w-full">
-            <DashboardSidebar userRole={userRole} userProfile={profile}>
-              <Routes>
-                <Route path="/" element={<DashboardOverview />} />
+            <DashboardSidebar userRole={userRole} userProfile={displayProfile}>
+              <div className="space-y-4">
+                {/* Development Role Switcher */}
+                <RoleSwitcher 
+                  currentRole={userRole}
+                  onRoleChange={setDevRole}
+                />
                 
-                {/* Student Routes */}
-                {userRole === 'student' && (
-                  <>
-                    <Route path="/courses" element={<RolePlaceholder title="My Courses" description="View and manage your enrolled courses" icon={BookOpen} />} />
-                    <Route path="/assignments" element={<RolePlaceholder title="Assignments" description="View and complete your assignments" icon={ClipboardList} />} />
-                    <Route path="/progress" element={<RolePlaceholder title="Progress Tracking" description="Monitor your learning progress and achievements" icon={TrendingUp} />} />
-                    <Route path="/ai-tutor" element={<RolePlaceholder title="AI Tutor" description="Get personalized AI-powered learning assistance" icon={GraduationCap} />} />
-                  </>
-                )}
-                
-                {/* Teacher Routes */}
-                {userRole === 'teacher' && (
-                  <>
-                    <Route path="/classes" element={<RolePlaceholder title="My Classes" description="Manage your classes and students" icon={Users} />} />
-                    <Route path="/courses" element={<RolePlaceholder title="Course Management" description="Create and manage your courses" icon={BookOpen} />} />
-                    <Route path="/student-progress" element={<RolePlaceholder title="Student Progress" description="Monitor individual student performance" icon={TrendingUp} />} />
-                    <Route path="/assignments" element={<RolePlaceholder title="Assignment Management" description="Create and grade assignments" icon={ClipboardList} />} />
-                    <Route path="/resources" element={<RolePlaceholder title="Teaching Resources" description="Access and manage teaching materials" icon={Award} />} />
-                  </>
-                )}
-                
-                {/* Admin Routes */}
-                {userRole === 'admin' && (
-                  <>
-                    <Route path="/users" element={<RolePlaceholder title="Users" description="Manage system users and permissions" icon={Users} />} />
-                    <Route path="/courses" element={<RolePlaceholder title="Courses" description="Oversee all courses in the system" icon={BookOpen} />} />
-                    <Route path="/analytics" element={<RolePlaceholder title="System Analytics" description="View comprehensive system analytics" icon={BarChart3} />} />
-                    <Route path="/reports" element={<RolePlaceholder title="Reports" description="Generate and view system reports" icon={ClipboardList} />} />
-                    <Route path="/observation-reports" element={<RolePlaceholder title="Observation Reports" description="View and manage observation reports" icon={Eye} />} />
-                    <Route path="/secure-links" element={<RolePlaceholder title="Secure Links" description="Manage secure links and access controls" icon={Link} />} />
-                    <Route path="/settings" element={<RolePlaceholder title="Settings" description="Configure system-wide settings" icon={Settings} />} />
-                    <Route path="/security" element={<RolePlaceholder title="Security" description="Manage security settings and protocols" icon={Shield} />} />
-                    <Route path="/discussion" element={<RolePlaceholder title="Discussion" description="Moderate discussions and forums" icon={MessageSquare} />} />
-                    <Route path="/grade-assignments" element={<RolePlaceholder title="Grade Assignments" description="Review and grade student assignments" icon={Award} />} />
-                  </>
-                )}
-              </Routes>
+                <Routes>
+                  <Route path="/" element={<DashboardOverview />} />
+                  
+                  {/* Student Routes */}
+                  {userRole === 'student' && (
+                    <>
+                      <Route path="/courses" element={<RolePlaceholder title="My Courses" description="View and manage your enrolled courses" icon={BookOpen} />} />
+                      <Route path="/assignments" element={<RolePlaceholder title="Assignments" description="View and complete your assignments" icon={ClipboardList} />} />
+                      <Route path="/progress" element={<RolePlaceholder title="Progress Tracking" description="Monitor your learning progress and achievements" icon={TrendingUp} />} />
+                      <Route path="/ai-tutor" element={<RolePlaceholder title="AI Tutor" description="Get personalized AI-powered learning assistance" icon={GraduationCap} />} />
+                    </>
+                  )}
+                  
+                  {/* Teacher Routes */}
+                  {userRole === 'teacher' && (
+                    <>
+                      <Route path="/classes" element={<RolePlaceholder title="My Classes" description="Manage your classes and students" icon={Users} />} />
+                      <Route path="/courses" element={<RolePlaceholder title="Course Management" description="Create and manage your courses" icon={BookOpen} />} />
+                      <Route path="/student-progress" element={<RolePlaceholder title="Student Progress" description="Monitor individual student performance" icon={TrendingUp} />} />
+                      <Route path="/assignments" element={<RolePlaceholder title="Assignment Management" description="Create and grade assignments" icon={ClipboardList} />} />
+                      <Route path="/resources" element={<RolePlaceholder title="Teaching Resources" description="Access and manage teaching materials" icon={Award} />} />
+                    </>
+                  )}
+                  
+                  {/* Admin Routes */}
+                  {userRole === 'admin' && (
+                    <>
+                      <Route path="/users" element={<RolePlaceholder title="Users" description="Manage system users and permissions" icon={Users} />} />
+                      <Route path="/courses" element={<RolePlaceholder title="Courses" description="Oversee all courses in the system" icon={BookOpen} />} />
+                      <Route path="/analytics" element={<RolePlaceholder title="System Analytics" description="View comprehensive system analytics" icon={BarChart3} />} />
+                      <Route path="/reports" element={<RolePlaceholder title="Reports" description="Generate and view system reports" icon={ClipboardList} />} />
+                      <Route path="/observation-reports" element={<RolePlaceholder title="Observation Reports" description="View and manage observation reports" icon={Eye} />} />
+                      <Route path="/secure-links" element={<RolePlaceholder title="Secure Links" description="Manage secure links and access controls" icon={Link} />} />
+                      <Route path="/settings" element={<RolePlaceholder title="Settings" description="Configure system-wide settings" icon={Settings} />} />
+                      <Route path="/security" element={<RolePlaceholder title="Security" description="Manage security settings and protocols" icon={Shield} />} />
+                      <Route path="/discussion" element={<RolePlaceholder title="Discussion" description="Moderate discussions and forums" icon={MessageSquare} />} />
+                      <Route path="/grade-assignments" element={<RolePlaceholder title="Grade Assignments" description="Review and grade student assignments" icon={Award} />} />
+                    </>
+                  )}
+                </Routes>
+              </div>
             </DashboardSidebar>
           </div>
         </div>
