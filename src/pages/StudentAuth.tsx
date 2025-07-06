@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Header } from '@/components/Header';
@@ -33,6 +32,15 @@ const StudentAuth = () => {
     email: '', 
     password: '' 
   });
+  
+  // Add login validation error states
+  const [loginValidationErrors, setLoginValidationErrors] = useState({
+    email: '',
+    password: ''
+  });
+  
+  // Add state for auth error
+  const [authError, setAuthError] = useState('');
   
   const [signupData, setSignupData] = useState({ 
     firstName: '',
@@ -97,6 +105,17 @@ const StudentAuth = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setAuthError(''); // Clear any previous auth errors
+
+    // Add validation for login fields
+    if (!loginData.email || !loginData.password) {
+      setLoginValidationErrors({
+        email: !loginData.email ? 'Email is required' : '',
+        password: !loginData.password ? 'Password is required' : ''
+      });
+      setIsLoading(false);
+      return;
+    }
 
     try {
       console.log('🔐 Attempting student login...');
@@ -115,7 +134,20 @@ const StudentAuth = () => {
       }
     } catch (error: any) {
       console.error('🔐 Student login error:', error);
-      toast.error(error.message || 'Failed to sign in');
+      if (error.message === 'Email not confirmed') {
+        try {
+          await supabase.auth.resend({
+            type: 'signup',
+            email: loginData.email,
+          });
+          setAuthError('Please verify your Email Address, we have sent a new verification link to your email');
+        } catch (resendError) {
+          console.error('Failed to resend verification email:', resendError);
+          setAuthError('Invalid Credentials.');
+        }
+      } else {
+        setAuthError('Invalid Credentials.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -131,6 +163,20 @@ const StudentAuth = () => {
     const passwordValidation = validatePassword(signupData.password);
     const confirmPasswordValidation = validateConfirmPassword(signupData.password, signupData.confirmPassword);
     const gradeValidation = validateGrade(signupData.grade);
+
+    // Check for empty fields first
+    if (!signupData.firstName || !signupData.lastName || !signupData.email || 
+        !signupData.password || !signupData.confirmPassword || !signupData.grade) {
+      setValidationErrors({
+        firstName: !signupData.firstName ? 'First name is required' : '',
+        lastName: !signupData.lastName ? 'Last name is required' : '',
+        email: !signupData.email ? 'Email is required' : '',
+        password: !signupData.password ? 'Password is required' : '',
+        confirmPassword: !signupData.confirmPassword ? 'Please confirm your password' : '',
+        grade: !signupData.grade ? 'Grade is required' : ''
+      });
+      return;
+    }
 
     const hasErrors = !firstNameValidation.isValid || 
                      !lastNameValidation.isValid || 
@@ -223,9 +269,16 @@ const StudentAuth = () => {
                         type="email"
                         placeholder="Enter your email"
                         value={loginData.email}
-                        onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                        required
+                        onChange={(e) => {
+                          setLoginData({ ...loginData, email: e.target.value });
+                          setLoginValidationErrors({ ...loginValidationErrors, email: '' });
+                          setAuthError(''); // Clear auth error when email changes
+                        }}
+                        className={loginValidationErrors.email ? 'border-red-500' : ''}
                       />
+                      {loginValidationErrors.email && (
+                        <p className="text-sm text-red-500">{loginValidationErrors.email}</p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="login-password">Password</Label>
@@ -235,15 +288,16 @@ const StudentAuth = () => {
                           type={showLoginPassword ? "text" : "password"}
                           placeholder="Enter your password"
                           value={loginData.password}
-                          onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                          required
-                          className="pr-10"
+                          onChange={(e) => {
+                            setLoginData({ ...loginData, password: e.target.value });
+                            setLoginValidationErrors({ ...loginValidationErrors, password: '' });
+                            setAuthError(''); // Clear auth error when password changes
+                          }}
+                          className={`pr-10 ${loginValidationErrors.password ? 'border-red-500' : ''}`}
                         />
-                        <Button
+                        <button
                           type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-accent/20"
+                          className="absolute right-3 top-[50%] transform -translate-y-[50%] text-gray-500"
                           onClick={() => setShowLoginPassword(!showLoginPassword)}
                         >
                           {showLoginPassword ? (
@@ -251,8 +305,14 @@ const StudentAuth = () => {
                           ) : (
                             <Eye className="h-4 w-4" />
                           )}
-                        </Button>
+                        </button>
                       </div>
+                      {loginValidationErrors.password && (
+                        <p className="text-sm text-red-500">{loginValidationErrors.password}</p>
+                      )}
+                      {authError && (
+                        <p className="text-sm text-red-500 mt-1 font-semibold">{authError}</p>
+                      )}
                     </div>
                     <Button 
                       type="submit" 
@@ -287,7 +347,6 @@ const StudentAuth = () => {
                             handleFieldValidation('firstName', e.target.value);
                           }}
                           className={validationErrors.firstName ? 'border-red-500' : ''}
-                          required
                         />
                         {validationErrors.firstName && (
                           <p className="text-sm text-red-500">{validationErrors.firstName}</p>
@@ -305,7 +364,6 @@ const StudentAuth = () => {
                             handleFieldValidation('lastName', e.target.value);
                           }}
                           className={validationErrors.lastName ? 'border-red-500' : ''}
-                          required
                         />
                         {validationErrors.lastName && (
                           <p className="text-sm text-red-500">{validationErrors.lastName}</p>
@@ -324,7 +382,6 @@ const StudentAuth = () => {
                           handleFieldValidation('email', e.target.value);
                         }}
                         className={validationErrors.email ? 'border-red-500' : ''}
-                        required
                       />
                       {validationErrors.email && (
                         <p className="text-sm text-red-500">{validationErrors.email}</p>
@@ -374,7 +431,6 @@ const StudentAuth = () => {
                             handleFieldValidation('password', e.target.value);
                           }}
                           className={validationErrors.password ? 'border-red-500 pr-10' : 'pr-10'}
-                          required
                         />
                         <Button
                           type="button"
@@ -407,7 +463,6 @@ const StudentAuth = () => {
                             handleFieldValidation('confirmPassword', e.target.value);
                           }}
                           className={validationErrors.confirmPassword ? 'border-red-500 pr-10' : 'pr-10'}
-                          required
                         />
                         <Button
                           type="button"

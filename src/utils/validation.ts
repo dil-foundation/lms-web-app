@@ -1,4 +1,3 @@
-
 export interface ValidationResult {
   isValid: boolean;
   error?: string;
@@ -96,3 +95,23 @@ export function validateGrade(value: string): ValidationResult {
   
   return { isValid: true };
 }
+
+export const validateTeacherId = (teacherId: string): ValidationResult => {
+  if (!teacherId) {
+    return {
+      isValid: false,
+      error: 'Teacher ID is required'
+    };
+  }
+
+  if (teacherId.length < 3) {
+    return {
+      isValid: false,
+      error: 'Teacher ID must be at least 3 characters'
+    };
+  }
+
+  return {
+    isValid: true
+  };
+};
