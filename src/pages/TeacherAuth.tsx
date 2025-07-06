@@ -26,6 +26,7 @@ const TeacherAuth = () => {
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showSignupPassword, setShowSignupPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [signupSuccessMessage, setSignupSuccessMessage] = useState('');
   
   const [loginData, setLoginData] = useState({ 
     email: '', 
@@ -154,6 +155,7 @@ const TeacherAuth = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSignupSuccessMessage('');
     
     // Validate all fields before submission
     const firstNameValidation = validateFirstName(signupData.firstName);
@@ -218,9 +220,15 @@ const TeacherAuth = () => {
       
       if (data.user) {
         console.log('🔐 Teacher signup successful:', data.user.email);
-        toast.success('Account created successfully!');
-        // Force page refresh to ensure clean state
-        window.location.href = '/dashboard';
+        setSignupSuccessMessage('Account created successfully! Please check your email for a verification link.');
+        setSignupData({
+          firstName: '',
+          lastName: '',
+          email: '',
+          password: '',
+          confirmPassword: '',
+          teacherId: ''
+        });
       }
     } catch (error: any) {
       console.error('🔐 Teacher signup error:', error);
@@ -462,6 +470,9 @@ const TeacherAuth = () => {
                         <p className="text-sm text-red-500">{validationErrors.confirmPassword}</p>
                       )}
                     </div>
+                    {signupSuccessMessage && (
+                      <p className="text-sm text-green-600 text-center py-2">{signupSuccessMessage}</p>
+                    )}
                     <Button 
                       type="submit" 
                       className="w-full bg-primary hover:bg-primary/90"
