@@ -127,6 +127,23 @@ const TeacherAuth = () => {
       if (error) throw error;
       
       if (data.user) {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user.id)
+          .single();
+
+        if (profileError || !profile) {
+          throw new Error('Could not fetch user profile.');
+        }
+
+        if (profile.role !== 'teacher') {
+          await supabase.auth.signOut();
+          setAuthError(`Please use the ${profile.role} portal to log in.`);
+          setIsLoading(false);
+          return;
+        }
+
         console.log('🔐 Teacher login successful:', data.user.email);
         toast.success('Welcome back!');
         // Force page refresh to ensure clean state

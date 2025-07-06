@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { DashboardSidebar } from '@/components/DashboardSidebar';
@@ -18,40 +18,34 @@ import { BookOpen, Users, ClipboardList, TrendingUp, BarChart3, Settings, Gradua
 import { type UserRole } from '@/config/roleNavigation';
 import ProfileSettings from './ProfileSettings';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
+import { FullScreenLoader } from '@/components/FullScreenLoader';
 
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
-  const { profile, loading: profileLoading } = useUserProfile(user);
+  const { profile, loading: profileLoading, error: profileError } = useUserProfile(user);
   const navigate = useNavigate();
   
   // Dev mode state for role switching
   const [devRole, setDevRole] = useState<UserRole | null>(null);
 
-  // Show loading state while fetching auth and profile data
-  if (authLoading || profileLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading dashboard...</p>
-        </div>
-      </div>
-    );
+  // Use a combined loading state to prevent flicker
+  if (authLoading || (user && profileLoading)) {
+    return <FullScreenLoader message={authLoading ? 'Authenticating...' : 'Loading user profile...'} />;
   }
 
-  // Redirect to auth if no user
+  // If loading is done and there's still no user, redirect
   if (!user) {
     window.location.href = '/auth';
     return null;
   }
 
-  // Handle case where profile is not yet available
+  // If loading is done and there's no profile, show an error
   if (!profile) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <p className="text-muted-foreground">Unable to load user profile. Please try refreshing the page.</p>
+          <p className="text-muted-foreground">Unable to load user profile.</p>
+          <p className="mt-2 text-sm text-red-500">Error: {profileError || 'Profile not found.'}</p>
         </div>
       </div>
     );
