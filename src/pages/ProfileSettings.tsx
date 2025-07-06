@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { validatePassword, validateConfirmPassword } from '@/utils/validation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 
 const ProfileSettings = () => {
   const { user } = useAuth();
@@ -123,8 +123,8 @@ const ProfileSettings = () => {
   return (
     <div className="p-6 space-y-6">
       {isPasswordRecovery && (
-        <Alert>
-          <Terminal className="h-4 w-4" />
+        <Alert variant="warning">
+          <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Update Your Password</AlertTitle>
           <AlertDescription>
             You have successfully initiated a password reset. Please enter and confirm your new password below.
