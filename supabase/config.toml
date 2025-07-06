@@ -1,1 +1,25 @@
 project_id = "yfaiauooxwvekdimfeuu"
+
+[auth.email.template.confirmation]
+subject = "Confirm your DIL signup"
+content_path = "supabase/email-templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "Reset your DIL password"
+content_path = "supabase/email-templates/recovery.html"
+
+[auth.email.template.magic_link]
+subject = "Your DIL LMS magic link"
+content_path = "supabase/email-templates/magic-link.html"
+
+[auth.email.template.email_change]
+subject = "Confirm your DIL email change"
+content_path = "supabase/email-templates/change-email.html"
+
+[auth.email.template.invite]
+subject = "You've been invited to DIL"
+content_path = "supabase/email-templates/invite-user.html"
+
+[auth.email.template.reauthentication]
+subject = "Confirm reauthentication"
+content_path = "supabase/email-templates/reauthentication.html"
