@@ -1,72 +1,43 @@
-
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { User } from '@supabase/supabase-js';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { Settings } from 'lucide-react';
 
-interface AuthButtonProps {
-  user: User | null;
-  loading: boolean;
-  signOut: () => Promise<void>;
-  isMobile?: boolean;
-  onButtonClick?: () => void;
-}
-
-export const AuthButton = ({ user, loading, signOut, isMobile = false, onButtonClick }: AuthButtonProps) => {
-  const location = useLocation();
+export const AuthButton = () => {
+  const { user, session } = useAuth();
   const navigate = useNavigate();
-  const isAuthPage = location.pathname.startsWith('/auth');
 
-  const handleSignOut = async () => {
-    try {
-      console.log('🔐 AuthButton: Starting sign out...');
-      await signOut();
-      console.log('🔐 AuthButton: Sign out completed, navigating to home...');
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast.error('Failed to log out. Please try again.');
+      console.error('Logout error:', error);
+    } else {
+      toast.success('You have been logged out.');
       navigate('/');
-      onButtonClick?.();
-    } catch (error) {
-      console.error('🔐 AuthButton: Sign out error:', error);
-      // Still navigate away even if sign out fails
-      navigate('/');
-      onButtonClick?.();
     }
   };
 
-  if (loading) {
+  if (session && user) {
     return (
-      <Button 
-        variant="outline" 
-        disabled
-        className={`${isMobile ? 'w-full' : ''}`}
-      >
-        Loading...
-      </Button>
-    );
-  }
-
-  if (user) {
-    return (
-      <Button 
-        onClick={handleSignOut}
-        variant="default" 
-        className={`bg-primary hover:bg-primary/90 hover-scale transition-all duration-300 ${isMobile ? 'w-full' : ''}`}
-      >
-        Logout
-      </Button>
-    );
-  }
-
-  if (!isAuthPage) {
-    return (
-      <Link to="/auth" onClick={onButtonClick}>
-        <Button 
-          variant="default" 
-          className={`bg-primary hover:bg-primary/90 hover-scale transition-all duration-300 ${isMobile ? 'w-full' : ''}`}
-        >
-          Sign In
+      <div className="flex items-center gap-2">
+        <Link to="/dashboard/profile-settings">
+          <Button variant="ghost" size="icon" aria-label="Settings">
+            <Settings className="h-5 w-5" />
+          </Button>
+        </Link>
+        <Button onClick={handleLogout} variant="outline">
+          Logout
         </Button>
-      </Link>
+      </div>
     );
   }
 
-  return null;
+  return (
+    <Link to="/auth">
+      <Button>Sign In</Button>
+    </Link>
+  );
 };

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const cleanupAuthState = () => {
   // Remove all Supabase auth keys from localStorage
@@ -40,6 +41,10 @@ export const useAuth = () => {
         if (event === 'SIGNED_IN' && window.location.pathname !== '/dashboard') {
           console.log('🔐 Navigating to dashboard after sign in...');
           navigate('/dashboard', { replace: true });
+        }
+
+        if (event === 'PASSWORD_RECOVERY') {
+          sessionStorage.setItem('passwordRecovery', 'true');
         }
       }
     );

@@ -1,61 +1,47 @@
-
 import { useState } from 'react';
-import { Menu, X } from 'lucide-react';
-import { User } from '@supabase/supabase-js';
 import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Menu, X } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { Navigation } from './Navigation';
 import { AuthButton } from './AuthButton';
+import { useAuth } from '@/hooks/useAuth';
 
-interface MobileMenuProps {
-  user: User | null;
-  loading: boolean;
-  signOut: () => Promise<void>;
-}
-
-export const MobileMenu = ({ user, loading, signOut }: MobileMenuProps) => {
+export const MobileMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
-
-  const closeMobileMenu = () => setIsOpen(false);
+  const { user } = useAuth();
 
   return (
-    <>
-      {/* Mobile Menu Button */}
-      <div className="md:hidden flex items-center space-x-2">
-        <ThemeToggle />
-        
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setIsOpen(!isOpen)}
-          className="transition-all duration-300"
-        >
-          {isOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-        </Button>
-      </div>
-
-      {/* Mobile Menu */}
-      {isOpen && (
-        <div className="md:hidden border-t border-border bg-background/95 backdrop-blur-sm">
-          <div className="px-2 pt-2 pb-3 space-y-1">
-            <Navigation 
-              user={user} 
-              isMobile={true} 
-              onLinkClick={closeMobileMenu} 
-            />
-
-            <div className="px-3 py-2">
-              <AuthButton 
-                user={user} 
-                loading={loading} 
-                signOut={signOut} 
-                isMobile={true}
-                onButtonClick={closeMobileMenu}
-              />
+    <div className="md:hidden">
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <SheetTrigger asChild>
+          <Button variant="ghost" size="icon">
+            <Menu className="h-6 w-6" />
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="right" className="w-full max-w-xs p-0">
+          <SheetHeader className="p-4 border-b">
+            <SheetTitle className="text-lg font-semibold">Menu</SheetTitle>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-3 right-3"
+              onClick={() => setIsOpen(false)}
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </SheetHeader>
+          <div className="p-4 space-y-4">
+            <Navigation user={user} isMobile onLinkClick={() => setIsOpen(false)} />
+            <div className="border-t pt-4">
+              <AuthButton />
+            </div>
+            <div className="border-t pt-4 flex justify-center">
+              <ThemeToggle />
             </div>
           </div>
-        </div>
-      )}
-    </>
+        </SheetContent>
+      </Sheet>
+    </div>
   );
 };

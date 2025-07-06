@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -40,18 +39,10 @@ export const Header = () => {
             
             <Navigation user={user} />
 
-            <AuthButton 
-              user={user} 
-              loading={loading} 
-              signOut={signOut} 
-            />
+            <AuthButton />
           </div>
 
-          <MobileMenu 
-            user={user} 
-            loading={loading} 
-            signOut={signOut} 
-          />
+          <MobileMenu />
         </div>
       </div>
     </header>

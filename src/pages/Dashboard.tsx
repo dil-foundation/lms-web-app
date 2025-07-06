@@ -1,6 +1,5 @@
-
 import { Routes, Route } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { DashboardSidebar } from '@/components/DashboardSidebar';
 import { StudentDashboard } from '@/components/dashboard/StudentDashboard';
@@ -17,10 +16,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { BookOpen, Users, ClipboardList, TrendingUp, BarChart3, Settings, GraduationCap, Award, Shield, MessageSquare, Link, Eye } from 'lucide-react';
 import { type UserRole } from '@/config/roleNavigation';
+import ProfileSettings from './ProfileSettings';
+import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading } = useUserProfile(user);
+  const navigate = useNavigate();
   
   // Dev mode state for role switching
   const [devRole, setDevRole] = useState<UserRole | null>(null);
@@ -119,6 +122,7 @@ const Dashboard = () => {
                 
                 <Routes>
                   <Route path="/" element={<DashboardOverview />} />
+                  <Route path="/profile-settings" element={<ProfileSettings />} />
                   
                   {/* Student Routes */}
                   {userRole === 'student' && (
