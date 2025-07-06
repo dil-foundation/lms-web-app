@@ -45,8 +45,11 @@ export const useAuth = () => {
         setUser(session?.user ?? null);
         setLoading(false);
 
-        const isAuthPage = window.location.pathname.startsWith('/auth');
-        if (event === 'SIGNED_IN' && !isAuthPage) {
+        const currentPath = window.location.pathname;
+        const isAuthPage = currentPath.startsWith('/auth');
+        const isDashboardPage = currentPath.startsWith('/dashboard');
+
+        if (event === 'SIGNED_IN' && !isAuthPage && !isDashboardPage) {
           navigate('/dashboard', { replace: true });
         }
 
