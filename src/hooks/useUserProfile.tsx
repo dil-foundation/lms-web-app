@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,9 +17,9 @@ export const useUserProfile = (user: User | null) => {
         setLoading(false);
         return;
       }
-
+      
+      setLoading(true);
       try {
-        console.log('👤 Fetching user profile for:', user.id);
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
@@ -31,10 +30,8 @@ export const useUserProfile = (user: User | null) => {
           throw error;
         }
 
-        console.log('👤 Profile fetched:', data);
         setProfile(data);
       } catch (err: any) {
-        console.error('👤 Error fetching profile:', err);
         setError(err.message);
       } finally {
         setLoading(false);
