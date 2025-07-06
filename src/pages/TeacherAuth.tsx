@@ -219,9 +219,9 @@ const TeacherAuth = () => {
       if (error) throw error;
       
       if (data.user) {
-        // For a new user, data.user.identities will not be empty.
-        // For an existing unconfirmed user, it will be empty.
-        if (data.user.identities && data.user.identities.length > 0) {
+        const isNewUser = (Date.now() - new Date(data.user.created_at).getTime()) < 60000; // 1 minute threshold
+        
+        if (isNewUser) {
           console.log('🔐 Teacher signup successful:', data.user.email);
           setSignupSuccessMessage('Account created successfully! Please check your email for a verification link.');
           setSignupData({
@@ -239,6 +239,7 @@ const TeacherAuth = () => {
           const { error: invokeError } = await supabase.functions.invoke('update-unconfirmed-user', {
             body: { 
               userId: data.user.id,
+              password: signupData.password,
               metadata: {
                 first_name: signupData.firstName,
                 last_name: signupData.lastName,

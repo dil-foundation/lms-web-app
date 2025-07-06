@@ -14,37 +14,59 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Function invoked. Processing request...");
     // Create a Supabase client with the service role key
     const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('URL') ?? '',
+      Deno.env.get('SERVICE_ROLE_KEY') ?? ''
     )
+    console.log("Supabase admin client initialized.");
 
     // Get the user ID and new metadata from the request body
-    const { userId, metadata } = await req.json()
+    const { userId, password, metadata } = await req.json()
+    console.log("Received data:", { userId, metadata });
 
-    if (!userId || !metadata) {
-      return new Response(JSON.stringify({ error: 'Missing userId or metadata' }), {
+    if (!userId || !metadata || !password) {
+      console.error("Missing userId, password, or metadata in the request body.");
+      return new Response(JSON.stringify({ error: 'Missing userId, password, or metadata' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
       })
     }
 
     // Update the user's metadata
-    const { data, error } = await supabaseAdmin.auth.admin.updateUserById(
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.updateUserById(
       userId,
-      { user_metadata: metadata }
+      { 
+        password: password,
+        user_metadata: metadata 
+      }
     )
 
-    if (error) {
-      throw error
+    if (authError) {
+      console.error("Error updating user metadata:", authError.message);
+      throw authError
     }
+    console.log("Successfully updated auth.users metadata:", authData);
 
-    return new Response(JSON.stringify({ data }), {
+    // Also update the public.profiles table
+    const { data: profileData, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .update(metadata)
+      .eq('id', userId)
+
+    if (profileError) {
+      console.error("Error updating profiles table:", profileError.message);
+      throw profileError;
+    }
+    console.log("Successfully updated profiles table:", profileData);
+
+    return new Response(JSON.stringify({ user: authData }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })
   } catch (error) {
+    console.error("Caught an exception:", error.message);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
