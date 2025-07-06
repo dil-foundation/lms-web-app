@@ -25,9 +25,32 @@ const ProfileSettings = () => {
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [passwordError, setPasswordError] = useState('');
+  const [passwordValidationErrors, setPasswordValidationErrors] = useState({
+    password: '',
+    confirmPassword: '',
+  });
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
+  const [needsReauthentication, setNeedsReauthentication] = useState(false);
+  const [reauthEmailSent, setReauthEmailSent] = useState(false);
+
+  useEffect(() => {
+    const checkAal = async () => {
+      if (user) {
+        const { data } = await supabase.auth.getSession();
+        if (data.session) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const aal = (data.session.user as any).aal;
+          if (aal === 'aal1') {
+            setNeedsReauthentication(true);
+          } else {
+            setNeedsReauthentication(false);
+          }
+        }
+      }
+    };
+    checkAal();
+  }, [user]);
 
   useEffect(() => {
     if (sessionStorage.getItem('passwordRecovery') === 'true') {
@@ -89,41 +112,107 @@ const ProfileSettings = () => {
     setIsUpdatingProfile(false);
   };
 
+  const handlePasswordFieldValidation = (field: 'password' | 'confirmPassword', value: string) => {
+    let validation;
+    if (field === 'password') {
+      validation = validatePassword(value);
+      if (confirmPassword) {
+        const confirmValidation = validateConfirmPassword(value, confirmPassword);
+        setPasswordValidationErrors(prev => ({
+          ...prev,
+          confirmPassword: confirmValidation.isValid ? '' : confirmValidation.error || '',
+        }));
+      }
+    } else { // confirmPassword
+      validation = validateConfirmPassword(password, value);
+    }
+
+    setPasswordValidationErrors(prev => ({
+      ...prev,
+      [field]: validation.isValid ? '' : validation.error || '',
+    }));
+  };
+
   const handlePasswordUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    setPasswordError('');
 
-    const passwordValidation = validatePassword(password);
-    if (!passwordValidation.isValid) {
-      setPasswordError(passwordValidation.error || 'Invalid password format.');
+    // Re-validate all fields on submit
+    handlePasswordFieldValidation('password', password);
+    handlePasswordFieldValidation('confirmPassword', confirmPassword);
+
+    // Check validation state after updates
+    const passwordIsValid = validatePassword(password).isValid;
+    const confirmPasswordIsValid = validateConfirmPassword(password, confirmPassword).isValid;
+
+    if (!passwordIsValid || !confirmPasswordIsValid) {
+      toast.error('Please fix the errors before submitting.');
       return;
     }
-
-    const confirmPasswordValidation = validateConfirmPassword(password, confirmPassword);
-    if (!confirmPasswordValidation.isValid) {
-      setPasswordError(confirmPasswordValidation.error || 'Passwords do not match.');
-      return;
-    }
-
+    
     setIsUpdatingPassword(true);
 
-    const { error } = await supabase.auth.updateUser({ password });
+    if (isPasswordRecovery) {
+      // User came from a password reset link. Use edge function to bypass AAL check.
+      try {
+        const { error } = await supabase.functions.invoke('reset-password', {
+          body: { password },
+        });
 
-    if (error) {
-      toast.error('Failed to update password. Please try again.');
-      console.error('Password update error:', error);
+        if (error) throw error;
+        
+        toast.success('Password updated successfully!');
+        setPassword('');
+        setConfirmPassword('');
+        sessionStorage.removeItem('passwordRecovery');
+        setIsPasswordRecovery(false);
+        // We can also remove the alert after success
+        const alert = document.getElementById('password-recovery-alert');
+        if (alert) alert.style.display = 'none';
+        
+      } catch (error: any) {
+        toast.error(error.message || 'Failed to update password. Please try again.');
+        console.error('Password reset error:', error);
+      }
     } else {
-      toast.success('Password updated successfully!');
-      setPassword('');
-      setConfirmPassword('');
+      // This is a standard password change for a logged-in user. AAL check applies.
+      if (needsReauthentication) {
+        // User logged in with magic link, needs re-auth email.
+        const { error } = await supabase.auth.updateUser({ password });
+        if (error) {
+          toast.error('Failed to send confirmation email. Please try again.');
+          console.error('Re-authentication trigger error:', error);
+        } else {
+          toast.success('Confirmation email sent! Please check your inbox to complete the password change.');
+          setReauthEmailSent(true); 
+          setPassword('');
+          setConfirmPassword('');
+        }
+      } else {
+        // User logged in with password, can update directly.
+        const { error } = await supabase.auth.updateUser({ password });
+        if (error) {
+          if (error.message.includes('New password should be different')) {
+            // This error is now less likely to be hit by user due to client-side validation, but good to keep.
+            setPasswordValidationErrors(prev => ({ ...prev, password: 'New password must be different from your old password.' }));
+          } else {
+            toast.error('Failed to update password. Please try again.');
+          }
+          console.error('Password update error:', error);
+        } else {
+          toast.success('Password updated successfully!');
+          setPassword('');
+          setConfirmPassword('');
+        }
+      }
     }
+
     setIsUpdatingPassword(false);
   };
 
   return (
     <div className="p-6 space-y-6">
       {isPasswordRecovery && (
-        <Alert variant="warning">
+        <Alert variant="warning" id="password-recovery-alert">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Update Your Password</AlertTitle>
           <AlertDescription>
@@ -194,20 +283,94 @@ const ProfileSettings = () => {
             <CardDescription>Update your password here. This will log you out from other devices.</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handlePasswordUpdate} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="newPassword">New Password</Label>
-                <Input id="newPassword" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                <Input id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
-              </div>
-              {passwordError && <p className="text-sm text-red-500">{passwordError}</p>}
-              <Button type="submit" disabled={isUpdatingPassword}>
-                {isUpdatingPassword ? 'Updating...' : 'Update Password'}
-              </Button>
-            </form>
+            {needsReauthentication && !isPasswordRecovery ? (
+              reauthEmailSent ? (
+                <Alert>
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Confirmation Email Sent</AlertTitle>
+                  <AlertDescription>
+                    We've sent a confirmation link to your email. Please click it to finalize your password change.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <div className="space-y-4">
+                   <Alert variant="warning">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Confirm Password Change</AlertTitle>
+                    <AlertDescription>
+                      Because you signed in with a secure link, you need to confirm your new password via email.
+                    </AlertDescription>
+                  </Alert>
+                  <form onSubmit={handlePasswordUpdate} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="newPassword-reauth">New Password</Label>
+                      <Input 
+                        id="newPassword-reauth" 
+                        type="password" 
+                        value={password} 
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          handlePasswordFieldValidation('password', e.target.value);
+                        }}
+                        className={passwordValidationErrors.password ? 'border-red-500' : ''}
+                      />
+                      {passwordValidationErrors.password && <p className="text-sm text-red-500">{passwordValidationErrors.password}</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword-reauth">Confirm New Password</Label>
+                      <Input 
+                        id="confirmPassword-reauth" 
+                        type="password" 
+                        value={confirmPassword} 
+                        onChange={(e) => {
+                          setConfirmPassword(e.target.value);
+                          handlePasswordFieldValidation('confirmPassword', e.target.value);
+                        }}
+                        className={passwordValidationErrors.confirmPassword ? 'border-red-500' : ''}
+                      />
+                      {passwordValidationErrors.confirmPassword && <p className="text-sm text-red-500">{passwordValidationErrors.confirmPassword}</p>}
+                    </div>
+                    <Button type="submit" disabled={isUpdatingPassword} className="w-full">
+                      {isUpdatingPassword ? 'Sending...' : 'Send Confirmation Email'}
+                    </Button>
+                  </form>
+                </div>
+              )
+            ) : (
+              <form onSubmit={handlePasswordUpdate} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">New Password</Label>
+                  <Input 
+                    id="newPassword" 
+                    type="password" 
+                    value={password} 
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      handlePasswordFieldValidation('password', e.target.value);
+                    }}
+                    className={passwordValidationErrors.password ? 'border-red-500' : ''}
+                  />
+                  {passwordValidationErrors.password && <p className="text-sm text-red-500">{passwordValidationErrors.password}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                  <Input 
+                    id="confirmPassword" 
+                    type="password" 
+                    value={confirmPassword} 
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      handlePasswordFieldValidation('confirmPassword', e.target.value);
+                    }}
+                    className={passwordValidationErrors.confirmPassword ? 'border-red-500' : ''}
+                  />
+                  {passwordValidationErrors.confirmPassword && <p className="text-sm text-red-500">{passwordValidationErrors.confirmPassword}</p>}
+                </div>
+                <Button type="submit" disabled={isUpdatingPassword}>
+                  {isUpdatingPassword ? 'Updating...' : 'Update Password'}
+                </Button>
+              </form>
+            )}
           </CardContent>
         </Card>
       </div>
