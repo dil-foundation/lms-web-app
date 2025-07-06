@@ -221,20 +221,61 @@ const StudentAuth = () => {
       if (error) throw error;
       
       if (data.user) {
-        console.log('🔐 Student signup successful:', data.user.email);
-        setSignupSuccessMessage('Account created successfully! Please check your email for a verification link.');
-        setSignupData({
-          firstName: '',
-          lastName: '',
-          email: '',
-          password: '',
-          confirmPassword: '',
-          grade: ''
-        });
+        const isNewUser = (Date.now() - new Date(data.user.created_at).getTime()) < 60000; // 1 minute threshold
+
+        if (isNewUser) {
+          console.log('🔐 Student signup successful:', data.user.email);
+          setSignupSuccessMessage('Account created successfully! Please check your email for a verification link.');
+          setSignupData({
+            firstName: '',
+            lastName: '',
+            email: '',
+            password: '',
+            confirmPassword: '',
+            grade: ''
+          });
+        } else {
+          // This is an existing, unconfirmed user.
+          // Update their metadata with the new information.
+          console.log('🔐 Updating metadata for existing unconfirmed user:', data.user.email);
+          const { error: invokeError } = await supabase.functions.invoke('update-unconfirmed-user', {
+            body: { 
+              userId: data.user.id,
+              password: signupData.password,
+              metadata: {
+                first_name: signupData.firstName,
+                last_name: signupData.lastName,
+                grade: signupData.grade
+              } 
+            }
+          });
+
+          if (invokeError) {
+            console.error('Failed to update user metadata:', invokeError);
+            toast.error('Failed to update your information. Please try again.');
+          } else {
+            setSignupSuccessMessage('Your information has been updated. Please check your email for a verification link.');
+            setSignupData({
+              firstName: '',
+              lastName: '',
+              email: '',
+              password: '',
+              confirmPassword: '',
+              grade: ''
+            });
+          }
+        }
       }
     } catch (error: any) {
       console.error('🔐 Student signup error:', error);
-      toast.error(error.message || 'Failed to create account');
+      if (error.message && error.message.includes('already registered')) {
+        setValidationErrors(prev => ({
+          ...prev,
+          email: 'An account with this email already exists.'
+        }));
+      } else {
+        toast.error(error.message || 'Failed to create account');
+      }
     } finally {
       setIsLoading(false);
     }

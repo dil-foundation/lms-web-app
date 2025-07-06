@@ -1,5 +1,5 @@
-
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -19,6 +19,7 @@ const cleanupAuthState = () => {
 };
 
 export const useAuth = () => {
+  const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,6 +36,11 @@ export const useAuth = () => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+
+        if (event === 'SIGNED_IN' && window.location.pathname !== '/dashboard') {
+          console.log('🔐 Navigating to dashboard after sign in...');
+          navigate('/dashboard', { replace: true });
+        }
       }
     );
 
@@ -49,7 +55,7 @@ export const useAuth = () => {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [navigate]);
 
   const signOut = async () => {
     console.log('🔐 Signing out...');
@@ -67,6 +73,10 @@ export const useAuth = () => {
       // Clear local state
       setSession(null);
       setUser(null);
+      
+      // Navigate to home after sign out
+      console.log('🔐 Navigating to home after sign out...');
+      navigate('/', { replace: true });
       
       // Remove custom app storage
       localStorage.removeItem('cameFromDashboard');
