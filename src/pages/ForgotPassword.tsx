@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Header } from '@/components/Header';
@@ -23,16 +22,12 @@ const ForgotPassword = () => {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `https://dil.lovable.app/dashboard/profile-settings`,
       });
 
       if (error) throw error;
 
       toast.success('Password reset email sent! Please check your inbox.');
-      // Redirect back to the appropriate auth page after a short delay
-      setTimeout(() => {
-        navigate(`/auth/${role}`);
-      }, 2000);
     } catch (error: any) {
       toast.error(error.message || 'Failed to send reset email');
     } finally {

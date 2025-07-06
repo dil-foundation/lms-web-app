@@ -1,4 +1,3 @@
-
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { getRoleDisplayName, type UserRole } from '@/config/roleNavigation';
@@ -21,7 +20,7 @@ export const UserProfileSection = ({ profile }: UserProfileSectionProps) => {
     .slice(0, 2);
 
   return (
-    <div className="flex items-center space-x-3 p-4 border-b border-border">
+    <div className="flex items-center space-x-3 p-4 border-t border-border">
       <Avatar className="h-10 w-10">
         <AvatarImage src="" alt={displayName} />
         <AvatarFallback className="bg-primary text-primary-foreground">
