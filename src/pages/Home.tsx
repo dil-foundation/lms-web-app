@@ -107,7 +107,7 @@ const Home = () => {
                 <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10 hover-scale transition-all duration-300">
                   <Languages className="h-8 w-8 text-primary" />
                 </div>
-                <CardTitle className="text-xl">Bilingual(Urdu & English)</CardTitle>
+                <CardTitle className="text-xl">Bilingual (Urdu & English)</CardTitle>
               </CardHeader>
               <CardContent className="text-center">
                 <p className="text-muted-foreground">
