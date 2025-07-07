@@ -50,11 +50,11 @@ const Home = () => {
                 <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10 hover-scale transition-all duration-300">
                   <Brain className="h-8 w-8 text-primary" />
                 </div>
-                <CardTitle className="text-xl">Personalized Learning</CardTitle>
+                <CardTitle className="text-xl">AI-Powered Lessons</CardTitle>
               </CardHeader>
               <CardContent className="text-center">
                 <p className="text-muted-foreground">
-                  AI-driven lessons adapt to your learning style and pace
+                  Interactive and adaptive English learning
                 </p>
               </CardContent>
             </Card>
@@ -64,11 +64,11 @@ const Home = () => {
                 <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10 hover-scale transition-all duration-300">
                   <MessageCircle className="h-8 w-8 text-primary" />
                 </div>
-                <CardTitle className="text-xl">Interactive Conversations</CardTitle>
+                <CardTitle className="text-xl">Conversational Practice</CardTitle>
               </CardHeader>
               <CardContent className="text-center">
                 <p className="text-muted-foreground">
-                  Practice with AI-powered conversation scenarios
+                  Speak with your tutor in real-time
                 </p>
               </CardContent>
             </Card>
@@ -78,11 +78,11 @@ const Home = () => {
                 <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10 hover-scale transition-all duration-300">
                   <Globe className="h-8 w-8 text-primary" />
                 </div>
-                <CardTitle className="text-xl">Cultural Context</CardTitle>
+                <CardTitle className="text-xl">Structured Learning Paths</CardTitle>
               </CardHeader>
               <CardContent className="text-center">
                 <p className="text-muted-foreground">
-                  Learn English within relevant cultural frameworks
+                  Follow guided curiculumn aligned to goals
                 </p>
               </CardContent>
             </Card>
@@ -92,11 +92,11 @@ const Home = () => {
                 <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10 hover-scale transition-all duration-300">
                   <Headphones className="h-8 w-8 text-primary" />
                 </div>
-                <CardTitle className="text-xl">Pronunciation Practice</CardTitle>
+                <CardTitle className="text-xl">Verifiable Credentials</CardTitle>
               </CardHeader>
               <CardContent className="text-center">
                 <p className="text-muted-foreground">
-                  Real-time feedback on your english pronunciation
+                  Earn certifications recognized with sponsors
                 </p>
               </CardContent>
             </Card>
@@ -106,7 +106,7 @@ const Home = () => {
                 <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10 hover-scale transition-all duration-300">
                   <Languages className="h-8 w-8 text-primary" />
                 </div>
-                <CardTitle className="text-xl">Dual Language Support</CardTitle>
+                <CardTitle className="text-xl">Bilingual(Urdu & English)</CardTitle>
               </CardHeader>
               <CardContent className="text-center">
                 <p className="text-muted-foreground">
@@ -120,11 +120,11 @@ const Home = () => {
                 <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10 hover-scale transition-all duration-300">
                   <Target className="h-8 w-8 text-primary" />
                 </div>
-                <CardTitle className="text-xl">Progress Tracking</CardTitle>
+                <CardTitle className="text-xl">Progress & Analytics</CardTitle>
               </CardHeader>
               <CardContent className="text-center">
                 <p className="text-muted-foreground">
-                  Track your learning journey with detailed analytics
+                  Visualize improvement with data
                 </p>
               </CardContent>
             </Card>
