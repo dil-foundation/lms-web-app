@@ -11,6 +11,8 @@ import { UsersManagement } from '@/components/admin/UsersManagement';
 import { CourseManagement } from '@/components/admin/CourseManagement';
 import { ReportsOverview } from '@/components/admin/ReportsOverview';
 import CourseBuilder from './CourseBuilder';
+import { CourseOverview } from './CourseOverview';
+import { CourseContent } from './CourseContent';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -104,7 +106,7 @@ const Dashboard = () => {
       <div className="min-h-screen bg-background flex flex-col w-full">
         <Header />
         
-        <div className="flex-1 pt-16">
+        <div className="flex-1">
           <div className="flex min-h-full w-full">
             <DashboardSidebar userRole={userRole} userProfile={displayProfile}>
               <div className="space-y-4">
@@ -117,6 +119,10 @@ const Dashboard = () => {
                 <Routes>
                   <Route path="/" element={<DashboardOverview />} />
                   <Route path="/profile-settings" element={<ProfileSettings />} />
+                  
+                  {/* Universal Course Routes */}
+                  <Route path="/course/:id" element={<CourseOverview />} />
+                  <Route path="/course/:id/content" element={<CourseContent />} />
                   
                   {/* Student Routes */}
                   {userRole === 'student' && (

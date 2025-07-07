@@ -3,12 +3,15 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Flame, Award, BookOpen, Clock, Lock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface StudentDashboardProps {
   userProfile: any;
 }
 
 export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
+  const navigate = useNavigate();
+  
   const getInitials = (firstName?: string, lastName?: string) => {
     return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
   };
@@ -127,7 +130,16 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
         <h2 className="text-xl font-semibold mb-4">Continue Learning</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {courses.map((course) => (
-            <Card key={course.id} className="overflow-hidden hover:shadow-lg transition-shadow bg-card border border-border">
+            <Card 
+              key={course.id} 
+              className="overflow-hidden hover:shadow-lg transition-shadow bg-card border border-border cursor-pointer"
+                                onClick={(e) => {
+                    e.stopPropagation();
+                    if (course.status !== 'locked') {
+                      navigate(`/dashboard/course/${course.id}`);
+                    }
+                  }}
+            >
               <div className="relative">
                 <img 
                   src={course.image} 
@@ -154,6 +166,11 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
                       : 'bg-green-600 hover:bg-green-700 text-white'
                   }`}
                   disabled={course.status === 'locked'}
+                  onClick={() => {
+                    if (course.status !== 'locked') {
+                      navigate(`/dashboard/course/${course.id}`);
+                    }
+                  }}
                 >
                   {course.status === 'locked' && <Lock className="w-4 h-4 mr-2" />}
                   {course.buttonText}
