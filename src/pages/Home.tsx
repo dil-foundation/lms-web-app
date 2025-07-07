@@ -1,9 +1,8 @@
-
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
-import { Brain, MessageCircle, Globe, Award, Languages, Target, ArrowRight, Star } from 'lucide-react';
+import { Brain, MessageCircle, Globe, Award, Languages, Target, ArrowRight, Sparkles } from 'lucide-react';
 
 const Home = () => {
   return <div className="min-h-screen bg-background text-foreground">
@@ -149,8 +148,7 @@ const Home = () => {
             <Card className="bg-card border-border text-card-foreground hover-lift animate-slide-in-left stagger-1">
               <CardHeader>
                 <div className="flex items-center mb-4">
-                  <div className="w-2 h-2 bg-primary rounded-full mr-3 animate-pulse"></div>
-                  <Star className="h-5 w-5 text-primary" />
+                  <Sparkles className="h-5 w-5 text-primary" />
                 </div>
               </CardHeader>
               <CardContent>
@@ -168,8 +166,7 @@ const Home = () => {
             <Card className="bg-card border-border text-card-foreground hover-lift animate-fade-in-up stagger-2">
               <CardHeader>
                 <div className="flex items-center mb-4">
-                  <div className="w-2 h-2 bg-primary rounded-full mr-3 animate-pulse"></div>
-                  <Star className="h-5 w-5 text-primary" />
+                  <Sparkles className="h-5 w-5 text-primary" />
                 </div>
               </CardHeader>
               <CardContent>
@@ -188,8 +185,7 @@ const Home = () => {
             <Card className="bg-card border-border text-card-foreground hover-lift animate-slide-in-right stagger-3">
               <CardHeader>
                 <div className="flex items-center mb-4">
-                  <div className="w-2 h-2 bg-primary rounded-full mr-3 animate-pulse"></div>
-                  <Star className="h-5 w-5 text-primary" />
+                  <Sparkles className="h-5 w-5 text-primary" />
                 </div>
               </CardHeader>
               <CardContent>
