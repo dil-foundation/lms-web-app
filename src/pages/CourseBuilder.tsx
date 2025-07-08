@@ -7,17 +7,39 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Save, Eye, Upload, Plus, GripVertical, X } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Upload, Plus, GripVertical, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { FileUpload } from '@/components/ui/FileUpload';
 import { RichTextEditor } from '@/components/ui/RichTextEditor';
 import { MultiSelect } from '@/components/ui/MultiSelect';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  DragStartEvent,
+  MeasuringStrategy,
+  DragOverlay,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import React, { useRef } from 'react'; // Added missing import for React
 
 // #region Interfaces
 interface CourseSection {
   id: string;
   title: string;
   lessons: CourseLesson[];
+  isCollapsed?: boolean;
 }
 
 interface CourseLesson {
@@ -26,6 +48,7 @@ interface CourseLesson {
   type: 'video' | 'attachment' | 'assignment' | 'quiz';
   content?: string | File | QuizData;
   duration?: number;
+  isCollapsed?: boolean;
 }
 
 interface QuizQuestion {
@@ -76,9 +99,12 @@ interface LessonItemProps {
   sectionId: string;
   onUpdate: (sectionId: string, lessonId:string, updatedLesson: Partial<CourseLesson>) => void;
   onRemove: (sectionId: string, lessonId:string) => void;
+  isRemovable: boolean;
+  dragHandleProps: any;
+  onToggleCollapse: (sectionId: string, lessonId: string) => void;
 }
 
-const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove }: LessonItemProps) => {
+const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, dragHandleProps, onToggleCollapse }: LessonItemProps) => {
   const [localContent, setLocalContent] = useState(typeof lesson.content === 'string' ? lesson.content : '');
 
   // Keep local state in sync if the prop changes from parent
@@ -138,12 +164,17 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove }: LessonItemPr
   return (
     <div className="p-4 rounded-lg bg-background border space-y-4">
       <div className="flex items-center justify-between">
-        <Input
-          value={lesson.title}
-          onChange={(e) => onUpdate(sectionId, lesson.id, { title: e.target.value })}
-          placeholder="Lesson Title"
-          className="flex-1"
-        />
+        <div className="flex items-center gap-2 flex-1">
+          <div {...dragHandleProps} className="cursor-move">
+            <GripVertical className="text-muted-foreground" />
+          </div>
+          <Input
+            value={lesson.title}
+            onChange={(e) => onUpdate(sectionId, lesson.id, { title: e.target.value })}
+            placeholder="Lesson Title"
+            className="flex-1"
+          />
+        </div>
         <div className="flex items-center gap-2 ml-4">
           <Select
             value={lesson.type}
@@ -161,22 +192,61 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove }: LessonItemPr
               <SelectItem value="quiz">Quiz</SelectItem>
             </SelectContent>
           </Select>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onRemove(sectionId, lesson.id)}
-          >
-            <X className="w-4 h-4" />
+          {isRemovable && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onRemove(sectionId, lesson.id)}
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          )}
+          <Button variant="ghost" size="icon" onClick={() => onToggleCollapse(sectionId, lesson.id)}>
+            {lesson.isCollapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
           </Button>
         </div>
       </div>
-      <div>
-        {renderLessonContentEditor()}
-      </div>
+      {!lesson.isCollapsed && (
+        <div>
+          {renderLessonContentEditor()}
+        </div>
+      )}
     </div>
   );
 });
 LessonItem.displayName = "LessonItem";
+// #endregion
+
+// #region SortableItem Component
+const SortableItem = ({ id, children, type, sectionId }: { id: string, children: (dragHandleProps: any) => React.ReactNode, type: 'section' | 'lesson', sectionId?: string }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ 
+    id,
+    data: {
+      type,
+      sectionId
+    }
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 10 : 'auto',
+    opacity: isDragging ? 0.8 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      {children({ ...attributes, ...listeners })}
+    </div>
+  );
+};
 // #endregion
 
 // #region QuizBuilder Component
@@ -304,7 +374,9 @@ const CourseBuilder = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('details');
   const [isSaving, setIsSaving] = useState(false);
-  const [courseData, setCourseData] = useState<CourseData>({
+  const preDragLessonStatesRef = useRef<Record<string, boolean>>({});
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [courseData, setCourseData] = useState<CourseData>(() => ({
     title: '',
     subtitle: '',
     description: '',
@@ -313,10 +385,24 @@ const CourseBuilder = () => {
     level: 'Beginner',
     requirements: [''],
     learningOutcomes: [''],
-    sections: [],
+    sections: [
+      {
+        id: `section-${Date.now()}`,
+        title: 'New Section',
+        isCollapsed: false,
+        lessons: [
+          {
+            id: `lesson-${Date.now() + 1}`,
+            title: 'New Lesson',
+            type: 'video',
+            content: undefined,
+          },
+        ],
+      },
+    ],
     instructors: [],
     students: [],
-  });
+  }));
 
   // Mock course data loading
   useEffect(() => {
@@ -342,11 +428,12 @@ const CourseBuilder = () => {
         ],
         sections: [
           {
-            id: '1',
+            id: 'section-1',
             title: 'Introduction to English',
+            isCollapsed: false,
             lessons: [
-              { id: '1-1', title: 'Welcome to the Course', type: 'video' },
-              { id: '1-2', title: 'Basic Greetings', type: 'video' }
+              { id: 'lesson-1-1', title: 'Welcome to the Course', type: 'video' },
+              { id: 'lesson-1-2', title: 'Basic Greetings', type: 'video' }
             ]
           }
         ]
@@ -367,14 +454,181 @@ const CourseBuilder = () => {
     toast.success('Course published successfully!');
   };
 
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    setActiveId(active.id.toString());
+    const activeType = active.data.current?.type;
+
+    if (activeType === 'section') {
+      setCourseData((prev) => ({
+        ...prev,
+        sections: prev.sections.map((s) => ({ ...s, isCollapsed: true })),
+      }));
+    } else if (activeType === 'lesson') {
+      const sectionId = active.data.current?.sectionId;
+      preDragLessonStatesRef.current = {}; // Clear previous states
+
+      setCourseData(prev => {
+        const section = prev.sections.find(s => s.id === sectionId);
+        if (section) {
+          for (const lesson of section.lessons) {
+            preDragLessonStatesRef.current[lesson.id] = !!lesson.isCollapsed;
+          }
+        }
+        
+        return {
+          ...prev,
+          sections: prev.sections.map(s => {
+            if (s.id === sectionId) {
+              return {
+                ...s,
+                lessons: s.lessons.map(l => ({ ...l, isCollapsed: true }))
+              };
+            }
+            return s;
+          })
+        };
+      })
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    setActiveId(null);
+    const { active, over } = event;
+
+    setCourseData(prev => {
+      let newSections = [...prev.sections]; // Create a mutable copy
+
+      if (over && active.id !== over.id) {
+        const activeType = active.data.current?.type;
+        const overType = over.data.current?.type;
+        const activeId = active.id.toString();
+        const overId = over.id.toString();
+
+        if (activeType === 'section' && overType === 'section') {
+          const oldIndex = newSections.findIndex((s) => s.id === activeId);
+          const newIndex = newSections.findIndex((s) => s.id === overId);
+          if (oldIndex !== -1 && newIndex !== -1) {
+            newSections = arrayMove(newSections, oldIndex, newIndex);
+          }
+        }
+
+        if (activeType === 'lesson') {
+          const sourceSectionId = active.data.current?.sectionId;
+          const sourceSectionIndex = newSections.findIndex(s => s.id === sourceSectionId);
+
+          // Determine destination section
+          let destSectionId = overId;
+          if (overType === 'lesson') {
+            destSectionId = over.data.current?.sectionId;
+          }
+          const destSectionIndex = newSections.findIndex(s => s.id === destSectionId);
+
+          if (sourceSectionIndex > -1 && destSectionIndex > -1) {
+            const sourceSection = newSections[sourceSectionIndex];
+            const destSection = newSections[destSectionIndex];
+            const lessonToMoveIndex = sourceSection.lessons.findIndex(l => l.id === activeId);
+            const lessonToMove = sourceSection.lessons[lessonToMoveIndex];
+
+            if (sourceSectionId === destSectionId) {
+              // Reordering within the same section
+              if (overType === 'lesson') {
+                const overLessonIndex = destSection.lessons.findIndex(l => l.id === overId);
+                if (lessonToMoveIndex > -1 && overLessonIndex > -1) {
+                  const reorderedLessons = arrayMove(sourceSection.lessons, lessonToMoveIndex, overLessonIndex);
+                  newSections[sourceSectionIndex] = { ...sourceSection, lessons: reorderedLessons };
+                }
+              }
+            } else {
+              // Moving to a different section
+              if (sourceSection.lessons.length <= 1) {
+                toast.info("Each section must have at least one lesson.");
+              } else {
+                // Remove from source
+                sourceSection.lessons.splice(lessonToMoveIndex, 1);
+
+                // Add to destination
+                let overLessonIndex = destSection.lessons.length; // Default to end
+                if (overType === 'lesson') {
+                    overLessonIndex = destSection.lessons.findIndex(l => l.id === overId);
+                }
+                destSection.lessons.splice(overLessonIndex, 0, lessonToMove);
+                newSections[destSectionIndex].isCollapsed = false; // Expand destination
+              }
+            }
+          }
+        }
+      }
+      
+      // Restore lesson states if a lesson was dragged
+      const activeType = active.data.current?.type;
+      if (activeType === 'lesson') {
+        const sectionId = active.data.current?.sectionId;
+        const sectionIndex = newSections.findIndex(s => s.id === sectionId);
+        if (sectionIndex !== -1) {
+          const sectionToRestore = newSections[sectionIndex];
+          newSections[sectionIndex] = {
+            ...sectionToRestore,
+            lessons: sectionToRestore.lessons.map(l => ({
+              ...l,
+              isCollapsed: preDragLessonStatesRef.current[l.id] ?? false
+            }))
+          };
+        }
+        preDragLessonStatesRef.current = {}; // Clear ref
+      }
+
+      return { ...prev, sections: newSections };
+    });
+  };
+
   // #region Section and Lesson Handlers
   const addSection = () => {
+    const newLesson = {
+      id: `lesson-${Date.now()}`,
+      title: 'New Lesson',
+      type: 'video' as const,
+      content: undefined,
+    };
     const newSection: CourseSection = {
-      id: Date.now().toString(),
+      id: `section-${Date.now() + 1}`,
       title: 'New Section',
-      lessons: []
+      lessons: [newLesson],
+      isCollapsed: false,
     };
     setCourseData(prev => ({ ...prev, sections: [...prev.sections, newSection] }));
+  };
+
+  const toggleSectionCollapse = (sectionId: string) => {
+    setCourseData(prev => ({
+      ...prev,
+      sections: prev.sections.map(s =>
+        s.id === sectionId ? { ...s, isCollapsed: !s.isCollapsed } : s
+      )
+    }));
+  };
+
+  const toggleLessonCollapse = (sectionId: string, lessonId: string) => {
+    setCourseData(prev => ({
+      ...prev,
+      sections: prev.sections.map(s =>
+        s.id === sectionId
+          ? {
+            ...s,
+            lessons: s.lessons.map(l =>
+              l.id === lessonId ? { ...l, isCollapsed: !l.isCollapsed } : l
+            ),
+          }
+          : s
+      ),
+    }));
   };
 
   const removeSection = (sectionId: string) => {
@@ -394,7 +648,7 @@ const CourseBuilder = () => {
     setCourseData(prev => ({
       ...prev,
       sections: prev.sections.map(section =>
-        section.id === sectionId ? { ...section, lessons: [...section.lessons, newLesson] } : section
+        section.id === sectionId ? { ...section, lessons: [...section.lessons, newLesson], isCollapsed: false } : section
       )
     }));
   };
@@ -416,14 +670,21 @@ const CourseBuilder = () => {
   }, []);
 
   const removeLesson = useCallback((sectionId: string, lessonId: string) => {
-    setCourseData(prev => ({
-      ...prev,
-      sections: prev.sections.map(s =>
-        s.id === sectionId
-          ? { ...s, lessons: s.lessons.filter(l => l.id !== lessonId) }
-          : s
-      ),
-    }));
+    setCourseData(prev => {
+      const section = prev.sections.find(s => s.id === sectionId);
+      if (section && section.lessons.length <= 1) {
+        toast.info("Each section must have at least one lesson.");
+        return prev;
+      }
+      return {
+        ...prev,
+        sections: prev.sections.map(s =>
+          s.id === sectionId
+            ? { ...s, lessons: s.lessons.filter(l => l.id !== lessonId) }
+            : s
+        ),
+      };
+    });
   }, []);
   // #endregion
 
@@ -617,48 +878,112 @@ const CourseBuilder = () => {
                   </Button>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {courseData.sections.map((section, sectionIndex) => (
-                    <Card key={section.id} className="bg-muted/50">
-                      <CardHeader className="flex flex-row items-center justify-between p-4">
-                        <div className="flex items-center gap-2">
-                          <GripVertical className="cursor-move text-muted-foreground" />
-                          <Input
-                            value={section.title}
-                            onChange={(e) => {
-                              const newSections = [...courseData.sections];
-                              newSections[sectionIndex].title = e.target.value;
-                              setCourseData(prev => ({ ...prev, sections: newSections }));
-                            }}
-                            className="text-lg font-semibold border-none focus-visible:ring-0"
-                          />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button onClick={() => addLesson(section.id)} variant="outline">
-                            <Plus className="w-4 h-4 mr-2" />
-                            Lesson
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => removeSection(section.id)}
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-2 pl-12 pr-4 pb-4">
-                        {section.lessons.map((lesson) => (
-                          <LessonItem
-                            key={lesson.id}
-                            lesson={lesson}
-                            sectionId={section.id}
-                            onUpdate={updateLesson}
-                            onRemove={removeLesson}
-                          />
-                        ))}
-                      </CardContent>
-                    </Card>
-                  ))}
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
+                    measuring={{
+                      droppable: {
+                        strategy: MeasuringStrategy.Always,
+                      },
+                    }}
+                  >
+                    <SortableContext
+                      items={courseData.sections.map(s => s.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {courseData.sections.map((section, sectionIndex) => (
+                        <SortableItem key={section.id} id={section.id} type="section">
+                          {(dragHandleProps) => (
+                            <Card className={`bg-muted/50 ${activeId === section.id ? 'opacity-50' : ''}`}>
+                              <CardHeader className="flex flex-row items-center justify-between p-4">
+                                <div className="flex items-center gap-2">
+                                  <div {...dragHandleProps} className="cursor-move">
+                                    <GripVertical className="text-muted-foreground" />
+                                  </div>
+                                  <Input
+                                    value={section.title}
+                                    onChange={(e) => {
+                                      const newSections = [...courseData.sections];
+                                      newSections[sectionIndex].title = e.target.value;
+                                      setCourseData(prev => ({ ...prev, sections: newSections }));
+                                    }}
+                                    className="text-lg font-semibold border-none focus-visible:ring-0"
+                                  />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Button onClick={() => addLesson(section.id)} variant="outline">
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Lesson
+                                  </Button>
+                                  {courseData.sections.length > 1 && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => removeSection(section.id)}
+                                    >
+                                      <X className="w-4 h-4" />
+                                    </Button>
+                                  )}
+                                  <Button variant="ghost" size="icon" onClick={() => toggleSectionCollapse(section.id)}>
+                                    {section.isCollapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
+                                  </Button>
+                                </div>
+                              </CardHeader>
+                              {!section.isCollapsed && (
+                                <CardContent className="space-y-2 pl-12 pr-4 pb-4">
+                                  <SortableContext items={section.lessons.map(l => l.id)} strategy={verticalListSortingStrategy}>
+                                    {section.lessons.map((lesson) => (
+                                      <SortableItem key={lesson.id} id={lesson.id} type="lesson" sectionId={section.id}>
+                                        {(lessonDragHandleProps) => (
+                                          <div className={`${activeId === lesson.id ? 'opacity-25' : ''}`}>
+                                            <LessonItem
+                                              key={lesson.id}
+                                              lesson={lesson}
+                                              sectionId={section.id}
+                                              onUpdate={updateLesson}
+                                              onRemove={removeLesson}
+                                              isRemovable={section.lessons.length > 1}
+                                              dragHandleProps={lessonDragHandleProps}
+                                              onToggleCollapse={toggleLessonCollapse}
+                                            />
+                                          </div>
+                                        )}
+                                      </SortableItem>
+                                    ))}
+                                  </SortableContext>
+                                </CardContent>
+                              )}
+                            </Card>
+                          )}
+                        </SortableItem>
+                      ))}
+                    </SortableContext>
+                    <DragOverlay>
+                      {activeId ? (
+                        activeId.startsWith('section-') ?
+                        <Card className="bg-muted/50">
+                          <CardHeader>{courseData.sections.find(s => s.id === activeId)?.title}</CardHeader>
+                        </Card> :
+                        <LessonItem
+                          lesson={
+                            courseData.sections
+                              .flatMap(s => s.lessons)
+                              .find(l => l.id === activeId) || { id: '', title: '', type: 'video' }
+                          }
+                          sectionId={
+                            courseData.sections.find(s => s.lessons.some(l => l.id === activeId))?.id || ''
+                          }
+                          onUpdate={() => {}}
+                          onRemove={() => {}}
+                          isRemovable={false}
+                          dragHandleProps={{}}
+                          onToggleCollapse={() => {}}
+                        />
+                      ) : null}
+                    </DragOverlay>
+                  </DndContext>
                 </CardContent>
               </Card>
             </TabsContent>
