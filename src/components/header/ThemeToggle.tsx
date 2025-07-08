@@ -1,9 +1,9 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export const ThemeToggle = () => {
+export const ThemeToggle = memo(() => {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
@@ -39,4 +39,6 @@ export const ThemeToggle = () => {
       {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
     </Button>
   );
-};
+});
+
+ThemeToggle.displayName = 'ThemeToggle';

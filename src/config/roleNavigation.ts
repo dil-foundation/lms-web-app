@@ -10,7 +10,11 @@ export interface NavigationItem {
   badge?: string;
 }
 
-export const getRoleNavigation = (role: UserRole): NavigationItem[] => {
+export const getRoleNavigation = (role?: UserRole): NavigationItem[] => {
+  if (!role) {
+    return [];
+  }
+  
   switch (role) {
     case 'student':
       return [

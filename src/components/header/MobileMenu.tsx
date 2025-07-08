@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Menu, X } from 'lucide-react';
@@ -7,9 +7,13 @@ import { Navigation } from './Navigation';
 import { AuthButton } from './AuthButton';
 import { useAuth } from '@/hooks/useAuth';
 
-export const MobileMenu = () => {
+export const MobileMenu = memo(() => {
   const [isOpen, setIsOpen] = useState(false);
   const { user } = useAuth();
+
+  const handleLinkClick = useCallback(() => {
+    setIsOpen(false);
+  }, []);
 
   return (
     <div className="md:hidden">
@@ -32,7 +36,7 @@ export const MobileMenu = () => {
             </Button>
           </SheetHeader>
           <div className="p-4 space-y-4">
-            <Navigation user={user} isMobile onLinkClick={() => setIsOpen(false)} />
+            <Navigation user={user} isMobile onLinkClick={handleLinkClick} />
             <div className="border-t pt-4">
               <AuthButton />
             </div>
@@ -44,4 +48,6 @@ export const MobileMenu = () => {
       </Sheet>
     </div>
   );
-};
+});
+
+MobileMenu.displayName = 'MobileMenu';
