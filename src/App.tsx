@@ -15,7 +15,13 @@ import AdminAuth from './pages/AdminAuth';
 import ProfileSettings from './pages/ProfileSettings';
 import { AuthProvider } from "@/contexts/AuthContext";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

@@ -19,7 +19,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { BookOpen, Users, ClipboardList, TrendingUp, BarChart3, Settings, GraduationCap, Award, Shield, MessageSquare, Link, Eye } from 'lucide-react';
 import { type UserRole } from '@/config/roleNavigation';
 import ProfileSettings from './ProfileSettings';
-import { Skeleton } from '@/components/ui/skeleton';
+import { ContentLoader } from '@/components/ContentLoader';
 import { Database } from '@/integrations/supabase/types';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -53,16 +53,7 @@ const Dashboard = () => {
 
   const DashboardContent = () => {
     if (isLoading) {
-      return (
-        <div className="space-y-6">
-          <Skeleton className="h-10 w-1/3" />
-          <div className="space-y-4">
-            <Skeleton className="h-16 w-full" />
-            <Skeleton className="h-16 w-full" />
-            <Skeleton className="h-16 w-2/3" />
-          </div>
-        </div>
-      );
+      return <ContentLoader message={authLoading ? 'Authenticating...' : 'Loading user profile...'} />;
     }
 
     if (profileError) {
@@ -115,7 +106,8 @@ const Dashboard = () => {
           {finalRole === 'teacher' && (
              <>
               <Route path="/classes" element={<RolePlaceholder title="My Classes" description="Manage your classes and students" icon={Users} />} />
-              <Route path="/courses" element={<RolePlaceholder title="Course Management" description="Create and manage your courses" icon={BookOpen} />} />
+              <Route path="/courses" element={<CourseManagement />} />
+              <Route path="/courses/builder/:courseId" element={<CourseBuilder />} />
               <Route path="/student-progress" element={<RolePlaceholder title="Student Progress" description="Monitor individual student performance" icon={TrendingUp} />} />
               <Route path="/assignments" element={<RolePlaceholder title="Assignment Management" description="Create and grade assignments" icon={ClipboardList} />} />
               <Route path="/resources" element={<RolePlaceholder title="Teaching Resources" description="Access and manage teaching materials" icon={Award} />} />

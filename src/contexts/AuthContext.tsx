@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, useMemo, useCallback, ReactNode } from 'react';
+import { createContext, useState, useEffect, useMemo, useCallback, ReactNode, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -47,12 +47,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // This ref holds the latest user object to avoid stale closures in the subscription,
+  // without making the useEffect below dependent on the `user` object itself.
+  const userRef = useRef(user);
   useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
+  useEffect(() => {
+    // Get the initial session and user data
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+        // Prevent re-renders on tab focus, etc. by only updating state if the user ID is different.
+        if (event === 'USER_UPDATED' || session?.user?.id !== userRef.current?.id) {
+          setSession(session);
+          setUser(session?.user ?? null);
+        }
 
         const currentPath = window.location.pathname;
         const isAuthPage = currentPath.startsWith('/auth');
@@ -67,12 +83,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       }
     );
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
 
     return () => subscription.unsubscribe();
   }, [navigate]);
