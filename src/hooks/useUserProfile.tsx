@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
@@ -41,5 +41,9 @@ export const useUserProfile = (user: User | null) => {
     fetchProfile();
   }, [user]);
 
-  return { profile, loading, error };
+  return useMemo(() => ({
+    profile,
+    loading,
+    error
+  }), [profile, loading, error]);
 };

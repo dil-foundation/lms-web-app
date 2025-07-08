@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -5,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Settings } from 'lucide-react';
 
-export const AuthButton = () => {
+export const AuthButton = memo(() => {
   const { user, session } = useAuth();
   const navigate = useNavigate();
 
@@ -40,4 +41,6 @@ export const AuthButton = () => {
       <Button>Sign In</Button>
     </Link>
   );
-};
+});
+
+AuthButton.displayName = 'AuthButton';

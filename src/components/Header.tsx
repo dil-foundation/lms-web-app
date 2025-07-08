@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Logo } from './header/Logo';
@@ -7,7 +7,7 @@ import { Navigation } from './header/Navigation';
 import { AuthButton } from './header/AuthButton';
 import { MobileMenu } from './header/MobileMenu';
 
-export const Header = () => {
+export const Header = memo(() => {
   const location = useLocation();
   const { user, loading, signOut } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -47,4 +47,6 @@ export const Header = () => {
       </div>
     </header>
   );
-};
+});
+
+Header.displayName = 'Header';
