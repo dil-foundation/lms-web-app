@@ -33,6 +33,18 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import React, { useRef } from 'react'; // Added missing import for React
+import { supabase } from '@/integrations/supabase/client';
+import { FileIcon } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 // #region Interfaces
 interface CourseSection {
@@ -102,17 +114,164 @@ interface LessonItemProps {
   isRemovable: boolean;
   dragHandleProps: any;
   onToggleCollapse: (sectionId: string, lessonId: string) => void;
+  courseId: string | undefined;
 }
 
-const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, dragHandleProps, onToggleCollapse }: LessonItemProps) => {
+const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, dragHandleProps, onToggleCollapse, courseId }: LessonItemProps) => {
   const [localContent, setLocalContent] = useState(typeof lesson.content === 'string' ? lesson.content : '');
+  const [isUploading, setIsUploading] = useState(false);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [attachmentInfo, setAttachmentInfo] = useState<{ url: string; name: string } | null>(null);
+  const [isConfirmingChange, setIsConfirmingChange] = useState(false);
+  const [pendingLessonType, setPendingLessonType] = useState<CourseLesson['type'] | null>(null);
 
   // Keep local state in sync if the prop changes from parent
   useEffect(() => {
-    if (typeof lesson.content === 'string') {
-      setLocalContent(lesson.content);
-    }
+    // If the parent content is a string, sync it to local state.
+    // If it's not a string (e.g., undefined, QuizData), reset local state to empty string.
+    setLocalContent(typeof lesson.content === 'string' ? lesson.content : '');
   }, [lesson.content]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const getSignedUrl = async (filePath: string, type: 'video' | 'attachment') => {
+      const { data, error } = await supabase.storage
+        .from('dil-lms')
+        .createSignedUrl(filePath, 3600);
+
+      if (!isMounted) return;
+
+      if (error) {
+        console.error(`Error creating signed URL for ${type}:`, error);
+        toast.error(`Could not load ${type} preview.`);
+      } else if (data) {
+        if (type === 'video') {
+          setVideoUrl(data.signedUrl);
+        } else {
+          const name = filePath.split('/').pop() || 'file';
+          setAttachmentInfo({ url: data.signedUrl, name });
+        }
+      }
+    };
+
+    if (typeof lesson.content === 'string' && lesson.content) {
+      if (lesson.type === 'video') {
+        setAttachmentInfo(null);
+        getSignedUrl(lesson.content, 'video');
+      } else if (lesson.type === 'attachment') {
+        setVideoUrl(null);
+        getSignedUrl(lesson.content, 'attachment');
+      }
+    } else {
+      setVideoUrl(null);
+      setAttachmentInfo(null);
+    }
+
+    return () => { isMounted = false; };
+  }, [lesson.content, lesson.type]);
+
+  const handleConfirmTypeChange = () => {
+    if (pendingLessonType) {
+      onUpdate(sectionId, lesson.id, { type: pendingLessonType, content: undefined });
+      setPendingLessonType(null);
+    }
+  };
+
+  const handleTypeChangeRequest = (newType: 'video' | 'attachment' | 'assignment' | 'quiz') => {
+    let hasContent = false;
+    if (lesson.content) {
+      if (lesson.type === 'quiz') {
+        hasContent = (lesson.content as QuizData)?.questions?.length > 0;
+      } else if (lesson.type === 'assignment') {
+        const contentStr = lesson.content as string;
+        hasContent = contentStr && contentStr !== '<p><br></p>';
+      } else { // Video or Attachment
+        hasContent = !!lesson.content;
+      }
+    }
+
+    if (hasContent && newType !== lesson.type) {
+      setPendingLessonType(newType);
+      setIsConfirmingChange(true);
+    } else {
+      onUpdate(sectionId, lesson.id, { type: newType, content: undefined });
+    }
+  };
+
+  const handleVideoUpload = async (file: File) => {
+    if (!file) return;
+
+    setIsUploading(true);
+    const filePath = `lesson-videos/${courseId || 'new'}/${lesson.id}/${crypto.randomUUID()}/${file.name}`;
+
+    try {
+      const { error } = await supabase.storage.from('dil-lms').upload(filePath, file);
+      if (error) throw error;
+      onUpdate(sectionId, lesson.id, { content: filePath });
+      toast.success('Video uploaded successfully!');
+    } catch (error: any) {
+      toast.error('Video upload failed.', { description: error.message });
+      console.error(error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleAttachmentUpload = async (file: File) => {
+    if (!file) return;
+
+    setIsUploading(true);
+    const filePath = `lesson-attachments/${courseId || 'new'}/${lesson.id}/${crypto.randomUUID()}/${file.name}`;
+
+    try {
+      const { error } = await supabase.storage.from('dil-lms').upload(filePath, file);
+      if (error) throw error;
+      onUpdate(sectionId, lesson.id, { content: filePath });
+      toast.success('Attachment uploaded successfully!');
+    } catch (error: any) {
+      toast.error('Attachment upload failed.', { description: error.message });
+      console.error(error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleAssignmentImageUpload = useCallback(async (file: File) => {
+    if (!file) {
+      toast.error("No file selected.");
+      throw new Error("No file selected.");
+    }
+    const filePath = `assignment-assets/images/${courseId || 'new'}/${lesson.id}/${crypto.randomUUID()}/${file.name}`;
+    try {
+      const { error: uploadError } = await supabase.storage.from('dil-lms').upload(filePath, file);
+      if (uploadError) throw uploadError;
+      const { data, error: urlError } = await supabase.storage.from('dil-lms').createSignedUrl(filePath, 3600 * 24 * 7); // 7 days
+      if (urlError) throw urlError;
+      return data.signedUrl;
+    } catch (error: any) {
+      toast.error('Image upload failed.', { description: error.message });
+      throw error;
+    }
+  }, [courseId, lesson.id]);
+
+  const handleAssignmentFileUpload = useCallback(async (file: File) => {
+    if (!file) {
+      toast.error("No file selected.");
+      throw new Error("No file selected.");
+    }
+    const filePath = `assignment-assets/files/${courseId || 'new'}/${lesson.id}/${crypto.randomUUID()}/${file.name}`;
+    try {
+      const { error: uploadError } = await supabase.storage.from('dil-lms').upload(filePath, file);
+      if (uploadError) throw uploadError;
+      const { data, error: urlError } = await supabase.storage.from('dil-lms').createSignedUrl(filePath, 3600 * 24 * 7); // 7 days
+      if (urlError) throw urlError;
+      return data.signedUrl;
+    } catch (error: any) {
+      toast.error('File upload failed.', { description: error.message });
+      throw error;
+    }
+  }, [courseId, lesson.id]);
 
   const handleBlur = () => {
     // Sync with parent state only when user is done editing
@@ -122,15 +281,56 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, d
   const renderLessonContentEditor = () => {
     switch (lesson.type) {
       case 'video':
+        if (videoUrl) {
+          return (
+            <div className="space-y-2">
+              <video controls src={videoUrl} className="w-full rounded-lg" />
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  setVideoUrl(null);
+                  onUpdate(sectionId, lesson.id, { content: undefined });
+                  // We might want to delete the file from storage here as well
+                }}
+              >
+                Remove Video
+              </Button>
+            </div>
+          );
+        }
         return <FileUpload 
-                  onUpload={(file) => onUpdate(sectionId, lesson.id, { content: file })} 
-                  label="Upload Video (MP4, MOV)"
+                  onUpload={handleVideoUpload} 
+                  label={isUploading ? "Uploading..." : "Upload Video (MP4, MOV)"}
                   acceptedFileTypes={['video/mp4', 'video/quicktime']}
+                  disabled={isUploading}
                 />;
       case 'attachment':
+        if (attachmentInfo) {
+          return (
+            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border">
+              <div className="flex items-center gap-3">
+                <FileIcon className="h-6 w-6 text-muted-foreground" />
+                <a href={attachmentInfo.url} target="_blank" rel="noopener noreferrer" className="font-medium hover:underline">
+                  {attachmentInfo.name}
+                </a>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setAttachmentInfo(null);
+                  onUpdate(sectionId, lesson.id, { content: undefined });
+                }}
+              >
+                Remove
+              </Button>
+            </div>
+          );
+        }
         return <FileUpload 
-                  onUpload={(file) => onUpdate(sectionId, lesson.id, { content: file })} 
-                  label="Upload Attachment (PDF, DOC, XLS, ZIP)"
+                  onUpload={handleAttachmentUpload}
+                  label={isUploading ? "Uploading..." : "Upload Attachment (PDF, DOC, ZIP)"}
                   acceptedFileTypes={[
                     'application/pdf',
                     'application/msword',
@@ -139,6 +339,7 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, d
                     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                     'application/zip'
                   ]}
+                  disabled={isUploading}
                 />;
       case 'assignment':
         return (
@@ -147,6 +348,8 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, d
             onChange={setLocalContent}
             onBlur={handleBlur}
             placeholder="Write the assignment details here..."
+            onImageUpload={handleAssignmentImageUpload}
+            onFileUpload={handleAssignmentFileUpload}
           />
         );
       case 'quiz':
@@ -178,9 +381,7 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, d
         <div className="flex items-center gap-2 ml-4">
           <Select
             value={lesson.type}
-            onValueChange={(value: 'video' | 'attachment' | 'assignment' | 'quiz') => {
-              onUpdate(sectionId, lesson.id, { type: value, content: undefined });
-            }}
+            onValueChange={handleTypeChangeRequest}
           >
             <SelectTrigger className="w-[120px]">
               <SelectValue />
@@ -211,6 +412,21 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, d
           {renderLessonContentEditor()}
         </div>
       )}
+
+      <AlertDialog open={isConfirmingChange} onOpenChange={setIsConfirmingChange}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to switch lesson type?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your current lesson content will be lost. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingLessonType(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmTypeChange}>Continue</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 });
@@ -376,6 +592,10 @@ const CourseBuilder = () => {
   const [isSaving, setIsSaving] = useState(false);
   const preDragLessonStatesRef = useRef<Record<string, boolean>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [categories, setCategories] = useState<{ id: number; name: string; }[]>([]);
+  const [languages, setLanguages] = useState<{ id: number; name: string; }[]>([]);
+  const [levels, setLevels] = useState<{ id: number; name: string; }[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
   const [courseData, setCourseData] = useState<CourseData>(() => ({
     title: '',
     subtitle: '',
@@ -403,6 +623,39 @@ const CourseBuilder = () => {
     instructors: [],
     students: [],
   }));
+
+  useEffect(() => {
+    const fetchDropdownData = async () => {
+      // Fetch Categories
+      const { data: catData, error: catError } = await supabase.from('course_categories').select('id, name');
+      if (catError) {
+        console.error('Error fetching categories: ', catError);
+        toast.error('Failed to load course categories.');
+      } else if (catData) {
+        setCategories(catData as any);
+      }
+
+      // Fetch Languages
+      const { data: langData, error: langError } = await supabase.from('course_languages').select('id, name');
+      if (langError) {
+        console.error('Error fetching languages: ', langError);
+        toast.error('Failed to load course languages.');
+      } else if (langData) {
+        setLanguages(langData as any);
+      }
+
+      // Fetch Levels
+      const { data: levelData, error: levelError } = await supabase.from('course_levels').select('id, name');
+      if (levelError) {
+        console.error('Error fetching levels: ', levelError);
+        toast.error('Failed to load course levels.');
+      } else if (levelData) {
+        setLevels(levelData as any);
+      }
+    };
+
+    fetchDropdownData();
+  }, []);
 
   // Mock course data loading
   useEffect(() => {
@@ -440,6 +693,43 @@ const CourseBuilder = () => {
       });
     }
   }, [courseId]);
+
+  const handleImageUpload = async (file: File) => {
+    if (!file) return;
+
+    setIsUploading(true);
+    // Use a more robust naming convention to avoid collisions
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${crypto.randomUUID()}.${fileExt}`;
+    const filePath = `course-thumbnails/${fileName}`;
+
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from('dil-lms')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+        .from('dil-lms')
+        .createSignedUrl(filePath, 3600); // 1 hour expiry
+
+      if (signedUrlError) {
+        throw signedUrlError;
+      }
+      
+      setCourseData(prev => ({ ...prev, image: signedUrlData.signedUrl }));
+      toast.success('Image uploaded successfully!');
+
+    } catch (error: any) {
+      toast.error('Image upload failed.', { description: error.message });
+      console.error(error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -815,10 +1105,11 @@ const CourseBuilder = () => {
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Language Learning">Language Learning</SelectItem>
-                          <SelectItem value="Mathematics">Mathematics</SelectItem>
-                          <SelectItem value="Science">Science</SelectItem>
-                          <SelectItem value="Technology">Technology</SelectItem>
+                          {categories.map((category) => (
+                            <SelectItem key={category.id} value={category.name}>
+                              {category.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -827,12 +1118,14 @@ const CourseBuilder = () => {
                       <label className="block text-sm font-medium mb-2">Language</label>
                       <Select value={courseData.language} onValueChange={(value) => setCourseData(prev => ({ ...prev, language: value }))}>
                         <SelectTrigger>
-                          <SelectValue />
+                          <SelectValue placeholder="Select language" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="English">English</SelectItem>
-                          <SelectItem value="Urdu">Urdu</SelectItem>
-                          <SelectItem value="Arabic">Arabic</SelectItem>
+                          {languages.map((language) => (
+                            <SelectItem key={language.id} value={language.name}>
+                              {language.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -841,12 +1134,14 @@ const CourseBuilder = () => {
                       <label className="block text-sm font-medium mb-2">Level</label>
                       <Select value={courseData.level} onValueChange={(value) => setCourseData(prev => ({ ...prev, level: value }))}>
                         <SelectTrigger>
-                          <SelectValue />
+                          <SelectValue placeholder="Select level" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Beginner">Beginner</SelectItem>
-                          <SelectItem value="Intermediate">Intermediate</SelectItem>
-                          <SelectItem value="Advanced">Advanced</SelectItem>
+                          {levels.map((level) => (
+                            <SelectItem key={level.id} value={level.name}>
+                              {level.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -859,11 +1154,25 @@ const CourseBuilder = () => {
                   <CardTitle>Course Image</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
-                    <Upload className="w-8 h-8 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground mb-2">Upload course thumbnail</p>
-                    <Button variant="outline">Choose File</Button>
-                  </div>
+                  {courseData.image ? (
+                    <div className="relative group">
+                      <img src={courseData.image} alt="Course thumbnail" className="rounded-lg w-full h-auto object-cover" />
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => setCourseData(prev => ({...prev, image: undefined}))}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <FileUpload 
+                      onUpload={handleImageUpload} 
+                      label={isUploading ? "Uploading..." : "Upload course thumbnail"}
+                      disabled={isUploading}
+                    />
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -947,6 +1256,7 @@ const CourseBuilder = () => {
                                               isRemovable={section.lessons.length > 1}
                                               dragHandleProps={lessonDragHandleProps}
                                               onToggleCollapse={toggleLessonCollapse}
+                                              courseId={courseId}
                                             />
                                           </div>
                                         )}
@@ -980,6 +1290,7 @@ const CourseBuilder = () => {
                           isRemovable={false}
                           dragHandleProps={{}}
                           onToggleCollapse={() => {}}
+                          courseId={courseId}
                         />
                       ) : null}
                     </DragOverlay>
@@ -989,15 +1300,6 @@ const CourseBuilder = () => {
             </TabsContent>
             
             <TabsContent value="landing" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Course Image</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <FileUpload onUpload={() => { /* Implement upload logic */ }} label="Upload course thumbnail" />
-                </CardContent>
-              </Card>
-              
               <Card>
                 <CardHeader>
                   <CardTitle>Course Details</CardTitle>

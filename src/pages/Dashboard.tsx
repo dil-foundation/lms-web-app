@@ -20,13 +20,17 @@ import { BookOpen, Users, ClipboardList, TrendingUp, BarChart3, Settings, Gradua
 import { type UserRole } from '@/config/roleNavigation';
 import ProfileSettings from './ProfileSettings';
 import { ContentLoader } from '@/components/ContentLoader';
-import { Database } from '@/integrations/supabase/types';
 
-type Profile = Database['public']['Tables']['profiles']['Row'];
+type Profile = {
+  full_name: string | null;
+  email: string | null;
+  role: UserRole;
+  [key: string]: any;
+};
 
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
-  const { profile, loading: profileLoading, error: profileError } = useUserProfile(user);
+  const { profile, loading: profileLoading, error: profileError } = useUserProfile();
   const navigate = useNavigate();
   
   const [devRole, setDevRole] = useState<UserRole | null>(null);
