@@ -1,6 +1,18 @@
 import { useRef, useMemo, useCallback } from 'react';
-import ReactQuill from 'react-quill';
+import ReactQuill, { Quill } from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import { toast } from 'sonner';
+import { Paperclip } from 'lucide-react';
+
+// Custom Icons
+const icons = Quill.import('ui/icons');
+icons['file'] = `<svg viewbox="0 0 18 18">
+  <line class="ql-stroke" x1="14" x2="4" y1="13" y2="13"></line>
+  <line class="ql-stroke" x1="14" x2="4" y1="13" y2="13"></line>
+  <path class="ql-stroke" d="M12,1H6A2,2,0,0,0,4,3V15a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V3A2,2,0,0,0,12,1Z"></path>
+  <polyline class="ql-stroke" points="14 13 4 13 4 12"></polyline>
+</svg>`;
+
 
 interface RichTextEditorProps {
   value: string;
@@ -8,43 +20,76 @@ interface RichTextEditorProps {
   onBlur?: () => void;
   placeholder?: string;
   className?: string;
+  onImageUpload?: (file: File) => Promise<string>;
+  onFileUpload?: (file: File) => Promise<string>;
 }
 
-export const RichTextEditor = ({ value, onChange, onBlur, placeholder, className }: RichTextEditorProps) => {
+export const RichTextEditor = ({ value, onChange, onBlur, placeholder, className, onImageUpload, onFileUpload }: RichTextEditorProps) => {
   const quillRef = useRef<ReactQuill>(null);
 
-  const fileUploadHandler = useCallback(() => {
-    if (!quillRef.current) return;
-
+  const imageHandler = useCallback(async () => {
+    if (!quillRef.current || !onImageUpload) {
+      console.warn("Image upload handler not provided.");
+      return;
+    }
     const editor = quillRef.current.getEditor();
-    editor.focus(); // Explicitly focus the editor to prevent errors
-    const range = editor.getSelection(true);
 
     const input = document.createElement('input');
     input.setAttribute('type', 'file');
-    input.setAttribute('accept', 'image/*, application/pdf, application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    input.setAttribute('accept', 'image/*');
     
-    input.onchange = () => {
+    input.onchange = async () => {
       const file = input.files?.[0];
       if (file) {
-        if (file.type.startsWith('image/')) {
-          const reader = new FileReader();
-          reader.onload = () => {
-            editor.insertEmbed(range.index, 'image', reader.result as string);
-          };
-          reader.readAsDataURL(file);
-        } else {
-          // For non-image files, we insert a link.
-          const fileUrl = URL.createObjectURL(file);
-          editor.insertText(range.index, file.name);
-          editor.setSelection(range.index, file.name.length);
-          editor.format('link', fileUrl);
+        const range = editor.getSelection(true) || { index: 0, length: 0 };
+        try {
+          editor.insertText(range.index, `[Uploading ${file.name}...]`);
+          const imageUrl = await onImageUpload(file);
+          editor.deleteText(range.index, `[Uploading ${file.name}...]`.length);
+          editor.insertEmbed(range.index, 'image', imageUrl);
+          editor.setSelection(range.index + 1, 0);
+        } catch (error) {
+          console.error("Image upload failed:", error);
+          editor.deleteText(range.index, `[Uploading ${file.name}...]`.length);
+          toast.error("Image upload failed.");
         }
       }
     };
     
     input.click();
-  }, [quillRef]);
+  }, [onImageUpload]);
+
+  const fileHandler = useCallback(async () => {
+    if (!quillRef.current || !onFileUpload) {
+      console.warn("File upload handler not provided.");
+      return;
+    }
+    const editor = quillRef.current.getEditor();
+    
+    const input = document.createElement('input');
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', '.pdf, .doc, .docx, .xls, .xlsx, application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (file) {
+        const range = editor.getSelection(true) || { index: 0, length: 0 };
+        try {
+          editor.insertText(range.index, `[Uploading ${file.name}...]`);
+          const fileUrl = await onFileUpload(file);
+          editor.deleteText(range.index, `[Uploading ${file.name}...]`.length);
+          editor.insertText(range.index, file.name, 'link', fileUrl);
+          editor.formatText(range.index, file.name.length, 'link', fileUrl);
+          editor.setSelection(range.index + file.name.length, 0);
+        } catch (error) {
+          console.error("File upload failed:", error);
+          editor.deleteText(range.index, `[Uploading ${file.name}...]`.length);
+          toast.error("File upload failed.");
+        }
+      }
+    };
+    input.click();
+  }, [onFileUpload]);
 
   const modules = useMemo(() => ({
     toolbar: {
@@ -58,14 +103,15 @@ export const RichTextEditor = ({ value, onChange, onBlur, placeholder, className
         [{ 'color': [] }, { 'background': [] }],
         [{ 'font': [] }],
         [{ 'align': [] }],
-        ['link', 'image'],
+        ['link', 'image', 'file'],
         ['clean']
       ],
       handlers: {
-        'image': fileUploadHandler
+        'image': imageHandler,
+        'file': fileHandler
       }
     },
-  }), [fileUploadHandler]);
+  }), [imageHandler, fileHandler]);
 
   return (
     <div className={className}>

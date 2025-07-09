@@ -1,10 +1,14 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { getRoleDisplayName, type UserRole } from '@/config/roleNavigation';
-import { Database } from '@/integrations/supabase/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
-type Profile = Database['public']['Tables']['profiles']['Row'];
+type Profile = {
+  full_name: string | null;
+  email: string | null;
+  [key: string]: any;
+};
+
 
 interface UserProfileSectionProps {
   profile: Profile | null;

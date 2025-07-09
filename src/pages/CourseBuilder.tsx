@@ -7,17 +7,51 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Save, Eye, Upload, Plus, GripVertical, X } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Upload, Plus, GripVertical, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { FileUpload } from '@/components/ui/FileUpload';
 import { RichTextEditor } from '@/components/ui/RichTextEditor';
 import { MultiSelect } from '@/components/ui/MultiSelect';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  DragStartEvent,
+  MeasuringStrategy,
+  DragOverlay,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import React, { useRef } from 'react'; // Added missing import for React
+import { supabase } from '@/integrations/supabase/client';
+import { FileIcon } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 // #region Interfaces
 interface CourseSection {
   id: string;
   title: string;
   lessons: CourseLesson[];
+  isCollapsed?: boolean;
 }
 
 interface CourseLesson {
@@ -26,6 +60,7 @@ interface CourseLesson {
   type: 'video' | 'attachment' | 'assignment' | 'quiz';
   content?: string | File | QuizData;
   duration?: number;
+  isCollapsed?: boolean;
 }
 
 interface QuizQuestion {
@@ -76,17 +111,167 @@ interface LessonItemProps {
   sectionId: string;
   onUpdate: (sectionId: string, lessonId:string, updatedLesson: Partial<CourseLesson>) => void;
   onRemove: (sectionId: string, lessonId:string) => void;
+  isRemovable: boolean;
+  dragHandleProps: any;
+  onToggleCollapse: (sectionId: string, lessonId: string) => void;
+  courseId: string | undefined;
 }
 
-const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove }: LessonItemProps) => {
+const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, dragHandleProps, onToggleCollapse, courseId }: LessonItemProps) => {
   const [localContent, setLocalContent] = useState(typeof lesson.content === 'string' ? lesson.content : '');
+  const [isUploading, setIsUploading] = useState(false);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [attachmentInfo, setAttachmentInfo] = useState<{ url: string; name: string } | null>(null);
+  const [isConfirmingChange, setIsConfirmingChange] = useState(false);
+  const [pendingLessonType, setPendingLessonType] = useState<CourseLesson['type'] | null>(null);
 
   // Keep local state in sync if the prop changes from parent
   useEffect(() => {
-    if (typeof lesson.content === 'string') {
-      setLocalContent(lesson.content);
-    }
+    // If the parent content is a string, sync it to local state.
+    // If it's not a string (e.g., undefined, QuizData), reset local state to empty string.
+    setLocalContent(typeof lesson.content === 'string' ? lesson.content : '');
   }, [lesson.content]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const getSignedUrl = async (filePath: string, type: 'video' | 'attachment') => {
+      const { data, error } = await supabase.storage
+        .from('dil-lms')
+        .createSignedUrl(filePath, 3600);
+
+      if (!isMounted) return;
+
+      if (error) {
+        console.error(`Error creating signed URL for ${type}:`, error);
+        toast.error(`Could not load ${type} preview.`);
+      } else if (data) {
+        if (type === 'video') {
+          setVideoUrl(data.signedUrl);
+        } else {
+          const name = filePath.split('/').pop() || 'file';
+          setAttachmentInfo({ url: data.signedUrl, name });
+        }
+      }
+    };
+
+    if (typeof lesson.content === 'string' && lesson.content) {
+      if (lesson.type === 'video') {
+        setAttachmentInfo(null);
+        getSignedUrl(lesson.content, 'video');
+      } else if (lesson.type === 'attachment') {
+        setVideoUrl(null);
+        getSignedUrl(lesson.content, 'attachment');
+      }
+    } else {
+      setVideoUrl(null);
+      setAttachmentInfo(null);
+    }
+
+    return () => { isMounted = false; };
+  }, [lesson.content, lesson.type]);
+
+  const handleConfirmTypeChange = () => {
+    if (pendingLessonType) {
+      onUpdate(sectionId, lesson.id, { type: pendingLessonType, content: undefined });
+      setPendingLessonType(null);
+    }
+  };
+
+  const handleTypeChangeRequest = (newType: 'video' | 'attachment' | 'assignment' | 'quiz') => {
+    let hasContent = false;
+    if (lesson.content) {
+      if (lesson.type === 'quiz') {
+        hasContent = (lesson.content as QuizData)?.questions?.length > 0;
+      } else if (lesson.type === 'assignment') {
+        const contentStr = lesson.content as string;
+        hasContent = contentStr && contentStr !== '<p><br></p>';
+      } else { // Video or Attachment
+        hasContent = !!lesson.content;
+      }
+    }
+
+    if (hasContent && newType !== lesson.type) {
+      setPendingLessonType(newType);
+      setIsConfirmingChange(true);
+    } else {
+      onUpdate(sectionId, lesson.id, { type: newType, content: undefined });
+    }
+  };
+
+  const handleVideoUpload = async (file: File) => {
+    if (!file) return;
+
+    setIsUploading(true);
+    const filePath = `lesson-videos/${courseId || 'new'}/${lesson.id}/${crypto.randomUUID()}/${file.name}`;
+
+    try {
+      const { error } = await supabase.storage.from('dil-lms').upload(filePath, file);
+      if (error) throw error;
+      onUpdate(sectionId, lesson.id, { content: filePath });
+      toast.success('Video uploaded successfully!');
+    } catch (error: any) {
+      toast.error('Video upload failed.', { description: error.message });
+      console.error(error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleAttachmentUpload = async (file: File) => {
+    if (!file) return;
+
+    setIsUploading(true);
+    const filePath = `lesson-attachments/${courseId || 'new'}/${lesson.id}/${crypto.randomUUID()}/${file.name}`;
+
+    try {
+      const { error } = await supabase.storage.from('dil-lms').upload(filePath, file);
+      if (error) throw error;
+      onUpdate(sectionId, lesson.id, { content: filePath });
+      toast.success('Attachment uploaded successfully!');
+    } catch (error: any) {
+      toast.error('Attachment upload failed.', { description: error.message });
+      console.error(error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleAssignmentImageUpload = useCallback(async (file: File) => {
+    if (!file) {
+      toast.error("No file selected.");
+      throw new Error("No file selected.");
+    }
+    const filePath = `assignment-assets/images/${courseId || 'new'}/${lesson.id}/${crypto.randomUUID()}/${file.name}`;
+    try {
+      const { error: uploadError } = await supabase.storage.from('dil-lms').upload(filePath, file);
+      if (uploadError) throw uploadError;
+      const { data, error: urlError } = await supabase.storage.from('dil-lms').createSignedUrl(filePath, 3600 * 24 * 7); // 7 days
+      if (urlError) throw urlError;
+      return data.signedUrl;
+    } catch (error: any) {
+      toast.error('Image upload failed.', { description: error.message });
+      throw error;
+    }
+  }, [courseId, lesson.id]);
+
+  const handleAssignmentFileUpload = useCallback(async (file: File) => {
+    if (!file) {
+      toast.error("No file selected.");
+      throw new Error("No file selected.");
+    }
+    const filePath = `assignment-assets/files/${courseId || 'new'}/${lesson.id}/${crypto.randomUUID()}/${file.name}`;
+    try {
+      const { error: uploadError } = await supabase.storage.from('dil-lms').upload(filePath, file);
+      if (uploadError) throw uploadError;
+      const { data, error: urlError } = await supabase.storage.from('dil-lms').createSignedUrl(filePath, 3600 * 24 * 7); // 7 days
+      if (urlError) throw urlError;
+      return data.signedUrl;
+    } catch (error: any) {
+      toast.error('File upload failed.', { description: error.message });
+      throw error;
+    }
+  }, [courseId, lesson.id]);
 
   const handleBlur = () => {
     // Sync with parent state only when user is done editing
@@ -96,15 +281,56 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove }: LessonItemPr
   const renderLessonContentEditor = () => {
     switch (lesson.type) {
       case 'video':
+        if (videoUrl) {
+          return (
+            <div className="space-y-2">
+              <video controls src={videoUrl} className="w-full rounded-lg" />
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  setVideoUrl(null);
+                  onUpdate(sectionId, lesson.id, { content: undefined });
+                  // We might want to delete the file from storage here as well
+                }}
+              >
+                Remove Video
+              </Button>
+            </div>
+          );
+        }
         return <FileUpload 
-                  onUpload={(file) => onUpdate(sectionId, lesson.id, { content: file })} 
-                  label="Upload Video (MP4, MOV)"
+                  onUpload={handleVideoUpload} 
+                  label={isUploading ? "Uploading..." : "Upload Video (MP4, MOV)"}
                   acceptedFileTypes={['video/mp4', 'video/quicktime']}
+                  disabled={isUploading}
                 />;
       case 'attachment':
+        if (attachmentInfo) {
+          return (
+            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border">
+              <div className="flex items-center gap-3">
+                <FileIcon className="h-6 w-6 text-muted-foreground" />
+                <a href={attachmentInfo.url} target="_blank" rel="noopener noreferrer" className="font-medium hover:underline">
+                  {attachmentInfo.name}
+                </a>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setAttachmentInfo(null);
+                  onUpdate(sectionId, lesson.id, { content: undefined });
+                }}
+              >
+                Remove
+              </Button>
+            </div>
+          );
+        }
         return <FileUpload 
-                  onUpload={(file) => onUpdate(sectionId, lesson.id, { content: file })} 
-                  label="Upload Attachment (PDF, DOC, XLS, ZIP)"
+                  onUpload={handleAttachmentUpload}
+                  label={isUploading ? "Uploading..." : "Upload Attachment (PDF, DOC, ZIP)"}
                   acceptedFileTypes={[
                     'application/pdf',
                     'application/msword',
@@ -113,6 +339,7 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove }: LessonItemPr
                     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                     'application/zip'
                   ]}
+                  disabled={isUploading}
                 />;
       case 'assignment':
         return (
@@ -121,6 +348,8 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove }: LessonItemPr
             onChange={setLocalContent}
             onBlur={handleBlur}
             placeholder="Write the assignment details here..."
+            onImageUpload={handleAssignmentImageUpload}
+            onFileUpload={handleAssignmentFileUpload}
           />
         );
       case 'quiz':
@@ -138,18 +367,21 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove }: LessonItemPr
   return (
     <div className="p-4 rounded-lg bg-background border space-y-4">
       <div className="flex items-center justify-between">
-        <Input
-          value={lesson.title}
-          onChange={(e) => onUpdate(sectionId, lesson.id, { title: e.target.value })}
-          placeholder="Lesson Title"
-          className="flex-1"
-        />
+        <div className="flex items-center gap-2 flex-1">
+          <div {...dragHandleProps} className="cursor-move">
+            <GripVertical className="text-muted-foreground" />
+          </div>
+          <Input
+            value={lesson.title}
+            onChange={(e) => onUpdate(sectionId, lesson.id, { title: e.target.value })}
+            placeholder="Lesson Title"
+            className="flex-1"
+          />
+        </div>
         <div className="flex items-center gap-2 ml-4">
           <Select
             value={lesson.type}
-            onValueChange={(value: 'video' | 'attachment' | 'assignment' | 'quiz') => {
-              onUpdate(sectionId, lesson.id, { type: value, content: undefined });
-            }}
+            onValueChange={handleTypeChangeRequest}
           >
             <SelectTrigger className="w-[120px]">
               <SelectValue />
@@ -161,22 +393,76 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove }: LessonItemPr
               <SelectItem value="quiz">Quiz</SelectItem>
             </SelectContent>
           </Select>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onRemove(sectionId, lesson.id)}
-          >
-            <X className="w-4 h-4" />
+          {isRemovable && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onRemove(sectionId, lesson.id)}
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          )}
+          <Button variant="ghost" size="icon" onClick={() => onToggleCollapse(sectionId, lesson.id)}>
+            {lesson.isCollapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
           </Button>
         </div>
       </div>
-      <div>
-        {renderLessonContentEditor()}
-      </div>
+      {!lesson.isCollapsed && (
+        <div>
+          {renderLessonContentEditor()}
+        </div>
+      )}
+
+      <AlertDialog open={isConfirmingChange} onOpenChange={setIsConfirmingChange}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to switch lesson type?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your current lesson content will be lost. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingLessonType(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmTypeChange}>Continue</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 });
 LessonItem.displayName = "LessonItem";
+// #endregion
+
+// #region SortableItem Component
+const SortableItem = ({ id, children, type, sectionId }: { id: string, children: (dragHandleProps: any) => React.ReactNode, type: 'section' | 'lesson', sectionId?: string }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ 
+    id,
+    data: {
+      type,
+      sectionId
+    }
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 10 : 'auto',
+    opacity: isDragging ? 0.8 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      {children({ ...attributes, ...listeners })}
+    </div>
+  );
+};
 // #endregion
 
 // #region QuizBuilder Component
@@ -304,7 +590,13 @@ const CourseBuilder = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('details');
   const [isSaving, setIsSaving] = useState(false);
-  const [courseData, setCourseData] = useState<CourseData>({
+  const preDragLessonStatesRef = useRef<Record<string, boolean>>({});
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [categories, setCategories] = useState<{ id: number; name: string; }[]>([]);
+  const [languages, setLanguages] = useState<{ id: number; name: string; }[]>([]);
+  const [levels, setLevels] = useState<{ id: number; name: string; }[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [courseData, setCourseData] = useState<CourseData>(() => ({
     title: '',
     subtitle: '',
     description: '',
@@ -313,10 +605,57 @@ const CourseBuilder = () => {
     level: 'Beginner',
     requirements: [''],
     learningOutcomes: [''],
-    sections: [],
+    sections: [
+      {
+        id: `section-${Date.now()}`,
+        title: 'New Section',
+        isCollapsed: false,
+        lessons: [
+          {
+            id: `lesson-${Date.now() + 1}`,
+            title: 'New Lesson',
+            type: 'video',
+            content: undefined,
+          },
+        ],
+      },
+    ],
     instructors: [],
     students: [],
-  });
+  }));
+
+  useEffect(() => {
+    const fetchDropdownData = async () => {
+      // Fetch Categories
+      const { data: catData, error: catError } = await supabase.from('course_categories').select('id, name');
+      if (catError) {
+        console.error('Error fetching categories: ', catError);
+        toast.error('Failed to load course categories.');
+      } else if (catData) {
+        setCategories(catData as any);
+      }
+
+      // Fetch Languages
+      const { data: langData, error: langError } = await supabase.from('course_languages').select('id, name');
+      if (langError) {
+        console.error('Error fetching languages: ', langError);
+        toast.error('Failed to load course languages.');
+      } else if (langData) {
+        setLanguages(langData as any);
+      }
+
+      // Fetch Levels
+      const { data: levelData, error: levelError } = await supabase.from('course_levels').select('id, name');
+      if (levelError) {
+        console.error('Error fetching levels: ', levelError);
+        toast.error('Failed to load course levels.');
+      } else if (levelData) {
+        setLevels(levelData as any);
+      }
+    };
+
+    fetchDropdownData();
+  }, []);
 
   // Mock course data loading
   useEffect(() => {
@@ -342,17 +681,55 @@ const CourseBuilder = () => {
         ],
         sections: [
           {
-            id: '1',
+            id: 'section-1',
             title: 'Introduction to English',
+            isCollapsed: false,
             lessons: [
-              { id: '1-1', title: 'Welcome to the Course', type: 'video' },
-              { id: '1-2', title: 'Basic Greetings', type: 'video' }
+              { id: 'lesson-1-1', title: 'Welcome to the Course', type: 'video' },
+              { id: 'lesson-1-2', title: 'Basic Greetings', type: 'video' }
             ]
           }
         ]
       });
     }
   }, [courseId]);
+
+  const handleImageUpload = async (file: File) => {
+    if (!file) return;
+
+    setIsUploading(true);
+    // Use a more robust naming convention to avoid collisions
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${crypto.randomUUID()}.${fileExt}`;
+    const filePath = `course-thumbnails/${fileName}`;
+
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from('dil-lms')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+        .from('dil-lms')
+        .createSignedUrl(filePath, 3600); // 1 hour expiry
+
+      if (signedUrlError) {
+        throw signedUrlError;
+      }
+      
+      setCourseData(prev => ({ ...prev, image: signedUrlData.signedUrl }));
+      toast.success('Image uploaded successfully!');
+
+    } catch (error: any) {
+      toast.error('Image upload failed.', { description: error.message });
+      console.error(error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -367,14 +744,181 @@ const CourseBuilder = () => {
     toast.success('Course published successfully!');
   };
 
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    setActiveId(active.id.toString());
+    const activeType = active.data.current?.type;
+
+    if (activeType === 'section') {
+      setCourseData((prev) => ({
+        ...prev,
+        sections: prev.sections.map((s) => ({ ...s, isCollapsed: true })),
+      }));
+    } else if (activeType === 'lesson') {
+      const sectionId = active.data.current?.sectionId;
+      preDragLessonStatesRef.current = {}; // Clear previous states
+
+      setCourseData(prev => {
+        const section = prev.sections.find(s => s.id === sectionId);
+        if (section) {
+          for (const lesson of section.lessons) {
+            preDragLessonStatesRef.current[lesson.id] = !!lesson.isCollapsed;
+          }
+        }
+        
+        return {
+          ...prev,
+          sections: prev.sections.map(s => {
+            if (s.id === sectionId) {
+              return {
+                ...s,
+                lessons: s.lessons.map(l => ({ ...l, isCollapsed: true }))
+              };
+            }
+            return s;
+          })
+        };
+      })
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    setActiveId(null);
+    const { active, over } = event;
+
+    setCourseData(prev => {
+      let newSections = [...prev.sections]; // Create a mutable copy
+
+      if (over && active.id !== over.id) {
+        const activeType = active.data.current?.type;
+        const overType = over.data.current?.type;
+        const activeId = active.id.toString();
+        const overId = over.id.toString();
+
+        if (activeType === 'section' && overType === 'section') {
+          const oldIndex = newSections.findIndex((s) => s.id === activeId);
+          const newIndex = newSections.findIndex((s) => s.id === overId);
+          if (oldIndex !== -1 && newIndex !== -1) {
+            newSections = arrayMove(newSections, oldIndex, newIndex);
+          }
+        }
+
+        if (activeType === 'lesson') {
+          const sourceSectionId = active.data.current?.sectionId;
+          const sourceSectionIndex = newSections.findIndex(s => s.id === sourceSectionId);
+
+          // Determine destination section
+          let destSectionId = overId;
+          if (overType === 'lesson') {
+            destSectionId = over.data.current?.sectionId;
+          }
+          const destSectionIndex = newSections.findIndex(s => s.id === destSectionId);
+
+          if (sourceSectionIndex > -1 && destSectionIndex > -1) {
+            const sourceSection = newSections[sourceSectionIndex];
+            const destSection = newSections[destSectionIndex];
+            const lessonToMoveIndex = sourceSection.lessons.findIndex(l => l.id === activeId);
+            const lessonToMove = sourceSection.lessons[lessonToMoveIndex];
+
+            if (sourceSectionId === destSectionId) {
+              // Reordering within the same section
+              if (overType === 'lesson') {
+                const overLessonIndex = destSection.lessons.findIndex(l => l.id === overId);
+                if (lessonToMoveIndex > -1 && overLessonIndex > -1) {
+                  const reorderedLessons = arrayMove(sourceSection.lessons, lessonToMoveIndex, overLessonIndex);
+                  newSections[sourceSectionIndex] = { ...sourceSection, lessons: reorderedLessons };
+                }
+              }
+            } else {
+              // Moving to a different section
+              if (sourceSection.lessons.length <= 1) {
+                toast.info("Each section must have at least one lesson.");
+              } else {
+                // Remove from source
+                sourceSection.lessons.splice(lessonToMoveIndex, 1);
+
+                // Add to destination
+                let overLessonIndex = destSection.lessons.length; // Default to end
+                if (overType === 'lesson') {
+                    overLessonIndex = destSection.lessons.findIndex(l => l.id === overId);
+                }
+                destSection.lessons.splice(overLessonIndex, 0, lessonToMove);
+                newSections[destSectionIndex].isCollapsed = false; // Expand destination
+              }
+            }
+          }
+        }
+      }
+      
+      // Restore lesson states if a lesson was dragged
+      const activeType = active.data.current?.type;
+      if (activeType === 'lesson') {
+        const sectionId = active.data.current?.sectionId;
+        const sectionIndex = newSections.findIndex(s => s.id === sectionId);
+        if (sectionIndex !== -1) {
+          const sectionToRestore = newSections[sectionIndex];
+          newSections[sectionIndex] = {
+            ...sectionToRestore,
+            lessons: sectionToRestore.lessons.map(l => ({
+              ...l,
+              isCollapsed: preDragLessonStatesRef.current[l.id] ?? false
+            }))
+          };
+        }
+        preDragLessonStatesRef.current = {}; // Clear ref
+      }
+
+      return { ...prev, sections: newSections };
+    });
+  };
+
   // #region Section and Lesson Handlers
   const addSection = () => {
+    const newLesson = {
+      id: `lesson-${Date.now()}`,
+      title: 'New Lesson',
+      type: 'video' as const,
+      content: undefined,
+    };
     const newSection: CourseSection = {
-      id: Date.now().toString(),
+      id: `section-${Date.now() + 1}`,
       title: 'New Section',
-      lessons: []
+      lessons: [newLesson],
+      isCollapsed: false,
     };
     setCourseData(prev => ({ ...prev, sections: [...prev.sections, newSection] }));
+  };
+
+  const toggleSectionCollapse = (sectionId: string) => {
+    setCourseData(prev => ({
+      ...prev,
+      sections: prev.sections.map(s =>
+        s.id === sectionId ? { ...s, isCollapsed: !s.isCollapsed } : s
+      )
+    }));
+  };
+
+  const toggleLessonCollapse = (sectionId: string, lessonId: string) => {
+    setCourseData(prev => ({
+      ...prev,
+      sections: prev.sections.map(s =>
+        s.id === sectionId
+          ? {
+            ...s,
+            lessons: s.lessons.map(l =>
+              l.id === lessonId ? { ...l, isCollapsed: !l.isCollapsed } : l
+            ),
+          }
+          : s
+      ),
+    }));
   };
 
   const removeSection = (sectionId: string) => {
@@ -394,7 +938,7 @@ const CourseBuilder = () => {
     setCourseData(prev => ({
       ...prev,
       sections: prev.sections.map(section =>
-        section.id === sectionId ? { ...section, lessons: [...section.lessons, newLesson] } : section
+        section.id === sectionId ? { ...section, lessons: [...section.lessons, newLesson], isCollapsed: false } : section
       )
     }));
   };
@@ -416,14 +960,21 @@ const CourseBuilder = () => {
   }, []);
 
   const removeLesson = useCallback((sectionId: string, lessonId: string) => {
-    setCourseData(prev => ({
-      ...prev,
-      sections: prev.sections.map(s =>
-        s.id === sectionId
-          ? { ...s, lessons: s.lessons.filter(l => l.id !== lessonId) }
-          : s
-      ),
-    }));
+    setCourseData(prev => {
+      const section = prev.sections.find(s => s.id === sectionId);
+      if (section && section.lessons.length <= 1) {
+        toast.info("Each section must have at least one lesson.");
+        return prev;
+      }
+      return {
+        ...prev,
+        sections: prev.sections.map(s =>
+          s.id === sectionId
+            ? { ...s, lessons: s.lessons.filter(l => l.id !== lessonId) }
+            : s
+        ),
+      };
+    });
   }, []);
   // #endregion
 
@@ -554,10 +1105,11 @@ const CourseBuilder = () => {
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Language Learning">Language Learning</SelectItem>
-                          <SelectItem value="Mathematics">Mathematics</SelectItem>
-                          <SelectItem value="Science">Science</SelectItem>
-                          <SelectItem value="Technology">Technology</SelectItem>
+                          {categories.map((category) => (
+                            <SelectItem key={category.id} value={category.name}>
+                              {category.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -566,12 +1118,14 @@ const CourseBuilder = () => {
                       <label className="block text-sm font-medium mb-2">Language</label>
                       <Select value={courseData.language} onValueChange={(value) => setCourseData(prev => ({ ...prev, language: value }))}>
                         <SelectTrigger>
-                          <SelectValue />
+                          <SelectValue placeholder="Select language" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="English">English</SelectItem>
-                          <SelectItem value="Urdu">Urdu</SelectItem>
-                          <SelectItem value="Arabic">Arabic</SelectItem>
+                          {languages.map((language) => (
+                            <SelectItem key={language.id} value={language.name}>
+                              {language.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -580,12 +1134,14 @@ const CourseBuilder = () => {
                       <label className="block text-sm font-medium mb-2">Level</label>
                       <Select value={courseData.level} onValueChange={(value) => setCourseData(prev => ({ ...prev, level: value }))}>
                         <SelectTrigger>
-                          <SelectValue />
+                          <SelectValue placeholder="Select level" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Beginner">Beginner</SelectItem>
-                          <SelectItem value="Intermediate">Intermediate</SelectItem>
-                          <SelectItem value="Advanced">Advanced</SelectItem>
+                          {levels.map((level) => (
+                            <SelectItem key={level.id} value={level.name}>
+                              {level.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -598,11 +1154,25 @@ const CourseBuilder = () => {
                   <CardTitle>Course Image</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
-                    <Upload className="w-8 h-8 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground mb-2">Upload course thumbnail</p>
-                    <Button variant="outline">Choose File</Button>
-                  </div>
+                  {courseData.image ? (
+                    <div className="relative group">
+                      <img src={courseData.image} alt="Course thumbnail" className="rounded-lg w-full h-auto object-cover" />
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => setCourseData(prev => ({...prev, image: undefined}))}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <FileUpload 
+                      onUpload={handleImageUpload} 
+                      label={isUploading ? "Uploading..." : "Upload course thumbnail"}
+                      disabled={isUploading}
+                    />
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -617,62 +1187,119 @@ const CourseBuilder = () => {
                   </Button>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {courseData.sections.map((section, sectionIndex) => (
-                    <Card key={section.id} className="bg-muted/50">
-                      <CardHeader className="flex flex-row items-center justify-between p-4">
-                        <div className="flex items-center gap-2">
-                          <GripVertical className="cursor-move text-muted-foreground" />
-                          <Input
-                            value={section.title}
-                            onChange={(e) => {
-                              const newSections = [...courseData.sections];
-                              newSections[sectionIndex].title = e.target.value;
-                              setCourseData(prev => ({ ...prev, sections: newSections }));
-                            }}
-                            className="text-lg font-semibold border-none focus-visible:ring-0"
-                          />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button onClick={() => addLesson(section.id)} variant="outline">
-                            <Plus className="w-4 h-4 mr-2" />
-                            Lesson
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => removeSection(section.id)}
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-2 pl-12 pr-4 pb-4">
-                        {section.lessons.map((lesson) => (
-                          <LessonItem
-                            key={lesson.id}
-                            lesson={lesson}
-                            sectionId={section.id}
-                            onUpdate={updateLesson}
-                            onRemove={removeLesson}
-                          />
-                        ))}
-                      </CardContent>
-                    </Card>
-                  ))}
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
+                    measuring={{
+                      droppable: {
+                        strategy: MeasuringStrategy.Always,
+                      },
+                    }}
+                  >
+                    <SortableContext
+                      items={courseData.sections.map(s => s.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {courseData.sections.map((section, sectionIndex) => (
+                        <SortableItem key={section.id} id={section.id} type="section">
+                          {(dragHandleProps) => (
+                            <Card className={`bg-muted/50 ${activeId === section.id ? 'opacity-50' : ''}`}>
+                              <CardHeader className="flex flex-row items-center justify-between p-4">
+                                <div className="flex items-center gap-2">
+                                  <div {...dragHandleProps} className="cursor-move">
+                                    <GripVertical className="text-muted-foreground" />
+                                  </div>
+                                  <Input
+                                    value={section.title}
+                                    onChange={(e) => {
+                                      const newSections = [...courseData.sections];
+                                      newSections[sectionIndex].title = e.target.value;
+                                      setCourseData(prev => ({ ...prev, sections: newSections }));
+                                    }}
+                                    className="text-lg font-semibold border-none focus-visible:ring-0"
+                                  />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Button onClick={() => addLesson(section.id)} variant="outline">
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Lesson
+                                  </Button>
+                                  {courseData.sections.length > 1 && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => removeSection(section.id)}
+                                    >
+                                      <X className="w-4 h-4" />
+                                    </Button>
+                                  )}
+                                  <Button variant="ghost" size="icon" onClick={() => toggleSectionCollapse(section.id)}>
+                                    {section.isCollapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
+                                  </Button>
+                                </div>
+                              </CardHeader>
+                              {!section.isCollapsed && (
+                                <CardContent className="space-y-2 pl-12 pr-4 pb-4">
+                                  <SortableContext items={section.lessons.map(l => l.id)} strategy={verticalListSortingStrategy}>
+                                    {section.lessons.map((lesson) => (
+                                      <SortableItem key={lesson.id} id={lesson.id} type="lesson" sectionId={section.id}>
+                                        {(lessonDragHandleProps) => (
+                                          <div className={`${activeId === lesson.id ? 'opacity-25' : ''}`}>
+                                            <LessonItem
+                                              key={lesson.id}
+                                              lesson={lesson}
+                                              sectionId={section.id}
+                                              onUpdate={updateLesson}
+                                              onRemove={removeLesson}
+                                              isRemovable={section.lessons.length > 1}
+                                              dragHandleProps={lessonDragHandleProps}
+                                              onToggleCollapse={toggleLessonCollapse}
+                                              courseId={courseId}
+                                            />
+                                          </div>
+                                        )}
+                                      </SortableItem>
+                                    ))}
+                                  </SortableContext>
+                                </CardContent>
+                              )}
+                            </Card>
+                          )}
+                        </SortableItem>
+                      ))}
+                    </SortableContext>
+                    <DragOverlay>
+                      {activeId ? (
+                        activeId.startsWith('section-') ?
+                        <Card className="bg-muted/50">
+                          <CardHeader>{courseData.sections.find(s => s.id === activeId)?.title}</CardHeader>
+                        </Card> :
+                        <LessonItem
+                          lesson={
+                            courseData.sections
+                              .flatMap(s => s.lessons)
+                              .find(l => l.id === activeId) || { id: '', title: '', type: 'video' }
+                          }
+                          sectionId={
+                            courseData.sections.find(s => s.lessons.some(l => l.id === activeId))?.id || ''
+                          }
+                          onUpdate={() => {}}
+                          onRemove={() => {}}
+                          isRemovable={false}
+                          dragHandleProps={{}}
+                          onToggleCollapse={() => {}}
+                          courseId={courseId}
+                        />
+                      ) : null}
+                    </DragOverlay>
+                  </DndContext>
                 </CardContent>
               </Card>
             </TabsContent>
             
             <TabsContent value="landing" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Course Image</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <FileUpload onUpload={() => { /* Implement upload logic */ }} label="Upload course thumbnail" />
-                </CardContent>
-              </Card>
-              
               <Card>
                 <CardHeader>
                   <CardTitle>Course Details</CardTitle>
