@@ -656,141 +656,58 @@
   "course_builder": {
     "header": {
       "create_title": "نیا کورس بنائیں",
-      "edit_title": "کورس میں ترمیم کریں",
-      "subtitle_new": "شروع سے اپنا کورس بنائیں"
+      "edit_title": "کورس میں ترمیم کریں۔",
+      "subtitle_new": "اپنا نیا کورس بنانے کے لیے تفصیلات پر کریں۔",
+      "subtitle_edit": "اپنے کورس کے مواد اور ترتیبات کا نظم کریں۔"
     },
-    "save_button": "مسودہ محفوظ کریں",
-    "publish_button": "کورس شائع کریں",
-    "preview_button": "پیش نظارہ",
+    "buttons": {
+      "saving": "محفوظ ہو رہا ہے۔..",
+      "save_draft": "ڈرافٹ محفوظ کریں۔",
+      "publish": "شائع کریں۔"
+    },
     "tabs": {
       "details": "تفصیلات",
       "curriculum": "نصاب",
+      "landing": "لینڈنگ پیج",
       "settings": "ترتیبات"
     },
-    "details": {
-      "title": "کورس کی تفصیلات",
-      "form": {
-        "title": {
-          "label": "کورس کا عنوان",
-          "placeholder": "مثال کے طور پر، پائتھون پروگرامنگ کا تعارف"
-        },
-        "subtitle": {
-          "label": "کورس کا ذیلی عنوان",
-          "placeholder": "آپ کے کورس کا ایک مختصر، دلکش خلاصہ"
-        },
-        "description": {
-          "label": "مکمل تفصیل",
-          "placeholder": "اپنے کورس کے مواد، ہدف کے سامعین، اور طلباء کیا سیکھیں گے کی تفصیلی وضاحت فراہم کریں۔"
-        },
-        "category": {
-          "label": "زمرہ",
-          "placeholder": "ایک زمرہ منتخب کریں"
-        },
-        "language": {
-          "label": "زبان",
-          "placeholder": "زبان منتخب کریں"
-        },
-        "level": {
-          "label": "سطح",
-          "placeholder": "مشکل کی سطح منتخب کریں"
-        },
-        "image": {
-          "label": "کورس تھمب نیل",
-          "upload_label": "اپ لوڈ کرنے کے لیے کلک کریں یا گھسیٹ کر چھوڑیں"
-        },
-        "requirements": {
-          "label": "تقاضے",
-          "placeholder": "شرائط کی فہرست بنائیں، شامل کرنے کے لیے انٹر دبائیں"
-        },
-        "outcomes": {
-          "label": "سیکھنے کے نتائج",
-          "placeholder": "طلباء کیا کرنے کے قابل ہوں گے؟ شامل کرنے کے لیے انٹر دبائیں"
-        }
-      }
-    },
-    "curriculum": {
-      "title": "نصاب",
-      "section_title_placeholder": "سیکشن کا عنوان (مثال کے طور پر، تعارف)",
-      "add_lesson_button": "سبق شامل کریں",
-      "add_section_button": "سیکشن شامل کریں"
+    "messages": {
+      "save_success": "کورس کامیابی سے محفوظ ہو گیا!",
+      "publish_success": "کورس کامیابی سے شائع ہو گیا!"
     },
     "lessons": {
-      "lesson_title_placeholder": "سبق کا عنوان",
       "types": {
         "video": "ویڈیو",
         "attachment": "منسلکہ",
-        "assignment": "اسائنمنٹ",
+        "assignment": "تفویض",
         "quiz": "کوئز"
-      },
-      "video_upload_label": "ویڈیو اپ لوڈ کریں (MP4, MOV)",
-      "attachment_upload_label": "منسلکہ اپ لوڈ کریں (PDF, DOCX, ZIP)",
-      "assignment_placeholder": "اسائنمنٹ کی ہدایات یہاں لکھیں..."
+      }
     },
     "quiz": {
-      "question_placeholder": "سوال {{index}}",
-      "option_placeholder": "آپشن {{index}}",
-      "add_option_button": "آپشن شامل کریں",
-      "add_question_button": "سوال شامل کریں"
-    },
-    "settings": {
-      "title": "ترتیبات اور اراکین",
-      "instructors": {
-        "label": "اساتذہ",
-        "placeholder": "اساتذہ کو تلاش کریں اور شامل کریں"
-      },
-      "students": {
-        "label": "داخلہ شدہ طلباء",
-        "placeholder": "طلباء کو تلاش کریں اور شامل کریں"
-      }
-    },
-    "categories": {
-      "language_arts": "لسانی فنون",
-      "mathematics": "ریاضی",
-      "science": "سائنس",
-      "social_studies": "سماجی علوم",
-      "technology": "ٹیکنالوجی"
-    },
-    "languages": {
-      "english": "انگریزی",
-      "urdu": "اردو",
-      "sindhi": "سندھی"
-    },
-    "levels": {
-      "beginner": "مبتدی",
-      "intermediate": "درمیانی",
-      "advanced": "اعلی درجے کا"
+      "question_placeholder": "سوال {{index}}...",
+      "option_placeholder": "آپشن...",
+      "correct_label": "درست",
+      "add_option_button": "آپشن شامل کریں۔",
+      "add_question_button": "سوال شامل کریں۔"
     },
     "mock_users": {
-      "inst1": {
-        "name": "ڈاکٹر ایولین ریڈ",
-        "email": "e.reed@example.com"
-      },
-      "inst2": {
-        "name": "جناب ڈیوڈ چن",
-        "email": "d.chen@example.com"
-      },
-      "inst3": {
-        "name": "پروفیسر اینا سلوا",
-        "email": "a.silva@example.com"
-      },
-      "stu1": {
-        "name": "علی خان",
-        "email": "ali.k@example.com"
-      },
-      "stu2": {
-        "name": "فاطمہ احمد",
-        "email": "f.ahmed@example.com"
-      },
-      "stu3": {
-        "name": "زینب عمر",
-        "email": "z.omar@example.com"
-      }
+      "inst1": { "name": "ڈاکٹر ایولین ریڈ", "email": "e.reed@example.com" },
+      "inst2": { "name": "جناب ڈیوڈ چن", "email": "d.chen@example.com" },
+      "inst3": { "name": "پروفیسر ماریہ گارسیا", "email": "m.garcia@example.com" },
+      "stu1": { "name": "علی خان", "email": "ali.k@example.com" },
+      "stu2": { "name": "فاطمہ احمد", "email": "f.ahmed@example.com" },
+      "stu3": { "name": "زینب عمر", "email": "z.omar@example.com" }
     },
-    "toasts": {
-      "save_success": "کورس کامیابی سے محفوظ ہو گیا!",
-      "save_error": "کورس محفوظ کرنے میں ناکامی۔ براہ کرم دوبارہ کوشش کریں.",
-      "publish_success": "کورس کامیابی سے شائع ہو گیا!",
-      "publish_error": "کورس شائع کرنے میں ناکامی۔ براہ کرم غلطیوں کی جانچ کریں."
+    "settings": {
+      "title": "کورس کی ترتیبات",
+      "instructors": {
+        "label": "اساتذہ",
+        "placeholder": "اساتذہ کو منتخب کریں۔"
+      },
+      "students": {
+        "label": "داخلہ لینے والے طلباء",
+        "placeholder": "طلباء کو منتخب کریں۔"
+      }
     }
   },
   "course_content": {
@@ -935,24 +852,48 @@
     }
   },
   "teacher_auth": {
+    "back_to_role_selection": "کردار کے انتخاب پر واپس جائیں۔",
+    "title": "استاد کا کھاتہ",
+    "description": "اپنے کورسز کا نظم کرنے کے لیے لاگ ان کریں یا نئے اکاؤنٹ کے لیے سائن اپ کریں۔",
     "login": {
+      "tab": "لاگ ان کریں",
+      "email_label": "ای میل",
+      "email_placeholder": "you@example.com",
+      "password_label": "پاس ورڈ",
+      "password_placeholder": "••••••••",
+      "forgot_password": "پاسورڈ بھول گے؟",
+      "button": "لاگ ان کریں",
       "email_required": "ای میل درکار ہے۔",
       "password_required": "پاس ورڈ درکار ہے۔",
-      "profile_fetch_error": "استاد کا پروفائل حاصل نہیں کیا جا سکا۔",
-      "wrong_portal_error": "یہ اکاؤنٹ ایک {{role}} اکاؤنٹ ہے، استاد کا اکاؤنٹ نہیں ہے۔ براہ کرم درست پورٹل کے ذریعے لاگ ان کریں۔",
-      "welcome_toast": "خوش آمدید، استاد!",
-      "unverified_email_error": "ای میل کی تصدیق نہیں ہوئی۔ ہم نے تصدیقی لنک دوبارہ بھیج دیا ہے۔",
+      "profile_fetch_error": "صارف پروفائل حاصل نہیں کیا جاسکا۔",
+      "wrong_portal_error": "غلط پورٹل۔ آپ بطور {{role}} رجسٹرڈ ہیں۔",
+      "welcome_toast": "خوش آمدید!",
+      "unverified_email_error": "آپ کا ای میل تصدیق شدہ نہیں ہے۔ ہم نے ایک نیا تصدیقی لنک بھیجا ہے۔",
       "invalid_credentials_error": "غلط لاگ ان اسناد۔ براہ کرم دوبارہ کوشش کریں۔"
     },
     "signup": {
+      "tab": "سائن اپ",
+      "first_name_label": "پہلا نام",
+      "first_name_placeholder": "اپنا پہلا نام درج کریں...",
       "first_name_required": "پہلا نام درکار ہے۔",
+      "last_name_label": "آخری نام",
+      "last_name_placeholder": "اپنا آخری نام درج کریں...",
       "last_name_required": "آخری نام درکار ہے۔",
+      "email_label": "ای میل",
+      "email_placeholder": "you@example.com",
       "email_required": "ای میل درکار ہے۔",
+      "password_label": "پاس ورڈ",
+      "password_placeholder": "ایک مضبوط پاس ورڈ بنائیں",
       "password_required": "پاس ورڈ درکار ہے۔",
-      "confirm_password_required": "براہ کرم اپنے پاس ورڈ کی تصدیق کریں۔",
+      "confirm_password_label": "پاس ورڈ کی تصدیق کریں",
+      "confirm_password_placeholder": "اپنے پاس ورڈ کی تصدیق کریں",
+      "confirm_password_required": "پاس ورڈ کی تصدیق درکار ہے۔",
+      "teacher_id_label": "استاد کی شناخت",
+      "teacher_id_placeholder": "اپنی فراہم کردہ استاد کی شناخت درج کریں۔",
       "teacher_id_required": "استاد کی شناخت درکار ہے۔",
-      "fix_errors_toast": "جمع کرانے سے پہلے براہ کرم غلطیاں درست کریں۔",
-      "success_message": "سائن اپ کامیاب! براہ کرم اپنے اکاؤنٹ کی تصدیق کے لیے اپنی ای میل چیک کریں۔"
+      "button": "کھاتا کھولیں",
+      "fix_errors_toast": "جمع کرانے سے پہلے براہ کرم غلطیوں کو درست کریں۔",
+      "success_message": "کامیابی! اپنی رجسٹریشن مکمل کرنے کے لیے تصدیقی لنک کے لیے اپنا ای میل چیک کریں۔"
     }
   },
   "mobile_menu": {
@@ -1155,5 +1096,91 @@
         "status": "حیثیت"
       }
     }
+  },
+  "role_selection": {
+    "welcome": "خوش آمدید!",
+    "choose_role": "براہ کرم جاری رکھنے کے لیے اپنا کردار منتخب کریں۔",
+    "student": {
+      "title": "میں ایک طالب علم ہوں۔",
+      "description": "اپنے کورسز تک رسائی حاصل کریں، پیشرفت کو ٹریک کریں، اور سیکھیں۔",
+      "button": "طالب علم کے طور پر جاری رکھیں"
+    },
+    "teacher": {
+      "title": "میں ایک استاد ہوں۔",
+      "description": "کورسز کا نظم کریں، اسائنمنٹس کو گریڈ کریں، اور تجزیات دیکھیں۔",
+      "button": "استاد کے طور پر جاری رکھیں"
+    }
+  },
+  "student_auth": {
+    "back_to_role_selection": "کردار کے انتخاب پر واپس جائیں۔",
+    "title": "طالب علم کا کھاتہ",
+    "description": "اپنے سیکھنے کے ڈیش بورڈ تک رسائی کے لیے لاگ ان یا سائن اپ کریں۔",
+    "login": {
+      "tab": "لاگ ان کریں",
+      "email_label": "ای میل",
+      "email_placeholder": "you@example.com",
+      "password_label": "پاس ورڈ",
+      "password_placeholder": "••••••••",
+      "forgot_password": "پاسورڈ بھول گے؟",
+      "button": "لاگ ان کریں"
+    },
+    "signup": {
+      "tab": "سائن اپ",
+      "first_name_label": "پہلا نام",
+      "first_name_placeholder": "اپنا پہلا نام درج کریں...",
+      "last_name_label": "آخری نام",
+      "last_name_placeholder": "اپنا آخری نام درج کریں...",
+      "email_label": "ای میل",
+      "email_placeholder": "you@example.com",
+      "password_label": "پاس ورڈ",
+      "password_placeholder": "ایک مضبوط پاس ورڈ بنائیں",
+      "confirm_password_label": "پاس ورڈ کی تصدیق کریں",
+      "confirm_password_placeholder": "اپنے پاس ورڈ کی تصدیق کریں",
+      "grade_label": "گریڈ",
+      "grade_placeholder": "اپنا گریڈ منتخب کریں",
+      "button": "کھاتا کھولیں"
+    }
+  },
+  "auth": {
+    "back_to_role_selection": "مرکزی لاگ ان پر واپس جائیں۔",
+    "admin": {
+      "title": "ایڈمن پورٹل",
+      "description": "ایڈمنسٹریٹر ڈیش بورڈ تک رسائی کے لیے براہ کرم سائن ان کریں۔"
+    },
+    "form": {
+      "email_label": "ای میل",
+      "email_placeholder": "admin@example.com",
+      "password_label": "پاس ورڈ",
+      "password_placeholder": "اپنا پاس ورڈ درج کریں"
+    },
+    "buttons": {
+      "signing_in": "سائن ان ہو رہا ہے...",
+      "sign_in": "سائن ان کریں"
+    },
+    "links": {
+      "forgot_password": "پاسورڈ بھول گے؟"
+    },
+    "errors": {
+      "email_required": "ای میل ایڈریس درکار ہے۔",
+      "password_required": "پاس ورڈ درکار ہے۔",
+      "fetch_profile_error": "صارف پروفائل حاصل نہیں کیا جاسکا۔",
+      "admin_access_denied": "رسائی مسترد کر دی گئی۔ صرف منتظمین کو اجازت ہے۔",
+      "email_not_verified": "ای میل کی تصدیق نہیں ہوئی۔ براہ کرم تصدیقی لنک کے لیے اپنا ان باکس چیک کریں۔",
+      "invalid_credentials_admin": "غلط اسناد۔ براہ کرم اپنا ای میل اور پاس ورڈ چیک کریں۔"
+    },
+    "success": {
+      "welcome_back": "خوش آمدید، ایڈمن!"
+    }
+  },
+  "forgot_password": {
+    "back_to_login": "{{role}} لاگ ان پر واپس جائیں۔",
+    "title": "پاسورڈ بھول گے؟",
+    "description": "کوئی مسئلہ نہیں. ذیل میں اپنا ای میل ایڈریس درج کریں اور ہم آپ کو اسے دوبارہ ترتیب دینے کے لیے ایک لنک بھیجیں گے۔",
+    "email_label": "ای میل ایڈریس",
+    "email_placeholder": "you@example.com",
+    "sending": "بھیج رہا ہے...",
+    "send_reset_link": "ری سیٹ لنک بھیجیں",
+    "success_toast": "پاس ورڈ ری سیٹ لنک بھیجا گیا! براہ کرم اپنا ای میل چیک کریں۔",
+    "error_toast": "ری سیٹ لنک بھیجنے میں ناکام۔ براہ کرم دوبارہ کوشش کریں۔"
   }
 }

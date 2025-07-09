@@ -1,11 +1,18 @@
 import { useState, useEffect, useMemo } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { Database } from '@/integrations/supabase/types';
+import { useAuth } from './useAuth';
+import { UserRole } from '@/config/roleNavigation';
 
-type Profile = Database['public']['Tables']['profiles']['Row'];
+type Profile = {
+  full_name: string | null;
+  email: string | null;
+  role: UserRole;
+  [key: string]: any;
+};
 
-export const useUserProfile = (user: User | null) => {
+export const useUserProfile = () => {
+  const { user } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

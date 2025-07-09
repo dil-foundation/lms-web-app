@@ -9,12 +9,14 @@ interface FileUploadProps {
   onUpload: (file: File) => void;
   acceptedFileTypes?: string[];
   label?: string;
+  disabled?: boolean;
 }
 
 export const FileUpload = ({
   onUpload,
   acceptedFileTypes = [],
-  label
+  label = 'Drag & drop a file here, or click to select a file',
+  disabled = false,
 }: FileUploadProps) => {
   const { t } = useTranslation();
   const [file, setFile] = useState<File | null>(null);
@@ -44,6 +46,7 @@ export const FileUpload = ({
     onDrop,
     accept: acceptedFileTypes.length > 0 ? acceptedFileTypes.reduce((acc, type) => ({ ...acc, [type]: [] }), {}) : undefined,
     multiple: false,
+    disabled,
   });
 
   const removeFile = () => {
@@ -69,10 +72,11 @@ export const FileUpload = ({
       ) : (
         <div
           {...getRootProps()}
-          className={`w-full text-center p-10 border-2 border-dashed rounded-lg cursor-pointer transition-colors
-            ${isDragActive ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'}`}
+          className={`w-full text-center p-10 border-2 border-dashed rounded-lg transition-colors
+            ${isDragActive ? 'border-primary bg-primary/10' : 'border-border'}
+            ${disabled ? 'cursor-not-allowed bg-muted/50' : 'cursor-pointer hover:border-primary/50'}`}
         >
-          <input {...getInputProps()} />
+          <input {...getInputProps()} disabled={disabled} />
           <div className="flex flex-col items-center gap-2 text-muted-foreground">
             <UploadCloud className="h-10 w-10" />
             <p>{label || t('file_upload.label')}</p>

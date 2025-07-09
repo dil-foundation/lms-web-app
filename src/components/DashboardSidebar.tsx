@@ -8,10 +8,14 @@ import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGrou
 import { Menu, X } from 'lucide-react';
 import { getRoleNavigation, type UserRole } from '@/config/roleNavigation';
 import { UserProfileSection } from '@/components/sidebar/UserProfileSection';
-import { Database } from '@/integrations/supabase/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
-type Profile = Database['public']['Tables']['profiles']['Row'];
+type Profile = {
+  full_name: string | null;
+  email: string | null;
+  role: UserRole;
+  [key: string]: any;
+};
 
 interface DashboardSidebarProps {
   children: React.ReactNode;

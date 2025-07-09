@@ -789,5 +789,193 @@
     "sign_in": "Sign In / Sign Up",
     "logout_failed": "Logout failed",
     "logout_success": "Logged out successfully"
+  },
+  "role_selection": {
+    "welcome": "Welcome!",
+    "choose_role": "Please choose your role to continue.",
+    "student": {
+      "title": "I am a Student",
+      "description": "Access your courses, track progress, and learn.",
+      "button": "Continue as Student"
+    },
+    "teacher": {
+      "title": "I am a Teacher",
+      "description": "Manage courses, grade assignments, and view analytics.",
+      "button": "Continue as Teacher"
+    }
+  },
+  "student_auth": {
+    "back_to_role_selection": "Back to role selection",
+    "title": "Student Account",
+    "description": "Log in or sign up to access your learning dashboard.",
+    "login": {
+      "tab": "Login",
+      "email_label": "Email",
+      "email_placeholder": "you@example.com",
+      "password_label": "Password",
+      "password_placeholder": "••••••••",
+      "forgot_password": "Forgot Password?",
+      "button": "Login"
+    },
+    "signup": {
+      "tab": "Sign Up",
+      "first_name_label": "First Name",
+      "first_name_placeholder": "Enter your first name...",
+      "last_name_label": "Last Name",
+      "last_name_placeholder": "Enter your last name...",
+      "email_label": "Email",
+      "email_placeholder": "you@example.com",
+      "password_label": "Password",
+      "password_placeholder": "Create a strong password",
+      "confirm_password_label": "Confirm Password",
+      "confirm_password_placeholder": "Confirm your password",
+      "grade_label": "Grade",
+      "grade_placeholder": "Select your grade",
+      "button": "Create Account"
+    }
+  },
+  "teacher_auth": {
+    "back_to_role_selection": "Back to role selection",
+    "title": "Teacher Account",
+    "description": "Log in to manage your courses or sign up for a new account.",
+    "login": {
+      "tab": "Login",
+      "email_label": "Email",
+      "email_placeholder": "you@example.com",
+      "password_label": "Password",
+      "password_placeholder": "••••••••",
+      "forgot_password": "Forgot Password?",
+      "button": "Login",
+      "email_required": "Email is required.",
+      "password_required": "Password is required.",
+      "profile_fetch_error": "Could not fetch user profile.",
+      "wrong_portal_error": "Incorrect portal. You are registered as a {{role}}.",
+      "welcome_toast": "Welcome back!",
+      "unverified_email_error": "Your email is not verified. We've sent a new confirmation link.",
+      "invalid_credentials_error": "Invalid login credentials. Please try again."
+    },
+    "signup": {
+      "tab": "Sign Up",
+      "first_name_label": "First Name",
+      "first_name_placeholder": "Enter your first name...",
+      "first_name_required": "First name is required.",
+      "last_name_label": "Last Name",
+      "last_name_placeholder": "Enter your last name...",
+      "last_name_required": "Last name is required.",
+      "email_label": "Email",
+      "email_placeholder": "you@example.com",
+      "email_required": "Email is required.",
+      "password_label": "Password",
+      "password_placeholder": "Create a strong password",
+      "password_required": "Password is required.",
+      "confirm_password_label": "Confirm Password",
+      "confirm_password_placeholder": "Confirm your password",
+      "confirm_password_required": "Password confirmation is required.",
+      "teacher_id_label": "Teacher ID",
+      "teacher_id_placeholder": "Enter your provided Teacher ID",
+      "teacher_id_required": "Teacher ID is required.",
+      "button": "Create Account",
+      "fix_errors_toast": "Please fix the errors before submitting.",
+      "success_message": "Success! Check your email for a verification link to complete your registration."
+    }
+  },
+  "auth": {
+    "back_to_role_selection": "Back to main login",
+    "admin": {
+      "title": "Admin Portal",
+      "description": "Please sign in to access the administrator dashboard."
+    },
+    "form": {
+      "email_label": "Email",
+      "email_placeholder": "admin@example.com",
+      "password_label": "Password",
+      "password_placeholder": "Enter your password"
+    },
+    "buttons": {
+      "signing_in": "Signing In...",
+      "sign_in": "Sign In"
+    },
+    "links": {
+      "forgot_password": "Forgot your password?"
+    },
+    "errors": {
+      "email_required": "Email address is required.",
+      "password_required": "Password is required.",
+      "fetch_profile_error": "Could not retrieve user profile.",
+      "admin_access_denied": "Access Denied. Only administrators are allowed.",
+      "email_not_verified": "Email not verified. Please check your inbox for a verification link.",
+      "invalid_credentials_admin": "Invalid credentials. Please check your email and password."
+    },
+    "success": {
+      "welcome_back": "Welcome back, Admin!"
+    }
+  },
+  "forgot_password": {
+    "back_to_login": "Back to {{role}} login",
+    "title": "Forgot Your Password?",
+    "description": "No problem. Enter your email address below and we'll send you a link to reset it.",
+    "email_label": "Email Address",
+    "email_placeholder": "you@example.com",
+    "sending": "Sending...",
+    "send_reset_link": "Send Reset Link",
+    "success_toast": "Password reset link sent! Please check your email.",
+    "error_toast": "Failed to send reset link. Please try again."
+  },
+  "course_builder": {
+    "header": {
+      "create_title": "Create New Course",
+      "edit_title": "Edit Course",
+      "subtitle_new": "Fill in the details to create your new course.",
+      "subtitle_edit": "Manage your course content and settings."
+    },
+    "buttons": {
+      "saving": "Saving...",
+      "save_draft": "Save Draft",
+      "publish": "Publish"
+    },
+    "tabs": {
+      "details": "Details",
+      "curriculum": "Curriculum",
+      "landing": "Landing Page",
+      "settings": "Settings"
+    },
+    "messages": {
+      "save_success": "Course saved successfully!",
+      "publish_success": "Course published successfully!"
+    },
+    "lessons": {
+      "types": {
+        "video": "Video",
+        "attachment": "Attachment",
+        "assignment": "Assignment",
+        "quiz": "Quiz"
+      }
+    },
+    "quiz": {
+      "question_placeholder": "Question {{index}}...",
+      "option_placeholder": "Option...",
+      "correct_label": "Correct",
+      "add_option_button": "Add Option",
+      "add_question_button": "Add Question"
+    },
+    "mock_users": {
+      "inst1": { "name": "Dr. Evelyn Reed", "email": "e.reed@example.com" },
+      "inst2": { "name": "Mr. David Chen", "email": "d.chen@example.com" },
+      "inst3": { "name": "Prof. Maria Garcia", "email": "m.garcia@example.com" },
+      "stu1": { "name": "Ali Khan", "email": "ali.k@example.com" },
+      "stu2": { "name": "Fatima Ahmed", "email": "f.ahmed@example.com" },
+      "stu3": { "name": "Zainab Omar", "email": "z.omar@example.com" }
+    },
+    "settings": {
+      "title": "Course Settings",
+      "instructors": {
+        "label": "Instructors",
+        "placeholder": "Select instructors"
+      },
+      "students": {
+        "label": "Enrolled Students",
+        "placeholder": "Select students"
+      }
+    }
   }
 }

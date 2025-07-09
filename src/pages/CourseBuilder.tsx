@@ -8,19 +8,53 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Save, Eye, Upload, Plus, GripVertical, X } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Upload, Plus, GripVertical, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { FileUpload } from '@/components/ui/FileUpload';
 import { RichTextEditor } from '@/components/ui/RichTextEditor';
 import { MultiSelect } from '@/components/ui/MultiSelect';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  DragStartEvent,
+  MeasuringStrategy,
+  DragOverlay,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import React, { useRef } from 'react'; // Added missing import for React
+import { supabase } from '@/integrations/supabase/client';
+import { FileIcon } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 // #region Interfaces
 interface CourseSection {
   id: string;
   title: string;
   lessons: CourseLesson[];
+  isCollapsed?: boolean;
 }
 
 interface CourseLesson {
@@ -29,6 +63,7 @@ interface CourseLesson {
   type: 'video' | 'attachment' | 'assignment' | 'quiz';
   content?: string | File | QuizData;
   duration?: number;
+  isCollapsed?: boolean;
 }
 
 interface QuizQuestion {
@@ -76,18 +111,168 @@ interface LessonItemProps {
   sectionId: string;
   onUpdate: (sectionId: string, lessonId:string, updatedLesson: Partial<CourseLesson>) => void;
   onRemove: (sectionId: string, lessonId:string) => void;
+  isRemovable: boolean;
+  dragHandleProps: any;
+  onToggleCollapse: (sectionId: string, lessonId: string) => void;
+  courseId: string | undefined;
 }
 
-const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove }: LessonItemProps) => {
+const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, dragHandleProps, onToggleCollapse, courseId }: LessonItemProps) => {
   const { t } = useTranslation();
   const [localContent, setLocalContent] = useState(typeof lesson.content === 'string' ? lesson.content : '');
+  const [isUploading, setIsUploading] = useState(false);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [attachmentInfo, setAttachmentInfo] = useState<{ url: string; name: string } | null>(null);
+  const [isConfirmingChange, setIsConfirmingChange] = useState(false);
+  const [pendingLessonType, setPendingLessonType] = useState<CourseLesson['type'] | null>(null);
 
   // Keep local state in sync if the prop changes from parent
   useEffect(() => {
-    if (typeof lesson.content === 'string') {
-      setLocalContent(lesson.content);
-    }
+    // If the parent content is a string, sync it to local state.
+    // If it's not a string (e.g., undefined, QuizData), reset local state to empty string.
+    setLocalContent(typeof lesson.content === 'string' ? lesson.content : '');
   }, [lesson.content]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const getSignedUrl = async (filePath: string, type: 'video' | 'attachment') => {
+      const { data, error } = await supabase.storage
+        .from('dil-lms')
+        .createSignedUrl(filePath, 3600);
+
+      if (!isMounted) return;
+
+      if (error) {
+        console.error(`Error creating signed URL for ${type}:`, error);
+        toast.error(`Could not load ${type} preview.`);
+      } else if (data) {
+        if (type === 'video') {
+          setVideoUrl(data.signedUrl);
+        } else {
+          const name = filePath.split('/').pop() || 'file';
+          setAttachmentInfo({ url: data.signedUrl, name });
+        }
+      }
+    };
+
+    if (typeof lesson.content === 'string' && lesson.content) {
+      if (lesson.type === 'video') {
+        setAttachmentInfo(null);
+        getSignedUrl(lesson.content, 'video');
+      } else if (lesson.type === 'attachment') {
+        setVideoUrl(null);
+        getSignedUrl(lesson.content, 'attachment');
+      }
+    } else {
+      setVideoUrl(null);
+      setAttachmentInfo(null);
+    }
+
+    return () => { isMounted = false; };
+  }, [lesson.content, lesson.type]);
+
+  const handleConfirmTypeChange = () => {
+    if (pendingLessonType) {
+      onUpdate(sectionId, lesson.id, { type: pendingLessonType, content: undefined });
+      setPendingLessonType(null);
+    }
+  };
+
+  const handleTypeChangeRequest = (newType: 'video' | 'attachment' | 'assignment' | 'quiz') => {
+    let hasContent = false;
+    if (lesson.content) {
+      if (lesson.type === 'quiz') {
+        hasContent = (lesson.content as QuizData)?.questions?.length > 0;
+      } else if (lesson.type === 'assignment') {
+        const contentStr = lesson.content as string;
+        hasContent = contentStr && contentStr !== '<p><br></p>';
+      } else { // Video or Attachment
+        hasContent = !!lesson.content;
+      }
+    }
+
+    if (hasContent && newType !== lesson.type) {
+      setPendingLessonType(newType);
+      setIsConfirmingChange(true);
+    } else {
+      onUpdate(sectionId, lesson.id, { type: newType, content: undefined });
+    }
+  };
+
+  const handleVideoUpload = async (file: File) => {
+    if (!file) return;
+
+    setIsUploading(true);
+    const filePath = `lesson-videos/${courseId || 'new'}/${lesson.id}/${crypto.randomUUID()}/${file.name}`;
+
+    try {
+      const { error } = await supabase.storage.from('dil-lms').upload(filePath, file);
+      if (error) throw error;
+      onUpdate(sectionId, lesson.id, { content: filePath });
+      toast.success('Video uploaded successfully!');
+    } catch (error: any) {
+      toast.error('Video upload failed.', { description: error.message });
+      console.error(error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleAttachmentUpload = async (file: File) => {
+    if (!file) return;
+
+    setIsUploading(true);
+    const filePath = `lesson-attachments/${courseId || 'new'}/${lesson.id}/${crypto.randomUUID()}/${file.name}`;
+
+    try {
+      const { error } = await supabase.storage.from('dil-lms').upload(filePath, file);
+      if (error) throw error;
+      onUpdate(sectionId, lesson.id, { content: filePath });
+      toast.success('Attachment uploaded successfully!');
+    } catch (error: any) {
+      toast.error('Attachment upload failed.', { description: error.message });
+      console.error(error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleAssignmentImageUpload = useCallback(async (file: File) => {
+    if (!file) {
+      toast.error("No file selected.");
+      throw new Error("No file selected.");
+    }
+    const filePath = `assignment-assets/images/${courseId || 'new'}/${lesson.id}/${crypto.randomUUID()}/${file.name}`;
+    try {
+      const { error: uploadError } = await supabase.storage.from('dil-lms').upload(filePath, file);
+      if (uploadError) throw uploadError;
+      const { data, error: urlError } = await supabase.storage.from('dil-lms').createSignedUrl(filePath, 3600 * 24 * 7); // 7 days
+      if (urlError) throw urlError;
+      return data.signedUrl;
+    } catch (error: any) {
+      toast.error('Image upload failed.', { description: error.message });
+      throw error;
+    }
+  }, [courseId, lesson.id]);
+
+  const handleAssignmentFileUpload = useCallback(async (file: File) => {
+    if (!file) {
+      toast.error("No file selected.");
+      throw new Error("No file selected.");
+    }
+    const filePath = `assignment-assets/files/${courseId || 'new'}/${lesson.id}/${crypto.randomUUID()}/${file.name}`;
+    try {
+      const { error: uploadError } = await supabase.storage.from('dil-lms').upload(filePath, file);
+      if (uploadError) throw uploadError;
+      const { data, error: urlError } = await supabase.storage.from('dil-lms').createSignedUrl(filePath, 3600 * 24 * 7); // 7 days
+      if (urlError) throw urlError;
+      return data.signedUrl;
+    } catch (error: any) {
+      toast.error('File upload failed.', { description: error.message });
+      throw error;
+    }
+  }, [courseId, lesson.id]);
 
   const handleBlur = () => {
     // Sync with parent state only when user is done editing
@@ -97,15 +282,56 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove }: LessonItemPr
   const renderLessonContentEditor = () => {
     switch (lesson.type) {
       case 'video':
+        if (videoUrl) {
+          return (
+            <div className="space-y-2">
+              <video controls src={videoUrl} className="w-full rounded-lg" />
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  setVideoUrl(null);
+                  onUpdate(sectionId, lesson.id, { content: undefined });
+                  // We might want to delete the file from storage here as well
+                }}
+              >
+                Remove Video
+              </Button>
+            </div>
+          );
+        }
         return <FileUpload 
-                  onUpload={(file) => onUpdate(sectionId, lesson.id, { content: file })} 
-                  label={t('course_builder.lessons.video_upload_label')}
+                  onUpload={handleVideoUpload} 
+                  label={isUploading ? "Uploading..." : "Upload Video (MP4, MOV)"}
                   acceptedFileTypes={['video/mp4', 'video/quicktime']}
+                  disabled={isUploading}
                 />;
       case 'attachment':
+        if (attachmentInfo) {
+          return (
+            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border">
+              <div className="flex items-center gap-3">
+                <FileIcon className="h-6 w-6 text-muted-foreground" />
+                <a href={attachmentInfo.url} target="_blank" rel="noopener noreferrer" className="font-medium hover:underline">
+                  {attachmentInfo.name}
+                </a>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setAttachmentInfo(null);
+                  onUpdate(sectionId, lesson.id, { content: undefined });
+                }}
+              >
+                Remove
+              </Button>
+            </div>
+          );
+        }
         return <FileUpload 
-                  onUpload={(file) => onUpdate(sectionId, lesson.id, { content: file })} 
-                  label={t('course_builder.lessons.attachment_upload_label')}
+                  onUpload={handleAttachmentUpload}
+                  label={isUploading ? "Uploading..." : "Upload Attachment (PDF, DOC, ZIP)"}
                   acceptedFileTypes={[
                     'application/pdf',
                     'application/msword',
@@ -114,6 +340,7 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove }: LessonItemPr
                     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                     'application/zip'
                   ]}
+                  disabled={isUploading}
                 />;
       case 'assignment':
         return (
@@ -121,7 +348,9 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove }: LessonItemPr
             value={localContent}
             onChange={setLocalContent}
             onBlur={handleBlur}
-            placeholder={t('course_builder.lessons.assignment_placeholder')}
+            placeholder="Write the assignment details here..."
+            onImageUpload={handleAssignmentImageUpload}
+            onFileUpload={handleAssignmentFileUpload}
           />
         );
       case 'quiz':
@@ -139,18 +368,21 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove }: LessonItemPr
   return (
     <div className="p-4 rounded-lg bg-background border space-y-4">
       <div className="flex items-center justify-between">
-        <Input
-          value={lesson.title}
-          onChange={(e) => onUpdate(sectionId, lesson.id, { title: e.target.value })}
-          placeholder={t('course_builder.lessons.lesson_title_placeholder')}
-          className="flex-1"
-        />
+        <div className="flex items-center gap-2 flex-1">
+          <div {...dragHandleProps} className="cursor-move">
+            <GripVertical className="text-muted-foreground" />
+          </div>
+          <Input
+            value={lesson.title}
+            onChange={(e) => onUpdate(sectionId, lesson.id, { title: e.target.value })}
+            placeholder="Lesson Title"
+            className="flex-1"
+          />
+        </div>
         <div className="flex items-center gap-2 ml-4">
           <Select
             value={lesson.type}
-            onValueChange={(value: 'video' | 'attachment' | 'assignment' | 'quiz') => {
-              onUpdate(sectionId, lesson.id, { type: value, content: undefined });
-            }}
+            onValueChange={handleTypeChangeRequest}
           >
             <SelectTrigger className="w-[120px]">
               <SelectValue />
@@ -162,22 +394,76 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove }: LessonItemPr
               <SelectItem value="quiz">{t('course_builder.lessons.types.quiz')}</SelectItem>
             </SelectContent>
           </Select>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onRemove(sectionId, lesson.id)}
-          >
-            <X className="w-4 h-4" />
+          {isRemovable && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onRemove(sectionId, lesson.id)}
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          )}
+          <Button variant="ghost" size="icon" onClick={() => onToggleCollapse(sectionId, lesson.id)}>
+            {lesson.isCollapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
           </Button>
         </div>
       </div>
-      <div>
-        {renderLessonContentEditor()}
-      </div>
+      {!lesson.isCollapsed && (
+        <div>
+          {renderLessonContentEditor()}
+        </div>
+      )}
+
+      <AlertDialog open={isConfirmingChange} onOpenChange={setIsConfirmingChange}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to switch lesson type?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your current lesson content will be lost. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingLessonType(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmTypeChange}>Continue</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 });
 LessonItem.displayName = "LessonItem";
+// #endregion
+
+// #region SortableItem Component
+const SortableItem = ({ id, children, type, sectionId }: { id: string, children: (dragHandleProps: any) => React.ReactNode, type: 'section' | 'lesson', sectionId?: string }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ 
+    id,
+    data: {
+      type,
+      sectionId
+    }
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 10 : 'auto',
+    opacity: isDragging ? 0.8 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      {children({ ...attributes, ...listeners })}
+    </div>
+  );
+};
 // #endregion
 
 // #region QuizBuilder Component
@@ -304,33 +590,73 @@ const CourseBuilder = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
   const [isSaving, setIsSaving] = useState(false);
-
-  const MOCK_USER_DATABASE = [
-    { id: 'inst1', name: t('course_builder.mock_users.inst1.name'), email: t('course_builder.mock_users.inst1.email'), role: 'instructor' },
-    { id: 'inst2', name: t('course_builder.mock_users.inst2.name'), email: t('course_builder.mock_users.inst2.email'), role: 'instructor' },
-    { id: 'inst3', name: t('course_builder.mock_users.inst3.name'), email: t('course_builder.mock_users.inst3.email'), role: 'instructor' },
-    { id: 'stu1', name: t('course_builder.mock_users.stu1.name'), email: t('course_builder.mock_users.stu1.email'), role: 'student' },
-    { id: 'stu2', name: t('course_builder.mock_users.stu2.name'), email: t('course_builder.mock_users.stu2.email'), role: 'student' },
-    { id: 'stu3', name: t('course_builder.mock_users.stu3.name'), email: t('course_builder.mock_users.stu3.email'), role: 'student' },
-  ];
-  
-  const MOCK_INSTRUCTORS_FOR_SELECT = MOCK_USER_DATABASE.filter(u => u.role === 'instructor').map(u => ({ label: `${u.name} (${u.email})`, value: u.id }));
-  const MOCK_STUDENTS_FOR_SELECT = MOCK_USER_DATABASE.filter(u => u.role === 'student').map(u => ({ label: `${u.name} (${u.email})`, value: u.id }));
-
-  const [courseData, setCourseData] = useState<CourseData>({
+  const [activeTab, setActiveTab] = useState('details');
+  const preDragLessonStatesRef = useRef<Record<string, boolean>>({});
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [categories, setCategories] = useState<{ id: number; name: string; }[]>([]);
+  const [languages, setLanguages] = useState<{ id: number; name: string; }[]>([]);
+  const [levels, setLevels] = useState<{ id: number; name: string; }[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [courseData, setCourseData] = useState<CourseData>(() => ({
     title: '',
     subtitle: '',
     description: '',
     category: '',
-    language: 'english',
-    level: 'beginner',
-    requirements: [],
-    learningOutcomes: [],
-    sections: [{ id: 'sec1', title: 'Introduction', lessons: [] }],
+    language: 'English',
+    level: 'Beginner',
+    requirements: [''],
+    learningOutcomes: [''],
+    sections: [
+      {
+        id: `section-${Date.now()}`,
+        title: 'New Section',
+        isCollapsed: false,
+        lessons: [
+          {
+            id: `lesson-${Date.now() + 1}`,
+            title: 'New Lesson',
+            type: 'video',
+            content: undefined,
+          },
+        ],
+      },
+    ],
     instructors: [],
     students: [],
-  });
-  const [activeTab, setActiveTab] = useState('details');
+  }));
+
+  useEffect(() => {
+    const fetchDropdownData = async () => {
+      // Fetch Categories
+      const { data: catData, error: catError } = await supabase.from('course_categories').select('id, name');
+      if (catError) {
+        console.error('Error fetching categories: ', catError);
+        toast.error('Failed to load course categories.');
+      } else if (catData) {
+        setCategories(catData as any);
+      }
+
+      // Fetch Languages
+      const { data: langData, error: langError } = await supabase.from('course_languages').select('id, name');
+      if (langError) {
+        console.error('Error fetching languages: ', langError);
+        toast.error('Failed to load course languages.');
+      } else if (langData) {
+        setLanguages(langData as any);
+      }
+
+      // Fetch Levels
+      const { data: levelData, error: levelError } = await supabase.from('course_levels').select('id, name');
+      if (levelError) {
+        console.error('Error fetching levels: ', levelError);
+        toast.error('Failed to load course levels.');
+      } else if (levelData) {
+        setLevels(levelData as any);
+      }
+    };
+
+    fetchDropdownData();
+  }, []);
 
   useEffect(() => {
     // In a real app, you would fetch course data based on courseId
@@ -347,45 +673,59 @@ const CourseBuilder = () => {
         level: 'advanced',
         requirements: ['Basic understanding of React', 'Familiarity with JavaScript (ES6+)'],
         learningOutcomes: ['Build complex applications with React', 'Optimize React app performance', 'Write custom hooks for reusable logic'],
-        instructors: MOCK_USER_DATABASE.filter(u => u.role === 'instructor').slice(0, 1),
-        students: MOCK_USER_DATABASE.filter(u => u.role === 'student'),
+        instructors: MOCK_USER_DATABASE.filter(u => u.role === 'instructor').slice(0, 1).map(u => ({ id: u.id, name: t(u.name_key), email: t(u.email_key) })),
+        students: MOCK_USER_DATABASE.filter(u => u.role === 'student').map(u => ({ id: u.id, name: t(u.name_key), email: t(u.email_key) })),
         sections: [
           {
-            id: 'sec1',
-            title: 'Introduction to Advanced Hooks',
+            id: 'section-1',
+            title: 'Introduction to English',
+            isCollapsed: false,
             lessons: [
-              { id: 'les1', title: 'The power of useReducer', type: 'video', duration: 600 },
-              { id: 'les2', title: 'Mastering useEffect dependencies', type: 'video', duration: 720 },
-            ],
-          },
-          {
-            id: 'sec2',
-            title: 'State Management with Context',
-            lessons: [
-              { id: 'les3', title: 'Context vs. Redux', type: 'attachment' },
-              { id: 'les4', title: 'Performance implications', type: 'video', duration: 900 },
-              { id: 'les5', title: 'Quiz on State Management', type: 'quiz', content: { questions: [] } },
-            ],
-          },
-        ],
-      });
-    } else {
-      // Default structure for a new course
-      setCourseData({
-        title: '',
-        subtitle: '',
-        description: '',
-        category: '',
-        language: 'english',
-        level: 'beginner',
-        requirements: [],
-        learningOutcomes: [],
-        sections: [{ id: 'sec1', title: 'Introduction', lessons: [] }],
-        instructors: [],
-        students: [],
+              { id: 'lesson-1-1', title: 'Welcome to the Course', type: 'video' },
+              { id: 'lesson-1-2', title: 'Basic Greetings', type: 'video' }
+            ]
+          }
+        ]
       });
     }
-  }, [courseId]);
+  }, [courseId, t]);
+
+  const handleImageUpload = async (file: File) => {
+    if (!file) return;
+
+    setIsUploading(true);
+    // Use a more robust naming convention to avoid collisions
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${crypto.randomUUID()}.${fileExt}`;
+    const filePath = `course-thumbnails/${fileName}`;
+
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from('dil-lms')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+        .from('dil-lms')
+        .createSignedUrl(filePath, 3600); // 1 hour expiry
+
+      if (signedUrlError) {
+        throw signedUrlError;
+      }
+      
+      setCourseData(prev => ({ ...prev, image: signedUrlData.signedUrl }));
+      toast.success('Image uploaded successfully!');
+
+    } catch (error: any) {
+      toast.error('Image upload failed.', { description: error.message });
+      console.error(error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -404,17 +744,183 @@ const CourseBuilder = () => {
     toast.success(t('course_builder.messages.publish_success'));
   };
 
-  const addSection = () => {
-    if (courseData) {
-      const newSection: CourseSection = {
-        id: `sec${Date.now()}`,
-        title: `Section ${courseData.sections.length + 1}`,
-        lessons: []
-      };
-      setCourseData({ ...courseData, sections: [...courseData.sections, newSection] });
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    setActiveId(active.id.toString());
+    const activeType = active.data.current?.type;
+
+    if (activeType === 'section') {
+      setCourseData((prev) => ({
+        ...prev,
+        sections: prev.sections.map((s) => ({ ...s, isCollapsed: true })),
+      }));
+    } else if (activeType === 'lesson') {
+      const sectionId = active.data.current?.sectionId;
+      preDragLessonStatesRef.current = {}; // Clear previous states
+
+      setCourseData(prev => {
+        const section = prev.sections.find(s => s.id === sectionId);
+        if (section) {
+          for (const lesson of section.lessons) {
+            preDragLessonStatesRef.current[lesson.id] = !!lesson.isCollapsed;
+          }
+        }
+        
+        return {
+          ...prev,
+          sections: prev.sections.map(s => {
+            if (s.id === sectionId) {
+              return {
+                ...s,
+                lessons: s.lessons.map(l => ({ ...l, isCollapsed: true }))
+              };
+            }
+            return s;
+          })
+        };
+      })
     }
   };
-  
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    setActiveId(null);
+    const { active, over } = event;
+
+    setCourseData(prev => {
+      let newSections = [...prev.sections]; // Create a mutable copy
+
+      if (over && active.id !== over.id) {
+        const activeType = active.data.current?.type;
+        const overType = over.data.current?.type;
+        const activeId = active.id.toString();
+        const overId = over.id.toString();
+
+        if (activeType === 'section' && overType === 'section') {
+          const oldIndex = newSections.findIndex((s) => s.id === activeId);
+          const newIndex = newSections.findIndex((s) => s.id === overId);
+          if (oldIndex !== -1 && newIndex !== -1) {
+            newSections = arrayMove(newSections, oldIndex, newIndex);
+          }
+        }
+
+        if (activeType === 'lesson') {
+          const sourceSectionId = active.data.current?.sectionId;
+          const sourceSectionIndex = newSections.findIndex(s => s.id === sourceSectionId);
+
+          // Determine destination section
+          let destSectionId = overId;
+          if (overType === 'lesson') {
+            destSectionId = over.data.current?.sectionId;
+          }
+          const destSectionIndex = newSections.findIndex(s => s.id === destSectionId);
+
+          if (sourceSectionIndex > -1 && destSectionIndex > -1) {
+            const sourceSection = newSections[sourceSectionIndex];
+            const destSection = newSections[destSectionIndex];
+            const lessonToMoveIndex = sourceSection.lessons.findIndex(l => l.id === activeId);
+            const lessonToMove = sourceSection.lessons[lessonToMoveIndex];
+
+            if (sourceSectionId === destSectionId) {
+              // Reordering within the same section
+              if (overType === 'lesson') {
+                const overLessonIndex = destSection.lessons.findIndex(l => l.id === overId);
+                if (lessonToMoveIndex > -1 && overLessonIndex > -1) {
+                  const reorderedLessons = arrayMove(sourceSection.lessons, lessonToMoveIndex, overLessonIndex);
+                  newSections[sourceSectionIndex] = { ...sourceSection, lessons: reorderedLessons };
+                }
+              }
+            } else {
+              // Moving to a different section
+              if (sourceSection.lessons.length <= 1) {
+                toast.info("Each section must have at least one lesson.");
+              } else {
+                // Remove from source
+                sourceSection.lessons.splice(lessonToMoveIndex, 1);
+
+                // Add to destination
+                let overLessonIndex = destSection.lessons.length; // Default to end
+                if (overType === 'lesson') {
+                    overLessonIndex = destSection.lessons.findIndex(l => l.id === overId);
+                }
+                destSection.lessons.splice(overLessonIndex, 0, lessonToMove);
+                newSections[destSectionIndex].isCollapsed = false; // Expand destination
+              }
+            }
+          }
+        }
+      }
+      
+      // Restore lesson states if a lesson was dragged
+      const activeType = active.data.current?.type;
+      if (activeType === 'lesson') {
+        const sectionId = active.data.current?.sectionId;
+        const sectionIndex = newSections.findIndex(s => s.id === sectionId);
+        if (sectionIndex !== -1) {
+          const sectionToRestore = newSections[sectionIndex];
+          newSections[sectionIndex] = {
+            ...sectionToRestore,
+            lessons: sectionToRestore.lessons.map(l => ({
+              ...l,
+              isCollapsed: preDragLessonStatesRef.current[l.id] ?? false
+            }))
+          };
+        }
+        preDragLessonStatesRef.current = {}; // Clear ref
+      }
+
+      return { ...prev, sections: newSections };
+    });
+  };
+
+  // #region Section and Lesson Handlers
+  const addSection = () => {
+    const newLesson = {
+      id: `lesson-${Date.now()}`,
+      title: 'New Lesson',
+      type: 'video' as const,
+      content: undefined,
+    };
+    const newSection: CourseSection = {
+      id: `section-${Date.now() + 1}`,
+      title: 'New Section',
+      lessons: [newLesson],
+      isCollapsed: false,
+    };
+    setCourseData(prev => ({ ...prev, sections: [...prev.sections, newSection] }));
+  };
+
+  const toggleSectionCollapse = (sectionId: string) => {
+    setCourseData(prev => ({
+      ...prev,
+      sections: prev.sections.map(s =>
+        s.id === sectionId ? { ...s, isCollapsed: !s.isCollapsed } : s
+      )
+    }));
+  };
+
+  const toggleLessonCollapse = (sectionId: string, lessonId: string) => {
+    setCourseData(prev => ({
+      ...prev,
+      sections: prev.sections.map(s =>
+        s.id === sectionId
+          ? {
+            ...s,
+            lessons: s.lessons.map(l =>
+              l.id === lessonId ? { ...l, isCollapsed: !l.isCollapsed } : l
+            ),
+          }
+          : s
+      ),
+    }));
+  };
+
   const removeSection = (sectionId: string) => {
     if (courseData) {
       setCourseData({ ...courseData, sections: courseData.sections.filter(s => s.id !== sectionId) });
@@ -422,17 +928,18 @@ const CourseBuilder = () => {
   };
   
   const addLesson = (sectionId: string) => {
-    if (courseData) {
-      const newLesson: CourseLesson = {
-        id: `les${Date.now()}`,
-        title: `New Lesson`,
-        type: 'video',
-      };
-      const updatedSections = courseData.sections.map(s => 
-        s.id === sectionId ? { ...s, lessons: [...s.lessons, newLesson] } : s
-      );
-      setCourseData({ ...courseData, sections: updatedSections });
-    }
+    const newLesson: CourseLesson = {
+      id: Date.now().toString(),
+      title: 'New Lesson',
+      type: 'video',
+      content: undefined
+    };
+    setCourseData(prev => ({
+      ...prev,
+      sections: prev.sections.map(section =>
+        section.id === sectionId ? { ...section, lessons: [...section.lessons, newLesson], isCollapsed: false } : section
+      )
+    }));
   };
 
   const updateSectionTitle = (sectionId: string, title: string) => {
@@ -462,19 +969,23 @@ const CourseBuilder = () => {
   }, [courseData]);
 
   const removeLesson = useCallback((sectionId: string, lessonId: string) => {
-    if (courseData) {
-      const updatedSections = courseData.sections.map(section => {
-        if (section.id === sectionId) {
-          return {
-            ...section,
-            lessons: section.lessons.filter(lesson => lesson.id !== lessonId)
-          };
-        }
-        return section;
-      });
-      setCourseData({ ...courseData, sections: updatedSections });
-    }
-  }, [courseData]);
+    setCourseData(prev => {
+      const section = prev.sections.find(s => s.id === sectionId);
+      if (section && section.lessons.length <= 1) {
+        toast.info("Each section must have at least one lesson.");
+        return prev;
+      }
+      return {
+        ...prev,
+        sections: prev.sections.map(s =>
+          s.id === sectionId
+            ? { ...s, lessons: s.lessons.filter(l => l.id !== lessonId) }
+            : s
+        ),
+      };
+    });
+  }, []);
+  // #endregion
 
   const handleInputChange = (field: keyof CourseData, value: any) => {
     if (courseData) {
@@ -482,21 +993,20 @@ const CourseBuilder = () => {
     }
   };
   
-  const handleListChange = (field: 'requirements' | 'learningOutcomes', value: string) => {
-    if (courseData) {
-      const list = courseData[field] as string[];
-      if (value.endsWith('\n') && value.trim() !== '') {
-        const newItem = value.trim();
-        if (!list.includes(newItem)) {
-          setCourseData({ ...courseData, [field]: [...list, newItem] });
-        }
-        // This is a bit of a hacky way to clear the input, but it works
-        const tempInput = document.getElementById(`${field}-input`) as HTMLInputElement;
-        if(tempInput) tempInput.value = '';
-      }
-    }
+  const addArrayField = (field: 'requirements' | 'learningOutcomes') => {
+    handleInputChange(field, [...courseData[field], '']);
   };
 
+  const updateArrayField = (field: 'requirements' | 'learningOutcomes', index: number, value: string) => {
+    const newList = [...courseData[field]];
+    newList[index] = value;
+    handleInputChange(field, newList);
+  };
+
+  const removeArrayField = (field: 'requirements' | 'learningOutcomes', index: number) => {
+    handleInputChange(field, courseData[field].filter((_, i) => i !== index));
+  };
+  
   const removeListItem = (field: 'requirements' | 'learningOutcomes', itemToRemove: string) => {
     handleInputChange(field, courseData[field].filter(item => item !== itemToRemove));
   };
@@ -510,237 +1020,352 @@ const CourseBuilder = () => {
     return <div className="flex justify-center items-center h-screen">Loading...</div>;
   }
   
-  const selectedInstructorValues = courseData.instructors.map(i => i.id);
-  const selectedStudentValues = courseData.students.map(s => s.id);
+  const MOCK_INSTRUCTORS_FOR_SELECT = MOCK_USER_DATABASE
+    .filter(u => u.role === 'instructor')
+    .map(u => ({ value: u.id, label: t(u.name_key) }));
+
+  const MOCK_STUDENTS_FOR_SELECT = MOCK_USER_DATABASE
+    .filter(u => u.role === 'student')
+    .map(u => ({ value: u.id, label: t(u.name_key) }));
 
   return (
     <div className="min-h-screen bg-muted/40">
-      {/* Header */}
-      <div className="bg-background border-b sticky top-0 z-10">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard/courses')}>
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <div className="flex-1">
-                <h1 className="text-2xl font-bold">{courseId ? t('course_builder.header.edit_title') : t('course_builder.header.create_title')}</h1>
-                <p className="text-muted-foreground">{t('course_builder.header.subtitle_new')}</p>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        {/* Header */}
+        <div className="bg-background border-b sticky top-0 z-10">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between h-16">
+              <div className="flex items-center gap-4">
+                <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard/courses')}>
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <div className="flex-1">
+                  <h1 className="text-2xl font-bold">{courseId !== 'new' ? t('course_builder.header.edit_title') : t('course_builder.header.create_title')}</h1>
+                  <p className="text-muted-foreground">{t('course_builder.header.subtitle_new')}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={handleSave} disabled={isSaving}>
+                  <Save className="mr-2 h-4 w-4" />
+                  {isSaving ? t('course_builder.buttons.saving') : t('course_builder.buttons.save_draft')}
+                </Button>
+                <Button onClick={handlePublish}>
+                  <Eye className="mr-2 h-4 w-4" />
+                  {t('course_builder.buttons.publish')}
+                </Button>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={handleSave} disabled={isSaving}>
-                <Save className="mr-2 h-4 w-4" />
-                {isSaving ? t('course_builder.buttons.saving') : t('course_builder.buttons.save_draft')}
-              </Button>
-              <Button onClick={handlePublish}>
-                <Eye className="mr-2 h-4 w-4" />
-                {t('course_builder.buttons.publish')}
-              </Button>
-            </div>
-          </div>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="details">{t('course_builder.tabs.details')}</TabsTrigger>
               <TabsTrigger value="curriculum">{t('course_builder.tabs.curriculum')}</TabsTrigger>
+              <TabsTrigger value="landing">{t('course_builder.tabs.landing')}</TabsTrigger>
               <TabsTrigger value="settings">{t('course_builder.tabs.settings')}</TabsTrigger>
             </TabsList>
-          </Tabs>
+          </div>
         </div>
-      </div>
-      
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-8">
-        <TabsContent value="details" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('course_builder.details.title')}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="title">{t('course_builder.details.form.title.label')}</Label>
-                <Input
-                  id="title"
-                  placeholder={t('course_builder.details.form.title.placeholder')}
-                  value={courseData.title}
-                  onChange={(e) => handleInputChange('title', e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="subtitle">{t('course_builder.details.form.subtitle.label')}</Label>
-                <Textarea
-                  id="subtitle"
-                  placeholder={t('course_builder.details.form.subtitle.placeholder')}
-                  value={courseData.subtitle}
-                  onChange={(e) => handleInputChange('subtitle', e.target.value)}
-                />
-              </div>
-              <div>
-                <Label>{t('course_builder.details.form.description.label')}</Label>
-                <RichTextEditor
-                  value={courseData.description}
-                  onChange={(value) => handleInputChange('description', value)}
-                  placeholder={t('course_builder.details.form.description.placeholder')}
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                 <Select onValueChange={(value) => handleInputChange('category', value)} value={courseData.category}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('course_builder.details.form.category.placeholder')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="language-arts">{t('course_builder.categories.language_arts')}</SelectItem>
-                    <SelectItem value="mathematics">{t('course_builder.categories.mathematics')}</SelectItem>
-                    <SelectItem value="science">{t('course_builder.categories.science')}</SelectItem>
-                    <SelectItem value="social-studies">{t('course_builder.categories.social_studies')}</SelectItem>
-                    <SelectItem value="technology">{t('course_builder.categories.technology')}</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select onValueChange={(value) => handleInputChange('language', value)} value={courseData.language}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('course_builder.details.form.language.placeholder')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="en">{t('course_builder.languages.english')}</SelectItem>
-                    <SelectItem value="ur">{t('course_builder.languages.urdu')}</SelectItem>
-                    <SelectItem value="sd">{t('course_builder.languages.sindhi')}</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select onValueChange={(value) => handleInputChange('level', value)} value={courseData.level}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('course_builder.details.form.level.placeholder')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="beginner">{t('course_builder.levels.beginner')}</SelectItem>
-                    <SelectItem value="intermediate">{t('course_builder.levels.intermediate')}</SelectItem>
-                    <SelectItem value="advanced">{t('course_builder.levels.advanced')}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-               <div>
-                <Label>{t('course_builder.details.form.image.label')}</Label>
-                <FileUpload 
-                  onUpload={(file) => console.log(file)} 
-                  label={t('course_builder.details.form.image.upload_label')} 
-                />
-              </div>
-              <div>
-                <Label htmlFor="requirements">{t('course_builder.details.form.requirements.label')}</Label>
-                <Input
-                  id="requirements"
-                  placeholder={t('course_builder.details.form.requirements.placeholder')}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleListChange('requirements', e.currentTarget.value);
-                      e.currentTarget.value = '';
-                    }
-                  }}
-                />
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {courseData.requirements.map((req, i) => (
-                    <Badge key={i} variant="secondary">
-                      {req}
-                      <button onClick={() => removeListItem('requirements', req)} className="ml-2 text-muted-foreground hover:text-foreground">
-                        <X className="w-3 h-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="outcomes">{t('course_builder.details.form.outcomes.label')}</Label>
-                <Input
-                  id="outcomes"
-                  placeholder={t('course_builder.details.form.outcomes.placeholder')}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleListChange('learningOutcomes', e.currentTarget.value);
-                      e.currentTarget.value = '';
-                    }
-                  }}
-                />
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {courseData.learningOutcomes.map((out, i) => (
-                    <Badge key={i} variant="secondary">
-                      {out}
-                      <button onClick={() => removeListItem('learningOutcomes', out)} className="ml-2 text-muted-foreground hover:text-foreground">
-                        <X className="w-3 h-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
-        <TabsContent value="curriculum" className="space-y-6">
-          {courseData.sections.map((section, index) => (
-            <Card key={section.id}>
+        {/* Main Content */}
+        <div className="container mx-auto p-6">
+          <TabsContent value="details" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Basic Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Course Title</label>
+                  <Input
+                    value={courseData.title}
+                    onChange={(e) => setCourseData(prev => ({ ...prev, title: e.target.value }))}
+                    placeholder="Enter course title"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-2">Course Subtitle</label>
+                  <Input
+                    value={courseData.subtitle}
+                    onChange={(e) => setCourseData(prev => ({ ...prev, subtitle: e.target.value }))}
+                    placeholder="Enter course subtitle"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-2">Course Description</label>
+                  <Textarea
+                    value={courseData.description}
+                    onChange={(e) => setCourseData(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Describe your course"
+                    rows={4}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Category</label>
+                    <Select value={courseData.category} onValueChange={(value) => setCourseData(prev => ({ ...prev, category: value }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((category) => (
+                          <SelectItem key={category.id} value={category.name}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Language</label>
+                    <Select value={courseData.language} onValueChange={(value) => setCourseData(prev => ({ ...prev, language: value }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select language" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {languages.map((language) => (
+                          <SelectItem key={language.id} value={language.name}>
+                            {language.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Level</label>
+                    <Select value={courseData.level} onValueChange={(value) => setCourseData(prev => ({ ...prev, level: value }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select level" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {levels.map((level) => (
+                          <SelectItem key={level.id} value={level.name}>
+                            {level.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Course Image</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {courseData.image ? (
+                  <div className="relative group">
+                    <img src={courseData.image} alt="Course thumbnail" className="rounded-lg w-full h-auto object-cover" />
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => setCourseData(prev => ({...prev, image: undefined}))}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <FileUpload 
+                    onUpload={handleImageUpload} 
+                    label={isUploading ? "Uploading..." : "Upload course thumbnail"}
+                    disabled={isUploading}
+                  />
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="curriculum" className="space-y-6">
+            <Card>
               <CardHeader className="flex flex-row items-center justify-between">
-                <Input
-                  value={section.title}
-                  onChange={(e) => updateSectionTitle(section.id, e.target.value)}
-                  placeholder={t('course_builder.curriculum.section_title_placeholder')}
-                  className="flex-1"
-                />
-                <Button variant="ghost" size="icon" onClick={() => removeSection(section.id)}>
-                  <X className="w-4 h-4" />
+                <CardTitle>Course Curriculum</CardTitle>
+                <Button onClick={addSection}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Section
                 </Button>
               </CardHeader>
               <CardContent className="space-y-4">
-                {section.lessons.map(lesson => (
-                  <LessonItem 
-                    key={lesson.id}
-                    lesson={lesson}
-                    sectionId={section.id}
-                    onUpdate={updateLesson}
-                    onRemove={removeLesson}
-                  />
-                ))}
-                <Button variant="outline" onClick={() => addLesson(section.id)}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  {t('course_builder.curriculum.add_lesson_button')}
-                </Button>
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragStart={handleDragStart}
+                  onDragEnd={handleDragEnd}
+                  measuring={{
+                    droppable: {
+                      strategy: MeasuringStrategy.Always,
+                    },
+                  }}
+                >
+                  <SortableContext
+                    items={courseData.sections.map(s => s.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {courseData.sections.map((section, sectionIndex) => (
+                      <SortableItem key={section.id} id={section.id} type="section">
+                        {(dragHandleProps) => (
+                          <Card className={`bg-muted/50 ${activeId === section.id ? 'opacity-50' : ''}`}>
+                            <CardHeader className="flex flex-row items-center justify-between p-4">
+                              <div className="flex items-center gap-2">
+                                <div {...dragHandleProps} className="cursor-move">
+                                  <GripVertical className="text-muted-foreground" />
+                                </div>
+                                <Input
+                                  value={section.title}
+                                  onChange={(e) => {
+                                    const newSections = [...courseData.sections];
+                                    newSections[sectionIndex].title = e.target.value;
+                                    setCourseData(prev => ({ ...prev, sections: newSections }));
+                                  }}
+                                  className="text-lg font-semibold border-none focus-visible:ring-0"
+                                />
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button onClick={() => addLesson(section.id)} variant="outline">
+                                  <Plus className="w-4 h-4 mr-2" />
+                                  Lesson
+                                </Button>
+                                {courseData.sections.length > 1 && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => removeSection(section.id)}
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </Button>
+                                )}
+                                <Button variant="ghost" size="icon" onClick={() => toggleSectionCollapse(section.id)}>
+                                  {section.isCollapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
+                                </Button>
+                              </div>
+                            </CardHeader>
+                            {!section.isCollapsed && (
+                              <CardContent className="space-y-2 pl-12 pr-4 pb-4">
+                                <SortableContext items={section.lessons.map(l => l.id)} strategy={verticalListSortingStrategy}>
+                                  {section.lessons.map((lesson) => (
+                                    <SortableItem key={lesson.id} id={lesson.id} type="lesson" sectionId={section.id}>
+                                      {(lessonDragHandleProps) => (
+                                        <div className={`${activeId === lesson.id ? 'opacity-25' : ''}`}>
+                                          <LessonItem
+                                            key={lesson.id}
+                                            lesson={lesson}
+                                            sectionId={section.id}
+                                            onUpdate={updateLesson}
+                                            onRemove={removeLesson}
+                                            isRemovable={section.lessons.length > 1}
+                                            dragHandleProps={lessonDragHandleProps}
+                                            onToggleCollapse={toggleLessonCollapse}
+                                            courseId={courseId}
+                                          />
+                                        </div>
+                                      )}
+                                    </SortableItem>
+                                  ))}
+                                </SortableContext>
+                              </CardContent>
+                            )}
+                          </Card>
+                        )}
+                      </SortableItem>
+                    ))}
+                  </SortableContext>
+                  <DragOverlay>
+                    {activeId ? (
+                      activeId.startsWith('section-') ?
+                      <Card className="bg-muted/50">
+                        <CardHeader>{courseData.sections.find(s => s.id === activeId)?.title}</CardHeader>
+                      </Card> :
+                      <LessonItem
+                        lesson={
+                          courseData.sections
+                            .flatMap(s => s.lessons)
+                            .find(l => l.id === activeId) || { id: '', title: '', type: 'video' }
+                        }
+                        sectionId={
+                          courseData.sections.find(s => s.lessons.some(l => l.id === activeId))?.id || ''
+                        }
+                        onUpdate={() => {}}
+                        onRemove={() => {}}
+                        isRemovable={false}
+                        dragHandleProps={{}}
+                        onToggleCollapse={() => {}}
+                        courseId={courseId}
+                      />
+                    ) : null}
+                  </DragOverlay>
+                </DndContext>
               </CardContent>
             </Card>
-          ))}
-          <Button onClick={addSection}>
-            <Plus className="w-4 h-4 mr-2" />
-            {t('course_builder.curriculum.add_section_button')}
-          </Button>
-        </TabsContent>
+          </TabsContent>
+          
+          <TabsContent value="landing" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Course Details</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                  <div>
+                  <label className="block text-sm font-medium mb-2">Requirements</label>
+                  {courseData.requirements.map((req, index) => (
+                    <div key={index} className="flex items-center gap-2 mb-2">
+                      <Input value={req} onChange={(e) => updateArrayField('requirements', index, e.target.value)} />
+                      <Button variant="ghost" size="icon" onClick={() => removeArrayField('requirements', index)}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button variant="outline" size="sm" onClick={() => addArrayField('requirements')}>Add Requirement</Button>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-2">What you'll learn</label>
+                  {courseData.learningOutcomes.map((outcome, index) => (
+                    <div key={index} className="flex items-center gap-2 mb-2">
+                      <Input value={outcome} onChange={(e) => updateArrayField('learningOutcomes', index, e.target.value)} />
+                      <Button variant="ghost" size="icon" onClick={() => removeArrayField('learningOutcomes', index)}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button variant="outline" size="sm" onClick={() => addArrayField('learningOutcomes')}>Add Outcome</Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        <TabsContent value="settings" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('course_builder.settings.title')}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label>{t('course_builder.settings.instructors.label')}</Label>
-                <MultiSelect
-                  options={MOCK_INSTRUCTORS_FOR_SELECT}
-                  value={courseData.instructors.map(i => i.id)}
-                  onValueChange={(selected) => handleMembersChange('instructors', selected)}
-                  placeholder={t('course_builder.settings.instructors.placeholder')}
-                />
-              </div>
-               <div>
-                <Label>{t('course_builder.settings.students.label')}</Label>
-                <MultiSelect
-                  options={MOCK_STUDENTS_FOR_SELECT}
-                  value={courseData.students.map(s => s.id)}
-                  onValueChange={(selected) => handleMembersChange('students', selected)}
-                  placeholder={t('course_builder.settings.students.placeholder')}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </div>
+          <TabsContent value="settings" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>{t('course_builder.settings.title')}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label>{t('course_builder.settings.instructors.label')}</Label>
+                  <MultiSelect
+                    options={MOCK_INSTRUCTORS_FOR_SELECT}
+                    value={courseData.instructors.map(i => i.id)}
+                    onValueChange={(selected) => handleMembersChange('instructors', selected)}
+                    placeholder={t('course_builder.settings.instructors.placeholder')}
+                  />
+                </div>
+                <div>
+                  <Label>{t('course_builder.settings.students.label')}</Label>
+                  <MultiSelect
+                    options={MOCK_STUDENTS_FOR_SELECT}
+                    value={courseData.students.map(s => s.id)}
+                    onValueChange={(selected) => handleMembersChange('students', selected)}
+                    placeholder={t('course_builder.settings.students.placeholder')}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </div>
+      </Tabs>
     </div>
   );
 };
