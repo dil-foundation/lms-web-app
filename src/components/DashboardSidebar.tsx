@@ -1,6 +1,10 @@
 
+import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import { Menu, X } from 'lucide-react';
 import { getRoleNavigation, type UserRole } from '@/config/roleNavigation';
 import { UserProfileSection } from '@/components/sidebar/UserProfileSection';
 import { Database } from '@/integrations/supabase/types';
@@ -19,57 +23,122 @@ export const DashboardSidebar = ({
   userRole,
   userProfile
 }: DashboardSidebarProps) => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigationItems = getRoleNavigation(userRole);
-  
-  return <>
-      <Sidebar className="border-r border-border">
-        <UserProfileSection profile={userProfile} />
-        <SidebarContent className="pt-4">
-          <SidebarGroup>
-            <SidebarGroupLabel className="mb-3">Navigation</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {navigationItems.length > 0
-                  ? navigationItems.map(item => (
-                  <SidebarMenuItem key={item.path}>
-                    <SidebarMenuButton asChild>
-                      <NavLink 
-                        to={item.path} 
+
+  const SidebarComponent = () => (
+    <Sidebar className="border-r border-border bg-background">
+      <UserProfileSection profile={userProfile} />
+      <SidebarContent className="pt-4">
+        <SidebarGroup>
+          <SidebarGroupLabel className="mb-3">Navigation</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navigationItems.map(item => (
+                <SidebarMenuItem key={item.path}>
+                  <SidebarMenuButton asChild>
+                    <NavLink 
+                      to={item.path} 
+                      end={item.path === '/dashboard'}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      {({ isActive }) => (
+                        <div className={`flex items-center space-x-3 px-3 py-2 mx-2 rounded-lg transition-all duration-200 ${
+                          isActive 
+                            ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 font-medium shadow-sm' 
+                            : 'text-foreground hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-foreground'
+                        }`}>
+                          <item.icon className="h-5 w-5" />
+                          <span className="font-medium">{item.title}</span>
+                        </div>
+                      )}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+    </Sidebar>
+  );
+
+  return (
+    <>
+      {/* Mobile Layout */}
+      <div className="lg:hidden">
+        <div className="flex items-center justify-between bg-background border-b border-border p-4">
+          <h2 className="text-lg font-semibold text-foreground">Dashboard</h2>
+          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="h-6 w-6" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="p-0 w-80 [&>button]:hidden">
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <h2 className="text-lg font-semibold">Menu</h2>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+              <div className="h-full">
+                <UserProfileSection profile={userProfile} />
+                <div className="pt-4">
+                  <div className="px-4 pb-3">
+                    <h3 className="text-sm font-medium text-muted-foreground">Navigation</h3>
+                  </div>
+                  <nav className="space-y-1 px-2">
+                    {navigationItems.map(item => (
+                      <NavLink
+                        key={item.path}
+                        to={item.path}
                         end={item.path === '/dashboard'}
-                      >
-                        {({ isActive }) => (
-                          <div className={`flex items-center space-x-3 px-3 py-2 mx-2 rounded-lg transition-all duration-200 ${
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className={({ isActive }) => 
+                          `flex items-center space-x-3 px-3 py-2 mx-2 rounded-lg transition-all duration-200 ${
                             isActive 
                               ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 font-medium shadow-sm' 
                               : 'text-foreground hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-foreground'
-                          }`}>
-                            <item.icon className="h-5 w-5" />
-                            <span className="font-medium">{item.title}</span>
-                          </div>
-                        )}
+                          }`
+                        }
+                      >
+                        <item.icon className="h-5 w-5" />
+                        <span className="font-medium">{item.title}</span>
                       </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                    ))
-                  : Array.from({ length: 4 }).map((_, i) => (
-                      <SidebarMenuItem key={`skel-${i}`}>
-                        <div className="flex items-center space-x-3 px-3 py-2 mx-2 rounded-lg">
-                          <Skeleton className="h-5 w-5" />
-                          <Skeleton className="h-4 w-32" />
-                        </div>
-                      </SidebarMenuItem>
-                    ))
-                }
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </SidebarContent>
-      </Sidebar>
-
-      <main className="flex-1 min-h-0 overflow-y-auto">
-        <div className="container mx-auto px-4 sm:px-6 py-12 h-full">
-          {children}
+                    ))}
+                  </nav>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
-      </main>
-    </>;
+        
+        {/* Mobile Main Content */}
+        <main className="min-h-0 bg-background">
+          <div className="w-full px-3 sm:px-4 py-4 sm:py-6">
+            {children}
+          </div>
+        </main>
+      </div>
+
+      {/* Desktop Layout */}
+      <div className="hidden lg:flex min-h-full">
+        <div className="w-64 flex-shrink-0">
+          <SidebarComponent />
+        </div>
+        
+        {/* Desktop Main Content */}
+        <main className="flex-1 min-h-0 bg-background w-full">
+          <div className="w-full h-full px-4 sm:px-6 lg:px-8 py-12">
+            {children}
+          </div>
+        </main>
+      </div>
+    </>
+  );
 };

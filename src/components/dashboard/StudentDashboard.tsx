@@ -56,70 +56,70 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="w-full max-w-full overflow-hidden space-y-4 sm:space-y-6 min-w-0">
       {/* Welcome Section */}
-      <div className="flex items-center space-x-4 mb-8">
-        <Avatar className="h-16 w-16">
-          <AvatarFallback className="bg-primary text-primary-foreground text-xl font-bold">
+      <div className="flex items-center space-x-3 sm:space-x-4 mb-6 sm:mb-8">
+        <Avatar className="h-12 w-12 sm:h-16 sm:w-16 flex-shrink-0">
+          <AvatarFallback className="bg-primary text-primary-foreground text-lg sm:text-xl font-bold">
             {getInitials(userProfile?.first_name, userProfile?.last_name)}
           </AvatarFallback>
         </Avatar>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">
             Welcome back, {userProfile?.first_name || 'Student'}!
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-sm sm:text-base text-muted-foreground">
             {userProfile?.grade ? `Grade ${userProfile.grade}` : 'Continue your learning journey'}
           </p>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Current Streak</p>
-                <p className="text-2xl font-bold">7 days</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">Current Streak</p>
+                <p className="text-lg sm:text-2xl font-bold">7 days</p>
               </div>
-              <Flame className="h-6 w-6 text-orange-500" />
+              <Flame className="h-5 w-5 sm:h-6 sm:w-6 text-orange-500 flex-shrink-0" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Completed Lessons</p>
-                <p className="text-2xl font-bold">24</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">Completed Lessons</p>
+                <p className="text-lg sm:text-2xl font-bold">24</p>
               </div>
-              <BookOpen className="h-6 w-6 text-blue-500" />
+              <BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500 flex-shrink-0" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Points Earned</p>
-                <p className="text-2xl font-bold">1,250</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">Points Earned</p>
+                <p className="text-lg sm:text-2xl font-bold">1,250</p>
               </div>
-              <Award className="h-6 w-6 text-yellow-500" />
+              <Award className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-500 flex-shrink-0" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Study Time</p>
-                <p className="text-2xl font-bold">45h</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">Study Time</p>
+                <p className="text-lg sm:text-2xl font-bold">45h</p>
               </div>
-              <Clock className="h-6 w-6 text-green-500" />
+              <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-green-500 flex-shrink-0" />
             </div>
           </CardContent>
         </Card>
@@ -127,8 +127,8 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
 
       {/* Continue Learning Section */}
       <div>
-        <h2 className="text-xl font-semibold mb-4">Continue Learning</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Continue Learning</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
           {courses.map((course) => (
             <Card 
               key={course.id} 
@@ -144,27 +144,28 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
                 <img 
                   src={course.image} 
                   alt={course.title}
-                  className="w-full h-32 object-cover"
+                  className="w-full h-28 sm:h-32 object-cover"
                 />
                 <Badge 
-                  className="absolute top-2 left-2 bg-green-600 hover:bg-green-700 text-white border-0"
+                  className="absolute top-2 left-2 bg-green-600 hover:bg-green-700 text-white border-0 text-xs"
                 >
                   AI Tutor
                 </Badge>
               </div>
-              <CardContent className="p-4">
-                <h3 className="font-semibold text-sm mb-2 text-card-foreground line-clamp-2">
+              <CardContent className="p-3 sm:p-4">
+                <h3 className="font-semibold text-xs sm:text-sm mb-2 text-card-foreground line-clamp-2 leading-tight">
                   {course.title}
                 </h3>
                 <p className="text-xs text-muted-foreground mb-3">
                   {course.duration}
                 </p>
                 <Button 
-                  className={`w-full text-sm ${
+                  className={`w-full text-xs sm:text-sm ${
                     course.status === 'locked' 
                       ? 'bg-muted hover:bg-muted text-muted-foreground cursor-not-allowed' 
                       : 'bg-green-600 hover:bg-green-700 text-white'
                   }`}
+                  size="sm"
                   disabled={course.status === 'locked'}
                   onClick={() => {
                     if (course.status !== 'locked') {
@@ -172,8 +173,8 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
                     }
                   }}
                 >
-                  {course.status === 'locked' && <Lock className="w-4 h-4 mr-2" />}
-                  {course.buttonText}
+                  {course.status === 'locked' && <Lock className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />}
+                  <span className="truncate">{course.buttonText}</span>
                 </Button>
               </CardContent>
             </Card>

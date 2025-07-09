@@ -178,7 +178,7 @@ export const CourseOverview = ({ courseId }: CourseOverviewProps) => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 py-4">
           <Button 
             variant="ghost" 
             onClick={() => navigate(-1)}
@@ -192,7 +192,7 @@ export const CourseOverview = ({ courseId }: CourseOverviewProps) => {
 
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 py-12">
           <div className="space-y-8">
             {/* Course Info */}
             <div className="text-center space-y-6">
@@ -315,9 +315,9 @@ export const CourseOverview = ({ courseId }: CourseOverviewProps) => {
       </div>
 
       {/* Course Content */}
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          <div className="lg:col-span-3 space-y-8">
+          <div className="lg:col-span-3 space-y-8 order-2 lg:order-1">
             {/* What You'll Learn & Course Features */}
             <Card>
               <CardHeader>
@@ -464,7 +464,7 @@ export const CourseOverview = ({ courseId }: CourseOverviewProps) => {
           </div>
 
           {/* Course Details Sidebar */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 order-1 lg:order-2">
             <Card>
               <CardHeader>
                 <CardTitle>Course Details</CardTitle>
