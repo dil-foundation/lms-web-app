@@ -43,9 +43,9 @@ const Dashboard = () => {
   const getMockProfile = (baseProfile: Profile, role: UserRole) => {
     const newProfile = { ...baseProfile, role };
     switch (role) {
-      case 'student': return { ...newProfile, first_name: 'Alex', last_name: 'Student', grade: '10th' };
-      case 'teacher': return { ...newProfile, first_name: 'Sarah', last_name: 'Teacher' };
-      case 'admin': return { ...newProfile, first_name: 'John', last_name: 'Admin' };
+      case 'student': return { ...newProfile, first_name: t('dashboard.mock_profiles.student.first_name'), last_name: t('dashboard.mock_profiles.student.last_name'), grade: t('dashboard.mock_profiles.student.grade') };
+      case 'teacher': return { ...newProfile, first_name: t('dashboard.mock_profiles.teacher.first_name'), last_name: t('dashboard.mock_profiles.teacher.last_name') };
+      case 'admin': return { ...newProfile, first_name: t('dashboard.mock_profiles.admin.first_name'), last_name: t('dashboard.mock_profiles.admin.last_name') };
       default: return newProfile;
     }
   };

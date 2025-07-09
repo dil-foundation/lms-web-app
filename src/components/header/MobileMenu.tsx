@@ -6,6 +6,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { Menu, X, LogOut, Settings, Home } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
+import { LanguageToggle } from './LanguageToggle';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -105,6 +106,10 @@ export const MobileMenu = memo(() => {
                     {t('mobile_menu.appearance_title')}
                   </h3>
                   <div className="flex items-center justify-between px-3 py-2">
+                    <span className="text-sm">{t('mobile_menu.language_label')}</span>
+                    <LanguageToggle />
+                  </div>
+                  <div className="flex items-center justify-between px-3 py-2">
                     <span className="text-sm">{t('mobile_menu.theme_label')}</span>
                     <ThemeToggle />
                   </div>
@@ -142,6 +147,10 @@ export const MobileMenu = memo(() => {
                   <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
                     {t('mobile_menu.appearance_title')}
                   </h3>
+                  <div className="flex items-center justify-between px-3 py-2">
+                    <span className="text-sm">{t('mobile_menu.language_label')}</span>
+                    <LanguageToggle />
+                  </div>
                   <div className="flex items-center justify-between px-3 py-2">
                     <span className="text-sm">{t('mobile_menu.theme_label')}</span>
                     <ThemeToggle />

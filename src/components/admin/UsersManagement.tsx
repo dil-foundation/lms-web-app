@@ -26,7 +26,7 @@ interface User {
 const mockUsers: User[] = [
   {
     id: '1',
-    name: 'Alice Johnson',
+    name: 'users_management.mock_users.user1.name',
     email: 'alice.johnson@school.edu',
     role: 'student',
     status: 'active',
@@ -35,7 +35,7 @@ const mockUsers: User[] = [
   },
   {
     id: '2',
-    name: 'Robert Smith',
+    name: 'users_management.mock_users.user2.name',
     email: 'robert.smith@school.edu',
     role: 'teacher',
     status: 'active',
@@ -44,7 +44,7 @@ const mockUsers: User[] = [
   },
   {
     id: '3',
-    name: 'Emma Wilson',
+    name: 'users_management.mock_users.user3.name',
     email: 'emma.wilson@school.edu',
     role: 'student',
     status: 'inactive',
@@ -53,7 +53,7 @@ const mockUsers: User[] = [
   },
   {
     id: '4',
-    name: 'Michael Brown',
+    name: 'users_management.mock_users.user4.name',
     email: 'michael.brown@school.edu',
     role: 'teacher',
     status: 'active',
@@ -62,7 +62,7 @@ const mockUsers: User[] = [
   },
   {
     id: '5',
-    name: 'Sarah Davis',
+    name: 'users_management.mock_users.user5.name',
     email: 'sarah.davis@school.edu',
     role: 'student',
     status: 'active',
@@ -86,7 +86,7 @@ export const UsersManagement = () => {
 
   // Filter users based on search and filters
   const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = t(user.name).toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = roleFilter === 'all' || user.role === roleFilter;
     const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
@@ -249,10 +249,10 @@ export const UsersManagement = () => {
               <div className="grid grid-cols-2 gap-2">
                 <Select value={roleFilter} onValueChange={setRoleFilter}>
                   <SelectTrigger>
-                    <SelectValue placeholder={t('users_management.table.role_filter_placeholder')} />
+                    <SelectValue placeholder={t('users_management.table.filters.role_placeholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">{t('users_management.table.all_roles')}</SelectItem>
+                    <SelectItem value="all">{t('users_management.table.filters.all_roles')}</SelectItem>
                     <SelectItem value="student">{t('users_management.roles.student')}</SelectItem>
                     <SelectItem value="teacher">{t('users_management.roles.teacher')}</SelectItem>
                     <SelectItem value="admin">{t('users_management.roles.admin')}</SelectItem>
@@ -260,10 +260,10 @@ export const UsersManagement = () => {
                 </Select>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger>
-                    <SelectValue placeholder={t('users_management.table.status_filter_placeholder')} />
+                    <SelectValue placeholder={t('users_management.table.filters.status_placeholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">{t('users_management.table.all_statuses')}</SelectItem>
+                    <SelectItem value="all">{t('users_management.table.filters.all_statuses')}</SelectItem>
                     <SelectItem value="active">{t('users_management.statuses.active')}</SelectItem>
                     <SelectItem value="inactive">{t('users_management.statuses.inactive')}</SelectItem>
                   </SelectContent>
@@ -289,7 +289,7 @@ export const UsersManagement = () => {
                 {filteredUsers.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell>
-                      <div className="font-medium">{user.name}</div>
+                      <div className="font-medium">{t(user.name)}</div>
                       <div className="text-sm text-muted-foreground">{user.email}</div>
                     </TableCell>
                     <TableCell>
@@ -304,7 +304,7 @@ export const UsersManagement = () => {
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">{t('users_management.table.open_menu')}</span>
+                            <span className="sr-only">{t('users_management.table.actions.open_menu')}</span>
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>

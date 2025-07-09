@@ -45,42 +45,42 @@ const StatCard = ({ title, value, icon: Icon, iconColor, bgColor, additionalText
   </Card>
 );
 
-const mockReports = [
-  {
-    school: 'Senior High',
-    test: 'TEST',
-    date: 'Jul 05, 2025',
-    time: '06:15:00 - 06:45:00',
-    observer: 'ECE Observer',
-    observerRole: 'ECE Observer',
-    avatar: 'EO',
-    created: 'Created 3 days ago',
-  },
-  {
-    school: 'Harvard University',
-    test: 'Nasir Mahmood',
-    date: 'Jul 05, 2025',
-    time: '06:15:00 - 13:00:00',
-    observer: 'Demo Admin',
-    observerRole: 'Principal',
-    avatar: 'DA',
-    created: 'Created 3 days ago',
-  },
-];
-
-const getRoleBadgeClass = (role: string) => {
-  switch (role) {
-    case 'Principal':
-      return 'bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/50 dark:text-blue-300';
-    case 'ECE Observer':
-      return 'bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/50 dark:text-green-300';
-    default:
-      return 'bg-gray-100 text-gray-800';
-  }
-};
-
 export const PastReportsView = ({ onBack }: PastReportsViewProps) => {
   const { t } = useTranslation();
+
+  const mockReports = [
+    {
+      school: 'past_reports.mock_reports.senior_high.school',
+      test: 'past_reports.mock_reports.senior_high.test',
+      date: 'Jul 05, 2025',
+      time: '06:15:00 - 06:45:00',
+      observer: 'observation_reports.roles.ece_observer',
+      observerRole: 'observation_reports.roles.ece_observer',
+      avatar: 'EO',
+      created: 'past_reports.mock_reports.senior_high.created',
+    },
+    {
+      school: 'past_reports.harvard_university',
+      test: 'past_reports.mock_reports.harvard.test',
+      date: 'Jul 05, 2025',
+      time: '06:15:00 - 13:00:00',
+      observer: 'past_reports.mock_reports.harvard.observer',
+      observerRole: 'observation_reports.roles.principal',
+      avatar: 'DA',
+      created: 'past_reports.mock_reports.harvard.created',
+    },
+  ];
+
+  const getRoleBadgeClass = (role: string) => {
+    if (role === t('observation_reports.roles.principal')) {
+      return 'bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/50 dark:text-blue-300';
+    }
+    if (role === t('observation_reports.roles.ece_observer')) {
+      return 'bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/50 dark:text-green-300';
+    }
+    return 'bg-gray-100 text-gray-800';
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto p-4 sm:p-6">
       <div className="flex items-center justify-between">
@@ -154,18 +154,18 @@ export const PastReportsView = ({ onBack }: PastReportsViewProps) => {
               </Avatar>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-semibold">{report.school}</h3>
+                  <h3 className="font-semibold">{t(report.school)}</h3>
                   <span className="text-muted-foreground">•</span>
-                  <p className="text-muted-foreground">{report.test}</p>
+                  <p className="text-muted-foreground">{t(report.test)}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
                   <div className="flex items-center gap-1.5"><Calendar className="w-4 h-4" />{report.date}</div>
                   <div className="flex items-center gap-1.5"><ClockIcon className="w-4 h-4" />{report.time}</div>
-                  <div className="flex items-center gap-1.5"><User className="w-4 h-4" />{report.observer}</div>
+                  <div className="flex items-center gap-1.5"><User className="w-4 h-4" />{t(report.observer)}</div>
                 </div>
                 <div className="mt-2 flex items-center gap-2">
-                  <Badge className={cn(getRoleBadgeClass(report.observerRole))}>{report.observerRole}</Badge>
-                  <p className="text-xs text-muted-foreground">{report.created}</p>
+                  <Badge className={cn(getRoleBadgeClass(t(report.observerRole)))}>{t(report.observerRole)}</Badge>
+                  <p className="text-xs text-muted-foreground">{t(report.created)}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 mt-4 sm:mt-0">

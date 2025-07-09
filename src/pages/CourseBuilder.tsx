@@ -61,16 +61,13 @@ interface CourseData {
 
 // #region Mock Data for Selection
 const MOCK_USER_DATABASE = [
-  { id: 'inst1', name: 'Dr. Evelyn Reed', email: 'e.reed@example.com', role: 'instructor' },
-  { id: 'inst2', name: 'Mr. David Chen', email: 'd.chen@example.com', role: 'instructor' },
-  { id: 'inst3', name: 'Prof. Ana Silva', email: 'a.silva@example.com', role: 'instructor' },
-  { id: 'stu1', name: 'Ali Khan', email: 'ali.k@example.com', role: 'student' },
-  { id: 'stu2', name: 'Fatima Ahmed', email: 'f.ahmed@example.com', role: 'student' },
-  { id: 'stu3', name: 'Zainab Omar', email: 'z.omar@example.com', role: 'student' },
+  { id: 'inst1', name_key: 'course_builder.mock_users.inst1.name', email_key: 'course_builder.mock_users.inst1.email', role: 'instructor' },
+  { id: 'inst2', name_key: 'course_builder.mock_users.inst2.name', email_key: 'course_builder.mock_users.inst2.email', role: 'instructor' },
+  { id: 'inst3', name_key: 'course_builder.mock_users.inst3.name', email_key: 'course_builder.mock_users.inst3.email', role: 'instructor' },
+  { id: 'stu1', name_key: 'course_builder.mock_users.stu1.name', email_key: 'course_builder.mock_users.stu1.email', role: 'student' },
+  { id: 'stu2', name_key: 'course_builder.mock_users.stu2.name', email_key: 'course_builder.mock_users.stu2.email', role: 'student' },
+  { id: 'stu3', name_key: 'course_builder.mock_users.stu3.name', email_key: 'course_builder.mock_users.stu3.email', role: 'student' },
 ];
-
-const MOCK_INSTRUCTORS_FOR_SELECT = MOCK_USER_DATABASE.filter(u => u.role === 'instructor').map(u => ({ label: `${u.name} (${u.email})`, value: u.id }));
-const MOCK_STUDENTS_FOR_SELECT = MOCK_USER_DATABASE.filter(u => u.role === 'student').map(u => ({ label: `${u.name} (${u.email})`, value: u.id }));
 // #endregion
 
 // #region LessonItem Component
@@ -307,7 +304,32 @@ const CourseBuilder = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
   const [isSaving, setIsSaving] = useState(false);
-  const [courseData, setCourseData] = useState<CourseData | null>(null);
+
+  const MOCK_USER_DATABASE = [
+    { id: 'inst1', name: t('course_builder.mock_users.inst1.name'), email: t('course_builder.mock_users.inst1.email'), role: 'instructor' },
+    { id: 'inst2', name: t('course_builder.mock_users.inst2.name'), email: t('course_builder.mock_users.inst2.email'), role: 'instructor' },
+    { id: 'inst3', name: t('course_builder.mock_users.inst3.name'), email: t('course_builder.mock_users.inst3.email'), role: 'instructor' },
+    { id: 'stu1', name: t('course_builder.mock_users.stu1.name'), email: t('course_builder.mock_users.stu1.email'), role: 'student' },
+    { id: 'stu2', name: t('course_builder.mock_users.stu2.name'), email: t('course_builder.mock_users.stu2.email'), role: 'student' },
+    { id: 'stu3', name: t('course_builder.mock_users.stu3.name'), email: t('course_builder.mock_users.stu3.email'), role: 'student' },
+  ];
+  
+  const MOCK_INSTRUCTORS_FOR_SELECT = MOCK_USER_DATABASE.filter(u => u.role === 'instructor').map(u => ({ label: `${u.name} (${u.email})`, value: u.id }));
+  const MOCK_STUDENTS_FOR_SELECT = MOCK_USER_DATABASE.filter(u => u.role === 'student').map(u => ({ label: `${u.name} (${u.email})`, value: u.id }));
+
+  const [courseData, setCourseData] = useState<CourseData>({
+    title: '',
+    subtitle: '',
+    description: '',
+    category: '',
+    language: 'english',
+    level: 'beginner',
+    requirements: [],
+    learningOutcomes: [],
+    sections: [{ id: 'sec1', title: 'Introduction', lessons: [] }],
+    instructors: [],
+    students: [],
+  });
   const [activeTab, setActiveTab] = useState('details');
 
   useEffect(() => {
@@ -476,19 +498,14 @@ const CourseBuilder = () => {
   };
 
   const removeListItem = (field: 'requirements' | 'learningOutcomes', itemToRemove: string) => {
-    if (courseData) {
-      const list = courseData[field] as string[];
-      setCourseData({ ...courseData, [field]: list.filter(item => item !== itemToRemove) });
-    }
-  };
-  
-  const handleMembersChange = (role: 'instructors' | 'students', selectedIds: string[]) => {
-    if (courseData) {
-      const selectedMembers = MOCK_USER_DATABASE.filter(user => selectedIds.includes(user.id) && user.role === role.slice(0, -1));
-      setCourseData({ ...courseData, [role]: selectedMembers });
-    }
+    handleInputChange(field, courseData[field].filter(item => item !== itemToRemove));
   };
 
+  const handleMembersChange = (role: 'instructors' | 'students', selectedIds: string[]) => {
+    const selectedMembers = MOCK_USER_DATABASE.filter(user => selectedIds.includes(user.id));
+    handleInputChange(role, selectedMembers);
+  };
+  
   if (!courseData) {
     return <div className="flex justify-center items-center h-screen">Loading...</div>;
   }
@@ -506,9 +523,9 @@ const CourseBuilder = () => {
               <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard/courses')}>
                 <ArrowLeft className="h-5 w-5" />
               </Button>
-              <div>
-                <h1 className="text-xl font-bold">{courseId === 'new' ? t('course_builder.header.create_title') : t('course_builder.header.edit_title')}</h1>
-                <p className="text-sm text-muted-foreground">{courseData.title || t('course_builder.header.subtitle_new')}</p>
+              <div className="flex-1">
+                <h1 className="text-2xl font-bold">{courseId ? t('course_builder.header.edit_title') : t('course_builder.header.create_title')}</h1>
+                <p className="text-muted-foreground">{t('course_builder.header.subtitle_new')}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -534,185 +551,188 @@ const CourseBuilder = () => {
       
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
-        <TabsContent value="details">
+        <TabsContent value="details" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>{t('course_builder.details.title')}</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label htmlFor="title">{t('course_builder.details.form.title.label')}</label>
-                  <Input id="title" value={courseData.title} onChange={(e) => handleInputChange('title', e.target.value)} placeholder={t('course_builder.details.form.title.placeholder')} />
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="subtitle">{t('course_builder.details.form.subtitle.label')}</label>
-                  <Input id="subtitle" value={courseData.subtitle} onChange={(e) => handleInputChange('subtitle', e.target.value)} placeholder={t('course_builder.details.form.subtitle.placeholder')} />
-                </div>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="title">{t('course_builder.details.form.title.label')}</Label>
+                <Input
+                  id="title"
+                  placeholder={t('course_builder.details.form.title.placeholder')}
+                  value={courseData.title}
+                  onChange={(e) => handleInputChange('title', e.target.value)}
+                />
               </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="description">{t('course_builder.details.form.description.label')}</label>
+              <div>
+                <Label htmlFor="subtitle">{t('course_builder.details.form.subtitle.label')}</Label>
+                <Textarea
+                  id="subtitle"
+                  placeholder={t('course_builder.details.form.subtitle.placeholder')}
+                  value={courseData.subtitle}
+                  onChange={(e) => handleInputChange('subtitle', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>{t('course_builder.details.form.description.label')}</Label>
                 <RichTextEditor
                   value={courseData.description}
                   onChange={(value) => handleInputChange('description', value)}
                   placeholder={t('course_builder.details.form.description.placeholder')}
                 />
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <label>{t('course_builder.details.form.category.label')}</label>
-                  <Select value={courseData.category} onValueChange={(value) => handleInputChange('category', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('course_builder.details.form.category.placeholder')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="language-arts">{t('course_builder.categories.language_arts')}</SelectItem>
-                      <SelectItem value="mathematics">{t('course_builder.categories.mathematics')}</SelectItem>
-                      <SelectItem value="science">{t('course_builder.categories.science')}</SelectItem>
-                      <SelectItem value="social-studies">{t('course_builder.categories.social_studies')}</SelectItem>
-                      <SelectItem value="technology">{t('course_builder.categories.technology')}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <label>{t('course_builder.details.form.language.label')}</label>
-                  <Select value={courseData.language} onValueChange={(value) => handleInputChange('language', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('course_builder.details.form.language.placeholder')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="english">English</SelectItem>
-                      <SelectItem value="urdu">Urdu</SelectItem>
-                      <SelectItem value="sindhi">Sindhi</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <label>{t('course_builder.details.form.level.label')}</label>
-                  <Select value={courseData.level} onValueChange={(value) => handleInputChange('level', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('course_builder.details.form.level.placeholder')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="beginner">{t('course_builder.levels.beginner')}</SelectItem>
-                      <SelectItem value="intermediate">{t('course_builder.levels.intermediate')}</SelectItem>
-                      <SelectItem value="advanced">{t('course_builder.levels.advanced')}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                 <Select onValueChange={(value) => handleInputChange('category', value)} value={courseData.category}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('course_builder.details.form.category.placeholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="language-arts">{t('course_builder.categories.language_arts')}</SelectItem>
+                    <SelectItem value="mathematics">{t('course_builder.categories.mathematics')}</SelectItem>
+                    <SelectItem value="science">{t('course_builder.categories.science')}</SelectItem>
+                    <SelectItem value="social-studies">{t('course_builder.categories.social_studies')}</SelectItem>
+                    <SelectItem value="technology">{t('course_builder.categories.technology')}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select onValueChange={(value) => handleInputChange('language', value)} value={courseData.language}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('course_builder.details.form.language.placeholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en">{t('course_builder.languages.english')}</SelectItem>
+                    <SelectItem value="ur">{t('course_builder.languages.urdu')}</SelectItem>
+                    <SelectItem value="sd">{t('course_builder.languages.sindhi')}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select onValueChange={(value) => handleInputChange('level', value)} value={courseData.level}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('course_builder.details.form.level.placeholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="beginner">{t('course_builder.levels.beginner')}</SelectItem>
+                    <SelectItem value="intermediate">{t('course_builder.levels.intermediate')}</SelectItem>
+                    <SelectItem value="advanced">{t('course_builder.levels.advanced')}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              
-              <div>
-                <label>{t('course_builder.details.form.image.label')}</label>
+               <div>
+                <Label>{t('course_builder.details.form.image.label')}</Label>
                 <FileUpload 
-                  onUpload={(file) => handleInputChange('image', file.name)} 
-                  label={t('course_builder.details.form.image.upload_label')}
+                  onUpload={(file) => console.log(file)} 
+                  label={t('course_builder.details.form.image.upload_label')} 
                 />
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label htmlFor="requirements-input">{t('course_builder.details.form.requirements.label')}</label>
-                  <Textarea
-                    id="requirements-input"
-                    placeholder={t('course_builder.details.form.requirements.placeholder')}
-                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleListChange('requirements', e.currentTarget.value); }}}
-                  />
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {courseData.requirements.map(req => (
-                      <Badge key={req} variant="secondary">
-                        {req}
-                        <button onClick={() => removeListItem('requirements', req)} className="ml-2 text-muted-foreground hover:text-foreground">
-                          <X className="h-3 w-3" />
-                        </button>
-                      </Badge>
-                    ))}
-                  </div>
+              <div>
+                <Label htmlFor="requirements">{t('course_builder.details.form.requirements.label')}</Label>
+                <Input
+                  id="requirements"
+                  placeholder={t('course_builder.details.form.requirements.placeholder')}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleListChange('requirements', e.currentTarget.value);
+                      e.currentTarget.value = '';
+                    }
+                  }}
+                />
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {courseData.requirements.map((req, i) => (
+                    <Badge key={i} variant="secondary">
+                      {req}
+                      <button onClick={() => removeListItem('requirements', req)} className="ml-2 text-muted-foreground hover:text-foreground">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </Badge>
+                  ))}
                 </div>
-                <div className="space-y-2">
-                  <label htmlFor="learningOutcomes-input">{t('course_builder.details.form.outcomes.label')}</label>
-                  <Textarea
-                    id="learningOutcomes-input"
-                    placeholder={t('course_builder.details.form.outcomes.placeholder')}
-                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleListChange('learningOutcomes', e.currentTarget.value); }}}
-                  />
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {courseData.learningOutcomes.map(outcome => (
-                      <Badge key={outcome} variant="secondary">
-                        {outcome}
-                        <button onClick={() => removeListItem('learningOutcomes', outcome)} className="ml-2 text-muted-foreground hover:text-foreground">
-                          <X className="h-3 w-3" />
-                        </button>
-                      </Badge>
-                    ))}
-                  </div>
+              </div>
+              <div>
+                <Label htmlFor="outcomes">{t('course_builder.details.form.outcomes.label')}</Label>
+                <Input
+                  id="outcomes"
+                  placeholder={t('course_builder.details.form.outcomes.placeholder')}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleListChange('learningOutcomes', e.currentTarget.value);
+                      e.currentTarget.value = '';
+                    }
+                  }}
+                />
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {courseData.learningOutcomes.map((out, i) => (
+                    <Badge key={i} variant="secondary">
+                      {out}
+                      <button onClick={() => removeListItem('learningOutcomes', out)} className="ml-2 text-muted-foreground hover:text-foreground">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </Badge>
+                  ))}
                 </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
-        
-        <TabsContent value="curriculum">
-          <div className="space-y-6">
-            {courseData.sections.map((section, index) => (
-              <Card key={section.id}>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div className="flex items-center gap-2 flex-1">
-                    <GripVertical className="h-5 w-5 text-muted-foreground cursor-move" />
-                    <Input
-                      value={section.title}
-                      onChange={(e) => updateSectionTitle(section.id, e.target.value)}
-                      placeholder={t('course_builder.curriculum.section_title_placeholder')}
-                      className="text-lg font-semibold"
-                    />
-                  </div>
-                  <Button variant="ghost" size="icon" onClick={() => removeSection(section.id)}>
-                    <X className="w-4 h-4 text-muted-foreground" />
-                  </Button>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {section.lessons.map(lesson => (
-                    <LessonItem 
-                      key={lesson.id} 
-                      lesson={lesson} 
-                      sectionId={section.id} 
-                      onUpdate={updateLesson}
-                      onRemove={removeLesson}
-                    />
-                  ))}
-                  <Button variant="outline" onClick={() => addLesson(section.id)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    {t('course_builder.curriculum.add_lesson_button')}
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-            <Button onClick={addSection}>{t('course_builder.curriculum.add_section_button')}</Button>
-          </div>
+
+        <TabsContent value="curriculum" className="space-y-6">
+          {courseData.sections.map((section, index) => (
+            <Card key={section.id}>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <Input
+                  value={section.title}
+                  onChange={(e) => updateSectionTitle(section.id, e.target.value)}
+                  placeholder={t('course_builder.curriculum.section_title_placeholder')}
+                  className="flex-1"
+                />
+                <Button variant="ghost" size="icon" onClick={() => removeSection(section.id)}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {section.lessons.map(lesson => (
+                  <LessonItem 
+                    key={lesson.id}
+                    lesson={lesson}
+                    sectionId={section.id}
+                    onUpdate={updateLesson}
+                    onRemove={removeLesson}
+                  />
+                ))}
+                <Button variant="outline" onClick={() => addLesson(section.id)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  {t('course_builder.curriculum.add_lesson_button')}
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+          <Button onClick={addSection}>
+            <Plus className="w-4 h-4 mr-2" />
+            {t('course_builder.curriculum.add_section_button')}
+          </Button>
         </TabsContent>
 
-        <TabsContent value="settings">
+        <TabsContent value="settings" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>{t('course_builder.settings.title')}</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <label>{t('course_builder.settings.instructors.label')}</label>
+            <CardContent className="space-y-4">
+              <div>
+                <Label>{t('course_builder.settings.instructors.label')}</Label>
                 <MultiSelect
                   options={MOCK_INSTRUCTORS_FOR_SELECT}
-                  value={selectedInstructorValues}
+                  value={courseData.instructors.map(i => i.id)}
                   onValueChange={(selected) => handleMembersChange('instructors', selected)}
                   placeholder={t('course_builder.settings.instructors.placeholder')}
                 />
               </div>
-              <div className="space-y-2">
-                <label>{t('course_builder.settings.students.label')}</label>
+               <div>
+                <Label>{t('course_builder.settings.students.label')}</Label>
                 <MultiSelect
                   options={MOCK_STUDENTS_FOR_SELECT}
-                  value={selectedStudentValues}
+                  value={courseData.students.map(s => s.id)}
                   onValueChange={(selected) => handleMembersChange('students', selected)}
                   placeholder={t('course_builder.settings.students.placeholder')}
                 />

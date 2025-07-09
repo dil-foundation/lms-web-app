@@ -61,100 +61,100 @@ const StatCard = ({ title, value, icon: Icon, iconColor, bgColor }) => (
     </Card>
 );
 
-const mockLinks = [
+export const SecureLinkManagement = ({ onBack }: SecureLinkManagementProps) => {
+  const { t } = useTranslation();
+
+  const mockLinks = [
     {
-        role: 'Principal',
+        role: t('observation_reports.roles.principal'),
         token: '1c87fa...',
         expiry: 'Jul 21, 2025,\n12:26 PM',
-        status: 'Active',
+        status: t('secure_link.statuses.active'),
         usedBy: '—',
         created: 'Jul 7, 2025,\n12:26 PM',
     },
     {
-        role: 'ECE Observer',
+        role: t('observation_reports.roles.ece_observer'),
         token: '1621b0...',
         expiry: 'Jul 12, 2025,\n03:33 PM',
-        status: 'Active',
+        status: t('secure_link.statuses.active'),
         usedBy: '—',
         created: 'Jul 5, 2025,\n03:33 PM',
     },
-];
+  ];
 
-const getRoleBadgeClass = (role: string) => {
-    switch (role) {
-        case 'Principal':
-            return 'bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/50 dark:text-blue-300';
-        case 'ECE Observer':
-            return 'bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/50 dark:text-green-300';
-        default:
-            return 'bg-gray-100 text-gray-800';
+  const getRoleBadgeClass = (role: string) => {
+    if (role === t('observation_reports.roles.principal')) {
+        return 'bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/50 dark:text-blue-300';
     }
-};
+    if (role === t('observation_reports.roles.ece_observer')) {
+        return 'bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/50 dark:text-green-300';
+    }
+    return 'bg-gray-100 text-gray-800';
+  };
 
-const GenerateLinkModalContent = () => {
-  const { t } = useTranslation();
-  const [role, setRole] = useState('');
-  const [expiry, setExpiry] = useState('7');
+  const GenerateLinkModalContent = () => {
+    const { t } = useTranslation();
+    const [role, setRole] = useState('');
+    const [expiry, setExpiry] = useState('7');
 
-  return (
-    <>
-      <DialogHeader>
-        <div className="flex items-center gap-3 mb-4">
-          <div className="bg-green-100 dark:bg-green-900/20 p-2 rounded-full">
-            <LinkIcon className="w-5 h-5 text-green-600" />
+    return (
+      <>
+        <DialogHeader>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="bg-green-100 dark:bg-green-900/20 p-2 rounded-full">
+              <LinkIcon className="w-5 h-5 text-green-600" />
+            </div>
+            <DialogTitle className="text-xl font-bold">{t('secure_link.modal.title')}</DialogTitle>
           </div>
-          <DialogTitle className="text-xl font-bold">{t('secure_link.modal.title')}</DialogTitle>
+          <DialogDescription>
+            {t('secure_link.modal.description')}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-6 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="observer-role">{t('secure_link.modal.observer_role')}</Label>
+            <Select value={role} onValueChange={setRole}>
+              <SelectTrigger id="observer-role" className="h-11">
+                <SelectValue placeholder={t('secure_link.modal.select_role_placeholder')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="principal">{t('observation_reports.roles.principal')}</SelectItem>
+                <SelectItem value="ece">{t('observation_reports.roles.ece_observer')}</SelectItem>
+                <SelectItem value="school-officer">{t('observation_reports.roles.school_officer')}</SelectItem>
+                <SelectItem value="project-manager">{t('observation_reports.roles.project_manager')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="expiry-days">{t('secure_link.modal.expiry_days')}</Label>
+            <Select value={expiry} onValueChange={setExpiry}>
+              <SelectTrigger id="expiry-days" className="h-11">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">{t('secure_link.modal.days', { count: 1 })}</SelectItem>
+                <SelectItem value="3">{t('secure_link.modal.days', { count: 3 })}</SelectItem>
+                <SelectItem value="7">{t('secure_link.modal.days', { count: 7 })}</SelectItem>
+                <SelectItem value="14">{t('secure_link.modal.days', { count: 14 })}</SelectItem>
+                <SelectItem value="30">{t('secure_link.modal.days', { count: 30 })}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <DialogDescription>
-          {t('secure_link.modal.description')}
-        </DialogDescription>
-      </DialogHeader>
-      <div className="grid gap-6 py-4">
-        <div className="space-y-2">
-          <Label htmlFor="observer-role">{t('secure_link.modal.observer_role')}</Label>
-          <Select value={role} onValueChange={setRole}>
-            <SelectTrigger id="observer-role" className="h-11">
-              <SelectValue placeholder={t('secure_link.modal.select_role_placeholder')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="principal">{t('observation_reports.roles.principal')}</SelectItem>
-              <SelectItem value="ece">{t('observation_reports.roles.ece_observer')}</SelectItem>
-              <SelectItem value="school-officer">{t('observation_reports.roles.school_officer')}</SelectItem>
-              <SelectItem value="project-manager">{t('observation_reports.roles.project_manager')}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="expiry-days">{t('secure_link.modal.expiry_days')}</Label>
-          <Select value={expiry} onValueChange={setExpiry}>
-            <SelectTrigger id="expiry-days" className="h-11">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1">{t('secure_link.modal.days', { count: 1 })}</SelectItem>
-              <SelectItem value="3">{t('secure_link.modal.days', { count: 3 })}</SelectItem>
-              <SelectItem value="7">{t('secure_link.modal.days', { count: 7 })}</SelectItem>
-              <SelectItem value="14">{t('secure_link.modal.days', { count: 14 })}</SelectItem>
-              <SelectItem value="30">{t('secure_link.modal.days', { count: 30 })}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      <DialogFooter>
-        <DialogClose asChild>
-          <Button variant="outline">{t('common.cancel')}</Button>
-        </DialogClose>
-        <Button type="submit" className="bg-green-600 hover:bg-green-700 text-white">
-          <LinkIcon className="w-4 h-4 mr-2" />
-          {t('secure_link.modal.generate_link_button')}
-        </Button>
-      </DialogFooter>
-    </>
-  );
-};
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="outline">{t('common.cancel')}</Button>
+          </DialogClose>
+          <Button type="submit" className="bg-green-600 hover:bg-green-700 text-white">
+            <LinkIcon className="w-4 h-4 mr-2" />
+            {t('secure_link.modal.generate_link_button')}
+          </Button>
+        </DialogFooter>
+      </>
+    );
+  };
 
-export const SecureLinkManagement = ({ onBack }: SecureLinkManagementProps) => {
-  const { t } = useTranslation();
   return (
     <div className="space-y-6 mx-auto p-4 sm:p-6">
       <div className="flex items-center gap-4">
@@ -224,7 +224,7 @@ export const SecureLinkManagement = ({ onBack }: SecureLinkManagementProps) => {
                   <TableCell className="font-mono">{link.token}</TableCell>
                   <TableCell>{link.expiry}</TableCell>
                   <TableCell>
-                    <Badge variant={link.status === 'Active' ? 'default' : 'destructive'}>
+                    <Badge variant={link.status === t('secure_link.statuses.active') ? 'default' : 'destructive'}>
                       {link.status}
                     </Badge>
                   </TableCell>

@@ -45,14 +45,14 @@ export const CourseOverview = ({ courseId }: CourseOverviewProps) => {
   // Mock course data - in real app, this would come from API
   const course = {
     id: courseId || id || '1',
-    title: "Complete English Language Mastery",
-    subtitle: "Master English from beginner to advanced level with AI-powered learning",
-    description: "This comprehensive course takes you from basic English fundamentals to advanced fluency. Learn with interactive lessons, real-world examples, and personalized AI tutoring that adapts to your learning style.",
+    title: t('course_overview.course.title'),
+    subtitle: t('course_overview.course.subtitle'),
+    description: t('course_overview.course.description'),
     thumbnail: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
     videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", // Mock video URL
     instructor: {
-      name: "Dr. Sarah Johnson",
-      title: "English Language Expert",
+      name: t('course_overview.course.instructor.name'),
+      title: t('course_overview.course.instructor.title'),
       avatar: "SJ",
       rating: 4.8,
       students: 12000,
@@ -62,106 +62,106 @@ export const CourseOverview = ({ courseId }: CourseOverviewProps) => {
       rating: 4.9,
       totalRatings: 2847,
       students: 18500,
-      duration: "42 hours",
+      duration: t('course_overview.course.stats.duration'),
       lessons: 156,
-      level: "All Levels",
-      language: "English",
-      lastUpdated: "March 2024"
+      level: t('course_overview.course.stats.level'),
+      language: t('course_overview.course.stats.language'),
+      lastUpdated: t('course_overview.course.stats.lastUpdated')
     },
     progress: {
       completed: 12,
       total: 156,
       percentage: 8,
-      lastAccessed: "2 days ago",
-      nextLesson: "Parts of Speech"
+      lastAccessed: t('course_overview.course.progress.lastAccessed'),
+      nextLesson: t('course_overview.course.progress.nextLesson')
     },
     features: [
-      "42 hours of on-demand video",
-      "156 downloadable lessons",
-      "AI-powered personalized tutoring",
-      "Interactive quizzes and exercises",
-      "Mobile and desktop access",
-      "Certificate of completion",
-      "Lifetime access",
-      "30-day money-back guarantee"
+      t('course_overview.course.features.0'),
+      t('course_overview.course.features.1'),
+      t('course_overview.course.features.2'),
+      t('course_overview.course.features.3'),
+      t('course_overview.course.features.4'),
+      t('course_overview.course.features.5'),
+      t('course_overview.course.features.6'),
+      t('course_overview.course.features.7')
     ],
     whatYouLearn: [
-      "Speak English confidently in any situation",
-      "Understand native English speakers clearly",
-      "Write professional emails and documents",
-      "Master English grammar and vocabulary",
-      "Develop natural pronunciation",
-      "Build business English skills"
+      t('course_overview.course.whatYouLearn.0'),
+      t('course_overview.course.whatYouLearn.1'),
+      t('course_overview.course.whatYouLearn.2'),
+      t('course_overview.course.whatYouLearn.3'),
+      t('course_overview.course.whatYouLearn.4'),
+      t('course_overview.course.whatYouLearn.5')
     ],
     requirements: [
-      "Basic understanding of English alphabet",
-      "Willingness to practice daily",
-      "Internet connection for video lessons",
-      "No prior English experience required"
+      t('course_overview.course.requirements.0'),
+      t('course_overview.course.requirements.1'),
+      t('course_overview.course.requirements.2'),
+      t('course_overview.course.requirements.3')
     ],
     curriculum: [
       {
         id: 'module-1',
-        title: 'Getting Started',
-        duration: '2h 30m',
+        title: t('course_overview.course.curriculum.0.title'),
+        duration: t('course_overview.course.curriculum.0.duration'),
         lessons: 3,
-        description: 'Introduction to the course and basic navigation',
+        description: t('course_overview.course.curriculum.0.description'),
         topics: [
-          'Welcome to the Course',
-          'Course Navigation',
-          'Learning Objectives Quiz'
+          t('course_overview.course.curriculum.0.topics.0'),
+          t('course_overview.course.curriculum.0.topics.1'),
+          t('course_overview.course.curriculum.0.topics.2')
         ]
       },
       {
         id: 'module-2',
-        title: 'Basic Grammar Foundation',
-        duration: '8h 45m',
+        title: t('course_overview.course.curriculum.1.title'),
+        duration: t('course_overview.course.curriculum.1.duration'),
         lessons: 12,
-        description: 'Fundamental grammar concepts and sentence structure',
+        description: t('course_overview.course.curriculum.1.description'),
         topics: [
-          'Parts of Speech',
-          'Sentence Structure',
-          'Tenses Overview',
-          'Common Grammar Mistakes'
+          t('course_overview.course.curriculum.1.topics.0'),
+          t('course_overview.course.curriculum.1.topics.1'),
+          t('course_overview.course.curriculum.1.topics.2'),
+          t('course_overview.course.curriculum.1.topics.3')
         ]
       },
       {
         id: 'module-3',
-        title: 'Vocabulary Building',
-        duration: '12h 15m',
+        title: t('course_overview.course.curriculum.2.title'),
+        duration: t('course_overview.course.curriculum.2.duration'),
         lessons: 18,
-        description: 'Essential vocabulary for daily communication',
+        description: t('course_overview.course.curriculum.2.description'),
         topics: [
-          'Daily Conversation Words',
-          'Business Vocabulary',
-          'Academic Terms',
-          'Idioms and Expressions'
+          t('course_overview.course.curriculum.2.topics.0'),
+          t('course_overview.course.curriculum.2.topics.1'),
+          t('course_overview.course.curriculum.2.topics.2'),
+          t('course_overview.course.curriculum.2.topics.3')
         ]
       },
       {
         id: 'module-4',
-        title: 'Speaking & Pronunciation',
-        duration: '10h 30m',
+        title: t('course_overview.course.curriculum.3.title'),
+        duration: t('course_overview.course.curriculum.3.duration'),
         lessons: 15,
-        description: 'Develop natural pronunciation and speaking confidence',
+        description: t('course_overview.course.curriculum.3.description'),
         topics: [
-          'Phonetic Sounds',
-          'Stress and Intonation',
-          'Conversation Practice',
-          'Public Speaking'
+          t('course_overview.course.curriculum.3.topics.0'),
+          t('course_overview.course.curriculum.3.topics.1'),
+          t('course_overview.course.curriculum.3.topics.2'),
+          t('course_overview.course.curriculum.3.topics.3')
         ]
       },
       {
         id: 'module-5',
-        title: 'Reading & Writing',
-        duration: '8h 0m',
+        title: t('course_overview.course.curriculum.4.title'),
+        duration: t('course_overview.course.curriculum.4.duration'),
         lessons: 14,
-        description: 'Improve reading comprehension and writing skills',
+        description: t('course_overview.course.curriculum.4.description'),
         topics: [
-          'Reading Strategies',
-          'Writing Techniques',
-          'Essay Structure',
-          'Professional Writing'
+          t('course_overview.course.curriculum.4.topics.0'),
+          t('course_overview.course.curriculum.4.topics.1'),
+          t('course_overview.course.curriculum.4.topics.2'),
+          t('course_overview.course.curriculum.4.topics.3')
         ]
       }
     ]

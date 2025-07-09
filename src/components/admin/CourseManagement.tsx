@@ -41,49 +41,49 @@ export const CourseManagement = () => {
   const courses = [
     {
       id: 1,
-      title: "Stage 0 - Beginner English for Urdu Speakers",
-      instructor: "Sarah Johnson",
-      category: "Language Learning",
+      title: "course_management.courses.beginner_english.title",
+      instructor: "course_management.courses.beginner_english.instructor",
+      category: "course_management.category.language_learning",
       status: "published",
       enrolledStudents: 245,
       image: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-      duration: "8 weeks",
+      duration: "course_management.courses.beginner_english.duration",
       lessons: 24,
       createdAt: "2024-01-15"
     },
     {
       id: 2,
-      title: "Stage 1 - Building Confidence",
-      instructor: "Michael Chen",
-      category: "Language Learning",
+      title: "course_management.courses.building_confidence.title",
+      instructor: "course_management.courses.building_confidence.instructor",
+      category: "course_management.category.language_learning",
       status: "draft",
       enrolledStudents: 0,
       image: "https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-      duration: "6 weeks",
+      duration: "course_management.courses.building_confidence.duration",
       lessons: 18,
       createdAt: "2024-02-01"
     },
     {
       id: 3,
-      title: "Stage 2 - Elementary English",
-      instructor: "Emily Rodriguez",
-      category: "Language Learning",
+      title: "course_management.courses.elementary_english.title",
+      instructor: "course_management.courses.elementary_english.instructor",
+      category: "course_management.category.language_learning",
       status: "published",
       enrolledStudents: 189,
       image: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2028&q=80",
-      duration: "10 weeks",
+      duration: "course_management.courses.elementary_english.duration",
       lessons: 30,
       createdAt: "2024-01-20"
     },
     {
       id: 4,
-      title: "Stage 3 - Intermediate English",
-      instructor: "David Kim",
-      category: "Language Learning",
+      title: "course_management.courses.intermediate_english.title",
+      instructor: "course_management.courses.intermediate_english.instructor",
+      category: "course_management.category.language_learning",
       status: "under-review",
       enrolledStudents: 67,
       image: "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1973&q=80",
-      duration: "12 weeks",
+      duration: "course_management.courses.intermediate_english.duration",
       lessons: 36,
       createdAt: "2024-02-10"
     }
@@ -105,10 +105,10 @@ export const CourseManagement = () => {
   };
 
   const filteredCourses = courses.filter(course => {
-    const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         course.instructor.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = t(course.title).toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         t(course.instructor).toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || course.status === statusFilter;
-    const matchesCategory = categoryFilter === 'all' || course.category === categoryFilter;
+    const matchesCategory = categoryFilter === 'all' || t(course.category) === categoryFilter;
     
     return matchesSearch && matchesStatus && matchesCategory;
   });
@@ -236,40 +236,39 @@ export const CourseManagement = () => {
       {/* Course List */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
         {filteredCourses.map(course => (
-          <Card key={course.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-            <img src={course.image} alt={course.title} className="w-full h-40 object-cover" />
-            <CardContent className="p-4 space-y-3">
+          <Card key={course.id} className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col">
+            <img src={course.image} alt={t(course.title)} className="w-full h-40 object-cover" />
+            <CardContent className="p-4 space-y-3 flex-grow">
               <div className="flex justify-between items-start">
-                <h3 className="font-bold text-lg text-foreground line-clamp-2">{course.title}</h3>
+                <h3 className="font-bold text-lg text-foreground line-clamp-2 h-14">{t(course.title)}</h3>
                 {getStatusBadge(course.status)}
               </div>
               <p className="text-sm text-muted-foreground">
-                {t('course_management.by_instructor', { instructor: course.instructor })}
+                {t('course_management.by_instructor', { instructor: t(course.instructor) })}
               </p>
               
               <div className="flex items-center text-sm text-muted-foreground space-x-4 pt-2">
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
                   <BookOpen className="w-4 h-4" />
                   <span>{t('course_management.lessons', { count: course.lessons })}</span>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
                   <Users className="w-4 h-4" />
                   <span>{t('course_management.students', { count: course.enrolledStudents })}</span>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4" />
-                  <span>{course.duration}</span>
+                  <span>{t(course.duration)}</span>
                 </div>
               </div>
-
             </CardContent>
-            <div className="p-4 bg-muted/50 dark:bg-muted/20 border-t border-border flex justify-between items-center">
+            <div className="px-4 py-3 bg-muted/40 border-t border-border flex justify-between items-center">
               <p className="text-xs text-muted-foreground">
-                {t('course_management.created_at', { date: new Date(course.createdAt).toLocaleDateString() })}
+                {t('course_management.created_at', { date: new Date(course.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) })}
               </p>
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm" onClick={() => handleEditCourse(course.id)}>
-                  <Edit className="w-3.5 h-3.5 mr-1.5" />
+                  <Edit className="w-3 h-3 mr-1" />
                   {t('course_management.edit')}
                 </Button>
                 <DropdownMenu>

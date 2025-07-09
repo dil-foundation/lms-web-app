@@ -52,62 +52,40 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
   // Mock course data - in real app, this would come from API
   const course = {
     id: courseId || id || '1',
-    title: "Complete English Language Mastery",
+    title: t('course_content.course.title'),
     totalProgress: 45,
     modules: [
       {
         id: 'module-1',
-        title: 'Getting Started',
-        duration: '2h 30m',
+        title: t('course_content.course.modules.0.title'),
+        duration: t('course_content.course.modules.0.duration'),
         lessons: [
           {
             id: 'lesson-1-1',
-            title: 'Welcome to the Course',
+            title: t('course_content.course.modules.0.lessons.0.title'),
             type: 'video',
             duration: '5:30',
             completed: true,
             content: {
               videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-              transcript: 'Welcome to our comprehensive English language course...',
-              description: 'In this introductory lesson, we will cover the course structure and learning objectives.'
+              transcript: t('course_content.course.modules.0.lessons.0.content.transcript'),
+              description: t('course_content.course.modules.0.lessons.0.content.description')
             }
           },
           {
             id: 'lesson-1-2',
-            title: 'Course Navigation',
+            title: t('course_content.course.modules.0.lessons.1.title'),
             type: 'text',
             duration: '10 min',
             completed: true,
             content: {
-              title: 'How to Navigate This Course',
-              text: `
-                <h2>Getting Around</h2>
-                <p>This course is designed to be intuitive and easy to navigate. Here's how to make the most of your learning experience:</p>
-                
-                <h3>Lesson Types</h3>
-                <ul>
-                  <li><strong>Video Lessons:</strong> Watch and learn from expert instructors</li>
-                  <li><strong>Text Lessons:</strong> Read detailed explanations and examples</li>
-                  <li><strong>Quizzes:</strong> Test your knowledge and reinforce learning</li>
-                </ul>
-                
-                <h3>Progress Tracking</h3>
-                <p>Your progress is automatically saved as you complete each lesson. You can see your overall progress in the sidebar.</p>
-                
-                <h3>Interactive Features</h3>
-                <p>Take advantage of:</p>
-                <ul>
-                  <li>Downloadable resources</li>
-                  <li>Note-taking capabilities</li>
-                  <li>Discussion forums</li>
-                  <li>AI-powered assistance</li>
-                </ul>
-              `
+              title: t('course_content.course.modules.0.lessons.1.content.title'),
+              text: t('course_content.course.modules.0.lessons.1.content.text')
             }
           },
           {
             id: 'lesson-1-3',
-            title: 'Learning Objectives Quiz',
+            title: t('course_content.course.modules.0.lessons.2.title'),
             type: 'quiz',
             duration: '5 min',
             completed: false,
@@ -115,23 +93,23 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
               questions: [
                 {
                   id: 'q1',
-                  question: 'What is the main goal of this course?',
+                  question: t('course_content.course.modules.0.lessons.2.content.questions.0.question'),
                   options: [
-                    'To learn basic English vocabulary',
-                    'To achieve English language mastery',
-                    'To prepare for English exams',
-                    'To practice conversation skills'
+                    t('course_content.course.modules.0.lessons.2.content.questions.0.options.0'),
+                    t('course_content.course.modules.0.lessons.2.content.questions.0.options.1'),
+                    t('course_content.course.modules.0.lessons.2.content.questions.0.options.2'),
+                    t('course_content.course.modules.0.lessons.2.content.questions.0.options.3')
                   ],
                   correct: 1
                 },
                 {
                   id: 'q2',
-                  question: 'Which learning method is NOT mentioned in this course?',
+                  question: t('course_content.course.modules.0.lessons.2.content.questions.1.question'),
                   options: [
-                    'Video lessons',
-                    'Text lessons',
-                    'Group projects',
-                    'Quizzes'
+                    t('course_content.course.modules.0.lessons.2.content.questions.1.options.0'),
+                    t('course_content.course.modules.0.lessons.2.content.questions.1.options.1'),
+                    t('course_content.course.modules.0.lessons.2.content.questions.1.options.2'),
+                    t('course_content.course.modules.0.lessons.2.content.questions.1.options.3')
                   ],
                   correct: 2
                 }
@@ -142,68 +120,49 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       },
       {
         id: 'module-2',
-        title: 'Basic Grammar Foundation',
-        duration: '8h 45m',
+        title: t('course_content.course.modules.1.title'),
+        duration: t('course_content.course.modules.1.duration'),
         lessons: [
           {
             id: 'lesson-2-1',
-            title: 'Parts of Speech',
+            title: t('course_content.course.modules.1.lessons.0.title'),
             type: 'video',
             duration: '15:20',
             completed: false,
             content: {
               videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-              transcript: 'Let\'s explore the fundamental parts of speech...',
-              description: 'Learn about nouns, verbs, adjectives, and more in this comprehensive lesson.'
+              transcript: t('course_content.course.modules.1.lessons.0.content.transcript'),
+              description: t('course_content.course.modules.1.lessons.0.content.description')
             }
           },
           {
             id: 'lesson-2-2',
-            title: 'Sentence Structure',
+            title: t('course_content.course.modules.1.lessons.1.title'),
             type: 'text',
             duration: '20 min',
             completed: false,
             content: {
-              title: 'Understanding Sentence Structure',
-              text: `
-                <h2>Basic Sentence Patterns</h2>
-                <p>English sentences follow predictable patterns. Understanding these patterns will help you construct clear, grammatically correct sentences.</p>
-                
-                <h3>Subject + Verb (SV)</h3>
-                <p>The simplest sentence pattern:</p>
-                <ul>
-                  <li>Birds fly.</li>
-                  <li>She laughed.</li>
-                  <li>Time passes.</li>
-                </ul>
-                
-                <h3>Subject + Verb + Object (SVO)</h3>
-                <p>Adding an object to receive the action:</p>
-                <ul>
-                  <li>She reads books.</li>
-                  <li>They play football.</li>
-                  <li>I drink coffee.</li>
-                </ul>
-              `
+              title: t('course_content.course.modules.1.lessons.1.content.title'),
+              text: t('course_content.course.modules.1.lessons.1.content.text')
             }
           }
         ]
       },
       {
         id: 'module-3',
-        title: 'Vocabulary Building',
-        duration: '12h 15m',
+        title: t('course_content.course.modules.2.title'),
+        duration: t('course_content.course.modules.2.duration'),
         lessons: [
           {
             id: 'lesson-3-1',
-            title: 'Essential Daily Vocabulary',
+            title: t('course_content.course.modules.2.lessons.0.title'),
             type: 'video',
             duration: '18:45',
             completed: false,
             content: {
               videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-              transcript: 'Today we\'ll learn essential vocabulary for daily conversations...',
-              description: 'Master 100 essential words used in everyday English conversations.'
+              transcript: t('course_content.course.modules.2.lessons.0.content.transcript'),
+              description: t('course_content.course.modules.2.lessons.0.content.description')
             }
           }
         ]

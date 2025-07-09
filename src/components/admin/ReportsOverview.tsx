@@ -4,339 +4,472 @@ import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend } from 'recharts';
-import { Users, GraduationCap, BookOpen, TrendingUp, Clock, Star, DollarSign, Award } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Download,
+  Search,
+  Users,
+  BookOpen,
+  Activity,
+  Cog,
+  ShieldAlert,
+  RefreshCw,
+  DollarSign,
+  TrendingUp,
+  BarChart2,
+  FileText,
+  CheckCircle,
+  MessageSquare,
+  XCircle
+} from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LabelList, Cell } from 'recharts';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-// Mock data for demonstration
-const userStatsData = [
-  { month: 'Jan', activeUsers: 1200, newSignups: 150, churnRate: 5 },
-  { month: 'Feb', activeUsers: 1350, newSignups: 180, churnRate: 4 },
-  { month: 'Mar', activeUsers: 1500, newSignups: 200, churnRate: 3 },
-  { month: 'Apr', activeUsers: 1650, newSignups: 170, churnRate: 4 },
-  { month: 'May', activeUsers: 1800, newSignups: 220, churnRate: 3 },
-  { month: 'Jun', activeUsers: 1950, newSignups: 190, churnRate: 2 },
-];
+const StatCard = ({ title, value, subtitle, icon: Icon }) => {
+  const { t } = useTranslation();
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{value}</div>
+        <p className="text-xs text-muted-foreground">{subtitle}</p>
+      </CardContent>
+    </Card>
+  );
+};
 
-const coursePerformanceData = [
-  { course: 'JavaScript Fundamentals', enrollments: 450, completionRate: 78, avgRating: 4.5 },
-  { course: 'React Development', enrollments: 380, completionRate: 72, avgRating: 4.7 },
-  { course: 'Python Basics', enrollments: 520, completionRate: 85, avgRating: 4.3 },
-  { course: 'Data Science', enrollments: 290, completionRate: 65, avgRating: 4.6 },
-  { course: 'Machine Learning', enrollments: 210, completionRate: 58, avgRating: 4.4 },
-];
 
-const engagementData = [
-  { day: 'Mon', timeSpent: 45, quizScore: 78 },
-  { day: 'Tue', timeSpent: 52, quizScore: 82 },
-  { day: 'Wed', timeSpent: 38, quizScore: 75 },
-  { day: 'Thu', timeSpent: 48, quizScore: 80 },
-  { day: 'Fri', timeSpent: 42, quizScore: 77 },
-  { day: 'Sat', timeSpent: 35, quizScore: 73 },
-  { day: 'Sun', timeSpent: 28, quizScore: 70 },
-];
+const CoursesAnalytics = () => {
+  const { t } = useTranslation();
 
-const revenueData = [
-  { month: 'Jan', revenue: 15000, subscriptions: 300 },
-  { month: 'Feb', revenue: 18000, subscriptions: 360 },
-  { month: 'Mar', revenue: 22000, subscriptions: 440 },
-  { month: 'Apr', revenue: 19500, subscriptions: 390 },
-  { month: 'May', revenue: 25000, subscriptions: 500 },
-  { month: 'Jun', revenue: 28000, subscriptions: 560 },
-];
+  const topCoursesData = [
+    { course: 'DIL-SE', instructor: 'Nasir Mahmood', students: 2, completion: 0, status: 'published' },
+    { course: 'Mathematics-SOW (2025-26)', instructor: 'Nasir Mahmood', students: 2, completion: 0, status: 'draft' },
+    { course: 'TEST1', instructor: 'Nasir Mahmood', students: 1, completion: 0, status: 'published' },
+    { course: 'Test1', instructor: 'Nasir Mahmood', students: 2, completion: 0, status: 'draft' },
+  ];
+  
+  const getStatusBadgeClass = (status) => {
+    switch (status) {
+      case 'published': return 'bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/50 dark:text-green-300';
+      case 'draft': return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-300';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
 
-const categoryDistribution = [
-  { name: 'Programming', value: 35, color: '#8884d8' },
-  { name: 'Design', value: 25, color: '#82ca9d' },
-  { name: 'Business', value: 20, color: '#ffc658' },
-  { name: 'Data Science', value: 15, color: '#ff7300' },
-  { name: 'Others', value: 5, color: '#00C49F' },
-];
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>{t('reports_analytics.courses.courses_analytics')}</CardTitle>
+          <Button variant="outline" size="sm">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            {t('reports_analytics.courses.refresh')}
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <StatCard title={t('reports_analytics.courses.total_courses')} value="4" subtitle="2 published" icon={BookOpen} />
+            <StatCard title={t('reports_analytics.courses.total_enrollments')} value="6" subtitle="Across all courses" icon={Users} />
+            <StatCard title={t('reports_analytics.courses.completion_rate')} value="0%" subtitle="Average across courses" icon={TrendingUp} />
+            <StatCard title={t('reports_analytics.courses.course_levels')} value="3/1/0" subtitle="Beginner/Intermediate/Advanced" icon={BarChart2} />
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('reports_analytics.courses.top_performing_courses')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t('reports_analytics.courses.table.course')}</TableHead>
+                <TableHead>{t('reports_analytics.courses.table.instructor')}</TableHead>
+                <TableHead>{t('reports_analytics.courses.table.students')}</TableHead>
+                <TableHead>{t('reports_analytics.courses.table.completion')}</TableHead>
+                <TableHead>{t('reports_analytics.courses.table.status')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {topCoursesData.map((course) => (
+                <TableRow key={course.course}>
+                  <TableCell className="font-medium">{course.course}</TableCell>
+                  <TableCell>{course.instructor}</TableCell>
+                  <TableCell>{course.students}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Progress value={course.completion} className="w-24" />
+                      <span>{course.completion}%</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={getStatusBadgeClass(course.status)}>{course.status}</Badge>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  )
+};
 
-const chartConfig = {
-  activeUsers: { label: 'Active Users', color: '#8884d8' },
-  newSignups: { label: 'New Signups', color: '#82ca9d' },
-  churnRate: { label: 'Churn Rate (%)', color: '#ffc658' },
-  enrollments: { label: 'Enrollments', color: '#8884d8' },
-  completionRate: { label: 'Completion Rate (%)', color: '#82ca9d' },
-  avgRating: { label: 'Avg Rating', color: '#ffc658' },
-  timeSpent: { label: 'Time Spent (min)', color: '#8884d8' },
-  quizScore: { label: 'Quiz Score (%)', color: '#82ca9d' },
-  revenue: { label: 'Revenue ($)', color: '#8884d8' },
-  subscriptions: { label: 'Subscriptions', color: '#82ca9d' },
+const UsersAnalytics = () => <div>Users Analytics Content</div>;
+const SystemAnalytics = () => <div>System Analytics Content</div>;
+
+const ActivityAnalytics = () => {
+  const { t } = useTranslation();
+  
+  const recentActivityData = [
+      { user: 'Demo Admin', role: 'admin', activity: 'Untitled Post', details: 'ok', course: 'DIL-SE', time: '3 days ago' },
+      { user: 'Demo Admin', role: 'admin', activity: 'Untitled Post', details: 'Hi', course: 'DIL-SE', time: '4 days ago' },
+      { user: 'Student2', role: 'student', activity: 'Untitled Post', details: 'Thanks Teacher', course: 'DIL-SE', time: '15 days ago' },
+      { user: 'Nasir Mahmood', role: 'teacher', activity: 'THIS IS TEST ANNOUNCEMENT', details: 'BRING YOU IDS', course: 'Test1', time: '15 days ago' },
+      { user: 'Nasir Mahmood', role: 'teacher', activity: 'THIS IS A TEST ANNOUNCEMENT', details: 'BRING YOU IDS to the principal\'s office to pick up...', course: 'Test1', time: '15 days ago' },
+  ];
+
+  const getRoleBadgeClass = (role) => {
+    switch (role) {
+      case 'admin': return 'bg-purple-100 text-purple-800';
+      case 'teacher': return 'bg-blue-100 text-blue-800';
+      case 'student': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>{t('reports_analytics.activity.activity_analytics')}</CardTitle>
+          <Button variant="outline" size="sm">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            {t('reports_analytics.activity.refresh')}
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <StatCard title={t('reports_analytics.activity.lesson_completions')} value="0" subtitle="Last 30 days" icon={CheckCircle} />
+            <StatCard title={t('reports_analytics.activity.quiz_attempts')} value="0" subtitle="Last 30 days" icon={FileText} />
+            <StatCard title={t('reports_analytics.activity.discussion_posts')} value="6" subtitle="Last 30 days" icon={MessageSquare} />
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('reports_analytics.activity.recent_activity')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t('reports_analytics.activity.table.user')}</TableHead>
+                <TableHead>{t('reports_analytics.activity.table.activity')}</TableHead>
+                <TableHead>{t('reports_analytics.activity.table.course')}</TableHead>
+                <TableHead>{t('reports_analytics.activity.table.time')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {recentActivityData.map((item, index) => (
+                <TableRow key={index}>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback>{item.user.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium">{item.user}</p>
+                        <Badge className={getRoleBadgeClass(item.role)}>{item.role}</Badge>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <p className="font-medium">{item.activity}</p>
+                    <p className="text-sm text-muted-foreground truncate max-w-xs">{item.details}</p>
+                  </TableCell>
+                  <TableCell>{item.course}</TableCell>
+                  <TableCell>{item.time}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+
+const PlatformAnalytics = () => {
+  const { t } = useTranslation();
+
+  const userDistributionData = [
+    { name: t('reports_analytics.platform.students'), value: 3, color: '#22c55e' },
+    { name: t('reports_analytics.platform.teachers'), value: 2, color: '#3b82f6' },
+    { name: t('reports_analytics.platform.admins'), value: 3, color: '#8b5cf6' },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>{t('reports_analytics.platform.platform_analytics')}</CardTitle>
+          <Button variant="outline" size="sm">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            {t('reports_analytics.platform.refresh')}
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <StatCard title={t('reports_analytics.platform.total_users')} value="8" subtitle={t('reports_analytics.platform.users_subtitle')} icon={Users} />
+            <StatCard title={t('reports_analytics.platform.total_courses')} value="4" subtitle={t('reports_analytics.platform.courses_subtitle')} icon={BookOpen} />
+            <StatCard title={t('reports_analytics.platform.enrollments')} value="6" subtitle={t('reports_analytics.platform.enrollments_subtitle')} icon={TrendingUp} />
+            <StatCard title={t('reports_analytics.platform.total_revenue')} value="$0" subtitle={t('reports_analytics.platform.revenue_subtitle')} icon={DollarSign} />
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>{t('reports_analytics.platform.user_distribution')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={userDistributionData} layout="vertical" margin={{ left: 10 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                <XAxis type="number" hide />
+                <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} tick={{ fontSize: 12 }} width={80} />
+                <Bar dataKey="value" barSize={20} radius={[0, 4, 4, 0]}>
+                  {userDistributionData.map((entry) => (
+                    <Cell key={`cell-${entry.name}`} fill={entry.color} />
+                  ))}
+                  <LabelList dataKey="value" position="right" offset={8} className="font-medium" />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+        <Card className="lg:col-span-3">
+          <CardHeader>
+            <CardTitle>{t('reports_analytics.platform.platform_activity')}</CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">{t('reports_analytics.platform.lesson_completions')}</p>
+              <p className="text-3xl font-bold">0</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">{t('reports_analytics.platform.quiz_attempts')}</p>
+              <p className="text-3xl font-bold">0</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">{t('reports_analytics.platform.discussion_posts')}</p>
+              <p className="text-3xl font-bold">6</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">{t('reports_analytics.platform.badges_awarded')}</p>
+              <p className="text-3xl font-bold">0</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+const AlertsAnalytics = () => {
+  const { t } = useTranslation();
+
+  const alertsData = [
+    // This will be empty as per the design
+  ];
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>{t('reports_analytics.alerts.alerts_analytics')}</CardTitle>
+          <Button variant="outline" size="sm">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            {t('reports_analytics.alerts.refresh')}
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <StatCard title={t('reports_analytics.alerts.total_alerts')} value="0" subtitle="0 unresolved" icon={ShieldAlert} />
+            <StatCard title={t('reports_analytics.alerts.critical_alerts')} value="0" subtitle="Highest priority" icon={XCircle} />
+            <StatCard title={t('reports_analytics.alerts.warnings')} value="0" subtitle="Medium priority" icon={ShieldAlert} />
+            <StatCard title={t('reports_analytics.alerts.info_alerts')} value="0" subtitle="Low priority" icon={ShieldAlert} />
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('reports_analytics.alerts.recent_alerts')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t('reports_analytics.alerts.table.type')}</TableHead>
+                <TableHead>{t('reports_analytics.alerts.table.title')}</TableHead>
+                <TableHead>{t('reports_analytics.alerts.table.message')}</TableHead>
+                <TableHead>{t('reports_analytics.alerts.table.source')}</TableHead>
+                <TableHead>{t('reports_analytics.alerts.table.time')}</TableHead>
+                <TableHead>{t('reports_analytics.alerts.table.status')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {alertsData.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center">
+                    {t('reports_analytics.alerts.no_recent_alerts')}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                alertsData.map((alert, index) => (
+                  <TableRow key={index}>
+                    {/* Data rendering here */}
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
 };
 
 export const ReportsOverview = () => {
   const { t } = useTranslation();
-  const [timeRange, setTimeRange] = useState('6months');
+  const [activeTab, setActiveTab] = useState('activity');
 
-  const summaryCards = [
-    {
-      title: t('reports_overview.summary.total_active_users'),
-      value: '1,950',
-      change: '+12.5%',
-      icon: Users,
-      color: 'text-blue-600'
-    },
-    {
-      title: t('reports_overview.summary.total_courses'),
-      value: '248',
-      change: '+8.2%',
-      icon: BookOpen,
-      color: 'text-green-600'
-    },
-    {
-      title: t('reports_overview.summary.avg_completion_rate'),
-      value: '72%',
-      change: '+5.1%',
-      icon: Award,
-      color: 'text-purple-600'
-    },
-    {
-      title: t('reports_overview.summary.monthly_revenue'),
-      value: '$28,000',
-      change: '+15.8%',
-      icon: DollarSign,
-      color: 'text-emerald-600'
+  const renderAnalyticsContent = () => {
+    switch (activeTab) {
+      case 'platform':
+        return <PlatformAnalytics />;
+      case 'users':
+        return <UsersAnalytics />;
+      case 'courses':
+        return <CoursesAnalytics />;
+      case 'activity':
+        return <ActivityAnalytics />;
+      case 'system':
+        return <SystemAnalytics />;
+      case 'alerts':
+        return <AlertsAnalytics />;
+      default:
+        return <PlatformAnalytics />;
     }
-  ];
+  };
 
   return (
-    <div className="space-y-6 p-2 sm:p-0">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">{t('reports_overview.title')}</h1>
-          <p className="text-muted-foreground text-sm sm:text-base">{t('reports_overview.description')}</p>
-        </div>
-        <Select value={timeRange} onValueChange={setTimeRange}>
-          <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder={t('reports_overview.time_range_placeholder')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="7days">{t('reports_overview.time_ranges.last_7_days')}</SelectItem>
-            <SelectItem value="30days">{t('reports_overview.time_ranges.last_30_days')}</SelectItem>
-            <SelectItem value="3months">{t('reports_overview.time_ranges.last_3_months')}</SelectItem>
-            <SelectItem value="6months">{t('reports_overview.time_ranges.last_6_months')}</SelectItem>
-            <SelectItem value="1year">{t('reports_overview.time_ranges.last_year')}</SelectItem>
-          </SelectContent>
-        </Select>
+    <div className="space-y-6 p-4 sm:p-6 lg:p-8">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {t('reports_analytics.title')}
+        </h1>
+        <p className="text-muted-foreground mt-1">
+          {t('reports_analytics.description')}
+        </p>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 sm:gap-6">
-        {summaryCards.map((card, index) => (
-          <Card key={index}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
-              <card.icon className={`h-4 w-4 ${card.color}`} />
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl sm:text-2xl font-bold">{card.value}</div>
-              <p className="text-xs text-muted-foreground">
-                <span className="text-green-600">{card.change}</span> {t('reports_overview.from_last_period')}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Cog className="h-5 w-5" />
+              {t('reports_analytics.report_options.title')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder={t('reports_analytics.report_options.last_30_days')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="30">
+                    {t('reports_analytics.report_options.last_30_days')}
+                  </SelectItem>
+                  <SelectItem value="90">
+                    {t('reports_analytics.report_options.last_90_days')}
+                  </SelectItem>
+                  <SelectItem value="365">
+                    {t('reports_analytics.report_options.last_year')}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <Button variant="outline" className="w-full">
+                <Download className="mr-2 h-4 w-4 flex-shrink-0" />
+                <span className="truncate">{t('reports_analytics.report_options.export_report')}</span>
+              </Button>
+               <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder={t('reports_analytics.report_options.all_users')} />
+                </SelectTrigger>
+                <SelectContent>
+                   <SelectItem value="all">
+                    {t('reports_analytics.report_options.all_users')}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input placeholder={t('reports_analytics.report_options.search_users')} className="pl-10" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+             <CardTitle className="flex items-center gap-2">
+                <BarChart2 className="h-5 w-5" />
+                {t('reports_analytics.report_types.title')}
+             </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 gap-2 bg-transparent p-0">
+                <TabsTrigger value="platform" className="bg-muted text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  {t('reports_analytics.report_types.platform')}
+                </TabsTrigger>
+                <TabsTrigger value="users" className="bg-muted text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  {t('reports_analytics.report_types.users')}
+                </TabsTrigger>
+                <TabsTrigger value="courses" className="bg-muted text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  {t('reports_analytics.report_types.courses')}
+                </TabsTrigger>
+                <TabsTrigger value="activity" className="bg-muted text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  {t('reports_analytics.report_types.activity')}
+                </TabsTrigger>
+                <TabsTrigger value="system" className="bg-muted text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  {t('reports_analytics.report_types.system')}
+                </TabsTrigger>
+                <TabsTrigger value="alerts" className="bg-muted text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  {t('reports_analytics.report_types.alerts')}
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
+      
+      {/* Dynamic Content based on selected tab */}
+      {renderAnalyticsContent()}
 
-      {/* Main Reports Tabs */}
-      <Tabs defaultValue="users" className="space-y-6">
-        <div className="overflow-x-auto">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 min-w-fit">
-            <TabsTrigger value="users" className="text-xs sm:text-sm">{t('reports_overview.tabs.user_analytics')}</TabsTrigger>
-            <TabsTrigger value="courses" className="text-xs sm:text-sm">{t('reports_overview.tabs.course_performance')}</TabsTrigger>
-            <TabsTrigger value="engagement" className="text-xs sm:text-sm">{t('reports_overview.tabs.engagement')}</TabsTrigger>
-            <TabsTrigger value="revenue" className="text-xs sm:text-sm">{t('reports_overview.tabs.revenue')}</TabsTrigger>
-          </TabsList>
-        </div>
-
-        {/* User Analytics Tab */}
-        <TabsContent value="users" className="space-y-6">
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg sm:text-xl">{t('reports_overview.user_analytics.growth_trends')}</CardTitle>
-              </CardHeader>
-              <CardContent className="p-2 sm:p-6">
-                <div className="w-full h-[250px] sm:h-[300px]">
-                  <ChartContainer config={chartConfig} className="w-full h-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={userStatsData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis 
-                          dataKey="month" 
-                          tick={{ fontSize: 12 }}
-                          interval={0}
-                        />
-                        <YAxis tick={{ fontSize: 12 }} />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Line 
-                          type="monotone" 
-                          dataKey="activeUsers" 
-                          stroke="var(--color-activeUsers)" 
-                          strokeWidth={2}
-                          name={t('reports_overview.user_analytics.active_users')}
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="newSignups" 
-                          stroke="var(--color-newSignups)" 
-                          strokeWidth={2}
-                          name={t('reports_overview.user_analytics.new_signups')}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg sm:text-xl">{t('reports_overview.user_analytics.category_distribution')}</CardTitle>
-              </CardHeader>
-              <CardContent className="p-2 sm:p-6">
-                <div className="w-full h-[250px] sm:h-[300px]">
-                  <ChartContainer config={chartConfig} className="w-full h-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Pie data={categoryDistribution} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
-                          {categoryDistribution.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Course Performance Tab */}
-        <TabsContent value="courses" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg sm:text-xl">{t('reports_overview.course_performance.title')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="w-full h-[300px] sm:h-[400px]">
-                <ChartContainer config={chartConfig} className="w-full h-full">
-                  <ResponsiveContainer>
-                    <BarChart data={coursePerformanceData} layout="vertical" margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" tick={{ fontSize: 12 }} />
-                      <YAxis 
-                        dataKey="course" 
-                        type="category" 
-                        tick={{ fontSize: 12 }} 
-                        width={120}
-                      />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Legend />
-                      <Bar 
-                        dataKey="enrollments" 
-                        fill="var(--color-enrollments)" 
-                        radius={[0, 4, 4, 0]} 
-                        name={t('reports_overview.course_performance.enrollments')}
-                      />
-                      <Bar 
-                        dataKey="completionRate" 
-                        fill="var(--color-completionRate)" 
-                        radius={[0, 4, 4, 0]} 
-                        name={t('reports_overview.course_performance.completion_rate')}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Engagement Tab */}
-        <TabsContent value="engagement" className="space-y-6">
-           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg sm:text-xl">{t('reports_overview.engagement.title')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="w-full h-[300px] sm:h-[400px]">
-                <ChartContainer config={chartConfig} className="w-full h-full">
-                  <ResponsiveContainer>
-                    <LineChart data={engagementData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="day" tick={{ fontSize: 12 }} />
-                      <YAxis yAxisId="left" orientation="left" stroke="var(--color-timeSpent)" tick={{ fontSize: 12 }} />
-                      <YAxis yAxisId="right" orientation="right" stroke="var(--color-quizScore)" tick={{ fontSize: 12 }} />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Legend />
-                      <Line 
-                        yAxisId="left"
-                        type="monotone" 
-                        dataKey="timeSpent" 
-                        stroke="var(--color-timeSpent)" 
-                        strokeWidth={2}
-                        name={t('reports_overview.engagement.time_spent')}
-                      />
-                      <Line 
-                        yAxisId="right"
-                        type="monotone" 
-                        dataKey="quizScore" 
-                        stroke="var(--color-quizScore)"
-                        strokeWidth={2} 
-                        name={t('reports_overview.engagement.quiz_score')}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Revenue Tab */}
-        <TabsContent value="revenue" className="space-y-6">
-           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg sm:text-xl">{t('reports_overview.revenue.title')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="w-full h-[300px] sm:h-[400px]">
-                <ChartContainer config={chartConfig} className="w-full h-full">
-                  <ResponsiveContainer>
-                    <BarChart data={revenueData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                      <YAxis yAxisId="left" orientation="left" stroke="var(--color-revenue)" tick={{ fontSize: 12 }} />
-                      <YAxis yAxisId="right" orientation="right" stroke="var(--color-subscriptions)" tick={{ fontSize: 12 }} />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Legend />
-                      <Bar 
-                        yAxisId="left"
-                        dataKey="revenue" 
-                        fill="var(--color-revenue)" 
-                        radius={[4, 4, 0, 0]}
-                        name={t('reports_overview.revenue.revenue')}
-                      />
-                      <Bar 
-                        yAxisId="right"
-                        dataKey="subscriptions" 
-                        fill="var(--color-subscriptions)" 
-                        radius={[4, 4, 0, 0]} 
-                        name={t('reports_overview.revenue.subscriptions')}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
     </div>
   );
 };
