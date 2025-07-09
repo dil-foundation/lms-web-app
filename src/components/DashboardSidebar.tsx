@@ -127,14 +127,14 @@ export const DashboardSidebar = ({
       </div>
 
       {/* Desktop Layout */}
-      <div className="hidden lg:flex min-h-full">
+      <div className="hidden lg:flex min-h-full w-full">
         <div className="w-64 flex-shrink-0">
           <SidebarComponent />
         </div>
         
         {/* Desktop Main Content */}
         <main className="flex-1 min-h-0 bg-background w-full">
-          <div className="w-full h-full px-4 sm:px-6 lg:px-8 py-12">
+          <div className="w-full h-full px-4 sm:px-6 lg:px-8 py-12 max-w-7xl mx-auto">
             {children}
           </div>
         </main>

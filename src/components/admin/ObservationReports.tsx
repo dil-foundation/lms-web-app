@@ -7,14 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { DatePicker } from '@/components/ui/date-picker';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
 import {
   User,
-  Building,
-  Calendar,
-  Clock,
   ClipboardList,
   Star,
   Home,
@@ -486,7 +482,7 @@ export const ObservationReports = () => {
   }
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto p-4">
+    <div className="space-y-8 mx-auto p-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>

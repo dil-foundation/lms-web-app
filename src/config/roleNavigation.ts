@@ -42,7 +42,6 @@ export const getRoleNavigation = (role?: UserRole): NavigationItem[] => {
         { title: 'Courses', path: '/dashboard/courses', icon: BookOpen },
         { title: 'Reports', path: '/dashboard/reports', icon: FileQuestion },
         { title: 'Observation Reports', path: '/dashboard/observation-reports', icon: Eye },
-        { title: 'Secure Links', path: '/dashboard/secure-links', icon: Link },
         { title: 'Settings', path: '/dashboard/settings', icon: Settings },
         { title: 'Security', path: '/dashboard/security', icon: Shield },
         { title: 'Discussion', path: '/dashboard/discussion', icon: MessageSquare },

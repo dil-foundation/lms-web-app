@@ -154,7 +154,7 @@ const GenerateLinkModalContent = () => {
 
 export const SecureLinkManagement = ({ onBack }: SecureLinkManagementProps) => {
   return (
-    <div className="space-y-6 max-w-7xl mx-auto p-4 sm:p-6">
+    <div className="space-y-6 mx-auto p-4 sm:p-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" onClick={onBack} className="text-muted-foreground">
           <ArrowLeft className="w-4 h-4 mr-2" />

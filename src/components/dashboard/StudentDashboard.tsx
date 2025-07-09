@@ -56,7 +56,7 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
   ];
 
   return (
-    <div className="w-full max-w-full overflow-hidden space-y-4 sm:space-y-6 min-w-0">
+    <div className="w-full space-y-4 sm:space-y-6 min-w-0">
       {/* Welcome Section */}
       <div className="flex items-center space-x-3 sm:space-x-4 mb-6 sm:mb-8">
         <Avatar className="h-12 w-12 sm:h-16 sm:w-16 flex-shrink-0">
