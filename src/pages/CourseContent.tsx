@@ -41,7 +41,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [currentLessonId, setCurrentLessonId] = useState('lesson-1-1');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isVideoMuted, setIsVideoMuted] = useState(false);
   const [videoProgress, setVideoProgress] = useState(0);
 
@@ -409,112 +409,290 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Sidebar */}
-      <div className={`${isSidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 border-r border-border bg-background overflow-hidden`}>
-        <div className="p-6 border-b border-border bg-card/50">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-foreground truncate text-lg">{course.title}</h2>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsSidebarOpen(false)}
-              className="md:hidden hover:bg-accent"
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-foreground">Course Progress</span>
-              <span className="text-sm font-semibold text-green-600">{course.totalProgress}%</span>
+    <div className="min-h-screen bg-background w-full">
+      {/* Mobile Sidebar Overlay */}
+      <div className={`lg:hidden fixed inset-0 z-50 ${isSidebarOpen ? 'block' : 'hidden'}`}>
+        <div className="absolute inset-0 bg-black/50" onClick={() => setIsSidebarOpen(false)} />
+        <div className="relative w-80 h-full bg-background border-r border-border overflow-hidden">
+          <div className="p-6 border-b border-border bg-card/50">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold text-foreground truncate text-lg">{course.title}</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsSidebarOpen(false)}
+                className="hover:bg-accent"
+              >
+                <X className="w-4 h-4" />
+              </Button>
             </div>
-            <Progress value={course.totalProgress} className="h-3 bg-muted" />
-            <p className="text-xs text-muted-foreground">Keep up the great work!</p>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-foreground">Course Progress</span>
+                <span className="text-sm font-semibold text-green-600">{course.totalProgress}%</span>
+              </div>
+              <Progress value={course.totalProgress} className="h-3 bg-muted" />
+              <p className="text-xs text-muted-foreground">Keep up the great work!</p>
+            </div>
           </div>
-        </div>
 
-        <ScrollArea className="flex-1 p-2">
-          <Accordion type="multiple" defaultValue={[currentModule?.id || '']}>
-            {course.modules.map((module) => (
-              <AccordionItem key={module.id} value={module.id} className="border-none">
-                <AccordionTrigger className="hover:no-underline hover:bg-accent/50 rounded-lg px-3 py-4 transition-colors">
-                  <div className="flex items-center gap-3 w-full">
-                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                      <BookOpen className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          <ScrollArea className="flex-1 p-2">
+            <Accordion type="multiple" defaultValue={[currentModule?.id || '']}>
+              {course.modules.map((module) => (
+                <AccordionItem key={module.id} value={module.id} className="border-none">
+                  <AccordionTrigger className="hover:no-underline hover:bg-accent/50 rounded-lg px-3 py-4 transition-colors">
+                    <div className="flex items-center gap-3 w-full">
+                      <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                        <BookOpen className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <span className="font-semibold text-foreground">{module.title}</span>
                     </div>
-                    <span className="font-semibold text-foreground">{module.title}</span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="pb-2">
-                  <div className="space-y-2 mt-3 ml-4">
-                    {module.lessons.map((lesson) => (
-                      <Button
-                        key={lesson.id}
-                        variant="ghost"
-                        className={`w-full justify-start h-auto p-4 rounded-xl transition-all ${
-                          lesson.id === currentLessonId 
-                            ? 'bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 shadow-sm' 
-                            : 'hover:bg-accent/50'
-                        }`}
-                        onClick={() => setCurrentLessonId(lesson.id)}
-                      >
-                        <div className="flex items-center gap-3 w-full">
-                          <div className="flex-shrink-0">
-                            {lesson.completed ? (
-                              <div className="p-1 bg-green-100 dark:bg-green-900/30 rounded-full">
-                                <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
-                              </div>
-                            ) : (
-                              <div className={`p-1 rounded-full ${
-                                lesson.type === 'video' ? 'bg-red-100 dark:bg-red-900/30' :
-                                lesson.type === 'text' ? 'bg-blue-100 dark:bg-blue-900/30' :
-                                'bg-purple-100 dark:bg-purple-900/30'
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-2">
+                    <div className="space-y-2 mt-3 ml-4">
+                      {module.lessons.map((lesson) => (
+                        <Button
+                          key={lesson.id}
+                          variant="ghost"
+                          className={`w-full justify-start h-auto p-4 rounded-xl transition-all ${
+                            lesson.id === currentLessonId 
+                              ? 'bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 shadow-sm' 
+                              : 'hover:bg-accent/50'
+                          }`}
+                          onClick={() => {
+                            setCurrentLessonId(lesson.id);
+                            setIsSidebarOpen(false);
+                          }}
+                        >
+                          <div className="flex items-center gap-3 w-full">
+                            <div className="flex-shrink-0">
+                              {lesson.completed ? (
+                                <div className="p-1 bg-green-100 dark:bg-green-900/30 rounded-full">
+                                  <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+                                </div>
+                              ) : (
+                                <div className={`p-1 rounded-full ${
+                                  lesson.type === 'video' ? 'bg-red-100 dark:bg-red-900/30' :
+                                  lesson.type === 'text' ? 'bg-blue-100 dark:bg-blue-900/30' :
+                                  'bg-purple-100 dark:bg-purple-900/30'
+                                }`}>
+                                  {getTypeIcon(lesson.type)}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1 text-left">
+                              <div className={`font-medium text-sm ${
+                                lesson.id === currentLessonId ? 'text-green-700 dark:text-green-300' : 'text-foreground'
                               }`}>
-                                {getTypeIcon(lesson.type)}
+                                {lesson.title}
                               </div>
-                            )}
-                          </div>
-                          <div className="flex-1 text-left">
-                            <div className={`font-medium text-sm ${
-                              lesson.id === currentLessonId ? 'text-green-700 dark:text-green-300' : 'text-foreground'
-                            }`}>
-                              {lesson.title}
-                            </div>
-                            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                              <div className="flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                <span>{lesson.duration}</span>
+                              <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                                <div className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  <span>{lesson.duration}</span>
+                                </div>
+                                <Badge 
+                                  variant="outline" 
+                                  className={`text-xs capitalize ${
+                                    lesson.type === 'video' ? 'border-red-200 text-red-600 dark:border-red-800 dark:text-red-400' :
+                                    lesson.type === 'text' ? 'border-blue-200 text-blue-600 dark:border-blue-800 dark:text-blue-400' :
+                                    'border-purple-200 text-purple-600 dark:border-purple-800 dark:text-purple-400'
+                                  }`}
+                                >
+                                  {lesson.type}
+                                </Badge>
                               </div>
-                              <Badge 
-                                variant="outline" 
-                                className={`text-xs capitalize ${
-                                  lesson.type === 'video' ? 'border-red-200 text-red-600 dark:border-red-800 dark:text-red-400' :
-                                  lesson.type === 'text' ? 'border-blue-200 text-blue-600 dark:border-blue-800 dark:text-blue-400' :
-                                  'border-purple-200 text-purple-600 dark:border-purple-800 dark:text-purple-400'
-                                }`}
-                              >
-                                {lesson.type}
-                              </Badge>
                             </div>
                           </div>
-                        </div>
-                      </Button>
-                    ))}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </ScrollArea>
+                        </Button>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </ScrollArea>
+        </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      {/* Desktop Layout */}
+      <div className="hidden lg:flex min-h-screen">
+        {/* Desktop Sidebar */}
+        <div className={`${isSidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 border-r border-border bg-background overflow-hidden`}>
+          <div className="p-6 border-b border-border bg-card/50">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold text-foreground truncate text-lg">{course.title}</h2>
+            </div>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-foreground">Course Progress</span>
+                <span className="text-sm font-semibold text-green-600">{course.totalProgress}%</span>
+              </div>
+              <Progress value={course.totalProgress} className="h-3 bg-muted" />
+              <p className="text-xs text-muted-foreground">Keep up the great work!</p>
+            </div>
+          </div>
+
+          <ScrollArea className="flex-1 p-2">
+            <Accordion type="multiple" defaultValue={[currentModule?.id || '']}>
+              {course.modules.map((module) => (
+                <AccordionItem key={module.id} value={module.id} className="border-none">
+                  <AccordionTrigger className="hover:no-underline hover:bg-accent/50 rounded-lg px-3 py-4 transition-colors">
+                    <div className="flex items-center gap-3 w-full">
+                      <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                        <BookOpen className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <span className="font-semibold text-foreground">{module.title}</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-2">
+                    <div className="space-y-2 mt-3 ml-4">
+                      {module.lessons.map((lesson) => (
+                        <Button
+                          key={lesson.id}
+                          variant="ghost"
+                          className={`w-full justify-start h-auto p-4 rounded-xl transition-all ${
+                            lesson.id === currentLessonId 
+                              ? 'bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 shadow-sm' 
+                              : 'hover:bg-accent/50'
+                          }`}
+                          onClick={() => setCurrentLessonId(lesson.id)}
+                        >
+                          <div className="flex items-center gap-3 w-full">
+                            <div className="flex-shrink-0">
+                              {lesson.completed ? (
+                                <div className="p-1 bg-green-100 dark:bg-green-900/30 rounded-full">
+                                  <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+                                </div>
+                              ) : (
+                                <div className={`p-1 rounded-full ${
+                                  lesson.type === 'video' ? 'bg-red-100 dark:bg-red-900/30' :
+                                  lesson.type === 'text' ? 'bg-blue-100 dark:bg-blue-900/30' :
+                                  'bg-purple-100 dark:bg-purple-900/30'
+                                }`}>
+                                  {getTypeIcon(lesson.type)}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1 text-left">
+                              <div className={`font-medium text-sm ${
+                                lesson.id === currentLessonId ? 'text-green-700 dark:text-green-300' : 'text-foreground'
+                              }`}>
+                                {lesson.title}
+                              </div>
+                              <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                                <div className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  <span>{lesson.duration}</span>
+                                </div>
+                                <Badge 
+                                  variant="outline" 
+                                  className={`text-xs capitalize ${
+                                    lesson.type === 'video' ? 'border-red-200 text-red-600 dark:border-red-800 dark:text-red-400' :
+                                    lesson.type === 'text' ? 'border-blue-200 text-blue-600 dark:border-blue-800 dark:text-blue-400' :
+                                    'border-purple-200 text-purple-600 dark:border-purple-800 dark:text-purple-400'
+                                  }`}
+                                >
+                                  {lesson.type}
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                        </Button>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </ScrollArea>
+        </div>
+
+        {/* Desktop Main Content */}
+        <div className="flex-1 flex flex-col">
+          {/* Header */}
+          <div className="border-b border-border bg-background p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                  className="hover:bg-accent"
+                >
+                  <Menu className="w-4 h-4" />
+                </Button>
+                <div>
+                  <h1 className="font-semibold text-foreground text-lg">
+                    {currentLesson?.title}
+                  </h1>
+                  <p className="text-sm text-muted-foreground">
+                    {currentModule?.title}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Button variant="outline" size="sm" onClick={() => navigate(-1)} className="hover:bg-accent hidden sm:flex">
+                  <ChevronLeft className="w-4 h-4 mr-2" />
+                  Back to Course
+                </Button>
+                {!currentLesson?.completed && (
+                  <Button 
+                    size="sm" 
+                    className="bg-green-600 hover:bg-green-700 text-white shadow-sm"
+                    onClick={() => markLessonComplete(currentLessonId)}
+                  >
+                    Mark Complete
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Lesson Content */}
+          <div className="flex-1 p-6">
+            <div className="max-w-4xl mx-auto">
+              {renderLessonContent()}
+            </div>
+          </div>
+
+          {/* Footer Navigation */}
+          <div className="border-t border-border bg-background p-6">
+            <div className="flex items-center justify-between max-w-4xl mx-auto">
+              <div className="flex items-center gap-2">
+                {prevLesson && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentLessonId(prevLesson.id)}
+                    className="hover:bg-accent"
+                  >
+                    <ChevronLeft className="w-4 h-4 mr-2" />
+                    <span className="hidden sm:inline">Previous</span>
+                  </Button>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {nextLesson && (
+                  <Button
+                    className="bg-green-600 hover:bg-green-700 text-white shadow-sm"
+                    onClick={() => setCurrentLessonId(nextLesson.id)}
+                  >
+                    <span className="hidden sm:inline">Next</span>
+                    <ChevronRight className="w-4 h-4 ml-2" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Main Content */}
+      <div className="lg:hidden">
         {/* Header */}
-        <div className="border-b border-border bg-background p-6">
+        <div className="border-b border-border bg-background p-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
                 size="sm"
@@ -524,51 +702,44 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                 <Menu className="w-4 h-4" />
               </Button>
               <div>
-                <h1 className="font-semibold text-foreground text-lg">
+                <h1 className="font-semibold text-foreground text-base">
                   {currentLesson?.title}
                 </h1>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   {currentModule?.title}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <Button variant="outline" size="sm" onClick={() => navigate(-1)} className="hover:bg-accent">
-                <ChevronLeft className="w-4 h-4 mr-2" />
-                Back to Course
+            {!currentLesson?.completed && (
+              <Button 
+                size="sm" 
+                className="bg-green-600 hover:bg-green-700 text-white shadow-sm"
+                onClick={() => markLessonComplete(currentLessonId)}
+              >
+                Complete
               </Button>
-              {!currentLesson?.completed && (
-                <Button 
-                  size="sm" 
-                  className="bg-green-600 hover:bg-green-700 text-white shadow-sm"
-                  onClick={() => markLessonComplete(currentLessonId)}
-                >
-                  Mark Complete
-                </Button>
-              )}
-            </div>
+            )}
           </div>
         </div>
 
-        {/* Lesson Content */}
-        <div className="flex-1 p-6">
-          <div className="max-w-4xl mx-auto">
-            {renderLessonContent()}
-          </div>
+        {/* Mobile Lesson Content */}
+        <div className="p-4">
+          {renderLessonContent()}
         </div>
 
-        {/* Footer Navigation */}
-        <div className="border-t border-border bg-background p-6">
-          <div className="flex items-center justify-between max-w-4xl mx-auto">
+        {/* Mobile Footer Navigation */}
+        <div className="border-t border-border bg-background p-4 sticky bottom-0">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               {prevLesson && (
                 <Button
                   variant="outline"
                   onClick={() => setCurrentLessonId(prevLesson.id)}
                   className="hover:bg-accent"
+                  size="sm"
                 >
-                  <ChevronLeft className="w-4 h-4 mr-2" />
-                  Previous
+                  <ChevronLeft className="w-4 h-4 mr-1" />
+                  Prev
                 </Button>
               )}
             </div>
@@ -577,9 +748,10 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                 <Button
                   className="bg-green-600 hover:bg-green-700 text-white shadow-sm"
                   onClick={() => setCurrentLessonId(nextLesson.id)}
+                  size="sm"
                 >
                   Next
-                  <ChevronRight className="w-4 h-4 ml-2" />
+                  <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               )}
             </div>

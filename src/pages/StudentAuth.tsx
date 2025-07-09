@@ -498,11 +498,9 @@ const StudentAuth = () => {
                           }}
                           className={validationErrors.password ? 'border-red-500 pr-10' : 'pr-10'}
                         />
-                        <Button
+                        <button
                           type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-accent/20"
+                          className="absolute right-3 top-[50%] transform -translate-y-[50%] text-gray-500"
                           onClick={() => setShowSignupPassword(!showSignupPassword)}
                         >
                           {showSignupPassword ? (
@@ -510,7 +508,7 @@ const StudentAuth = () => {
                           ) : (
                             <Eye className="h-4 w-4" />
                           )}
-                        </Button>
+                        </button>
                       </div>
                       {validationErrors.password && (
                         <p className="text-sm text-red-500">{validationErrors.password}</p>
@@ -530,11 +528,9 @@ const StudentAuth = () => {
                           }}
                           className={validationErrors.confirmPassword ? 'border-red-500 pr-10' : 'pr-10'}
                         />
-                        <Button
+                        <button
                           type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-accent/20"
+                          className="absolute right-3 top-[50%] transform -translate-y-[50%] text-gray-500"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                         >
                           {showConfirmPassword ? (
@@ -542,7 +538,7 @@ const StudentAuth = () => {
                           ) : (
                             <Eye className="h-4 w-4" />
                           )}
-                        </Button>
+                        </button>
                       </div>
                       {validationErrors.confirmPassword && (
                         <p className="text-sm text-red-500">{validationErrors.confirmPassword}</p>

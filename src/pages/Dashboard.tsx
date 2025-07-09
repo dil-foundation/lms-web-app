@@ -10,6 +10,7 @@ import { RoleSwitcher } from '@/components/dashboard/RoleSwitcher';
 import { UsersManagement } from '@/components/admin/UsersManagement';
 import { CourseManagement } from '@/components/admin/CourseManagement';
 import { ReportsOverview } from '@/components/admin/ReportsOverview';
+import { ObservationReports } from '@/components/admin/ObservationReports';
 import CourseBuilder from './CourseBuilder';
 import { CourseOverview } from './CourseOverview';
 import { CourseContent } from './CourseContent';
@@ -124,7 +125,7 @@ const Dashboard = () => {
               <Route path="/courses/builder/:courseId" element={<CourseBuilder />} />
               <Route path="/analytics" element={<RolePlaceholder title="System Analytics" description="View comprehensive system analytics" icon={BarChart3} />} />
               <Route path="/reports" element={<ReportsOverview />} />
-              <Route path="/observation-reports" element={<RolePlaceholder title="Observation Reports" description="View and manage observation reports" icon={Eye} />} />
+              <Route path="/observation-reports" element={<ObservationReports />} />
               <Route path="/secure-links" element={<RolePlaceholder title="Secure Links" description="Manage secure links and access controls" icon={Link} />} />
               <Route path="/settings" element={<RolePlaceholder title="Settings" description="Configure system-wide settings" icon={Settings} />} />
               <Route path="/security" element={<RolePlaceholder title="Security" description="Manage security settings and protocols" icon={Shield} />} />
@@ -141,10 +142,11 @@ const Dashboard = () => {
     <SidebarProvider>
       <div className="min-h-screen bg-background flex flex-col w-full">
         <Header />
-        <div className="flex-1 flex min-h-0">
-          <DashboardSidebar userRole={currentRole} userProfile={displayProfile}>
-            <DashboardContent />
-          </DashboardSidebar>
+        
+        <div className="flex flex-1 min-h-full w-full">
+            <DashboardSidebar userRole={currentRole} userProfile={displayProfile}>
+                <DashboardContent />
+            </DashboardSidebar>
         </div>
       </div>
     </SidebarProvider>
