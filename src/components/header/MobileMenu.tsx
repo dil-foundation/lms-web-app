@@ -1,5 +1,6 @@
 import { useState, memo, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
@@ -11,16 +12,17 @@ import { toast } from 'sonner';
 
 export const MobileMenu = memo(() => {
   const [isOpen, setIsOpen] = useState(false);
+  const { t } = useTranslation();
   const { user, session } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
-      toast.error('Failed to log out. Please try again.');
+      toast.error(t('mobile_menu.logout_failed'));
       console.error('Logout error:', error);
     } else {
-      toast.success('You have been logged out.');
+      toast.success(t('mobile_menu.logout_success'));
       setIsOpen(false);
       navigate('/');
     }
@@ -42,7 +44,7 @@ export const MobileMenu = memo(() => {
         <SheetContent side="right" className="w-80 p-0 flex flex-col [&>button]:hidden">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-border">
-            <h2 className="text-lg font-semibold text-foreground">Menu</h2>
+            <h2 className="text-lg font-semibold text-foreground">{t('mobile_menu.menu_title')}</h2>
             <Button
               variant="ghost"
               size="icon"
@@ -65,7 +67,7 @@ export const MobileMenu = memo(() => {
                     className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-accent transition-colors"
                   >
                     <Home className="h-5 w-5 text-muted-foreground" />
-                    <span className="font-medium">Dashboard</span>
+                    <span className="font-medium">{t('mobile_menu.dashboard')}</span>
                   </Link>
                 </div>
 
@@ -74,7 +76,7 @@ export const MobileMenu = memo(() => {
                 {/* Account Section */}
                 <div className="space-y-3">
                   <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                    Account
+                    {t('mobile_menu.account_title')}
                   </h3>
                   <div className="space-y-1">
                     <Link
@@ -83,14 +85,14 @@ export const MobileMenu = memo(() => {
                       className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-accent transition-colors"
                     >
                       <Settings className="h-5 w-5 text-muted-foreground" />
-                      <span>Profile Settings</span>
+                      <span>{t('mobile_menu.profile_settings')}</span>
                     </Link>
                     <button
                       onClick={handleLogout}
                       className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-accent transition-colors w-full text-left"
                     >
                       <LogOut className="h-5 w-5 text-muted-foreground" />
-                      <span>Sign Out</span>
+                      <span>{t('mobile_menu.sign_out')}</span>
                     </button>
                   </div>
                 </div>
@@ -100,10 +102,10 @@ export const MobileMenu = memo(() => {
                 {/* Appearance Section */}
                 <div className="space-y-3">
                   <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                    Appearance
+                    {t('mobile_menu.appearance_title')}
                   </h3>
                   <div className="flex items-center justify-between px-3 py-2">
-                    <span className="text-sm">Theme</span>
+                    <span className="text-sm">{t('mobile_menu.theme_label')}</span>
                     <ThemeToggle />
                   </div>
                 </div>
@@ -118,7 +120,7 @@ export const MobileMenu = memo(() => {
                     className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-accent transition-colors"
                   >
                     <Home className="h-5 w-5 text-muted-foreground" />
-                    <span className="font-medium">Home</span>
+                    <span className="font-medium">{t('mobile_menu.home')}</span>
                   </Link>
                 </div>
 
@@ -128,7 +130,7 @@ export const MobileMenu = memo(() => {
                 <div className="space-y-3">
                   <Link to="/auth" onClick={handleLinkClick}>
                     <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-                      Sign In
+                      {t('mobile_menu.sign_in')}
                     </Button>
                   </Link>
                 </div>
@@ -138,10 +140,10 @@ export const MobileMenu = memo(() => {
                 {/* Appearance Section for Guests */}
                 <div className="space-y-3">
                   <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                    Appearance
+                    {t('mobile_menu.appearance_title')}
                   </h3>
                   <div className="flex items-center justify-between px-3 py-2">
-                    <span className="text-sm">Theme</span>
+                    <span className="text-sm">{t('mobile_menu.theme_label')}</span>
                     <ThemeToggle />
                   </div>
                 </div>

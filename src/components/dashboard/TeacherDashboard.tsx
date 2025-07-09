@@ -1,4 +1,5 @@
 
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ interface TeacherDashboardProps {
 }
 
 export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
+  const { t } = useTranslation();
   const getInitials = (firstName?: string, lastName?: string) => {
     return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
   };
@@ -24,10 +26,10 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         </Avatar>
         <div>
           <h1 className="text-2xl font-bold text-foreground">
-            Welcome, {userProfile?.first_name || 'Teacher'}!
+            {t('teacher_dashboard.welcome', { name: userProfile?.first_name || 'Teacher' })}
           </h1>
           <p className="text-muted-foreground">
-            {userProfile?.teacher_id ? `Teacher ID: ${userProfile.teacher_id}` : 'Manage your classes and students'}
+            {userProfile?.teacher_id ? t('teacher_dashboard.teacher_id', { id: userProfile.teacher_id }) : t('teacher_dashboard.manage_classes')}
           </p>
         </div>
       </div>
@@ -38,7 +40,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Students</p>
+                <p className="text-sm text-muted-foreground">{t('teacher_dashboard.stats.total_students')}</p>
                 <p className="text-2xl font-bold">45</p>
               </div>
               <Users className="h-6 w-6 text-blue-500" />
@@ -50,7 +52,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Active Courses</p>
+                <p className="text-sm text-muted-foreground">{t('teacher_dashboard.stats.active_courses')}</p>
                 <p className="text-2xl font-bold">6</p>
               </div>
               <BookOpen className="h-6 w-6 text-green-500" />
@@ -62,7 +64,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Pending Assignments</p>
+                <p className="text-sm text-muted-foreground">{t('teacher_dashboard.stats.pending_assignments')}</p>
                 <p className="text-2xl font-bold">12</p>
               </div>
               <ClipboardCheck className="h-6 w-6 text-orange-500" />
@@ -74,7 +76,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Avg. Performance</p>
+                <p className="text-sm text-muted-foreground">{t('teacher_dashboard.stats.avg_performance')}</p>
                 <p className="text-2xl font-bold">87%</p>
               </div>
               <TrendingUp className="h-6 w-6 text-purple-500" />
@@ -85,35 +87,35 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
 
       {/* Quick Actions */}
       <div>
-        <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
+        <h2 className="text-xl font-semibold mb-4">{t('teacher_dashboard.quick_actions.title')}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
           <Card className="cursor-pointer hover:shadow-md transition-shadow">
             <CardHeader>
-              <CardTitle className="text-base">Create New Assignment</CardTitle>
+              <CardTitle className="text-base">{t('teacher_dashboard.quick_actions.new_assignment.title')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground mb-3">Set up assignments for your students</p>
-              <Button className="w-full">Create</Button>
+              <p className="text-sm text-muted-foreground mb-3">{t('teacher_dashboard.quick_actions.new_assignment.description')}</p>
+              <Button className="w-full">{t('teacher_dashboard.quick_actions.new_assignment.button')}</Button>
             </CardContent>
           </Card>
 
           <Card className="cursor-pointer hover:shadow-md transition-shadow">
             <CardHeader>
-              <CardTitle className="text-base">Grade Submissions</CardTitle>
+              <CardTitle className="text-base">{t('teacher_dashboard.quick_actions.grade_submissions.title')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground mb-3">Review and grade pending work</p>
-              <Button className="w-full">Review</Button>
+              <p className="text-sm text-muted-foreground mb-3">{t('teacher_dashboard.quick_actions.grade_submissions.description')}</p>
+              <Button className="w-full">{t('teacher_dashboard.quick_actions.grade_submissions.button')}</Button>
             </CardContent>
           </Card>
 
           <Card className="cursor-pointer hover:shadow-md transition-shadow">
             <CardHeader>
-              <CardTitle className="text-base">Class Analytics</CardTitle>
+              <CardTitle className="text-base">{t('teacher_dashboard.quick_actions.class_analytics.title')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground mb-3">View detailed class performance</p>
-              <Button className="w-full">Analyze</Button>
+              <p className="text-sm text-muted-foreground mb-3">{t('teacher_dashboard.quick_actions.class_analytics.description')}</p>
+              <Button className="w-full">{t('teacher_dashboard.quick_actions.class_analytics.button')}</Button>
             </CardContent>
           </Card>
         </div>

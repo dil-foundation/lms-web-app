@@ -11,6 +11,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -91,6 +92,7 @@ const getRoleBadgeClass = (role: string) => {
 };
 
 const GenerateLinkModalContent = () => {
+  const { t } = useTranslation();
   const [role, setRole] = useState('');
   const [expiry, setExpiry] = useState('7');
 
@@ -101,51 +103,50 @@ const GenerateLinkModalContent = () => {
           <div className="bg-green-100 dark:bg-green-900/20 p-2 rounded-full">
             <LinkIcon className="w-5 h-5 text-green-600" />
           </div>
-          <DialogTitle className="text-xl font-bold">Generate Secure Link</DialogTitle>
+          <DialogTitle className="text-xl font-bold">{t('secure_link.modal.title')}</DialogTitle>
         </div>
         <DialogDescription>
-          Create a secure link for observation reporting. The link will be
-          valid for the specified number of days.
+          {t('secure_link.modal.description')}
         </DialogDescription>
       </DialogHeader>
       <div className="grid gap-6 py-4">
         <div className="space-y-2">
-          <Label htmlFor="observer-role">Observer Role</Label>
+          <Label htmlFor="observer-role">{t('secure_link.modal.observer_role')}</Label>
           <Select value={role} onValueChange={setRole}>
             <SelectTrigger id="observer-role" className="h-11">
-              <SelectValue placeholder="Select role" />
+              <SelectValue placeholder={t('secure_link.modal.select_role_placeholder')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="principal">Principal</SelectItem>
-              <SelectItem value="ece">ECE Observer</SelectItem>
-              <SelectItem value="school-officer">School Officer</SelectItem>
-              <SelectItem value="project-manager">Project Manager</SelectItem>
+              <SelectItem value="principal">{t('observation_reports.roles.principal')}</SelectItem>
+              <SelectItem value="ece">{t('observation_reports.roles.ece_observer')}</SelectItem>
+              <SelectItem value="school-officer">{t('observation_reports.roles.school_officer')}</SelectItem>
+              <SelectItem value="project-manager">{t('observation_reports.roles.project_manager')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="expiry-days">Expiry (Days)</Label>
+          <Label htmlFor="expiry-days">{t('secure_link.modal.expiry_days')}</Label>
           <Select value={expiry} onValueChange={setExpiry}>
             <SelectTrigger id="expiry-days" className="h-11">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="1">1 day</SelectItem>
-              <SelectItem value="3">3 days</SelectItem>
-              <SelectItem value="7">7 days</SelectItem>
-              <SelectItem value="14">14 days</SelectItem>
-              <SelectItem value="30">30 days</SelectItem>
+              <SelectItem value="1">{t('secure_link.modal.days', { count: 1 })}</SelectItem>
+              <SelectItem value="3">{t('secure_link.modal.days', { count: 3 })}</SelectItem>
+              <SelectItem value="7">{t('secure_link.modal.days', { count: 7 })}</SelectItem>
+              <SelectItem value="14">{t('secure_link.modal.days', { count: 14 })}</SelectItem>
+              <SelectItem value="30">{t('secure_link.modal.days', { count: 30 })}</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
       <DialogFooter>
         <DialogClose asChild>
-          <Button variant="outline">Cancel</Button>
+          <Button variant="outline">{t('common.cancel')}</Button>
         </DialogClose>
         <Button type="submit" className="bg-green-600 hover:bg-green-700 text-white">
           <LinkIcon className="w-4 h-4 mr-2" />
-          Generate Link
+          {t('secure_link.modal.generate_link_button')}
         </Button>
       </DialogFooter>
     </>
@@ -153,32 +154,33 @@ const GenerateLinkModalContent = () => {
 };
 
 export const SecureLinkManagement = ({ onBack }: SecureLinkManagementProps) => {
+  const { t } = useTranslation();
   return (
     <div className="space-y-6 mx-auto p-4 sm:p-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" onClick={onBack} className="text-muted-foreground">
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Observation Reporting
+          {t('past_reports.back_button')}
         </Button>
       </div>
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Secure Link Management</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('secure_link.title')}</h1>
           <p className="text-muted-foreground mt-1">
-            Generate and manage secure links for observation reporting.
+            {t('secure_link.description')}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline">
             <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
+            {t('secure_link.refresh_button')}
           </Button>
           <Dialog>
             <DialogTrigger asChild>
               <Button className="bg-green-600 hover:bg-green-700 text-white">
                 <Plus className="w-4 h-4 mr-2" />
-                Generate Link
+                {t('secure_link.generate_link_button')}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
@@ -189,59 +191,55 @@ export const SecureLinkManagement = ({ onBack }: SecureLinkManagementProps) => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        <StatCard title="Total Links" value="2" icon={LinkIcon} iconColor="text-green-600" bgColor="bg-green-100" />
-        <StatCard title="Active" value="2" icon={CheckCircle} iconColor="text-green-600" bgColor="bg-green-100" />
-        <StatCard title="Used" value="0" icon={Shield} iconColor="text-blue-600" bgColor="bg-blue-100" />
-        <StatCard title="Deactivated" value="0" icon={XCircle} iconColor="text-red-600" bgColor="bg-red-100" />
-        <StatCard title="Expired" value="0" icon={Clock} iconColor="text-orange-600" bgColor="bg-orange-100" />
+        <StatCard title={t('secure_link.stats.total_links')} value="2" icon={LinkIcon} iconColor="text-green-600" bgColor="bg-green-100" />
+        <StatCard title={t('secure_link.stats.active')} value="2" icon={CheckCircle} iconColor="text-green-600" bgColor="bg-green-100" />
+        <StatCard title={t('secure_link.stats.used')} value="0" icon={Shield} iconColor="text-blue-600" bgColor="bg-blue-100" />
+        <StatCard title={t('secure_link.stats.deactivated')} value="0" icon={XCircle} iconColor="text-red-600" bgColor="bg-red-100" />
+        <StatCard title={t('secure_link.stats.expired')} value="0" icon={Clock} iconColor="text-orange-600" bgColor="bg-orange-100" />
       </div>
 
       <Card>
         <CardHeader>
-            <div className="flex items-center gap-2">
-                <LinkIcon className="w-5 h-5 text-muted-foreground" />
-                <CardTitle>Secure Links</CardTitle>
-            </div>
+          <CardTitle>{t('secure_link.links_table.title')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-                <TableHeader>
-                <TableRow>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Token</TableHead>
-                    <TableHead>Expiry</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Used By</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t('secure_link.links_table.role')}</TableHead>
+                <TableHead>{t('secure_link.links_table.token')}</TableHead>
+                <TableHead>{t('secure_link.links_table.expiry')}</TableHead>
+                <TableHead>{t('secure_link.links_table.status')}</TableHead>
+                <TableHead>{t('secure_link.links_table.used_by')}</TableHead>
+                <TableHead>{t('secure_link.links_table.created')}</TableHead>
+                <TableHead>{t('secure_link.links_table.actions')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {mockLinks.map((link, index) => (
+                <TableRow key={index}>
+                  <TableCell>
+                    <Badge className={cn(getRoleBadgeClass(link.role))}>{link.role}</Badge>
+                  </TableCell>
+                  <TableCell className="font-mono">{link.token}</TableCell>
+                  <TableCell>{link.expiry}</TableCell>
+                  <TableCell>
+                    <Badge variant={link.status === 'Active' ? 'default' : 'destructive'}>
+                      {link.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{link.usedBy}</TableCell>
+                  <TableCell>{link.created}</TableCell>
+                  <TableCell className="flex items-center gap-2">
+                    <Button variant="ghost" size="sm"><Copy className="w-4 h-4" /></Button>
+                    <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {mockLinks.map((link, index) => (
-                        <TableRow key={index}>
-                            <TableCell>
-                                <Badge className={cn("font-medium", getRoleBadgeClass(link.role))}>{link.role}</Badge>
-                            </TableCell>
-                            <TableCell className="font-mono text-muted-foreground">{link.token}</TableCell>
-                            <TableCell className="text-muted-foreground whitespace-pre-wrap">{link.expiry}</TableCell>
-                            <TableCell>
-                                <Badge className="bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/50 dark:text-green-300">Active</Badge>
-                            </TableCell>
-                            <TableCell className="text-muted-foreground">{link.usedBy}</TableCell>
-                            <TableCell className="text-muted-foreground whitespace-pre-wrap">{link.created}</TableCell>
-                            <TableCell className="text-right">
-                                <div className="flex items-center justify-end gap-2">
-                                    <Button variant="outline" size="sm"><Copy className="w-3 h-3 mr-2"/>Copy Link</Button>
-                                    <Button variant="outline" size="sm"><XCircle className="w-3 h-3 mr-2"/>Deactivate</Button>
-                                    <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"><Trash2 className="w-3 h-3 mr-2"/>Delete</Button>
-                                </div>
-                            </TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-          </div>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>

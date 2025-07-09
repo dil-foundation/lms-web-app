@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,12 +33,15 @@ import {
   Download,
   Share2
 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 
 interface CourseContentProps {
   courseId?: string;
 }
 
 export const CourseContent = ({ courseId }: CourseContentProps) => {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const [currentLessonId, setCurrentLessonId] = useState('lesson-1-1');
@@ -248,516 +252,230 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                     {isVideoMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                   </Button>
                   <Button size="sm" variant="secondary">
+                    <PlayCircle className="w-4 h-4" />
+                  </Button>
+                  <div className="w-48">
+                    <Progress value={videoProgress} />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="secondary">
                     <Settings className="w-4 h-4" />
                   </Button>
+                  <Button size="sm" variant="secondary">
+                    <Maximize className="w-4 h-4" />
+                  </Button>
                 </div>
-                <Button size="sm" variant="secondary">
-                  <Maximize className="w-4 h-4" />
+              </div>
+            </div>
+
+            {/* Title and Actions */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+              <h1 className="text-2xl sm:text-3xl font-bold mb-2 sm:mb-0">
+                {currentLesson.title}
+              </h1>
+              <div className="flex items-center gap-2">
+                <Button variant="outline">
+                  <Download className="w-4 h-4 mr-2" /> {t('course_content.actions.download')}
+                </Button>
+                <Button variant="outline">
+                  <Share2 className="w-4 h-4 mr-2" /> {t('course_content.actions.share')}
                 </Button>
               </div>
             </div>
 
-            {/* Video Progress */}
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Video Progress</span>
-                <span className="text-sm font-medium">{videoProgress}% Complete</span>
-              </div>
-              <Progress value={videoProgress} className="h-2" />
-            </div>
-
-            {/* Video Description */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <PlayCircle className="w-5 h-5 text-green-500" />
-                  Lesson Overview
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-4">
-                  {currentLesson.content.description}
-                </p>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
-                    <Download className="w-4 h-4 mr-2" />
-                    Download
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Share2 className="w-4 h-4 mr-2" />
-                    Share
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Transcript */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Transcript</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-40">
-                  <p className="text-sm leading-relaxed">{currentLesson.content.transcript}</p>
-                </ScrollArea>
-              </CardContent>
-            </Card>
+            {/* Lesson Content Sections */}
+            <Tabs defaultValue="description" className="w-full">
+              <TabsList>
+                <TabsTrigger value="description">{t('course_content.tabs.description')}</TabsTrigger>
+                <TabsTrigger value="transcript">{t('course_content.tabs.transcript')}</TabsTrigger>
+                <TabsTrigger value="downloads">{t('course_content.tabs.downloads')}</TabsTrigger>
+              </TabsList>
+              <TabsContent value="description" className="mt-4">
+                <Card>
+                  <CardContent className="pt-6">
+                    <p>{currentLesson.content.description}</p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              <TabsContent value="transcript" className="mt-4">
+                <Card>
+                  <CardContent className="pt-6">
+                    <p>{currentLesson.content.transcript}</p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              <TabsContent value="downloads" className="mt-4">
+                 <Card>
+                   <CardContent className="pt-6">
+                     <p>{t('course_content.downloads.no_downloads')}</p>
+                   </CardContent>
+                 </Card>
+              </TabsContent>
+            </Tabs>
           </div>
         );
-
       case 'text':
         return (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-blue-500" />
-                  {currentLesson.content.title}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div 
-                  className="prose prose-sm max-w-none dark:prose-invert"
-                  dangerouslySetInnerHTML={{ __html: currentLesson.content.text }}
-                />
-              </CardContent>
-            </Card>
-
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-2" />
-                Download PDF
-              </Button>
-              <Button variant="outline" size="sm">
-                <Share2 className="w-4 h-4 mr-2" />
-                Share
-              </Button>
-            </div>
+          <div className="prose dark:prose-invert max-w-none">
+            <h1>{currentLesson.content.title}</h1>
+            <div dangerouslySetInnerHTML={{ __html: currentLesson.content.text }} />
           </div>
         );
-
       case 'quiz':
         return (
-          <div className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold mb-4">{t('course_content.quiz.title')}</h2>
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <HelpCircle className="w-5 h-5 text-purple-500" />
-                  Knowledge Check
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {currentLesson.content.questions.map((question, index) => (
-                  <div key={question.id} className="space-y-4">
-                    <div className="flex gap-3">
-                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
-                        <span className="text-sm font-semibold text-purple-600 dark:text-purple-400">
-                          {index + 1}
-                        </span>
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-medium mb-3">{question.question}</h4>
-                        <div className="space-y-2">
-                          {question.options.map((option, optionIndex) => (
-                            <Button
-                              key={optionIndex}
-                              variant="outline"
-                              className="w-full justify-start h-auto p-3 text-left"
-                            >
-                              <div className="flex items-center gap-3">
-                                <Circle className="w-4 h-4" />
-                                <span>{option}</span>
-                              </div>
-                            </Button>
-                          ))}
-                        </div>
-                      </div>
+              <CardContent className="p-6 space-y-6">
+                {currentLesson.content.questions.map((q, index) => (
+                  <div key={q.id}>
+                    <p className="font-semibold mb-2">{t('course_content.quiz.question', { current: index + 1, total: currentLesson.content.questions.length })}</p>
+                    <p className="mb-4">{q.question}</p>
+                    <div className="space-y-2">
+                      {q.options.map((opt, i) => (
+                        <Button key={i} variant="outline" className="w-full justify-start text-left h-auto py-2">
+                          {opt}
+                        </Button>
+                      ))}
                     </div>
-                    {index < currentLesson.content.questions.length - 1 && <Separator />}
                   </div>
                 ))}
-                
-                <div className="flex gap-2 pt-4">
-                  <Button className="bg-green-600 hover:bg-green-700">
-                    Submit Quiz
-                  </Button>
-                  <Button variant="outline">
-                    Reset Answers
-                  </Button>
+                <div className="flex justify-end space-x-2">
+                  <Button variant="outline">{t('course_content.quiz.retake')}</Button>
+                  <Button>{t('course_content.quiz.submit')}</Button>
                 </div>
               </CardContent>
             </Card>
           </div>
         );
-
       default:
-        return null;
+        return <div>{t('course_content.unknown_lesson_type')}</div>;
     }
   };
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'video':
-        return <PlayCircle className="w-4 h-4 text-red-600 dark:text-red-400" />;
-      case 'text':
-        return <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />;
-      case 'quiz':
-        return <HelpCircle className="w-4 h-4 text-purple-600 dark:text-purple-400" />;
-      default:
-        return <Circle className="w-4 h-4 text-gray-500" />;
+      case 'video': return <PlayCircle className="w-5 h-5" />;
+      case 'text': return <FileText className="w-5 h-5" />;
+      case 'quiz': return <HelpCircle className="w-5 h-5" />;
+      default: return <BookOpen className="w-5 h-5" />;
     }
   };
+  
+  const SidebarContent = () => (
+    <div className="flex flex-col h-full">
+       <div className="p-4 border-b">
+        <Button variant="ghost" onClick={() => navigate('/dashboard/courses')} className="mb-4">
+          <ChevronLeft className="w-4 h-4 mr-2" />
+          {t('course_content.sidebar.back_to_course')}
+        </Button>
+        <h2 className="text-xl font-bold truncate">{course.title}</h2>
+        <div className="flex items-center gap-2 mt-2">
+          <Progress value={course.totalProgress} className="w-full" />
+          <span className="text-sm text-muted-foreground whitespace-nowrap">{course.totalProgress}%</span>
+        </div>
+      </div>
+      <ScrollArea className="flex-1">
+        <Accordion type="multiple" defaultValue={[`module-${currentModule?.id}`]} className="w-full">
+          {course.modules.map(module => (
+            <AccordionItem value={`module-${module.id}`} key={module.id}>
+              <AccordionTrigger className="px-4 py-3 text-base font-semibold hover:bg-muted/50">
+                <div className="flex-1 text-left">
+                  <p>{module.title}</p>
+                  <p className="text-sm text-muted-foreground font-normal">{module.duration}</p>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pb-0">
+                <ul className="space-y-1">
+                  {module.lessons.map(lesson => (
+                    <li key={lesson.id}>
+                      <button
+                        onClick={() => {
+                          setCurrentLessonId(lesson.id);
+                          if(isSidebarOpen) setIsSidebarOpen(false);
+                        }}
+                        className={cn(
+                          'flex items-center gap-3 w-full text-left p-4 pr-2 text-sm transition-colors',
+                          currentLessonId === lesson.id 
+                            ? 'bg-primary/10 text-primary font-semibold'
+                            : 'hover:bg-muted/50'
+                        )}
+                      >
+                        {lesson.completed ? <CheckCircle className="w-5 h-5 text-green-500" /> : <Circle className="w-5 h-5 text-muted-foreground" />}
+                        <span className="flex-1">{lesson.title}</span>
+                        <Badge variant="outline" className="text-xs">{lesson.type}</Badge>
+                        <span className="text-xs text-muted-foreground">{lesson.duration}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      </ScrollArea>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-background w-full">
-      {/* Mobile Sidebar Overlay */}
-      <div className={`lg:hidden fixed inset-0 z-50 ${isSidebarOpen ? 'block' : 'hidden'}`}>
-        <div className="absolute inset-0 bg-black/50" onClick={() => setIsSidebarOpen(false)} />
-        <div className="relative w-80 h-full bg-background border-r border-border overflow-hidden">
-          <div className="p-6 border-b border-border bg-card/50">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-foreground truncate text-lg">{course.title}</h2>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsSidebarOpen(false)}
-                className="hover:bg-accent"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-foreground">Course Progress</span>
-                <span className="text-sm font-semibold text-green-600">{course.totalProgress}%</span>
-              </div>
-              <Progress value={course.totalProgress} className="h-3 bg-muted" />
-              <p className="text-xs text-muted-foreground">Keep up the great work!</p>
-            </div>
-          </div>
+    <div className="flex h-screen bg-background">
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:block w-80 xl:w-96 border-r flex-shrink-0">
+        <SidebarContent />
+      </aside>
 
-          <ScrollArea className="flex-1 p-2">
-            <Accordion type="multiple" defaultValue={[currentModule?.id || '']}>
-              {course.modules.map((module) => (
-                <AccordionItem key={module.id} value={module.id} className="border-none">
-                  <AccordionTrigger className="hover:no-underline hover:bg-accent/50 rounded-lg px-3 py-4 transition-colors">
-                    <div className="flex items-center gap-3 w-full">
-                      <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                        <BookOpen className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <span className="font-semibold text-foreground">{module.title}</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="pb-2">
-                    <div className="space-y-2 mt-3 ml-4">
-                      {module.lessons.map((lesson) => (
-                        <Button
-                          key={lesson.id}
-                          variant="ghost"
-                          className={`w-full justify-start h-auto p-4 rounded-xl transition-all ${
-                            lesson.id === currentLessonId 
-                              ? 'bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 shadow-sm' 
-                              : 'hover:bg-accent/50'
-                          }`}
-                          onClick={() => {
-                            setCurrentLessonId(lesson.id);
-                            setIsSidebarOpen(false);
-                          }}
-                        >
-                          <div className="flex items-center gap-3 w-full">
-                            <div className="flex-shrink-0">
-                              {lesson.completed ? (
-                                <div className="p-1 bg-green-100 dark:bg-green-900/30 rounded-full">
-                                  <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
-                                </div>
-                              ) : (
-                                <div className={`p-1 rounded-full ${
-                                  lesson.type === 'video' ? 'bg-red-100 dark:bg-red-900/30' :
-                                  lesson.type === 'text' ? 'bg-blue-100 dark:bg-blue-900/30' :
-                                  'bg-purple-100 dark:bg-purple-900/30'
-                                }`}>
-                                  {getTypeIcon(lesson.type)}
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex-1 text-left">
-                              <div className={`font-medium text-sm ${
-                                lesson.id === currentLessonId ? 'text-green-700 dark:text-green-300' : 'text-foreground'
-                              }`}>
-                                {lesson.title}
-                              </div>
-                              <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                                <div className="flex items-center gap-1">
-                                  <Clock className="w-3 h-3" />
-                                  <span>{lesson.duration}</span>
-                                </div>
-                                <Badge 
-                                  variant="outline" 
-                                  className={`text-xs capitalize ${
-                                    lesson.type === 'video' ? 'border-red-200 text-red-600 dark:border-red-800 dark:text-red-400' :
-                                    lesson.type === 'text' ? 'border-blue-200 text-blue-600 dark:border-blue-800 dark:text-blue-400' :
-                                    'border-purple-200 text-purple-600 dark:border-purple-800 dark:text-purple-400'
-                                  }`}
-                                >
-                                  {lesson.type}
-                                </Badge>
-                              </div>
-                            </div>
-                          </div>
-                        </Button>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </ScrollArea>
-        </div>
-      </div>
-
-      {/* Desktop Layout */}
-      <div className="hidden lg:flex min-h-screen">
-        {/* Desktop Sidebar */}
-        <div className={`${isSidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 border-r border-border bg-background overflow-hidden`}>
-          <div className="p-6 border-b border-border bg-card/50">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-foreground truncate text-lg">{course.title}</h2>
-            </div>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-foreground">Course Progress</span>
-                <span className="text-sm font-semibold text-green-600">{course.totalProgress}%</span>
-              </div>
-              <Progress value={course.totalProgress} className="h-3 bg-muted" />
-              <p className="text-xs text-muted-foreground">Keep up the great work!</p>
-            </div>
-          </div>
-
-          <ScrollArea className="flex-1 p-2">
-            <Accordion type="multiple" defaultValue={[currentModule?.id || '']}>
-              {course.modules.map((module) => (
-                <AccordionItem key={module.id} value={module.id} className="border-none">
-                  <AccordionTrigger className="hover:no-underline hover:bg-accent/50 rounded-lg px-3 py-4 transition-colors">
-                    <div className="flex items-center gap-3 w-full">
-                      <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                        <BookOpen className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <span className="font-semibold text-foreground">{module.title}</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="pb-2">
-                    <div className="space-y-2 mt-3 ml-4">
-                      {module.lessons.map((lesson) => (
-                        <Button
-                          key={lesson.id}
-                          variant="ghost"
-                          className={`w-full justify-start h-auto p-4 rounded-xl transition-all ${
-                            lesson.id === currentLessonId 
-                              ? 'bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 shadow-sm' 
-                              : 'hover:bg-accent/50'
-                          }`}
-                          onClick={() => setCurrentLessonId(lesson.id)}
-                        >
-                          <div className="flex items-center gap-3 w-full">
-                            <div className="flex-shrink-0">
-                              {lesson.completed ? (
-                                <div className="p-1 bg-green-100 dark:bg-green-900/30 rounded-full">
-                                  <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
-                                </div>
-                              ) : (
-                                <div className={`p-1 rounded-full ${
-                                  lesson.type === 'video' ? 'bg-red-100 dark:bg-red-900/30' :
-                                  lesson.type === 'text' ? 'bg-blue-100 dark:bg-blue-900/30' :
-                                  'bg-purple-100 dark:bg-purple-900/30'
-                                }`}>
-                                  {getTypeIcon(lesson.type)}
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex-1 text-left">
-                              <div className={`font-medium text-sm ${
-                                lesson.id === currentLessonId ? 'text-green-700 dark:text-green-300' : 'text-foreground'
-                              }`}>
-                                {lesson.title}
-                              </div>
-                              <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                                <div className="flex items-center gap-1">
-                                  <Clock className="w-3 h-3" />
-                                  <span>{lesson.duration}</span>
-                                </div>
-                                <Badge 
-                                  variant="outline" 
-                                  className={`text-xs capitalize ${
-                                    lesson.type === 'video' ? 'border-red-200 text-red-600 dark:border-red-800 dark:text-red-400' :
-                                    lesson.type === 'text' ? 'border-blue-200 text-blue-600 dark:border-blue-800 dark:text-blue-400' :
-                                    'border-purple-200 text-purple-600 dark:border-purple-800 dark:text-purple-400'
-                                  }`}
-                                >
-                                  {lesson.type}
-                                </Badge>
-                              </div>
-                            </div>
-                          </div>
-                        </Button>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </ScrollArea>
-        </div>
-
-        {/* Desktop Main Content */}
-        <div className="flex-1 flex flex-col">
-          {/* Header */}
-          <div className="border-b border-border bg-background p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                  className="hover:bg-accent"
-                >
-                  <Menu className="w-4 h-4" />
-                </Button>
-                <div>
-                  <h1 className="font-semibold text-foreground text-lg">
-                    {currentLesson?.title}
-                  </h1>
-                  <p className="text-sm text-muted-foreground">
-                    {currentModule?.title}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Button variant="outline" size="sm" onClick={() => navigate(-1)} className="hover:bg-accent hidden sm:flex">
-                  <ChevronLeft className="w-4 h-4 mr-2" />
-                  Back to Course
-                </Button>
-                {!currentLesson?.completed && (
-                  <Button 
-                    size="sm" 
-                    className="bg-green-600 hover:bg-green-700 text-white shadow-sm"
-                    onClick={() => markLessonComplete(currentLessonId)}
-                  >
-                    Mark Complete
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Lesson Content */}
-          <div className="flex-1 p-6">
-            <div className="max-w-4xl mx-auto">
-              {renderLessonContent()}
-            </div>
-          </div>
-
-          {/* Footer Navigation */}
-          <div className="border-t border-border bg-background p-6">
-            <div className="flex items-center justify-between max-w-4xl mx-auto">
-              <div className="flex items-center gap-2">
-                {prevLesson && (
-                  <Button
-                    variant="outline"
-                    onClick={() => setCurrentLessonId(prevLesson.id)}
-                    className="hover:bg-accent"
-                  >
-                    <ChevronLeft className="w-4 h-4 mr-2" />
-                    <span className="hidden sm:inline">Previous</span>
-                  </Button>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                {nextLesson && (
-                  <Button
-                    className="bg-green-600 hover:bg-green-700 text-white shadow-sm"
-                    onClick={() => setCurrentLessonId(nextLesson.id)}
-                  >
-                    <span className="hidden sm:inline">Next</span>
-                    <ChevronRight className="w-4 h-4 ml-2" />
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Main Content */}
-      <div className="lg:hidden">
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col">
         {/* Header */}
-        <div className="border-b border-border bg-background p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className="hover:bg-accent"
-              >
-                <Menu className="w-4 h-4" />
-              </Button>
-              <div>
-                <h1 className="font-semibold text-foreground text-base">
-                  {currentLesson?.title}
-                </h1>
-                <p className="text-xs text-muted-foreground">
-                  {currentModule?.title}
-                </p>
-              </div>
-            </div>
-            {!currentLesson?.completed && (
-              <Button 
-                size="sm" 
-                className="bg-green-600 hover:bg-green-700 text-white shadow-sm"
-                onClick={() => markLessonComplete(currentLessonId)}
-              >
-                Complete
-              </Button>
-            )}
+        <header className="flex items-center justify-between p-4 border-b lg:border-none">
+          <Button variant="ghost" className="lg:hidden" size="icon" onClick={() => setIsSidebarOpen(true)}>
+            <Menu />
+          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => prevLesson && setCurrentLessonId(prevLesson.id)} disabled={!prevLesson}>
+              <ChevronLeft className="w-4 h-4 mr-1" />
+              {t('course_content.navigation.previous')}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => nextLesson && setCurrentLessonId(nextLesson.id)} disabled={!nextLesson}>
+              {t('course_content.navigation.next')}
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
           </div>
-        </div>
+          <div>
+            <Button onClick={() => markLessonComplete(currentLessonId)} disabled={currentLesson?.completed}>
+              {currentLesson?.completed ? (
+                <>
+                  <CheckCircle className="w-4 h-4 mr-2" /> {t('course_content.navigation.completed')}
+                </>
+              ) : (
+                t('course_content.navigation.mark_complete')
+              )}
+            </Button>
+          </div>
+        </header>
 
-        {/* Mobile Lesson Content */}
-        <div className="p-4">
+        {/* Lesson Content Area */}
+        <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
           {renderLessonContent()}
-        </div>
-
-        {/* Mobile Footer Navigation */}
-        <div className="border-t border-border bg-background p-4 sticky bottom-0">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {prevLesson && (
-                <Button
-                  variant="outline"
-                  onClick={() => setCurrentLessonId(prevLesson.id)}
-                  className="hover:bg-accent"
-                  size="sm"
-                >
-                  <ChevronLeft className="w-4 h-4 mr-1" />
-                  Prev
-                </Button>
-              )}
+        </main>
+      </div>
+      
+      {/* Mobile Sidebar */}
+      {isSidebarOpen && (
+        <div className="lg:hidden fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setIsSidebarOpen(false)} />
+          <div className="relative w-80 bg-background h-full border-r">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="font-semibold">{t('course_content.mobile_sidebar.title')}</h2>
+              <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(false)}>
+                <X className="w-5 h-5" />
+              </Button>
             </div>
-            <div className="flex items-center gap-2">
-              {nextLesson && (
-                <Button
-                  className="bg-green-600 hover:bg-green-700 text-white shadow-sm"
-                  onClick={() => setCurrentLessonId(nextLesson.id)}
-                  size="sm"
-                >
-                  Next
-                  <ChevronRight className="w-4 h-4 ml-1" />
-                </Button>
-              )}
-            </div>
+            <SidebarContent />
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }; 

@@ -2,9 +2,12 @@ import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Brain, MessageCircle, Globe, Award, Languages, Target, ArrowRight, Sparkles } from 'lucide-react';
 
 const Home = () => {
+  const { t } = useTranslation();
+
   return <div className="min-h-screen bg-background text-foreground">
       <Header />
       
@@ -12,23 +15,21 @@ const Home = () => {
       <section className="pt-20 sm:pt-32 md:pt-48 pb-12 sm:pb-16 md:pb-20 px-4">
         <div className="container mx-auto text-center">
           <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 sm:mb-6 animate-fade-in-up">
-            Master English with{' '}
-            <span className="text-primary">AI-Powered Learning</span>
+            {t('home.hero.title_part1')}{' '}
+            <span className="text-primary">{t('home.hero.title_part2')}</span>
           </h1>
           <p className="text-lg sm:text-xl text-muted-foreground mb-8 sm:mb-12 max-w-4xl mx-auto leading-relaxed animate-fade-in-delayed px-2">
-            Your personalized English tutor powered by artificial intelligence. Learn 
-            at your own pace with interactive lessons, real-time feedback, and 
-            cultural context.
+            {t('home.hero.subtitle')}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center animate-fade-in-delayed stagger-2 px-4">
             <Link to="/auth" className="w-full sm:w-auto">
               <Button size="lg" className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 rounded-full hover-scale transition-all duration-300">
-                Start Learning
+                {t('home.hero.start_learning')}
                 <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </Link>
             <Button variant="outline" size="lg" className="w-full sm:w-auto border-primary text-primary hover:bg-primary/10 text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 rounded-full hover-scale transition-all duration-300">
-              Watch Demo
+              {t('home.hero.watch_demo')}
             </Button>
           </div>
         </div>
@@ -39,10 +40,10 @@ const Home = () => {
         <div className="container mx-auto">
           <div className="text-center mb-8 sm:mb-12 md:mb-16">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 text-primary animate-fade-in-up">
-              Everything You Need To Master English
+              {t('home.features.title')}
             </h2>
             <p className="text-lg sm:text-xl text-muted-foreground max-w-4xl mx-auto animate-fade-in-delayed px-2">
-              Comprehensive features designed to make English learning effective, enjoyable, and accessible for young minds.
+              {t('home.features.subtitle')}
             </p>
           </div>
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
@@ -51,11 +52,11 @@ const Home = () => {
                 <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10 hover-scale transition-all duration-300">
                   <Brain className="h-8 w-8 text-primary" />
                 </div>
-                <CardTitle className="text-xl">AI-Powered Lessons</CardTitle>
+                <CardTitle className="text-xl">{t('home.features.ai_lessons.title')}</CardTitle>
               </CardHeader>
               <CardContent className="text-center">
                 <p className="text-muted-foreground">
-                  Interactive and adaptive English learning
+                  {t('home.features.ai_lessons.description')}
                 </p>
               </CardContent>
             </Card>
@@ -65,11 +66,11 @@ const Home = () => {
                 <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10 hover-scale transition-all duration-300">
                   <MessageCircle className="h-8 w-8 text-primary" />
                 </div>
-                <CardTitle className="text-xl">Conversational Practice</CardTitle>
+                <CardTitle className="text-xl">{t('home.features.conversational_practice.title')}</CardTitle>
               </CardHeader>
               <CardContent className="text-center">
                 <p className="text-muted-foreground">
-                  Speak with your tutor in real-time
+                  {t('home.features.conversational_practice.description')}
                 </p>
               </CardContent>
             </Card>
@@ -79,11 +80,11 @@ const Home = () => {
                 <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10 hover-scale transition-all duration-300">
                   <Globe className="h-8 w-8 text-primary" />
                 </div>
-                <CardTitle className="text-xl">Structured Learning Paths</CardTitle>
+                <CardTitle className="text-xl">{t('home.features.structured_paths.title')}</CardTitle>
               </CardHeader>
               <CardContent className="text-center">
                 <p className="text-muted-foreground">
-                  Follow guided curiculumn aligned to goals
+                  {t('home.features.structured_paths.description')}
                 </p>
               </CardContent>
             </Card>
@@ -93,11 +94,11 @@ const Home = () => {
                 <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10 hover-scale transition-all duration-300">
                   <Award className="h-8 w-8 text-primary" />
                 </div>
-                <CardTitle className="text-xl">Verifiable Credentials</CardTitle>
+                <CardTitle className="text-xl">{t('home.features.verifiable_credentials.title')}</CardTitle>
               </CardHeader>
               <CardContent className="text-center">
                 <p className="text-muted-foreground">
-                  Earn certifications recognized with sponsors
+                  {t('home.features.verifiable_credentials.description')}
                 </p>
               </CardContent>
             </Card>
@@ -107,11 +108,11 @@ const Home = () => {
                 <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10 hover-scale transition-all duration-300">
                   <Languages className="h-8 w-8 text-primary" />
                 </div>
-                <CardTitle className="text-xl">Bilingual (Urdu & English)</CardTitle>
+                <CardTitle className="text-xl">{t('home.features.bilingual.title')}</CardTitle>
               </CardHeader>
               <CardContent className="text-center">
                 <p className="text-muted-foreground">
-                  Learn easily with bilingual (English & Urdu) support
+                  {t('home.features.bilingual.description')}
                 </p>
               </CardContent>
             </Card>
@@ -121,11 +122,11 @@ const Home = () => {
                 <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10 hover-scale transition-all duration-300">
                   <Target className="h-8 w-8 text-primary" />
                 </div>
-                <CardTitle className="text-xl">Progress & Analytics</CardTitle>
+                <CardTitle className="text-xl">{t('home.features.progress_analytics.title')}</CardTitle>
               </CardHeader>
               <CardContent className="text-center">
                 <p className="text-muted-foreground">
-                  Visualize improvement with data
+                  {t('home.features.progress_analytics.description')}
                 </p>
               </CardContent>
             </Card>
@@ -138,10 +139,10 @@ const Home = () => {
         <div className="container mx-auto">
           <div className="text-center mb-8 sm:mb-12 md:mb-16">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 text-primary animate-fade-in-up">
-              Loved By Learners Worldwide
+              {t('home.testimonials.title')}
             </h2>
             <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto animate-fade-in-delayed px-2">
-              Join thousands of satisfied students who have transformed their English skills
+              {t('home.testimonials.subtitle')}
             </p>
           </div>
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
@@ -153,12 +154,11 @@ const Home = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground mb-6 italic">
-                  "AI Tutor has completely transformed how I learn English. The 
-                  personalized approach makes all the difference."
+                  {t('home.testimonials.sarah.quote')}
                 </p>
                 <div>
-                  <p className="font-semibold text-foreground">Sarah Ahmed</p>
-                  <p className="text-sm text-muted-foreground">Student</p>
+                  <p className="font-semibold text-foreground">{t('home.testimonials.sarah.name')}</p>
+                  <p className="text-sm text-muted-foreground">{t('home.testimonials.sarah.role')}</p>
                 </div>
               </CardContent>
             </Card>
@@ -171,13 +171,11 @@ const Home = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground mb-6 italic">
-                  "The cultural context and real-world scenarios 
-                  have helped me understand English in 
-                  practical situations."
+                  {t('home.testimonials.mohammad.quote')}
                 </p>
                 <div>
-                  <p className="font-semibold text-foreground">Mohammad Khan</p>
-                  <p className="text-sm text-muted-foreground">Professional</p>
+                  <p className="font-semibold text-foreground">{t('home.testimonials.mohammad.name')}</p>
+                  <p className="text-sm text-muted-foreground">{t('home.testimonials.mohammad.role')}</p>
                 </div>
               </CardContent>
             </Card>
@@ -190,13 +188,11 @@ const Home = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground mb-6 italic">
-                  "I love how the app adapts to my learning 
-                  style. It's like having a personal tutor available 
-                  24/7."
+                  {t('home.testimonials.fatima.quote')}
                 </p>
                 <div>
-                  <p className="font-semibold text-foreground">Fatima Ali</p>
-                  <p className="text-sm text-muted-foreground">Business Owner</p>
+                  <p className="font-semibold text-foreground">{t('home.testimonials.fatima.name')}</p>
+                  <p className="text-sm text-muted-foreground">{t('home.testimonials.fatima.role')}</p>
                 </div>
               </CardContent>
             </Card>
@@ -209,14 +205,14 @@ const Home = () => {
         <div className="container mx-auto text-center">
           <div className="max-w-4xl mx-auto bg-gradient-to-br from-primary via-primary to-blue-600 rounded-3xl p-6 sm:p-8 md:p-12 hover-scale transition-all duration-500 animate-scale-in">
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 text-black">
-              Start Your English Learning Journey Today
+              {t('home.cta.title')}
             </h2>
             <p className="text-lg sm:text-xl text-black mb-6 sm:mb-8 md:mb-10 max-w-3xl mx-auto px-2">
-              Join thousands of learners who have achieved fluency with AI Tutor
+              {t('home.cta.subtitle')}
             </p>
             <Link to="/auth">
               <Button size="lg" className="bg-blue-800 hover:bg-blue-900 text-white font-semibold text-base sm:text-lg px-6 sm:px-8 md:px-10 py-3 sm:py-4 md:py-6 rounded-xl hover-scale transition-all duration-300">
-                Get Started Free
+                {t('home.cta.get_started')}
               </Button>
             </Link>
           </div>

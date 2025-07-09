@@ -1,0 +1,1045 @@
+{
+  "header": {
+    "dashboard": "ڈیش بورڈ",
+    "logout": "لاگ آوٹ",
+    "toggle_theme": "تھیم تبدیل کریں",
+    "settings": "ترتیبات",
+    "sign_in": "سائن ان کریں",
+    "back_to_dashboard": "ڈیش بورڈ پر واپس جائیں"
+  },
+  "logout_failed": "لاگ آوٹ کرنے میں ناکام رہے۔ براہ کرم دوبارہ کوشش کریں.",
+  "logout_success": "آپ کامیابی سے لاگ آوٹ ہو گئے ہیں.",
+  "student_dashboard": {
+    "welcome_back": "خوش آمدید, {{name}}!",
+    "grade": "گریڈ {{grade}}",
+    "continue_learning_journey": "اپنا سیکھنے کا سفر جاری رکھیں",
+    "current_streak": "موجودہ تسلسل",
+    "completed_lessons": "مکمل اسباق",
+    "points_earned": "حاصل کردہ پوائنٹس",
+    "study_time": "مطالعہ کا وقت",
+    "continue_learning": "سیکھنا جاری رکھیں",
+    "ai_tutor": "AI ٹیوٹر"
+  },
+  "course_management": {
+    "title": "کورس مینجمنٹ",
+    "description": "سسٹم میں تمام کورسز کا نظم کریں",
+    "create_course": "کورس بنائیں",
+    "total_courses": "کل کورسز",
+    "published": "شائع شدہ",
+    "draft_courses": "ڈرافٹ کورسز",
+    "total_students": "کل طلباء",
+    "search_placeholder": "عنوان یا انسٹرکٹر کے ذریعہ کورسز تلاش کریں...",
+    "filter": {
+      "status": "حیثیت",
+      "category": "زمرہ",
+      "all_statuses": "تمام حیثیتیں",
+      "all_categories": "تمام زمرے"
+    },
+    "status": {
+      "published": "شائع شدہ",
+      "draft": "ڈرافٹ",
+      "under_review": "زیر نظر"
+    },
+    "category": {
+      "language_learning": "زبان سیکھنا"
+    },
+    "by_instructor": "منجانب {{instructor}}",
+    "lessons": "{{count}} اسباق",
+    "students": "{{count}} طلباء",
+    "created_at": "بنایا گیا: {{date}}",
+    "edit": "ترمیم",
+    "view_details": "تفصیلات دیکھیں",
+    "manage_students": "طلباء کا نظم کریں"
+  },
+  "common": {
+    "yes": "ہاں",
+    "no": "نہیں",
+    "view": "دیکھیں",
+    "edit": "ترمیم",
+    "export": "برآمد کریں",
+    "delete": "حذف کریں",
+    "cancel": "منسوخ کریں"
+  },
+  "observation_reports": {
+    "header": {
+      "title": "فیلڈ آڈٹ اور تعمیل کا جائزہ",
+      "description": "ڈیٹا پر مبنی نصاب میں بہتری اور کارکردگی سے باخبر رہنے کے لئے منظم مشاہدات حاصل کریں",
+      "manage_secure_links_button": "محفوظ لنکس کا نظم کریں",
+      "view_past_reports_button": "ماضی کی رپورٹس دیکھیں"
+    },
+    "submit_button": "مشاہداتی رپورٹ جمع کروائیں",
+    "observer_information": {
+      "title": "مشاہدہ کرنے والے کی معلومات",
+      "description": "اپنا کردار منتخب کریں اور مشاہدے کے بارے میں بنیادی معلومات فراہم کریں",
+      "observer_role": "مشاہدہ کرنے والے کا کردار",
+      "select_role_placeholder": "اپنا مشاہدہ کرنے والے کا کردار منتخب کریں",
+      "questionnaire_note": "کردار کے لئے مخصوص سوالنامہ نیچے ظاہر ہوگا"
+    },
+    "roles": {
+      "principal": "پرنسپل",
+      "ece_observer": "ای سی ای مشاہد",
+      "school_officer": "اسکول آفیسر",
+      "project_manager": "پروجیکٹ مینیجر"
+    },
+    "observation_details": {
+      "title": "مشاہدے کی تفصیلات",
+      "description": "مشاہدے کے سیشن کے بارے میں بنیادی معلومات",
+      "observer_name": "مشاہدہ کرنے والے کا نام",
+      "observer_name_placeholder": "اپنا پورا نام درج کریں...",
+      "observation_date": "مشاہدے کی تاریخ",
+      "school_name": "اسکول کا نام",
+      "school_name_placeholder": "اسکول کا نام درج کریں...",
+      "teacher_name": "استاد کا نام",
+      "teacher_name_placeholder": "استاد کا نام درج کریں...",
+      "start_time": "شروع ہونے کا وقت",
+      "end_time": "ختم ہونے کا وقت",
+      "general_notes": "عمومی نوٹس",
+      "general_notes_placeholder": "کوئی عمومی مشاہدات یا نوٹ شامل کریں..."
+    },
+    "ratings": {
+      "excellent": "بہترین",
+      "good": "اچھا",
+      "average": "اوسط",
+      "fair": "مناسب",
+      "poor": "ناقص"
+    },
+    "principal_assessment": {
+      "title": "پرنسپل کا جائزہ",
+      "description": "تدریسی تاثیر اور کلاس روم کے ماحول کا اندازہ کریں",
+      "rating_placeholder": "درجہ بندی منتخب کریں",
+      "q1_label": "استاد واضح ہدایات دیتا ہے",
+      "q1_description": "سبق کے مقاصد اور کاموں کو استاد کتنی واضح طور پر بیان کرتا ہے اس کی درجہ بندی کریں",
+      "q2_label": "طلباء سبق کے دوران مصروف ہیں",
+      "q2_description": "طلباء کی شرکت اور توجہ کی سطح کا اندازہ کریں",
+      "q3_label": "کلاس روم کے ڈسپلے عمر کے مطابق ہیں",
+      "q3_description": "کلاس روم کے مواد کی مطابقت اور معیار کا اندازہ کریں",
+      "q4_label": "سیکھنے کے مواد کا استعمال",
+      "q4_description": "کیا سبق کے دوران مناسب سیکھنے کا مواد استعمال کیا گیا تھا؟",
+      "q5_label": "کیا سبق کے منصوبے پر عمل کیا گیا؟",
+      "q5_description": "کیا استاد نے منصوبہ بند نصاب کی ساخت پر عمل کیا؟",
+      "concerns_label": "کوئی فوری تشویش؟",
+      "concerns_placeholder": "کسی بھی فوری تشویش یا مشاہدہ شدہ مسائل کو بیان کریں..."
+    },
+    "ece_assessment": {
+      "title": "ای سی ای مشاہد کا جائزہ",
+      "description": "تدریسی تاثیر اور کلاس روم کے ماحول کا اندازہ کریں",
+      "q1_label": "استاد واضح ہدایات دیتا ہے",
+      "q1_description": "سبق کے مقاصد اور کاموں کو استاد کتنی واضح طور پر بیان کرتا ہے اس کی درجہ بندی کریں",
+      "q2_label": "طلباء سبق کے دوران مصروف ہیں",
+      "q2_description": "طلباء کی شرکت اور توجہ کی سطح کا اندازہ کریں",
+      "q3_label": "کلاس روم کے ڈسپلے عمر کے مطابق ہیں",
+      "q3_description": "کلاس روم کے مواد کی مطابقت اور معیار کا اندازہ کریں",
+      "q4_label": "سیکھنے کے مواد کا استعمال",
+      "q4_description": "کیا سبق کے دوران مناسب سیکھنے کا مواد استعمال کیا گیا تھا؟",
+      "q5_label": "کیا سبق کے منصوبے پر عمل کیا گیا؟",
+      "q5_description": "کیا استاد نے منصوبہ بند نصاب کی ساخت پر عمل کیا؟",
+      "concerns_label": "کوئی فوری تشویش؟",
+      "concerns_placeholder": "کسی بھی فوری تشویش یا مشاہدہ شدہ مسائل کو بیان کریں..."
+    },
+    "school_officer_assessment": {
+      "title": "اسکول آفیسر کا جائزہ",
+      "description": "پروجیکٹ کے نفاذ اور اسکول کے کاموں کا اندازہ کریں",
+      "project_name_label": "پروجیکٹ کا نام *",
+      "project_name_placeholder": "پروجیکٹ کا نام درج کریں...",
+      "quarter_label": "سہ ماہی *",
+      "quarter_description": "موجودہ سہ ماہی منتخب کریں",
+      "quarter_placeholder": "سہ ماہی منتخب کریں",
+      "quarter_q1": "پہلی سہ ماہی",
+      "quarter_q2": "دوسری سہ ماہی",
+      "quarter_q3": "تیسری سہ ماہی",
+      "quarter_q4": "چوتھی سہ ماہی",
+      "teaching_effectiveness_label": "تدریسی تاثیر",
+      "teaching_effectiveness_description": "ہدایات کی فراہمی کا مجموعی معیار",
+      "teaching_effectiveness_placeholder": "درجہ بندی منتخب کریں",
+      "school_cleanliness_label": "اسکول کی صفائی",
+      "school_cleanliness_description": "سہولت کی بحالی اور حفظان صحت کے معیارات",
+      "school_cleanliness_placeholder": "درجہ بندی منتخب کریں",
+      "availability_of_materials_label": "مواد کی دستیابی",
+      "availability_of_materials_description": "کیا ضروری تدریسی اور سیکھنے کا مواد دستیاب ہے؟",
+      "teacher_attendance_label": "استاد کی حاضری",
+      "teacher_attendance_description": "کیا استاد کی حاضری اطمینان بخش ہے؟",
+      "summary_comments_label": "خلاصہ تبصرے",
+      "summary_comments_placeholder": "مشاہدے کے بارے میں خلاصہ تبصرے شامل کریں..."
+    },
+    "project_manager_assessment": {
+      "title": "پروجیکٹ مینیجر کا جائزہ",
+      "description": "مجموعی پروگرام کے معیار اور اسٹیک ہولڈر کے تعاون کا اندازہ کریں",
+      "observation_cycle_label": "مشاہداتی دور *",
+      "observation_cycle_description": "موجودہ مشاہداتی دور منتخب کریں",
+      "observation_cycle_placeholder": "مشاہداتی دور منتخب کریں",
+      "observation_cycle_cycle1": "دور 1",
+      "observation_cycle_cycle2": "دور 2",
+      "observation_cycle_cycle3": "دور 3",
+      "overall_program_quality_label": "مجموعی پروگرام کا معیار",
+      "overall_program_quality_description": "پروگرام کے نفاذ کا جامع جائزہ",
+      "overall_program_quality_placeholder": "درجہ بندی منتخب کریں",
+      "teacher_morale_label": "استاد کا حوصلہ",
+      "teacher_morale_description": "استاد کے اطمینان اور حوصلہ افزائی کی سطح",
+      "teacher_morale_placeholder": "درجہ بندی منتخب کریں",
+      "school_admin_cooperation_label": "اسکول انتظامیہ کا تعاون",
+      "school_admin_cooperation_description": "انتظامی مدد اور تعاون کی سطح",
+      "school_admin_cooperation_placeholder": "درجہ بندی منتخب کریں",
+      "final_remarks_label": "حتمی رائے اور سفارشات",
+      "final_remarks_placeholder": "حتمی رائے، سفارشات، اور اسٹریٹجک بصیرت فراہم کریں..."
+    }
+  },
+  "past_reports": {
+    "back_button": "مشاہداتی رپورٹنگ پر واپس",
+    "title": "ماضی کی مشاہداتی رپورٹس",
+    "description": "اپنی پہلے جمع کرائی گئی مشاہداتی رپورٹس دیکھیں اور ان کا نظم کریں",
+    "stats": {
+      "total_reports": "کل رپورٹس",
+      "this_week": "اس ہفتے",
+      "schools_visited": "دورہ کیے گئے اسکول",
+      "most_common_role": "سب سے عام کردار"
+    },
+    "search_placeholder": "رپورٹس تلاش کریں...",
+    "filters": {
+      "all_roles": "تمام کردار",
+      "all_schools": "تمام اسکول",
+      "most_recent": "سب سے حالیہ",
+      "oldest": "سب سے پرانی"
+    },
+    "harvard_university": "ہارورڈ یونیورسٹی",
+    "reports_title": "مشاہداتی رپورٹس ({{count}})",
+    "reports_description": "تفصیلات دیکھنے کے لیے کسی رپورٹ پر کلک کریں یا رپورٹس کا نظم کرنے کے لیے ایکشن بٹن استعمال کریں۔"
+  },
+  "reports_overview": {
+    "title": "رپورٹس اور تجزیات",
+    "description": "پلیٹ فارم کی کارکردگی اور صارف کی مصروفیت کی نگرانی کریں",
+    "time_range_placeholder": "وقت کی حد منتخب کریں",
+    "time_ranges": {
+      "last_7_days": "پچھلے 7 دن",
+      "last_30_days": "پچھلے 30 دن",
+      "last_3_months": "پچھلے 3 ماہ",
+      "last_6_months": "پچھلے 6 ماہ",
+      "last_year": "پچھلے سال"
+    },
+    "from_last_period": "پچھلی مدت سے",
+    "summary": {
+      "total_active_users": "کل فعال صارفین",
+      "total_courses": "کل کورسز",
+      "avg_completion_rate": "اوسط تکمیل کی شرح",
+      "monthly_revenue": "ماہانہ آمدنی"
+    },
+    "tabs": {
+      "user_analytics": "صارف کے تجزیات",
+      "course_performance": "کورس کی کارکردگی",
+      "engagement": "مصروفیت",
+      "revenue": "آمدنی"
+    },
+    "user_analytics": {
+      "growth_trends": "صارف کی ترقی کے رجحانات",
+      "active_users": "فعال صارفین",
+      "new_signups": "نئے سائن اپس",
+      "category_distribution": "کورس کے زمرے کی تقسیم"
+    },
+    "course_performance": {
+      "title": "سب سے بہترین کارکردگی والے کورسز",
+      "enrollments": "اندراجات",
+      "completion_rate": "تکمیل کی شرح %"
+    },
+    "engagement": {
+      "title": "روزانہ مصروفیت کے میٹرکس",
+      "time_spent": "صرف کیا گیا وقت (منٹ)",
+      "quiz_score": "کوئز اسکور %"
+    },
+    "revenue": {
+      "title": "آمدنی اور سبسکرپشن میں اضافہ",
+      "revenue": "آمدنی ($)",
+      "subscriptions": "سبسکرپشنز"
+    }
+  },
+  "secure_link": {
+    "title": "محفوظ لنک مینجمنٹ",
+    "description": "مشاہداتی رپورٹنگ کے لئے محفوظ لنکس بنائیں اور ان کا نظم کریں.",
+    "refresh_button": "ریفریش",
+    "generate_link_button": "لنک بنائیں",
+    "stats": {
+      "total_links": "کل لنکس",
+      "active": "فعال",
+      "used": "استعمال شدہ",
+      "deactivated": "غیر فعال",
+      "expired": "میعاد ختم"
+    },
+    "links_table": {
+      "title": "محفوظ لنکس",
+      "role": "کردار",
+      "token": "ٹوکن",
+      "expiry": "میعاد",
+      "status": "حیثیت",
+      "used_by": "استعمال کنندہ",
+      "created": "بنایا گیا",
+      "actions": "اعمال"
+    },
+    "modal": {
+      "title": "محفوظ لنک بنائیں",
+      "description": "مشاہداتی رپورٹنگ کے لئے ایک محفوظ لنک بنائیں۔ یہ لنک مخصوص دنوں کے لئے درست ہوگا۔",
+      "observer_role": "مشاہدہ کرنے والے کا کردار",
+      "select_role_placeholder": "کردار منتخب کریں",
+      "expiry_days": "میعاد (دن)",
+      "days_one": "{{count}} دن",
+      "days_other": "{{count}} دن",
+      "generate_link_button": "لنک بنائیں"
+    }
+  },
+  "secure_link_management": {
+    "title": "محفوظ لنک کا انتظام",
+    "description": "بیرونی مبصرین کے لیے محفوظ، یک وقتی رسائی کے لنکس بنائیں اور ان کا نظم کریں۔",
+    "create_link_button": "نیا لنک بنائیں",
+    "active_links_title": "فعال لنکس ({{count}})",
+    "active_links_description": "یہ لنکس فعال ہیں اور فارم جمع کرانے کے لیے ایک بار استعمال کیے جا سکتے ہیں۔",
+    "link_created_at": "بنایا گیا: {{date}}",
+    "expires_at": "میعاد ختم: {{date}}",
+    "copy_link": "لنک کاپی کریں",
+    "link_copied": "لنک کلپ بورڈ پر کاپی ہو گیا!",
+    "delete_link": "لنک حذف کریں",
+    "no_active_links": "کوئی فعال لنکس نہیں ملے.",
+    "modal": {
+      "title": "محفوظ لنک بنائیں",
+      "description": "یہ ایک محفوظ، واحد استعمال کا لنک بنائے گا جو بیرونی صارف کو لاگ ان کیے بغیر ایک مشاہداتی رپورٹ جمع کرانے کی اجازت دے گا۔",
+      "form_label": "رسائی کے لیے فارم",
+      "form_placeholder": "ایک فارم منتخب کریں",
+      "principal_form": "پرنسپل اسسمنٹ فارم",
+      "ece_form": "ای سی ای آبزرور فارم",
+      "school_officer_form": "اسکول آفیسر فارم",
+      "project_manager_form": "پروجیکٹ مینیجر فارم",
+      "validity_label": "لنک کی میعاد (گھنٹوں میں)",
+      "validity_placeholder": "مثلاً، 24",
+      "generate_link_button": "لنک بنائیں",
+      "link_generation_failed": "لنک بنانے میں ناکامی۔ براہ کرم دوبارہ کوشش کریں."
+    }
+  },
+  "users_management": {
+    "title": "صارفین کا انتظام",
+    "description": "سسٹم میں تمام صارفین کا نظم کریں، بشمول طلباء، اساتذہ، اور منتظمین۔",
+    "create_user_button": "صارف بنائیں",
+    "modal": {
+      "title": "ایک نیا صارف بنائیں",
+      "description": "نیا صارف شامل کرنے کے لیے نیچے دی گئی تفصیلات کو پُر کریں۔ ان کے ای میل پر ایک عارضی پاس ورڈ کے ساتھ دعوت نامہ بھیجا جائے گا۔",
+      "first_name": "پہلا نام",
+      "first_name_placeholder": "جیسے، جان",
+      "last_name": "آخری نام",
+      "last_name_placeholder": "جیسے، ڈو",
+      "email": "ای میل اڈریس",
+      "email_placeholder": "user@example.com",
+      "role": "کردار",
+      "role_placeholder": "ایک کردار منتخب کریں",
+      "temp_password": "عارضی پاس ورڈ",
+      "temp_password_placeholder": "ایک مضبوط پاس ورڈ بنایا جائے گا۔"
+    },
+    "roles": {
+      "student": "طالب علم",
+      "teacher": "استاد",
+      "admin": "منتظم"
+    },
+    "stats": {
+      "total_users": "کل صارفین",
+      "total_users_desc": "سسٹم میں تمام رجسٹرڈ صارفین۔",
+      "total_students": "کل طلباء",
+      "total_students_desc": "طالب علم کے کردار کے ساتھ تمام صارفین۔",
+      "total_teachers": "کل اساتذہ",
+      "total_teachers_desc": "استاد کے کردار کے ساتھ تمام صارفین۔",
+      "active_now": "ابھی فعال",
+      "active_now_desc": "وہ صارفین جو فی الحال فعال کے بطور نشان زد ہیں۔"
+    },
+    "table": {
+      "title": "تمام صارفین",
+      "description": "تمام صارفین، ان کے کردار، اور حیثیت کی ایک فہرست۔",
+      "search_placeholder": "نام یا ای میل سے تلاش کریں...",
+      "headers": {
+        "user": "صارف",
+        "role": "کردار",
+        "status": "حیثیت",
+        "joined": "شامل ہوئے",
+        "last_active": "آخری بار فعال"
+      },
+      "actions": {
+        "edit": "صارف میں ترمیم کریں",
+        "delete": "صارف کو حذف کریں"
+      },
+      "no_users_found": "کوئی صارف نہیں ملا۔"
+    },
+    "filters": {
+      "role_placeholder": "کردار کے لحاظ سے فلٹر کریں",
+      "all_roles": "تمام کردار",
+      "status_placeholder": "حیثیت کے لحاظ سے فلٹر کریں",
+      "all_statuses": "تمام حیثیتیں"
+    },
+    "statuses": {
+      "active": "فعال",
+      "inactive": "غیر فعال"
+    }
+  },
+  "admin_dashboard": {
+    "title": "ایڈمن ڈیش بورڈ",
+    "welcome": "خوش آمدید، {{name}}",
+    "stats": {
+      "total_users": "کل صارفین",
+      "active_teachers": "فعال اساتذہ",
+      "total_courses": "کل کورسز",
+      "system_health": "سسٹم کی صحت"
+    },
+    "actions": {
+      "title": "سسٹم کا انتظام",
+      "user_management": {
+        "title": "صارف کا انتظام",
+        "description": "صارفین، کردار، اور اجازتوں کا نظم کریں",
+        "button": "انتظام کریں"
+      },
+      "system_analytics": {
+        "title": "سسٹم کے تجزیات",
+        "description": "سسٹم کی کارکردگی اور استعمال دیکھیں",
+        "button": "دیکھیں"
+      },
+      "system_settings": {
+        "title": "سسٹم کی ترتیبات",
+        "description": "سسٹم بھر کی ترتیبات تشکیل دیں",
+        "button": "تشکیل دیں"
+      }
+    }
+  },
+  "dashboard": {
+    "loading": {
+      "authenticating": "توثیق کی جا رہی ہے...",
+      "loading_profile": "صارف پروفائل لوڈ ہو رہا ہے..."
+    },
+    "errors": {
+      "unable_to_load_profile": "صارف پروفائل لوڈ کرنے سے قاصر۔",
+      "error_message": "خرابی: {{message}}",
+      "profile_not_found": "صارف پروفائل نہیں ملا۔"
+    },
+    "placeholders": {
+      "dashboard": {
+        "title": "ڈیش بورڈ",
+        "description": "خوش آمدید"
+      },
+      "student": {
+        "my_courses": {
+          "title": "میرے کورسز",
+          "description": "اپنے داخلہ شدہ کورسز دیکھیں اور ان کا نظم کریں"
+        },
+        "assignments": {
+          "title": "اسائنمنٹس",
+          "description": "اپنی اسائنمنٹس دیکھیں اور مکمل کریں"
+        },
+        "progress_tracking": {
+          "title": "پیشرفت سے باخبر رہنا",
+          "description": "اپنی سیکھنے کی پیشرفت اور کامیابیوں کی نگرانی کریں"
+        },
+        "ai_tutor": {
+          "title": "اے آئی ٹیوٹر",
+          "description": "ذاتی نوعیت کی اے آئی سے چلنے والی سیکھنے میں مدد حاصل کریں"
+        }
+      },
+      "teacher": {
+        "my_classes": {
+          "title": "میری کلاسیں",
+          "description": "اپنی کلاسوں اور طلباء کا نظم کریں"
+        },
+        "student_progress": {
+          "title": "طالب علم کی پیشرفت",
+          "description": "انفرادی طالب علم کی کارکردگی کی نگرانی کریں"
+        },
+        "assignment_management": {
+          "title": "اسائنمنٹ مینجمنٹ",
+          "description": "اسائنمنٹس بنائیں اور گریڈ کریں"
+        },
+        "teaching_resources": {
+          "title": "تدریسی وسائل",
+          "description": "تدریسی مواد تک رسائی حاصل کریں اور ان کا نظم کریں"
+        }
+      },
+      "admin": {
+        "system_analytics": {
+          "title": "سسٹم کے تجزیات",
+          "description": "جامع نظام کے تجزیات دیکھیں"
+        },
+        "secure_links": {
+          "title": "محفوظ لنکس",
+          "description": "محفوظ لنکس اور رسائی کنٹرولز کا نظم کریں"
+        },
+        "settings": {
+          "title": "ترتیبات",
+          "description": "سسٹم بھر کی ترتیبات تشکیل دیں"
+        },
+        "security": {
+          "title": "سیکورٹی",
+          "description": "سیکورٹی کی ترتیبات اور پروٹوکولز کا نظم کریں"
+        },
+        "discussion": {
+          "title": "بحث",
+          "description": "بحث و مباحثے اور فورمز کو معتدل کریں"
+        },
+        "grade_assignments": {
+          "title": "اسائنمنٹس گریڈ کریں",
+          "description": "طالب علم کی اسائنمنٹس کا جائزہ لیں اور گریڈ کریں"
+        }
+      }
+    }
+  },
+  "role_switcher": {
+    "dev_mode": "ڈویلپر موڈ:",
+    "student": "طالب علم",
+    "teacher": "استاد",
+    "admin": "منتظم"
+  },
+  "teacher_dashboard": {
+    "welcome": "خوش آمدید، {{name}}!",
+    "teacher_id": "استاد کا شناختی نمبر: {{id}}",
+    "manage_classes": "اپنی کلاسوں اور طلباء کا نظم کریں",
+    "stats": {
+      "total_students": "کل طلباء",
+      "active_courses": "فعال کورسز",
+      "pending_assignments": "زیر التواء اسائنمنٹس",
+      "avg_performance": "اوسط کارکردگی"
+    },
+    "quick_actions": {
+      "title": "فوری کاروائیاں",
+      "new_assignment": {
+        "title": "نیا اسائنمنٹ بنائیں",
+        "description": "اپنے طلباء کے لیے اسائنمنٹس ترتیب دیں",
+        "button": "بنائیں"
+      },
+      "grade_submissions": {
+        "title": "جمع کرائے گئے کاموں کو گریڈ کریں",
+        "description": "زیر التواء کام کا جائزہ لیں اور گریڈ کریں",
+        "button": "جائزہ لیں"
+      },
+      "class_analytics": {
+        "title": "کلاس کے تجزیات",
+        "description": "کلاس کی تفصیلی کارکردگی دیکھیں",
+        "button": "تجزیہ کریں"
+      }
+    }
+  },
+  "dashboard_sidebar": {
+    "navigation": "نیویگیشن",
+    "dashboard": "ڈیش بورڈ",
+    "menu": "مینو"
+  },
+  "navigation": {
+    "student": {
+      "overview": "جائزہ",
+      "my_courses": "میرے کورسز",
+      "assignments": "اسائنمنٹس",
+      "progress": "پیشرفت",
+      "ai_tutor": "اے آئی ٹیوٹر"
+    },
+    "teacher": {
+      "overview": "جائزہ",
+      "my_classes": "میری کلاسیں",
+      "course_management": "کورس کا انتظام",
+      "student_progress": "طالب علم کی پیشرفت",
+      "assignments": "اسائنمنٹس",
+      "resources": "وسائل"
+    },
+    "admin": {
+      "overview": "جائزہ",
+      "users": "صارفین",
+      "courses": "کورسز",
+      "reports": "رپورٹس",
+      "observation_reports": "مشاہداتی رپورٹس",
+      "settings": "ترتیبات",
+      "security": "سیکورٹی",
+      "discussion": "بحث",
+      "grade_assignments": "اسائنمنٹس گریڈ کریں"
+    },
+    "default": {
+      "overview": "جائزہ"
+    }
+  },
+  "roles": {
+    "student": "طالب علم",
+    "teacher": "استاد",
+    "admin": "منتظم",
+    "user": "صارف"
+  },
+  "auth": {
+    "errors": {
+      "email_required": "ای میل درکار ہے",
+      "password_required": "پاس ورڈ درکار ہے",
+      "fetch_profile_error": "صارف پروفائل حاصل نہیں کیا جا سکا.",
+      "admin_access_denied": "رسائی مسترد کر دی گئی۔ آپ کو یہاں لاگ ان کرنے کی اجازت نہیں ہے۔",
+      "email_not_verified": "لاگ ان کرنے سے پہلے براہ کرم اپنے ای میل ایڈریس کی تصدیق کریں۔",
+      "invalid_credentials_admin": "غلط اسناد یا رسائی مسترد کر دی گئی۔"
+    },
+    "success": {
+      "welcome_back": "خوش آمدید!"
+    },
+    "back_to_role_selection": "کردار کے انتخاب پر واپس جائیں",
+    "admin": {
+      "title": "ایڈمن پورٹل",
+      "description": "اپنے منتظم اکاؤنٹ میں سائن ان کریں"
+    },
+    "form": {
+      "email_label": "ای میل",
+      "email_placeholder": "اپنا ای میل درج کریں",
+      "password_label": "پاس ورڈ",
+      "password_placeholder": "اپنا پاس ورڈ درج کریں"
+    },
+    "buttons": {
+      "signing_in": "سائن ان ہو رہا ہے...",
+      "sign_in": "سائن ان کریں"
+    },
+    "links": {
+      "forgot_password": "پاس ورڈ بھول گئے؟"
+    }
+  },
+  "course_builder": {
+    "lessons": {
+      "video_upload_label": "ویڈیو اپ لوڈ کریں (MP4, MOV)",
+      "attachment_upload_label": "منسلکہ اپ لوڈ کریں (PDF, DOC, XLS, ZIP)",
+      "assignment_placeholder": "اسائنمنٹ کی تفصیلات یہاں لکھیں...",
+      "lesson_title_placeholder": "سبق کا عنوان",
+      "types": {
+        "video": "ویڈیو",
+        "attachment": "منسلکہ",
+        "assignment": "اسائنمنٹ",
+        "quiz": "کوئز"
+      }
+    },
+    "quiz": {
+      "question_placeholder": "سوال {{index}}",
+      "option_placeholder": "آپشن کا متن",
+      "correct_label": "درست",
+      "add_option_button": "آپشن شامل کریں",
+      "add_question_button": "سوال شامل کریں"
+    },
+    "header": {
+      "create_title": "نیا کورس بنائیں",
+      "edit_title": "کورس میں ترمیم کریں",
+      "subtitle_new": "اپنے کورس کی تفصیلات درج کریں"
+    },
+    "buttons": {
+      "saving": "محفوظ ہو رہا ہے...",
+      "save_draft": "ڈرافٹ محفوظ کریں",
+      "publish": "کورس شائع کریں"
+    },
+    "tabs": {
+      "details": "کورس کی تفصیلات",
+      "curriculum": "نصاب",
+      "settings": "ترتیبات"
+    },
+    "details": {
+      "title": "کورس کی تفصیلات",
+      "form": {
+        "title": {
+          "label": "عنوان",
+          "placeholder": "مثال کے طور پر، پروگرامنگ کا تعارف"
+        },
+        "subtitle": {
+          "label": "ذیلی عنوان",
+          "placeholder": "مثال کے طور پر، پروگرامنگ کے بنیادی اصول سیکھیں"
+        },
+        "description": {
+          "label": "تفصیل",
+          "placeholder": "اپنے کورس کی تفصیل سے وضاحت کریں..."
+        },
+        "category": {
+          "label": "زمرہ",
+          "placeholder": "ایک زمرہ منتخب کریں"
+        },
+        "language": {
+          "label": "زبان",
+          "placeholder": "ایک زبان منتخب کریں"
+        },
+        "level": {
+          "label": "سطح",
+          "placeholder": "ایک سطح منتخب کریں"
+        },
+        "image": {
+          "label": "کورس کی تصویر",
+          "upload_label": "ایک تصویر اپ لوڈ کریں (JPG, PNG, GIF)"
+        },
+        "requirements": {
+          "label": "تقاضے",
+          "placeholder": "کورس کے تقاضوں کی فہرست بنائیں۔ شامل کرنے کے لیے انٹر دبائیں۔"
+        },
+        "outcomes": {
+          "label": "سیکھنے کے نتائج",
+          "placeholder": "سیکھنے کے نتائج کی فہرست بنائیں۔ شامل کرنے کے لیے انٹر دبائیں۔"
+        }
+      }
+    },
+    "categories": {
+      "language_arts": "لسانی فنون",
+      "mathematics": "ریاضی",
+      "science": "سائنس",
+      "social_studies": "سماجی علوم",
+      "technology": "ٹیکنالوجی"
+    },
+    "languages": {
+      "english": "انگریزی",
+      "urdu": "اردو",
+      "sindhi": "سندھی"
+    },
+    "levels": {
+      "beginner": "مبتدی",
+      "intermediate": "درمیانی",
+      "advanced": "اعلی درجے کا"
+    },
+    "curriculum": {
+      "section_title_placeholder": "سیکشن کا عنوان",
+      "add_lesson_button": "سبق شامل کریں",
+      "add_section_button": "سیکشن شامل کریں"
+    },
+    "settings": {
+      "title": "کورس کی ترتیبات",
+      "instructors": {
+        "label": "انسٹرکٹرز",
+        "placeholder": "اس کورس کے لیے انسٹرکٹر تفویض کریں"
+      },
+      "students": {
+        "label": "طلباء",
+        "placeholder": "اس کورس میں طلباء کا اندراج کریں"
+      }
+    },
+    "messages": {
+      "save_success": "کورس کامیابی سے محفوظ ہو گیا!",
+      "publish_success": "کورس کامیابی سے شائع ہو گیا!"
+    }
+  },
+  "course_content": {
+    "actions": {
+      "download": "ڈاؤن لوڈ",
+      "share": "شیئر کریں"
+    },
+    "tabs": {
+      "description": "تفصیل",
+      "transcript": "نقل",
+      "downloads": "ڈاؤن لوڈز"
+    },
+    "downloads": {
+      "no_downloads": "اس سبق کے لیے کوئی ڈاؤن لوڈ کے قابل وسائل نہیں ہیں۔"
+    },
+    "quiz": {
+      "title": "علم کی جانچ",
+      "question": "سوال {{current}} از {{total}}",
+      "retake": "کوئز دوبارہ دیں",
+      "submit": "جوابات جمع کروائیں"
+    },
+    "unknown_lesson_type": "نامعلوم سبق کی قسم.",
+    "sidebar": {
+      "back_to_course": "کورس پر واپس جائیں"
+    },
+    "navigation": {
+      "previous": "پچھلا",
+      "next": "اگلا",
+      "completed": "مکمل",
+      "mark_complete": "مکمل کے بطور نشان زد کریں"
+    },
+    "mobile_sidebar": {
+      "title": "کورس کا مواد"
+    }
+  },
+  "course_overview": {
+    "title": "کورس کا جائزہ",
+    "edit_course": "کورس میں ترمیم کریں",
+    "view_students": "طلباء کو دیکھیں",
+    "publish_course": "کورس شائع کریں",
+    "unpublish_course": "کورس غیر شائع کریں",
+    "status": "حیثیت",
+    "published": "شائع شدہ",
+    "draft": "ڈرافٹ",
+    "under_review": "زیر نظر",
+    "instructor": "انسٹرکٹر",
+    "category": "زمرہ",
+    "enrollment_count": "اندراج کی تعداد",
+    "created_at": "بنانے کی تاریخ",
+    "last_updated": "آخری بار اپ ڈیٹ کیا گیا",
+    "description": "تفصیل",
+    "no_description": "کوئی تفصیل فراہم نہیں کی گئی ہے۔",
+    "curriculum": "نصاب",
+    "add_section": "سیکشن شامل کریں",
+    "add_lesson": "سبق شامل کریں",
+    "edit": "ترمیم",
+    "delete": "حذف کریں",
+    "students_enrolled": "داخلہ لینے والے طلباء",
+    "no_students": "اس کورس میں فی الحال کوئی طالب علم داخل نہیں ہے۔",
+    "view_all_students": "تمام طلباء کو دیکھیں",
+    "recent_activity": "حالیہ سرگرمی",
+    "no_activity": "اس کورس کے لئے کوئی حالیہ سرگرمی نہیں ہے۔",
+    "view_all_activity": "تمام سرگرمی دیکھیں",
+    "add_section_modal": {
+      "title": "نیا سیکشن شامل کریں",
+      "section_title": "سیکشن کا عنوان",
+      "section_title_placeholder": "مثلاً، تعارف...",
+      "add_section_button": "سیکشن شامل کریں"
+    },
+    "add_lesson_modal": {
+      "title": "نیا سبق شامل کریں",
+      "lesson_title": "سبق کا عنوان",
+      "lesson_title_placeholder": "مثلاً، کیا ہے...",
+      "add_lesson_button": "سبق شامل کریں"
+    }
+  },
+  "forgot_password": {
+    "back_to_login": "{{role}} لاگ ان پر واپس جائیں",
+    "title": "پاس ورڈ بھول گئے؟",
+    "description": "اپنا ای میل ایڈریس درج کریں اور ہم آپ کو اپنا پاس ورڈ دوبارہ ترتیب دینے کے لیے ایک لنک بھیجیں گے۔",
+    "email_label": "ای میل ایڈریس",
+    "email_placeholder": "اپنا ای میل درج کریں",
+    "send_reset_link": "ری سیٹ لنک بھیجیں",
+    "sending": "بھیجا جا رہا ہے۔..",
+    "success_toast": "پاس ورڈ ری سیٹ ای میل بھیج دیا گیا ہے! براہ کرم اپنا ان باکس چیک کریں۔",
+    "error_toast": "ری سیٹ ای میل بھیجنے میں ناکام"
+  },
+  "home": {
+    "hero": {
+      "title_part1": "انگریزی میں مہارت حاصل کریں",
+      "title_part2": "AI سے چلنے والی لرننگ کے ساتھ",
+      "subtitle": "مصنوعی ذہانت سے چلنے والا آپ کا ذاتی انگریزی ٹیوٹر۔ انٹرایکٹو اسباق، ریئل ٹائم فیڈ بیک، اور ثقافتی تناظر کے ساتھ اپنی رفتار سے سیکھیں۔",
+      "start_learning": "سیکھنا شروع کریں",
+      "watch_demo": "ڈیمو دیکھیں"
+    },
+    "features": {
+      "title": "انگریزی میں مہارت حاصل کرنے کے لیے آپ کو درکار ہر چیز",
+      "subtitle": "جامع خصوصیات جو انگریزی سیکھنے کو نوجوان ذہنوں کے لیے موثر، پرلطف اور قابل رسائی بنانے کے لیے ڈیزائن کی گئی ہیں۔",
+      "ai_lessons": {
+        "title": "AI سے چلنے والے اسباق",
+        "description": "انٹرایکٹو اور انکولی انگریزی سیکھنا"
+      },
+      "conversational_practice": {
+        "title": "گفتگو کی مشق",
+        "description": "اپنے ٹیوٹر کے ساتھ حقیقی وقت میں بات کریں"
+      },
+      "structured_paths": {
+        "title": "ساختہ سیکھنے کے راستے",
+        "description": "اہداف کے مطابق رہنمائی والے نصاب پر عمل کریں"
+      },
+      "verifiable_credentials": {
+        "title": "قابل تصدیق اسناد",
+        "description": "اسپانسرز کے ساتھ تسلیم شدہ سرٹیفیکیشن حاصل کریں"
+      },
+      "bilingual": {
+        "title": "دو لسانی (اردو اور انگریزی)",
+        "description": "دو لسانی (انگریزی اور اردو) معاونت کے ساتھ آسانی سے سیکھیں"
+      },
+      "progress_analytics": {
+        "title": "پیشرفت اور تجزیات",
+        "description": "ڈیٹا کے ساتھ بہتری کا تصور کریں"
+      }
+    },
+    "testimonials": {
+      "title": "دنیا بھر کے سیکھنے والوں کی طرف سے پسند کیا گیا",
+      "subtitle": "ان ہزاروں مطمئن طلباء میں شامل ہوں جنہوں نے اپنی انگریزی کی مہارت کو تبدیل کیا ہے",
+      "sarah": {
+        "quote": "\"AI ٹیوٹر نے میرے انگریزی سیکھنے کے طریقے کو پوری طرح بدل دیا ہے۔ ذاتی نوعیت کا نقطہ نظر تمام فرق کرتا ہے۔\"",
+        "name": "سارہ احمد",
+        "role": "طالب علم"
+      },
+      "mohammad": {
+        "quote": "\"ثقافتی تناظر اور حقیقی دنیا کے منظرناموں نے مجھے عملی حالات میں انگریزی سمجھنے میں مدد کی ہے۔\"",
+        "name": "محمد خان",
+        "role": "پیشہ ور"
+      },
+      "fatima": {
+        "quote": "\"مجھے یہ پسند ہے کہ ایپ میرے سیکھنے کے انداز کے مطابق ڈھل جاتی ہے۔ یہ ایسا ہی ہے جیسے ایک ذاتی ٹیوٹر 24/7 دستیاب ہو۔\"",
+        "name": "فاطمہ علی",
+        "role": "کاروباری مالک"
+      }
+    },
+    "cta": {
+      "title": "آج ہی اپنا انگریزی سیکھنے کا سفر شروع کریں",
+      "subtitle": "ان ہزاروں سیکھنے والوں میں شامل ہوں جنہوں نے AI ٹیوٹر کے ساتھ روانی حاصل کی ہے",
+      "get_started": "مفت شروع کریں"
+    }
+  },
+  "index": {
+    "welcome": "آپ کی خالی ایپ میں خوش آمدید",
+    "start_building": "یہاں اپنے حیرت انگیز پروجیکٹ کی تعمیر شروع کریں!"
+  },
+  "not_found": {
+    "title": "404",
+    "subtitle": "افوہ! صفحہ نہیں ملا",
+    "return_home": "مرکزی صفحہ پر واپس جائیں",
+    "error_console": "404 خرابی: صارف نے غیر موجود راستے تک رسائی کی کوشش کی:"
+  },
+  "profile_settings": {
+    "title": "پروفائل کی ترتیبات",
+    "password_recovery": {
+      "title": "اپنا پاس ورڈ اپ ڈیٹ کریں",
+      "description": "آپ نے کامیابی سے پاس ورڈ ری سیٹ شروع کر دیا ہے۔ براہ کرم ذیل میں اپنا نیا پاس ورڈ درج اور تصدیق کریں۔"
+    },
+    "personal_info": {
+      "title": "ذاتی معلومات",
+      "description": "اپنی ذاتی تفصیلات یہاں اپ ڈیٹ کریں۔",
+      "first_name": "پہلا نام",
+      "last_name": "آخری نام",
+      "grade": "گریڈ",
+      "teacher_id": "استاد کی شناخت",
+      "update_button": "پروفائل اپ ڈیٹ کریں",
+      "updating_button": "اپ ڈیٹ ہو رہا ہے۔..",
+      "update_success_toast": "پروفائل کامیابی سے اپ ڈیٹ ہو گیا!",
+      "update_error_toast": "پروفائل اپ ڈیٹ کرنے میں ناکام۔ براہ کرم دوبارہ کوشش کریں.",
+      "auth_update_error_toast": "سیشن ڈیٹا اپ ڈیٹ کرنے میں ناکام۔ براہ کرم دوبارہ کوشش کریں.",
+      "select_grade_placeholder": "گریڈ منتخب کریں",
+      "grade_option": "گریڈ {{grade}}"
+    },
+    "password": {
+      "title": "پاس ورڈ تبدیل کریں",
+      "description": "اپنا پاس ورڈ یہاں اپ ڈیٹ کریں۔ ایک مضبوط پاس ورڈ استعمال کرنے کی سفارش کی جاتی ہے۔",
+      "new_password": "نیا پاس ورڈ",
+      "confirm_new_password": "نئے پاس ورڈ کی تصدیق کریں",
+      "update_button": "پاس ورڈ اپ ڈیٹ کریں",
+      "updating_button": "اپ ڈیٹ ہو رہا ہے۔..",
+      "update_success_toast": "پاس ورڈ کامیابی سے اپ ڈیٹ ہو گیا!",
+      "update_error_toast": "پاس ورڈ اپ ڈیٹ کرنے میں ناکام۔ براہ کرم دوبارہ کوشش کریں.",
+      "fix_errors_toast": "جمع کرانے سے پہلے براہ کرم غلطیاں درست کریں۔",
+      "reauth_email_sent_toast": "تصدیقی ای میل بھیج دی گئی ہے! پاس ورڈ کی تبدیلی مکمل کرنے کے لیے براہ کرم اپنا ان باکس چیک کریں۔",
+      "reauth_email_error_toast": "تصدیقی ای میل بھیجنے میں ناکام۔ براہ کرم دوبارہ کوشش کریں.",
+      "new_password_different_error": "نیا پاس ورڈ آپ کے پرانے پاس ورڈ سے مختلف ہونا چاہیے۔"
+    },
+    "reauth_alert": {
+      "title": "اضافی سیکیورٹی تصدیق درکار ہے",
+      "description_part1": "چونکہ آپ نے کم محفوظ طریقے (جیسے میجک لنک) سے لاگ ان کیا ہے، اس لیے آپ کو اپنا پاس ورڈ تبدیل کرنے کے لیے اپنی شناخت کی تصدیق کرنی ہوگی۔",
+      "description_part2": "ایک تصدیقی لنک آپ کے ای میل ایڈریس پر بھیجا جائے گا۔",
+      "reauth_email_sent": "ایک تصدیقی ای میل بھیج دی گئی ہے۔ براہ کرم اپنا ان باکس چیک کریں۔",
+      "reauth_email_sent_title": "تصدیقی ای میل بھیجی گئی"
+    }
+  },
+  "role_selection": {
+    "welcome": "DIL میں خوش آمدید",
+    "choose_role": "شروع کرنے کے لیے اپنا کردار منتخب کریں",
+    "student": {
+      "title": "میں ایک طالب علم ہوں",
+      "description": "سیکھنے کے مواد تک رسائی حاصل کریں اور اپنی پیشرفت کو ٹریک کریں",
+      "button": "طالب علم کے طور پر جاری رکھیں"
+    },
+    "teacher": {
+      "title": "میں ایک استاد ہوں",
+      "description": "طلباء کا نظم کریں اور سیکھنے کے تجربات بنائیں",
+      "button": "استاد کے طور پر جاری رکھیں"
+    }
+  },
+  "student_auth": {
+    "back_to_role_selection": "کردار کے انتخاب پر واپس جائیں",
+    "login": {
+      "tab": "لاگ ان",
+      "email_label": "ای میل",
+      "password_label": "پاس ورڈ",
+      "forgot_password": "پاس ورڈ بھول گئے؟",
+      "button": "لاگ ان",
+      "loading_button": "لاگ ان ہو رہا ہے۔..",
+      "email_required": "ای میل درکار ہے",
+      "password_required": "پاس ورڈ درکار ہے",
+      "profile_fetch_error": "صارف پروفائل حاصل نہیں کیا جا سکا۔",
+      "wrong_portal_error": "براہ کرم لاگ ان کرنے کے لیے {{role}} پورٹل استعمال کریں۔",
+      "welcome_toast": "خوش آمدید!",
+      "unverified_email_error": "براہ کرم اپنے ای میل ایڈریس کی تصدیق کریں، ہم نے آپ کے ای میل پر ایک نیا تصدیقی لنک بھیجا ہے۔",
+      "invalid_credentials_error": "غلط اسناد۔"
+    },
+    "signup": {
+      "tab": "سائن اپ",
+      "first_name_label": "پہلا نام",
+      "first_name_placeholder": "اپنا پہلا نام درج کریں",
+      "last_name_label": "آخری نام",
+      "last_name_placeholder": "اپنا آخری نام درج کریں",
+      "email_label": "ای میل ایڈریس",
+      "email_placeholder": "m@example.com",
+      "password_label": "پاس ورڈ",
+      "password_placeholder": "ایک پاس ورڈ بنائیں",
+      "confirm_password_label": "پاس ورڈ کی تصدیق کریں",
+      "confirm_password_placeholder": "اپنے پاس ورڈ کی تصدیق کریں",
+      "grade_label": "گریڈ",
+      "grade_placeholder": "اپنا گریڈ منتخب کریں",
+      "grade_option": "گریڈ {{grade}}",
+      "button": "اکاؤنٹ بنائیں",
+      "loading_button": "اکاؤنٹ بنایا جا رہا ہے۔..",
+      "first_name_required": "پہلا نام درکار ہے",
+      "last_name_required": "آخری نام درکار ہے",
+      "email_required": "ای میل درکار ہے",
+      "password_required": "پاس ورڈ درکار ہے",
+      "confirm_password_required": "براہ کرم اپنے پاس ورڈ کی تصدیق کریں",
+      "grade_required": "گریڈ درکار ہے",
+      "fix_errors_toast": "جمع کرانے سے پہلے براہ کرم توثیق کی غلطیاں درست کریں",
+      "success_message": "اکاؤنٹ کامیابی سے بن گیا! براہ کرم تصدیقی لنک کے لیے اپنا ای میل چیک کریں۔",
+      "email_already_exists": "اس ای میل کے ساتھ ایک اکاؤنٹ پہلے سے موجود ہے۔",
+      "update_info_success_message": "آپ کی معلومات کو اپ ڈیٹ کر دیا گیا ہے۔ براہ کرم تصدیقی لنک کے لیے اپنا ای میل چیک کریں۔",
+      "update_info_error_toast": "آپ کی معلومات کو اپ ڈیٹ کرنے میں ناکام۔ براہ کرم دوبارہ کوشش کریں.",
+      "fail_toast": "سائن اپ ناکام ہوگیا۔ براہ کرم دوبارہ کوشش کریں."
+    },
+    "title": "اسٹوڈنٹ پورٹل",
+    "description": "اپنے ذاتی نوعیت کے سیکھنے کے سفر تک رسائی حاصل کریں۔"
+  },
+  "teacher_auth": {
+    "back_to_role_selection": "کردار کے انتخاب پر واپس جائیں",
+    "login": {
+      "tab": "لاگ ان",
+      "email_label": "ای میل",
+      "password_label": "پاس ورڈ",
+      "forgot_password": "پاس ورڈ بھول گئے؟",
+      "button": "لاگ ان",
+      "loading_button": "لاگ ان ہو رہا ہے۔..",
+      "email_required": "ای میل درکار ہے",
+      "password_required": "پاس ورڈ درکار ہے",
+      "profile_fetch_error": "صارف پروفائل حاصل نہیں کیا جا سکا۔",
+      "wrong_portal_error": "براہ کرم لاگ ان کرنے کے لیے {{role}} پورٹل استعمال کریں۔",
+      "welcome_toast": "خوش آمدید!",
+      "unverified_email_error": "براہ کرم اپنے ای میل ایڈریس کی تصدیق کریں، ہم نے آپ کے ای میل پر ایک نیا تصدیقی لنک بھیجا ہے۔",
+      "invalid_credentials_error": "غلط اسناد۔"
+    },
+    "signup": {
+      "tab": "سائن اپ",
+      "first_name_label": "پہلا نام",
+      "first_name_placeholder": "اپنا پہلا نام درج کریں",
+      "last_name_label": "آخری نام",
+      "last_name_placeholder": "اپنا آخری نام درج کریں",
+      "email_label": "ای میل ایڈریس",
+      "email_placeholder": "m@example.com",
+      "password_label": "پاس ورڈ",
+      "password_placeholder": "ایک پاس ورڈ بنائیں",
+      "confirm_password_label": "پاس ورڈ کی تصدیق کریں",
+      "confirm_password_placeholder": "اپنے پاس ورڈ کی تصدیق کریں",
+      "teacher_id_label": "استاد کی شناخت",
+      "teacher_id_placeholder": "اپنی استاد کی شناخت درج کریں",
+      "button": "اکاؤنٹ بنائیں",
+      "loading_button": "اکاؤنٹ بنایا جا رہا ہے۔..",
+      "first_name_required": "پہلا نام درکار ہے",
+      "last_name_required": "آخری نام درکار ہے",
+      "email_required": "ای میل درکار ہے",
+      "password_required": "پاس ورڈ درکار ہے",
+      "confirm_password_required": "براہ کرم اپنے پاس ورڈ کی تصدیق کریں",
+      "teacher_id_required": "استاد کی شناخت درکار ہے",
+      "fix_errors_toast": "جمع کرانے سے پہلے براہ کرم توثیق کی غلطیاں درست کریں",
+      "success_message": "اکاؤنٹ کامیابی سے بن گیا! براہ کرم تصدیقی لنک کے لیے اپنا ای میل چیک کریں۔",
+      "email_already_exists": "اس ای میل کے ساتھ ایک اکاؤنٹ پہلے سے موجود ہے۔",
+      "update_info_success_message": "آپ کی معلومات کو اپ ڈیٹ کر دیا گیا ہے۔ براہ کرم تصدیقی لنک کے لیے اپنا ای میل چیک کریں۔",
+      "update_info_error_toast": "آپ کی معلومات کو اپ ڈیٹ کرنے میں ناکام۔ براہ کرم دوبارہ کوشش کریں.",
+      "fail_toast": "سائن اپ ناکام ہوگیا۔ براہ کرم دوبارہ کوشش کریں."
+    },
+    "title": "ٹیچر پورٹل",
+    "description": "اپنی کلاسوں اور طلباء کا نظم کریں۔"
+  },
+  "mobile_menu": {
+    "menu_title": "مینو",
+    "dashboard": "ڈیش بورڈ",
+    "account_title": "اکاؤنٹ",
+    "profile_settings": "پروفائل کی ترتیبات",
+    "sign_out": "سائن آؤٹ",
+    "appearance_title": "ظاہری شکل",
+    "theme_label": "تھیم",
+    "home": "مرکزی صفحہ",
+    "sign_in": "سائن ان کریں",
+    "logout_failed": "لاگ آؤٹ کرنے میں ناکام۔ براہ کرم دوبارہ کوشش کریں.",
+    "logout_success": "آپ لاگ آؤٹ ہو چکے ہیں۔"
+  },
+  "multi_select": {
+    "placeholder": "اختیارات منتخب کریں",
+    "remove_option": "{{option}} کو ہٹائیں"
+  },
+  "file_upload": {
+    "label": "یہاں ایک فائل گھسیٹیں اور چھوڑیں، یا فائل منتخب کرنے کے لیے کلک کریں"
+  },
+  "pagination": {
+    "go_to_previous_page": "پچھلے صفحے پر جائیں",
+    "previous": "پچھلا",
+    "go_to_next_page": "اگلے صفحے پر جائیں",
+    "next": "اگلا",
+    "more_pages": "مزید صفحات"
+  },
+  "dialog": {
+    "close": "بند کریں"
+  }
+} 

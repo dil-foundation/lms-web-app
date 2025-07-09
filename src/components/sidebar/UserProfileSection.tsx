@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { getRoleDisplayName, type UserRole } from '@/config/roleNavigation';
@@ -11,6 +12,7 @@ interface UserProfileSectionProps {
 }
 
 export const UserProfileSection = ({ profile }: UserProfileSectionProps) => {
+  const { t } = useTranslation();
   if (!profile) {
     return (
       <div className="flex items-center space-x-3 p-4 pt-10 border-t border-border">
@@ -24,7 +26,7 @@ export const UserProfileSection = ({ profile }: UserProfileSectionProps) => {
   }
 
   const userRole = profile.role as UserRole;
-  const displayName = profile.full_name || profile.first_name || 'User';
+  const displayName = profile.full_name || profile.first_name || t('roles.user');
   const initials = displayName
     .split(' ')
     .map(name => name.charAt(0))
@@ -46,7 +48,7 @@ export const UserProfileSection = ({ profile }: UserProfileSectionProps) => {
         </p>
         <div className="flex items-center space-x-2">
           <Badge variant="secondary" className="text-xs">
-            {getRoleDisplayName(userRole)}
+            {getRoleDisplayName(t, userRole)}
           </Badge>
         </div>
       </div>

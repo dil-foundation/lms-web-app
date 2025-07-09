@@ -1,18 +1,21 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { GraduationCap, Users } from 'lucide-react';
 
 const RoleSelection = () => {
+  const { t } = useTranslation();
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <div className="pt-16 min-h-screen flex items-center justify-center px-4">
         <div className="w-full max-w-4xl mx-auto">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold mb-2">Welcome to DIL</h1>
-            <p className="text-muted-foreground">Choose your role to get started</p>
+            <h1 className="text-3xl font-bold mb-2">{t('role_selection.welcome')}</h1>
+            <p className="text-muted-foreground">{t('role_selection.choose_role')}</p>
           </div>
           
           <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
@@ -21,15 +24,15 @@ const RoleSelection = () => {
                 <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                   <GraduationCap className="w-8 h-8 text-primary" />
                 </div>
-                <CardTitle className="text-xl">I'm a Student</CardTitle>
+                <CardTitle className="text-xl">{t('role_selection.student.title')}</CardTitle>
                 <CardDescription>
-                  Access learning materials and track your progress
+                  {t('role_selection.student.description')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Link to="/auth/student">
                   <Button className="w-full bg-primary hover:bg-primary/90">
-                    Continue as Student
+                    {t('role_selection.student.button')}
                   </Button>
                 </Link>
               </CardContent>
@@ -40,15 +43,15 @@ const RoleSelection = () => {
                 <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Users className="w-8 h-8 text-primary" />
                 </div>
-                <CardTitle className="text-xl">I'm a Teacher</CardTitle>
+                <CardTitle className="text-xl">{t('role_selection.teacher.title')}</CardTitle>
                 <CardDescription>
-                  Manage students and create learning experiences
+                  {t('role_selection.teacher.description')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Link to="/auth/teacher">
                   <Button className="w-full bg-primary hover:bg-primary/90">
-                    Continue as Teacher
+                    {t('role_selection.teacher.button')}
                   </Button>
                 </Link>
               </CardContent>

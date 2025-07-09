@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
+import { useTranslation } from 'react-i18next';
 import { UploadCloud, File as FileIcon, X } from 'lucide-react';
 import { Button } from './button';
 import { Progress } from './progress';
@@ -13,8 +14,9 @@ interface FileUploadProps {
 export const FileUpload = ({
   onUpload,
   acceptedFileTypes = [],
-  label = 'Drag & drop a file here, or click to select a file'
+  label
 }: FileUploadProps) => {
+  const { t } = useTranslation();
   const [file, setFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
 
@@ -73,7 +75,7 @@ export const FileUpload = ({
           <input {...getInputProps()} />
           <div className="flex flex-col items-center gap-2 text-muted-foreground">
             <UploadCloud className="h-10 w-10" />
-            <p>{label}</p>
+            <p>{label || t('file_upload.label')}</p>
           </div>
         </div>
       )}

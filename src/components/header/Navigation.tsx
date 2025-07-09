@@ -2,6 +2,7 @@
 import { memo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { User } from '@supabase/supabase-js';
+import { useTranslation } from 'react-i18next';
 
 interface NavigationProps {
   user: User | null;
@@ -10,6 +11,7 @@ interface NavigationProps {
 }
 
 export const Navigation = memo(({ user, isMobile = false, onLinkClick }: NavigationProps) => {
+  const { t } = useTranslation();
   const location = useLocation();
   const isHomePage = location.pathname === '/';
   const showBackToDashboard = isHomePage && localStorage.getItem('cameFromDashboard') === 'true';
@@ -26,14 +28,14 @@ export const Navigation = memo(({ user, isMobile = false, onLinkClick }: Navigat
     <nav className={isMobile ? "space-y-1" : "flex items-center space-x-6"}>
       {user && showBackToDashboard && (
         <Link to="/dashboard" className={linkClass} onClick={onLinkClick}>
-          Go back to Dashboard
+          {t('header.back_to_dashboard')}
           {underlineSpan}
         </Link>
       )}
       
       {user && !showBackToDashboard && !isHomePage && (
         <Link to="/dashboard" className={linkClass} onClick={onLinkClick}>
-          Dashboard
+          {t('header.dashboard')}
           {underlineSpan}
         </Link>
       )}

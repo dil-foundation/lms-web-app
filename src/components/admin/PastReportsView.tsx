@@ -11,6 +11,7 @@ import {
   Trash2,
   Clock as ClockIcon,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -79,55 +80,56 @@ const getRoleBadgeClass = (role: string) => {
 };
 
 export const PastReportsView = ({ onBack }: PastReportsViewProps) => {
+  const { t } = useTranslation();
   return (
     <div className="space-y-6 max-w-7xl mx-auto p-4 sm:p-6">
       <div className="flex items-center justify-between">
         <Button variant="ghost" onClick={onBack} className="text-muted-foreground">
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Observation Reporting
+          {t('past_reports.back_button')}
         </Button>
       </div>
 
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Past Observation Reports</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t('past_reports.title')}</h1>
         <p className="text-muted-foreground mt-1">
-          View and manage your previously submitted observation reports
+          {t('past_reports.description')}
         </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Reports" value="4" icon={FileText} iconColor="text-gray-600" bgColor="bg-gray-100" />
-        <StatCard title="This Week" value="4" icon={Calendar} iconColor="text-blue-600" bgColor="bg-blue-100" />
-        <StatCard title="Schools Visited" value="3" icon={Building} iconColor="text-green-600" bgColor="bg-green-100" />
-        <StatCard title="Most Common Role" value="Principal" icon={User} iconColor="text-purple-600" bgColor="bg-purple-100" />
+        <StatCard title={t('past_reports.stats.total_reports')} value="4" icon={FileText} iconColor="text-gray-600" bgColor="bg-gray-100" />
+        <StatCard title={t('past_reports.stats.this_week')} value="4" icon={Calendar} iconColor="text-blue-600" bgColor="bg-blue-100" />
+        <StatCard title={t('past_reports.stats.schools_visited')} value="3" icon={Building} iconColor="text-green-600" bgColor="bg-green-100" />
+        <StatCard title={t('past_reports.stats.most_common_role')} value={t('observation_reports.roles.principal')} icon={User} iconColor="text-purple-600" bgColor="bg-purple-100" />
       </div>
 
       <Card className="shadow-sm">
         <CardContent className="p-4 flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-            <Input placeholder="Search reports..." className="pl-10 h-11" />
+            <Input placeholder={t('past_reports.search_placeholder')} className="pl-10 h-11" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Select>
-              <SelectTrigger className="h-11"><SelectValue placeholder="All Roles" /></SelectTrigger>
+              <SelectTrigger className="h-11"><SelectValue placeholder={t('past_reports.filters.all_roles')} /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Roles</SelectItem>
-                <SelectItem value="principal">Principal</SelectItem>
+                <SelectItem value="all">{t('past_reports.filters.all_roles')}</SelectItem>
+                <SelectItem value="principal">{t('observation_reports.roles.principal')}</SelectItem>
               </SelectContent>
             </Select>
             <Select>
-              <SelectTrigger className="h-11"><SelectValue placeholder="All Schools" /></SelectTrigger>
+              <SelectTrigger className="h-11"><SelectValue placeholder={t('past_reports.filters.all_schools')} /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Schools</SelectItem>
-                <SelectItem value="harvard">Harvard University</SelectItem>
+                <SelectItem value="all">{t('past_reports.filters.all_schools')}</SelectItem>
+                <SelectItem value="harvard">{t('past_reports.harvard_university')}</SelectItem>
               </SelectContent>
             </Select>
             <Select>
-              <SelectTrigger className="h-11"><SelectValue placeholder="Most Recent" /></SelectTrigger>
+              <SelectTrigger className="h-11"><SelectValue placeholder={t('past_reports.filters.most_recent')} /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="recent">Most Recent</SelectItem>
-                <SelectItem value="oldest">Oldest</SelectItem>
+                <SelectItem value="recent">{t('past_reports.filters.most_recent')}</SelectItem>
+                <SelectItem value="oldest">{t('past_reports.filters.oldest')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -139,9 +141,9 @@ export const PastReportsView = ({ onBack }: PastReportsViewProps) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <FileText className="w-5 h-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold">Observation Reports (4)</h2>
+              <h2 className="text-lg font-semibold">{t('past_reports.reports_title', { count: 4 })}</h2>
             </div>
-            <p className="text-sm text-muted-foreground">Click on a report to view details or use the action buttons to manage reports</p>
+            <p className="text-sm text-muted-foreground">{t('past_reports.reports_description')}</p>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -167,10 +169,10 @@ export const PastReportsView = ({ onBack }: PastReportsViewProps) => {
                 </div>
               </div>
               <div className="flex items-center gap-2 mt-4 sm:mt-0">
-                <Button variant="outline" size="sm"><Eye className="w-4 h-4 mr-2" />View</Button>
-                <Button variant="outline" size="sm"><Edit className="w-4 h-4 mr-2" />Edit</Button>
-                <Button variant="outline" size="sm"><Download className="w-4 h-4 mr-2" />Export</Button>
-                <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"><Trash2 className="w-4 h-4 mr-2" />Delete</Button>
+                <Button variant="outline" size="sm"><Eye className="w-4 h-4 mr-2" />{t('common.view')}</Button>
+                <Button variant="outline" size="sm"><Edit className="w-4 h-4 mr-2" />{t('common.edit')}</Button>
+                <Button variant="outline" size="sm"><Download className="w-4 h-4 mr-2" />{t('common.export')}</Button>
+                <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"><Trash2 className="w-4 h-4 mr-2" />{t('common.delete')}</Button>
               </div>
             </Card>
           ))}

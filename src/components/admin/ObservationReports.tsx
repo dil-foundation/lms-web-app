@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SecureLinkManagement } from './SecureLinkManagement';
 import { PastReportsView } from './PastReportsView';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -23,31 +24,31 @@ import {
 type ObserverRole = 'principal' | 'ece' | 'school-officer' | 'project-manager' | '';
 type ViewMode = 'reporting' | 'secureLinks' | 'pastReports';
 
-const ObserverInformation = ({ observerRole, onRoleChange }) => (
+const ObserverInformation = ({ observerRole, onRoleChange, t }) => (
   <Card className="bg-green-50/20 border-green-200 dark:bg-green-900/10 dark:border-green-800/50">
     <CardHeader className="flex flex-row items-center gap-4">
       <User className="w-6 h-6 text-green-600" />
       <div>
-        <CardTitle className="text-xl">Observer Information</CardTitle>
+        <CardTitle className="text-xl">{t('observation_reports.observer_information.title')}</CardTitle>
         <CardDescription>
-          Select your role and provide basic information about the observation
+          {t('observation_reports.observer_information.description')}
         </CardDescription>
       </div>
     </CardHeader>
     <CardContent>
       <div className="max-w-md mx-auto">
         <Label htmlFor="observer-role" className="text-center block mb-2 font-semibold">
-          Observer Role *
+          {t('observation_reports.observer_information.observer_role')} *
         </Label>
         <Select value={observerRole} onValueChange={onRoleChange}>
           <SelectTrigger id="observer-role" className="h-12 text-base">
-            <SelectValue placeholder="Select your observer role" />
+            <SelectValue placeholder={t('observation_reports.observer_information.select_role_placeholder')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="principal">Principal</SelectItem>
-            <SelectItem value="ece">ECE Observer</SelectItem>
-            <SelectItem value="school-officer">School Officer</SelectItem>
-            <SelectItem value="project-manager">Project Manager</SelectItem>
+            <SelectItem value="principal">{t('observation_reports.roles.principal')}</SelectItem>
+            <SelectItem value="ece">{t('observation_reports.roles.ece_observer')}</SelectItem>
+            <SelectItem value="school-officer">{t('observation_reports.roles.school_officer')}</SelectItem>
+            <SelectItem value="project-manager">{t('observation_reports.roles.project_manager')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -55,7 +56,7 @@ const ObserverInformation = ({ observerRole, onRoleChange }) => (
         <div className="text-center mt-6">
           <Badge variant="outline" className="border-green-300 bg-white">
             <Check className="w-4 h-4 mr-2 text-green-600" />
-            Role-specific questionnaire will appear below
+            {t('observation_reports.observer_information.questionnaire_note')}
           </Badge>
         </div>
       )}
@@ -63,45 +64,45 @@ const ObserverInformation = ({ observerRole, onRoleChange }) => (
   </Card>
 );
 
-const ObservationDetails = () => (
+const ObservationDetails = ({ t }) => (
   <Card className="bg-green-50/20 border-green-200 dark:bg-green-900/10 dark:border-green-800/50">
     <CardHeader className="flex flex-row items-center gap-4">
       <ClipboardList className="w-6 h-6 text-green-600" />
       <div>
-        <CardTitle className="text-xl">Observation Details</CardTitle>
-        <CardDescription>Basic information about the observation session</CardDescription>
+        <CardTitle className="text-xl">{t('observation_reports.observation_details.title')}</CardTitle>
+        <CardDescription>{t('observation_reports.observation_details.description')}</CardDescription>
       </div>
     </CardHeader>
     <CardContent className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="observer-name">Observer Name *</Label>
-          <Input id="observer-name" placeholder="Enter your full name..." />
+          <Label htmlFor="observer-name">{t('observation_reports.observation_details.observer_name')} *</Label>
+          <Input id="observer-name" placeholder={t('observation_reports.observation_details.observer_name_placeholder')} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="observation-date">Observation Date *</Label>
+          <Label htmlFor="observation-date">{t('observation_reports.observation_details.observation_date')} *</Label>
           <Input id="observation-date" type="date" />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="school-name">School Name *</Label>
-          <Input id="school-name" placeholder="Enter school name..." />
+          <Label htmlFor="school-name">{t('observation_reports.observation_details.school_name')} *</Label>
+          <Input id="school-name" placeholder={t('observation_reports.observation_details.school_name_placeholder')} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="teacher-name">Teacher Name *</Label>
-          <Input id="teacher-name" placeholder="Enter teacher name..." />
+          <Label htmlFor="teacher-name">{t('observation_reports.observation_details.teacher_name')} *</Label>
+          <Input id="teacher-name" placeholder={t('observation_reports.observation_details.teacher_name_placeholder')} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="start-time">Start Time *</Label>
+          <Label htmlFor="start-time">{t('observation_reports.observation_details.start_time')} *</Label>
           <Input id="start-time" type="time" />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="end-time">End Time *</Label>
+          <Label htmlFor="end-time">{t('observation_reports.observation_details.end_time')} *</Label>
           <Input id="end-time" type="time" />
         </div>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="general-notes">General Notes</Label>
-        <Textarea id="general-notes" placeholder="Add any general observations or notes..." />
+        <Label htmlFor="general-notes">{t('observation_reports.observation_details.general_notes')}</Label>
+        <Textarea id="general-notes" placeholder={t('observation_reports.observation_details.general_notes_placeholder')} />
       </div>
     </CardContent>
   </Card>
@@ -115,112 +116,114 @@ const AssessmentQuestion = ({ label, description, children }) => (
   </div>
 );
 
-const YesNoQuestion = ({ label, description }) => (
+const YesNoQuestion = ({ label, description, t }) => (
   <div className="space-y-2">
     <Label>{label}</Label>
     <p className="text-sm text-muted-foreground">{description}</p>
     <RadioGroup className="flex items-center gap-6 pt-2">
       <div className="flex items-center space-x-2">
         <RadioGroupItem value="yes" id={`${label}-yes`} />
-        <Label htmlFor={`${label}-yes`}>Yes</Label>
+        <Label htmlFor={`${label}-yes`}>{t('common.yes')}</Label>
       </div>
       <div className="flex items-center space-x-2">
         <RadioGroupItem value="no" id={`${label}-no`} />
-        <Label htmlFor={`${label}-no`}>No</Label>
+        <Label htmlFor={`${label}-no`}>{t('common.no')}</Label>
       </div>
     </RadioGroup>
   </div>
 );
 
-const PrincipalAssessment = () => (
+const PrincipalAssessment = ({ t }) => (
   <Card className="bg-green-50/20 border-green-200 dark:bg-green-900/10 dark:border-green-800/50">
     <CardHeader>
       <div className="flex items-center gap-4">
         <Star className="w-6 h-6 text-green-600" />
         <div>
-          <CardTitle className="text-xl">Principal Assessment</CardTitle>
-          <CardDescription>Evaluate teaching effectiveness and classroom environment</CardDescription>
+          <CardTitle className="text-xl">{t('observation_reports.principal_assessment.title')}</CardTitle>
+          <CardDescription>{t('observation_reports.principal_assessment.description')}</CardDescription>
         </div>
       </div>
     </CardHeader>
     <CardContent className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <AssessmentQuestion
-          label="Teacher gives clear instructions"
-          description="Rate how clearly the teacher communicates lesson objectives and tasks"
+          label={t('observation_reports.principal_assessment.q1_label')}
+          description={t('observation_reports.principal_assessment.q1_description')}
         >
           <Select>
-            <SelectTrigger><SelectValue placeholder="Select rating" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={t('observation_reports.principal_assessment.rating_placeholder')} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="5">Excellent</SelectItem>
-              <SelectItem value="4">Good</SelectItem>
-              <SelectItem value="3">Average</SelectItem>
-              <SelectItem value="2">Fair</SelectItem>
-              <SelectItem value="1">Poor</SelectItem>
+              <SelectItem value="5">{t('observation_reports.ratings.excellent')}</SelectItem>
+              <SelectItem value="4">{t('observation_reports.ratings.good')}</SelectItem>
+              <SelectItem value="3">{t('observation_reports.ratings.average')}</SelectItem>
+              <SelectItem value="2">{t('observation_reports.ratings.fair')}</SelectItem>
+              <SelectItem value="1">{t('observation_reports.ratings.poor')}</SelectItem>
             </SelectContent>
           </Select>
         </AssessmentQuestion>
 
         <AssessmentQuestion
-          label="Students are engaged during lesson"
-          description="Assess student participation and attention levels"
+          label={t('observation_reports.principal_assessment.q2_label')}
+          description={t('observation_reports.principal_assessment.q2_description')}
         >
           <Select>
-            <SelectTrigger><SelectValue placeholder="Select rating" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={t('observation_reports.principal_assessment.rating_placeholder')} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="5">Excellent</SelectItem>
-              <SelectItem value="4">Good</SelectItem>
-              <SelectItem value="3">Average</SelectItem>
-              <SelectItem value="2">Fair</SelectItem>
-              <SelectItem value="1">Poor</SelectItem>
+              <SelectItem value="5">{t('observation_reports.ratings.excellent')}</SelectItem>
+              <SelectItem value="4">{t('observation_reports.ratings.good')}</SelectItem>
+              <SelectItem value="3">{t('observation_reports.ratings.average')}</SelectItem>
+              <SelectItem value="2">{t('observation_reports.ratings.fair')}</SelectItem>
+              <SelectItem value="1">{t('observation_reports.ratings.poor')}</SelectItem>
             </SelectContent>
           </Select>
         </AssessmentQuestion>
       </div>
 
       <AssessmentQuestion
-        label="Classroom displays are age-appropriate"
-        description="Evaluate the relevance and quality of classroom materials"
+        label={t('observation_reports.principal_assessment.q3_label')}
+        description={t('observation_reports.principal_assessment.q3_description')}
       >
         <Select>
-          <SelectTrigger><SelectValue placeholder="Select rating" /></SelectTrigger>
+          <SelectTrigger><SelectValue placeholder={t('observation_reports.principal_assessment.rating_placeholder')} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="5">Excellent</SelectItem>
-            <SelectItem value="4">Good</SelectItem>
-            <SelectItem value="3">Average</SelectItem>
-            <SelectItem value="2">Fair</SelectItem>
-            <SelectItem value="1">Poor</SelectItem>
+            <SelectItem value="5">{t('observation_reports.ratings.excellent')}</SelectItem>
+            <SelectItem value="4">{t('observation_reports.ratings.good')}</SelectItem>
+            <SelectItem value="3">{t('observation_reports.ratings.average')}</SelectItem>
+            <SelectItem value="2">{t('observation_reports.ratings.fair')}</SelectItem>
+            <SelectItem value="1">{t('observation_reports.ratings.poor')}</SelectItem>
           </SelectContent>
         </Select>
       </AssessmentQuestion>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
         <YesNoQuestion
-          label="Use of learning materials"
-          description="Were appropriate learning materials utilized during the lesson?"
+          label={t('observation_reports.principal_assessment.q4_label')}
+          description={t('observation_reports.principal_assessment.q4_description')}
+          t={t}
         />
         <YesNoQuestion
-          label="Was the lesson plan followed?"
-          description="Did the teacher adhere to the planned curriculum structure?"
+          label={t('observation_reports.principal_assessment.q5_label')}
+          description={t('observation_reports.principal_assessment.q5_description')}
+          t={t}
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="immediate-concerns">Any immediate concerns?</Label>
-        <Textarea id="immediate-concerns" placeholder="Describe any immediate concerns or issues observed..." />
+        <Label htmlFor="immediate-concerns">{t('observation_reports.principal_assessment.concerns_label')}</Label>
+        <Textarea id="immediate-concerns" placeholder={t('observation_reports.principal_assessment.concerns_placeholder')} />
       </div>
     </CardContent>
   </Card>
 );
 
-const EceObserverAssessment = () => (
+const EceObserverAssessment = ({ t }) => (
   <Card className="bg-green-50/20 border-green-200 dark:bg-green-900/10 dark:border-green-800/50">
     <CardHeader>
       <div className="flex items-center gap-4">
         <Star className="w-6 h-6 text-green-600" />
         <div>
-          <CardTitle className="text-xl">ECE Observer Assessment</CardTitle>
-          <CardDescription>Evaluate teaching effectiveness and classroom environment</CardDescription>
+          <CardTitle className="text-xl">{t('observation_reports.ece_assessment.title')}</CardTitle>
+          <CardDescription>{t('observation_reports.ece_assessment.description')}</CardDescription>
         </div>
       </div>
     </CardHeader>
@@ -228,128 +231,130 @@ const EceObserverAssessment = () => (
       {/* This component can be identical to PrincipalAssessment or customized */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <AssessmentQuestion
-          label="Teacher gives clear instructions"
-          description="Rate how clearly the teacher communicates lesson objectives and tasks"
+          label={t('observation_reports.ece_assessment.q1_label')}
+          description={t('observation_reports.ece_assessment.q1_description')}
         >
           <Select>
-            <SelectTrigger><SelectValue placeholder="Select rating" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={t('observation_reports.principal_assessment.rating_placeholder')} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="5">Excellent</SelectItem>
-              <SelectItem value="4">Good</SelectItem>
-              <SelectItem value="3">Average</SelectItem>
-              <SelectItem value="2">Fair</SelectItem>
-              <SelectItem value="1">Poor</SelectItem>
+              <SelectItem value="5">{t('observation_reports.ratings.excellent')}</SelectItem>
+              <SelectItem value="4">{t('observation_reports.ratings.good')}</SelectItem>
+              <SelectItem value="3">{t('observation_reports.ratings.average')}</SelectItem>
+              <SelectItem value="2">{t('observation_reports.ratings.fair')}</SelectItem>
+              <SelectItem value="1">{t('observation_reports.ratings.poor')}</SelectItem>
             </SelectContent>
           </Select>
         </AssessmentQuestion>
 
         <AssessmentQuestion
-          label="Students are engaged during lesson"
-          description="Assess student participation and attention levels"
+          label={t('observation_reports.ece_assessment.q2_label')}
+          description={t('observation_reports.ece_assessment.q2_description')}
         >
           <Select>
-            <SelectTrigger><SelectValue placeholder="Select rating" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={t('observation_reports.principal_assessment.rating_placeholder')} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="5">Excellent</SelectItem>
-              <SelectItem value="4">Good</SelectItem>
-              <SelectItem value="3">Average</SelectItem>
-              <SelectItem value="2">Fair</SelectItem>
-              <SelectItem value="1">Poor</SelectItem>
+              <SelectItem value="5">{t('observation_reports.ratings.excellent')}</SelectItem>
+              <SelectItem value="4">{t('observation_reports.ratings.good')}</SelectItem>
+              <SelectItem value="3">{t('observation_reports.ratings.average')}</SelectItem>
+              <SelectItem value="2">{t('observation_reports.ratings.fair')}</SelectItem>
+              <SelectItem value="1">{t('observation_reports.ratings.poor')}</SelectItem>
             </SelectContent>
           </Select>
         </AssessmentQuestion>
       </div>
 
       <AssessmentQuestion
-        label="Classroom displays are age-appropriate"
-        description="Evaluate the relevance and quality of classroom materials"
+        label={t('observation_reports.ece_assessment.q3_label')}
+        description={t('observation_reports.ece_assessment.q3_description')}
       >
         <Select>
-          <SelectTrigger><SelectValue placeholder="Select rating" /></SelectTrigger>
+          <SelectTrigger><SelectValue placeholder={t('observation_reports.principal_assessment.rating_placeholder')} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="5">Excellent</SelectItem>
-            <SelectItem value="4">Good</SelectItem>
-            <SelectItem value="3">Average</SelectItem>
-            <SelectItem value="2">Fair</SelectItem>
-            <SelectItem value="1">Poor</SelectItem>
+            <SelectItem value="5">{t('observation_reports.ratings.excellent')}</SelectItem>
+            <SelectItem value="4">{t('observation_reports.ratings.good')}</SelectItem>
+            <SelectItem value="3">{t('observation_reports.ratings.average')}</SelectItem>
+            <SelectItem value="2">{t('observation_reports.ratings.fair')}</SelectItem>
+            <SelectItem value="1">{t('observation_reports.ratings.poor')}</SelectItem>
           </SelectContent>
         </Select>
       </AssessmentQuestion>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
         <YesNoQuestion
-          label="Use of learning materials"
-          description="Were appropriate learning materials utilized during the lesson?"
+          label={t('observation_reports.ece_assessment.q4_label')}
+          description={t('observation_reports.ece_assessment.q4_description')}
+          t={t}
         />
         <YesNoQuestion
-          label="Was the lesson plan followed?"
-          description="Did the teacher adhere to the planned curriculum structure?"
+          label={t('observation_reports.ece_assessment.q5_label')}
+          description={t('observation_reports.ece_assessment.q5_description')}
+          t={t}
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="ece-concerns">Any immediate concerns?</Label>
-        <Textarea id="ece-concerns" placeholder="Describe any immediate concerns or issues observed..." />
+        <Label htmlFor="ece-concerns">{t('observation_reports.ece_assessment.concerns_label')}</Label>
+        <Textarea id="ece-concerns" placeholder={t('observation_reports.ece_assessment.concerns_placeholder')} />
       </div>
     </CardContent>
   </Card>
 );
 
-const SchoolOfficerAssessment = () => (
+const SchoolOfficerAssessment = ({ t }) => (
   <Card className="bg-green-50/20 border-green-200 dark:bg-green-900/10 dark:border-green-800/50">
     <CardHeader>
       <div className="flex items-center gap-4">
         <Home className="w-6 h-6 text-green-600" />
         <div>
-          <CardTitle className="text-xl">School Officer Assessment</CardTitle>
-          <CardDescription>Evaluate project implementation and school operations</CardDescription>
+          <CardTitle className="text-xl">{t('observation_reports.school_officer_assessment.title')}</CardTitle>
+          <CardDescription>{t('observation_reports.school_officer_assessment.description')}</CardDescription>
         </div>
       </div>
     </CardHeader>
     <CardContent className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="project-name">Project Name *</Label>
-          <Input id="project-name" placeholder="Enter project name..." />
+          <Label htmlFor="project-name">{t('observation_reports.school_officer_assessment.project_name_label')}</Label>
+          <Input id="project-name" placeholder={t('observation_reports.school_officer_assessment.project_name_placeholder')} />
         </div>
-        <AssessmentQuestion label="Quarter *" description="Select the current quarter">
+        <AssessmentQuestion label={t('observation_reports.school_officer_assessment.quarter_label')} description={t('observation_reports.school_officer_assessment.quarter_description')}>
           <Select>
-            <SelectTrigger><SelectValue placeholder="Select quarter" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={t('observation_reports.school_officer_assessment.quarter_placeholder')} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="q1">Q1</SelectItem>
-              <SelectItem value="q2">Q2</SelectItem>
-              <SelectItem value="q3">Q3</SelectItem>
-              <SelectItem value="q4">Q4</SelectItem>
+              <SelectItem value="q1">{t('observation_reports.school_officer_assessment.quarter_q1')}</SelectItem>
+              <SelectItem value="q2">{t('observation_reports.school_officer_assessment.quarter_q2')}</SelectItem>
+              <SelectItem value="q3">{t('observation_reports.school_officer_assessment.quarter_q3')}</SelectItem>
+              <SelectItem value="q4">{t('observation_reports.school_officer_assessment.quarter_q4')}</SelectItem>
             </SelectContent>
           </Select>
         </AssessmentQuestion>
         <AssessmentQuestion
-          label="Teaching effectiveness"
-          description="Overall quality of instruction delivery"
+          label={t('observation_reports.school_officer_assessment.teaching_effectiveness_label')}
+          description={t('observation_reports.school_officer_assessment.teaching_effectiveness_description')}
         >
           <Select>
-            <SelectTrigger><SelectValue placeholder="Select rating" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={t('observation_reports.school_officer_assessment.teaching_effectiveness_placeholder')} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="5">Excellent</SelectItem>
-              <SelectItem value="4">Good</SelectItem>
-              <SelectItem value="3">Average</SelectItem>
-              <SelectItem value="2">Fair</SelectItem>
-              <SelectItem value="1">Poor</SelectItem>
+              <SelectItem value="5">{t('observation_reports.ratings.excellent')}</SelectItem>
+              <SelectItem value="4">{t('observation_reports.ratings.good')}</SelectItem>
+              <SelectItem value="3">{t('observation_reports.ratings.average')}</SelectItem>
+              <SelectItem value="2">{t('observation_reports.ratings.fair')}</SelectItem>
+              <SelectItem value="1">{t('observation_reports.ratings.poor')}</SelectItem>
             </SelectContent>
           </Select>
         </AssessmentQuestion>
         <AssessmentQuestion
-          label="School cleanliness"
-          description="Maintenance and hygiene standards of the facility"
+          label={t('observation_reports.school_officer_assessment.school_cleanliness_label')}
+          description={t('observation_reports.school_officer_assessment.school_cleanliness_description')}
         >
           <Select>
-            <SelectTrigger><SelectValue placeholder="Select rating" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={t('observation_reports.school_officer_assessment.school_cleanliness_placeholder')} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="5">Excellent</SelectItem>
-              <SelectItem value="4">Good</SelectItem>
-              <SelectItem value="3">Average</SelectItem>
-              <SelectItem value="2">Fair</SelectItem>
-              <SelectItem value="1">Poor</SelectItem>
+              <SelectItem value="5">{t('observation_reports.ratings.excellent')}</SelectItem>
+              <SelectItem value="4">{t('observation_reports.ratings.good')}</SelectItem>
+              <SelectItem value="3">{t('observation_reports.ratings.average')}</SelectItem>
+              <SelectItem value="2">{t('observation_reports.ratings.fair')}</SelectItem>
+              <SelectItem value="1">{t('observation_reports.ratings.poor')}</SelectItem>
             </SelectContent>
           </Select>
         </AssessmentQuestion>
@@ -357,97 +362,99 @@ const SchoolOfficerAssessment = () => (
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
         <YesNoQuestion
-          label="Availability of materials"
-          description="Are necessary teaching and learning materials available?"
+          label={t('observation_reports.school_officer_assessment.availability_of_materials_label')}
+          description={t('observation_reports.school_officer_assessment.availability_of_materials_description')}
+          t={t}
         />
         <YesNoQuestion
-          label="Teacher attendance"
-          description="Is teacher attendance satisfactory?"
+          label={t('observation_reports.school_officer_assessment.teacher_attendance_label')}
+          description={t('observation_reports.school_officer_assessment.teacher_attendance_description')}
+          t={t}
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="summary-comments">Summary comments</Label>
-        <Textarea id="summary-comments" placeholder="Add summary comments about the observation..." />
+        <Label htmlFor="summary-comments">{t('observation_reports.school_officer_assessment.summary_comments_label')}</Label>
+        <Textarea id="summary-comments" placeholder={t('observation_reports.school_officer_assessment.summary_comments_placeholder')} />
       </div>
     </CardContent>
   </Card>
 );
 
-const ProjectManagerAssessment = () => (
+const ProjectManagerAssessment = ({ t }) => (
   <Card className="bg-green-50/20 border-green-200 dark:bg-green-900/10 dark:border-green-800/50">
     <CardHeader>
       <div className="flex items-center gap-4">
         <TrendingUp className="w-6 h-6 text-green-600" />
         <div>
-          <CardTitle className="text-xl">Project Manager Assessment</CardTitle>
-          <CardDescription>Evaluate overall program quality and stakeholder cooperation</CardDescription>
+          <CardTitle className="text-xl">{t('observation_reports.project_manager_assessment.title')}</CardTitle>
+          <CardDescription>{t('observation_reports.project_manager_assessment.description')}</CardDescription>
         </div>
       </div>
     </CardHeader>
     <CardContent className="space-y-6">
-      <AssessmentQuestion label="Observation Cycle *" description="Select the current observation cycle">
+      <AssessmentQuestion label={t('observation_reports.project_manager_assessment.observation_cycle_label')} description={t('observation_reports.project_manager_assessment.observation_cycle_description')}>
         <Select>
-          <SelectTrigger><SelectValue placeholder="Select observation cycle" /></SelectTrigger>
+          <SelectTrigger><SelectValue placeholder={t('observation_reports.project_manager_assessment.observation_cycle_placeholder')} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="cycle1">Cycle 1</SelectItem>
-            <SelectItem value="cycle2">Cycle 2</SelectItem>
-            <SelectItem value="cycle3">Cycle 3</SelectItem>
+            <SelectItem value="cycle1">{t('observation_reports.project_manager_assessment.observation_cycle_cycle1')}</SelectItem>
+            <SelectItem value="cycle2">{t('observation_reports.project_manager_assessment.observation_cycle_cycle2')}</SelectItem>
+            <SelectItem value="cycle3">{t('observation_reports.project_manager_assessment.observation_cycle_cycle3')}</SelectItem>
           </SelectContent>
         </Select>
       </AssessmentQuestion>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <AssessmentQuestion
-          label="Overall program quality"
-          description="Comprehensive assessment of program implementation"
+          label={t('observation_reports.project_manager_assessment.overall_program_quality_label')}
+          description={t('observation_reports.project_manager_assessment.overall_program_quality_description')}
         >
           <Select>
-            <SelectTrigger><SelectValue placeholder="Select rating" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={t('observation_reports.project_manager_assessment.overall_program_quality_placeholder')} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="5">Excellent</SelectItem>
-              <SelectItem value="4">Good</SelectItem>
-              <SelectItem value="3">Average</SelectItem>
-              <SelectItem value="2">Fair</SelectItem>
-              <SelectItem value="1">Poor</SelectItem>
+              <SelectItem value="5">{t('observation_reports.ratings.excellent')}</SelectItem>
+              <SelectItem value="4">{t('observation_reports.ratings.good')}</SelectItem>
+              <SelectItem value="3">{t('observation_reports.ratings.average')}</SelectItem>
+              <SelectItem value="2">{t('observation_reports.ratings.fair')}</SelectItem>
+              <SelectItem value="1">{t('observation_reports.ratings.poor')}</SelectItem>
             </SelectContent>
           </Select>
         </AssessmentQuestion>
         <AssessmentQuestion
-          label="Teacher morale"
-          description="Teacher satisfaction and motivation levels"
+          label={t('observation_reports.project_manager_assessment.teacher_morale_label')}
+          description={t('observation_reports.project_manager_assessment.teacher_morale_description')}
         >
           <Select>
-            <SelectTrigger><SelectValue placeholder="Select rating" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={t('observation_reports.project_manager_assessment.teacher_morale_placeholder')} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="5">Excellent</SelectItem>
-              <SelectItem value="4">Good</SelectItem>
-              <SelectItem value="3">Average</SelectItem>
-              <SelectItem value="2">Fair</SelectItem>
-              <SelectItem value="1">Poor</SelectItem>
+              <SelectItem value="5">{t('observation_reports.ratings.excellent')}</SelectItem>
+              <SelectItem value="4">{t('observation_reports.ratings.good')}</SelectItem>
+              <SelectItem value="3">{t('observation_reports.ratings.average')}</SelectItem>
+              <SelectItem value="2">{t('observation_reports.ratings.fair')}</SelectItem>
+              <SelectItem value="1">{t('observation_reports.ratings.poor')}</SelectItem>
             </SelectContent>
           </Select>
         </AssessmentQuestion>
         <AssessmentQuestion
-          label="School admin cooperation"
-          description="Level of administrative support and collaboration"
+          label={t('observation_reports.project_manager_assessment.school_admin_cooperation_label')}
+          description={t('observation_reports.project_manager_assessment.school_admin_cooperation_description')}
         >
           <Select>
-            <SelectTrigger><SelectValue placeholder="Select rating" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={t('observation_reports.project_manager_assessment.school_admin_cooperation_placeholder')} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="5">Excellent</SelectItem>
-              <SelectItem value="4">Good</SelectItem>
-              <SelectItem value="3">Average</SelectItem>
-              <SelectItem value="2">Fair</SelectItem>
-              <SelectItem value="1">Poor</SelectItem>
+              <SelectItem value="5">{t('observation_reports.ratings.excellent')}</SelectItem>
+              <SelectItem value="4">{t('observation_reports.ratings.good')}</SelectItem>
+              <SelectItem value="3">{t('observation_reports.ratings.average')}</SelectItem>
+              <SelectItem value="2">{t('observation_reports.ratings.fair')}</SelectItem>
+              <SelectItem value="1">{t('observation_reports.ratings.poor')}</SelectItem>
             </SelectContent>
           </Select>
         </AssessmentQuestion>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="final-remarks">Final remarks and recommendations</Label>
-        <Textarea id="final-remarks" placeholder="Provide final remarks, recommendations, and strategic insights..." />
+        <Label htmlFor="final-remarks">{t('observation_reports.project_manager_assessment.final_remarks_label')}</Label>
+        <Textarea id="final-remarks" placeholder={t('observation_reports.project_manager_assessment.final_remarks_placeholder')} />
       </div>
     </CardContent>
   </Card>
@@ -455,19 +462,20 @@ const ProjectManagerAssessment = () => (
 
 
 export const ObservationReports = () => {
+  const { t } = useTranslation();
   const [observerRole, setObserverRole] = useState<ObserverRole>('');
   const [viewMode, setViewMode] = useState<ViewMode>('reporting');
 
   const renderAssessmentForm = () => {
     switch (observerRole) {
       case 'principal':
-        return <PrincipalAssessment />;
+        return <PrincipalAssessment t={t} />;
       case 'ece':
-        return <EceObserverAssessment />;
+        return <EceObserverAssessment t={t} />;
       case 'school-officer':
-        return <SchoolOfficerAssessment />;
+        return <SchoolOfficerAssessment t={t} />;
       case 'project-manager':
-        return <ProjectManagerAssessment />;
+        return <ProjectManagerAssessment t={t} />;
       default:
         return null;
     }
@@ -482,30 +490,30 @@ export const ObservationReports = () => {
   }
 
   return (
-    <div className="space-y-8 mx-auto p-4">
+    <div className="space-y-8 max-w-4xl mx-auto p-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Field Audit & Compliance Assessment</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('observation_reports.header.title')}</h1>
           <p className="text-muted-foreground mt-1">
-            Capture systematic observations to drive data-informed curriculum improvements and performance tracking
+            {t('observation_reports.header.description')}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={() => setViewMode('secureLinks')}>
             <Link className="w-4 h-4 mr-2" />
-            Manage Secure Links
+            {t('observation_reports.header.manage_secure_links_button')}
           </Button>
           <Button variant="outline" onClick={() => setViewMode('pastReports')}>
             <Eye className="w-4 h-4 mr-2" />
-            View Past Reports
+            {t('observation_reports.header.view_past_reports_button')}
           </Button>
         </div>
       </div>
       {/* Observer Information Form */}
-      <ObserverInformation observerRole={observerRole} onRoleChange={setObserverRole} />
+      <ObserverInformation observerRole={observerRole} onRoleChange={setObserverRole} t={t} />
       {/* Observation Details Form */}
-      {observerRole && <ObservationDetails />}
+      {observerRole && <ObservationDetails t={t} />}
       {/* Dynamic Assessment Form */}
       {observerRole && renderAssessmentForm()}
       {/* Submit Button */}
@@ -513,7 +521,7 @@ export const ObservationReports = () => {
         <div className="flex justify-end pt-4">
           <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white">
             <Check className="w-5 h-5 mr-2" />
-            Submit Observation Report
+            {t('observation_reports.submit_button')}
           </Button>
         </div>
       )}

@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -66,32 +67,33 @@ const chartConfig = {
 };
 
 export const ReportsOverview = () => {
+  const { t } = useTranslation();
   const [timeRange, setTimeRange] = useState('6months');
 
   const summaryCards = [
     {
-      title: 'Total Active Users',
+      title: t('reports_overview.summary.total_active_users'),
       value: '1,950',
       change: '+12.5%',
       icon: Users,
       color: 'text-blue-600'
     },
     {
-      title: 'Total Courses',
+      title: t('reports_overview.summary.total_courses'),
       value: '248',
       change: '+8.2%',
       icon: BookOpen,
       color: 'text-green-600'
     },
     {
-      title: 'Average Completion Rate',
+      title: t('reports_overview.summary.avg_completion_rate'),
       value: '72%',
       change: '+5.1%',
       icon: Award,
       color: 'text-purple-600'
     },
     {
-      title: 'Monthly Revenue',
+      title: t('reports_overview.summary.monthly_revenue'),
       value: '$28,000',
       change: '+15.8%',
       icon: DollarSign,
@@ -103,19 +105,19 @@ export const ReportsOverview = () => {
     <div className="space-y-6 p-2 sm:p-0">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Reports & Analytics</h1>
-          <p className="text-muted-foreground text-sm sm:text-base">Monitor platform performance and user engagement</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">{t('reports_overview.title')}</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">{t('reports_overview.description')}</p>
         </div>
         <Select value={timeRange} onValueChange={setTimeRange}>
           <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder="Select time range" />
+            <SelectValue placeholder={t('reports_overview.time_range_placeholder')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="7days">Last 7 days</SelectItem>
-            <SelectItem value="30days">Last 30 days</SelectItem>
-            <SelectItem value="3months">Last 3 months</SelectItem>
-            <SelectItem value="6months">Last 6 months</SelectItem>
-            <SelectItem value="1year">Last year</SelectItem>
+            <SelectItem value="7days">{t('reports_overview.time_ranges.last_7_days')}</SelectItem>
+            <SelectItem value="30days">{t('reports_overview.time_ranges.last_30_days')}</SelectItem>
+            <SelectItem value="3months">{t('reports_overview.time_ranges.last_3_months')}</SelectItem>
+            <SelectItem value="6months">{t('reports_overview.time_ranges.last_6_months')}</SelectItem>
+            <SelectItem value="1year">{t('reports_overview.time_ranges.last_year')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -131,7 +133,7 @@ export const ReportsOverview = () => {
             <CardContent>
               <div className="text-xl sm:text-2xl font-bold">{card.value}</div>
               <p className="text-xs text-muted-foreground">
-                <span className="text-green-600">{card.change}</span> from last period
+                <span className="text-green-600">{card.change}</span> {t('reports_overview.from_last_period')}
               </p>
             </CardContent>
           </Card>
@@ -142,10 +144,10 @@ export const ReportsOverview = () => {
       <Tabs defaultValue="users" className="space-y-6">
         <div className="overflow-x-auto">
           <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 min-w-fit">
-            <TabsTrigger value="users" className="text-xs sm:text-sm">User Analytics</TabsTrigger>
-            <TabsTrigger value="courses" className="text-xs sm:text-sm">Course Performance</TabsTrigger>
-            <TabsTrigger value="engagement" className="text-xs sm:text-sm">Engagement</TabsTrigger>
-            <TabsTrigger value="revenue" className="text-xs sm:text-sm">Revenue</TabsTrigger>
+            <TabsTrigger value="users" className="text-xs sm:text-sm">{t('reports_overview.tabs.user_analytics')}</TabsTrigger>
+            <TabsTrigger value="courses" className="text-xs sm:text-sm">{t('reports_overview.tabs.course_performance')}</TabsTrigger>
+            <TabsTrigger value="engagement" className="text-xs sm:text-sm">{t('reports_overview.tabs.engagement')}</TabsTrigger>
+            <TabsTrigger value="revenue" className="text-xs sm:text-sm">{t('reports_overview.tabs.revenue')}</TabsTrigger>
           </TabsList>
         </div>
 
@@ -154,7 +156,7 @@ export const ReportsOverview = () => {
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg sm:text-xl">User Growth Trends</CardTitle>
+                <CardTitle className="text-lg sm:text-xl">{t('reports_overview.user_analytics.growth_trends')}</CardTitle>
               </CardHeader>
               <CardContent className="p-2 sm:p-6">
                 <div className="w-full h-[250px] sm:h-[300px]">
@@ -174,14 +176,14 @@ export const ReportsOverview = () => {
                           dataKey="activeUsers" 
                           stroke="var(--color-activeUsers)" 
                           strokeWidth={2}
-                          name="Active Users"
+                          name={t('reports_overview.user_analytics.active_users')}
                         />
                         <Line 
                           type="monotone" 
                           dataKey="newSignups" 
                           stroke="var(--color-newSignups)" 
                           strokeWidth={2}
-                          name="New Signups"
+                          name={t('reports_overview.user_analytics.new_signups')}
                         />
                       </LineChart>
                     </ResponsiveContainer>
@@ -192,31 +194,19 @@ export const ReportsOverview = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg sm:text-xl">Course Category Distribution</CardTitle>
+                <CardTitle className="text-lg sm:text-xl">{t('reports_overview.user_analytics.category_distribution')}</CardTitle>
               </CardHeader>
               <CardContent className="p-2 sm:p-6">
                 <div className="w-full h-[250px] sm:h-[300px]">
                   <ChartContainer config={chartConfig} className="w-full h-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
-                        <Pie
-                          data={categoryDistribution}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={({ name, percent }) => {
-                            // Only show label if there's enough space
-                            return window.innerWidth > 640 ? `${name} ${(percent * 100).toFixed(0)}%` : `${(percent * 100).toFixed(0)}%`;
-                          }}
-                          outerRadius="80%"
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Pie data={categoryDistribution} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
                           {categoryDistribution.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <ChartTooltip />
                       </PieChart>
                     </ResponsiveContainer>
                   </ChartContainer>
@@ -230,30 +220,35 @@ export const ReportsOverview = () => {
         <TabsContent value="courses" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg sm:text-xl">Top Performing Courses</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">{t('reports_overview.course_performance.title')}</CardTitle>
             </CardHeader>
-            <CardContent className="p-2 sm:p-6">
-              <div className="w-full h-[350px] sm:h-[400px]">
+            <CardContent>
+              <div className="w-full h-[300px] sm:h-[400px]">
                 <ChartContainer config={chartConfig} className="w-full h-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart 
-                      data={coursePerformanceData} 
-                      margin={{ top: 20, right: 10, left: 10, bottom: 80 }}
-                    >
+                  <ResponsiveContainer>
+                    <BarChart data={coursePerformanceData} layout="vertical" margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis 
+                      <XAxis type="number" tick={{ fontSize: 12 }} />
+                      <YAxis 
                         dataKey="course" 
-                        angle={-45}
-                        textAnchor="end"
-                        height={80}
-                        interval={0}
-                        tick={{ fontSize: 10 }}
+                        type="category" 
+                        tick={{ fontSize: 12 }} 
+                        width={120}
                       />
-                      <YAxis tick={{ fontSize: 12 }} />
                       <ChartTooltip content={<ChartTooltipContent />} />
                       <Legend />
-                      <Bar dataKey="enrollments" fill="var(--color-enrollments)" name="Enrollments" />
-                      <Bar dataKey="completionRate" fill="var(--color-completionRate)" name="Completion Rate %" />
+                      <Bar 
+                        dataKey="enrollments" 
+                        fill="var(--color-enrollments)" 
+                        radius={[0, 4, 4, 0]} 
+                        name={t('reports_overview.course_performance.enrollments')}
+                      />
+                      <Bar 
+                        dataKey="completionRate" 
+                        fill="var(--color-completionRate)" 
+                        radius={[0, 4, 4, 0]} 
+                        name={t('reports_overview.course_performance.completion_rate')}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </ChartContainer>
@@ -264,75 +259,76 @@ export const ReportsOverview = () => {
 
         {/* Engagement Tab */}
         <TabsContent value="engagement" className="space-y-6">
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg sm:text-xl">Daily Engagement Metrics</CardTitle>
-              </CardHeader>
-              <CardContent className="p-2 sm:p-6">
-                <div className="w-full h-[250px] sm:h-[300px]">
-                  <ChartContainer config={chartConfig} className="w-full h-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={engagementData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="day" tick={{ fontSize: 12 }} />
-                        <YAxis tick={{ fontSize: 12 }} />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Bar dataKey="timeSpent" fill="var(--color-timeSpent)" name="Time Spent (min)" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg sm:text-xl">Quiz Performance Trends</CardTitle>
-              </CardHeader>
-              <CardContent className="p-2 sm:p-6">
-                <div className="w-full h-[250px] sm:h-[300px]">
-                  <ChartContainer config={chartConfig} className="w-full h-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={engagementData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="day" tick={{ fontSize: 12 }} />
-                        <YAxis tick={{ fontSize: 12 }} />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Line 
-                          type="monotone" 
-                          dataKey="quizScore" 
-                          stroke="var(--color-quizScore)" 
-                          strokeWidth={2}
-                          name="Quiz Score %"
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+           <Card>
+            <CardHeader>
+              <CardTitle className="text-lg sm:text-xl">{t('reports_overview.engagement.title')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="w-full h-[300px] sm:h-[400px]">
+                <ChartContainer config={chartConfig} className="w-full h-full">
+                  <ResponsiveContainer>
+                    <LineChart data={engagementData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="day" tick={{ fontSize: 12 }} />
+                      <YAxis yAxisId="left" orientation="left" stroke="var(--color-timeSpent)" tick={{ fontSize: 12 }} />
+                      <YAxis yAxisId="right" orientation="right" stroke="var(--color-quizScore)" tick={{ fontSize: 12 }} />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Legend />
+                      <Line 
+                        yAxisId="left"
+                        type="monotone" 
+                        dataKey="timeSpent" 
+                        stroke="var(--color-timeSpent)" 
+                        strokeWidth={2}
+                        name={t('reports_overview.engagement.time_spent')}
+                      />
+                      <Line 
+                        yAxisId="right"
+                        type="monotone" 
+                        dataKey="quizScore" 
+                        stroke="var(--color-quizScore)"
+                        strokeWidth={2} 
+                        name={t('reports_overview.engagement.quiz_score')}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Revenue Tab */}
         <TabsContent value="revenue" className="space-y-6">
-          <Card>
+           <Card>
             <CardHeader>
-              <CardTitle className="text-lg sm:text-xl">Revenue & Subscription Growth</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">{t('reports_overview.revenue.title')}</CardTitle>
             </CardHeader>
-            <CardContent className="p-2 sm:p-6">
-              <div className="w-full h-[350px] sm:h-[400px]">
+            <CardContent>
+              <div className="w-full h-[300px] sm:h-[400px]">
                 <ChartContainer config={chartConfig} className="w-full h-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={revenueData} margin={{ top: 20, right: 10, left: 10, bottom: 20 }}>
+                  <ResponsiveContainer>
+                    <BarChart data={revenueData}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                      <YAxis tick={{ fontSize: 12 }} />
+                      <YAxis yAxisId="left" orientation="left" stroke="var(--color-revenue)" tick={{ fontSize: 12 }} />
+                      <YAxis yAxisId="right" orientation="right" stroke="var(--color-subscriptions)" tick={{ fontSize: 12 }} />
                       <ChartTooltip content={<ChartTooltipContent />} />
                       <Legend />
-                      <Bar dataKey="revenue" fill="var(--color-revenue)" name="Revenue ($)" />
-                      <Bar dataKey="subscriptions" fill="var(--color-subscriptions)" name="Subscriptions" />
+                      <Bar 
+                        yAxisId="left"
+                        dataKey="revenue" 
+                        fill="var(--color-revenue)" 
+                        radius={[4, 4, 0, 0]}
+                        name={t('reports_overview.revenue.revenue')}
+                      />
+                      <Bar 
+                        yAxisId="right"
+                        dataKey="subscriptions" 
+                        fill="var(--color-subscriptions)" 
+                        radius={[4, 4, 0, 0]} 
+                        name={t('reports_overview.revenue.subscriptions')}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </ChartContainer>

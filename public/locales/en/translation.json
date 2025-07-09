@@ -1,0 +1,1012 @@
+{
+  "header": {
+    "dashboard": "Dashboard",
+    "logout": "Logout",
+    "toggle_theme": "Toggle theme",
+    "settings": "Settings",
+    "sign_in": "Sign In",
+    "back_to_dashboard": "Go back to Dashboard"
+  },
+  "logout_failed": "Failed to log out. Please try again.",
+  "logout_success": "You have been logged out.",
+  "student_dashboard": {
+    "welcome_back": "Welcome back, {{name}}!",
+    "grade": "Grade {{grade}}",
+    "continue_learning_journey": "Continue your learning journey",
+    "current_streak": "Current Streak",
+    "completed_lessons": "Completed Lessons",
+    "points_earned": "Points Earned",
+    "study_time": "Study Time",
+    "continue_learning": "Continue Learning",
+    "ai_tutor": "AI Tutor"
+  },
+  "course_management": {
+    "title": "Course Management",
+    "description": "Manage all courses in the system",
+    "create_course": "Create Course",
+    "total_courses": "Total Courses",
+    "published": "Published",
+    "draft_courses": "Draft Courses",
+    "total_students": "Total Students",
+    "search_placeholder": "Search courses by title or instructor...",
+    "filter": {
+      "status": "Status",
+      "category": "Category",
+      "all_statuses": "All Statuses",
+      "all_categories": "All Categories"
+    },
+    "status": {
+      "published": "Published",
+      "draft": "Draft",
+      "under_review": "Under Review"
+    },
+    "category": {
+      "language_learning": "Language Learning"
+    },
+    "by_instructor": "By {{instructor}}",
+    "lessons": "{{count}} lessons",
+    "students": "{{count}} students",
+    "created_at": "Created: {{date}}",
+    "edit": "Edit",
+    "view_details": "View Details",
+    "manage_students": "Manage Students"
+  },
+  "common": {
+    "yes": "Yes",
+    "no": "No",
+    "view": "View",
+    "edit": "Edit",
+    "export": "Export",
+    "delete": "Delete",
+    "cancel": "Cancel"
+  },
+  "observation_reports": {
+    "header": {
+      "title": "Field Audit & Compliance Assessment",
+      "description": "Capture systematic observations to drive data-informed curriculum improvements and performance tracking",
+      "manage_secure_links_button": "Manage Secure Links",
+      "view_past_reports_button": "View Past Reports"
+    },
+    "submit_button": "Submit Observation Report",
+    "observer_information": {
+      "title": "Observer Information",
+      "description": "Select your role and provide basic information about the observation",
+      "observer_role": "Observer Role",
+      "select_role_placeholder": "Select your observer role",
+      "questionnaire_note": "Role-specific questionnaire will appear below"
+    },
+    "roles": {
+      "principal": "Principal",
+      "ece_observer": "ECE Observer",
+      "school_officer": "School Officer",
+      "project_manager": "Project Manager"
+    },
+    "observation_details": {
+      "title": "Observation Details",
+      "description": "Basic information about the observation session",
+      "observer_name": "Observer Name",
+      "observer_name_placeholder": "Enter your full name...",
+      "observation_date": "Observation Date",
+      "school_name": "School Name",
+      "school_name_placeholder": "Enter school name...",
+      "teacher_name": "Teacher Name",
+      "teacher_name_placeholder": "Enter teacher name...",
+      "start_time": "Start Time",
+      "end_time": "End Time",
+      "general_notes": "General Notes",
+      "general_notes_placeholder": "Add any general observations or notes..."
+    },
+    "ratings": {
+      "excellent": "Excellent",
+      "good": "Good",
+      "average": "Average",
+      "fair": "Fair",
+      "poor": "Poor"
+    },
+    "principal_assessment": {
+      "title": "Principal Assessment",
+      "description": "Evaluate teaching effectiveness and classroom environment",
+      "rating_placeholder": "Select rating",
+      "q1_label": "Teacher gives clear instructions",
+      "q1_description": "Rate how clearly the teacher communicates lesson objectives and tasks",
+      "q2_label": "Students are engaged during lesson",
+      "q2_description": "Assess student participation and attention levels",
+      "q3_label": "Classroom displays are age-appropriate",
+      "q3_description": "Evaluate the relevance and quality of classroom materials",
+      "q4_label": "Use of learning materials",
+      "q4_description": "Were appropriate learning materials utilized during the lesson?",
+      "q5_label": "Was the lesson plan followed?",
+      "q5_description": "Did the teacher adhere to the planned curriculum structure?",
+      "concerns_label": "Any immediate concerns?",
+      "concerns_placeholder": "Describe any immediate concerns or issues observed..."
+    },
+    "ece_assessment": {
+      "title": "ECE Observer Assessment",
+      "description": "Evaluate teaching effectiveness and classroom environment",
+      "q1_label": "Teacher gives clear instructions",
+      "q1_description": "Rate how clearly the teacher communicates lesson objectives and tasks",
+      "q2_label": "Students are engaged during lesson",
+      "q2_description": "Assess student participation and attention levels",
+      "q3_label": "Classroom displays are age-appropriate",
+      "q3_description": "Evaluate the relevance and quality of classroom materials",
+      "q4_label": "Use of learning materials",
+      "q4_description": "Were appropriate learning materials utilized during the lesson?",
+      "q5_label": "Was the lesson plan followed?",
+      "q5_description": "Did the teacher adhere to the planned curriculum structure?",
+      "concerns_label": "Any immediate concerns?",
+      "concerns_placeholder": "Describe any immediate concerns or issues observed..."
+    },
+    "school_officer_assessment": {
+      "title": "School Officer Assessment",
+      "description": "Evaluate project implementation and school operations",
+      "project_name_label": "Project Name *",
+      "project_name_placeholder": "Enter project name...",
+      "quarter_label": "Quarter *",
+      "quarter_description": "Select the current quarter",
+      "quarter_placeholder": "Select quarter",
+      "quarter_q1": "Q1",
+      "quarter_q2": "Q2",
+      "quarter_q3": "Q3",
+      "quarter_q4": "Q4",
+      "teaching_effectiveness_label": "Teaching effectiveness",
+      "teaching_effectiveness_description": "Overall quality of instruction delivery",
+      "teaching_effectiveness_placeholder": "Select rating",
+      "school_cleanliness_label": "School cleanliness",
+      "school_cleanliness_description": "Maintenance and hygiene standards of the facility",
+      "school_cleanliness_placeholder": "Select rating",
+      "availability_of_materials_label": "Availability of materials",
+      "availability_of_materials_description": "Are necessary teaching and learning materials available?",
+      "teacher_attendance_label": "Teacher attendance",
+      "teacher_attendance_description": "Is teacher attendance satisfactory?",
+      "summary_comments_label": "Summary comments",
+      "summary_comments_placeholder": "Add summary comments about the observation..."
+    },
+    "project_manager_assessment": {
+      "title": "Project Manager Assessment",
+      "description": "Evaluate overall program quality and stakeholder cooperation",
+      "observation_cycle_label": "Observation Cycle *",
+      "observation_cycle_description": "Select the current observation cycle",
+      "observation_cycle_placeholder": "Select observation cycle",
+      "observation_cycle_cycle1": "Cycle 1",
+      "observation_cycle_cycle2": "Cycle 2",
+      "observation_cycle_cycle3": "Cycle 3",
+      "overall_program_quality_label": "Overall program quality",
+      "overall_program_quality_description": "Comprehensive assessment of program implementation",
+      "overall_program_quality_placeholder": "Select rating",
+      "teacher_morale_label": "Teacher morale",
+      "teacher_morale_description": "Teacher satisfaction and motivation levels",
+      "teacher_morale_placeholder": "Select rating",
+      "school_admin_cooperation_label": "School admin cooperation",
+      "school_admin_cooperation_description": "Level of administrative support and collaboration",
+      "school_admin_cooperation_placeholder": "Select rating",
+      "final_remarks_label": "Final remarks and recommendations",
+      "final_remarks_placeholder": "Provide final remarks, recommendations, and strategic insights..."
+    }
+  },
+  "past_reports": {
+    "back_button": "Back to Observation Reporting",
+    "title": "Past Observation Reports",
+    "description": "View and manage your previously submitted observation reports",
+    "stats": {
+      "total_reports": "Total Reports",
+      "this_week": "This Week",
+      "schools_visited": "Schools Visited",
+      "most_common_role": "Most Common Role"
+    },
+    "search_placeholder": "Search reports...",
+    "filters": {
+      "all_roles": "All Roles",
+      "all_schools": "All Schools",
+      "most_recent": "Most Recent",
+      "oldest": "Oldest"
+    },
+    "harvard_university": "Harvard University",
+    "reports_title": "Observation Reports ({{count}})",
+    "reports_description": "Click on a report to view details or use the action buttons to manage reports"
+  },
+  "reports_overview": {
+    "title": "Reports & Analytics",
+    "description": "Monitor platform performance and user engagement",
+    "time_range_placeholder": "Select time range",
+    "time_ranges": {
+      "last_7_days": "Last 7 days",
+      "last_30_days": "Last 30 days",
+      "last_3_months": "Last 3 months",
+      "last_6_months": "Last 6 months",
+      "last_year": "Last year"
+    },
+    "from_last_period": "from last period",
+    "summary": {
+      "total_active_users": "Total Active Users",
+      "total_courses": "Total Courses",
+      "avg_completion_rate": "Average Completion Rate",
+      "monthly_revenue": "Monthly Revenue"
+    },
+    "tabs": {
+      "user_analytics": "User Analytics",
+      "course_performance": "Course Performance",
+      "engagement": "Engagement",
+      "revenue": "Revenue"
+    },
+    "user_analytics": {
+      "growth_trends": "User Growth Trends",
+      "active_users": "Active Users",
+      "new_signups": "New Signups",
+      "category_distribution": "Course Category Distribution"
+    },
+    "course_performance": {
+      "title": "Top Performing Courses",
+      "enrollments": "Enrollments",
+      "completion_rate": "Completion Rate %"
+    },
+    "engagement": {
+      "title": "Daily Engagement Metrics",
+      "time_spent": "Time Spent (min)",
+      "quiz_score": "Quiz Score %"
+    },
+    "revenue": {
+      "title": "Revenue & Subscription Growth",
+      "revenue": "Revenue ($)",
+      "subscriptions": "Subscriptions"
+    }
+  },
+  "secure_link_management": {
+    "title": "Secure Link Management",
+    "description": "Create and manage secure, one-time access links for external observers.",
+    "create_link_button": "Create New Link",
+    "active_links_title": "Active Links ({{count}})",
+    "active_links_description": "These links are active and can be used once for form submission.",
+    "link_created_at": "Created: {{date}}",
+    "expires_at": "Expires: {{date}}",
+    "copy_link": "Copy Link",
+    "link_copied": "Link copied to clipboard!",
+    "delete_link": "Delete Link",
+    "no_active_links": "No active links found.",
+    "modal": {
+      "title": "Create Secure Link",
+      "description": "This will generate a secure, single-use link that allows an external user to submit one observation report without needing to log in.",
+      "form_label": "Form to Access",
+      "form_placeholder": "Select a form",
+      "principal_form": "Principal Assessment Form",
+      "ece_form": "ECE Observer Form",
+      "school_officer_form": "School Officer Form",
+      "project_manager_form": "Project Manager Form",
+      "validity_label": "Link Validity (in hours)",
+      "validity_placeholder": "e.g., 24",
+      "generate_link_button": "Generate Link",
+      "link_generation_failed": "Failed to generate link. Please try again."
+    }
+  },
+  "users_management": {
+    "title": "Users Management",
+    "description": "Manage all users in the system, including students, teachers, and administrators.",
+    "create_user_button": "Create User",
+    "modal": {
+      "title": "Create a New User",
+      "description": "Fill in the details below to add a new user. An invitation with a temporary password will be sent to their email.",
+      "first_name": "First Name",
+      "first_name_placeholder": "e.g., John",
+      "last_name": "Last Name",
+      "last_name_placeholder": "e.g., Doe",
+      "email": "Email Address",
+      "email_placeholder": "user@example.com",
+      "role": "Role",
+      "role_placeholder": "Select a role",
+      "temp_password": "Temporary Password",
+      "temp_password_placeholder": "A strong password will be generated"
+    },
+    "roles": {
+      "student": "Student",
+      "teacher": "Teacher",
+      "admin": "Admin"
+    },
+    "stats": {
+      "total_users": "Total Users",
+      "total_users_desc": "All registered users in the system.",
+      "total_students": "Total Students",
+      "total_students_desc": "All users with the student role.",
+      "total_teachers": "Total Teachers",
+      "total_teachers_desc": "All users with the teacher role.",
+      "active_now": "Active Now",
+      "active_now_desc": "Users currently marked as active."
+    },
+    "table": {
+      "title": "All Users",
+      "description": "A list of all users, their roles, and statuses.",
+      "search_placeholder": "Search by name or email...",
+      "headers": {
+        "user": "User",
+        "role": "Role",
+        "status": "Status",
+        "joined": "Joined",
+        "last_active": "Last Active"
+      },
+      "actions": {
+        "edit": "Edit User",
+        "delete": "Delete User"
+      },
+      "no_users_found": "No users found."
+    },
+    "filters": {
+      "role_placeholder": "Filter by role",
+      "all_roles": "All Roles",
+      "status_placeholder": "Filter by status",
+      "all_statuses": "All Statuses"
+    },
+    "statuses": {
+      "active": "Active",
+      "inactive": "Inactive"
+    }
+  },
+  "admin_dashboard": {
+    "title": "Admin Dashboard",
+    "welcome": "Welcome, {{name}}",
+    "stats": {
+      "total_users": "Total Users",
+      "active_teachers": "Active Teachers",
+      "total_courses": "Total Courses",
+      "system_health": "System Health"
+    },
+    "actions": {
+      "title": "System Management",
+      "user_management": {
+        "title": "User Management",
+        "description": "Manage users, roles, and permissions",
+        "button": "Manage"
+      },
+      "system_analytics": {
+        "title": "System Analytics",
+        "description": "View system performance and usage",
+        "button": "View"
+      },
+      "system_settings": {
+        "title": "System Settings",
+        "description": "Configure system-wide settings",
+        "button": "Configure"
+      }
+    }
+  },
+  "dashboard": {
+    "loading": {
+      "authenticating": "Authenticating...",
+      "loading_profile": "Loading user profile..."
+    },
+    "errors": {
+      "unable_to_load_profile": "Unable to load user profile.",
+      "error_message": "Error: {{message}}",
+      "profile_not_found": "User profile not found."
+    },
+    "placeholders": {
+      "dashboard": {
+        "title": "Dashboard",
+        "description": "Welcome"
+      },
+      "student": {
+        "my_courses": {
+          "title": "My Courses",
+          "description": "View and manage your enrolled courses"
+        },
+        "assignments": {
+          "title": "Assignments",
+          "description": "View and complete your assignments"
+        },
+        "progress_tracking": {
+          "title": "Progress Tracking",
+          "description": "Monitor your learning progress and achievements"
+        },
+        "ai_tutor": {
+          "title": "AI Tutor",
+          "description": "Get personalized AI-powered learning assistance"
+        }
+      },
+      "teacher": {
+        "my_classes": {
+          "title": "My Classes",
+          "description": "Manage your classes and students"
+        },
+        "student_progress": {
+          "title": "Student Progress",
+          "description": "Monitor individual student performance"
+        },
+        "assignment_management": {
+          "title": "Assignment Management",
+          "description": "Create and grade assignments"
+        },
+        "teaching_resources": {
+          "title": "Teaching Resources",
+          "description": "Access and manage teaching materials"
+        }
+      },
+      "admin": {
+        "system_analytics": {
+          "title": "System Analytics",
+          "description": "View comprehensive system analytics"
+        },
+        "secure_links": {
+          "title": "Secure Links",
+          "description": "Manage secure links and access controls"
+        },
+        "settings": {
+          "title": "Settings",
+          "description": "Configure system-wide settings"
+        },
+        "security": {
+          "title": "Security",
+          "description": "Manage security settings and protocols"
+        },
+        "discussion": {
+          "title": "Discussion",
+          "description": "Moderate discussions and forums"
+        },
+        "grade_assignments": {
+          "title": "Grade Assignments",
+          "description": "Review and grade student assignments"
+        }
+      }
+    }
+  },
+  "role_switcher": {
+    "dev_mode": "Dev Mode:",
+    "student": "Student",
+    "teacher": "Teacher",
+    "admin": "Admin"
+  },
+  "teacher_dashboard": {
+    "welcome": "Welcome, {{name}}!",
+    "teacher_id": "Teacher ID: {{id}}",
+    "manage_classes": "Manage your classes and students",
+    "stats": {
+      "total_students": "Total Students",
+      "active_courses": "Active Courses",
+      "pending_assignments": "Pending Assignments",
+      "avg_performance": "Avg. Performance"
+    },
+    "quick_actions": {
+      "title": "Quick Actions",
+      "new_assignment": {
+        "title": "Create New Assignment",
+        "description": "Set up assignments for your students",
+        "button": "Create"
+      },
+      "grade_submissions": {
+        "title": "Grade Submissions",
+        "description": "Review and grade pending work",
+        "button": "Review"
+      },
+      "class_analytics": {
+        "title": "Class Analytics",
+        "description": "View detailed class performance",
+        "button": "Analyze"
+      }
+    }
+  },
+  "dashboard_sidebar": {
+    "navigation": "Navigation",
+    "dashboard": "Dashboard",
+    "menu": "Menu"
+  },
+  "navigation": {
+    "student": {
+      "overview": "Overview",
+      "my_courses": "My Courses",
+      "assignments": "Assignments",
+      "progress": "Progress",
+      "ai_tutor": "AI Tutor"
+    },
+    "teacher": {
+      "overview": "Overview",
+      "my_classes": "My Classes",
+      "course_management": "Course Management",
+      "student_progress": "Student Progress",
+      "assignments": "Assignments",
+      "resources": "Resources"
+    },
+    "admin": {
+      "overview": "Overview",
+      "users": "Users",
+      "courses": "Courses",
+      "reports": "Reports",
+      "observation_reports": "Observation Reports",
+      "settings": "Settings",
+      "security": "Security",
+      "discussion": "Discussion",
+      "grade_assignments": "Grade Assignments"
+    },
+    "default": {
+      "overview": "Overview"
+    }
+  },
+  "roles": {
+    "student": "Student",
+    "teacher": "Teacher",
+    "admin": "Admin",
+    "user": "User"
+  },
+  "auth": {
+    "errors": {
+      "email_required": "Email is required",
+      "password_required": "Password is required",
+      "fetch_profile_error": "Could not fetch user profile.",
+      "admin_access_denied": "Access denied. You do not have permission to log in here.",
+      "email_not_verified": "Please verify your email address before logging in.",
+      "invalid_credentials_admin": "Invalid credentials or access denied."
+    },
+    "success": {
+      "welcome_back": "Welcome back!"
+    },
+    "back_to_role_selection": "Back to role selection",
+    "admin": {
+      "title": "Admin Portal",
+      "description": "Sign in to your administrator account"
+    },
+    "form": {
+      "email_label": "Email",
+      "email_placeholder": "Enter your email",
+      "password_label": "Password",
+      "password_placeholder": "Enter your password"
+    },
+    "buttons": {
+      "signing_in": "Signing in...",
+      "sign_in": "Sign In"
+    },
+    "links": {
+      "forgot_password": "Forgot Password?"
+    }
+  },
+  "course_builder": {
+    "lessons": {
+      "video_upload_label": "Upload Video (MP4, MOV)",
+      "attachment_upload_label": "Upload Attachment (PDF, DOC, XLS, ZIP)",
+      "assignment_placeholder": "Write the assignment details here...",
+      "lesson_title_placeholder": "Lesson Title",
+      "types": {
+        "video": "Video",
+        "attachment": "Attachment",
+        "assignment": "Assignment",
+        "quiz": "Quiz"
+      }
+    },
+    "quiz": {
+      "question_placeholder": "Question {{index}}",
+      "option_placeholder": "Option text",
+      "correct_label": "Correct",
+      "add_option_button": "Add Option",
+      "add_question_button": "Add Question"
+    },
+    "header": {
+      "create_title": "Create New Course",
+      "edit_title": "Edit Course",
+      "subtitle_new": "Fill in the details of your course."
+    },
+    "buttons": {
+      "saving": "Saving...",
+      "save_draft": "Save Draft",
+      "publish": "Publish Course"
+    },
+    "tabs": {
+      "details": "Course Details",
+      "curriculum": "Curriculum",
+      "settings": "Settings"
+    },
+    "details": {
+      "title": "Course Details",
+      "form": {
+        "title": {
+          "label": "Title",
+          "placeholder": "e.g., Introduction to Programming"
+        },
+        "subtitle": {
+          "label": "Subtitle",
+          "placeholder": "e.g., Learn the fundamentals of programming"
+        },
+        "description": {
+          "label": "Description",
+          "placeholder": "Describe your course in detail..."
+        },
+        "category": {
+          "label": "Category",
+          "placeholder": "Select a category"
+        },
+        "language": {
+          "label": "Language",
+          "placeholder": "Select a language"
+        },
+        "level": {
+          "label": "Level",
+          "placeholder": "Select a level"
+        },
+        "image": {
+          "label": "Course Image",
+          "upload_label": "Upload an image (JPG, PNG, GIF)"
+        },
+        "requirements": {
+          "label": "Requirements",
+          "placeholder": "List course requirements. Press Enter to add."
+        },
+        "outcomes": {
+          "label": "Learning Outcomes",
+          "placeholder": "List learning outcomes. Press Enter to add."
+        }
+      }
+    },
+    "categories": {
+      "language_arts": "Language Arts",
+      "mathematics": "Mathematics",
+      "science": "Science",
+      "social_studies": "Social Studies",
+      "technology": "Technology"
+    },
+    "languages": {
+      "english": "English",
+      "urdu": "Urdu",
+      "sindhi": "Sindhi"
+    },
+    "levels": {
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced"
+    },
+    "curriculum": {
+      "section_title_placeholder": "Section Title",
+      "add_lesson_button": "Add Lesson",
+      "add_section_button": "Add Section"
+    },
+    "settings": {
+      "title": "Course Settings",
+      "instructors": {
+        "label": "Instructors",
+        "placeholder": "Assign instructors to this course"
+      },
+      "students": {
+        "label": "Students",
+        "placeholder": "Enroll students in this course"
+      }
+    },
+    "messages": {
+      "save_success": "Course saved successfully!",
+      "publish_success": "Course published successfully!"
+    }
+  },
+  "course_content": {
+    "actions": {
+      "download": "Download",
+      "share": "Share"
+    },
+    "tabs": {
+      "description": "Description",
+      "transcript": "Transcript",
+      "downloads": "Downloads"
+    },
+    "downloads": {
+      "no_downloads": "No downloadable resources for this lesson."
+    },
+    "quiz": {
+      "title": "Knowledge Check",
+      "question": "Question {{current}} of {{total}}",
+      "retake": "Retake Quiz",
+      "submit": "Submit Answers"
+    },
+    "unknown_lesson_type": "Unknown lesson type.",
+    "sidebar": {
+      "back_to_course": "Back to Course"
+    },
+    "navigation": {
+      "previous": "Previous",
+      "next": "Next",
+      "completed": "Completed",
+      "mark_complete": "Mark as Complete"
+    },
+    "mobile_sidebar": {
+      "title": "Course Content"
+    }
+  },
+  "course_overview": {
+    "title": "Course Overview",
+    "edit_course": "Edit Course",
+    "view_students": "View Students",
+    "publish_course": "Publish Course",
+    "unpublish_course": "Unpublish Course",
+    "status": "Status",
+    "published": "Published",
+    "draft": "Draft",
+    "under_review": "Under Review",
+    "instructor": "Instructor",
+    "category": "Category",
+    "enrollment_count": "Enrollment Count",
+    "created_at": "Created At",
+    "last_updated": "Last Updated",
+    "description": "Description",
+    "no_description": "No description provided.",
+    "curriculum": "Curriculum",
+    "add_section": "Add Section",
+    "add_lesson": "Add Lesson",
+    "edit": "Edit",
+    "delete": "Delete",
+    "students_enrolled": "Students Enrolled",
+    "no_students": "No students are currently enrolled in this course.",
+    "view_all_students": "View all students",
+    "recent_activity": "Recent Activity",
+    "no_activity": "No recent activity for this course.",
+    "view_all_activity": "View all activity",
+    "add_section_modal": {
+      "title": "Add New Section",
+      "section_title": "Section Title",
+      "section_title_placeholder": "e.g., Introduction to...",
+      "add_section_button": "Add Section"
+    },
+    "add_lesson_modal": {
+      "title": "Add New Lesson",
+      "lesson_title": "Lesson Title",
+      "lesson_title_placeholder": "e.g., What is...",
+      "add_lesson_button": "Add Lesson"
+    }
+  },
+  "forgot_password": {
+    "back_to_login": "Back to {{role}} login",
+    "title": "Forgot Password?",
+    "description": "Enter your email address and we'll send you a link to reset your password",
+    "email_label": "Email Address",
+    "email_placeholder": "Enter your email",
+    "send_reset_link": "Send Reset Link",
+    "sending": "Sending...",
+    "success_toast": "Password reset email sent! Please check your inbox.",
+    "error_toast": "Failed to send reset email"
+  },
+  "home": {
+    "hero": {
+      "title_part1": "Master English with",
+      "title_part2": "AI-Powered Learning",
+      "subtitle": "Your personalized English tutor powered by artificial intelligence. Learn at your own pace with interactive lessons, real-time feedback, and cultural context.",
+      "start_learning": "Start Learning",
+      "watch_demo": "Watch Demo"
+    },
+    "features": {
+      "title": "Everything You Need To Master English",
+      "subtitle": "Comprehensive features designed to make English learning effective, enjoyable, and accessible for young minds.",
+      "ai_lessons": {
+        "title": "AI-Powered Lessons",
+        "description": "Interactive and adaptive English learning"
+      },
+      "conversational_practice": {
+        "title": "Conversational Practice",
+        "description": "Speak with your tutor in real-time"
+      },
+      "structured_paths": {
+        "title": "Structured Learning Paths",
+        "description": "Follow guided curiculumn aligned to goals"
+      },
+      "verifiable_credentials": {
+        "title": "Verifiable Credentials",
+        "description": "Earn certifications recognized with sponsors"
+      },
+      "bilingual": {
+        "title": "Bilingual (Urdu & English)",
+        "description": "Learn easily with bilingual (English & Urdu) support"
+      },
+      "progress_analytics": {
+        "title": "Progress & Analytics",
+        "description": "Visualize improvement with data"
+      }
+    },
+    "testimonials": {
+      "title": "Loved By Learners Worldwide",
+      "subtitle": "Join thousands of satisfied students who have transformed their English skills",
+      "sarah": {
+        "quote": "\"AI Tutor has completely transformed how I learn English. The personalized approach makes all the difference.\"",
+        "name": "Sarah Ahmed",
+        "role": "Student"
+      },
+      "mohammad": {
+        "quote": "\"The cultural context and real-world scenarios have helped me understand English in practical situations.\"",
+        "name": "Mohammad Khan",
+        "role": "Professional"
+      },
+      "fatima": {
+        "quote": "\"I love how the app adapts to my learning style. It's like having a personal tutor available 24/7.\"",
+        "name": "Fatima Ali",
+        "role": "Business Owner"
+      }
+    },
+    "cta": {
+      "title": "Start Your English Learning Journey Today",
+      "subtitle": "Join thousands of learners who have achieved fluency with AI Tutor",
+      "get_started": "Get Started Free"
+    }
+  },
+  "index": {
+    "welcome": "Welcome to Your Blank App",
+    "start_building": "Start building your amazing project here!"
+  },
+  "not_found": {
+    "title": "404",
+    "subtitle": "Oops! Page not found",
+    "return_home": "Return to Home",
+    "error_console": "404 Error: User attempted to access non-existent route:"
+  },
+  "profile_settings": {
+    "title": "Profile Settings",
+    "password_recovery": {
+      "title": "Update Your Password",
+      "description": "You have successfully initiated a password reset. Please enter and confirm your new password below."
+    },
+    "personal_info": {
+      "title": "Personal Information",
+      "description": "Update your personal details here.",
+      "first_name": "First Name",
+      "last_name": "Last Name",
+      "grade": "Grade",
+      "teacher_id": "Teacher ID",
+      "update_button": "Update Profile",
+      "updating_button": "Updating...",
+      "update_success_toast": "Profile updated successfully!",
+      "update_error_toast": "Failed to update profile. Please try again.",
+      "auth_update_error_toast": "Failed to update session data. Please try again.",
+      "select_grade_placeholder": "Select Grade",
+      "grade_option": "Grade {{grade}}"
+    },
+    "password": {
+      "title": "Change Password",
+      "description": "Update your password here. It's recommended to use a strong password.",
+      "new_password": "New Password",
+      "confirm_new_password": "Confirm New Password",
+      "update_button": "Update Password",
+      "updating_button": "Updating...",
+      "update_success_toast": "Password updated successfully!",
+      "update_error_toast": "Failed to update password. Please try again.",
+      "fix_errors_toast": "Please fix the errors before submitting.",
+      "reauth_email_sent_toast": "Confirmation email sent! Please check your inbox to complete the password change.",
+      "reauth_email_error_toast": "Failed to send confirmation email. Please try again.",
+      "new_password_different_error": "New password must be different from your old password."
+    },
+    "reauth_alert": {
+      "title": "Additional security verification required",
+      "description_part1": "Because you logged in with a less secure method (like a magic link), you must verify your identity to change your password.",
+      "description_part2": "A confirmation link will be sent to your email address.",
+      "reauth_email_sent": "A confirmation email has been sent. Please check your inbox.",
+      "reauth_email_sent_title": "Confirmation Email Sent"
+    }
+  },
+  "role_selection": {
+    "welcome": "Welcome to DIL",
+    "choose_role": "Choose your role to get started",
+    "student": {
+      "title": "I'm a Student",
+      "description": "Access learning materials and track your progress",
+      "button": "Continue as Student"
+    },
+    "teacher": {
+      "title": "I'm a Teacher",
+      "description": "Manage students and create learning experiences",
+      "button": "Continue as Teacher"
+    }
+  },
+  "student_auth": {
+    "back_to_role_selection": "Back to role selection",
+    "login": {
+      "tab": "Login",
+      "email_label": "Email",
+      "password_label": "Password",
+      "forgot_password": "Forgot your password?",
+      "button": "Login",
+      "loading_button": "Logging in...",
+      "email_required": "Email is required",
+      "password_required": "Password is required",
+      "profile_fetch_error": "Could not fetch user profile.",
+      "wrong_portal_error": "Please use the {{role}} portal to log in.",
+      "welcome_toast": "Welcome back!",
+      "unverified_email_error": "Please verify your Email Address, we have sent a new verification link to your email",
+      "invalid_credentials_error": "Invalid Credentials."
+    },
+    "signup": {
+      "tab": "Sign Up",
+      "first_name_label": "First Name",
+      "first_name_placeholder": "Enter your first name",
+      "last_name_label": "Last Name",
+      "last_name_placeholder": "Enter your last name",
+      "email_label": "Email Address",
+      "email_placeholder": "m@example.com",
+      "password_label": "Password",
+      "password_placeholder": "Create a password",
+      "confirm_password_label": "Confirm Password",
+      "confirm_password_placeholder": "Confirm your password",
+      "grade_label": "Grade",
+      "grade_placeholder": "Select your grade",
+      "grade_option": "Grade {{grade}}",
+      "button": "Create Account",
+      "loading_button": "Creating account...",
+      "first_name_required": "First name is required",
+      "last_name_required": "Last name is required",
+      "email_required": "Email is required",
+      "password_required": "Password is required",
+      "confirm_password_required": "Please confirm your password",
+      "grade_required": "Grade is required",
+      "fix_errors_toast": "Please fix the validation errors before submitting",
+      "success_message": "Account created successfully! Please check your email for a verification link.",
+      "email_already_exists": "An account with this email already exists.",
+      "update_info_success_message": "Your information has been updated. Please check your email for a verification link.",
+      "update_info_error_toast": "Failed to update your information. Please try again.",
+      "fail_toast": "Signup failed. Please try again."
+    },
+    "title": "Student Portal",
+    "description": "Access your personalized learning journey."
+  },
+  "teacher_auth": {
+    "back_to_role_selection": "Back to role selection",
+    "login": {
+      "tab": "Login",
+      "email_label": "Email",
+      "password_label": "Password",
+      "forgot_password": "Forgot your password?",
+      "button": "Login",
+      "loading_button": "Logging in...",
+      "email_required": "Email is required",
+      "password_required": "Password is required",
+      "profile_fetch_error": "Could not fetch user profile.",
+      "wrong_portal_error": "Please use the {{role}} portal to log in.",
+      "welcome_toast": "Welcome back!",
+      "unverified_email_error": "Please verify your Email Address, we have sent a new verification link to your email",
+      "invalid_credentials_error": "Invalid Credentials."
+    },
+    "signup": {
+      "tab": "Sign Up",
+      "first_name_label": "First Name",
+      "first_name_placeholder": "Enter your first name",
+      "last_name_label": "Last Name",
+      "last_name_placeholder": "Enter your last name",
+      "email_label": "Email Address",
+      "email_placeholder": "m@example.com",
+      "password_label": "Password",
+      "password_placeholder": "Create a password",
+      "confirm_password_label": "Confirm Password",
+      "confirm_password_placeholder": "Confirm your password",
+      "teacher_id_label": "Teacher ID",
+      "teacher_id_placeholder": "Enter your teacher ID",
+      "button": "Create Account",
+      "loading_button": "Creating account...",
+      "first_name_required": "First name is required",
+      "last_name_required": "Last name is required",
+      "email_required": "Email is required",
+      "password_required": "Password is required",
+      "confirm_password_required": "Please confirm your password",
+      "teacher_id_required": "Teacher ID is required",
+      "fix_errors_toast": "Please fix the validation errors before submitting",
+      "success_message": "Account created successfully! Please check your email for a verification link.",
+      "email_already_exists": "An account with this email already exists.",
+      "update_info_success_message": "Your information has been updated. Please check your email for a verification link.",
+      "update_info_error_toast": "Failed to update your information. Please try again.",
+      "fail_toast": "Signup failed. Please try again."
+    },
+    "title": "Teacher Portal",
+    "description": "Manage your classes and students."
+  },
+  "mobile_menu": {
+    "menu_title": "Menu",
+    "dashboard": "Dashboard",
+    "account_title": "Account",
+    "profile_settings": "Profile Settings",
+    "sign_out": "Sign Out",
+    "appearance_title": "Appearance",
+    "theme_label": "Theme",
+    "home": "Home",
+    "sign_in": "Sign In",
+    "logout_failed": "Failed to log out. Please try again.",
+    "logout_success": "You have been logged out."
+  },
+  "multi_select": {
+    "placeholder": "Select options",
+    "remove_option": "Remove {{option}}"
+  },
+  "file_upload": {
+    "label": "Drag & drop a file here, or click to select a file"
+  },
+  "pagination": {
+    "go_to_previous_page": "Go to previous page",
+    "previous": "Previous",
+    "go_to_next_page": "Go to next page",
+    "next": "Next",
+    "more_pages": "More pages"
+  },
+  "dialog": {
+    "close": "Close"
+  }
+}

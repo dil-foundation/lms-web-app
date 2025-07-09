@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Header } from '@/components/Header';
@@ -11,6 +12,7 @@ import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 
 const AdminAuth = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
@@ -34,8 +36,8 @@ const AdminAuth = () => {
 
     if (!loginData.email || !loginData.password) {
       setLoginValidationErrors({
-        email: !loginData.email ? 'Email is required' : '',
-        password: !loginData.password ? 'Password is required' : ''
+        email: !loginData.email ? t('auth.errors.email_required') : '',
+        password: !loginData.password ? t('auth.errors.password_required') : ''
       });
       setIsLoading(false);
       return;
@@ -59,26 +61,26 @@ const AdminAuth = () => {
           .single();
 
         if (profileError || !profile) {
-          throw new Error('Could not fetch user profile.');
+          throw new Error(t('auth.errors.fetch_profile_error'));
         }
 
         if (profile.role !== 'admin') {
           await supabase.auth.signOut(); // Log out non-admin users immediately
-          setAuthError('Access denied. You do not have permission to log in here.');
+          setAuthError(t('auth.errors.admin_access_denied'));
           setIsLoading(false);
           return;
         }
 
         console.log('🔐 Admin login successful:', data.user.email);
-        toast.success('Welcome back!');
+        toast.success(t('auth.success.welcome_back'));
         window.location.href = '/dashboard';
       }
     } catch (error: any) {
       console.error('🔐 Admin login error:', error);
       if (error.message.includes('Email not confirmed')) {
-        setAuthError('Please verify your email address before logging in.');
+        setAuthError(t('auth.errors.email_not_verified'));
       } else {
-        setAuthError('Invalid credentials or access denied.');
+        setAuthError(t('auth.errors.invalid_credentials_admin'));
       }
     } finally {
       setIsLoading(false);
@@ -96,24 +98,24 @@ const AdminAuth = () => {
             className="mb-4 p-2"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to role selection
+            {t('auth.back_to_role_selection')}
           </Button>
 
           <Card>
             <CardHeader className="text-center">
-              <CardTitle className="text-2xl font-bold">Admin Portal</CardTitle>
+              <CardTitle className="text-2xl font-bold">{t('auth.admin.title')}</CardTitle>
               <CardDescription>
-                Sign in to your administrator account
+                {t('auth.admin.description')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
+                  <Label htmlFor="login-email">{t('auth.form.email_label')}</Label>
                   <Input
                     id="login-email"
                     type="email"
-                    placeholder="Enter your email"
+                    placeholder={t('auth.form.email_placeholder')}
                     value={loginData.email}
                     onChange={(e) => {
                       setLoginData({ ...loginData, email: e.target.value });
@@ -127,12 +129,12 @@ const AdminAuth = () => {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="login-password">Password</Label>
+                  <Label htmlFor="login-password">{t('auth.form.password_label')}</Label>
                   <div className="relative">
                     <Input
                       id="login-password"
                       type={showLoginPassword ? "text" : "password"}
-                      placeholder="Enter your password"
+                      placeholder={t('auth.form.password_placeholder')}
                       value={loginData.password}
                       onChange={(e) => {
                         setLoginData({ ...loginData, password: e.target.value });
@@ -165,14 +167,14 @@ const AdminAuth = () => {
                   className="w-full bg-primary hover:bg-primary/90"
                   disabled={isLoading}
                 >
-                  {isLoading ? 'Signing in...' : 'Sign In'}
+                  {isLoading ? t('auth.buttons.signing_in') : t('auth.buttons.sign_in')}
                 </Button>
                 <div className="text-center">
                   <Link 
                     to="/forgot-password?role=admin"
                     className="text-sm text-muted-foreground hover:text-primary transition-colors"
                   >
-                    Forgot Password?
+                    {t('auth.links.forgot_password')}
                   </Link>
                 </div>
               </form>

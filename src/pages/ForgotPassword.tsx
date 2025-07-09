@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +11,7 @@ import { toast } from 'sonner';
 import { ArrowLeft, Mail } from 'lucide-react';
 
 const ForgotPassword = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const role = searchParams.get('role') || 'student';
@@ -27,9 +29,9 @@ const ForgotPassword = () => {
 
       if (error) throw error;
 
-      toast.success('Password reset email sent! Please check your inbox.');
+      toast.success(t('forgot_password.success_toast'));
     } catch (error: any) {
-      toast.error(error.message || 'Failed to send reset email');
+      toast.error(error.message || t('forgot_password.error_toast'));
     } finally {
       setIsLoading(false);
     }
@@ -50,7 +52,7 @@ const ForgotPassword = () => {
             className="mb-4 p-2"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to {role} login
+            {t('forgot_password.back_to_login', { role })}
           </Button>
 
           <Card>
@@ -58,19 +60,19 @@ const ForgotPassword = () => {
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Mail className="w-8 h-8 text-primary" />
               </div>
-              <CardTitle className="text-2xl font-bold">Forgot Password?</CardTitle>
+              <CardTitle className="text-2xl font-bold">{t('forgot_password.title')}</CardTitle>
               <CardDescription>
-                Enter your email address and we'll send you a link to reset your password
+                {t('forgot_password.description')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
+                  <Label htmlFor="email">{t('forgot_password.email_label')}</Label>
                   <Input
                     id="email"
                     type="email"
-                    placeholder="Enter your email"
+                    placeholder={t('forgot_password.email_placeholder')}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -81,7 +83,7 @@ const ForgotPassword = () => {
                   className="w-full bg-primary hover:bg-primary/90"
                   disabled={isLoading}
                 >
-                  {isLoading ? 'Sending...' : 'Send Reset Link'}
+                  {isLoading ? t('forgot_password.sending') : t('forgot_password.send_reset_link')}
                 </Button>
               </form>
             </CardContent>

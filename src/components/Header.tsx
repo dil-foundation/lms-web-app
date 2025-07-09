@@ -1,13 +1,16 @@
 import { useState, useEffect, memo } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { Logo } from './header/Logo';
 import { ThemeToggle } from './header/ThemeToggle';
 import { Navigation } from './header/Navigation';
 import { AuthButton } from './header/AuthButton';
 import { MobileMenu } from './header/MobileMenu';
+import { LanguageToggle } from './header/LanguageToggle';
 
 export const Header = memo(() => {
+  const { t } = useTranslation();
   const location = useLocation();
   const { user, loading, signOut } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -37,7 +40,8 @@ export const Header = memo(() => {
           </div>
 
           {/* Desktop Navigation - Right Aligned */}
-          <div className="hidden md:flex items-center space-x-6">
+          <div className="hidden md:flex items-center space-x-2">
+            <LanguageToggle />
             <ThemeToggle />
             
             <Navigation user={user} />

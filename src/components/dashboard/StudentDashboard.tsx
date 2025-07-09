@@ -4,12 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Flame, Award, BookOpen, Clock, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 interface StudentDashboardProps {
   userProfile: any;
 }
 
 export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   
   const getInitials = (firstName?: string, lastName?: string) => {
@@ -56,7 +58,7 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
   ];
 
   return (
-    <div className="w-full space-y-4 sm:space-y-6 min-w-0">
+    <div className="w-full space-y-4 sm:space-y-6 min-w-0 max-w-7xl">
       {/* Welcome Section */}
       <div className="flex items-center space-x-3 sm:space-x-4 mb-6 sm:mb-8">
         <Avatar className="h-12 w-12 sm:h-16 sm:w-16 flex-shrink-0">
@@ -66,10 +68,10 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
         </Avatar>
         <div className="min-w-0 flex-1">
           <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">
-            Welcome back, {userProfile?.first_name || 'Student'}!
+            {t('student_dashboard.welcome_back', { name: userProfile?.first_name || 'Student' })}
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
-            {userProfile?.grade ? `Grade ${userProfile.grade}` : 'Continue your learning journey'}
+            {userProfile?.grade ? t('student_dashboard.grade', { grade: userProfile.grade }) : t('student_dashboard.continue_learning_journey')}
           </p>
         </div>
       </div>
@@ -80,7 +82,7 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
           <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1">
-                <p className="text-xs sm:text-sm text-muted-foreground truncate">Current Streak</p>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">{t('student_dashboard.current_streak')}</p>
                 <p className="text-lg sm:text-2xl font-bold">7 days</p>
               </div>
               <Flame className="h-5 w-5 sm:h-6 sm:w-6 text-orange-500 flex-shrink-0" />
@@ -92,7 +94,7 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
           <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1">
-                <p className="text-xs sm:text-sm text-muted-foreground truncate">Completed Lessons</p>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">{t('student_dashboard.completed_lessons')}</p>
                 <p className="text-lg sm:text-2xl font-bold">24</p>
               </div>
               <BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500 flex-shrink-0" />
@@ -104,7 +106,7 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
           <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1">
-                <p className="text-xs sm:text-sm text-muted-foreground truncate">Points Earned</p>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">{t('student_dashboard.points_earned')}</p>
                 <p className="text-lg sm:text-2xl font-bold">1,250</p>
               </div>
               <Award className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-500 flex-shrink-0" />
@@ -116,7 +118,7 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
           <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1">
-                <p className="text-xs sm:text-sm text-muted-foreground truncate">Study Time</p>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">{t('student_dashboard.study_time')}</p>
                 <p className="text-lg sm:text-2xl font-bold">45h</p>
               </div>
               <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-green-500 flex-shrink-0" />
@@ -127,7 +129,7 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
 
       {/* Continue Learning Section */}
       <div>
-        <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Continue Learning</h2>
+        <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">{t('student_dashboard.continue_learning')}</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
           {courses.map((course) => (
             <Card 
@@ -149,7 +151,7 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
                 <Badge 
                   className="absolute top-2 left-2 bg-green-600 hover:bg-green-700 text-white border-0 text-xs"
                 >
-                  AI Tutor
+                  {t('student_dashboard.ai_tutor')}
                 </Badge>
               </div>
               <CardContent className="p-3 sm:p-4">

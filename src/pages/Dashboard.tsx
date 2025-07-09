@@ -22,10 +22,12 @@ import { type UserRole } from '@/config/roleNavigation';
 import ProfileSettings from './ProfileSettings';
 import { ContentLoader } from '@/components/ContentLoader';
 import { Database } from '@/integrations/supabase/types';
+import { useTranslation } from 'react-i18next';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
 const Dashboard = () => {
+  const { t } = useTranslation();
   const { user, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading, error: profileError } = useUserProfile(user);
   const navigate = useNavigate();
@@ -54,15 +56,15 @@ const Dashboard = () => {
 
   const DashboardContent = () => {
     if (isLoading) {
-      return <ContentLoader message={authLoading ? 'Authenticating...' : 'Loading user profile...'} />;
+      return <ContentLoader message={authLoading ? t('dashboard.loading.authenticating') : t('dashboard.loading.loading_profile')} />;
     }
 
     if (profileError) {
       return (
         <div className="flex items-center justify-center h-full text-center">
           <div>
-            <p className="text-muted-foreground">Unable to load user profile.</p>
-            <p className="mt-2 text-sm text-red-500">Error: {profileError}</p>
+            <p className="text-muted-foreground">{t('dashboard.errors.unable_to_load_profile')}</p>
+            <p className="mt-2 text-sm text-red-500">{t('dashboard.errors.error_message', { message: profileError })}</p>
           </div>
         </div>
       );
@@ -71,7 +73,7 @@ const Dashboard = () => {
     if (!profile) {
       return (
         <div className="flex items-center justify-center h-full text-center">
-          <p className="text-muted-foreground">User profile not found.</p>
+          <p className="text-muted-foreground">{t('dashboard.errors.profile_not_found')}</p>
         </div>
       );
     }
@@ -84,7 +86,7 @@ const Dashboard = () => {
         case 'student': return <StudentDashboard userProfile={finalProfile} />;
         case 'teacher': return <TeacherDashboard userProfile={finalProfile} />;
         case 'admin': return <AdminDashboard userProfile={finalProfile} />;
-        default: return <RolePlaceholder title="Dashboard" description="Welcome" icon={BookOpen} />;
+        default: return <RolePlaceholder title={t('dashboard.placeholders.dashboard.title')} description={t('dashboard.placeholders.dashboard.description')} icon={BookOpen} />;
       }
     };
     
@@ -98,20 +100,20 @@ const Dashboard = () => {
           <Route path="/course/:id/content" element={<CourseContent />} />
           {finalRole === 'student' && (
             <>
-              <Route path="/courses" element={<RolePlaceholder title="My Courses" description="View and manage your enrolled courses" icon={BookOpen} />} />
-              <Route path="/assignments" element={<RolePlaceholder title="Assignments" description="View and complete your assignments" icon={ClipboardList} />} />
-              <Route path="/progress" element={<RolePlaceholder title="Progress Tracking" description="Monitor your learning progress and achievements" icon={TrendingUp} />} />
-              <Route path="/ai-tutor" element={<RolePlaceholder title="AI Tutor" description="Get personalized AI-powered learning assistance" icon={GraduationCap} />} />
+              <Route path="/courses" element={<RolePlaceholder title={t('dashboard.placeholders.student.my_courses.title')} description={t('dashboard.placeholders.student.my_courses.description')} icon={BookOpen} />} />
+              <Route path="/assignments" element={<RolePlaceholder title={t('dashboard.placeholders.student.assignments.title')} description={t('dashboard.placeholders.student.assignments.description')} icon={ClipboardList} />} />
+              <Route path="/progress" element={<RolePlaceholder title={t('dashboard.placeholders.student.progress_tracking.title')} description={t('dashboard.placeholders.student.progress_tracking.description')} icon={TrendingUp} />} />
+              <Route path="/ai-tutor" element={<RolePlaceholder title={t('dashboard.placeholders.student.ai_tutor.title')} description={t('dashboard.placeholders.student.ai_tutor.description')} icon={GraduationCap} />} />
             </>
           )}
           {finalRole === 'teacher' && (
              <>
-              <Route path="/classes" element={<RolePlaceholder title="My Classes" description="Manage your classes and students" icon={Users} />} />
+              <Route path="/classes" element={<RolePlaceholder title={t('dashboard.placeholders.teacher.my_classes.title')} description={t('dashboard.placeholders.teacher.my_classes.description')} icon={Users} />} />
               <Route path="/courses" element={<CourseManagement />} />
               <Route path="/courses/builder/:courseId" element={<CourseBuilder />} />
-              <Route path="/student-progress" element={<RolePlaceholder title="Student Progress" description="Monitor individual student performance" icon={TrendingUp} />} />
-              <Route path="/assignments" element={<RolePlaceholder title="Assignment Management" description="Create and grade assignments" icon={ClipboardList} />} />
-              <Route path="/resources" element={<RolePlaceholder title="Teaching Resources" description="Access and manage teaching materials" icon={Award} />} />
+              <Route path="/student-progress" element={<RolePlaceholder title={t('dashboard.placeholders.teacher.student_progress.title')} description={t('dashboard.placeholders.teacher.student_progress.description')} icon={TrendingUp} />} />
+              <Route path="/assignments" element={<RolePlaceholder title={t('dashboard.placeholders.teacher.assignment_management.title')} description={t('dashboard.placeholders.teacher.assignment_management.description')} icon={ClipboardList} />} />
+              <Route path="/resources" element={<RolePlaceholder title={t('dashboard.placeholders.teacher.teaching_resources.title')} description={t('dashboard.placeholders.teacher.teaching_resources.description')} icon={Award} />} />
             </>
           )}
           {finalRole === 'admin' && (
@@ -119,14 +121,14 @@ const Dashboard = () => {
               <Route path="/users" element={<UsersManagement />} />
               <Route path="/courses" element={<CourseManagement />} />
               <Route path="/courses/builder/:courseId" element={<CourseBuilder />} />
-              <Route path="/analytics" element={<RolePlaceholder title="System Analytics" description="View comprehensive system analytics" icon={BarChart3} />} />
+              <Route path="/analytics" element={<RolePlaceholder title={t('dashboard.placeholders.admin.system_analytics.title')} description={t('dashboard.placeholders.admin.system_analytics.description')} icon={BarChart3} />} />
               <Route path="/reports" element={<ReportsOverview />} />
               <Route path="/observation-reports" element={<ObservationReports />} />
-              <Route path="/secure-links" element={<RolePlaceholder title="Secure Links" description="Manage secure links and access controls" icon={Link} />} />
-              <Route path="/settings" element={<RolePlaceholder title="Settings" description="Configure system-wide settings" icon={Settings} />} />
-              <Route path="/security" element={<RolePlaceholder title="Security" description="Manage security settings and protocols" icon={Shield} />} />
-              <Route path="/discussion" element={<RolePlaceholder title="Discussion" description="Moderate discussions and forums" icon={MessageSquare} />} />
-              <Route path="/grade-assignments" element={<RolePlaceholder title="Grade Assignments" description="Review and grade student assignments" icon={Award} />} />
+              <Route path="/secure-links" element={<RolePlaceholder title={t('dashboard.placeholders.admin.secure_links.title')} description={t('dashboard.placeholders.admin.secure_links.description')} icon={Link} />} />
+              <Route path="/settings" element={<RolePlaceholder title={t('dashboard.placeholders.admin.settings.title')} description={t('dashboard.placeholders.admin.settings.description')} icon={Settings} />} />
+              <Route path="/security" element={<RolePlaceholder title={t('dashboard.placeholders.admin.security.title')} description={t('dashboard.placeholders.admin.security.description')} icon={Shield} />} />
+              <Route path="/discussion" element={<RolePlaceholder title={t('dashboard.placeholders.admin.discussion.title')} description={t('dashboard.placeholders.admin.discussion.description')} icon={MessageSquare} />} />
+              <Route path="/grade-assignments" element={<RolePlaceholder title={t('dashboard.placeholders.admin.grade_assignments.title')} description={t('dashboard.placeholders.admin.grade_assignments.description')} icon={Award} />} />
             </>
           )}
         </Routes>

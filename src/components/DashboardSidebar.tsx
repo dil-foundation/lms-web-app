@@ -1,4 +1,5 @@
 
+import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -23,15 +24,16 @@ export const DashboardSidebar = ({
   userRole,
   userProfile
 }: DashboardSidebarProps) => {
+  const { t } = useTranslation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const navigationItems = getRoleNavigation(userRole);
+  const navigationItems = getRoleNavigation(t, userRole);
 
   const SidebarComponent = () => (
     <Sidebar className="border-r border-border bg-background">
       <UserProfileSection profile={userProfile} />
       <SidebarContent className="pt-4">
         <SidebarGroup>
-          <SidebarGroupLabel className="mb-3">Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel className="mb-3">{t('dashboard_sidebar.navigation')}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navigationItems.map(item => (
@@ -68,7 +70,7 @@ export const DashboardSidebar = ({
       {/* Mobile Layout */}
       <div className="lg:hidden">
         <div className="flex items-center justify-between bg-background border-b border-border p-4">
-          <h2 className="text-lg font-semibold text-foreground">Dashboard</h2>
+          <h2 className="text-lg font-semibold text-foreground">{t('dashboard_sidebar.dashboard')}</h2>
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon">
@@ -77,7 +79,7 @@ export const DashboardSidebar = ({
             </SheetTrigger>
             <SheetContent side="left" className="p-0 w-80 [&>button]:hidden">
               <div className="flex items-center justify-between p-4 border-b border-border">
-                <h2 className="text-lg font-semibold">Menu</h2>
+                <h2 className="text-lg font-semibold">{t('dashboard_sidebar.menu')}</h2>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -90,7 +92,7 @@ export const DashboardSidebar = ({
                 <UserProfileSection profile={userProfile} />
                 <div className="pt-4">
                   <div className="px-4 pb-3">
-                    <h3 className="text-sm font-medium text-muted-foreground">Navigation</h3>
+                    <h3 className="text-sm font-medium text-muted-foreground">{t('dashboard_sidebar.navigation')}</h3>
                   </div>
                   <nav className="space-y-1 px-2">
                     {navigationItems.map(item => (

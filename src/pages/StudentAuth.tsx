@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +21,7 @@ import {
 } from '@/utils/validation';
 
 const StudentAuth = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   
@@ -111,8 +113,8 @@ const StudentAuth = () => {
     // Add validation for login fields
     if (!loginData.email || !loginData.password) {
       setLoginValidationErrors({
-        email: !loginData.email ? 'Email is required' : '',
-        password: !loginData.password ? 'Password is required' : ''
+        email: !loginData.email ? t('student_auth.login.email_required') : '',
+        password: !loginData.password ? t('student_auth.login.password_required') : ''
       });
       setIsLoading(false);
       return;
@@ -135,18 +137,18 @@ const StudentAuth = () => {
           .single();
 
         if (profileError || !profile) {
-          throw new Error('Could not fetch user profile.');
+          throw new Error(t('student_auth.login.profile_fetch_error'));
         }
 
         if (profile.role !== 'student') {
           await supabase.auth.signOut();
-          setAuthError(`Please use the ${profile.role} portal to log in.`);
+          setAuthError(t('student_auth.login.wrong_portal_error', { role: profile.role }));
           setIsLoading(false);
           return;
         }
 
         console.log('🔐 Student login successful:', data.user.email);
-        toast.success('Welcome back!');
+        toast.success(t('student_auth.login.welcome_toast'));
         // Force page refresh to ensure clean state
         window.location.href = '/dashboard';
       }
@@ -158,13 +160,13 @@ const StudentAuth = () => {
             type: 'signup',
             email: loginData.email,
           });
-          setAuthError('Please verify your Email Address, we have sent a new verification link to your email');
+          setAuthError(t('student_auth.login.unverified_email_error'));
         } catch (resendError) {
           console.error('Failed to resend verification email:', resendError);
-          setAuthError('Invalid Credentials.');
+          setAuthError(t('student_auth.login.invalid_credentials_error'));
         }
       } else {
-        setAuthError('Invalid Credentials.');
+        setAuthError(t('student_auth.login.invalid_credentials_error'));
       }
     } finally {
       setIsLoading(false);
@@ -187,12 +189,12 @@ const StudentAuth = () => {
     if (!signupData.firstName || !signupData.lastName || !signupData.email || 
         !signupData.password || !signupData.confirmPassword || !signupData.grade) {
       setValidationErrors({
-        firstName: !signupData.firstName ? 'First name is required' : '',
-        lastName: !signupData.lastName ? 'Last name is required' : '',
-        email: !signupData.email ? 'Email is required' : '',
-        password: !signupData.password ? 'Password is required' : '',
-        confirmPassword: !signupData.confirmPassword ? 'Please confirm your password' : '',
-        grade: !signupData.grade ? 'Grade is required' : ''
+        firstName: !signupData.firstName ? t('student_auth.signup.first_name_required') : '',
+        lastName: !signupData.lastName ? t('student_auth.signup.last_name_required') : '',
+        email: !signupData.email ? t('student_auth.signup.email_required') : '',
+        password: !signupData.password ? t('student_auth.signup.password_required') : '',
+        confirmPassword: !signupData.confirmPassword ? t('student_auth.signup.confirm_password_required') : '',
+        grade: !signupData.grade ? t('student_auth.signup.grade_required') : ''
       });
       return;
     }
@@ -213,7 +215,7 @@ const StudentAuth = () => {
         confirmPassword: confirmPasswordValidation.error || '',
         grade: gradeValidation.error || ''
       });
-      toast.error('Please fix the validation errors before submitting');
+      toast.error(t('student_auth.signup.fix_errors_toast'));
       return;
     }
 
@@ -242,7 +244,7 @@ const StudentAuth = () => {
 
         if (isNewUser) {
           console.log('🔐 Student signup successful:', data.user.email);
-          setSignupSuccessMessage('Account created successfully! Please check your email for a verification link.');
+          setSignupSuccessMessage(t('student_auth.signup.success_message'));
           setSignupData({
             firstName: '',
             lastName: '',
@@ -252,50 +254,66 @@ const StudentAuth = () => {
             grade: ''
           });
         } else {
-          // This is an existing, unconfirmed user.
-          // Update their metadata with the new information.
-          console.log('🔐 Updating metadata for existing unconfirmed user:', data.user.email);
-          const { error: invokeError } = await supabase.functions.invoke('update-unconfirmed-user', {
-            body: { 
-              userId: data.user.id,
-              password: signupData.password,
-              metadata: {
-                first_name: signupData.firstName,
-                last_name: signupData.lastName,
-                grade: signupData.grade
-              } 
-            }
-          });
-
-          if (invokeError) {
-            console.error('Failed to update user metadata:', invokeError);
-            toast.error('Failed to update your information. Please try again.');
-          } else {
-            setSignupSuccessMessage('Your information has been updated. Please check your email for a verification link.');
-            setSignupData({
-              firstName: '',
-              lastName: '',
-              email: '',
-              password: '',
-              confirmPassword: '',
-              grade: ''
-            });
-          }
+           // This is an existing, unconfirmed user.
+           // Update their metadata with the new information.
+           console.log('🔐 Updating metadata for existing unconfirmed user:', data.user.email);
+           const { error: invokeError } = await supabase.functions.invoke('update-unconfirmed-user', {
+             body: { 
+               userId: data.user.id,
+               password: signupData.password,
+               metadata: {
+                 first_name: signupData.firstName,
+                 last_name: signupData.lastName,
+                 grade: signupData.grade
+               } 
+             }
+           });
+ 
+           if (invokeError) {
+             console.error('Failed to update user metadata:', invokeError);
+             toast.error(t('student_auth.signup.update_info_error_toast'));
+           } else {
+             setSignupSuccessMessage(t('student_auth.signup.update_info_success_message'));
+             setSignupData({
+               firstName: '',
+               lastName: '',
+               email: '',
+               password: '',
+               confirmPassword: '',
+               grade: ''
+             });
+           }
         }
       }
     } catch (error: any) {
       console.error('🔐 Student signup error:', error);
-      if (error.message && error.message.includes('already registered')) {
+      if (error.message.includes('User already registered')) {
         setValidationErrors(prev => ({
           ...prev,
-          email: 'An account with this email already exists.'
+          email: t('student_auth.signup.email_already_exists')
         }));
       } else {
-        toast.error(error.message || 'Failed to create account');
+        toast.error(error.message || t('student_auth.signup.fail_toast'));
       }
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleLoginInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setLoginData(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleSignupInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setSignupData(prev => ({ ...prev, [id]: value }));
+    handleFieldValidation(id, value);
+  };
+  
+  const handleGradeChange = (value: string) => {
+    setSignupData(prev => ({ ...prev, grade: value }));
+    handleFieldValidation('grade', value);
   };
 
   return (
@@ -303,256 +321,170 @@ const StudentAuth = () => {
       <Header />
       <div className="pt-16 min-h-screen flex items-center justify-center px-4">
         <div className="w-full max-w-md mx-auto">
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/auth')}
-            className="mb-4 p-2"
-          >
+          <Link to="/auth" className="inline-flex items-center text-sm mb-4 hover:underline">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to role selection
-          </Button>
-
+            {t('student_auth.back_to_role_selection')}
+          </Link>
           <Card>
             <CardHeader className="text-center">
-              <CardTitle className="text-2xl font-bold">Student Portal</CardTitle>
-              <CardDescription>
-                Sign in to your account or create a new one
-              </CardDescription>
+              <CardTitle className="text-2xl font-bold">{t('student_auth.title')}</CardTitle>
+              <CardDescription>{t('student_auth.description')}</CardDescription>
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="login" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="login">Sign In</TabsTrigger>
-                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                  <TabsTrigger value="login">{t('student_auth.login.tab')}</TabsTrigger>
+                  <TabsTrigger value="signup">{t('student_auth.signup.tab')}</TabsTrigger>
                 </TabsList>
                 
-                <TabsContent value="login" className="space-y-4 mt-6">
-                  <form onSubmit={handleLogin} className="space-y-4">
+                {/* Login Form */}
+                <TabsContent value="login">
+                  <form onSubmit={handleLogin} className="space-y-4 pt-4">
                     <div className="space-y-2">
-                      <Label htmlFor="login-email">Email</Label>
-                      <Input
-                        id="login-email"
-                        type="email"
-                        placeholder="Enter your email"
+                      <Label htmlFor="email">{t('student_auth.login.email_label')}</Label>
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        placeholder="m@example.com" 
                         value={loginData.email}
-                        onChange={(e) => {
-                          setLoginData({ ...loginData, email: e.target.value });
-                          setLoginValidationErrors({ ...loginValidationErrors, email: '' });
-                          setAuthError(''); // Clear auth error when email changes
-                        }}
-                        className={loginValidationErrors.email ? 'border-red-500' : ''}
+                        onChange={handleLoginInputChange}
                       />
-                      {loginValidationErrors.email && (
-                        <p className="text-sm text-red-500">{loginValidationErrors.email}</p>
-                      )}
+                      {loginValidationErrors.email && <p className="text-sm text-red-500">{loginValidationErrors.email}</p>}
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="login-password">Password</Label>
+                      <Label htmlFor="password">{t('student_auth.login.password_label')}</Label>
                       <div className="relative">
-                        <Input
-                          id="login-password"
-                          type={showLoginPassword ? "text" : "password"}
+                        <Input 
+                          id="password" 
+                          type={showLoginPassword ? 'text' : 'password'}
                           placeholder="Enter your password"
                           value={loginData.password}
-                          onChange={(e) => {
-                            setLoginData({ ...loginData, password: e.target.value });
-                            setLoginValidationErrors({ ...loginValidationErrors, password: '' });
-                            setAuthError(''); // Clear auth error when password changes
-                          }}
-                          className={`pr-10 ${loginValidationErrors.password ? 'border-red-500' : ''}`}
+                          onChange={handleLoginInputChange}
                         />
-                        <button
-                          type="button"
-                          className="absolute right-3 top-[50%] transform -translate-y-[50%] text-gray-500"
+                        <button 
+                          type="button" 
                           onClick={() => setShowLoginPassword(!showLoginPassword)}
+                          className="absolute inset-y-0 right-0 px-3 flex items-center text-muted-foreground"
                         >
-                          {showLoginPassword ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <Eye className="h-4 w-4" />
-                          )}
+                          {showLoginPassword ? <EyeOff className="h-5 w-5"/> : <Eye className="h-5 w-5" />}
                         </button>
                       </div>
-                      {loginValidationErrors.password && (
-                        <p className="text-sm text-red-500">{loginValidationErrors.password}</p>
-                      )}
-                      {authError && (
-                        <p className="text-sm text-red-500 mt-1 font-semibold">{authError}</p>
-                      )}
+                      {loginValidationErrors.password && <p className="text-sm text-red-500">{loginValidationErrors.password}</p>}
                     </div>
-                    <Button 
-                      type="submit" 
-                      className="w-full bg-primary hover:bg-primary/90"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? 'Signing in...' : 'Sign In'}
+                    {authError && (
+                      <div className="text-sm text-red-500 text-center">{authError}</div>
+                    )}
+                    <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={isLoading}>
+                      {isLoading ? t('student_auth.login.loading_button') : t('student_auth.login.button')}
                     </Button>
-                    <div className="text-center">
-                      <Link 
-                        to="/forgot-password?role=student"
-                        className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                      >
-                        Forgot Password?
+                    <div className="text-center text-sm">
+                      <Link to="/forgot-password?role=student" className="underline hover:text-primary">
+                        {t('student_auth.login.forgot_password')}
                       </Link>
                     </div>
                   </form>
                 </TabsContent>
                 
-                <TabsContent value="signup" className="space-y-4 mt-6">
-                  <form onSubmit={handleSignup} className="space-y-4">
+                {/* Signup Form */}
+                <TabsContent value="signup">
+                  <form onSubmit={handleSignup} className="space-y-4 pt-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="signup-firstname">First Name</Label>
-                        <Input
-                          id="signup-firstname"
-                          type="text"
-                          placeholder="First name"
+                        <Label htmlFor="firstName">{t('student_auth.signup.first_name_label')}</Label>
+                        <Input 
+                          id="firstName" 
+                          placeholder={t('student_auth.signup.first_name_placeholder')}
                           value={signupData.firstName}
-                          onChange={(e) => {
-                            setSignupData({ ...signupData, firstName: e.target.value });
-                            handleFieldValidation('firstName', e.target.value);
-                          }}
+                          onChange={handleSignupInputChange}
                           className={validationErrors.firstName ? 'border-red-500' : ''}
                         />
-                        {validationErrors.firstName && (
-                          <p className="text-sm text-red-500">{validationErrors.firstName}</p>
-                        )}
+                        {validationErrors.firstName && <p className="text-sm text-red-500">{validationErrors.firstName}</p>}
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="signup-lastname">Last Name</Label>
-                        <Input
-                          id="signup-lastname"
-                          type="text"
-                          placeholder="Last name"
+                        <Label htmlFor="lastName">{t('student_auth.signup.last_name_label')}</Label>
+                        <Input 
+                          id="lastName" 
+                          placeholder={t('student_auth.signup.last_name_placeholder')}
                           value={signupData.lastName}
-                          onChange={(e) => {
-                            setSignupData({ ...signupData, lastName: e.target.value });
-                            handleFieldValidation('lastName', e.target.value);
-                          }}
+                          onChange={handleSignupInputChange}
                           className={validationErrors.lastName ? 'border-red-500' : ''}
                         />
-                        {validationErrors.lastName && (
-                          <p className="text-sm text-red-500">{validationErrors.lastName}</p>
-                        )}
+                        {validationErrors.lastName && <p className="text-sm text-red-500">{validationErrors.lastName}</p>}
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="signup-email">Email</Label>
-                      <Input
-                        id="signup-email"
-                        type="email"
-                        placeholder="Enter your email"
+                      <Label htmlFor="email">{t('student_auth.signup.email_label')}</Label>
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        placeholder={t('student_auth.signup.email_placeholder')}
                         value={signupData.email}
-                        onChange={(e) => {
-                          setSignupData({ ...signupData, email: e.target.value });
-                          handleFieldValidation('email', e.target.value);
-                        }}
+                        onChange={handleSignupInputChange}
                         className={validationErrors.email ? 'border-red-500' : ''}
                       />
-                      {validationErrors.email && (
-                        <p className="text-sm text-red-500">{validationErrors.email}</p>
-                      )}
+                      {validationErrors.email && <p className="text-sm text-red-500">{validationErrors.email}</p>}
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="grade">Grade</Label>
-                      <Select 
-                        value={signupData.grade} 
-                        onValueChange={(value) => {
-                          setSignupData({ ...signupData, grade: value });
-                          handleFieldValidation('grade', value);
-                        }}
-                      >
+                      <Label htmlFor="password">{t('student_auth.signup.password_label')}</Label>
+                      <div className="relative">
+                        <Input 
+                          id="password" 
+                          type={showSignupPassword ? 'text' : 'password'}
+                          placeholder={t('student_auth.signup.password_placeholder')}
+                          value={signupData.password}
+                          onChange={handleSignupInputChange}
+                          className={validationErrors.password ? 'border-red-500' : ''}
+                        />
+                        <button 
+                          type="button" 
+                          onClick={() => setShowSignupPassword(!showSignupPassword)}
+                          className="absolute inset-y-0 right-0 px-3 flex items-center text-muted-foreground"
+                        >
+                          {showSignupPassword ? <EyeOff className="h-5 w-5"/> : <Eye className="h-5 w-5" />}
+                        </button>
+                      </div>
+                      {validationErrors.password && <p className="text-sm text-red-500">{validationErrors.password}</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword">{t('student_auth.signup.confirm_password_label')}</Label>
+                      <div className="relative">
+                        <Input 
+                          id="confirmPassword" 
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          placeholder={t('student_auth.signup.confirm_password_placeholder')}
+                          value={signupData.confirmPassword}
+                          onChange={handleSignupInputChange}
+                          className={validationErrors.confirmPassword ? 'border-red-500' : ''}
+                        />
+                         <button 
+                          type="button" 
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute inset-y-0 right-0 px-3 flex items-center text-muted-foreground"
+                        >
+                          {showConfirmPassword ? <EyeOff className="h-5 w-5"/> : <Eye className="h-5 w-5" />}
+                        </button>
+                      </div>
+                      {validationErrors.confirmPassword && <p className="text-sm text-red-500">{validationErrors.confirmPassword}</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="grade">{t('student_auth.signup.grade_label')}</Label>
+                      <Select onValueChange={handleGradeChange} value={signupData.grade}>
                         <SelectTrigger className={validationErrors.grade ? 'border-red-500' : ''}>
-                          <SelectValue placeholder="Select your grade" />
+                          <SelectValue placeholder={t('student_auth.signup.grade_placeholder')} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="1">1st Grade</SelectItem>
-                          <SelectItem value="2">2nd Grade</SelectItem>
-                          <SelectItem value="3">3rd Grade</SelectItem>
-                          <SelectItem value="4">4th Grade</SelectItem>
-                          <SelectItem value="5">5th Grade</SelectItem>
-                          <SelectItem value="6">6th Grade</SelectItem>
-                          <SelectItem value="7">7th Grade</SelectItem>
-                          <SelectItem value="8">8th Grade</SelectItem>
-                          <SelectItem value="9">9th Grade</SelectItem>
-                          <SelectItem value="10">10th Grade</SelectItem>
-                          <SelectItem value="11">11th Grade</SelectItem>
-                          <SelectItem value="12">12th Grade</SelectItem>
+                          {Array.from({ length: 12 }, (_, i) => i + 1).map((g) => (
+                            <SelectItem key={g} value={String(g)}>
+                              {t('student_auth.signup.grade_option', { grade: g })}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
-                      {validationErrors.grade && (
-                        <p className="text-sm text-red-500">{validationErrors.grade}</p>
-                      )}
+                      {validationErrors.grade && <p className="text-sm text-red-500">{validationErrors.grade}</p>}
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-password">Password</Label>
-                      <div className="relative">
-                        <Input
-                          id="signup-password"
-                          type={showSignupPassword ? "text" : "password"}
-                          placeholder="Create a password"
-                          value={signupData.password}
-                          onChange={(e) => {
-                            setSignupData({ ...signupData, password: e.target.value });
-                            handleFieldValidation('password', e.target.value);
-                          }}
-                          className={validationErrors.password ? 'border-red-500 pr-10' : 'pr-10'}
-                        />
-                        <button
-                          type="button"
-                          className="absolute right-3 top-[50%] transform -translate-y-[50%] text-gray-500"
-                          onClick={() => setShowSignupPassword(!showSignupPassword)}
-                        >
-                          {showSignupPassword ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <Eye className="h-4 w-4" />
-                          )}
-                        </button>
-                      </div>
-                      {validationErrors.password && (
-                        <p className="text-sm text-red-500">{validationErrors.password}</p>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="confirm-password">Confirm Password</Label>
-                      <div className="relative">
-                        <Input
-                          id="confirm-password"
-                          type={showConfirmPassword ? "text" : "password"}
-                          placeholder="Confirm your password"
-                          value={signupData.confirmPassword}
-                          onChange={(e) => {
-                            setSignupData({ ...signupData, confirmPassword: e.target.value });
-                            handleFieldValidation('confirmPassword', e.target.value);
-                          }}
-                          className={validationErrors.confirmPassword ? 'border-red-500 pr-10' : 'pr-10'}
-                        />
-                        <button
-                          type="button"
-                          className="absolute right-3 top-[50%] transform -translate-y-[50%] text-gray-500"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        >
-                          {showConfirmPassword ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <Eye className="h-4 w-4" />
-                          )}
-                        </button>
-                      </div>
-                      {validationErrors.confirmPassword && (
-                        <p className="text-sm text-red-500">{validationErrors.confirmPassword}</p>
-                      )}
-                    </div>
-                    {signupSuccessMessage && (
-                      <p className="text-sm text-green-600 text-center py-2">{signupSuccessMessage}</p>
-                    )}
-                    <Button 
-                      type="submit" 
-                      className="w-full bg-primary hover:bg-primary/90"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? 'Creating account...' : 'Create Account'}
+                    {signupSuccessMessage && <div className="text-sm text-green-600 text-center">{signupSuccessMessage}</div>}
+                    <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={isLoading}>
+                      {isLoading ? t('student_auth.signup.loading_button') : t('student_auth.signup.button')}
                     </Button>
                   </form>
                 </TabsContent>

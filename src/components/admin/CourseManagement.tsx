@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +31,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export const CourseManagement = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -89,9 +91,9 @@ export const CourseManagement = () => {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      published: { color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', label: 'Published' },
-      draft: { color: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200', label: 'Draft' },
-      'under-review': { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200', label: 'Under Review' },
+      published: { color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', label: t('course_management.status.published') },
+      draft: { color: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200', label: t('course_management.status.draft') },
+      'under-review': { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200', label: t('course_management.status.under_review') },
     };
     
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.draft;
@@ -124,8 +126,8 @@ export const CourseManagement = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Course Management</h1>
-          <p className="text-muted-foreground">Manage all courses in the system</p>
+          <h1 className="text-2xl font-bold text-foreground">{t('course_management.title')}</h1>
+          <p className="text-muted-foreground">{t('course_management.description')}</p>
         </div>
         
         <Button 
@@ -133,7 +135,7 @@ export const CourseManagement = () => {
           onClick={handleCreateCourse}
         >
           <Plus className="w-4 h-4 mr-2" />
-          Create Course
+          {t('course_management.create_course')}
         </Button>
       </div>
 
@@ -143,7 +145,7 @@ export const CourseManagement = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Courses</p>
+                <p className="text-sm text-muted-foreground">{t('course_management.total_courses')}</p>
                 <p className="text-2xl font-bold">{courses.length}</p>
               </div>
               <BookOpen className="h-6 w-6 text-blue-500" />
@@ -155,7 +157,7 @@ export const CourseManagement = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Published</p>
+                <p className="text-sm text-muted-foreground">{t('course_management.published')}</p>
                 <p className="text-2xl font-bold">
                   {courses.filter(c => c.status === 'published').length}
                 </p>
@@ -169,7 +171,7 @@ export const CourseManagement = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Draft Courses</p>
+                <p className="text-sm text-muted-foreground">{t('course_management.draft_courses')}</p>
                 <p className="text-2xl font-bold">
                   {courses.filter(c => c.status === 'draft').length}
                 </p>
@@ -183,7 +185,7 @@ export const CourseManagement = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Students</p>
+                <p className="text-sm text-muted-foreground">{t('course_management.total_students')}</p>
                 <p className="text-2xl font-bold">
                   {courses.reduce((sum, course) => sum + course.enrolledStudents, 0)}
                 </p>
@@ -198,136 +200,100 @@ export const CourseManagement = () => {
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-          <Input
-            placeholder="Search courses by title or instructor..."
+          <Input 
+            placeholder={t('course_management.search_placeholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
           />
         </div>
-        
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          <Filter className="w-4 h-4 text-muted-foreground" />
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[140px]">
-              <Filter className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Status" />
+            <SelectTrigger className="w-full sm:w-auto">
+              <SelectValue placeholder={t('course_management.filter.status')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="published">Published</SelectItem>
-              <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="under-review">Under Review</SelectItem>
+              <SelectItem value="all">{t('course_management.filter.all_statuses')}</SelectItem>
+              <SelectItem value="published">{t('course_management.status.published')}</SelectItem>
+              <SelectItem value="draft">{t('course_management.status.draft')}</SelectItem>
+              <SelectItem value="under-review">{t('course_management.status.under_review')}</SelectItem>
             </SelectContent>
           </Select>
-
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Category" />
+            <SelectTrigger className="w-full sm:w-auto">
+              <SelectValue placeholder={t('course_management.filter.category')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              <SelectItem value="Language Learning">Language Learning</SelectItem>
-              <SelectItem value="Mathematics">Mathematics</SelectItem>
-              <SelectItem value="Science">Science</SelectItem>
+              <SelectItem value="all">{t('course_management.filter.all_categories')}</SelectItem>
+              <SelectItem value="language-learning">{t('course_management.category.language_learning')}</SelectItem>
+              {/* Add other categories as needed */}
             </SelectContent>
           </Select>
         </div>
       </div>
-
-      {/* Course Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredCourses.map((course) => (
-          <Card key={course.id} className="overflow-hidden hover:shadow-lg transition-shadow bg-card border border-border">
-            <div className="relative">
-              <img 
-                src={course.image} 
-                alt={course.title}
-                className="w-full h-40 object-cover"
-              />
-              <div className="absolute top-2 left-2">
+      
+      {/* Course List */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
+        {filteredCourses.map(course => (
+          <Card key={course.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+            <img src={course.image} alt={course.title} className="w-full h-40 object-cover" />
+            <CardContent className="p-4 space-y-3">
+              <div className="flex justify-between items-start">
+                <h3 className="font-bold text-lg text-foreground line-clamp-2">{course.title}</h3>
                 {getStatusBadge(course.status)}
               </div>
-              <div className="absolute top-2 right-2">
+              <p className="text-sm text-muted-foreground">
+                {t('course_management.by_instructor', { instructor: course.instructor })}
+              </p>
+              
+              <div className="flex items-center text-sm text-muted-foreground space-x-4 pt-2">
+                <div className="flex items-center gap-1.5">
+                  <BookOpen className="w-4 h-4" />
+                  <span>{t('course_management.lessons', { count: course.lessons })}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Users className="w-4 h-4" />
+                  <span>{t('course_management.students', { count: course.enrolledStudents })}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Clock className="w-4 h-4" />
+                  <span>{course.duration}</span>
+                </div>
+              </div>
+
+            </CardContent>
+            <div className="p-4 bg-muted/50 dark:bg-muted/20 border-t border-border flex justify-between items-center">
+              <p className="text-xs text-muted-foreground">
+                {t('course_management.created_at', { date: new Date(course.createdAt).toLocaleDateString() })}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => handleEditCourse(course.id)}>
+                  <Edit className="w-3.5 h-3.5 mr-1.5" />
+                  {t('course_management.edit')}
+                </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="bg-white/80 hover:bg-white/90">
+                    <Button variant="ghost" size="icon" className="w-8 h-8">
                       <MoreVertical className="w-4 h-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleEditCourse(course.id)}>
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit Course
-                    </DropdownMenuItem>
                     <DropdownMenuItem>
                       <Eye className="w-4 h-4 mr-2" />
-                      Preview
+                      {t('course_management.view_details')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="text-red-500 hover:!text-red-500">
+                      <Users className="w-4 h-4 mr-2" />
+                      {t('course_management.manage_students')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
             </div>
-            
-            <CardContent className="p-4">
-              <h3 className="font-semibold text-sm mb-2 text-card-foreground line-clamp-2">
-                {course.title}
-              </h3>
-              
-              <p className="text-xs text-muted-foreground mb-2">
-                by {course.instructor}
-              </p>
-              
-              <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
-                <div className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  {course.duration}
-                </div>
-                <div className="flex items-center gap-1">
-                  <BookOpen className="w-3 h-3" />
-                  {course.lessons} lessons
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
-                <div className="flex items-center gap-1">
-                  <Users className="w-3 h-3" />
-                  {course.enrolledStudents} students
-                </div>
-              </div>
-              
-              <Button 
-                className="w-full text-sm bg-green-600 hover:bg-green-700 text-white"
-                onClick={() => handleEditCourse(course.id)}
-              >
-                <Edit className="w-4 h-4 mr-2" />
-                Edit Course
-              </Button>
-            </CardContent>
           </Card>
         ))}
       </div>
-
-      {/* Empty State */}
-      {filteredCourses.length === 0 && (
-        <div className="text-center py-12">
-          <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-foreground mb-2">No courses found</h3>
-          <p className="text-muted-foreground mb-4">
-            {searchTerm || statusFilter !== 'all' || categoryFilter !== 'all'
-              ? 'Try adjusting your search or filter criteria.'
-              : 'Get started by creating your first course.'}
-          </p>
-          {(!searchTerm && statusFilter === 'all' && categoryFilter === 'all') && (
-            <Button 
-              className="bg-green-600 hover:bg-green-700 text-white"
-              onClick={handleCreateCourse}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Create Your First Course
-            </Button>
-          )}
-        </div>
-      )}
     </div>
   );
 };

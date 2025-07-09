@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,6 +15,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
 
 const ProfileSettings = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { profile, loading: profileLoading } = useUserProfile(user);
 
@@ -91,7 +93,7 @@ const ProfileSettings = () => {
       .eq('id', user.id);
 
     if (profileError) {
-      toast.error('Failed to update profile. Please try again.');
+      toast.error(t('profile_settings.personal_info.update_error_toast'));
       console.error('Profile update error:', profileError);
       setIsUpdatingProfile(false);
       return;
@@ -103,10 +105,10 @@ const ProfileSettings = () => {
     });
 
     if (authError) {
-      toast.error('Failed to update session data. Please try again.');
+      toast.error(t('profile_settings.personal_info.auth_update_error_toast'));
       console.error('Auth update error:', authError);
     } else {
-      toast.success('Profile updated successfully!');
+      toast.success(t('profile_settings.personal_info.update_success_toast'));
     }
     
     setIsUpdatingProfile(false);
@@ -145,7 +147,7 @@ const ProfileSettings = () => {
     const confirmPasswordIsValid = validateConfirmPassword(password, confirmPassword).isValid;
 
     if (!passwordIsValid || !confirmPasswordIsValid) {
-      toast.error('Please fix the errors before submitting.');
+      toast.error(t('profile_settings.password.fix_errors_toast'));
       return;
     }
     
@@ -160,7 +162,7 @@ const ProfileSettings = () => {
 
         if (error) throw error;
         
-        toast.success('Password updated successfully!');
+        toast.success(t('profile_settings.password.update_success_toast'));
         setPassword('');
         setConfirmPassword('');
         sessionStorage.removeItem('passwordRecovery');
@@ -170,7 +172,7 @@ const ProfileSettings = () => {
         if (alert) alert.style.display = 'none';
         
       } catch (error: any) {
-        toast.error(error.message || 'Failed to update password. Please try again.');
+        toast.error(error.message || t('profile_settings.password.update_error_toast'));
         console.error('Password reset error:', error);
       }
     } else {
@@ -179,10 +181,10 @@ const ProfileSettings = () => {
         // User logged in with magic link, needs re-auth email.
         const { error } = await supabase.auth.updateUser({ password });
         if (error) {
-          toast.error('Failed to send confirmation email. Please try again.');
+          toast.error(t('profile_settings.password.reauth_email_error_toast'));
           console.error('Re-authentication trigger error:', error);
         } else {
-          toast.success('Confirmation email sent! Please check your inbox to complete the password change.');
+          toast.success(t('profile_settings.password.reauth_email_sent_toast'));
           setReauthEmailSent(true); 
           setPassword('');
           setConfirmPassword('');
@@ -193,13 +195,13 @@ const ProfileSettings = () => {
         if (error) {
           if (error.message.includes('New password should be different')) {
             // This error is now less likely to be hit by user due to client-side validation, but good to keep.
-            setPasswordValidationErrors(prev => ({ ...prev, password: 'New password must be different from your old password.' }));
+            setPasswordValidationErrors(prev => ({ ...prev, password: t('profile_settings.password.new_password_different_error') }));
           } else {
-            toast.error('Failed to update password. Please try again.');
+            toast.error(t('profile_settings.password.update_error_toast'));
           }
           console.error('Password update error:', error);
         } else {
-          toast.success('Password updated successfully!');
+          toast.success(t('profile_settings.password.update_success_toast'));
           setPassword('');
           setConfirmPassword('');
         }
@@ -214,18 +216,18 @@ const ProfileSettings = () => {
       {isPasswordRecovery && (
         <Alert variant="warning" id="password-recovery-alert">
           <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Update Your Password</AlertTitle>
+          <AlertTitle>{t('profile_settings.password_recovery.title')}</AlertTitle>
           <AlertDescription>
-            You have successfully initiated a password reset. Please enter and confirm your new password below.
+            {t('profile_settings.password_recovery.description')}
           </AlertDescription>
         </Alert>
       )}
-      <h1 className="text-2xl font-bold">Profile Settings</h1>
+      <h1 className="text-2xl font-bold">{t('profile_settings.title')}</h1>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Personal Information</CardTitle>
-            <CardDescription>Update your personal details here.</CardDescription>
+            <CardTitle>{t('profile_settings.personal_info.title')}</CardTitle>
+            <CardDescription>{t('profile_settings.personal_info.description')}</CardDescription>
           </CardHeader>
           <CardContent>
             {profileLoading ? (
@@ -238,24 +240,26 @@ const ProfileSettings = () => {
             ) : (
               <form onSubmit={handleProfileUpdate} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
+                  <Label htmlFor="firstName">{t('profile_settings.personal_info.first_name')}</Label>
                   <Input id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
+                  <Label htmlFor="lastName">{t('profile_settings.personal_info.last_name')}</Label>
                   <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} />
                 </div>
                 
                 {profile?.role === 'student' && (
                   <div className="space-y-2">
-                    <Label htmlFor="grade">Grade</Label>
+                    <Label htmlFor="grade">{t('profile_settings.personal_info.grade')}</Label>
                     <Select value={grade} onValueChange={setGrade}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select your grade" />
+                      <SelectTrigger id="grade">
+                        <SelectValue placeholder={t('profile_settings.personal_info.select_grade_placeholder')} />
                       </SelectTrigger>
                       <SelectContent>
-                        {[...Array(12)].map((_, i) => (
-                          <SelectItem key={i + 1} value={(i + 1).toString()}>{i + 1}{i === 0 ? 'st' : i === 1 ? 'nd' : i === 2 ? 'rd' : 'th'} Grade</SelectItem>
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map((g) => (
+                          <SelectItem key={g} value={String(g)}>
+                            {t('profile_settings.personal_info.grade_option', { grade: g })}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -264,113 +268,79 @@ const ProfileSettings = () => {
 
                 {profile?.role === 'teacher' && (
                   <div className="space-y-2">
-                    <Label htmlFor="teacherId">Teacher ID</Label>
+                    <Label htmlFor="teacherId">{t('profile_settings.personal_info.teacher_id')}</Label>
                     <Input id="teacherId" value={teacherId} onChange={(e) => setTeacherId(e.target.value)} />
                   </div>
                 )}
-
+                
                 <Button type="submit" disabled={isUpdatingProfile}>
-                  {isUpdatingProfile ? 'Updating...' : 'Update Profile'}
+                  {isUpdatingProfile ? t('profile_settings.personal_info.updating_button') : t('profile_settings.personal_info.update_button')}
                 </Button>
               </form>
             )}
           </CardContent>
         </Card>
-
+        
         <Card>
           <CardHeader>
-            <CardTitle>Change Password</CardTitle>
-            <CardDescription>Update your password here. This will log you out from other devices.</CardDescription>
+            <CardTitle>{t('profile_settings.password.title')}</CardTitle>
+            <CardDescription>
+             {t('profile_settings.password.description')}
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            {needsReauthentication && !isPasswordRecovery ? (
-              reauthEmailSent ? (
-                <Alert>
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertTitle>Confirmation Email Sent</AlertTitle>
-                  <AlertDescription>
-                    We've sent a confirmation link to your email. Please click it to finalize your password change.
-                  </AlertDescription>
-                </Alert>
-              ) : (
-                <div className="space-y-4">
-                   <Alert variant="warning">
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertTitle>Confirm Password Change</AlertTitle>
-                    <AlertDescription>
-                      Because you signed in with a secure link, you need to confirm your new password via email.
-                    </AlertDescription>
-                  </Alert>
-                  <form onSubmit={handlePasswordUpdate} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="newPassword-reauth">New Password</Label>
-                      <Input 
-                        id="newPassword-reauth" 
-                        type="password" 
-                        value={password} 
-                        onChange={(e) => {
-                          setPassword(e.target.value);
-                          handlePasswordFieldValidation('password', e.target.value);
-                        }}
-                        className={passwordValidationErrors.password ? 'border-red-500' : ''}
-                      />
-                      {passwordValidationErrors.password && <p className="text-sm text-red-500">{passwordValidationErrors.password}</p>}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="confirmPassword-reauth">Confirm New Password</Label>
-                      <Input 
-                        id="confirmPassword-reauth" 
-                        type="password" 
-                        value={confirmPassword} 
-                        onChange={(e) => {
-                          setConfirmPassword(e.target.value);
-                          handlePasswordFieldValidation('confirmPassword', e.target.value);
-                        }}
-                        className={passwordValidationErrors.confirmPassword ? 'border-red-500' : ''}
-                      />
-                      {passwordValidationErrors.confirmPassword && <p className="text-sm text-red-500">{passwordValidationErrors.confirmPassword}</p>}
-                    </div>
-                    <Button type="submit" disabled={isUpdatingPassword} className="w-full">
-                      {isUpdatingPassword ? 'Sending...' : 'Send Confirmation Email'}
-                    </Button>
-                  </form>
-                </div>
-              )
-            ) : (
-              <form onSubmit={handlePasswordUpdate} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="newPassword">New Password</Label>
-                  <Input 
-                    id="newPassword" 
-                    type="password" 
-                    value={password} 
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      handlePasswordFieldValidation('password', e.target.value);
-                    }}
-                    className={passwordValidationErrors.password ? 'border-red-500' : ''}
-                  />
-                  {passwordValidationErrors.password && <p className="text-sm text-red-500">{passwordValidationErrors.password}</p>}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                  <Input 
-                    id="confirmPassword" 
-                    type="password" 
-                    value={confirmPassword} 
-                    onChange={(e) => {
-                      setConfirmPassword(e.target.value);
-                      handlePasswordFieldValidation('confirmPassword', e.target.value);
-                    }}
-                    className={passwordValidationErrors.confirmPassword ? 'border-red-500' : ''}
-                  />
-                  {passwordValidationErrors.confirmPassword && <p className="text-sm text-red-500">{passwordValidationErrors.confirmPassword}</p>}
-                </div>
-                <Button type="submit" disabled={isUpdatingPassword}>
-                  {isUpdatingPassword ? 'Updating...' : 'Update Password'}
-                </Button>
-              </form>
+            {needsReauthentication && !reauthEmailSent && (
+              <Alert variant="warning" className="mb-4">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>{t('profile_settings.reauth_alert.title')}</AlertTitle>
+                <AlertDescription>
+                  {t('profile_settings.reauth_alert.description_part1')}{' '}
+                  {t('profile_settings.reauth_alert.description_part2')}
+                </AlertDescription>
+              </Alert>
             )}
+
+            {reauthEmailSent && (
+               <Alert variant="default" className="mb-4">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>{t('profile_settings.reauth_alert.reauth_email_sent_title')}</AlertTitle>
+                <AlertDescription>
+                  {t('profile_settings.reauth_alert.reauth_email_sent')}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <form onSubmit={handlePasswordUpdate} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="password">{t('profile_settings.password.new_password')}</Label>
+                <Input 
+                  id="password" 
+                  type="password" 
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    handlePasswordFieldValidation('password', e.target.value);
+                  }}
+                />
+                {passwordValidationErrors.password && <p className="text-sm text-red-500">{passwordValidationErrors.password}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">{t('profile_settings.password.confirm_new_password')}</Label>
+                <Input 
+                  id="confirmPassword" 
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    handlePasswordFieldValidation('confirmPassword', e.target.value);
+                  }}
+                />
+                {passwordValidationErrors.confirmPassword && <p className="text-sm text-red-500">{passwordValidationErrors.confirmPassword}</p>}
+              </div>
+              <Button type="submit" disabled={isUpdatingPassword || reauthEmailSent}>
+                {isUpdatingPassword ? t('profile_settings.password.updating_button') : t('profile_settings.password.update_button')}
+              </Button>
+            </form>
           </CardContent>
         </Card>
       </div>

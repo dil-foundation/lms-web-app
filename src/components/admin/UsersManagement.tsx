@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -71,6 +72,7 @@ const mockUsers: User[] = [
 ];
 
 export const UsersManagement = () => {
+  const { t } = useTranslation();
   const [users] = useState<User[]>(mockUsers);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
@@ -110,61 +112,61 @@ export const UsersManagement = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Users Management</h1>
-          <p className="text-muted-foreground">Manage all users in the system</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t('users_management.title')}</h1>
+          <p className="text-muted-foreground">{t('users_management.description')}</p>
         </div>
         
         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
           <DialogTrigger asChild>
             <Button className="w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
-              Create User
+              {t('users_management.create_user_button')}
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>Create New User</DialogTitle>
+              <DialogTitle>{t('users_management.modal.title')}</DialogTitle>
               <DialogDescription>
-                Add a new user to the system. Fill in the required information below.
+                {t('users_management.modal.description')}
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="firstName">First Name</Label>
-                <Input id="firstName" placeholder="Enter first name" />
+                <Label htmlFor="firstName">{t('users_management.modal.first_name')}</Label>
+                <Input id="firstName" placeholder={t('users_management.modal.first_name_placeholder')} />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input id="lastName" placeholder="Enter last name" />
+                <Label htmlFor="lastName">{t('users_management.modal.last_name')}</Label>
+                <Input id="lastName" placeholder={t('users_management.modal.last_name_placeholder')} />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="Enter email address" />
+                <Label htmlFor="email">{t('users_management.modal.email')}</Label>
+                <Input id="email" type="email" placeholder={t('users_management.modal.email_placeholder')} />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="role">Role</Label>
+                <Label htmlFor="role">{t('users_management.modal.role')}</Label>
                 <Select>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select role" />
+                    <SelectValue placeholder={t('users_management.modal.role_placeholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="student">Student</SelectItem>
-                    <SelectItem value="teacher">Teacher</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="student">{t('users_management.roles.student')}</SelectItem>
+                    <SelectItem value="teacher">{t('users_management.roles.teacher')}</SelectItem>
+                    <SelectItem value="admin">{t('users_management.roles.admin')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="password">Temporary Password</Label>
-                <Input id="password" type="password" placeholder="Enter temporary password" />
+                <Label htmlFor="password">{t('users_management.modal.temp_password')}</Label>
+                <Input id="password" type="password" placeholder={t('users_management.modal.temp_password_placeholder')} />
               </div>
             </div>
             <div className="flex justify-end space-x-2">
               <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button onClick={() => setIsCreateModalOpen(false)}>
-                Create User
+                {t('users_management.create_user_button')}
               </Button>
             </div>
           </DialogContent>
@@ -175,168 +177,145 @@ export const UsersManagement = () => {
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('users_management.stats.total_users')}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalUsers}</div>
             <p className="text-xs text-muted-foreground">
-              All users in the system
+              {t('users_management.stats.total_users_desc')}
             </p>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('users_management.stats.total_students')}</CardTitle>
             <GraduationCap className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalStudents}</div>
             <p className="text-xs text-muted-foreground">
-              Active and inactive students
+              {t('users_management.stats.total_students_desc')}
             </p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Teachers</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('users_management.stats.total_teachers')}</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalTeachers}</div>
             <p className="text-xs text-muted-foreground">
-              Teaching staff members
+              {t('users_management.stats.total_teachers_desc')}
             </p>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Users</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('users_management.stats.active_now')}</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{users.filter(u => u.status === 'active').length}</div>
             <p className="text-xs text-muted-foreground">
-              Currently active users
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">New This Month</CardTitle>
-            <Plus className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">
-              New users this month
+              {t('users_management.stats.active_now_desc')}
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Search and Filter Controls */}
+      {/* Users Table */}
       <Card>
         <CardHeader>
-          <CardTitle>User Directory</CardTitle>
-          <CardDescription>
-            Search and filter users by various criteria
-          </CardDescription>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <CardTitle>{t('users_management.table.title')}</CardTitle>
+              <CardDescription>{t('users_management.table.description')}</CardDescription>
+            </div>
+            <div className="flex w-full sm:w-auto flex-col sm:flex-row gap-2">
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder={t('users_management.table.search_placeholder')}
+                  className="pl-9"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Select value={roleFilter} onValueChange={setRoleFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('users_management.table.role_filter_placeholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t('users_management.table.all_roles')}</SelectItem>
+                    <SelectItem value="student">{t('users_management.roles.student')}</SelectItem>
+                    <SelectItem value="teacher">{t('users_management.roles.teacher')}</SelectItem>
+                    <SelectItem value="admin">{t('users_management.roles.admin')}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('users_management.table.status_filter_placeholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t('users_management.table.all_statuses')}</SelectItem>
+                    <SelectItem value="active">{t('users_management.statuses.active')}</SelectItem>
+                    <SelectItem value="inactive">{t('users_management.statuses.inactive')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Search by name or email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            
-            <Select value={roleFilter} onValueChange={setRoleFilter}>
-              <SelectTrigger className="w-full sm:w-[150px]">
-                <SelectValue placeholder="Role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Roles</SelectItem>
-                <SelectItem value="student">Students</SelectItem>
-                <SelectItem value="teacher">Teachers</SelectItem>
-                <SelectItem value="admin">Admins</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[150px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Users Table */}
-          <div className="rounded-md border">
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="hidden md:table-cell">Joined</TableHead>
-                  <TableHead className="hidden md:table-cell">Last Active</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t('users_management.table.columns.user')}</TableHead>
+                  <TableHead>{t('users_management.table.columns.role')}</TableHead>
+                  <TableHead>{t('users_management.table.columns.status')}</TableHead>
+                  <TableHead>{t('users_management.table.columns.joined_date')}</TableHead>
+                  <TableHead>{t('users_management.table.columns.last_active')}</TableHead>
+                  <TableHead className="text-right">{t('users_management.table.columns.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredUsers.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.name}</TableCell>
-                    <TableCell className="text-muted-foreground">{user.email}</TableCell>
                     <TableCell>
-                      <Badge variant={getRoleBadgeVariant(user.role)}>
-                        {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                      </Badge>
+                      <div className="font-medium">{user.name}</div>
+                      <div className="text-sm text-muted-foreground">{user.email}</div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={getStatusBadgeVariant(user.status)}>
-                        {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
-                      </Badge>
+                      <Badge variant={getRoleBadgeVariant(user.role)}>{t(`users_management.roles.${user.role}`)}</Badge>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">
-                      {new Date(user.joinedDate).toLocaleDateString()}
+                    <TableCell>
+                      <Badge variant={getStatusBadgeVariant(user.status)}>{t(`users_management.statuses.${user.status}`)}</Badge>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">
-                      {new Date(user.lastActive).toLocaleDateString()}
-                    </TableCell>
+                    <TableCell>{user.joinedDate}</TableCell>
+                    <TableCell>{user.lastActive}</TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
+                            <span className="sr-only">{t('users_management.table.open_menu')}</span>
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem>
                             <Edit className="mr-2 h-4 w-4" />
-                            Edit User
+                            <span>{t('users_management.table.actions.edit')}</span>
                           </DropdownMenuItem>
                           <DropdownMenuItem>
-                            Reset Password
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">
                             <Trash2 className="mr-2 h-4 w-4" />
-                            Delete User
+                            <span>{t('users_management.table.actions.delete')}</span>
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -346,16 +325,6 @@ export const UsersManagement = () => {
               </TableBody>
             </Table>
           </div>
-
-          {filteredUsers.length === 0 && (
-            <div className="text-center py-8">
-              <Users className="mx-auto h-12 w-12 text-muted-foreground/50" />
-              <h3 className="mt-4 text-lg font-semibold">No users found</h3>
-              <p className="text-muted-foreground">
-                Try adjusting your search or filter criteria.
-              </p>
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>

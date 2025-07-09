@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -46,12 +47,13 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
       onValueChange,
       variant,
       value = [],
-      placeholder = 'Select options',
+      placeholder,
       maxCount = 5,
       ...props
     },
     ref
   ) => {
+    const { t } = useTranslation();
     const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
     const [isFocused, setIsFocused] = React.useState(false);
     const [inputValue, setInputValue] = React.useState('');
@@ -128,7 +130,7 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                     e.stopPropagation();
                     handleSelectOption(selectedValue);
                   }}
-                  aria-label={`Remove ${option.label}`}
+                  aria-label={t('multi_select.remove_option', { option: option.label })}
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -142,7 +144,7 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
             onFocus={handleFocus}
             onBlur={handleBlur}
             onKeyDown={handleInputKeyDown}
-            placeholder={value.length === 0 ? placeholder : ''}
+            placeholder={value.length === 0 ? (placeholder || t('multi_select.placeholder')) : ''}
             className="ml-2 flex-1 bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none"
           />
         </div>
