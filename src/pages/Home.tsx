@@ -9,25 +9,25 @@ const Home = () => {
       <Header />
       
       {/* Hero Section */}
-      <section className="pt-48 pb-20 px-4">
+      <section className="pt-20 sm:pt-32 md:pt-48 pb-12 sm:pb-16 md:pb-20 px-4">
         <div className="container mx-auto text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 animate-fade-in-up">
+          <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 sm:mb-6 animate-fade-in-up">
             Master English with{' '}
             <span className="text-primary">AI-Powered Learning</span>
           </h1>
-          <p className="text-xl text-muted-foreground mb-12 max-w-4xl mx-auto leading-relaxed animate-fade-in-delayed">
+          <p className="text-lg sm:text-xl text-muted-foreground mb-8 sm:mb-12 max-w-4xl mx-auto leading-relaxed animate-fade-in-delayed px-2">
             Your personalized English tutor powered by artificial intelligence. Learn 
             at your own pace with interactive lessons, real-time feedback, and 
             cultural context.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-delayed stagger-2">
-            <Link to="/auth">
-              <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-lg px-8 py-4 rounded-full hover-scale transition-all duration-300">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center animate-fade-in-delayed stagger-2 px-4">
+            <Link to="/auth" className="w-full sm:w-auto">
+              <Button size="lg" className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 rounded-full hover-scale transition-all duration-300">
                 Start Learning
-                <ArrowRight className="ml-2 h-5 w-5" />
+                <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </Link>
-            <Button variant="outline" size="lg" className="border-primary text-primary hover:bg-primary/10 text-lg px-8 py-4 rounded-full hover-scale transition-all duration-300">
+            <Button variant="outline" size="lg" className="w-full sm:w-auto border-primary text-primary hover:bg-primary/10 text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 rounded-full hover-scale transition-all duration-300">
               Watch Demo
             </Button>
           </div>
@@ -35,13 +35,13 @@ const Home = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-4">
+      <section className="py-12 sm:py-16 md:py-20 px-4">
         <div className="container mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6 text-primary animate-fade-in-up">
+          <div className="text-center mb-8 sm:mb-12 md:mb-16">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 text-primary animate-fade-in-up">
               Everything You Need To Master English
             </h2>
-            <p className="text-xl text-muted-foreground max-w-4xl mx-auto animate-fade-in-delayed">
+            <p className="text-lg sm:text-xl text-muted-foreground max-w-4xl mx-auto animate-fade-in-delayed px-2">
               Comprehensive features designed to make English learning effective, enjoyable, and accessible for young minds.
             </p>
           </div>
@@ -134,13 +134,13 @@ const Home = () => {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-20 px-4">
+      <section className="py-12 sm:py-16 md:py-20 px-4">
         <div className="container mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6 text-primary animate-fade-in-up">
+          <div className="text-center mb-8 sm:mb-12 md:mb-16">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 text-primary animate-fade-in-up">
               Loved By Learners Worldwide
             </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto animate-fade-in-delayed">
+            <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto animate-fade-in-delayed px-2">
               Join thousands of satisfied students who have transformed their English skills
             </p>
           </div>
@@ -205,17 +205,17 @@ const Home = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4">
+      <section className="py-12 sm:py-16 md:py-20 px-4">
         <div className="container mx-auto text-center">
-          <div className="max-w-4xl mx-auto bg-gradient-to-br from-primary via-primary to-blue-600 rounded-3xl p-12 hover-scale transition-all duration-500 animate-scale-in">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-black">
+          <div className="max-w-4xl mx-auto bg-gradient-to-br from-primary via-primary to-blue-600 rounded-3xl p-6 sm:p-8 md:p-12 hover-scale transition-all duration-500 animate-scale-in">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 text-black">
               Start Your English Learning Journey Today
             </h2>
-            <p className="text-xl text-black mb-10 max-w-3xl mx-auto">
+            <p className="text-lg sm:text-xl text-black mb-6 sm:mb-8 md:mb-10 max-w-3xl mx-auto px-2">
               Join thousands of learners who have achieved fluency with AI Tutor
             </p>
             <Link to="/auth">
-              <Button size="lg" className="bg-blue-800 hover:bg-blue-900 text-white font-semibold text-lg px-10 py-6 rounded-xl hover-scale transition-all duration-300">
+              <Button size="lg" className="bg-blue-800 hover:bg-blue-900 text-white font-semibold text-base sm:text-lg px-6 sm:px-8 md:px-10 py-3 sm:py-4 md:py-6 rounded-xl hover-scale transition-all duration-300">
                 Get Started Free
               </Button>
             </Link>

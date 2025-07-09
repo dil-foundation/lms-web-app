@@ -454,10 +454,10 @@ const CourseBuilder = () => {
 
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background w-full">
       {/* Header */}
       <div className="border-b bg-card">
-        <div className="flex items-center justify-between p-4">
+        <div className="flex items-center justify-between p-4 w-full">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard/courses')}>
               <ArrowLeft className="w-4 h-4" />

@@ -10,18 +10,14 @@ interface RolePlaceholderProps {
 
 export const RolePlaceholder = ({ title, description, icon: Icon }: RolePlaceholderProps) => {
   return (
-    <div className="text-center py-12">
-      <Card className="max-w-md mx-auto">
-        <CardHeader>
-          <div className="flex justify-center mb-4">
-            <Icon className="h-16 w-16 text-muted-foreground" />
-          </div>
-          <CardTitle className="text-2xl">{title}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">{description}</p>
-        </CardContent>
-      </Card>
+    <div className="w-full h-full flex items-center justify-center min-h-[400px]">
+      <div className="text-center max-w-md">
+        <div className="flex justify-center mb-6">
+          <Icon className="h-16 w-16 text-muted-foreground" />
+        </div>
+        <h2 className="text-2xl font-bold mb-4">{title}</h2>
+        <p className="text-muted-foreground">{description}</p>
+      </div>
     </div>
   );
 };

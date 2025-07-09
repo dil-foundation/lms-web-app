@@ -11,6 +11,9 @@ export const Header = memo(() => {
   const location = useLocation();
   const { user, loading, signOut } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
+  
+  // Hide mobile menu on dashboard pages since DashboardSidebar handles mobile navigation
+  const isDashboardPage = location.pathname.startsWith('/dashboard');
 
   useEffect(() => {
     const handleScroll = () => {
