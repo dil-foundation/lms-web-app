@@ -4,8 +4,10 @@ import { getRoleDisplayName, type UserRole } from '@/config/roleNavigation';
 import { Skeleton } from '@/components/ui/skeleton';
 
 type Profile = {
-  full_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
   email: string | null;
+  role: UserRole;
   [key: string]: any;
 };
 
@@ -27,21 +29,24 @@ export const UserProfileSection = ({ profile }: UserProfileSectionProps) => {
     );
   }
 
-  const userRole = profile.role as UserRole;
-  const displayName = profile.full_name || profile.first_name || 'User';
-  const initials = displayName
-    .split(' ')
-    .map(name => name.charAt(0))
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
+  const displayName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.email || 'User';
+
+  const getInitials = () => {
+    if (profile.first_name && profile.last_name) {
+      return `${profile.first_name.charAt(0)}${profile.last_name.charAt(0)}`.toUpperCase();
+    }
+    if (profile.email) {
+      return profile.email.charAt(0).toUpperCase();
+    }
+    return 'U';
+  };
 
   return (
     <div className="flex items-center space-x-3 p-4 pt-10 border-t border-border">
       <Avatar className="h-10 w-10">
         <AvatarImage src="" alt={displayName} />
         <AvatarFallback className="bg-primary text-primary-foreground">
-          {initials}
+          {getInitials()}
         </AvatarFallback>
       </Avatar>
       <div className="flex-1 min-w-0">
@@ -50,7 +55,7 @@ export const UserProfileSection = ({ profile }: UserProfileSectionProps) => {
         </p>
         <div className="flex items-center space-x-2">
           <Badge variant="secondary" className="text-xs">
-            {getRoleDisplayName(userRole)}
+            {getRoleDisplayName(profile.role)}
           </Badge>
         </div>
       </div>
