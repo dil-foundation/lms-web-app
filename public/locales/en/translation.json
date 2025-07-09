@@ -1008,5 +1008,6 @@
   },
   "dialog": {
     "close": "Close"
-  }
+  },
+  "test_key": "Test Key"
 }

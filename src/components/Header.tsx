@@ -37,6 +37,9 @@ export const Header = memo(() => {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
             <Logo />
+            <div className="hidden md:ml-6 md:flex md:space-x-8">
+              <Navigation user={null} />
+            </div>
           </div>
 
           {/* Desktop Navigation - Right Aligned */}
