@@ -2,6 +2,8 @@
 import { memo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { User } from '@supabase/supabase-js';
+import { Button } from '@/components/ui/button';
+import { Settings } from 'lucide-react';
 
 interface NavigationProps {
   user: User | null;
@@ -22,21 +24,20 @@ export const Navigation = memo(({ user, isMobile = false, onLinkClick }: Navigat
     <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
   );
 
+  if (!user) {
+    return null;
+  }
+
   return (
-    <nav className={isMobile ? "space-y-1" : "flex items-center space-x-6"}>
-      {user && showBackToDashboard && (
-        <Link to="/dashboard" className={linkClass} onClick={onLinkClick}>
-          Go back to Dashboard
-          {underlineSpan}
-        </Link>
-      )}
-      
-      {user && !showBackToDashboard && !isHomePage && (
-        <Link to="/dashboard" className={linkClass} onClick={onLinkClick}>
-          Dashboard
-          {underlineSpan}
-        </Link>
-      )}
+    <nav className="flex items-center gap-2">
+      <Link to="/dashboard" className="text-sm font-medium text-muted-foreground hover:text-primary px-3 py-2 rounded-md transition-colors">
+        Dashboard
+      </Link>
+      <Link to="/dashboard/profile-settings" aria-label="Profile Settings">
+        <Button variant="ghost" size="icon">
+          <Settings className="h-5 w-5" />
+        </Button>
+      </Link>
     </nav>
   );
 });

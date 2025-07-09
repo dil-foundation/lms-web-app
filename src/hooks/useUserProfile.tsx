@@ -5,7 +5,8 @@ import { useAuth } from './useAuth';
 import { UserRole } from '@/config/roleNavigation';
 
 type Profile = {
-  full_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
   email: string | null;
   role: UserRole;
   [key: string]: any;

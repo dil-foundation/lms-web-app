@@ -45,6 +45,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { useAuth } from '@/hooks/useAuth';
 
 // #region Interfaces
 interface CourseSection {
@@ -86,24 +87,36 @@ interface CourseData {
   requirements: string[];
   learningOutcomes: string[];
   sections: CourseSection[];
-  instructors: { id: string; name: string; email: string }[];
+  teachers: { id: string; name: string; email: string }[];
   students: { id: string; name: string; email: string }[];
+  status?: 'Draft' | 'Published' | 'Under Review';
+  duration?: string;
+  published_course_id?: string;
+  authorId?: string;
 }
 // #endregion
 
 // #region Mock Data for Selection
 const MOCK_USER_DATABASE = [
-  { id: 'inst1', name: 'Dr. Evelyn Reed', email: 'e.reed@example.com', role: 'instructor' },
-  { id: 'inst2', name: 'Mr. David Chen', email: 'd.chen@example.com', role: 'instructor' },
-  { id: 'inst3', name: 'Prof. Ana Silva', email: 'a.silva@example.com', role: 'instructor' },
+  { id: 'inst1', name: 'Dr. Evelyn Reed', email: 'e.reed@example.com', role: 'teacher' },
+  { id: 'inst2', name: 'Mr. David Chen', email: 'd.chen@example.com', role: 'teacher' },
+  { id: 'inst3', name: 'Prof. Ana Silva', email: 'a.silva@example.com', role: 'teacher' },
   { id: 'stu1', name: 'Ali Khan', email: 'ali.k@example.com', role: 'student' },
   { id: 'stu2', name: 'Fatima Ahmed', email: 'f.ahmed@example.com', role: 'student' },
   { id: 'stu3', name: 'Zainab Omar', email: 'z.omar@example.com', role: 'student' },
 ];
 
-const MOCK_INSTRUCTORS_FOR_SELECT = MOCK_USER_DATABASE.filter(u => u.role === 'instructor').map(u => ({ label: `${u.name} (${u.email})`, value: u.id }));
+const MOCK_TEACHERS_FOR_SELECT = MOCK_USER_DATABASE.filter(u => u.role === 'teacher').map(u => ({ label: `${u.name} (${u.email})`, value: u.id }));
 const MOCK_STUDENTS_FOR_SELECT = MOCK_USER_DATABASE.filter(u => u.role === 'student').map(u => ({ label: `${u.name} (${u.email})`, value: u.id }));
 // #endregion
+
+interface Profile {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  role: 'admin' | 'teacher' | 'student';
+}
 
 // #region LessonItem Component
 interface LessonItemProps {
@@ -562,40 +575,24 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
 };
 // #endregion
 
-// #region Mock Data
-const MOCK_INSTRUCTORS = [
-  { id: 'inst1', name: 'Dr. Evelyn Reed', email: 'e.reed@example.com' },
-  { id: 'inst2', name: 'Mr. David Chen', email: 'd.chen@example.com' },
-  { id: 'inst3', name: 'Prof. Maria Garcia', email: 'm.garcia@example.com' },
-  { id: 'inst4', name: 'Dr. James Wilson', email: 'j.wilson@example.com' },
-  { id: 'inst5', name: 'Ms. Sarah Thompson', email: 's.thompson@example.com' },
-  { id: 'inst6', name: 'Mr. Robert Brown', email: 'r.brown@example.com' },
-  { id: 'inst7', name: 'Dr. Emily Davis', email: 'e.davis@example.com' },
-  { id: 'inst8', name: 'Mr. Michael Lee', email: 'm.lee@example.com' },
-  { id: 'inst9', name: 'Dr. Samantha White', email: 's.white@example.com' },
-  { id: 'inst10', name: 'Mr. David Taylor', email: 'd.taylor@example.com' },
-];
-
-const MOCK_STUDENTS = [
-  { id: 'stu1', name: 'Ali Khan', email: 'ali.k@example.com' },
-  { id: 'stu2', name: 'Fatima Ahmed', email: 'f.ahmed@example.com' },
-  { id: 'stu3', name: 'Zainab Omar', email: 'z.omar@example.com' },
-  { id: 'stu4', name: 'Ahmed Ali', email: 'ahmed.ali@example.com' },
-  { id: 'stu5', name: 'Sara Khan', email: 'sara.k@example.com' },
-  { id: 'stu6', name: 'Hassan Ahmed', email: 'hassan.ahmed@example.com' }
-];
-
 const CourseBuilder = () => {
   const { courseId } = useParams();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('details');
-  const [isSaving, setIsSaving] = useState(false);
+  const [saveAction, setSaveAction] = useState<null | 'draft' | 'publish' | 'unpublish'>(null);
+  const isSaving = saveAction !== null;
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const preDragLessonStatesRef = useRef<Record<string, boolean>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
   const [categories, setCategories] = useState<{ id: number; name: string; }[]>([]);
   const [languages, setLanguages] = useState<{ id: number; name: string; }[]>([]);
   const [levels, setLevels] = useState<{ id: number; name: string; }[]>([]);
+  const [allTeachers, setAllTeachers] = useState<{ label: string; value: string; }[]>([]);
+  const [allStudents, setAllStudents] = useState<{ label: string; value: string; }[]>([]);
+  const [userProfiles, setUserProfiles] = useState<Profile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [imageDbPath, setImageDbPath] = useState<string | undefined>();
   const [courseData, setCourseData] = useState<CourseData>(() => ({
     title: '',
     subtitle: '',
@@ -603,8 +600,10 @@ const CourseBuilder = () => {
     category: '',
     language: 'English',
     level: 'Beginner',
+    duration: '',
     requirements: [''],
     learningOutcomes: [''],
+    status: 'Draft',
     sections: [
       {
         id: `section-${Date.now()}`,
@@ -620,79 +619,161 @@ const CourseBuilder = () => {
         ],
       },
     ],
-    instructors: [],
+    teachers: [],
     students: [],
   }));
 
   useEffect(() => {
-    const fetchDropdownData = async () => {
-      // Fetch Categories
-      const { data: catData, error: catError } = await supabase.from('course_categories').select('id, name');
-      if (catError) {
-        console.error('Error fetching categories: ', catError);
+    const fetchInitialData = async () => {
+      console.log("Fetching initial data for course builder...");
+      try {
+        const [usersRes, catRes, langRes, levelRes] = await Promise.all([
+          supabase.from('profiles').select('id, first_name, last_name, email, role'),
+          supabase.from('course_categories').select('id, name'),
+          supabase.from('course_languages').select('id, name'),
+          supabase.from('course_levels').select('id, name'),
+        ]);
+
+        if (usersRes.error) {
+          toast.error("Failed to load users for access management.");
+          console.error("Error fetching profiles:", usersRes.error);
+        } else if (usersRes.data) {
+          const data = usersRes.data as Profile[];
+          console.log("Successfully fetched profiles:", data);
+          setUserProfiles(data);
+
+          const teachers = data
+            .filter(p => p.role === 'teacher')
+            .map(p => ({ label: `${p.first_name} ${p.last_name} (${p.email})`, value: p.id }));
+          const students = data
+            .filter(p => p.role === 'student')
+            .map(p => ({ label: `${p.first_name} ${p.last_name} (${p.email})`, value: p.id }));
+
+          console.log("Processed teachers for dropdown:", teachers);
+          console.log("Processed students for dropdown:", students);
+
+          setAllTeachers(teachers);
+          setAllStudents(students);
+        }
+        
+        if (catRes.error) {
+          console.error('Error fetching categories: ', catRes.error);
         toast.error('Failed to load course categories.');
-      } else if (catData) {
-        setCategories(catData as any);
-      }
+        } else if (catRes.data) {
+          setCategories(catRes.data as any);
+        }
 
-      // Fetch Languages
-      const { data: langData, error: langError } = await supabase.from('course_languages').select('id, name');
-      if (langError) {
-        console.error('Error fetching languages: ', langError);
-        toast.error('Failed to load course languages.');
-      } else if (langData) {
-        setLanguages(langData as any);
-      }
+        if (langRes.error) {
+          console.error('Error fetching languages: ', langRes.error);
+          toast.error('Failed to load course languages.');
+        } else if (langRes.data) {
+          setLanguages(langRes.data as any);
+        }
 
-      // Fetch Levels
-      const { data: levelData, error: levelError } = await supabase.from('course_levels').select('id, name');
-      if (levelError) {
-        console.error('Error fetching levels: ', levelError);
-        toast.error('Failed to load course levels.');
-      } else if (levelData) {
-        setLevels(levelData as any);
+        if (levelRes.error) {
+          console.error('Error fetching levels: ', levelRes.error);
+          toast.error('Failed to load course levels.');
+        } else if (levelRes.data) {
+          setLevels(levelRes.data as any);
+        }
+      } catch (error) {
+        toast.error("An unexpected error occurred while fetching data.");
+        console.error("Unexpected fetch error:", error);
       }
     };
 
-    fetchDropdownData();
+    fetchInitialData();
   }, []);
 
-  // Mock course data loading
   useEffect(() => {
-    if (courseId && courseId !== 'new') {
-      // Mock loading existing course data
-      setCourseData({
-        title: 'Stage 0 - Beginner English for Urdu Speakers',
-        subtitle: 'Master English fundamentals with native Urdu instruction',
-        description: 'A comprehensive English learning course designed specifically for Urdu speakers...',
-        category: 'Language Learning',
-        language: 'English',
-        level: 'Beginner',
-        requirements: ['Basic Urdu literacy', 'Willingness to practice daily'],
-        learningOutcomes: ['Speak basic English confidently', 'Understand common English phrases', 'Write simple sentences'],
-        instructors: [
-          { id: 'inst1', name: 'Dr. Evelyn Reed', email: 'e.reed@example.com' },
-          { id: 'inst2', name: 'Mr. David Chen', email: 'd.chen@example.com' }
-        ],
-        students: [
-          { id: 'stu1', name: 'Ali Khan', email: 'ali.k@example.com' },
-          { id: 'stu2', name: 'Fatima Ahmed', email: 'f.ahmed@example.com' },
-          { id: 'stu3', name: 'Zainab Omar', email: 'z.omar@example.com' }
-        ],
-        sections: [
-          {
-            id: 'section-1',
-            title: 'Introduction to English',
-            isCollapsed: false,
-            lessons: [
-              { id: 'lesson-1-1', title: 'Welcome to the Course', type: 'video' },
-              { id: 'lesson-1-2', title: 'Basic Greetings', type: 'video' }
-            ]
+    const loadCourseData = async () => {
+      if (!courseId || courseId === 'new') return;
+      console.log(`Loading data for courseId: ${courseId}`);
+
+      const { data, error } = await supabase
+        .from('courses')
+        .select(`
+          *,
+          published_course_id,
+          sections:course_sections (
+            *,
+            lessons:course_lessons (*)
+          ),
+          members:course_members (
+            role,
+            profile:profiles (*)
+          )
+        `)
+        .eq('id', courseId)
+        .single();
+
+      if (error) {
+        toast.error("Failed to load course data.");
+        console.error("Error loading course data:", error);
+        navigate('/dashboard/courses');
+        return;
+      }
+      
+      if (data) {
+        console.log("Successfully loaded raw course data:", data);
+
+        // Handle image URL
+        let displayImageUrl: string | undefined = undefined;
+        if (data.image_url) {
+          setImageDbPath(data.image_url);
+          const { data: signedUrlData, error } = await supabase.storage.from('dil-lms').createSignedUrl(data.image_url, 3600);
+          if (error) {
+            console.error("Failed to create signed URL for course image", error);
+            toast.error("Could not load course image preview.");
+          } else if (signedUrlData) {
+            displayImageUrl = signedUrlData.signedUrl;
           }
-        ]
-      });
+        }
+        
+        const teachers = data.members
+          .filter((m: any) => m.role === 'teacher' && m.profile)
+          .map((m: any) => ({ id: m.profile.id, name: `${m.profile.first_name} ${m.profile.last_name}`, email: m.profile.email }));
+        
+        const students = data.members
+          .filter((m: any) => m.role === 'student' && m.profile)
+          .map((m: any) => ({ id: m.profile.id, name: `${m.profile.first_name} ${m.profile.last_name}`, email: m.profile.email }));
+        
+        console.log("Processed course teachers:", teachers);
+        console.log("Processed course students:", students);
+
+        const finalCourseData: CourseData = {
+          id: data.id,
+          title: data.title,
+          subtitle: data.subtitle || '',
+          description: data.description || '',
+          image: displayImageUrl,
+          authorId: data.author_id,
+          category: categories.find(c => c.id === data.category_id)?.name || '',
+          language: languages.find(l => l.id === data.language_id)?.name || '',
+          level: levels.find(l => l.id === data.level_id)?.name || '',
+          duration: data.duration || '',
+          requirements: data.requirements || [''],
+          learningOutcomes: data.learning_outcomes || [''],
+          status: data.status || 'Draft',
+          published_course_id: data.published_course_id,
+          sections: data.sections.sort((a: any, b: any) => a.position - b.position).map((s: any) => ({
+            ...s,
+            lessons: s.lessons.sort((a: any, b: any) => a.position - b.position)
+          })),
+          teachers: teachers,
+          students: students,
+        };
+
+        console.log("Setting final course data state:", finalCourseData);
+        setCourseData(finalCourseData);
+      }
+    };
+
+    // We need dropdown data to be loaded before we can map IDs to names
+    if (categories.length > 0 && languages.length > 0 && levels.length > 0) {
+      loadCourseData();
     }
-  }, [courseId]);
+  }, [courseId, navigate, categories, languages, levels]);
 
   const handleImageUpload = async (file: File) => {
     if (!file) return;
@@ -711,10 +792,10 @@ const CourseBuilder = () => {
       if (uploadError) {
         throw uploadError;
       }
+      
+      setImageDbPath(filePath);
 
-      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-        .from('dil-lms')
-        .createSignedUrl(filePath, 3600); // 1 hour expiry
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage.from('dil-lms').createSignedUrl(filePath, 3600); // 1 hour expiry
 
       if (signedUrlError) {
         throw signedUrlError;
@@ -731,17 +812,186 @@ const CourseBuilder = () => {
     }
   };
 
-  const handleSave = async () => {
-    setIsSaving(true);
-    // Mock save operation
-    console.log('Saving course data:', courseData);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsSaving(false);
-    toast.success('Course saved successfully!');
+  const saveCourseData = async (courseToSave: CourseData): Promise<string | null> => {
+    if (!user) {
+      toast.error("You must be logged in to save a course.");
+      throw new Error("User not logged in");
+    }
+
+    if (!courseToSave.title.trim()) {
+      toast.error("Course title is required.");
+      throw new Error("Course title is required");
+    }
+
+    const isNewCourse = !courseToSave.id;
+
+    // Step 1: Upsert the main course details.
+    const courseDetails: any = {
+      id: isNewCourse ? undefined : courseToSave.id,
+      title: courseToSave.title,
+      subtitle: courseToSave.subtitle,
+      description: courseToSave.description,
+      category_id: categories.find(c => c.name === courseToSave.category)?.id,
+      language_id: languages.find(l => l.name === courseToSave.language)?.id,
+      level_id: levels.find(l => l.name === courseToSave.level)?.id,
+      image_url: imageDbPath,
+      duration: courseToSave.duration,
+      requirements: courseToSave.requirements.filter(r => r.trim() !== ''),
+      learning_outcomes: courseToSave.learningOutcomes.filter(o => o.trim() !== ''),
+      status: courseToSave.status,
+      published_course_id: courseToSave.published_course_id,
+    };
+    
+    if (isNewCourse) {
+      courseDetails.author_id = user.id;
+    }
+
+    const { data: savedCourse, error: courseError } = await supabase
+      .from('courses')
+      .upsert(courseDetails)
+      .select('id')
+      .single();
+
+    if (courseError) throw courseError;
+    if (!savedCourse) throw new Error("Failed to save course and retrieve its ID.");
+
+    const currentCourseId = savedCourse.id;
+
+    await supabase.from('course_members').delete().eq('course_id', currentCourseId);
+    await supabase.from('course_sections').delete().eq('course_id', currentCourseId);
+
+    for (const [sectionIndex, section] of courseToSave.sections.entries()) {
+      const { data: savedSection, error: sectionError } = await supabase
+        .from('course_sections')
+        .insert({ course_id: currentCourseId, title: section.title, position: sectionIndex })
+        .select('id')
+        .single();
+      
+      if (sectionError) throw sectionError;
+      if (!savedSection) throw new Error("Failed to save a course section.");
+
+      for (const [lessonIndex, lesson] of section.lessons.entries()) {
+        await supabase.from('course_lessons').insert({
+          section_id: savedSection.id,
+          title: lesson.title,
+          type: lesson.type,
+          content: typeof lesson.content === 'string' ? lesson.content : undefined,
+          position: lessonIndex,
+        });
+      }
+    }
+
+    const teachersToInsert = courseToSave.teachers.map(t => ({ course_id: currentCourseId, user_id: t.id, role: 'teacher' as const }));
+    const studentsToInsert = courseToSave.students.map(s => ({ course_id: currentCourseId, user_id: s.id, role: 'student' as const }));
+    const membersToInsert = [...teachersToInsert, ...studentsToInsert];
+    
+    if (membersToInsert.length > 0) {
+      await supabase.from('course_members').insert(membersToInsert);
+    }
+    
+    return currentCourseId;
   };
 
-  const handlePublish = () => {
-    toast.success('Course published successfully!');
+  const handleSaveDraftClick = async () => {
+    setSaveAction('draft');
+    try {
+      if (courseData.id && courseData.status === 'Published') {
+        const draftToCreate: CourseData = {
+          ...courseData,
+          id: undefined,
+          status: 'Draft',
+          published_course_id: courseData.id,
+        };
+        const newDraftId = await saveCourseData(draftToCreate);
+        if (newDraftId) {
+          toast.success("Draft created successfully. You are now editing the new draft.");
+          navigate(`/dashboard/courses/builder/${newDraftId}`, { replace: true });
+        }
+      } else {
+        const courseToSave = { ...courseData, status: 'Draft' as const };
+        const savedId = await saveCourseData(courseToSave);
+        if (savedId) {
+          toast.success("Draft saved successfully!");
+          setCourseData(prev => ({...prev, status: 'Draft'}));
+          if (courseId === 'new') {
+            navigate(`/dashboard/courses/builder/${savedId}`, { replace: true });
+          }
+        }
+      }
+    } catch (error: any) {
+      toast.error('Failed to save draft.', { description: error.message });
+      console.error(error);
+    } finally {
+      setSaveAction(null);
+    }
+  };
+
+  const handlePublishClick = async () => {
+    setSaveAction('publish');
+    try {
+      if (courseData.published_course_id && courseData.id) {
+        // First, save any pending changes to the draft.
+        await saveCourseData({ ...courseData, status: 'Draft' });
+        
+        // Then, call the RPC to publish.
+        const { error } = await supabase.rpc('publish_draft', {
+          draft_id_in: courseData.id,
+          published_id_in: courseData.published_course_id,
+        });
+        if (error) throw error;
+        
+        toast.success("Course published successfully!");
+        navigate('/dashboard/courses');
+      } else {
+        const savedId = await saveCourseData({ ...courseData, status: 'Published' });
+        if(savedId) {
+          toast.success("Course published successfully!");
+          navigate('/dashboard/courses');
+        }
+      }
+    } catch (error: any) {
+      toast.error('Failed to publish course.', { description: error.message });
+      console.error(error);
+    } finally {
+      setSaveAction(null);
+    }
+  };
+
+  const handleUnpublishClick = async () => {
+    setSaveAction('unpublish');
+    try {
+      await saveCourseData({ ...courseData, status: 'Draft' });
+      toast.success("Course unpublished and saved as a draft.");
+      setCourseData(prev => ({...prev, status: 'Draft'}));
+    } catch (error: any) {
+      toast.error('Failed to unpublish course.', { description: error.message });
+      console.error(error);
+    } finally {
+      setSaveAction(null);
+    }
+  };
+
+  const handleDeleteConfirmed = async () => {
+    if (!courseData.id) return;
+
+    if (imageDbPath) {
+        const { error: storageError } = await supabase.storage.from('dil-lms').remove([imageDbPath]);
+        if (storageError) {
+            toast.error("Could not delete course image. The course was not deleted.", { description: storageError.message });
+            setIsDeleteDialogOpen(false);
+            return;
+        }
+    }
+
+    const { error } = await supabase.from('courses').delete().eq('id', courseData.id);
+    
+    if (error) {
+      toast.error("Failed to delete course.", { description: error.message });
+    } else {
+      toast.success(`Course "${courseData.title}" deleted successfully.`);
+      navigate('/dashboard/courses');
+    }
+    setIsDeleteDialogOpen(false);
   };
 
   const sensors = useSensors(
@@ -992,16 +1242,21 @@ const CourseBuilder = () => {
   }, []);
   // #endregion
 
-  const handleMembersChange = (role: 'instructors' | 'students', selectedIds: string[]) => {
-    const selectedUsers = MOCK_USER_DATABASE
+  const handleMembersChange = (role: 'teachers' | 'students', selectedIds: string[]) => {
+    const selectedUsers = userProfiles
         .filter(user => selectedIds.includes(user.id))
-        .map(user => ({ id: user.id, name: user.name, email: user.email }));
+        .map(user => ({ id: user.id, name: `${user.first_name} ${user.last_name}`, email: user.email }));
     
     setCourseData(prev => ({
         ...prev,
         [role]: selectedUsers
     }));
   };
+
+  const canDelete = user && courseData.id && courseData.authorId && (
+    (user.app_metadata.role === 'admin' || userProfiles.find(p => p.id === user.id)?.role === 'admin') ||
+    (user.app_metadata.role === 'teacher' && courseData.status === 'Draft' && user.id === courseData.authorId)
+  );
 
 
   return (
@@ -1018,7 +1273,7 @@ const CourseBuilder = () => {
                 {courseData.title || 'New Course'}
               </h1>
               <div className="flex items-center gap-2 mt-1">
-                <Badge variant="secondary">Draft</Badge>
+                <Badge variant={courseData.status === 'Published' ? 'default' : 'secondary'}>{courseData.status || 'Draft'}</Badge>
                 <span className="text-sm text-muted-foreground">
                   Last saved: 2 minutes ago
                 </span>
@@ -1031,13 +1286,24 @@ const CourseBuilder = () => {
               <Eye className="w-4 h-4 mr-2" />
               Preview
             </Button>
-            <Button onClick={handleSave} disabled={isSaving}>
+            <Button onClick={handleSaveDraftClick} disabled={isSaving}>
               <Save className="w-4 h-4 mr-2" />
-              {isSaving ? 'Saving...' : 'Save'}
+              {saveAction === 'draft' ? 'Saving...' : 'Save Draft'}
             </Button>
-            <Button onClick={handlePublish} className="bg-green-600 hover:bg-green-700">
-              Publish
+            {courseData.status === 'Published' ? (
+              <Button onClick={handleUnpublishClick} className="bg-yellow-600 hover:bg-yellow-700" disabled={isSaving}>
+                {saveAction === 'unpublish' ? 'Unpublishing...' : 'Unpublish'}
             </Button>
+            ) : (
+              <Button onClick={handlePublishClick} className="bg-green-600 hover:bg-green-700" disabled={isSaving}>
+                {saveAction === 'publish' ? 'Publishing...' : 'Publish'}
+              </Button>
+            )}
+             {canDelete && (
+                <Button variant="destructive" onClick={() => setIsDeleteDialogOpen(true)} disabled={isSaving}>
+                    Delete
+                </Button>
+            )}
           </div>
         </div>
       </div>
@@ -1056,8 +1322,8 @@ const CourseBuilder = () => {
               <TabsTrigger value="landing" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
                 Landing Page
               </TabsTrigger>
-              <TabsTrigger value="group" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
-                Group
+              <TabsTrigger value="access" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
+                Access
               </TabsTrigger>
             </TabsList>
           </div>
@@ -1146,6 +1412,15 @@ const CourseBuilder = () => {
                       </Select>
                     </div>
                   </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Course Duration</label>
+                    <Input
+                      value={courseData.duration || ''}
+                      onChange={(e) => setCourseData(prev => ({ ...prev, duration: e.target.value }))}
+                      placeholder="e.g., 8 weeks"
+                    />
+                  </div>
                 </CardContent>
               </Card>
 
@@ -1161,11 +1436,14 @@ const CourseBuilder = () => {
                         variant="destructive"
                         size="icon"
                         className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => setCourseData(prev => ({...prev, image: undefined}))}
+                        onClick={() => {
+                          setCourseData(prev => ({...prev, image: undefined}));
+                          setImageDbPath(undefined);
+                        }}
                       >
                         <X className="w-4 h-4" />
                       </Button>
-                    </div>
+                  </div>
                   ) : (
                     <FileUpload 
                       onUpload={handleImageUpload} 
@@ -1334,21 +1612,21 @@ const CourseBuilder = () => {
               </Card>
             </TabsContent>
 
-            <TabsContent value="group" className="space-y-6">
+            <TabsContent value="access" className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Manage Instructors</CardTitle>
-                  <p className="text-sm text-muted-foreground">Add or remove instructors who can manage this course.</p>
+                  <CardTitle>Manage Teachers</CardTitle>
+                  <p className="text-sm text-muted-foreground">Add or remove teachers who can manage this course.</p>
                 </CardHeader>
                 <CardContent>
                   <MultiSelect
-                    options={MOCK_INSTRUCTORS_FOR_SELECT}
-                    onValueChange={(selectedIds) => handleMembersChange('instructors', selectedIds)}
-                    value={courseData.instructors.map(i => i.id)}
-                    placeholder="Select instructors"
+                    options={allTeachers}
+                    onValueChange={(selectedIds) => handleMembersChange('teachers', selectedIds)}
+                    value={courseData.teachers.map(i => i.id)}
+                    placeholder="Select teachers"
                   />
                   <div className="space-y-2 mt-4">
-                    {courseData.instructors.map(user => (
+                    {courseData.teachers.map(user => (
                       <div key={user.id} className="flex items-center justify-between p-2 rounded-md border bg-muted/20">
                         <div>
                           <p className="font-medium">{user.name}</p>
@@ -1367,7 +1645,7 @@ const CourseBuilder = () => {
                 </CardHeader>
                 <CardContent>
                    <MultiSelect
-                    options={MOCK_STUDENTS_FOR_SELECT}
+                    options={allStudents}
                     onValueChange={(selectedIds) => handleMembersChange('students', selectedIds)}
                     value={courseData.students.map(s => s.id)}
                     placeholder="Select students"
@@ -1388,6 +1666,28 @@ const CourseBuilder = () => {
           </div>
         </Tabs>
       </div>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the course
+              <strong className="mx-1">"{courseData.title}"</strong>
+              and all of its associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirmed}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
