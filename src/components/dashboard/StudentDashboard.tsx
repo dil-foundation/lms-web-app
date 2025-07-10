@@ -59,7 +59,7 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
               imageUrl = signedUrlData.signedUrl;
             }
           }
-          return { ...course, image_url: imageUrl, progress: Math.floor(Math.random() * 101) }; // Mock progress
+          return { ...course, image_url: imageUrl, progress: 0 }; // Static 0% progress
         }));
         setCourses(coursesWithImages);
       }
