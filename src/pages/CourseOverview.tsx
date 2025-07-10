@@ -1,5 +1,4 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -30,165 +29,220 @@ import {
   TrendingUp,
   Target
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ContentLoader } from '@/components/ContentLoader';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
+// This is a subset of the CourseData from CourseBuilder.
+// In a real app, this might live in a shared types file.
+interface CourseData {
+  id?: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  image?: string;
+  requirements: string[];
+  learningOutcomes: string[];
+  sections: {
+      id: string;
+      title: string;
+      lessons: { id: string; title: string; }[];
+  }[];
+  teachers: { name: string; }[];
+  students: { id: string; }[];
+  duration?: string;
+  level?: string;
+  language?: string;
+}
 
 interface CourseOverviewProps {
   courseId?: string;
+  courseData?: CourseData;
+  isPreviewMode?: boolean;
 }
 
-export const CourseOverview = ({ courseId }: CourseOverviewProps) => {
-  const { id } = useParams();
+export const CourseOverview = ({ courseId: propCourseId, courseData: initialCourseData, isPreviewMode = false }: CourseOverviewProps) => {
+  const { id: paramId } = useParams();
   const navigate = useNavigate();
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [course, setCourse] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock course data - in real app, this would come from API
-  const course = {
-    id: courseId || id || '1',
-    title: "Complete English Language Mastery",
-    subtitle: "Master English from beginner to advanced level with AI-powered learning",
-    description: "This comprehensive course takes you from basic English fundamentals to advanced fluency. Learn with interactive lessons, real-world examples, and personalized AI tutoring that adapts to your learning style.",
-    thumbnail: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", // Mock video URL
-    instructor: {
-      name: "Dr. Sarah Johnson",
-      title: "English Language Expert",
-      avatar: "SJ",
-      rating: 4.8,
-      students: 12000,
-      courses: 15
-    },
-    stats: {
-      rating: 4.9,
-      totalRatings: 2847,
-      students: 18500,
-      duration: "42 hours",
-      lessons: 156,
-      level: "All Levels",
-      language: "English",
-      lastUpdated: "March 2024"
-    },
-    progress: {
-      completed: 12,
-      total: 156,
-      percentage: 8,
-      lastAccessed: "2 days ago",
-      nextLesson: "Parts of Speech"
-    },
-    features: [
-      "42 hours of on-demand video",
-      "156 downloadable lessons",
-      "AI-powered personalized tutoring",
-      "Interactive quizzes and exercises",
-      "Mobile and desktop access",
-      "Certificate of completion",
-      "Lifetime access",
-      "30-day money-back guarantee"
-    ],
-    whatYouLearn: [
-      "Speak English confidently in any situation",
-      "Understand native English speakers clearly",
-      "Write professional emails and documents",
-      "Master English grammar and vocabulary",
-      "Develop natural pronunciation",
-      "Build business English skills"
-    ],
-    requirements: [
-      "Basic understanding of English alphabet",
-      "Willingness to practice daily",
-      "Internet connection for video lessons",
-      "No prior English experience required"
-    ],
-    curriculum: [
-      {
-        id: 'module-1',
-        title: 'Getting Started',
-        duration: '2h 30m',
-        lessons: 3,
-        description: 'Introduction to the course and basic navigation',
-        topics: [
-          'Welcome to the Course',
-          'Course Navigation',
-          'Learning Objectives Quiz'
-        ]
+  const courseId = propCourseId || paramId;
+
+  const mapDataToCourse = (data: any) => {
+    const firstTeacher = data.teachers?.[0] || data.members?.find((m: any) => m.role === 'teacher')?.profile || { first_name: 'Instructor', last_name: 'TBD' };
+    const teacherName = `${firstTeacher.first_name || ''} ${firstTeacher.last_name || ''}`.trim();
+    const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
+    const totalLessons = data.sections?.reduce((acc: number, section: any) => acc + (section.lessons?.length || 0), 0) || 0;
+
+    return {
+      id: data.id || 'preview',
+      title: data.title,
+      subtitle: data.subtitle,
+      description: data.description,
+      thumbnail: data.image || data.image_url || "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+      videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", // Placeholder
+      instructor: {
+        name: teacherName,
+        title: "English Language Expert",
+        avatar: getInitials(teacherName),
+        rating: 4.8,
+        students: 12000,
+        courses: 15
       },
-      {
-        id: 'module-2',
-        title: 'Basic Grammar Foundation',
-        duration: '8h 45m',
-        lessons: 12,
-        description: 'Fundamental grammar concepts and sentence structure',
-        topics: [
-          'Parts of Speech',
-          'Sentence Structure',
-          'Tenses Overview',
-          'Common Grammar Mistakes'
-        ]
+      stats: {
+        rating: 4.9,
+        totalRatings: 2847,
+        students: data.students?.length || data.members?.filter((m: any) => m.role === 'student').length || 0,
+        duration: data.duration || "N/A",
+        lessons: totalLessons,
+        level: data.level || "All Levels",
+        language: data.language || "English",
+        lastUpdated: new Date(data.updated_at || Date.now()).toLocaleString('en-US', { month: 'long', year: 'numeric' })
       },
-      {
-        id: 'module-3',
-        title: 'Vocabulary Building',
-        duration: '12h 15m',
-        lessons: 18,
-        description: 'Essential vocabulary for daily communication',
-        topics: [
-          'Daily Conversation Words',
-          'Business Vocabulary',
-          'Academic Terms',
-          'Idioms and Expressions'
-        ]
+      progress: { // This would be fetched per-user in a real app
+        completed: 0,
+        total: totalLessons,
+        percentage: 0,
+        lastAccessed: "Never",
+        nextLesson: data.sections?.[0]?.lessons?.[0]?.title || "First Lesson"
       },
-      {
-        id: 'module-4',
-        title: 'Speaking & Pronunciation',
-        duration: '10h 30m',
-        lessons: 15,
-        description: 'Develop natural pronunciation and speaking confidence',
-        topics: [
-          'Phonetic Sounds',
-          'Stress and Intonation',
-          'Conversation Practice',
-          'Public Speaking'
-        ]
-      },
-      {
-        id: 'module-5',
-        title: 'Reading & Writing',
-        duration: '8h 0m',
-        lessons: 14,
-        description: 'Improve reading comprehension and writing skills',
-        topics: [
-          'Reading Strategies',
-          'Writing Techniques',
-          'Essay Structure',
-          'Professional Writing'
-        ]
+      features: [
+        `${data.duration || 'Comprehensive'} of on-demand video`,
+        `${totalLessons} downloadable lessons`,
+        "Interactive quizzes and exercises",
+        "Mobile and desktop access",
+        "Certificate of completion",
+      ],
+      whatYouLearn: data.learning_outcomes || [],
+      requirements: data.requirements || [],
+      curriculum: data.sections?.map((section: any, index: number) => ({
+        id: section.id,
+        title: section.title,
+        duration: `${section.lessons?.length * 5}m`,
+        lessons: section.lessons?.length || 0,
+        description: `An overview of ${section.title}.`,
+        topics: section.lessons?.map((lesson: any) => lesson.title) || []
+      })) || []
+    };
+  }
+
+  useEffect(() => {
+    const fetchCourseData = async (id: string) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const { data, error } = await supabase
+          .from('courses')
+          .select(`
+            *,
+            sections:course_sections (
+              *,
+              lessons:course_lessons (
+                *
+              )
+            ),
+            members:course_members (
+              role,
+              profile:profiles (
+                *
+              )
+            )
+          `)
+          .eq('id', id)
+          .single();
+
+        if (error) throw error;
+        if (data) {
+          // The fetched data structure is different from the builder's state.
+          // We need to resolve the image URL for the fetched course.
+          if (data.image_url) {
+            const { data: signedUrlData, error: urlError } = await supabase.storage.from('dil-lms').createSignedUrl(data.image_url, 3600);
+            if (!urlError) {
+              data.image = signedUrlData.signedUrl;
+            }
+          }
+          setCourse(mapDataToCourse(data));
+        } else {
+          throw new Error("Course not found.");
+        }
+      } catch (err: any) {
+        toast.error("Failed to load course.", { description: err.message });
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
       }
-    ]
-  };
+    };
+
+    if (initialCourseData) {
+      setCourse(mapDataToCourse(initialCourseData));
+      setIsLoading(false);
+    } else if (courseId) {
+      fetchCourseData(courseId);
+    } else {
+      setIsLoading(false);
+      setError("No course specified.");
+    }
+  }, [initialCourseData, courseId]);
 
   const handleStartLearning = () => {
-    // Navigate to course content
-    navigate(`/dashboard/course/${course.id}/content`);
+    if (course) {
+      navigate(`/dashboard/course/${course.id}/content`);
+    }
   };
 
   const handlePreview = () => {
     setIsVideoPlaying(true);
   };
 
-  return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border bg-card">
-        <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 py-4">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate(-1)}
-            className="mb-4"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Courses
-          </Button>
-        </div>
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8 h-screen">
+        <ContentLoader message="Loading Course..." />
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 h-screen text-center">
+        <h2 className="text-xl font-semibold text-destructive mb-2">Could not load course</h2>
+        <p className="text-muted-foreground mb-4">{error}</p>
+        <Button onClick={() => navigate(-1)}>Go Back</Button>
+      </div>
+    )
+  }
+
+  if (!course) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 h-screen text-center">
+        <h2 className="text-xl font-semibold text-muted-foreground">Course Not Found</h2>
+        <p className="text-muted-foreground mb-4">The course you are looking for does not exist or has been moved.</p>
+        <Button onClick={() => navigate(-1)}>Go Back</Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-full bg-background">
+      {/* Header */}
+      {!isPreviewMode && (
+        <div className="border-b border-border bg-card">
+          <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 py-4">
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate(-1)}
+              className="mb-4"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Courses
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20">

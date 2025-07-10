@@ -45,9 +45,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { ContentLoader } from '@/components/ContentLoader';
+import { CourseOverview } from './CourseOverview';
 
 // #region Interfaces
 interface CourseSection {
@@ -615,6 +622,8 @@ const CourseBuilder = () => {
   const [saveAction, setSaveAction] = useState<null | 'draft' | 'publish' | 'unpublish'>(null);
   const isSaving = saveAction !== null;
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isCreateDraftConfirmOpen, setIsCreateDraftConfirmOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const preDragLessonStatesRef = useRef<Record<string, boolean>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
   const [categories, setCategories] = useState<{ id: number; name: string; }[]>([]);
@@ -955,36 +964,47 @@ const CourseBuilder = () => {
     return currentCourseId;
   };
 
-  const handleSaveDraftClick = async () => {
+  const handleConfirmCreateDraft = async () => {
     setSaveAction('draft');
     try {
-      // If we are editing a course that is currently 'Published', this action
-      // should create a *new* draft, not overwrite the published one.
-      if (courseData.status === 'Published') {
         const draftToCreate: CourseData = {
-          ...courseData,
-          id: undefined, // This makes it a new course row
-          status: 'Draft',
-          published_course_id: courseData.id, // Link back to the published course
+            ...courseData,
+            id: undefined, // This makes it a new course row
+            status: 'Draft',
+            published_course_id: courseData.id, // Link back to the published course
         };
         const newDraftId = await saveCourseData(draftToCreate);
         if (newDraftId) {
-          toast.success("Draft created successfully. You are now editing the new draft.");
-          navigate(`/dashboard/courses/builder/${newDraftId}`, { replace: true });
+            toast.success("New draft created successfully.", {
+                description: "You are now editing the new draft copy."
+            });
+            navigate(`/dashboard/courses/builder/${newDraftId}`, { replace: true });
         }
-      } else {
-        // If the status is already 'Draft' (or it's a new course), we just save/update it.
-        // The upsert logic in `saveCourseData` handles whether to insert or update.
-        const courseToSave = { ...courseData, status: 'Draft' as const };
-        const savedId = await saveCourseData(courseToSave);
-        if (savedId) {
-          toast.success("Draft saved successfully!");
-          // Keep local state in sync
-          setCourseData(prev => ({...prev, id: savedId, status: 'Draft'}));
-          // If this was a brand new course, navigate to the new ID
-          if (courseId === 'new' && savedId) {
-            navigate(`/dashboard/courses/builder/${savedId}`, { replace: true });
-          }
+    } catch (error: any) {
+        toast.error('Failed to create a new draft.', { description: error.message });
+        console.error(error);
+    } finally {
+        setSaveAction(null);
+    }
+  }
+
+  const handleSaveDraftClick = async () => {
+    // If we are editing a course that is currently 'Published', show confirmation dialog.
+    if (courseData.status === 'Published') {
+      setIsCreateDraftConfirmOpen(true);
+      return;
+    }
+    
+    // If the status is already 'Draft' (or it's a new course), just save/update it.
+    setSaveAction('draft');
+    try {
+      const courseToSave = { ...courseData, status: 'Draft' as const };
+      const savedId = await saveCourseData(courseToSave);
+      if (savedId) {
+        toast.success("Draft saved successfully!");
+        setCourseData(prev => ({...prev, id: savedId, status: 'Draft'}));
+        if (courseId === 'new' && savedId) {
+          navigate(`/dashboard/courses/builder/${savedId}`, { replace: true });
         }
       }
     } catch (error: any) {
@@ -1384,7 +1404,7 @@ const CourseBuilder = () => {
           </div>
           
           <div className="flex items-center gap-2">
-            <Button variant="outline">
+            <Button variant="outline" onClick={() => setIsPreviewOpen(true)}>
               <Eye className="w-4 h-4 mr-2" />
               Preview
             </Button>
@@ -1822,6 +1842,34 @@ const CourseBuilder = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={isCreateDraftConfirmOpen} onOpenChange={setIsCreateDraftConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Create a New Draft?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This course is already published. Saving a draft will create a new, separate copy for editing.
+              <br /><br />
+              Your changes will not affect the live, published version until you explicitly publish this new draft.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmCreateDraft}>Create Draft</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <DialogContent className="max-w-screen-lg h-[90vh] flex flex-col p-0">
+          <DialogHeader className="p-6 pb-0">
+            <DialogTitle>Course Preview</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto">
+            <CourseOverview courseData={courseData} isPreviewMode={true} />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
