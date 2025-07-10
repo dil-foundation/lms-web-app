@@ -3,9 +3,10 @@ interface EmptyStateProps {
   title: string;
   description: string;
   icon?: React.ReactNode;
+  action?: React.ReactNode;
 }
 
-export const EmptyState = ({ title, description, icon }: EmptyStateProps) => {
+export const EmptyState = ({ title, description, icon, action }: EmptyStateProps) => {
   return (
     <div className="flex flex-col items-center justify-center min-h-[400px] p-8 text-center">
       {icon && (
@@ -14,7 +15,8 @@ export const EmptyState = ({ title, description, icon }: EmptyStateProps) => {
         </div>
       )}
       <h3 className="text-xl font-semibold mb-2">{title}</h3>
-      <p className="text-muted-foreground max-w-md">{description}</p>
+      <p className="text-muted-foreground max-w-md mb-6">{description}</p>
+      {action && action}
     </div>
   );
 };

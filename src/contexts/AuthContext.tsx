@@ -73,8 +73,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const currentPath = window.location.pathname;
         const isAuthPage = currentPath.startsWith('/auth');
         const isDashboardPage = currentPath.startsWith('/dashboard');
+        const isSecureFormPage = currentPath.startsWith('/secure-form');
 
-        if (event === 'SIGNED_IN' && !isAuthPage && !isDashboardPage) {
+        if (event === 'SIGNED_IN' && !isAuthPage && !isDashboardPage && !isSecureFormPage) {
           navigate('/dashboard', { replace: true });
         }
 
