@@ -1,6 +1,5 @@
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { Header } from '@/components/Header';
 import { DashboardSidebar } from '@/components/DashboardSidebar';
 import { StudentDashboard } from '@/components/dashboard/StudentDashboard';
 import { TeacherDashboard } from '@/components/dashboard/TeacherDashboard';
@@ -24,6 +23,8 @@ import { BookOpen, Users, ClipboardList, TrendingUp, BarChart3, Settings, Gradua
 import { type UserRole } from '@/config/roleNavigation';
 import ProfileSettings from './ProfileSettings';
 import { ContentLoader } from '@/components/ContentLoader';
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { Logo } from '@/components/header/Logo';
 
 type Profile = {
   first_name: string | null;
@@ -91,7 +92,7 @@ const Dashboard = () => {
   };
 
   return (
-              <div className="space-y-4">
+              <div className="space-y-4 p-4 sm:p-6 lg:p-8 pt-0">
                 <Routes>
                   <Route path="/" element={<DashboardOverview />} />
                   <Route path="/profile-settings" element={<ProfileSettings />} />
@@ -140,9 +141,8 @@ const Dashboard = () => {
   return (
     <SidebarProvider>
       <div className="min-h-screen bg-background flex flex-col w-full">
-        <Header />
-        
-        <div className="flex flex-1 min-h-full w-full">
+        <DashboardHeader />
+        <div className="flex flex-1 min-h-full w-full ">
             <DashboardSidebar userRole={currentRole} userProfile={displayProfile}>
                 <DashboardContent />
             </DashboardSidebar>
