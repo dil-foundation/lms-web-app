@@ -32,7 +32,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "../ui/input"
 import { useNavigate } from "react-router-dom"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { supabase } from "@/integrations/supabase/client"
 import { toast } from "sonner"
 import { Skeleton } from "../ui/skeleton"
@@ -122,23 +122,22 @@ const CourseCard = ({ course, onDelete }: { course: Course, onDelete: (course: C
 
 const CourseManagement = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<CourseStatus | "All">("All");
   const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
   const [stats, setStats] = useState({
-    totalCourses: 0,
+    total: 0,
     published: 0,
-    drafts: 0,
-    totalStudents: 0
+    draft: 0,
   });
+  const [totalStudents, setTotalStudents] = useState(0);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-
-      // Query for the list of courses to display, with filters applied
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
       let coursesQuery = supabase
         .from('courses')
         .select(`
@@ -163,27 +162,7 @@ const CourseManagement = () => {
         );
       }
       
-      const studentsCountPromise = supabase
-        .from('profiles')
-        .select('id', { count: 'exact', head: true })
-        .eq('role', 'student');
-
-      // A separate query for stats that is NOT filtered by search or status
-      // This should only count "main" courses, so we filter out drafts that are copies.
-      const statsQuery = supabase
-        .from('courses')
-        .select('status')
-        .is('published_course_id', null);
-
-      const [coursesResult, studentsCountResult, statsResult] = await Promise.all([
-        coursesQuery, 
-        studentsCountPromise,
-        statsQuery
-      ]);
-
-      const { data: coursesData, error: coursesError } = coursesResult;
-      const { count: studentsCount, error: studentsError } = studentsCountResult;
-      const { data: statsData, error: statsError } = statsResult;
+      const { data: coursesData, error: coursesError } = await coursesQuery;
 
       if (coursesError) {
         toast.error("Failed to fetch courses.");
@@ -191,13 +170,20 @@ const CourseManagement = () => {
         setLoading(false);
         return;
       }
-      
-      if (studentsError || statsError) {
-        toast.error("Failed to fetch statistics.");
-        console.error(studentsError || statsError);
-      }
 
       if (coursesData) {
+        // Calculate all statistics from the RLS-filtered course list
+        setStats({
+          total: coursesData.length,
+          published: coursesData.filter(c => c.status === 'Published').length,
+          draft: coursesData.filter(c => c.status === 'Draft').length,
+        });
+
+        const totalEnrolledStudents = coursesData.reduce((acc, course) => {
+            return acc + course.members.filter((m: any) => m.role === 'student').length;
+        }, 0);
+        setTotalStudents(totalEnrolledStudents);
+
         const transformedCourses = await Promise.all(coursesData.map(async (course: any) => {
           const authorProfile = course.profiles as { first_name: string, last_name: string } | null;
           
@@ -217,29 +203,24 @@ const CourseManagement = () => {
             imagePath: course.image_url,
             totalStudents: course.members.filter((m: any) => m.role === 'student').length,
             totalLessons: course.sections.reduce((acc: number, section: any) => acc + section.lessons.length, 0),
-            authorName: authorProfile ? `${authorProfile.first_name} ${authorProfile.last_name}` : 'Unknown Author',
+            authorName: authorProfile ? `${authorProfile.first_name} ${authorProfile.last_name}`.trim() : 'N/A',
             authorId: course.author_id,
-            duration: course.duration || 'Not set'
+            duration: course.duration,
           };
         }));
         setCourses(transformedCourses);
       }
-      
-      if (statsData) {
-        const published = statsData.filter(s => s.status === 'Published').length;
-        const drafts = statsData.filter(s => s.status === 'Draft').length;
-        setStats({
-          totalCourses: statsData.length,
-          published: published,
-          drafts: drafts,
-          totalStudents: studentsCount || 0
-        });
-      }
-      
+    } catch (error: any) {
+      toast.error("An unexpected error occurred.", { description: error.message });
+      console.error(error);
+    } finally {
       setLoading(false);
     }
+  }, [searchQuery, statusFilter]);
+
+  useEffect(() => {
     fetchData();
-  }, [searchQuery, statusFilter])
+  }, [fetchData]);
 
   const handleCreateCourse = () => {
     navigate('/dashboard/courses/builder/new');
@@ -270,24 +251,26 @@ const CourseManagement = () => {
       setStats(prev => {
         const courseStatus = courseToDelete.status;
         let newPublished = prev.published;
-        let newDrafts = prev.drafts;
+        let newDraft = prev.draft;
 
         if (courseStatus === 'Published') {
-          newPublished -= 1;
+          newPublished = Math.max(0, prev.published - 1);
         } else if (courseStatus === 'Draft') {
-          newDrafts -= 1;
+          newDraft = Math.max(0, prev.draft - 1);
         }
 
         return {
           ...prev,
-          totalCourses: prev.totalCourses - 1,
+          total: prev.total - 1,
           published: newPublished,
-          drafts: newDrafts
+          draft: newDraft
         };
       });
     }
     setCourseToDelete(null);
   };
+
+  const { total, published, draft } = stats;
 
   return (
     <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
@@ -309,7 +292,7 @@ const CourseManagement = () => {
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalCourses}</div>
+            <div className="text-2xl font-bold">{total}</div>
           </CardContent>
         </Card>
         <Card>
@@ -318,7 +301,7 @@ const CourseManagement = () => {
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.published}</div>
+            <div className="text-2xl font-bold">{published}</div>
           </CardContent>
         </Card>
         <Card>
@@ -327,7 +310,7 @@ const CourseManagement = () => {
             <Edit3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.drafts}</div>
+            <div className="text-2xl font-bold">{draft}</div>
           </CardContent>
         </Card>
         <Card>
@@ -336,7 +319,7 @@ const CourseManagement = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalStudents}</div>
+            <div className="text-2xl font-bold">{totalStudents}</div>
           </CardContent>
         </Card>
       </div>

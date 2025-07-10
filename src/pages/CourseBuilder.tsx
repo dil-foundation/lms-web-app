@@ -958,9 +958,16 @@ const CourseBuilder = () => {
   };
 
   const handleUnpublishClick = async () => {
+    if (!courseData.id) return;
     setSaveAction('unpublish');
     try {
-      await saveCourseData({ ...courseData, status: 'Draft' });
+      const { error } = await supabase
+        .from('courses')
+        .update({ status: 'Draft' })
+        .eq('id', courseData.id);
+
+      if (error) throw error;
+
       toast.success("Course unpublished and saved as a draft.");
       setCourseData(prev => ({...prev, status: 'Draft'}));
     } catch (error: any) {
@@ -974,10 +981,12 @@ const CourseBuilder = () => {
   const handleDeleteConfirmed = async () => {
     if (!courseData.id) return;
 
-    if (imageDbPath) {
+    // Only delete assets if the course is not a draft of an existing published course.
+    // If published_course_id exists, it means this draft shares assets with a published version.
+    if (imageDbPath && !courseData.published_course_id) {
         const { error: storageError } = await supabase.storage.from('dil-lms').remove([imageDbPath]);
         if (storageError) {
-            toast.error("Could not delete course image. The course was not deleted.", { description: storageError.message });
+            toast.error("Could not delete course image. The course record was not deleted.", { description: storageError.message });
             setIsDeleteDialogOpen(false);
             return;
         }

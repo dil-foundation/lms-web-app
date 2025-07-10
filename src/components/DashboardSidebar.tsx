@@ -10,7 +10,8 @@ import { UserProfileSection } from '@/components/sidebar/UserProfileSection';
 import { Skeleton } from '@/components/ui/skeleton';
 
 type Profile = {
-  full_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
   email: string | null;
   role: UserRole;
   [key: string]: any;

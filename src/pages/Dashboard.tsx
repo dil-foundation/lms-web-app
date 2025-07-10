@@ -6,7 +6,6 @@ import { StudentDashboard } from '@/components/dashboard/StudentDashboard';
 import { TeacherDashboard } from '@/components/dashboard/TeacherDashboard';
 import { AdminDashboard } from '@/components/dashboard/AdminDashboard';
 import { RolePlaceholder } from '@/components/dashboard/RolePlaceholder';
-import { RoleSwitcher } from '@/components/dashboard/RoleSwitcher';
 import { UsersManagement } from '@/components/admin/UsersManagement';
 import CourseManagement from '@/components/admin/CourseManagement';
 import { ReportsOverview } from '@/components/admin/ReportsOverview';
@@ -35,17 +34,17 @@ const Dashboard = () => {
   const { profile, loading: profileLoading, error: profileError } = useUserProfile();
   const navigate = useNavigate();
   
-  const [devRole, setDevRole] = useState<UserRole | null>(null);
-
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/auth', { replace: true });
     }
   }, [authLoading, user, navigate]);
 
-  const currentRole = devRole || (profile?.role as UserRole | undefined);
+  const currentRole = profile?.role as UserRole | undefined;
+  
   const displayProfile = profile && currentRole ? {
     ...profile,
+    full_name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim(),
     role: currentRole,
   } : null;
   
@@ -75,8 +74,8 @@ const Dashboard = () => {
       );
     }
 
-    const finalRole = devRole || profile.role as UserRole;
-    const finalProfile = { ...profile, role: finalRole };
+    const finalRole = profile.role as UserRole;
+    const finalProfile = { ...profile, role: finalRole, id: profile.id };
 
   const DashboardOverview = () => {
       switch (finalRole) {
@@ -89,7 +88,6 @@ const Dashboard = () => {
 
   return (
               <div className="space-y-4">
-        <RoleSwitcher currentRole={finalRole} onRoleChange={setDevRole} />
                 <Routes>
                   <Route path="/" element={<DashboardOverview />} />
                   <Route path="/profile-settings" element={<ProfileSettings />} />
@@ -97,7 +95,7 @@ const Dashboard = () => {
                   <Route path="/course/:id/content" element={<CourseContent />} />
           {finalRole === 'student' && (
                     <>
-                      <Route path="/courses" element={<RolePlaceholder title="My Courses" description="View and manage your enrolled courses" icon={BookOpen} />} />
+                      <Route path="/courses" element={<StudentDashboard userProfile={finalProfile} />} />
                       <Route path="/assignments" element={<RolePlaceholder title="Assignments" description="View and complete your assignments" icon={ClipboardList} />} />
                       <Route path="/progress" element={<RolePlaceholder title="Progress Tracking" description="Monitor your learning progress and achievements" icon={TrendingUp} />} />
                       <Route path="/ai-tutor" element={<RolePlaceholder title="AI Tutor" description="Get personalized AI-powered learning assistance" icon={GraduationCap} />} />
