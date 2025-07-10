@@ -47,6 +47,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
+import { ContentLoader } from '@/components/ContentLoader';
 
 // #region Interfaces
 interface CourseSection {
@@ -146,6 +147,7 @@ interface Profile {
   last_name: string;
   email: string;
   role: 'admin' | 'teacher' | 'student';
+  avatar_url?: string;
 }
 
 // #region LessonItem Component
@@ -625,6 +627,7 @@ const CourseBuilder = () => {
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [touchedFields, setTouchedFields] = useState<Partial<Record<keyof ValidationErrors, boolean>>>({});
   const [imageDbPath, setImageDbPath] = useState<string | undefined>();
+  const [isLoadingPage, setIsLoadingPage] = useState(true);
   const [courseData, setCourseData] = useState<CourseData>(() => ({
     title: '',
     subtitle: '',
@@ -665,156 +668,162 @@ const CourseBuilder = () => {
   }, [courseData]);
 
   useEffect(() => {
-    const fetchInitialData = async () => {
-      console.log("Fetching initial data for course builder...");
+    const initializeCourseBuilder = async () => {
+      setIsLoadingPage(true);
       try {
         const [usersRes, catRes, langRes, levelRes] = await Promise.all([
-          supabase.from('profiles').select('id, first_name, last_name, email, role'),
+          supabase.from('profiles').select('*'),
           supabase.from('course_categories').select('id, name'),
           supabase.from('course_languages').select('id, name'),
           supabase.from('course_levels').select('id, name'),
         ]);
 
-        if (usersRes.error) {
-          toast.error("Failed to load users for access management.");
-          console.error("Error fetching profiles:", usersRes.error);
-        } else if (usersRes.data) {
-          const data = usersRes.data as Profile[];
-          console.log("Successfully fetched profiles:", data);
-          setUserProfiles(data);
-
-          const teachers = data
-            .filter(p => p.role === 'teacher')
-            .map(p => ({ label: `${p.first_name} ${p.last_name} (${p.email})`, value: p.id }));
-          const students = data
-            .filter(p => p.role === 'student')
-            .map(p => ({ label: `${p.first_name} ${p.last_name} (${p.email})`, value: p.id }));
-
-          console.log("Processed teachers for dropdown:", teachers);
-          console.log("Processed students for dropdown:", students);
-
-          setAllTeachers(teachers);
-          setAllStudents(students);
+        if (usersRes.error) throw usersRes.error;
+        if (catRes.error) throw catRes.error;
+        if (langRes.error) throw langRes.error;
+        if (levelRes.error) throw levelRes.error;
+        
+        const fetchedProfiles = usersRes.data as Profile[];
+        
+        // Log the first profile to inspect its structure
+        if (fetchedProfiles.length > 0) {
+            console.log("Inspecting fetched profile:", fetchedProfiles[0]);
         }
         
-        if (catRes.error) {
-          console.error('Error fetching categories: ', catRes.error);
-        toast.error('Failed to load course categories.');
-        } else if (catRes.data) {
-          setCategories(catRes.data as any);
-        }
+        const fetchedCategories = catRes.data as { id: number; name: string; }[];
+        const fetchedLanguages = langRes.data as { id: number; name: string; }[];
+        const fetchedLevels = levelRes.data as { id: number; name: string; }[];
 
-        if (langRes.error) {
-          console.error('Error fetching languages: ', langRes.error);
-          toast.error('Failed to load course languages.');
-        } else if (langRes.data) {
-          setLanguages(langRes.data as any);
-        }
-
-        if (levelRes.error) {
-          console.error('Error fetching levels: ', levelRes.error);
-          toast.error('Failed to load course levels.');
-        } else if (levelRes.data) {
-          setLevels(levelRes.data as any);
-        }
-      } catch (error) {
-        toast.error("An unexpected error occurred while fetching data.");
-        console.error("Unexpected fetch error:", error);
-      }
-    };
-
-    fetchInitialData();
-  }, []);
-
-  useEffect(() => {
-    const loadCourseData = async () => {
-      if (!courseId || courseId === 'new') return;
-      console.log(`Loading data for courseId: ${courseId}`);
-
-      const { data, error } = await supabase
-        .from('courses')
-        .select(`
-          *,
-          published_course_id,
-          sections:course_sections (
-            *,
-            lessons:course_lessons (*)
-          ),
-          members:course_members (
-            role,
-            profile:profiles (*)
-          )
-        `)
-        .eq('id', courseId)
-        .single();
-
-      if (error) {
-        toast.error("Failed to load course data.");
-        console.error("Error loading course data:", error);
-        navigate('/dashboard/courses');
-        return;
-      }
-      
-      if (data) {
-        console.log("Successfully loaded raw course data:", data);
-
-        // Handle image URL
-        let displayImageUrl: string | undefined = undefined;
-        if (data.image_url) {
-          setImageDbPath(data.image_url);
-          const { data: signedUrlData, error } = await supabase.storage.from('dil-lms').createSignedUrl(data.image_url, 3600);
-          if (error) {
-            console.error("Failed to create signed URL for course image", error);
-            toast.error("Could not load course image preview.");
-          } else if (signedUrlData) {
-            displayImageUrl = signedUrlData.signedUrl;
-          }
-        }
+        setUserProfiles(fetchedProfiles);
+        setCategories(fetchedCategories);
+        setLanguages(fetchedLanguages);
+        setLevels(fetchedLevels);
         
-        const teachers = data.members
-          .filter((m: any) => m.role === 'teacher' && m.profile)
-          .map((m: any) => ({ id: m.profile.id, name: `${m.profile.first_name} ${m.profile.last_name}`, email: m.profile.email }));
-        
-        const students = data.members
-          .filter((m: any) => m.role === 'student' && m.profile)
-          .map((m: any) => ({ id: m.profile.id, name: `${m.profile.first_name} ${m.profile.last_name}`, email: m.profile.email }));
-        
-        console.log("Processed course teachers:", teachers);
-        console.log("Processed course students:", students);
-
-        const finalCourseData: CourseData = {
-          id: data.id,
-          title: data.title,
-          subtitle: data.subtitle || '',
-          description: data.description || '',
-          image: displayImageUrl,
-          authorId: data.author_id,
-          category: categories.find(c => c.id === data.category_id)?.name || '',
-          language: languages.find(l => l.id === data.language_id)?.name || '',
-          level: levels.find(l => l.id === data.level_id)?.name || '',
-          duration: data.duration || '',
-          requirements: data.requirements || [''],
-          learningOutcomes: data.learning_outcomes || [''],
-          status: data.status || 'Draft',
-          published_course_id: data.published_course_id,
-          sections: data.sections.sort((a: any, b: any) => a.position - b.position).map((s: any) => ({
-            ...s,
-            lessons: s.lessons.sort((a: any, b: any) => a.position - b.position)
-          })),
-          teachers: teachers,
-          students: students,
+        const getAvatarUrl = async (avatarPath?: string): Promise<string | undefined> => {
+            if (!avatarPath) return undefined;
+            
+            const { data, error } = await supabase.storage
+                .from('dil-lms-avatars')
+                .createSignedUrl(avatarPath, 3600); // 1-hour expiry
+                
+            if (error) {
+                console.error("Error creating signed URL for avatar:", error);
+                return undefined;
+            }
+            return data.signedUrl;
         };
 
-        console.log("Setting final course data state:", finalCourseData);
-        setCourseData(finalCourseData);
+        const profilesWithAvatars = await Promise.all(
+            fetchedProfiles.map(async (p) => ({
+                ...p,
+                avatarUrl: await getAvatarUrl((p as any).avatar_url),
+            }))
+        );
+
+        setUserProfiles(fetchedProfiles);
+        
+        const teachers = profilesWithAvatars
+          .filter(p => p.role === 'teacher')
+          .map(p => ({ 
+            label: `${p.first_name} ${p.last_name}`, 
+            value: p.id,
+            imageUrl: p.avatarUrl,
+            subLabel: p.email,
+          }));
+
+        const students = profilesWithAvatars
+          .filter(p => p.role === 'student')
+          .map(p => ({ 
+            label: `${p.first_name} ${p.last_name}`,
+            value: p.id,
+            imageUrl: p.avatarUrl,
+            subLabel: p.email,
+          }));
+
+        setAllTeachers(teachers);
+        setAllStudents(students);
+        
+        if (courseId && courseId !== 'new') {
+          const { data, error } = await supabase
+            .from('courses')
+            .select(`
+              *,
+              published_course_id,
+              sections:course_sections (
+                *,
+                lessons:course_lessons (*)
+              ),
+              members:course_members (
+                role,
+                profile:profiles (*)
+              )
+            `)
+            .eq('id', courseId)
+            .single();
+
+          if (error) {
+            toast.error("Failed to load course data.");
+            console.error("Error loading course data:", error);
+            navigate('/dashboard/courses');
+            return;
+          }
+          
+          if (data) {
+            let displayImageUrl: string | undefined = undefined;
+            if (data.image_url) {
+              setImageDbPath(data.image_url);
+              const { data: signedUrlData, error: urlError } = await supabase.storage.from('dil-lms').createSignedUrl(data.image_url, 3600);
+              if (!urlError) {
+                displayImageUrl = signedUrlData.signedUrl;
+              }
+            }
+            
+            const courseTeachers = data.members
+              .filter((m: any) => m.role === 'teacher' && m.profile)
+              .map((m: any) => ({ id: m.profile.id, name: `${m.profile.first_name} ${m.profile.last_name}`, email: m.profile.email }));
+            
+            const courseStudents = data.members
+              .filter((m: any) => m.role === 'student' && m.profile)
+              .map((m: any) => ({ id: m.profile.id, name: `${m.profile.first_name} ${m.profile.last_name}`, email: m.profile.email }));
+
+            const finalCourseData: CourseData = {
+              id: data.id,
+              title: data.title,
+              subtitle: data.subtitle || '',
+              description: data.description || '',
+              image: displayImageUrl,
+              authorId: data.author_id,
+              category: fetchedCategories.find(c => c.id === data.category_id)?.name || '',
+              language: fetchedLanguages.find(l => l.id === data.language_id)?.name || '',
+              level: fetchedLevels.find(l => l.id === data.level_id)?.name || '',
+              duration: data.duration || '',
+              requirements: data.requirements || [''],
+              learningOutcomes: data.learning_outcomes || [''],
+              status: data.status || 'Draft',
+              published_course_id: data.published_course_id,
+              sections: data.sections.sort((a: any, b: any) => a.position - b.position).map((s: any) => ({
+                ...s,
+                lessons: s.lessons.sort((a: any, b: any) => a.position - b.position)
+              })),
+              teachers: courseTeachers,
+              students: courseStudents,
+            };
+            setCourseData(finalCourseData);
+          }
+        }
+      } catch (error: any) {
+        toast.error("Failed to initialize course builder.", {
+          description: error.message,
+        });
+        console.error("Initialization error:", error);
+        navigate('/dashboard/courses');
+      } finally {
+        setIsLoadingPage(false);
       }
     };
 
-    // We need dropdown data to be loaded before we can map IDs to names
-    if (categories.length > 0 && languages.length > 0 && levels.length > 0) {
-      loadCourseData();
-    }
-  }, [courseId, navigate, categories, languages, levels]);
+    initializeCourseBuilder();
+  }, [courseId, navigate]);
 
   const handleImageUpload = async (file: File) => {
     if (!file) return;
@@ -1344,6 +1353,13 @@ const CourseBuilder = () => {
 
   const isFormValid = Object.keys(validationErrors).length === 0;
 
+  if (isLoadingPage) {
+    return (
+        <div className="flex items-center justify-center h-full w-full min-h-[calc(100vh-8rem)]">
+            <ContentLoader message="Loading Course Builder..." />
+        </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background w-full">

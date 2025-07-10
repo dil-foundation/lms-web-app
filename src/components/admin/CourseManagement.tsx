@@ -48,6 +48,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { ContentLoader } from "../ContentLoader";
 
 type CourseStatus = "Published" | "Draft" | "Under Review";
 
@@ -407,9 +408,7 @@ const CourseManagement = () => {
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {loadingStats ? <Skeleton className="h-8 w-16" /> : total}
-            </div>
+            <div className="text-2xl font-bold">{total}</div>
           </CardContent>
         </Card>
         <Card>
@@ -418,9 +417,7 @@ const CourseManagement = () => {
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-             <div className="text-2xl font-bold">
-              {loadingStats ? <Skeleton className="h-8 w-16" /> : published}
-            </div>
+            <div className="text-2xl font-bold">{published}</div>
           </CardContent>
         </Card>
         <Card>
@@ -429,9 +426,7 @@ const CourseManagement = () => {
             <Edit3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-             <div className="text-2xl font-bold">
-              {loadingStats ? <Skeleton className="h-8 w-16" /> : draft}
-            </div>
+            <div className="text-2xl font-bold">{draft}</div>
           </CardContent>
         </Card>
         <Card>
@@ -440,9 +435,7 @@ const CourseManagement = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-             <div className="text-2xl font-bold">
-              {loadingStats ? <Skeleton className="h-8 w-16" /> : totalStudents}
-            </div>
+            <div className="text-2xl font-bold">{totalStudents}</div>
           </CardContent>
         </Card>
       </div>
@@ -502,24 +495,8 @@ const CourseManagement = () => {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {[...Array(4)].map((_, i) => (
-                <Card key={i}>
-                  <Skeleton className="w-full h-40" />
-                  <CardContent className="p-4 space-y-2">
-                    <Skeleton className="h-6 w-3/4" />
-                    <Skeleton className="h-4 w-1/2" />
-                    <div className="flex justify-between">
-                      <Skeleton className="h-4 w-1/4" />
-                      <Skeleton className="h-4 w-1/4" />
-              </div>
-                    <Skeleton className="h-4 w-1/3" />
-                  </CardContent>
-                  <CardFooter className="p-4 pt-0">
-                    <Skeleton className="h-10 w-full" />
-                  </CardFooter>
-                </Card>
-              ))}
+             <div className="py-12">
+                <ContentLoader message="Loading courses..." />
             </div>
           ) : courses.length > 0 ? (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
