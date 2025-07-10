@@ -48,6 +48,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { ContentLoader } from "../ContentLoader";
 
 type CourseStatus = "Published" | "Draft" | "Under Review";
 
@@ -134,6 +135,140 @@ const CourseManagement = () => {
     draft: 0,
   });
   const [totalStudents, setTotalStudents] = useState(0);
+  const [loadingStats, setLoadingStats] = useState(true);
+
+  const fetchStats = useCallback(async () => {
+    if (!user) {
+      console.log("fetchStats: No user found, aborting.");
+      return;
+    }
+    setLoadingStats(true);
+    console.log("fetchStats: Starting for user:", user.id, "with initial app_metadata.role:", user.app_metadata.role);
+    
+    try {
+      let role = user.app_metadata.role;
+
+      // If role is not in metadata, fetch it from the user's profile as a fallback.
+      if (!role) {
+        console.log("fetchStats: Role not in metadata, fetching from profiles table...");
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+        
+        if (profileError) {
+          toast.error("Could not verify user role.", { description: profileError.message });
+          throw profileError;
+        }
+
+        role = profileData?.role;
+        console.log("fetchStats: Role fetched from profile:", role);
+      }
+
+      if (role === 'admin') {
+        console.log("fetchStats: Admin role detected. Fetching admin stats.");
+        const [totalRes, publishedRes, draftRes, studentsRes] = await Promise.all([
+            supabase.from('courses').select('id', { count: 'exact', head: true }),
+            supabase.from('courses').select('id', { count: 'exact', head: true }).eq('status', 'Published'),
+            supabase.from('courses').select('id', { count: 'exact', head: true }).eq('status', 'Draft'),
+            supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student')
+        ]);
+
+        console.log("fetchStats (Admin) - Raw responses:", { totalRes, publishedRes, draftRes, studentsRes });
+        
+        if (totalRes.error || publishedRes.error || draftRes.error || studentsRes.error) {
+            console.error("fetchStats (Admin) - Error in Promise.all:", {
+              totalError: totalRes.error,
+              publishedError: publishedRes.error,
+              draftError: draftRes.error,
+              studentsError: studentsRes.error
+            });
+            throw totalRes.error || publishedRes.error || draftRes.error || studentsRes.error;
+        }
+
+        const statsToSet = {
+            total: totalRes.count || 0,
+            published: publishedRes.count || 0,
+            draft: draftRes.count || 0,
+        };
+        const studentsToSet = studentsRes.count || 0;
+
+        console.log("fetchStats (Admin) - Setting stats:", statsToSet);
+        console.log("fetchStats (Admin) - Setting total students:", studentsToSet);
+
+        setStats(statsToSet);
+        setTotalStudents(studentsToSet);
+
+      } else if (role === 'teacher') {
+        console.log("fetchStats: Teacher role detected. Fetching teacher stats.");
+        const { data: authoredCourses, error: authoredError } = await supabase.from('courses').select('id').eq('author_id', user.id);
+        if (authoredError) throw authoredError;
+        console.log("fetchStats (Teacher) - Authored courses:", authoredCourses);
+
+        const { data: memberCourses, error: memberError } = await supabase.from('course_members').select('course_id').eq('user_id', user.id).eq('role', 'teacher');
+        if (memberError) throw memberError;
+        console.log("fetchStats (Teacher) - Member courses:", memberCourses);
+
+        const courseIds = [...new Set([...(authoredCourses || []).map(c => c.id), ...(memberCourses || []).map(m => m.course_id)])];
+        console.log("fetchStats (Teacher) - Combined course IDs:", courseIds);
+
+        if (courseIds.length === 0) {
+          console.log("fetchStats (Teacher) - No courses found, setting stats to zero.");
+          setStats({ total: 0, published: 0, draft: 0 });
+          setTotalStudents(0);
+        } else {
+            const [totalRes, publishedRes, draftRes, studentsRes] = await Promise.all([
+                supabase.from('courses').select('id', { count: 'exact', head: true }).in('id', courseIds),
+                supabase.from('courses').select('id', { count: 'exact', head: true }).in('id', courseIds).eq('status', 'Published'),
+                supabase.from('courses').select('id', { count: 'exact', head: true }).in('id', courseIds).eq('status', 'Draft'),
+                supabase.from('course_members').select('user_id').in('course_id', courseIds).eq('role', 'student')
+            ]);
+            
+            console.log("fetchStats (Teacher) - Raw responses:", { totalRes, publishedRes, draftRes, studentsRes });
+
+            if (totalRes.error || publishedRes.error || draftRes.error || studentsRes.error) {
+                 console.error("fetchStats (Teacher) - Error in Promise.all:", {
+                    totalError: totalRes.error,
+                    publishedError: publishedRes.error,
+                    draftError: draftRes.error,
+                    studentsError: studentsRes.error
+                 });
+                 throw totalRes.error || publishedRes.error || draftRes.error || studentsRes.error;
+            }
+
+            const uniqueStudentIds = new Set((studentsRes.data || []).map(s => s.user_id));
+
+            const statsToSet = {
+                total: totalRes.count || 0,
+                published: publishedRes.count || 0,
+                draft: draftRes.count || 0,
+            };
+            const studentsToSet = uniqueStudentIds.size;
+
+            console.log("fetchStats (Teacher) - Setting stats:", statsToSet);
+            console.log("fetchStats (Teacher) - Setting total students:", studentsToSet);
+
+            setStats(statsToSet);
+            setTotalStudents(studentsToSet);
+        }
+      } else {
+        console.warn(`fetchStats: User has no recognized role ('admin' or 'teacher'). Role found: ${role}. Stats will be zero.`);
+        setStats({ total: 0, published: 0, draft: 0 });
+        setTotalStudents(0);
+      }
+    } catch (error: any) {
+      toast.error("Failed to load dashboard statistics.", { description: error.message });
+      console.error("Error fetching stats:", error);
+    } finally {
+      console.log("fetchStats: Finished.");
+      setLoadingStats(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -246,24 +381,7 @@ const CourseManagement = () => {
       // Optimistically update the UI
       setCourses(prev => prev.filter(c => c.id !== courseToDelete.id));
       // You might want to re-calculate stats here as well
-      setStats(prev => {
-        const courseStatus = courseToDelete.status;
-        let newPublished = prev.published;
-        let newDraft = prev.draft;
-
-        if (courseStatus === 'Published') {
-          newPublished = Math.max(0, prev.published - 1);
-        } else if (courseStatus === 'Draft') {
-          newDraft = Math.max(0, prev.draft - 1);
-        }
-
-        return {
-          ...prev,
-          total: prev.total - 1,
-          published: newPublished,
-          draft: newDraft
-        };
-      });
+      fetchStats();
     }
     setCourseToDelete(null);
   };
@@ -377,24 +495,8 @@ const CourseManagement = () => {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {[...Array(4)].map((_, i) => (
-                <Card key={i}>
-                  <Skeleton className="w-full h-40" />
-                  <CardContent className="p-4 space-y-2">
-                    <Skeleton className="h-6 w-3/4" />
-                    <Skeleton className="h-4 w-1/2" />
-                    <div className="flex justify-between">
-                      <Skeleton className="h-4 w-1/4" />
-                      <Skeleton className="h-4 w-1/4" />
-              </div>
-                    <Skeleton className="h-4 w-1/3" />
-                  </CardContent>
-                  <CardFooter className="p-4 pt-0">
-                    <Skeleton className="h-10 w-full" />
-                  </CardFooter>
-                </Card>
-              ))}
+             <div className="py-12">
+                <ContentLoader message="Loading courses..." />
             </div>
           ) : courses.length > 0 ? (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

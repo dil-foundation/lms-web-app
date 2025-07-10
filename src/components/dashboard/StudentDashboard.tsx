@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { ContentLoader } from '../ContentLoader';
 
 type Profile = {
   id: string;
@@ -121,7 +122,9 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
       <div>
         <h2 className="text-2xl font-semibold tracking-tight mb-4">My Courses</h2>
         {loading ? (
-          <p>Loading your courses...</p>
+          <div className="py-12">
+            <ContentLoader message="Loading your courses..." />
+          </div>
         ) : courses.length > 0 ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {courses.map(course => (

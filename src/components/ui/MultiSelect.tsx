@@ -5,6 +5,7 @@ import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const multiSelectVariants = cva(
   'm-1 transition ease-in-out delay-150 hover:-translate-y-1 hover:scale-110 duration-300',
@@ -32,6 +33,8 @@ interface MultiSelectProps
     label: string;
     value: string;
     icon?: React.ComponentType<{ className?: string }>;
+    imageUrl?: string;
+    subLabel?: string;
   }[];
   onValueChange: (value: string[]) => void;
   value: string[];
@@ -100,7 +103,8 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
     const filteredOptions = options.filter(
       (option) =>
         !value.includes(option.value) &&
-        option.label.toLowerCase().includes(inputValue.toLowerCase())
+        (option.label.toLowerCase().includes(inputValue.toLowerCase()) ||
+          option.subLabel?.toLowerCase().includes(inputValue.toLowerCase()))
     );
 
     return (
@@ -119,18 +123,22 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
             return (
               <Badge
                 key={selectedValue}
-                className={cn(multiSelectVariants({ variant }))}
+                className={cn(multiSelectVariants({ variant }), 'flex items-center gap-1.5')}
               >
+                <Avatar className="h-5 w-5">
+                  <AvatarImage src={option.imageUrl} alt={option.label} />
+                  <AvatarFallback>{option.label.charAt(0)}</AvatarFallback>
+                </Avatar>
                 {option.label}
                 <button
-                  className="ml-2"
+                  className="ml-1 ring-offset-background rounded-full focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleSelectOption(selectedValue);
                   }}
                   aria-label={`Remove ${option.label}`}
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
                 </button>
               </Badge>
             );
@@ -158,7 +166,16 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                   }}
                   className="cursor-pointer rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
                 >
-                  {option.label}
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-6 w-6">
+                      <AvatarImage src={option.imageUrl} alt={option.label} />
+                      <AvatarFallback>{option.label.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <div>{option.label}</div>
+                      {option.subLabel && <div className="text-xs text-muted-foreground">{option.subLabel}</div>}
+                    </div>
+                  </div>
                 </li>
               ))}
             </ul>
