@@ -44,13 +44,8 @@ const Dashboard = () => {
     }
   }, [authLoading, user, navigate]);
 
-<<<<<<< HEAD
   const currentRole = profile?.role as UserRole | undefined;
   
-=======
-  const currentRole = devRole || (profile?.role as UserRole | undefined);
-
->>>>>>> 7d643cda2f6aa1f4bb008ff2858f47fd568a88cb
   const displayProfile = profile && currentRole ? {
     ...profile,
     full_name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim(),
