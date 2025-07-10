@@ -42,7 +42,7 @@ export const UserProfileSection = ({ profile }: UserProfileSectionProps) => {
   };
 
   return (
-    <div className="flex items-center space-x-3 p-4 pt-10 border-t border-border">
+    <div className="flex items-center space-x-3 p-4">
       <Avatar className="h-10 w-10">
         <AvatarImage src="" alt={displayName} />
         <AvatarFallback className="bg-primary text-primary-foreground">

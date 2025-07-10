@@ -8,6 +8,9 @@ import { Menu, X } from 'lucide-react';
 import { getRoleNavigation, type UserRole } from '@/config/roleNavigation';
 import { UserProfileSection } from '@/components/sidebar/UserProfileSection';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Logo } from './header/Logo';
+import { ThemeToggle } from './header/ThemeToggle';
+import { AuthButton } from './header/AuthButton';
 
 type Profile = {
   first_name: string | null;
@@ -34,7 +37,7 @@ export const DashboardSidebar = ({
   const SidebarComponent = () => (
     <Sidebar className="border-r border-border bg-background">
       <UserProfileSection profile={userProfile} />
-      <SidebarContent className="pt-4">
+      <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="mb-3">Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -71,18 +74,22 @@ export const DashboardSidebar = ({
   return (
     <>
       {/* Mobile Layout */}
-      <div className="lg:hidden">
-        <div className="flex items-center justify-between bg-background border-b border-border p-4">
-          <h2 className="text-lg font-semibold text-foreground">Dashboard</h2>
+      <div className="md:hidden">
+        <div className="sticky top-0 z-10 flex items-center justify-between h-16 p-4 bg-background border-b border-border">
+          <div className="w-32">
+            <Logo />
+          </div>
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon">
                 <Menu className="h-6 w-6" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-80 [&>button]:hidden">
-              <div className="flex items-center justify-between p-4 border-b border-border">
-                <h2 className="text-lg font-semibold">Menu</h2>
+            <SheetContent side="left" className="p-0 w-80 flex flex-col [&>button]:hidden">
+              <div className="flex items-center justify-between h-16 p-4 border-b border-border">
+                <div className="w-32">
+                    <Logo />
+                </div>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -91,13 +98,13 @@ export const DashboardSidebar = ({
                   <X className="h-5 w-5" />
                 </Button>
               </div>
-              <div className="h-full">
+              <div className="flex-1 flex flex-col h-full">
                 <UserProfileSection profile={userProfile} />
-                <div className="pt-4">
-                  <div className="px-4 pb-3">
+                <div className='flex-1 overflow-y-auto'>
+                  <div className="px-4 pt-4 pb-3">
                     <h3 className="text-sm font-medium text-muted-foreground">Navigation</h3>
                   </div>
-                  <nav className="space-y-1 px-2">
+                  <nav className="px-2 space-y-1">
                     {navigationItems.map(item => (
                       <NavLink
                         key={item.path}
@@ -118,6 +125,13 @@ export const DashboardSidebar = ({
                     ))}
                   </nav>
                 </div>
+
+                <div className="p-4 mt-auto border-t border-border">
+                    <div className="flex items-center justify-between">
+                        <ThemeToggle />
+                        <AuthButton />
+                    </div>
+                </div>
               </div>
             </SheetContent>
           </Sheet>
@@ -132,14 +146,14 @@ export const DashboardSidebar = ({
       </div>
 
       {/* Desktop Layout */}
-      <div className="hidden lg:flex min-h-full w-full">
-        <div className="w-64 flex-shrink-0">
+      <div className="hidden md:flex min-h-full w-full">
+        <div className="w-72 flex-shrink-0">
           <SidebarComponent />
         </div>
         
         {/* Desktop Main Content */}
-        <main className="flex-1 min-h-0 bg-background w-full">
-          <div className="w-full h-full px-4 sm:px-6 lg:px-8 py-12 max-w-7xl mx-auto">
+        <main className="flex-1 min-h-0 bg-background w-full max-w-7xl mx-auto">
+          <div className="w-full h-full">
             {children}
           </div>
         </main>

@@ -76,7 +76,7 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
         <p className="text-muted-foreground">Let's continue your learning journey.</p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Enrolled Courses</CardTitle>
@@ -126,7 +126,7 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
             <ContentLoader message="Loading your courses..." />
           </div>
         ) : courses.length > 0 ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {courses.map(course => (
               <Card key={course.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                 <img src={course.image_url} alt={course.title} className="w-full h-40 object-cover" />
