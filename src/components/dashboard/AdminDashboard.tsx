@@ -1,17 +1,84 @@
 
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Users, BookOpen, BarChart3, Settings } from 'lucide-react';
+import { Users, Shield } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface AdminDashboardProps {
   userProfile: any;
 }
 
+interface DashboardStats {
+  totalUsers: number;
+  totalTeachers: number;
+  totalStudents: number;
+  totalAdmins: number;
+}
+
 export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      setLoading(true);
+      try {
+        const [
+          { count: totalUsers, error: usersError },
+          { count: totalTeachers, error: teachersError },
+          { count: totalStudents, error: studentsError },
+          { count: totalAdmins, error: adminsError },
+        ] = await Promise.all([
+          supabase.from('profiles').select('*', { count: 'exact', head: true }),
+          supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'teacher'),
+          supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student'),
+          supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'admin'),
+        ]);
+
+        if (usersError) throw usersError;
+        if (teachersError) throw teachersError;
+        if (studentsError) throw studentsError;
+        if (adminsError) throw adminsError;
+
+        setStats({
+          totalUsers: totalUsers ?? 0,
+          totalTeachers: totalTeachers ?? 0,
+          totalStudents: totalStudents ?? 0,
+          totalAdmins: totalAdmins ?? 0,
+        });
+
+      } catch (error: any) {
+        console.error("Failed to fetch dashboard stats:", error);
+        toast.error("Failed to load dashboard statistics.", { description: error.message });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
   const getInitials = (firstName?: string, lastName?: string) => {
     return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
   };
+
+  const StatCard = ({ title, value, icon, isLoading }: { title: string, value: number, icon: React.ReactNode, isLoading: boolean }) => (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-muted-foreground">{title}</p>
+            {isLoading ? <Skeleton className="h-7 w-16 mt-1" /> : <p className="text-2xl font-bold">{value.toLocaleString()}</p>}
+          </div>
+          {icon}
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div className="space-y-6">
@@ -34,53 +101,30 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Users</p>
-                <p className="text-2xl font-bold">1,234</p>
-              </div>
-              <Users className="h-6 w-6 text-blue-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Active Teachers</p>
-                <p className="text-2xl font-bold">87</p>
-              </div>
-              <Users className="h-6 w-6 text-green-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Courses</p>
-                <p className="text-2xl font-bold">156</p>
-              </div>
-              <BookOpen className="h-6 w-6 text-purple-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">System Health</p>
-                <p className="text-2xl font-bold">98%</p>
-              </div>
-              <BarChart3 className="h-6 w-6 text-orange-500" />
-            </div>
-          </CardContent>
-        </Card>
+        <StatCard 
+          title="Total Users" 
+          value={stats?.totalUsers ?? 0} 
+          isLoading={loading}
+          icon={<Users className="h-6 w-6 text-blue-500" />} 
+        />
+        <StatCard 
+          title="Total Teachers" 
+          value={stats?.totalTeachers ?? 0} 
+          isLoading={loading}
+          icon={<Users className="h-6 w-6 text-green-500" />} 
+        />
+        <StatCard 
+          title="Total Admins" 
+          value={stats?.totalAdmins ?? 0} 
+          isLoading={loading}
+          icon={<Shield className="h-6 w-6 text-purple-500" />} 
+        />
+        <StatCard 
+          title="Total Students" 
+          value={stats?.totalStudents ?? 0} 
+          isLoading={loading}
+          icon={<Users className="h-6 w-6 text-orange-500" />} 
+        />
       </div>
 
       {/* Admin Actions */}
