@@ -1,5 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -8,8 +10,19 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Search, Plus, Users, GraduationCap, BookOpen, MoreHorizontal, Edit, Trash2, Activity } from 'lucide-react';
+import { Search, Plus, Users, GraduationCap, BookOpen, MoreHorizontal, Edit, Trash2, Shield } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ContentLoader } from '../ContentLoader';
+import { Skeleton } from '../ui/skeleton';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 
 interface User {
   id: string;
@@ -21,76 +34,123 @@ interface User {
   lastActive: string;
 }
 
-// Mock data for demonstration
-const mockUsers: User[] = [
-  {
-    id: '1',
-    name: 'Alice Johnson',
-    email: 'alice.johnson@school.edu',
-    role: 'student',
-    status: 'active',
-    joinedDate: '2024-01-15',
-    lastActive: '2024-07-04'
-  },
-  {
-    id: '2',
-    name: 'Robert Smith',
-    email: 'robert.smith@school.edu',
-    role: 'teacher',
-    status: 'active',
-    joinedDate: '2023-08-20',
-    lastActive: '2024-07-03'
-  },
-  {
-    id: '3',
-    name: 'Emma Wilson',
-    email: 'emma.wilson@school.edu',
-    role: 'student',
-    status: 'inactive',
-    joinedDate: '2024-02-10',
-    lastActive: '2024-06-15'
-  },
-  {
-    id: '4',
-    name: 'Michael Brown',
-    email: 'michael.brown@school.edu',
-    role: 'teacher',
-    status: 'active',
-    joinedDate: '2023-09-05',
-    lastActive: '2024-07-04'
-  },
-  {
-    id: '5',
-    name: 'Sarah Davis',
-    email: 'sarah.davis@school.edu',
-    role: 'student',
-    status: 'active',
-    joinedDate: '2024-03-12',
-    lastActive: '2024-07-02'
-  }
-];
-
 export const UsersManagement = () => {
-  const [users] = useState<User[]>(mockUsers);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-
-  // Calculate metrics
-  const totalUsers = users.length;
-  const totalStudents = users.filter(user => user.role === 'student').length;
-  const totalTeachers = users.filter(user => user.role === 'teacher').length;
-
-  // Filter users based on search and filters
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = roleFilter === 'all' || user.role === roleFilter;
-    const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
-    
-    return matchesSearch && matchesRole && matchesStatus;
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage] = useState(10);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [stats, setStats] = useState({
+    students: 0,
+    teachers: 0,
+    admins: 0,
   });
+  const [loadingStats, setLoadingStats] = useState(true);
+  
+  const totalPages = Math.ceil(totalUsers / rowsPerPage);
+
+  const fetchStats = useCallback(async () => {
+    setLoadingStats(true);
+    try {
+      const [
+        { count: students, error: studentsError },
+        { count: teachers, error: teachersError },
+        { count: admins, error: adminsError }
+      ] = await Promise.all([
+        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
+        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'teacher'),
+        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'admin')
+      ]);
+
+      if (studentsError || teachersError || adminsError) {
+        throw studentsError || teachersError || adminsError;
+      }
+      
+      setStats({
+        students: students || 0,
+        teachers: teachers || 0,
+        admins: admins || 0,
+      });
+
+    } catch (error: any) {
+      toast.error("Failed to load statistics.", { description: error.message });
+      console.error("Error fetching stats:", error);
+    } finally {
+      setLoadingStats(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const from = (currentPage - 1) * rowsPerPage;
+      const to = from + rowsPerPage - 1;
+
+      let query = supabase
+        .from('profiles')
+        .select('id, first_name, last_name, email, role, created_at, updated_at', { count: 'exact' });
+
+      if (roleFilter !== 'all') {
+        query = query.eq('role', roleFilter);
+      }
+
+      if (searchTerm) {
+        const searchParts = searchTerm.split(' ').filter(part => part);
+        if (searchParts.length > 1) {
+          // Search for first name AND last name if multiple words are entered
+          query = query.ilike('first_name', `%${searchParts[0]}%`);
+          query = query.ilike('last_name', `%${searchParts[1]}%`);
+        } else {
+          // Search across multiple fields for a single term
+          query = query.or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+        }
+      }
+
+      const { data, error, count } = await query.range(from, to);
+
+      if (error) throw error;
+      
+      if (data) {
+        const transformedUsers: User[] = data.map((user: any) => ({
+          id: user.id,
+          name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email,
+          email: user.email,
+          role: user.role,
+          status: 'active',
+          joinedDate: user.created_at,
+          lastActive: user.updated_at,
+        }));
+        setUsers(transformedUsers);
+        setTotalUsers(count || 0);
+      } else {
+        setUsers([]);
+        setTotalUsers(0);
+      }
+    } catch (error: any) {
+      toast.error("Failed to fetch user data.", {
+        description: error.message,
+      });
+      console.error("Error fetching users:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, rowsPerPage, searchTerm, roleFilter]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+  
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, roleFilter]);
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
@@ -172,14 +232,14 @@ export const UsersManagement = () => {
       </div>
 
       {/* Metrics Cards */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalUsers}</div>
+            {loadingStats ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">{stats.students + stats.teachers + stats.admins}</div>}
             <p className="text-xs text-muted-foreground">
               All users in the system
             </p>
@@ -192,7 +252,7 @@ export const UsersManagement = () => {
             <GraduationCap className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalStudents}</div>
+            {loadingStats ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">{stats.students}</div>}
             <p className="text-xs text-muted-foreground">
               Active and inactive students
             </p>
@@ -205,7 +265,7 @@ export const UsersManagement = () => {
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalTeachers}</div>
+            {loadingStats ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">{stats.teachers}</div>}
             <p className="text-xs text-muted-foreground">
               Teaching staff members
             </p>
@@ -214,26 +274,13 @@ export const UsersManagement = () => {
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Users</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Total Admins</CardTitle>
+            <Shield className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{users.filter(u => u.status === 'active').length}</div>
+            {loadingStats ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">{stats.admins}</div>}
             <p className="text-xs text-muted-foreground">
-              Currently active users
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">New This Month</CardTitle>
-            <Plus className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">
-              New users this month
+              System administrators
             </p>
           </CardContent>
         </Card>
@@ -244,7 +291,7 @@ export const UsersManagement = () => {
         <CardHeader>
           <CardTitle>User Directory</CardTitle>
           <CardDescription>
-            Search and filter users by various criteria
+            Search and filter users by name or email
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -270,17 +317,6 @@ export const UsersManagement = () => {
                 <SelectItem value="admin">Admins</SelectItem>
               </SelectContent>
             </Select>
-            
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[150px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
 
           {/* Users Table */}
@@ -298,56 +334,107 @@ export const UsersManagement = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.name}</TableCell>
-                    <TableCell className="text-muted-foreground">{user.email}</TableCell>
-                    <TableCell>
-                      <Badge variant={getRoleBadgeVariant(user.role)}>
-                        {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusBadgeVariant(user.status)}>
-                        {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">
-                      {new Date(user.joinedDate).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">
-                      {new Date(user.lastActive).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit User
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            Reset Password
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete User
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={7}>
+                      <ContentLoader message="Loading users..." />
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  users.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell className="font-medium">{user.name}</TableCell>
+                      <TableCell className="text-muted-foreground">{user.email}</TableCell>
+                      <TableCell>
+                        <Badge variant={getRoleBadgeVariant(user.role)}>
+                          {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusBadgeVariant(user.status)}>
+                          {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-muted-foreground">
+                        {new Date(user.joinedDate).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-muted-foreground">
+                        {new Date(user.lastActive).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <span className="sr-only">Open menu</span>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit User
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              Reset Password
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive">
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete User
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
 
-          {filteredUsers.length === 0 && (
+          {!loading && totalPages > 0 && (
+             <Pagination className="mt-4">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious 
+                    href="#" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setCurrentPage(prev => Math.max(1, prev - 1));
+                    }}
+                    className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                  />
+                </PaginationItem>
+                
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                  <PaginationItem key={page}>
+                    <PaginationLink 
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setCurrentPage(page);
+                      }}
+                      isActive={currentPage === page}
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+
+                <PaginationItem>
+                  <PaginationNext 
+                    href="#" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setCurrentPage(prev => Math.min(totalPages, prev + 1));
+                    }}
+                    className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
+
+          {!loading && users.length === 0 && (
             <div className="text-center py-8">
               <Users className="mx-auto h-12 w-12 text-muted-foreground/50" />
               <h3 className="mt-4 text-lg font-semibold">No users found</h3>
