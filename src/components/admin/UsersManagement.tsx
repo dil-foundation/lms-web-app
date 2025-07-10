@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Search, Plus, Users, GraduationCap, BookOpen, MoreHorizontal, Edit, Trash2, Shield } from 'lucide-react';
@@ -23,16 +23,54 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
+import { 
+  validateFirstName, 
+  validateLastName, 
+  validateEmail, 
+  validateGrade,
+  validateTeacherId,
+} from '@/utils/validation';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface User {
   id: string;
   name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   role: 'student' | 'teacher' | 'admin';
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'unverified';
   joinedDate: string;
   lastActive: string;
+  grade?: string;
+  teacherId?: string;
 }
+
+const initialNewUserState = {
+  firstName: '',
+  lastName: '',
+  email: '',
+  role: 'student' as 'student' | 'teacher' | 'admin',
+  grade: '',
+  teacherId: '',
+};
+
+const initialValidationErrors = {
+  firstName: '',
+  lastName: '',
+  email: '',
+  grade: '',
+  teacherId: '',
+};
 
 export const UsersManagement = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -40,6 +78,15 @@ export const UsersManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  const [newUser, setNewUser] = useState(initialNewUserState);
+  const [validationErrors, setValidationErrors] = useState(initialValidationErrors);
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
+  const [userToEdit, setUserToEdit] = useState<User | null>(null);
+  const [editValidationErrors, setEditValidationErrors] = useState(initialValidationErrors);
+  const [isUpdatingUser, setIsUpdatingUser] = useState(false);
   
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage] = useState(10);
@@ -91,42 +138,32 @@ export const UsersManagement = () => {
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const from = (currentPage - 1) * rowsPerPage;
-      const to = from + rowsPerPage - 1;
-
-      let query = supabase
-        .from('profiles')
-        .select('id, first_name, last_name, email, role, created_at, updated_at', { count: 'exact' });
-
-      if (roleFilter !== 'all') {
-        query = query.eq('role', roleFilter);
-      }
-
-      if (searchTerm) {
-        const searchParts = searchTerm.split(' ').filter(part => part);
-        if (searchParts.length > 1) {
-          // Search for first name AND last name if multiple words are entered
-          query = query.ilike('first_name', `%${searchParts[0]}%`);
-          query = query.ilike('last_name', `%${searchParts[1]}%`);
-        } else {
-          // Search across multiple fields for a single term
-          query = query.or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+      const { data, error } = await supabase.functions.invoke('get-users', {
+        body: {
+          page: currentPage,
+          rowsPerPage,
+          searchTerm,
+          roleFilter
         }
-      }
-
-      const { data, error, count } = await query.range(from, to);
-
-      if (error) throw error;
+      });
       
-      if (data) {
-        const transformedUsers: User[] = data.map((user: any) => ({
+      if (error) throw new Error(error.message);
+      
+      const { users: fetchedUsers, count } = data;
+
+      if (fetchedUsers) {
+        const transformedUsers: User[] = fetchedUsers.map((user: any) => ({
           id: user.id,
           name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email,
+          firstName: user.first_name || '',
+          lastName: user.last_name || '',
           email: user.email,
           role: user.role,
-          status: 'active',
+          status: user.email_confirmed_at ? 'active' : 'unverified',
           joinedDate: user.created_at,
-          lastActive: user.updated_at,
+          lastActive: user.last_active_at || user.updated_at,
+          grade: user.grade,
+          teacherId: user.teacher_id,
         }));
         setUsers(transformedUsers);
         setTotalUsers(count || 0);
@@ -152,6 +189,171 @@ export const UsersManagement = () => {
     setCurrentPage(1);
   }, [searchTerm, roleFilter]);
 
+  const handleFieldValidation = (field: string, value: string) => {
+    let validation;
+    switch (field) {
+      case 'firstName':
+        validation = validateFirstName(value);
+        break;
+      case 'lastName':
+        validation = validateLastName(value);
+        break;
+      case 'email':
+        validation = validateEmail(value);
+        break;
+      case 'grade':
+        validation = validateGrade(value);
+        break;
+      case 'teacherId':
+        validation = validateTeacherId(value);
+        break;
+      default:
+        validation = { isValid: true, error: null };
+    }
+    setValidationErrors(prev => ({ ...prev, [field]: validation.isValid ? '' : validation.error }));
+  };
+
+  const handleCreateUser = async () => {
+    let hasErrors = false;
+    const { firstName, lastName, email, role, grade, teacherId } = newUser;
+
+    const firstNameValidation = validateFirstName(firstName);
+    if (!firstNameValidation.isValid) {
+      setValidationErrors(prev => ({ ...prev, firstName: firstNameValidation.error! }));
+      hasErrors = true;
+    }
+
+    const lastNameValidation = validateLastName(lastName);
+    if (!lastNameValidation.isValid) {
+      setValidationErrors(prev => ({ ...prev, lastName: lastNameValidation.error! }));
+      hasErrors = true;
+    }
+
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.isValid) {
+      setValidationErrors(prev => ({ ...prev, email: emailValidation.error! }));
+      hasErrors = true;
+    }
+    
+    if (role === 'student') {
+      const gradeValidation = validateGrade(grade);
+      if (!gradeValidation.isValid) {
+        setValidationErrors(prev => ({ ...prev, grade: gradeValidation.error! }));
+        hasErrors = true;
+      }
+    } else if (role === 'teacher') {
+      const teacherIdValidation = validateTeacherId(teacherId);
+      if (!teacherIdValidation.isValid) {
+        setValidationErrors(prev => ({ ...prev, teacherId: teacherIdValidation.error! }));
+        hasErrors = true;
+      }
+    }
+
+    if (hasErrors) {
+      toast.error("Please fix the errors before creating the user.");
+      return;
+    }
+
+    setIsCreatingUser(true);
+
+    try {
+      const { error } = await supabase.functions.invoke('invite-user', {
+        body: {
+          email: newUser.email,
+          role: newUser.role,
+          firstName: newUser.firstName,
+          lastName: newUser.lastName,
+          grade: newUser.role === 'student' ? newUser.grade : undefined,
+          teacherId: newUser.role === 'teacher' ? newUser.teacherId : undefined,
+          redirectTo: `${window.location.origin}/dashboard/profile-settings`,
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success("Invitation sent successfully!", { description: `An invitation email has been sent to ${newUser.email}.` });
+      setIsCreateModalOpen(false);
+      setNewUser(initialNewUserState);
+      setValidationErrors(initialValidationErrors);
+      fetchUsers();
+      fetchStats();
+
+    } catch (error: any) {
+      toast.error("Failed to create user.", { description: error.message });
+      console.error("Error creating user:", error);
+    } finally {
+      setIsCreatingUser(false);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+    setIsDeletingUser(true);
+    try {
+      const { error } = await supabase.functions.invoke('delete-user', {
+        body: { userId: userToDelete.id },
+      });
+
+      if (error) throw error;
+
+      toast.success("User deleted successfully!", { description: `${userToDelete.name} has been removed from the system.` });
+      setUserToDelete(null);
+      fetchUsers(); // Refresh the list
+      fetchStats(); // Refresh the stats
+    } catch (error: any) {
+      toast.error("Failed to delete user.", { description: error.message });
+      console.error("Error deleting user:", error);
+    } finally {
+      setIsDeletingUser(false);
+    }
+  };
+
+  const handleUpdateUser = async () => {
+    if (!userToEdit) return;
+    setIsUpdatingUser(true);
+    
+    // Add validation here based on role, similar to create user
+    
+    try {
+      const { error } = await supabase.functions.invoke('update-user', {
+        body: {
+          userId: userToEdit.id,
+          firstName: userToEdit.firstName,
+          lastName: userToEdit.lastName,
+          role: userToEdit.role,
+          grade: userToEdit.role === 'student' ? userToEdit.grade : undefined,
+          teacherId: userToEdit.role === 'teacher' ? userToEdit.teacherId : undefined,
+        },
+      });
+
+      if (error) throw error;
+      
+      toast.success("User updated successfully!");
+      setUserToEdit(null);
+      fetchUsers();
+    } catch (error: any) {
+      toast.error("Failed to update user.", { description: error.message });
+    } finally {
+      setIsUpdatingUser(false);
+    }
+  };
+
+  const handleResetPassword = async (user: User) => {
+    try {
+      const { error } = await supabase.functions.invoke('reset-user-password', {
+        body: { email: user.email },
+      });
+
+      if (error) throw error;
+
+      toast.success("Password reset email sent!", { description: `A reset link has been sent to ${user.name}.` });
+    } catch (error: any) {
+      toast.error("Failed to send reset link.", { description: error.message });
+      console.error("Error sending reset link:", error);
+    }
+  };
+
+
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
       case 'admin': return 'destructive';
@@ -162,7 +364,14 @@ export const UsersManagement = () => {
   };
 
   const getStatusBadgeVariant = (status: string) => {
-    return status === 'active' ? 'default' : 'secondary';
+    switch (status) {
+      case 'active':
+        return 'default';
+      case 'unverified':
+        return 'destructive';
+      default:
+        return 'secondary';
+    }
   };
 
   return (
@@ -174,7 +383,13 @@ export const UsersManagement = () => {
           <p className="text-muted-foreground">Manage all users in the system</p>
         </div>
         
-        <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+        <Dialog open={isCreateModalOpen} onOpenChange={(isOpen) => {
+          setIsCreateModalOpen(isOpen);
+          if (!isOpen) {
+            setNewUser(initialNewUserState);
+            setValidationErrors(initialValidationErrors);
+          }
+        }}>
           <DialogTrigger asChild>
             <Button className="w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
@@ -185,25 +400,63 @@ export const UsersManagement = () => {
             <DialogHeader>
               <DialogTitle>Create New User</DialogTitle>
               <DialogDescription>
-                Add a new user to the system. Fill in the required information below.
+                Invite a new user to the system. They will receive a magic link to get started.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="firstName">First Name</Label>
-                <Input id="firstName" placeholder="Enter first name" />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="firstName">First Name</Label>
+                  <Input 
+                    id="firstName" 
+                    placeholder="Enter first name" 
+                    value={newUser.firstName}
+                    onChange={(e) => {
+                      setNewUser(prev => ({ ...prev, firstName: e.target.value }));
+                      handleFieldValidation('firstName', e.target.value);
+                    }}
+                    className={validationErrors.firstName ? 'border-destructive' : ''}
+                  />
+                  {validationErrors.firstName && <p className="text-xs text-destructive">{validationErrors.firstName}</p>}
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input 
+                    id="lastName" 
+                    placeholder="Enter last name" 
+                    value={newUser.lastName}
+                    onChange={(e) => {
+                      setNewUser(prev => ({ ...prev, lastName: e.target.value }));
+                      handleFieldValidation('lastName', e.target.value);
+                    }}
+                    className={validationErrors.lastName ? 'border-destructive' : ''}
+                  />
+                  {validationErrors.lastName && <p className="text-xs text-destructive">{validationErrors.lastName}</p>}
+                </div>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input id="lastName" placeholder="Enter last name" />
-              </div>
+
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="Enter email address" />
+                <Input 
+                  id="email" 
+                  type="email" 
+                  placeholder="Enter email address"
+                  value={newUser.email}
+                  onChange={(e) => {
+                    setNewUser(prev => ({ ...prev, email: e.target.value }));
+                    handleFieldValidation('email', e.target.value);
+                  }}
+                  className={validationErrors.email ? 'border-destructive' : ''}
+                />
+                {validationErrors.email && <p className="text-xs text-destructive">{validationErrors.email}</p>}
               </div>
+
               <div className="grid gap-2">
                 <Label htmlFor="role">Role</Label>
-                <Select>
+                <Select
+                  value={newUser.role}
+                  onValueChange={(value: 'student' | 'teacher' | 'admin') => setNewUser(prev => ({ ...prev, role: value }))}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
@@ -214,17 +467,62 @@ export const UsersManagement = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="password">Temporary Password</Label>
-                <Input id="password" type="password" placeholder="Enter temporary password" />
-              </div>
+
+              {newUser.role === 'student' && (
+                <div className="grid gap-2">
+                  <Label htmlFor="grade">Grade</Label>
+                  <Select
+                    value={newUser.grade}
+                    onValueChange={(value) => {
+                      setNewUser(prev => ({ ...prev, grade: value }));
+                      handleFieldValidation('grade', value);
+                    }}
+                  >
+                    <SelectTrigger className={validationErrors.grade ? 'border-destructive' : ''}>
+                      <SelectValue placeholder="Select a grade" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1st Grade</SelectItem>
+                      <SelectItem value="2">2nd Grade</SelectItem>
+                      <SelectItem value="3">3rd Grade</SelectItem>
+                      <SelectItem value="4">4th Grade</SelectItem>
+                      <SelectItem value="5">5th Grade</SelectItem>
+                      <SelectItem value="6">6th Grade</SelectItem>
+                      <SelectItem value="7">7th Grade</SelectItem>
+                      <SelectItem value="8">8th Grade</SelectItem>
+                      <SelectItem value="9">9th Grade</SelectItem>
+                      <SelectItem value="10">10th Grade</SelectItem>
+                      <SelectItem value="11">11th Grade</SelectItem>
+                      <SelectItem value="12">12th Grade</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {validationErrors.grade && <p className="text-xs text-destructive">{validationErrors.grade}</p>}
+                </div>
+              )}
+
+              {newUser.role === 'teacher' && (
+                <div className="grid gap-2">
+                  <Label htmlFor="teacherId">Teacher ID</Label>
+                  <Input 
+                    id="teacherId" 
+                    placeholder="Enter Teacher ID" 
+                    value={newUser.teacherId}
+                    onChange={(e) => {
+                      setNewUser(prev => ({ ...prev, teacherId: e.target.value }));
+                      handleFieldValidation('teacherId', e.target.value);
+                    }}
+                    className={validationErrors.teacherId ? 'border-destructive' : ''}
+                  />
+                  {validationErrors.teacherId && <p className="text-xs text-destructive">{validationErrors.teacherId}</p>}
+                </div>
+              )}
             </div>
             <div className="flex justify-end space-x-2">
               <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={() => setIsCreateModalOpen(false)}>
-                Create User
+              <Button onClick={handleCreateUser} disabled={isCreatingUser}>
+                {isCreatingUser ? "Sending Invite..." : "Send Invite"}
               </Button>
             </div>
           </DialogContent>
@@ -370,16 +668,19 @@ export const UsersManagement = () => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setUserToEdit(user)}>
                               <Edit className="mr-2 h-4 w-4" />
-                              Edit User
+                              <span>Edit User</span>
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleResetPassword(user)}>
                               Reset Password
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive">
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={() => setUserToDelete(user)}
+                            >
                               <Trash2 className="mr-2 h-4 w-4" />
-                              Delete User
+                              <span>Delete User</span>
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -445,6 +746,121 @@ export const UsersManagement = () => {
           )}
         </CardContent>
       </Card>
+      
+      <AlertDialog open={!!userToDelete} onOpenChange={(isOpen) => !isOpen && setUserToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the user <strong className="font-bold">{userToDelete?.name}</strong>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteUser}
+              disabled={isDeletingUser}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {isDeletingUser ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={!!userToEdit} onOpenChange={(isOpen) => !isOpen && setUserToEdit(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>Update the user's details below.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-firstname">First Name</Label>
+                <Input
+                  id="edit-firstname"
+                  value={userToEdit?.firstName || ''}
+                  onChange={(e) => setUserToEdit(prev => prev ? { ...prev, firstName: e.target.value } : null)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-lastname">Last Name</Label>
+                <Input
+                  id="edit-lastname"
+                  value={userToEdit?.lastName || ''}
+                  onChange={(e) => setUserToEdit(prev => prev ? { ...prev, lastName: e.target.value } : null)}
+                />
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-email">Email</Label>
+              <Input id="edit-email" value={userToEdit?.email || ''} disabled />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-role">Role</Label>
+              <Select
+                value={userToEdit?.role}
+                onValueChange={(value: 'student' | 'teacher' | 'admin') =>
+                  setUserToEdit(prev => prev ? { ...prev, role: value } : null)
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="student">Student</SelectItem>
+                  <SelectItem value="teacher">Teacher</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {userToEdit?.role === 'student' && (
+              <div className="grid gap-2">
+                <Label htmlFor="edit-grade">Grade</Label>
+                <Select
+                  value={userToEdit.grade || ''}
+                  onValueChange={(value) => setUserToEdit(prev => prev ? { ...prev, grade: value } : null)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a grade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1st Grade</SelectItem>
+                    <SelectItem value="2">2nd Grade</SelectItem>
+                    <SelectItem value="3">3rd Grade</SelectItem>
+                    <SelectItem value="4">4th Grade</SelectItem>
+                    <SelectItem value="5">5th Grade</SelectItem>
+                    <SelectItem value="6">6th Grade</SelectItem>
+                    <SelectItem value="7">7th Grade</SelectItem>
+                    <SelectItem value="8">8th Grade</SelectItem>
+                    <SelectItem value="9">9th Grade</SelectItem>
+                    <SelectItem value="10">10th Grade</SelectItem>
+                    <SelectItem value="11">11th Grade</SelectItem>
+                    <SelectItem value="12">12th Grade</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {userToEdit?.role === 'teacher' && (
+              <div className="grid gap-2">
+                <Label htmlFor="edit-teacherid">Teacher ID</Label>
+                <Input
+                  id="edit-teacherid"
+                  value={userToEdit.teacherId || ''}
+                  onChange={(e) => setUserToEdit(prev => prev ? { ...prev, teacherId: e.target.value } : null)}
+                />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUserToEdit(null)}>Cancel</Button>
+            <Button onClick={handleUpdateUser} disabled={isUpdatingUser}>
+              {isUpdatingUser ? "Updating..." : "Update User"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
