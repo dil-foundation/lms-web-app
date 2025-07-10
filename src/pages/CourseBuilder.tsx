@@ -46,6 +46,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useAuth } from '@/hooks/useAuth';
+import { cn } from '@/lib/utils';
 
 // #region Interfaces
 interface CourseSection {
@@ -94,6 +95,35 @@ interface CourseData {
   published_course_id?: string;
   authorId?: string;
 }
+
+type ValidationErrors = Partial<Record<keyof Omit<CourseData, 'sections'|'teachers'|'students'|'image'|'status'|'duration'|'published_course_id'|'authorId'|'id'>, string>>;
+
+const validateCourseData = (data: CourseData): ValidationErrors => {
+  const errors: ValidationErrors = {};
+
+  if (!data.title.trim()) errors.title = 'Course title is required.';
+  if (data.title.trim().length > 100) errors.title = 'Title must be 100 characters or less.';
+  
+  if (!data.subtitle.trim()) errors.subtitle = 'Course subtitle is required.';
+  if (data.subtitle.trim().length > 150) errors.subtitle = 'Subtitle must be 150 characters or less.';
+
+  if (!data.description.trim()) errors.description = 'Course description is required.';
+  if (data.description.trim().length < 20) errors.description = 'Description must be at least 20 characters.';
+
+  if (!data.category) errors.category = 'Category is required.';
+  if (!data.language) errors.language = 'Language is required.';
+  if (!data.level) errors.level = 'Level is required.';
+
+  if (!data.requirements || data.requirements.length === 0 || data.requirements.every(r => !r.trim())) {
+    errors.requirements = 'At least one requirement is required.';
+  }
+  if (!data.learningOutcomes || data.learningOutcomes.length === 0 || data.learningOutcomes.every(o => !o.trim())) {
+    errors.learningOutcomes = 'At least one learning outcome is required.';
+  }
+
+  return errors;
+};
+
 // #endregion
 
 // #region Mock Data for Selection
@@ -592,6 +622,8 @@ const CourseBuilder = () => {
   const [allStudents, setAllStudents] = useState<{ label: string; value: string; }[]>([]);
   const [userProfiles, setUserProfiles] = useState<Profile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  const [touchedFields, setTouchedFields] = useState<Partial<Record<keyof ValidationErrors, boolean>>>({});
   const [imageDbPath, setImageDbPath] = useState<string | undefined>();
   const [courseData, setCourseData] = useState<CourseData>(() => ({
     title: '',
@@ -622,6 +654,15 @@ const CourseBuilder = () => {
     teachers: [],
     students: [],
   }));
+
+  const handleBlur = (field: keyof ValidationErrors) => {
+    setTouchedFields(prev => ({ ...prev, [field]: true }));
+  };
+
+  useEffect(() => {
+    // Real-time validation as user types
+    setValidationErrors(validateCourseData(courseData));
+  }, [courseData]);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -823,11 +864,9 @@ const CourseBuilder = () => {
       throw new Error("Course title is required");
     }
 
-    const isNewCourse = !courseToSave.id;
+    const isUpdate = !!courseToSave.id;
 
-    // Step 1: Upsert the main course details.
     const courseDetails: any = {
-      id: isNewCourse ? undefined : courseToSave.id,
       title: courseToSave.title,
       subtitle: courseToSave.subtitle,
       description: courseToSave.description,
@@ -841,16 +880,31 @@ const CourseBuilder = () => {
       status: courseToSave.status,
       published_course_id: courseToSave.published_course_id,
     };
-    
-    if (isNewCourse) {
-      courseDetails.author_id = user.id;
-    }
 
-    const { data: savedCourse, error: courseError } = await supabase
-      .from('courses')
-      .upsert(courseDetails)
-      .select('id')
-      .single();
+    let savedCourse: { id: string } | null = null;
+    let courseError: any = null;
+
+    if (isUpdate) {
+      // UPDATE existing course. author_id is immutable and not sent.
+      const { data, error } = await supabase
+        .from('courses')
+        .update(courseDetails)
+        .eq('id', courseToSave.id!)
+        .select('id')
+        .single();
+      savedCourse = data;
+      courseError = error;
+    } else {
+      // INSERT new course. author_id is required for RLS policy.
+      courseDetails.author_id = user.id;
+      const { data, error } = await supabase
+        .from('courses')
+        .insert(courseDetails)
+        .select('id')
+        .single();
+      savedCourse = data;
+      courseError = error;
+    }
 
     if (courseError) throw courseError;
     if (!savedCourse) throw new Error("Failed to save course and retrieve its ID.");
@@ -895,12 +949,14 @@ const CourseBuilder = () => {
   const handleSaveDraftClick = async () => {
     setSaveAction('draft');
     try {
-      if (courseData.id && courseData.status === 'Published') {
+      // If we are editing a course that is currently 'Published', this action
+      // should create a *new* draft, not overwrite the published one.
+      if (courseData.status === 'Published') {
         const draftToCreate: CourseData = {
           ...courseData,
-          id: undefined,
+          id: undefined, // This makes it a new course row
           status: 'Draft',
-          published_course_id: courseData.id,
+          published_course_id: courseData.id, // Link back to the published course
         };
         const newDraftId = await saveCourseData(draftToCreate);
         if (newDraftId) {
@@ -908,12 +964,16 @@ const CourseBuilder = () => {
           navigate(`/dashboard/courses/builder/${newDraftId}`, { replace: true });
         }
       } else {
+        // If the status is already 'Draft' (or it's a new course), we just save/update it.
+        // The upsert logic in `saveCourseData` handles whether to insert or update.
         const courseToSave = { ...courseData, status: 'Draft' as const };
         const savedId = await saveCourseData(courseToSave);
         if (savedId) {
           toast.success("Draft saved successfully!");
-          setCourseData(prev => ({...prev, status: 'Draft'}));
-          if (courseId === 'new') {
+          // Keep local state in sync
+          setCourseData(prev => ({...prev, id: savedId, status: 'Draft'}));
+          // If this was a brand new course, navigate to the new ID
+          if (courseId === 'new' && savedId) {
             navigate(`/dashboard/courses/builder/${savedId}`, { replace: true });
           }
         }
@@ -927,6 +987,21 @@ const CourseBuilder = () => {
   };
 
   const handlePublishClick = async () => {
+    const errors = validateCourseData(courseData);
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      toast.error("Cannot publish course", {
+        description: "Please fix the validation errors highlighted on the form.",
+      });
+      // Find the first tab with an error and switch to it
+      if (errors.title || errors.subtitle || errors.description || errors.category || errors.language || errors.level) {
+        setActiveTab('details');
+      } else if (errors.requirements || errors.learningOutcomes) {
+        setActiveTab('landing');
+      }
+      return;
+    }
+
     setSaveAction('publish');
     try {
       if (courseData.published_course_id && courseData.id) {
@@ -1267,6 +1342,8 @@ const CourseBuilder = () => {
     (user.app_metadata.role === 'teacher' && courseData.status === 'Draft' && user.id === courseData.authorId)
   );
 
+  const isFormValid = Object.keys(validationErrors).length === 0;
+
 
   return (
     <div className="min-h-screen bg-background w-full">
@@ -1304,7 +1381,7 @@ const CourseBuilder = () => {
                 {saveAction === 'unpublish' ? 'Unpublishing...' : 'Unpublish'}
             </Button>
             ) : (
-              <Button onClick={handlePublishClick} className="bg-green-600 hover:bg-green-700" disabled={isSaving}>
+              <Button onClick={handlePublishClick} className="bg-green-600 hover:bg-green-700" disabled={isSaving || !isFormValid}>
                 {saveAction === 'publish' ? 'Publishing...' : 'Publish'}
               </Button>
             )}
@@ -1349,8 +1426,11 @@ const CourseBuilder = () => {
                     <Input
                       value={courseData.title}
                       onChange={(e) => setCourseData(prev => ({ ...prev, title: e.target.value }))}
+                      onBlur={() => handleBlur('title')}
                       placeholder="Enter course title"
+                      className={cn(validationErrors.title && touchedFields.title && "border-red-500 focus-visible:ring-red-500")}
                     />
+                    {validationErrors.title && touchedFields.title && <p className="text-sm text-red-500 mt-1">{validationErrors.title}</p>}
                   </div>
                   
                   <div>
@@ -1358,8 +1438,11 @@ const CourseBuilder = () => {
                     <Input
                       value={courseData.subtitle}
                       onChange={(e) => setCourseData(prev => ({ ...prev, subtitle: e.target.value }))}
+                      onBlur={() => handleBlur('subtitle')}
                       placeholder="Enter course subtitle"
+                      className={cn(validationErrors.subtitle && touchedFields.subtitle && "border-red-500 focus-visible:ring-red-500")}
                     />
+                    {validationErrors.subtitle && touchedFields.subtitle && <p className="text-sm text-red-500 mt-1">{validationErrors.subtitle}</p>}
                   </div>
                   
                   <div>
@@ -1367,16 +1450,25 @@ const CourseBuilder = () => {
                     <Textarea
                       value={courseData.description}
                       onChange={(e) => setCourseData(prev => ({ ...prev, description: e.target.value }))}
+                      onBlur={() => handleBlur('description')}
                       placeholder="Describe your course"
                       rows={4}
+                      className={cn(validationErrors.description && touchedFields.description && "border-red-500 focus-visible:ring-red-500")}
                     />
+                    {validationErrors.description && touchedFields.description && <p className="text-sm text-red-500 mt-1">{validationErrors.description}</p>}
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-medium mb-2">Category</label>
-                      <Select value={courseData.category} onValueChange={(value) => setCourseData(prev => ({ ...prev, category: value }))}>
-                        <SelectTrigger>
+                      <Select
+                        value={courseData.category}
+                        onValueChange={(value) => {
+                          setCourseData(prev => ({ ...prev, category: value }));
+                          handleBlur('category');
+                        }}
+                      >
+                        <SelectTrigger className={cn(validationErrors.category && touchedFields.category && "border-red-500 focus:ring-red-500")}>
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
@@ -1387,12 +1479,19 @@ const CourseBuilder = () => {
                           ))}
                         </SelectContent>
                       </Select>
+                      {validationErrors.category && touchedFields.category && <p className="text-sm text-red-500 mt-1">{validationErrors.category}</p>}
                     </div>
                     
                     <div>
                       <label className="block text-sm font-medium mb-2">Language</label>
-                      <Select value={courseData.language} onValueChange={(value) => setCourseData(prev => ({ ...prev, language: value }))}>
-                        <SelectTrigger>
+                      <Select
+                        value={courseData.language}
+                        onValueChange={(value) => {
+                          setCourseData(prev => ({ ...prev, language: value }));
+                          handleBlur('language');
+                        }}
+                      >
+                        <SelectTrigger className={cn(validationErrors.language && touchedFields.language && "border-red-500 focus:ring-red-500")}>
                           <SelectValue placeholder="Select language" />
                         </SelectTrigger>
                         <SelectContent>
@@ -1403,12 +1502,19 @@ const CourseBuilder = () => {
                           ))}
                         </SelectContent>
                       </Select>
+                      {validationErrors.language && touchedFields.language && <p className="text-sm text-red-500 mt-1">{validationErrors.language}</p>}
                     </div>
                     
                     <div>
                       <label className="block text-sm font-medium mb-2">Level</label>
-                      <Select value={courseData.level} onValueChange={(value) => setCourseData(prev => ({ ...prev, level: value }))}>
-                        <SelectTrigger>
+                      <Select
+                        value={courseData.level}
+                        onValueChange={(value) => {
+                          setCourseData(prev => ({ ...prev, level: value }));
+                          handleBlur('level');
+                        }}
+                      >
+                        <SelectTrigger className={cn(validationErrors.level && touchedFields.level && "border-red-500 focus:ring-red-500")}>
                           <SelectValue placeholder="Select level" />
                         </SelectTrigger>
                         <SelectContent>
@@ -1419,6 +1525,7 @@ const CourseBuilder = () => {
                           ))}
                         </SelectContent>
                       </Select>
+                      {validationErrors.level && touchedFields.level && <p className="text-sm text-red-500 mt-1">{validationErrors.level}</p>}
                     </div>
                   </div>
 
@@ -1596,26 +1703,28 @@ const CourseBuilder = () => {
                     <label className="block text-sm font-medium mb-2">Requirements</label>
                     {courseData.requirements.map((req, index) => (
                       <div key={index} className="flex items-center gap-2 mb-2">
-                        <Input value={req} onChange={(e) => updateArrayField('requirements', index, e.target.value)} />
+                        <Input value={req} onChange={(e) => updateArrayField('requirements', index, e.target.value)} onBlur={() => handleBlur('requirements')} />
                         <Button variant="ghost" size="icon" onClick={() => removeArrayField('requirements', index)}>
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
                     ))}
                     <Button variant="outline" size="sm" onClick={() => addArrayField('requirements')}>Add Requirement</Button>
+                    {validationErrors.requirements && touchedFields.requirements && <p className="text-sm text-red-500 mt-1">{validationErrors.requirements}</p>}
                   </div>
                   
                   <div>
                     <label className="block text-sm font-medium mb-2">What you'll learn</label>
                     {courseData.learningOutcomes.map((outcome, index) => (
                       <div key={index} className="flex items-center gap-2 mb-2">
-                        <Input value={outcome} onChange={(e) => updateArrayField('learningOutcomes', index, e.target.value)} />
+                        <Input value={outcome} onChange={(e) => updateArrayField('learningOutcomes', index, e.target.value)} onBlur={() => handleBlur('learningOutcomes')} />
                         <Button variant="ghost" size="icon" onClick={() => removeArrayField('learningOutcomes', index)}>
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
                     ))}
                     <Button variant="outline" size="sm" onClick={() => addArrayField('learningOutcomes')}>Add Outcome</Button>
+                    {validationErrors.learningOutcomes && touchedFields.learningOutcomes && <p className="text-sm text-red-500 mt-1">{validationErrors.learningOutcomes}</p>}
                   </div>
                 </CardContent>
               </Card>
