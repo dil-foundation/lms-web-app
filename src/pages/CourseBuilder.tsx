@@ -45,9 +45,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { ContentLoader } from '@/components/ContentLoader';
+import { CourseOverview } from './CourseOverview';
 
 // #region Interfaces
 interface CourseSection {
@@ -616,6 +623,7 @@ const CourseBuilder = () => {
   const isSaving = saveAction !== null;
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isCreateDraftConfirmOpen, setIsCreateDraftConfirmOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const preDragLessonStatesRef = useRef<Record<string, boolean>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
   const [categories, setCategories] = useState<{ id: number; name: string; }[]>([]);
@@ -1396,7 +1404,7 @@ const CourseBuilder = () => {
           </div>
           
           <div className="flex items-center gap-2">
-            <Button variant="outline">
+            <Button variant="outline" onClick={() => setIsPreviewOpen(true)}>
               <Eye className="w-4 h-4 mr-2" />
               Preview
             </Button>
@@ -1851,6 +1859,17 @@ const CourseBuilder = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <DialogContent className="max-w-screen-lg h-[90vh] flex flex-col p-0">
+          <DialogHeader className="p-6 pb-0">
+            <DialogTitle>Course Preview</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto">
+            <CourseOverview courseData={courseData} isPreviewMode={true} />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
