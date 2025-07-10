@@ -12,7 +12,8 @@ import {
   ListFilter,
   PlusCircle,
   Search,
-  MoreHorizontal
+  MoreHorizontal,
+  Trash2
 } from "lucide-react"
 import {
   Card,
@@ -27,6 +28,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -49,6 +51,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { ContentLoader } from "../ContentLoader";
+import { cn } from "@/lib/utils";
 
 type CourseStatus = "Published" | "Draft" | "Under Review";
 
@@ -81,24 +84,6 @@ const CourseCard = ({ course, onDelete }: { course: Course, onDelete: (course: C
         <Badge variant={course.status === 'Published' ? 'default' : 'secondary'} className="absolute top-2 left-2">
           {course.status}
       </Badge>
-        <div className="absolute top-2 right-2 bg-background/80 rounded-full">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => navigate(`/dashboard/courses/builder/${course.id}`)}>Edit</DropdownMenuItem>
-                <DropdownMenuItem>View Details</DropdownMenuItem>
-                {canDelete && (
-                   <DropdownMenuItem className="text-destructive" onClick={() => onDelete(course)}>
-                    Delete
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-        </div>
       </CardHeader>
       <CardContent className="p-4 space-y-2">
         <h3 className="font-semibold text-lg">{course.title}</h3>
@@ -136,6 +121,7 @@ const CourseManagement = () => {
   });
   const [totalStudents, setTotalStudents] = useState(0);
   const [loadingStats, setLoadingStats] = useState(true);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const fetchStats = useCallback(async () => {
     if (!user) {
