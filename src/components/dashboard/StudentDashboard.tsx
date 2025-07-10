@@ -1,185 +1,161 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Flame, Award, BookOpen, Clock, Lock } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { BookOpen, Target, CheckCircle, Award } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
+type Profile = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  role: string;
+  [key: string]: any;
+};
+
+interface Course {
+  id: string;
+  title: string;
+  subtitle: string;
+  image_url: string;
+  // You might want to add progress data here later
+  progress?: number;
+}
 
 interface StudentDashboardProps {
-  userProfile: any;
+  userProfile: Profile;
 }
 
 export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
-  const navigate = useNavigate();
-  
-  const getInitials = (firstName?: string, lastName?: string) => {
-    return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
-  };
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const courses = [
-    {
-      id: 1,
-      title: "Stage 0 - Beginner English for Urdu Speakers",
-      progress: 65,
-      status: "available",
-      image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=6000&q=80",
-      duration: "Duration not set",
-      buttonText: "Continue"
-    },
-    {
-      id: 2,
-      title: "Stage 1 - Building Confidence",
-      progress: 0,
-      status: "locked",
-      image: "https://images.unsplash.com/photo-1518770660439-4636190af475?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=5530&q=80",
-      duration: "Duration not set",
-      buttonText: "Locked"
-    },
-    {
-      id: 3,
-      title: "Stage 2 - Elementary English",
-      progress: 0,
-      status: "locked",
-      image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=3543&q=80",
-      duration: "Duration not set",
-      buttonText: "Locked"
-    },
-    {
-      id: 4,
-      title: "Stage 3 - Intermediate English",
-      progress: 0,
-      status: "locked",
-      image: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=4076&q=80",
-      duration: "Duration not set",
-      buttonText: "Locked"
-    }
-  ];
+  useEffect(() => {
+    const fetchCourses = async () => {
+      setLoading(true);
+      
+      const { data, error } = await supabase.rpc('get_student_courses');
+
+      if (error) {
+        console.error("Error fetching student courses:", error);
+        toast.error("Failed to load your courses.", {
+          description: "Please try reloading the page.",
+        });
+      } else if (data) {
+        // Here we can also fetch image URLs if needed
+        const coursesWithImages = await Promise.all(data.map(async (course) => {
+          let imageUrl = '/placeholder.svg';
+          if (course.image_url) {
+            const { data: signedUrlData, error } = await supabase.storage
+              .from('dil-lms')
+              .createSignedUrl(course.image_url, 60); // Creates a secure URL valid for 60 seconds
+
+            if (error) {
+              console.error(`Failed to get signed URL for course image: ${course.image_url}`, error);
+            } else {
+              imageUrl = signedUrlData.signedUrl;
+            }
+          }
+          return { ...course, image_url: imageUrl, progress: Math.floor(Math.random() * 101) }; // Mock progress
+        }));
+        setCourses(coursesWithImages);
+      }
+      setLoading(false);
+    };
+
+    fetchCourses();
+  }, []);
 
   return (
-    <div className="w-full space-y-4 sm:space-y-6 min-w-0">
-      {/* Welcome Section */}
-      <div className="flex items-center space-x-3 sm:space-x-4 mb-6 sm:mb-8">
-        <Avatar className="h-12 w-12 sm:h-16 sm:w-16 flex-shrink-0">
-          <AvatarFallback className="bg-primary text-primary-foreground text-lg sm:text-xl font-bold">
-            {getInitials(userProfile?.first_name, userProfile?.last_name)}
-          </AvatarFallback>
-        </Avatar>
-        <div className="min-w-0 flex-1">
-          <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">
-            Welcome back, {userProfile?.first_name || 'Student'}!
-          </h1>
-          <p className="text-sm sm:text-base text-muted-foreground">
-            {userProfile?.grade ? `Grade ${userProfile.grade}` : 'Continue your learning journey'}
-          </p>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
-        <Card>
-          <CardContent className="p-3 sm:p-4">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0 flex-1">
-                <p className="text-xs sm:text-sm text-muted-foreground truncate">Current Streak</p>
-                <p className="text-lg sm:text-2xl font-bold">7 days</p>
-              </div>
-              <Flame className="h-5 w-5 sm:h-6 sm:w-6 text-orange-500 flex-shrink-0" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-3 sm:p-4">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0 flex-1">
-                <p className="text-xs sm:text-sm text-muted-foreground truncate">Completed Lessons</p>
-                <p className="text-lg sm:text-2xl font-bold">24</p>
-              </div>
-              <BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500 flex-shrink-0" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-3 sm:p-4">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0 flex-1">
-                <p className="text-xs sm:text-sm text-muted-foreground truncate">Points Earned</p>
-                <p className="text-lg sm:text-2xl font-bold">1,250</p>
-              </div>
-              <Award className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-500 flex-shrink-0" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-3 sm:p-4">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0 flex-1">
-                <p className="text-xs sm:text-sm text-muted-foreground truncate">Study Time</p>
-                <p className="text-lg sm:text-2xl font-bold">45h</p>
-              </div>
-              <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-green-500 flex-shrink-0" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Continue Learning Section */}
+    <div className="space-y-8">
       <div>
-        <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Continue Learning</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-          {courses.map((course) => (
-            <Card 
-              key={course.id} 
-              className="overflow-hidden hover:shadow-lg transition-shadow bg-card border border-border cursor-pointer"
-                                onClick={(e) => {
-                    e.stopPropagation();
-                    if (course.status !== 'locked') {
-                      navigate(`/dashboard/course/${course.id}`);
-                    }
-                  }}
-            >
-              <div className="relative">
-                <img 
-                  src={course.image} 
-                  alt={course.title}
-                  className="w-full h-28 sm:h-32 object-cover"
-                />
-                <Badge 
-                  className="absolute top-2 left-2 bg-green-600 hover:bg-green-700 text-white border-0 text-xs"
-                >
-                  AI Tutor
-                </Badge>
-              </div>
-              <CardContent className="p-3 sm:p-4">
-                <h3 className="font-semibold text-xs sm:text-sm mb-2 text-card-foreground line-clamp-2 leading-tight">
-                  {course.title}
-                </h3>
-                <p className="text-xs text-muted-foreground mb-3">
-                  {course.duration}
-                </p>
-                <Button 
-                  className={`w-full text-xs sm:text-sm ${
-                    course.status === 'locked' 
-                      ? 'bg-muted hover:bg-muted text-muted-foreground cursor-not-allowed' 
-                      : 'bg-green-600 hover:bg-green-700 text-white'
-                  }`}
-                  size="sm"
-                  disabled={course.status === 'locked'}
-                  onClick={() => {
-                    if (course.status !== 'locked') {
-                      navigate(`/dashboard/course/${course.id}`);
-                    }
-                  }}
-                >
-                  {course.status === 'locked' && <Lock className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />}
-                  <span className="truncate">{course.buttonText}</span>
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <h1 className="text-3xl font-bold tracking-tight">Welcome, {userProfile.first_name}!</h1>
+        <p className="text-muted-foreground">Let's continue your learning journey.</p>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Enrolled Courses</CardTitle>
+            <BookOpen className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{courses.length}</div>
+            <p className="text-xs text-muted-foreground">Ready to be completed</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Courses</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{courses.filter(c => c.progress && c.progress > 0 && c.progress < 100).length}</div>
+            <p className="text-xs text-muted-foreground">Currently in progress</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Completed Courses</CardTitle>
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{courses.filter(c => c.progress === 100).length}</div>
+            <p className="text-xs text-muted-foreground">Congratulations!</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Certificates Earned</CardTitle>
+            <Award className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">0</div>
+            <p className="text-xs text-muted-foreground">Keep up the great work</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div>
+        <h2 className="text-2xl font-semibold tracking-tight mb-4">My Courses</h2>
+        {loading ? (
+          <p>Loading your courses...</p>
+        ) : courses.length > 0 ? (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {courses.map(course => (
+              <Card key={course.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                <img src={course.image_url} alt={course.title} className="w-full h-40 object-cover" />
+                <CardHeader>
+                  <CardTitle className="truncate">{course.title}</CardTitle>
+                  <p className="text-sm text-muted-foreground truncate">{course.subtitle}</p>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="w-full bg-muted rounded-full h-2.5">
+                    <div className="bg-primary h-2.5 rounded-full" style={{ width: `${course.progress}%` }}></div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                     <span className="text-sm font-medium">{course.progress}% Complete</span>
+                    <Button asChild variant="secondary" size="sm">
+                      <Link to={`/dashboard/course/${course.id}/content`}>
+                        {course.progress && course.progress > 0 ? 'Continue' : 'Start Course'}
+                      </Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 border-2 border-dashed rounded-lg">
+            <h3 className="text-lg font-medium text-muted-foreground">No Courses Found</h3>
+            <p className="text-sm text-muted-foreground mt-1">You haven't been enrolled in any courses yet.</p>
+            <Button asChild className="mt-4">
+              <Link to="/courses">Browse Courses</Link>
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
