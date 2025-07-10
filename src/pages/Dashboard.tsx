@@ -11,6 +11,10 @@ import { UsersManagement } from '@/components/admin/UsersManagement';
 import CourseManagement from '@/components/admin/CourseManagement';
 import { ReportsOverview } from '@/components/admin/ReportsOverview';
 import { ObservationReports } from '@/components/admin/ObservationReports';
+import { Discussions } from '@/components/admin/Discussions';
+import { DiscussionView } from '@/components/admin/DiscussionView';
+import { GradeAssignments } from '@/components/admin/GradeAssignments';
+import { AssignmentSubmissions } from '@/components/admin/AssignmentSubmissions';
 import CourseBuilder from './CourseBuilder';
 import { CourseOverview } from './CourseOverview';
 import { CourseContent } from './CourseContent';
@@ -44,8 +48,10 @@ const Dashboard = () => {
   }, [authLoading, user, navigate]);
 
   const currentRole = devRole || (profile?.role as UserRole | undefined);
+
   const displayProfile = profile && currentRole ? {
     ...profile,
+    full_name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim(),
     role: currentRole,
   } : null;
   
@@ -76,7 +82,11 @@ const Dashboard = () => {
     }
 
     const finalRole = devRole || profile.role as UserRole;
-    const finalProfile = { ...profile, role: finalRole };
+    const finalProfile = { 
+      ...profile, 
+      full_name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim(),
+      role: finalRole 
+    };
 
   const DashboardOverview = () => {
       switch (finalRole) {
@@ -124,8 +134,10 @@ const Dashboard = () => {
                       <Route path="/secure-links" element={<RolePlaceholder title="Secure Links" description="Manage secure links and access controls" icon={Link} />} />
                       <Route path="/settings" element={<RolePlaceholder title="Settings" description="Configure system-wide settings" icon={Settings} />} />
                       <Route path="/security" element={<RolePlaceholder title="Security" description="Manage security settings and protocols" icon={Shield} />} />
-                      <Route path="/discussion" element={<RolePlaceholder title="Discussion" description="Moderate discussions and forums" icon={MessageSquare} />} />
-                      <Route path="/grade-assignments" element={<RolePlaceholder title="Grade Assignments" description="Review and grade student assignments" icon={Award} />} />
+                      <Route path="/discussion" element={<Discussions />} />
+                      <Route path="/discussion/:discussionId" element={<DiscussionView />} />
+                      <Route path="/grade-assignments" element={<GradeAssignments />} />
+                      <Route path="/grade-assignments/:assignmentId" element={<AssignmentSubmissions />} />
                     </>
                   )}
                 </Routes>
