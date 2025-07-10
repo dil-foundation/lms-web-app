@@ -53,8 +53,8 @@ const ObserverInformation = ({ observerRole, onRoleChange }) => (
       </div>
       {observerRole && (
         <div className="text-center mt-6">
-          <Badge variant="outline" className="border-green-300 bg-white">
-            <Check className="w-4 h-4 mr-2 text-green-600" />
+          <Badge variant="outline" className="border-green-300 bg-white text-green-800 dark:bg-green-950 dark:text-green-100 dark:border-green-700">
+            <Check className="w-4 h-4 mr-2 text-green-600 dark:text-green-400" />
             Role-specific questionnaire will appear below
           </Badge>
         </div>
@@ -152,11 +152,11 @@ const PrincipalAssessment = () => (
           <Select>
             <SelectTrigger><SelectValue placeholder="Select rating" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="5">Excellent</SelectItem>
-              <SelectItem value="4">Good</SelectItem>
-              <SelectItem value="3">Average</SelectItem>
-              <SelectItem value="2">Fair</SelectItem>
-              <SelectItem value="1">Poor</SelectItem>
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="4">4</SelectItem>
+              <SelectItem value="3">3</SelectItem>
+              <SelectItem value="2">2</SelectItem>
+              <SelectItem value="1">1</SelectItem>
             </SelectContent>
           </Select>
         </AssessmentQuestion>
@@ -168,11 +168,11 @@ const PrincipalAssessment = () => (
           <Select>
             <SelectTrigger><SelectValue placeholder="Select rating" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="5">Excellent</SelectItem>
-              <SelectItem value="4">Good</SelectItem>
-              <SelectItem value="3">Average</SelectItem>
-              <SelectItem value="2">Fair</SelectItem>
-              <SelectItem value="1">Poor</SelectItem>
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="4">4</SelectItem>
+              <SelectItem value="3">3</SelectItem>
+              <SelectItem value="2">2</SelectItem>
+              <SelectItem value="1">1</SelectItem>
             </SelectContent>
           </Select>
         </AssessmentQuestion>
@@ -185,11 +185,11 @@ const PrincipalAssessment = () => (
         <Select>
           <SelectTrigger><SelectValue placeholder="Select rating" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="5">Excellent</SelectItem>
-            <SelectItem value="4">Good</SelectItem>
-            <SelectItem value="3">Average</SelectItem>
-            <SelectItem value="2">Fair</SelectItem>
-            <SelectItem value="1">Poor</SelectItem>
+            <SelectItem value="5">5</SelectItem>
+            <SelectItem value="4">4</SelectItem>
+            <SelectItem value="3">3</SelectItem>
+            <SelectItem value="2">2</SelectItem>
+            <SelectItem value="1">1</SelectItem>
           </SelectContent>
         </Select>
       </AssessmentQuestion>
@@ -234,11 +234,11 @@ const EceObserverAssessment = () => (
           <Select>
             <SelectTrigger><SelectValue placeholder="Select rating" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="5">Excellent</SelectItem>
-              <SelectItem value="4">Good</SelectItem>
-              <SelectItem value="3">Average</SelectItem>
-              <SelectItem value="2">Fair</SelectItem>
-              <SelectItem value="1">Poor</SelectItem>
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="4">4</SelectItem>
+              <SelectItem value="3">3</SelectItem>
+              <SelectItem value="2">2</SelectItem>
+              <SelectItem value="1">1</SelectItem>
             </SelectContent>
           </Select>
         </AssessmentQuestion>
@@ -250,11 +250,11 @@ const EceObserverAssessment = () => (
           <Select>
             <SelectTrigger><SelectValue placeholder="Select rating" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="5">Excellent</SelectItem>
-              <SelectItem value="4">Good</SelectItem>
-              <SelectItem value="3">Average</SelectItem>
-              <SelectItem value="2">Fair</SelectItem>
-              <SelectItem value="1">Poor</SelectItem>
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="4">4</SelectItem>
+              <SelectItem value="3">3</SelectItem>
+              <SelectItem value="2">2</SelectItem>
+              <SelectItem value="1">1</SelectItem>
             </SelectContent>
           </Select>
         </AssessmentQuestion>
@@ -267,11 +267,11 @@ const EceObserverAssessment = () => (
         <Select>
           <SelectTrigger><SelectValue placeholder="Select rating" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="5">Excellent</SelectItem>
-            <SelectItem value="4">Good</SelectItem>
-            <SelectItem value="3">Average</SelectItem>
-            <SelectItem value="2">Fair</SelectItem>
-            <SelectItem value="1">Poor</SelectItem>
+            <SelectItem value="5">5</SelectItem>
+            <SelectItem value="4">4</SelectItem>
+            <SelectItem value="3">3</SelectItem>
+            <SelectItem value="2">2</SelectItem>
+            <SelectItem value="1">1</SelectItem>
           </SelectContent>
         </Select>
       </AssessmentQuestion>
@@ -330,11 +330,11 @@ const SchoolOfficerAssessment = () => (
           <Select>
             <SelectTrigger><SelectValue placeholder="Select rating" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="5">Excellent</SelectItem>
-              <SelectItem value="4">Good</SelectItem>
-              <SelectItem value="3">Average</SelectItem>
-              <SelectItem value="2">Fair</SelectItem>
-              <SelectItem value="1">Poor</SelectItem>
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="4">4</SelectItem>
+              <SelectItem value="3">3</SelectItem>
+              <SelectItem value="2">2</SelectItem>
+              <SelectItem value="1">1</SelectItem>
             </SelectContent>
           </Select>
         </AssessmentQuestion>
@@ -345,11 +345,11 @@ const SchoolOfficerAssessment = () => (
           <Select>
             <SelectTrigger><SelectValue placeholder="Select rating" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="5">Excellent</SelectItem>
-              <SelectItem value="4">Good</SelectItem>
-              <SelectItem value="3">Average</SelectItem>
-              <SelectItem value="2">Fair</SelectItem>
-              <SelectItem value="1">Poor</SelectItem>
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="4">4</SelectItem>
+              <SelectItem value="3">3</SelectItem>
+              <SelectItem value="2">2</SelectItem>
+              <SelectItem value="1">1</SelectItem>
             </SelectContent>
           </Select>
         </AssessmentQuestion>
@@ -405,11 +405,11 @@ const ProjectManagerAssessment = () => (
           <Select>
             <SelectTrigger><SelectValue placeholder="Select rating" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="5">Excellent</SelectItem>
-              <SelectItem value="4">Good</SelectItem>
-              <SelectItem value="3">Average</SelectItem>
-              <SelectItem value="2">Fair</SelectItem>
-              <SelectItem value="1">Poor</SelectItem>
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="4">4</SelectItem>
+              <SelectItem value="3">3</SelectItem>
+              <SelectItem value="2">2</SelectItem>
+              <SelectItem value="1">1</SelectItem>
             </SelectContent>
           </Select>
         </AssessmentQuestion>
@@ -420,11 +420,11 @@ const ProjectManagerAssessment = () => (
           <Select>
             <SelectTrigger><SelectValue placeholder="Select rating" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="5">Excellent</SelectItem>
-              <SelectItem value="4">Good</SelectItem>
-              <SelectItem value="3">Average</SelectItem>
-              <SelectItem value="2">Fair</SelectItem>
-              <SelectItem value="1">Poor</SelectItem>
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="4">4</SelectItem>
+              <SelectItem value="3">3</SelectItem>
+              <SelectItem value="2">2</SelectItem>
+              <SelectItem value="1">1</SelectItem>
             </SelectContent>
           </Select>
         </AssessmentQuestion>
@@ -435,11 +435,11 @@ const ProjectManagerAssessment = () => (
           <Select>
             <SelectTrigger><SelectValue placeholder="Select rating" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="5">Excellent</SelectItem>
-              <SelectItem value="4">Good</SelectItem>
-              <SelectItem value="3">Average</SelectItem>
-              <SelectItem value="2">Fair</SelectItem>
-              <SelectItem value="1">Poor</SelectItem>
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="4">4</SelectItem>
+              <SelectItem value="3">3</SelectItem>
+              <SelectItem value="2">2</SelectItem>
+              <SelectItem value="1">1</SelectItem>
             </SelectContent>
           </Select>
         </AssessmentQuestion>

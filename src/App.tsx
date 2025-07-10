@@ -13,6 +13,7 @@ import StudentAuth from './pages/StudentAuth';
 import TeacherAuth from './pages/TeacherAuth';
 import AdminAuth from './pages/AdminAuth';
 import ProfileSettings from './pages/ProfileSettings';
+import SecureObserverFormPage from './pages/SecureObserverFormPage';
 import { AuthProvider } from "@/contexts/AuthContext";
 
 const queryClient = new QueryClient({
@@ -40,6 +41,7 @@ const App = () => (
           <Route path="/dashboard/*" element={<Dashboard />} />
           <Route path="/course-builder/:courseId" element={<CourseBuilder />} />
           <Route path="/profile-settings" element={<ProfileSettings />} />
+          <Route path="/secure-form/:token" element={<SecureObserverFormPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         </AuthProvider>

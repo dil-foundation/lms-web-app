@@ -13,6 +13,8 @@ import { Discussions } from '@/components/admin/Discussions';
 import { DiscussionView } from '@/components/admin/DiscussionView';
 import { GradeAssignments } from '@/components/admin/GradeAssignments';
 import { AssignmentSubmissions } from '@/components/admin/AssignmentSubmissions';
+import { AdminSettings } from '@/components/admin/AdminSettings';
+import { AdminSecurity } from '@/components/admin/AdminSecurity';
 import CourseBuilder from './CourseBuilder';
 import { CourseOverview } from './CourseOverview';
 import { CourseContent } from './CourseContent';
@@ -125,8 +127,8 @@ const Dashboard = () => {
                       <Route path="/reports" element={<ReportsOverview />} />
               <Route path="/observation-reports" element={<ObservationReports />} />
                       <Route path="/secure-links" element={<RolePlaceholder title="Secure Links" description="Manage secure links and access controls" icon={Link} />} />
-                      <Route path="/settings" element={<RolePlaceholder title="Settings" description="Configure system-wide settings" icon={Settings} />} />
-                      <Route path="/security" element={<RolePlaceholder title="Security" description="Manage security settings and protocols" icon={Shield} />} />
+                      <Route path="/settings" element={<AdminSettings />} />
+                      <Route path="/security" element={<AdminSecurity />} />
                       <Route path="/discussion" element={<Discussions />} />
                       <Route path="/discussion/:discussionId" element={<DiscussionView />} />
                       <Route path="/grade-assignments" element={<GradeAssignments />} />

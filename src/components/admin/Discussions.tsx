@@ -250,47 +250,39 @@ export const Discussions = () => {
             </div>
             <div className="space-y-4">
               {discussions.map((discussion) => (
-                <Link to={`/dashboard/discussion/${discussion.id}`} key={discussion.id} className="block hover:bg-muted/50 rounded-lg">
-                  <div className="flex items-start space-x-4 p-4">
-                    <Avatar>
-                      <AvatarImage src={`https://api.dicebear.com/6.x/initials/svg?seed=${discussion.author}`} />
-                      <AvatarFallback>{discussion.authorInitials}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
+                <Link to={`/dashboard/discussion/${discussion.id}`} key={discussion.id} className="block">
+                  <Card className="hover:bg-muted/50 transition-colors">
+                    <CardContent className="p-4 flex items-center gap-4">
+                      <Avatar>
+                        <AvatarImage src={`https://api.dicebear.com/6.x/initials/svg?seed=${discussion.author}`} />
+                        <AvatarFallback>{discussion.authorInitials}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4 items-center">
+                        <div className="col-span-2 md:col-span-2">
+                          <p className="font-semibold text-base">{discussion.title}</p>
+                          <p className="text-sm text-muted-foreground">{discussion.content}</p>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
                           <p className="font-semibold">{discussion.author}</p>
-                          <span className="text-xs text-muted-foreground">•</span>
-                          <p className="text-xs text-muted-foreground">{discussion.date}</p>
+                          <p className="mt-1">{discussion.date}</p>
                         </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <span className="sr-only">Open menu</span>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={(e) => e.preventDefault()}>Edit</DropdownMenuItem>
-                            <DropdownMenuItem onClick={(e) => e.preventDefault()}>Delete</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                      <h3 className="font-bold text-lg">{discussion.title}</h3>
-                      <p className="text-muted-foreground mt-1">{discussion.content}</p>
-                      <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
-                        <Badge variant={discussion.type === 'Announcement' ? 'default' : 'secondary'}>
-                          {discussion.type}
-                        </Badge>
-                        <div className="flex items-center gap-1">
-                          <MessageCircle className="h-4 w-4" /> {discussion.comments}
+                        <div className="text-sm text-muted-foreground">
+                          <p>{discussion.comments} comments</p>
+                          <p>{discussion.likes} likes</p>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <ThumbsUp className="h-4 w-4" /> {discussion.likes}
+                        <div className="text-sm text-center">
+                          <Badge variant={discussion.type === 'Announcement' ? 'default' : 'secondary'}>
+                            {discussion.type}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-2 justify-self-end">
+                          <Button variant="ghost" size="icon" onClick={(e) => e.preventDefault()}>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
                 </Link>
               ))}
             </div>
