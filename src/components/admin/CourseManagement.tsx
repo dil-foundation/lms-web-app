@@ -7,7 +7,7 @@ import {
   MoreVertical,
   Plus, 
   Users,
-  Eye, 
+  Eye,
   Clock,
   ListFilter,
   PlusCircle,
@@ -138,7 +138,7 @@ const CourseManagement = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      let coursesQuery = supabase
+      let query = supabase
         .from('courses')
         .select(`
           id,
@@ -147,49 +147,47 @@ const CourseManagement = () => {
           image_url,
           duration,
           author_id,
-          profiles(first_name, last_name),
-          sections:course_sections(lessons:course_lessons(id)),
-          members:course_members(role)
+          author:profiles (
+            first_name,
+            last_name
+          ),
+          members:course_members (id),
+          sections:course_sections(lessons:course_lessons(id))
         `);
 
-      if (statusFilter !== 'All') {
-        coursesQuery = coursesQuery.eq('status', statusFilter);
+      if (searchQuery) {
+        const { data: courseIds, error: searchError } = await supabase
+          .rpc('get_course_ids_by_search', { search_term: searchQuery });
+
+        if (searchError) throw searchError;
+
+        if (courseIds && courseIds.length > 0) {
+          const ids = courseIds.map(c => c.id);
+          query = query.in('id', ids);
+        } else {
+          setCourses([]);
+          setLoading(false);
+          return;
+        }
       }
 
-      if (searchQuery) {
-        coursesQuery = coursesQuery.or(
-          `title.ilike.%${searchQuery}%,profiles.first_name.ilike.%${searchQuery}%,profiles.last_name.ilike.%${searchQuery}%`
-        );
+      if (statusFilter && statusFilter !== 'All') {
+        query = query.eq('status', statusFilter);
       }
       
-      const { data: coursesData, error: coursesError } = await coursesQuery;
+      const { data: coursesData, error: coursesError } = await query;
 
       if (coursesError) {
-        toast.error("Failed to fetch courses.");
-        console.error(coursesError);
-        setLoading(false);
-        return;
+        throw coursesError;
       }
 
       if (coursesData) {
-        // Calculate all statistics from the RLS-filtered course list
-        setStats({
-          total: coursesData.length,
-          published: coursesData.filter(c => c.status === 'Published').length,
-          draft: coursesData.filter(c => c.status === 'Draft').length,
-        });
-
-        const totalEnrolledStudents = coursesData.reduce((acc, course) => {
-            return acc + course.members.filter((m: any) => m.role === 'student').length;
-        }, 0);
-        setTotalStudents(totalEnrolledStudents);
-
         const transformedCourses = await Promise.all(coursesData.map(async (course: any) => {
-          const authorProfile = course.profiles as { first_name: string, last_name: string } | null;
+          const authorProfile = course.author as { first_name: string, last_name: string } | null;
           
           let imageUrl = '/placeholder.svg';
           if (course.image_url) {
-            const { data: signedUrlData } = await supabase.storage.from('dil-lms').createSignedUrl(course.image_url, 3600);
+            const { data: signedUrlData } = await supabase.storage.from('dil-lms').createSignedUrl(course.image_url, 60);
             if (signedUrlData) {
               imageUrl = signedUrlData.signedUrl;
             }
@@ -198,14 +196,14 @@ const CourseManagement = () => {
           return {
             id: course.id,
             title: course.title,
-            status: course.status as CourseStatus,
+            status: course.status,
             imageUrl: imageUrl,
             imagePath: course.image_url,
-            totalStudents: course.members.filter((m: any) => m.role === 'student').length,
-            totalLessons: course.sections.reduce((acc: number, section: any) => acc + section.lessons.length, 0),
+            totalStudents: (course.members || []).length,
+            totalLessons: (course.sections || []).reduce((acc: number, section: any) => acc + (section.lessons || []).length, 0),
             authorName: authorProfile ? `${authorProfile.first_name} ${authorProfile.last_name}`.trim() : 'N/A',
             authorId: course.author_id,
-            duration: course.duration,
+            duration: course.duration || 'N/A',
           };
         }));
         setCourses(transformedCourses);
