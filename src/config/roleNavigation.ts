@@ -1,5 +1,5 @@
 
-import { Home, BookOpen, FileQuestion, TrendingUp, Users, Settings, BarChart3, GraduationCap, ClipboardList, Award, UserCheck, Database, Shield, MessageSquare, Link, Eye } from 'lucide-react';
+import { Home, BookOpen, FileQuestion, TrendingUp, Users, Settings, BarChart3, GraduationCap, ClipboardList, Award, UserCheck, Database, Shield, MessageSquare, Link, Eye, MessageCircle } from 'lucide-react';
 
 export type UserRole = 'student' | 'teacher' | 'admin';
 
@@ -28,11 +28,11 @@ export const getRoleNavigation = (role?: UserRole): NavigationItem[] => {
     case 'teacher':
       return [
         { title: 'Overview', path: '/dashboard', icon: Home },
-        { title: 'My Classes', path: '/dashboard/classes', icon: Users },
-        { title: 'Course Management', path: '/dashboard/courses', icon: BookOpen },
-        { title: 'Student Progress', path: '/dashboard/student-progress', icon: TrendingUp },
-        { title: 'Assignments', path: '/dashboard/assignments', icon: ClipboardList },
-        { title: 'Resources', path: '/dashboard/resources', icon: Award },
+        { title: 'My Courses', path: '/dashboard/courses', icon: BookOpen },
+        { title: 'Students', path: '/dashboard/students', icon: Users },
+        { title: 'Reports', path: '/dashboard/reports', icon: FileQuestion },
+        { title: 'Messages', path: '/dashboard/messages', icon: MessageSquare },
+        { title: 'Discussion', path: '/dashboard/discussion', icon: MessageCircle },
       ];
     
     case 'admin':
