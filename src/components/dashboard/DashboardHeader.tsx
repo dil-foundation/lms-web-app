@@ -22,7 +22,7 @@ export const DashboardHeader = memo(() => {
   }, []);
 
   return (
-    <div className={`hidden md:flex sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-background/80 backdrop-blur-lg' : ''} items-center justify-between h-18 border-b border-border px-4 sm:px-6 lg:px-8 py-1`}>
+    <div className={`hidden md:flex sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-background/80 backdrop-blur-lg' : ''} items-center justify-between h-20 border-b border-border px-4 sm:px-6 lg:px-8 py-3`}>
       <div>
         <Logo />
       </div>

@@ -53,7 +53,7 @@ export const UserProfileSection = ({ profile }: UserProfileSectionProps) => {
         <p className="text-sm font-medium text-foreground truncate">
           {displayName}
         </p>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 mt-2">
           <Badge variant="secondary" className="text-xs">
             {getRoleDisplayName(profile.role)}
           </Badge>

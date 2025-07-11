@@ -35,7 +35,7 @@ export const DashboardSidebar = ({
   const navigationItems = getRoleNavigation(userRole);
 
   const SidebarComponent = () => (
-    <Sidebar className="border-r border-border bg-background">
+    <Sidebar className="border-r border-border bg-background h-full">
       <UserProfileSection profile={userProfile} />
       <SidebarContent>
         <SidebarGroup>
@@ -147,7 +147,7 @@ export const DashboardSidebar = ({
 
       {/* Desktop Layout */}
       <div className="hidden md:flex min-h-full w-full">
-        <div className="w-72 flex-shrink-0">
+        <div className="w-72 flex-shrink-0 pt-20">
           <SidebarComponent />
         </div>
         

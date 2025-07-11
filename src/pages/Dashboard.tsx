@@ -18,10 +18,14 @@ import { AdminSecurity } from '@/components/admin/AdminSecurity';
 import CourseBuilder from './CourseBuilder';
 import { CourseOverview } from './CourseOverview';
 import { CourseContent } from './CourseContent';
+import StudentsPage from './StudentsPage';
+import ReportsPage from './ReportsPage';
+import DiscussionsPage from './DiscussionsPage';
+import MessagesPage from './MessagesPage';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { BookOpen, Users, ClipboardList, TrendingUp, BarChart3, Settings, GraduationCap, Award, Shield, MessageSquare, Link, Eye } from 'lucide-react';
+import { BookOpen, Users, ClipboardList, TrendingUp, BarChart3, Settings, GraduationCap, Award, Shield, MessageSquare, Link, Eye, FileText, MessageCircle } from 'lucide-react';
 import { type UserRole } from '@/config/roleNavigation';
 import ProfileSettings from './ProfileSettings';
 import { ContentLoader } from '@/components/ContentLoader';
@@ -110,12 +114,12 @@ const Dashboard = () => {
                   )}
           {finalRole === 'teacher' && (
                     <>
-                      <Route path="/classes" element={<RolePlaceholder title="My Classes" description="Manage your classes and students" icon={Users} />} />
-              <Route path="/courses" element={<CourseManagement />} />
-              <Route path="/courses/builder/:courseId" element={<CourseBuilder />} />
-                      <Route path="/student-progress" element={<RolePlaceholder title="Student Progress" description="Monitor individual student performance" icon={TrendingUp} />} />
-                      <Route path="/assignments" element={<RolePlaceholder title="Assignment Management" description="Create and grade assignments" icon={ClipboardList} />} />
-                      <Route path="/resources" element={<RolePlaceholder title="Teaching Resources" description="Access and manage teaching materials" icon={Award} />} />
+                      <Route path="/courses" element={<CourseManagement />} />
+                      <Route path="/courses/builder/:courseId" element={<CourseBuilder />} />
+                      <Route path="/students" element={<StudentsPage />} />
+                      <Route path="/reports" element={<ReportsPage />} />
+                      <Route path="/messages" element={<MessagesPage />} />
+                      <Route path="/discussion" element={<DiscussionsPage />} />
                     </>
                   )}
           {finalRole === 'admin' && (
