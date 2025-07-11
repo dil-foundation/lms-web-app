@@ -2,6 +2,9 @@ import { Routes, Route, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { DashboardSidebar } from '@/components/DashboardSidebar';
 import { StudentDashboard } from '@/components/dashboard/StudentDashboard';
+import { StudentCourses } from '@/components/dashboard/StudentCourses';
+import { StudentProgress } from '@/components/dashboard/StudentProgress';
+import { StudentAssignments } from '@/components/dashboard/StudentAssignments';
 import { TeacherDashboard } from '@/components/dashboard/TeacherDashboard';
 import { AdminDashboard } from '@/components/dashboard/AdminDashboard';
 import { RolePlaceholder } from '@/components/dashboard/RolePlaceholder';
@@ -106,9 +109,9 @@ const Dashboard = () => {
                   <Route path="/course/:id/content" element={<CourseContent />} />
           {finalRole === 'student' && (
                     <>
-                      <Route path="/courses" element={<StudentDashboard userProfile={finalProfile} />} />
-                      <Route path="/assignments" element={<RolePlaceholder title="Assignments" description="View and complete your assignments" icon={ClipboardList} />} />
-                      <Route path="/progress" element={<RolePlaceholder title="Progress Tracking" description="Monitor your learning progress and achievements" icon={TrendingUp} />} />
+                      <Route path="/courses" element={<StudentCourses userProfile={finalProfile} />} />
+                      <Route path="/assignments" element={<StudentAssignments userProfile={finalProfile} />} />
+                      <Route path="/progress" element={<StudentProgress userProfile={finalProfile} />} />
                       <Route path="/ai-tutor" element={<RolePlaceholder title="AI Tutor" description="Get personalized AI-powered learning assistance" icon={GraduationCap} />} />
                     </>
                   )}

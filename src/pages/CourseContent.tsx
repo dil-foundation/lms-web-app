@@ -1,6 +1,9 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ContentLoader } from '@/components/ContentLoader';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -44,10 +47,131 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isVideoMuted, setIsVideoMuted] = useState(false);
   const [videoProgress, setVideoProgress] = useState(0);
+  const [course, setCourse] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock course data - in real app, this would come from API
-  const course = {
-    id: courseId || id || '1',
+  const actualCourseId = courseId || id;
+
+  // Transform course data from Supabase format to component format
+  // Helper function to determine if a URL is a valid video
+  const isValidVideoUrl = (url: string | null | undefined): boolean => {
+    if (!url) return false;
+    
+    // Check for common video platforms and valid video URLs
+    const videoPatterns = [
+      /^https?:\/\/(?:www\.)?youtube\.com\/embed\/[\w-]+/,
+      /^https?:\/\/(?:www\.)?youtube\.com\/watch\?v=[\w-]+/,
+      /^https?:\/\/youtu\.be\/[\w-]+/,
+      /^https?:\/\/player\.vimeo\.com\/video\/\d+/,
+      /^https?:\/\/vimeo\.com\/\d+/,
+      /^https?:\/\/.*\.(mp4|webm|ogg|m4v|mov|avi|wmv|flv)(\?.*)?$/i
+    ];
+    
+    // Exclude placeholder/demo URLs
+    const placeholderPatterns = [
+      /dQw4w9WgXcQ/, // Rick Roll placeholder
+      /placeholder/i,
+      /demo/i,
+      /sample/i
+    ];
+    
+    const isVideo = videoPatterns.some(pattern => pattern.test(url));
+    const isPlaceholder = placeholderPatterns.some(pattern => pattern.test(url));
+    
+    return isVideo && !isPlaceholder;
+  };
+
+  const transformCourseData = (data: any) => {
+    if (!data) return null;
+
+    const totalLessons = data.sections?.reduce((acc: number, section: any) => 
+      acc + (section.lessons?.length || 0), 0) || 0;
+    
+    return {
+      id: data.id,
+      title: data.title || "Course Title",
+      totalProgress: 0, // This would be calculated based on user progress
+      modules: data.sections?.map((section: any, index: number) => ({
+        id: section.id,
+        title: section.title,
+        duration: `${(section.lessons?.length || 0) * 15}m`, // Estimate 15min per lesson
+        lessons: section.lessons?.map((lesson: any, lessonIndex: number) => ({
+          id: lesson.id,
+          title: lesson.title,
+          type: lesson.content_type || 'video',
+          duration: lesson.duration || '10:00',
+          completed: false, // This would come from user progress
+          content: {
+            videoUrl: lesson.video_url,
+            thumbnailUrl: lesson.thumbnail_url || lesson.image_url || lesson.cover_image,
+            transcript: lesson.transcript || 'No transcript available.',
+            description: lesson.description || lesson.content || 'No description available.',
+            title: lesson.title,
+            text: lesson.content || 'No content available.',
+            hasValidVideo: isValidVideoUrl(lesson.video_url)
+          }
+        })) || []
+      })) || []
+    };
+  };
+
+  useEffect(() => {
+    const fetchCourseData = async () => {
+      if (!actualCourseId) {
+        setError("No course ID provided");
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const { data, error } = await supabase
+          .from('courses')
+          .select(`
+            *,
+            sections:course_sections (
+              *,
+              lessons:course_lessons (
+                *
+              )
+            )
+          `)
+          .eq('id', actualCourseId)
+          .single();
+
+        if (error) throw error;
+        
+        if (data) {
+          const transformedCourse = transformCourseData(data);
+          setCourse(transformedCourse);
+          
+          // Set the first lesson as current if available
+          if (transformedCourse?.modules?.[0]?.lessons?.[0]) {
+            setCurrentLessonId(transformedCourse.modules[0].lessons[0].id);
+          }
+        } else {
+          throw new Error("Course not found");
+        }
+      } catch (err: any) {
+        console.error("Error fetching course data:", err);
+        setError(err.message);
+        toast.error("Failed to load course content", {
+          description: err.message
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCourseData();
+  }, [actualCourseId]);
+
+  // Default course structure for when real data is not available
+  const defaultCourse = {
+    id: actualCourseId || '1',
     title: "Complete English Language Mastery",
     totalProgress: 45,
     modules: [
@@ -64,8 +188,10 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
             completed: true,
             content: {
               videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+              thumbnailUrl: '/public/placeholder.svg',
               transcript: 'Welcome to our comprehensive English language course...',
-              description: 'In this introductory lesson, we will cover the course structure and learning objectives.'
+              description: 'In this introductory lesson, we will cover the course structure and learning objectives.',
+              hasValidVideo: true
             }
           },
           {
@@ -149,8 +275,10 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
             completed: false,
             content: {
               videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+              thumbnailUrl: '/public/placeholder.svg',
               transcript: 'Let\'s explore the fundamental parts of speech...',
-              description: 'Learn about nouns, verbs, adjectives, and more in this comprehensive lesson.'
+              description: 'Learn about nouns, verbs, adjectives, and more in this comprehensive lesson.',
+              hasValidVideo: true
             }
           },
           {
@@ -207,19 +335,6 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     ]
   };
 
-  const currentLesson = course.modules
-    .flatMap(module => module.lessons)
-    .find(lesson => lesson.id === currentLessonId);
-
-  const currentModule = course.modules.find(module => 
-    module.lessons.some(lesson => lesson.id === currentLessonId)
-  );
-
-  const allLessons = course.modules.flatMap(module => module.lessons);
-  const currentIndex = allLessons.findIndex(lesson => lesson.id === currentLessonId);
-  const nextLesson = allLessons[currentIndex + 1];
-  const prevLesson = allLessons[currentIndex - 1];
-
   const markLessonComplete = (lessonId: string) => {
     // In real app, this would update the backend
     console.log(`Marking lesson ${lessonId} as complete`);
@@ -232,41 +347,64 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       case 'video':
         return (
           <div className="space-y-6">
-            {/* Video Player */}
-            <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
-              <iframe
-                src={currentLesson.content.videoUrl}
-                className="w-full h-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-              
-              {/* Video Controls Overlay */}
-              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Button size="sm" variant="secondary" onClick={() => setIsVideoMuted(!isVideoMuted)}>
-                    {isVideoMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                  </Button>
-                  <Button size="sm" variant="secondary">
-                    <Settings className="w-4 h-4" />
-                  </Button>
+            {/* Video Player or Image */}
+            {currentLesson.content.hasValidVideo && currentLesson.content.videoUrl ? (
+              <div className="space-y-4">
+                {/* Video Player */}
+                <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+                  <iframe
+                    src={currentLesson.content.videoUrl}
+                    className="w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                  
+                  {/* Video Controls Overlay */}
+                  <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="secondary" onClick={() => setIsVideoMuted(!isVideoMuted)}>
+                        {isVideoMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                      </Button>
+                      <Button size="sm" variant="secondary">
+                        <Settings className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <Button size="sm" variant="secondary">
+                      <Maximize className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
-                <Button size="sm" variant="secondary">
-                  <Maximize className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
 
-            {/* Video Progress */}
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Video Progress</span>
-                <span className="text-sm font-medium">{videoProgress}% Complete</span>
+                {/* Video Progress */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Video Progress</span>
+                    <span className="text-sm font-medium">{videoProgress}% Complete</span>
+                  </div>
+                  <Progress value={videoProgress} className="h-2" />
+                </div>
               </div>
-              <Progress value={videoProgress} className="h-2" />
-            </div>
+            ) : currentLesson.content.thumbnailUrl ? (
+              /* Image Display */
+              <div className="relative aspect-video bg-muted rounded-lg overflow-hidden flex items-center justify-center">
+                <img
+                  src={currentLesson.content.thumbnailUrl}
+                  alt={currentLesson.title}
+                  className="max-w-full max-h-full object-contain"
+                />
+              </div>
+            ) : (
+              /* No Content Available */
+              <div className="relative aspect-video bg-muted rounded-lg overflow-hidden flex items-center justify-center">
+                <div className="text-center p-8">
+                  <PlayCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground text-lg font-medium">No video content available</p>
+                  <p className="text-muted-foreground/60 text-sm mt-2">Content will be available soon</p>
+                </div>
+              </div>
+            )}
 
-            {/* Video Description */}
+            {/* Lesson Description */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -291,17 +429,19 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
               </CardContent>
             </Card>
 
-            {/* Transcript */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Transcript</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-40">
-                  <p className="text-sm leading-relaxed">{currentLesson.content.transcript}</p>
-                </ScrollArea>
-              </CardContent>
-            </Card>
+            {/* Transcript - only show if there's actual content */}
+            {currentLesson.content.hasValidVideo && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Transcript</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-40">
+                    <p className="text-sm leading-relaxed">{currentLesson.content.transcript}</p>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            )}
           </div>
         );
 
@@ -408,6 +548,42 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     }
   };
 
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <ContentLoader message="Loading course content..." />
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen text-center p-8">
+        <h2 className="text-xl font-semibold text-destructive mb-2">Failed to load course</h2>
+        <p className="text-muted-foreground mb-4">{error}</p>
+        <Button onClick={() => navigate(-1)}>Go Back</Button>
+      </div>
+    );
+  }
+
+  // Use fetched course data or fallback to default
+  const displayCourse = course || defaultCourse;
+  
+  const currentLesson = displayCourse.modules
+    .flatMap(module => module.lessons)
+    .find(lesson => lesson.id === currentLessonId);
+
+  const currentModule = displayCourse.modules.find(module => 
+    module.lessons.some(lesson => lesson.id === currentLessonId)
+  );
+
+  const allLessons = displayCourse.modules.flatMap(module => module.lessons);
+  const currentIndex = allLessons.findIndex(lesson => lesson.id === currentLessonId);
+  const nextLesson = allLessons[currentIndex + 1];
+  const prevLesson = allLessons[currentIndex - 1];
+
   return (
     <div className="min-h-screen bg-background w-full">
       {/* Mobile Sidebar Overlay */}
@@ -416,7 +592,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         <div className="relative w-80 h-full bg-background border-r border-border overflow-hidden">
           <div className="p-6 border-b border-border bg-card/50">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-foreground truncate text-lg">{course.title}</h2>
+              <h2 className="font-semibold text-foreground truncate text-lg">{displayCourse.title}</h2>
               <Button
                 variant="ghost"
                 size="sm"
@@ -429,16 +605,16 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium text-foreground">Course Progress</span>
-                <span className="text-sm font-semibold text-green-600">{course.totalProgress}%</span>
+                <span className="text-sm font-semibold text-green-600">{displayCourse.totalProgress}%</span>
               </div>
-              <Progress value={course.totalProgress} className="h-3 bg-muted" />
+              <Progress value={displayCourse.totalProgress} className="h-3 bg-muted" />
               <p className="text-xs text-muted-foreground">Keep up the great work!</p>
             </div>
           </div>
 
           <ScrollArea className="flex-1 p-2">
             <Accordion type="multiple" defaultValue={[currentModule?.id || '']}>
-              {course.modules.map((module) => (
+              {displayCourse.modules.map((module) => (
                 <AccordionItem key={module.id} value={module.id} className="border-none">
                   <AccordionTrigger className="hover:no-underline hover:bg-accent/50 rounded-lg px-3 py-4 transition-colors">
                     <div className="flex items-center gap-3 w-full">
@@ -521,21 +697,21 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         <div className={`${isSidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 border-r border-border bg-background overflow-hidden`}>
           <div className="p-6 border-b border-border bg-card/50">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-foreground truncate text-lg">{course.title}</h2>
+              <h2 className="font-semibold text-foreground truncate text-lg">{displayCourse.title}</h2>
             </div>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium text-foreground">Course Progress</span>
-                <span className="text-sm font-semibold text-green-600">{course.totalProgress}%</span>
+                <span className="text-sm font-semibold text-green-600">{displayCourse.totalProgress}%</span>
               </div>
-              <Progress value={course.totalProgress} className="h-3 bg-muted" />
+              <Progress value={displayCourse.totalProgress} className="h-3 bg-muted" />
               <p className="text-xs text-muted-foreground">Keep up the great work!</p>
             </div>
           </div>
 
           <ScrollArea className="flex-1 p-2">
             <Accordion type="multiple" defaultValue={[currentModule?.id || '']}>
-              {course.modules.map((module) => (
+              {displayCourse.modules.map((module) => (
                 <AccordionItem key={module.id} value={module.id} className="border-none">
                   <AccordionTrigger className="hover:no-underline hover:bg-accent/50 rounded-lg px-3 py-4 transition-colors">
                     <div className="flex items-center gap-3 w-full">

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { Menu, X } from 'lucide-react';
-import { getRoleNavigation, type UserRole } from '@/config/roleNavigation';
+import { getCategorizedNavigation, type UserRole } from '@/config/roleNavigation';
 import { UserProfileSection } from '@/components/sidebar/UserProfileSection';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Logo } from './header/Logo';
@@ -32,41 +32,48 @@ export const DashboardSidebar = ({
   userProfile
 }: DashboardSidebarProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const navigationItems = getRoleNavigation(userRole);
+  const navigationCategories = getCategorizedNavigation(userRole);
 
   const SidebarComponent = () => (
     <Sidebar className="border-r border-border bg-background h-full">
       <UserProfileSection profile={userProfile} />
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel className="mb-3">Navigation</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navigationItems.map(item => (
-                <SidebarMenuItem key={item.path}>
-                  <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.path} 
-                      end={item.path === '/dashboard'}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      {({ isActive }) => (
-                        <div className={`flex items-center space-x-3 px-3 py-2 mx-2 rounded-lg transition-all duration-200 ${
-                          isActive 
-                            ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 font-medium shadow-sm' 
-                            : 'text-foreground hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-foreground'
-                        }`}>
-                          <item.icon className="h-5 w-5" />
-                          <span className="font-medium">{item.title}</span>
-                        </div>
-                      )}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {navigationCategories.map(category => (
+          <SidebarGroup key={category.title}>
+            <SidebarGroupLabel className="mb-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{category.title}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {category.items.map(item => (
+                  <SidebarMenuItem key={item.path}>
+                    <SidebarMenuButton asChild>
+                      <NavLink 
+                        to={item.path} 
+                        end={item.path === '/dashboard'}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        {({ isActive }) => (
+                          <div className={`flex items-center space-x-3 px-3 py-2 mx-2 rounded-lg transition-all duration-200 ${
+                            isActive 
+                              ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 font-medium shadow-sm' 
+                              : 'text-foreground hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-foreground'
+                          }`}>
+                            <item.icon className="h-5 w-5" />
+                            <span className="font-medium">{item.title}</span>
+                            {item.badge && (
+                              <span className="ml-auto bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded-full">
+                                {item.badge}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
     </Sidebar>
   );
@@ -101,27 +108,38 @@ export const DashboardSidebar = ({
               <div className="flex-1 flex flex-col h-full">
                 <UserProfileSection profile={userProfile} />
                 <div className='flex-1 overflow-y-auto'>
-                  <div className="px-4 pt-4 pb-3">
-                    <h3 className="text-sm font-medium text-muted-foreground">Navigation</h3>
-                  </div>
-                  <nav className="px-2 space-y-1">
-                    {navigationItems.map(item => (
-                      <NavLink
-                        key={item.path}
-                        to={item.path}
-                        end={item.path === '/dashboard'}
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className={({ isActive }) => 
-                          `flex items-center space-x-3 px-3 py-2 mx-2 rounded-lg transition-all duration-200 ${
-                            isActive 
-                              ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 font-medium shadow-sm' 
-                              : 'text-foreground hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-foreground'
-                          }`
-                        }
-                      >
-                        <item.icon className="h-5 w-5" />
-                        <span className="font-medium">{item.title}</span>
-                      </NavLink>
+                  <nav className="px-2 space-y-2">
+                    {navigationCategories.map(category => (
+                      <div key={category.title} className="mb-6">
+                        <div className="px-4 pt-4 pb-3">
+                          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{category.title}</h3>
+                        </div>
+                        <div className="space-y-1">
+                          {category.items.map(item => (
+                            <NavLink
+                              key={item.path}
+                              to={item.path}
+                              end={item.path === '/dashboard'}
+                              onClick={() => setIsMobileMenuOpen(false)}
+                              className={({ isActive }) => 
+                                `flex items-center space-x-3 px-3 py-2 mx-2 rounded-lg transition-all duration-200 ${
+                                  isActive 
+                                    ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 font-medium shadow-sm' 
+                                    : 'text-foreground hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-foreground'
+                                }`
+                              }
+                            >
+                              <item.icon className="h-5 w-5" />
+                              <span className="font-medium">{item.title}</span>
+                              {item.badge && (
+                                <span className="ml-auto bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded-full">
+                                  {item.badge}
+                                </span>
+                              )}
+                            </NavLink>
+                          ))}
+                        </div>
+                      </div>
                     ))}
                   </nav>
                 </div>
