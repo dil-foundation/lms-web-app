@@ -72,6 +72,34 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
 
   const courseId = propCourseId || paramId;
 
+  // Helper function to determine if a URL is a valid video
+  const isValidVideoUrl = (url: string | null | undefined): boolean => {
+    if (!url) return false;
+    
+    // Check for common video platforms and valid video URLs
+    const videoPatterns = [
+      /^https?:\/\/(?:www\.)?youtube\.com\/embed\/[\w-]+/,
+      /^https?:\/\/(?:www\.)?youtube\.com\/watch\?v=[\w-]+/,
+      /^https?:\/\/youtu\.be\/[\w-]+/,
+      /^https?:\/\/player\.vimeo\.com\/video\/\d+/,
+      /^https?:\/\/vimeo\.com\/\d+/,
+      /^https?:\/\/.*\.(mp4|webm|ogg|m4v|mov|avi|wmv|flv)(\?.*)?$/i
+    ];
+    
+    // Exclude placeholder/demo URLs
+    const placeholderPatterns = [
+      /dQw4w9WgXcQ/, // Rick Roll placeholder
+      /placeholder/i,
+      /demo/i,
+      /sample/i
+    ];
+    
+    const isVideo = videoPatterns.some(pattern => pattern.test(url));
+    const isPlaceholder = placeholderPatterns.some(pattern => pattern.test(url));
+    
+    return isVideo && !isPlaceholder;
+  };
+
   const mapDataToCourse = (data: any) => {
     const firstTeacher = data.teachers?.[0] || data.members?.find((m: any) => m.role === 'teacher')?.profile || { first_name: 'Instructor', last_name: 'TBD' };
     const teacherName = `${firstTeacher.first_name || ''} ${firstTeacher.last_name || ''}`.trim();
@@ -83,8 +111,9 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
       title: data.title,
       subtitle: data.subtitle,
       description: data.description,
-      thumbnail: data.image || data.image_url || "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-      videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", // Placeholder
+      thumbnail: data.image || data.image_url || data.thumbnail_url || "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+      videoUrl: data.video_url || data.preview_video_url,
+      hasValidVideo: isValidVideoUrl(data.video_url || data.preview_video_url),
       instructor: {
         name: teacherName,
         title: "English Language Expert",
@@ -290,31 +319,50 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                 <CardContent className="p-0">
                   {/* Video/Image Preview - Full Width */}
                   <div className="relative aspect-video bg-gray-100 rounded-t-lg overflow-hidden min-h-[400px] md:min-h-[500px]">
-                    {isVideoPlaying ? (
-                      <iframe
-                        src={course.videoUrl}
-                        className="w-full h-full"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
+                    {course.hasValidVideo && course.videoUrl ? (
+                      // Valid video available
+                      isVideoPlaying ? (
+                        <iframe
+                          src={course.videoUrl}
+                          className="w-full h-full"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      ) : (
+                        <>
+                          <img 
+                            src={course.thumbnail} 
+                            alt={course.title}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                            <Button 
+                              onClick={handlePreview}
+                              size="lg"
+                              className="bg-white/90 hover:bg-white text-black px-8 py-4 text-lg"
+                            >
+                              <Play className="w-6 h-6 mr-3" />
+                              Preview Course
+                            </Button>
+                          </div>
+                        </>
+                      )
+                    ) : course.thumbnail ? (
+                      // Image only available
+                      <img 
+                        src={course.thumbnail} 
+                        alt={course.title}
+                        className="w-full h-full object-cover"
                       />
                     ) : (
-                      <>
-                        <img 
-                          src={course.thumbnail} 
-                          alt={course.title}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                          <Button 
-                            onClick={handlePreview}
-                            size="lg"
-                            className="bg-white/90 hover:bg-white text-black px-8 py-4 text-lg"
-                          >
-                            <Play className="w-6 h-6 mr-3" />
-                            Preview Course
-                          </Button>
+                      // No content available
+                      <div className="w-full h-full flex items-center justify-center bg-muted">
+                        <div className="text-center p-8">
+                          <PlayCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                          <p className="text-muted-foreground text-lg font-medium">No preview available</p>
+                          <p className="text-muted-foreground/60 text-sm mt-2">Course content will be available soon</p>
                         </div>
-                      </>
+                      </div>
                     )}
                   </div>
 
@@ -398,22 +446,24 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
               </CardContent>
             </Card>
 
-            {/* Requirements */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Requirements</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {course.requirements.map((req, index) => (
-                    <div key={index} className="flex items-start gap-2">
-                      <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
-                      <span className="text-sm">{req}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            {/* Requirements - only show if there are requirements */}
+            {course.requirements && course.requirements.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Requirements</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {course.requirements.map((req, index) => (
+                      <div key={index} className="flex items-start gap-2">
+                        <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
+                        <span className="text-sm">{req}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Course Curriculum */}
             <Card>
