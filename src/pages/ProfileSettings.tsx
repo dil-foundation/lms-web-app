@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ContentLoader } from "@/components/ContentLoader";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Terminal } from "lucide-react";
 
 const profileFormSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -79,16 +81,30 @@ const ProfileSettings = () => {
   };
 
   const onPasswordUpdate: SubmitHandler<PasswordFormValues> = async (data) => {
+    if (!user) return;
     try {
-      const { error } = await supabase.auth.updateUser({
+      const { error: passwordError } = await supabase.auth.updateUser({
         password: data.newPassword,
       });
+      if (passwordError) throw passwordError;
 
-      if (error) throw error;
-      toast.success("Password updated successfully! You will be logged out.");
+      // After a successful password update, check if we need to update the metadata
+      if (user.user_metadata?.password_setup_required) {
+        const { error: metaError } = await supabase.auth.updateUser({
+          data: { ...user.user_metadata, password_setup_required: false }
+        });
+        if (metaError) {
+          // Log this error, but don't block the user since the password was updated.
+          console.error("Failed to update password_setup_required flag:", metaError);
+        }
+      }
+
+      toast.success("Password updated successfully! You will be logged out for security.");
       resetPasswordForm();
-      // Optional: Log out the user for security
+      
+      // Log out the user to ensure the new session uses the password.
       setTimeout(() => supabase.auth.signOut(), 2000);
+
     } catch (error: any) {
       toast.error("Failed to update password.", { description: error.message });
     }
@@ -138,6 +154,15 @@ const ProfileSettings = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {user?.user_metadata?.password_setup_required && (
+              <Alert variant="destructive" className="mb-4">
+                <Terminal className="h-4 w-4" />
+                <AlertTitle>Action Required: Set Your Password</AlertTitle>
+                <AlertDescription>
+                  Your account was created by an administrator. To secure your account, please set a password now.
+                </AlertDescription>
+              </Alert>
+            )}
             <form onSubmit={handlePasswordSubmit(onPasswordUpdate)} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="newPassword">New Password</Label>

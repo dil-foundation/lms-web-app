@@ -1,11 +1,11 @@
-import { 
+import {
   BookOpen,
   CheckCircle,
   Edit,
   Edit3,
   Filter,
   MoreVertical,
-  Plus, 
+  Plus,
   Users,
   Eye,
   Clock,
@@ -52,6 +52,14 @@ import {
 } from "@/components/ui/alert-dialog"
 import { ContentLoader } from "../ContentLoader";
 import { cn } from "@/lib/utils";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 type CourseStatus = "Published" | "Draft" | "Under Review";
 
@@ -114,6 +122,9 @@ const CourseManagement = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<CourseStatus | "All">("All");
   const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage] = useState(6); // Show 6 courses per page
+  const [totalCourses, setTotalCourses] = useState(0);
   const [stats, setStats] = useState({
     total: 0,
     published: 0,
@@ -130,7 +141,7 @@ const CourseManagement = () => {
     }
     setLoadingStats(true);
     console.log("fetchStats: Starting for user:", user.id, "with initial app_metadata.role:", user.app_metadata.role);
-    
+
     try {
       let role = user.app_metadata.role;
 
@@ -142,7 +153,7 @@ const CourseManagement = () => {
           .select('role')
           .eq('id', user.id)
           .single();
-        
+
         if (profileError) {
           toast.error("Could not verify user role.", { description: profileError.message });
           throw profileError;
@@ -162,7 +173,7 @@ const CourseManagement = () => {
         ]);
 
         console.log("fetchStats (Admin) - Raw responses:", { totalRes, publishedRes, draftRes, studentsRes });
-        
+
         if (totalRes.error || publishedRes.error || draftRes.error || studentsRes.error) {
             console.error("fetchStats (Admin) - Error in Promise.all:", {
               totalError: totalRes.error,
@@ -210,7 +221,7 @@ const CourseManagement = () => {
                 supabase.from('courses').select('id', { count: 'exact', head: true }).in('id', courseIds).eq('status', 'Draft'),
                 supabase.from('course_members').select('user_id').in('course_id', courseIds).eq('role', 'student')
             ]);
-            
+
             console.log("fetchStats (Teacher) - Raw responses:", { totalRes, publishedRes, draftRes, studentsRes });
 
             if (totalRes.error || publishedRes.error || draftRes.error || studentsRes.error) {
@@ -259,6 +270,9 @@ const CourseManagement = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
+      const from = (currentPage - 1) * rowsPerPage;
+      const to = from + rowsPerPage - 1;
+
       let query = supabase
         .from('courses')
         .select(`
@@ -274,29 +288,18 @@ const CourseManagement = () => {
           ),
           members:course_members (id),
           sections:course_sections(lessons:course_lessons(id))
-        `);
+        `, { count: 'exact' });
+
 
       if (searchQuery) {
-        const { data: courseIds, error: searchError } = await supabase
-          .rpc('get_course_ids_by_search', { search_term: searchQuery });
-
-        if (searchError) throw searchError;
-
-        if (courseIds && courseIds.length > 0) {
-          const ids = courseIds.map(c => c.id);
-          query = query.in('id', ids);
-        } else {
-          setCourses([]);
-          setLoading(false);
-          return;
-        }
+        query = query.ilike('title', `%${searchQuery}%`);
       }
 
       if (statusFilter && statusFilter !== 'All') {
         query = query.eq('status', statusFilter);
       }
-      
-      const { data: coursesData, error: coursesError } = await query;
+
+      const { data: coursesData, error: coursesError, count } = await query.range(from, to);
 
       if (coursesError) {
         throw coursesError;
@@ -305,7 +308,7 @@ const CourseManagement = () => {
       if (coursesData) {
         const transformedCourses = await Promise.all(coursesData.map(async (course: any) => {
           const authorProfile = course.author as { first_name: string, last_name: string } | null;
-          
+
           let imageUrl = '/placeholder.svg';
           if (course.image_url) {
             const { data: signedUrlData } = await supabase.storage.from('dil-lms').createSignedUrl(course.image_url, 60);
@@ -328,6 +331,7 @@ const CourseManagement = () => {
           };
         }));
         setCourses(transformedCourses);
+        setTotalCourses(count || 0);
       }
     } catch (error: any) {
       toast.error("An unexpected error occurred.", { description: error.message });
@@ -335,11 +339,15 @@ const CourseManagement = () => {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, statusFilter]);
+  }, [searchQuery, statusFilter, currentPage, rowsPerPage]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
 
   const handleCreateCourse = () => {
     navigate('/dashboard/courses/builder/new');
@@ -359,7 +367,7 @@ const CourseManagement = () => {
     }
 
     const { error } = await supabase.from('courses').delete().eq('id', courseToDelete.id);
-    
+
     if (error) {
       toast.error("Failed to delete course.", { description: error.message });
     } else {
@@ -373,6 +381,7 @@ const CourseManagement = () => {
   };
 
   const { total, published, draft } = stats;
+  const totalPages = Math.ceil(totalCourses / rowsPerPage);
 
   return (
     <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
@@ -503,6 +512,39 @@ const CourseManagement = () => {
             </div>
           )}
             </CardContent>
+            {totalPages > 0 && (
+            <CardFooter>
+              <Pagination className="mt-4">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => { e.preventDefault(); setCurrentPage(p => Math.max(1, p - 1)); }}
+                      className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                  {[...Array(totalPages)].map((_, i) => (
+                    <PaginationItem key={i}>
+                      <PaginationLink
+                        href="#"
+                        onClick={(e) => { e.preventDefault(); setCurrentPage(i + 1); }}
+                        isActive={currentPage === i + 1}
+                      >
+                        {i + 1}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ))}
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => { e.preventDefault(); setCurrentPage(p => Math.min(totalPages, p + 1)); }}
+                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </CardFooter>
+          )}
           </Card>
 
       <AlertDialog open={!!courseToDelete} onOpenChange={(open) => !open && setCourseToDelete(null)}>
