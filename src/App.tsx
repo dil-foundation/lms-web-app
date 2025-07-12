@@ -14,6 +14,7 @@ import TeacherAuth from './pages/TeacherAuth';
 import AdminAuth from './pages/AdminAuth';
 import ProfileSettings from './pages/ProfileSettings';
 import { AuthProvider } from "@/contexts/AuthContext";
+import { AILMSProvider } from "@/contexts/AILMSContext";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,6 +31,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <AILMSProvider>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/auth" element={<RoleSelection />} />
@@ -42,6 +44,7 @@ const App = () => (
           <Route path="/profile-settings" element={<ProfileSettings />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+          </AILMSProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

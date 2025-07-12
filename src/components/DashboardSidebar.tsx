@@ -11,6 +11,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Logo } from './header/Logo';
 import { ThemeToggle } from './header/ThemeToggle';
 import { AuthButton } from './header/AuthButton';
+import { useAILMS } from '@/contexts/AILMSContext';
+import { AILMSToggle } from '@/components/ui/AILMSToggle';
 
 type Profile = {
   first_name: string | null;
@@ -32,7 +34,8 @@ export const DashboardSidebar = ({
   userProfile
 }: DashboardSidebarProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const navigationCategories = getCategorizedNavigation(userRole);
+  const { isAIMode } = useAILMS();
+  const navigationCategories = getCategorizedNavigation(userRole, isAIMode);
 
   const SidebarComponent = () => (
     <Sidebar className="border-r border-border bg-background h-full">
@@ -85,6 +88,9 @@ export const DashboardSidebar = ({
         <div className="sticky top-0 z-10 flex items-center justify-between h-16 p-4 bg-background border-b border-border">
           <div className="w-32">
             <Logo />
+          </div>
+          <div className="flex items-center justify-center">
+            <AILMSToggle size="sm" />
           </div>
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetTrigger asChild>
