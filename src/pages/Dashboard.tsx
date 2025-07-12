@@ -105,13 +105,13 @@ const Dashboard = () => {
           default: return <RolePlaceholder title="AI Dashboard" description="Welcome to AI Mode" icon={BookOpen} />;
         }
       } else {
-        switch (finalRole) {
-          case 'student': return <StudentDashboard userProfile={finalProfile} />;
-          case 'teacher': return <TeacherDashboard userProfile={finalProfile} />;
-          case 'admin': return <AdminDashboard userProfile={finalProfile} />;
-          default: return <RolePlaceholder title="Dashboard" description="Welcome" icon={BookOpen} />;
+      switch (finalRole) {
+        case 'student': return <StudentDashboard userProfile={finalProfile} />;
+        case 'teacher': return <TeacherDashboard userProfile={finalProfile} />;
+        case 'admin': return <AdminDashboard userProfile={finalProfile} />;
+        default: return <RolePlaceholder title="Dashboard" description="Welcome" icon={BookOpen} />;
         }
-      }
+    }
   };
 
   return (
@@ -132,10 +132,10 @@ const Dashboard = () => {
                           <Route path="/ai-assessment" element={<RolePlaceholder title="Skill Assessment" description="AI-powered assessment of your knowledge and skills" icon={ClipboardList} />} />
                         </>
                       ) : (
-                        <>
-                          <Route path="/courses" element={<StudentCourses userProfile={finalProfile} />} />
-                          <Route path="/assignments" element={<StudentAssignments userProfile={finalProfile} />} />
-                          <Route path="/progress" element={<StudentProgress userProfile={finalProfile} />} />
+                    <>
+                      <Route path="/courses" element={<StudentCourses userProfile={finalProfile} />} />
+                      <Route path="/assignments" element={<StudentAssignments userProfile={finalProfile} />} />
+                      <Route path="/progress" element={<StudentProgress userProfile={finalProfile} />} />
                         </>
                       )}
                     </>
@@ -153,13 +153,13 @@ const Dashboard = () => {
                           <Route path="/ai-feedback" element={<RolePlaceholder title="AI Feedback" description="Get AI-powered feedback on your teaching methods" icon={MessageSquare} />} />
                         </>
                       ) : (
-                        <>
-                          <Route path="/courses" element={<CourseManagement />} />
-                          <Route path="/courses/builder/:courseId" element={<CourseBuilder />} />
-                          <Route path="/students" element={<StudentsPage />} />
-                          <Route path="/reports" element={<ReportsPage />} />
-                          <Route path="/messages" element={<MessagesPage />} />
-                          <Route path="/discussion" element={<DiscussionsPage />} />
+                    <>
+                      <Route path="/courses" element={<CourseManagement />} />
+                      <Route path="/courses/builder/:courseId" element={<CourseBuilder />} />
+                      <Route path="/students" element={<StudentsPage />} />
+                      <Route path="/reports" element={<ReportsPage />} />
+                      <Route path="/messages" element={<MessagesPage />} />
+                      <Route path="/discussion" element={<DiscussionsPage />} />
                         </>
                       )}
                     </>
@@ -177,20 +177,20 @@ const Dashboard = () => {
                           <Route path="/ai-training" element={<RolePlaceholder title="AI Training" description="Train and fine-tune AI models" icon={BookOpen} />} />
                         </>
                       ) : (
-                        <>
-                          <Route path="/users" element={<UsersManagement />} />
-                          <Route path="/courses" element={<CourseManagement />} />
-                          <Route path="/courses/builder/:courseId" element={<CourseBuilder />} />
-                          <Route path="/analytics" element={<RolePlaceholder title="System Analytics" description="View comprehensive system analytics" icon={BarChart3} />} />
-                          <Route path="/reports" element={<ReportsOverview />} />
+                    <>
+                      <Route path="/users" element={<UsersManagement />} />
+                      <Route path="/courses" element={<CourseManagement />} />
+                      <Route path="/courses/builder/:courseId" element={<CourseBuilder />} />
+                      <Route path="/analytics" element={<RolePlaceholder title="System Analytics" description="View comprehensive system analytics" icon={BarChart3} />} />
+                      <Route path="/reports" element={<ReportsOverview />} />
               <Route path="/observation-reports" element={<ObservationReports />} />
-                          <Route path="/secure-links" element={<RolePlaceholder title="Secure Links" description="Manage secure links and access controls" icon={Link} />} />
-                          <Route path="/settings" element={<AdminSettings />} />
-                          <Route path="/security" element={<AdminSecurity />} />
-                          <Route path="/discussion" element={<Discussions />} />
-                          <Route path="/discussion/:discussionId" element={<DiscussionView />} />
-                          <Route path="/grade-assignments" element={<GradeAssignments />} />
-                          <Route path="/grade-assignments/:assignmentId" element={<AssignmentSubmissions />} />
+                      <Route path="/secure-links" element={<RolePlaceholder title="Secure Links" description="Manage secure links and access controls" icon={Link} />} />
+                      <Route path="/settings" element={<AdminSettings />} />
+                      <Route path="/security" element={<AdminSecurity />} />
+                      <Route path="/discussion" element={<Discussions />} />
+                      <Route path="/discussion/:discussionId" element={<DiscussionView />} />
+                      <Route path="/grade-assignments" element={<GradeAssignments />} />
+                      <Route path="/grade-assignments/:assignmentId" element={<AssignmentSubmissions />} />
                         </>
                       )}
                     </>
