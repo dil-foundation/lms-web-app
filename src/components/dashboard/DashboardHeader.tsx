@@ -9,7 +9,11 @@ import { Logo } from '../header/Logo';
 import { AILMSToggle } from '@/components/ui/AILMSToggle';
 import { cn } from '@/lib/utils';
 
-export const DashboardHeader = memo(() => {
+interface DashboardHeaderProps {
+  onToggle?: () => void;
+}
+
+export const DashboardHeader = memo(({ onToggle }: DashboardHeaderProps) => {
   const { user } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -30,7 +34,7 @@ export const DashboardHeader = memo(() => {
 
       {/* Center Toggle */}
       <div className="flex items-center justify-center">
-        <AILMSToggle size="md" />
+        <AILMSToggle size="md" onToggle={onToggle} />
       </div>
 
       <div className="flex items-center space-x-4">

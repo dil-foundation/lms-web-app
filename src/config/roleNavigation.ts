@@ -164,19 +164,17 @@ export const getAICategorizedNavigation = (role: UserRole): NavigationCategory[]
     case 'student':
       return [
         {
-          title: 'AI LEARNING',
+          title: 'LEARNING',
           items: [
-            { title: 'AI Dashboard', path: '/dashboard', icon: Bot },
-            { title: 'Chat with AI', path: '/dashboard/ai-chat', icon: MessageCircle },
-            { title: 'Smart Study', path: '/dashboard/ai-study', icon: Brain },
-            { title: 'AI Recommendations', path: '/dashboard/ai-recommendations', icon: Sparkles },
+            { title: 'Overview', path: '/dashboard', icon: Bot },
+            { title: 'Learn', path: '/dashboard/ai-learn', icon: BookOpen },
           ]
         },
         {
-          title: 'PROGRESS',
+          title: 'ASSESSMENT',
           items: [
-            { title: 'Learning Analytics', path: '/dashboard/ai-analytics', icon: TrendingUp },
-            { title: 'Skill Assessment', path: '/dashboard/ai-assessment', icon: Target },
+            { title: 'Practice', path: '/dashboard/ai-practice', icon: Brain },
+            { title: 'Progress', path: '/dashboard/ai-progress', icon: TrendingUp },
           ]
         }
       ];

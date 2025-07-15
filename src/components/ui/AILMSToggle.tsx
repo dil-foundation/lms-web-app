@@ -6,13 +6,22 @@ import { cn } from '@/lib/utils';
 interface AILMSToggleProps {
   className?: string;
   size?: 'sm' | 'md' | 'lg';
+  onToggle?: () => void;
 }
 
 export const AILMSToggle: React.FC<AILMSToggleProps> = ({ 
   className,
-  size = 'md'
+  size = 'md',
+  onToggle,
 }) => {
   const { mode, toggleMode, isAIMode } = useAILMS();
+
+  const handleToggle = () => {
+    toggleMode();
+    if (onToggle) {
+      onToggle();
+    }
+  };
 
   const sizeClasses = {
     sm: 'h-8 text-xs px-1',
@@ -20,10 +29,16 @@ export const AILMSToggle: React.FC<AILMSToggleProps> = ({
     lg: 'h-12 text-base px-1.5'
   };
 
-  const iconSizes = {
+  const lmsIconSizeClasses = {
     sm: 'h-5 w-5',
     md: 'h-6 w-6',
     lg: 'h-7 w-7'
+  };
+
+  const botIconSizeClasses = {
+    sm: 'h-7 w-7',
+    md: 'h-8 w-8',
+    lg: 'h-9 w-9'
   };
 
   return (
@@ -34,7 +49,7 @@ export const AILMSToggle: React.FC<AILMSToggleProps> = ({
           sizeClasses[size],
           className
         )}
-        onClick={toggleMode}
+        onClick={handleToggle}
       >
         {/* Background slider */}
         <div
@@ -57,7 +72,7 @@ export const AILMSToggle: React.FC<AILMSToggleProps> = ({
               : "text-muted-foreground hover:text-foreground"
           )}
         >
-          <Bot className={iconSizes[size]} />
+          <Bot className={botIconSizeClasses[size]} />
           <span className="whitespace-nowrap">AI Tutor</span>
         </button>
 
@@ -71,7 +86,7 @@ export const AILMSToggle: React.FC<AILMSToggleProps> = ({
               : "text-muted-foreground hover:text-foreground"
           )}
         >
-          <GraduationCap className={iconSizes[size]} />
+          <GraduationCap className={lmsIconSizeClasses[size]} />
           <span className="whitespace-nowrap">LMS</span>
         </button>
       </div>

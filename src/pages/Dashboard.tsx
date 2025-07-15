@@ -10,9 +10,14 @@ import { AdminDashboard } from '@/components/dashboard/AdminDashboard';
 import { AIStudentDashboard } from '@/components/dashboard/AIStudentDashboard';
 import { AITeacherDashboard } from '@/components/dashboard/AITeacherDashboard';
 import { AIAdminDashboard } from '@/components/dashboard/AIAdminDashboard';
+import { AIStudentProgress } from '@/components/dashboard/AIStudentProgress';
+import { AIStudentPractice } from '@/components/dashboard/AIStudentPractice';
+import { AIStudentLearn } from '@/components/dashboard/AIStudentLearn';
 import { RolePlaceholder } from '@/components/dashboard/RolePlaceholder';
 import { UsersManagement } from '@/components/admin/UsersManagement';
 import CourseManagement from '@/components/admin/CourseManagement';
+import { StageZero } from '@/pages/practice/StageZero';
+import { LessonDetail } from '@/pages/practice/LessonDetail';
 import { ReportsOverview } from '@/components/admin/ReportsOverview';
 import { ObservationReports } from '@/components/admin/ObservationReports';
 import { Discussions } from '@/components/admin/Discussions';
@@ -52,6 +57,10 @@ const Dashboard = () => {
   const { profile, loading: profileLoading, error: profileError } = useUserProfile();
   const { isAIMode } = useAILMS();
   const navigate = useNavigate();
+
+  const resetToDashboard = () => {
+    navigate('/dashboard');
+  };
   
   useEffect(() => {
     if (!authLoading && !user) {
@@ -125,11 +134,11 @@ const Dashboard = () => {
                     <>
                       {isAIMode ? (
                         <>
-                          <Route path="/ai-chat" element={<RolePlaceholder title="AI Chat" description="Chat with your AI tutor for personalized learning support" icon={MessageCircle} />} />
-                          <Route path="/ai-study" element={<RolePlaceholder title="Smart Study" description="AI-powered study sessions tailored to your learning style" icon={BookOpen} />} />
-                          <Route path="/ai-recommendations" element={<RolePlaceholder title="AI Recommendations" description="Personalized learning recommendations based on your progress" icon={TrendingUp} />} />
-                          <Route path="/ai-analytics" element={<RolePlaceholder title="Learning Analytics" description="AI-driven insights into your learning patterns" icon={BarChart3} />} />
-                          <Route path="/ai-assessment" element={<RolePlaceholder title="Skill Assessment" description="AI-powered assessment of your knowledge and skills" icon={ClipboardList} />} />
+                          <Route path="/ai-learn" element={<AIStudentLearn />} />
+                          <Route path="/ai-practice" element={<AIStudentPractice />} />
+                          <Route path="/ai-progress" element={<AIStudentProgress />} />
+                          <Route path="/practice/stage-0" element={<StageZero />} />
+                          <Route path="/practice/stage-0/lesson/:lessonId" element={<LessonDetail />} />
                         </>
                       ) : (
                     <>
@@ -203,7 +212,7 @@ const Dashboard = () => {
   return (
     <SidebarProvider>
       <div className="min-h-screen bg-background flex flex-col w-full">
-        <DashboardHeader />
+        <DashboardHeader onToggle={resetToDashboard} />
         <div className="flex flex-1 min-h-full w-full ">
             <DashboardSidebar userRole={currentRole} userProfile={displayProfile}>
                 <DashboardContent />
