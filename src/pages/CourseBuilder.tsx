@@ -60,6 +60,7 @@ import { CourseOverview } from './CourseOverview';
 interface CourseSection {
   id: string;
   title: string;
+  overview?: string;
   lessons: CourseLesson[];
   isCollapsed?: boolean;
 }
@@ -67,6 +68,7 @@ interface CourseSection {
 interface CourseLesson {
   id:string;
   title: string;
+  overview?: string;
   type: 'video' | 'attachment' | 'assignment' | 'quiz';
   content?: string | File | QuizData;
   duration?: number;
@@ -418,17 +420,26 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, d
 
   return (
     <div className="p-4 rounded-lg bg-background border space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 flex-1">
-          <div {...dragHandleProps} className="cursor-move">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start gap-2 flex-1">
+          <div {...dragHandleProps} className="cursor-move pt-2.5">
             <GripVertical className="text-muted-foreground" />
           </div>
-          <Input
-            value={lesson.title}
-            onChange={(e) => onUpdate(sectionId, lesson.id, { title: e.target.value })}
-            placeholder="Lesson Title"
-            className="flex-1"
-          />
+          <div className="flex-1 space-y-1">
+            <Input
+              value={lesson.title}
+              onChange={(e) => onUpdate(sectionId, lesson.id, { title: e.target.value })}
+              placeholder="Lesson Title"
+              className="font-semibold"
+            />
+            <Textarea
+              value={lesson.overview || ''}
+              onChange={(e) => onUpdate(sectionId, lesson.id, { overview: e.target.value })}
+              placeholder="Lesson overview (optional, e.g., 'Video - 5min')"
+              rows={1}
+              className="text-sm resize-none"
+            />
+          </div>
         </div>
         <div className="flex items-center gap-2 ml-4">
           <Select
@@ -935,7 +946,7 @@ const CourseBuilder = () => {
     for (const [sectionIndex, section] of courseToSave.sections.entries()) {
       const { data: savedSection, error: sectionError } = await supabase
         .from('course_sections')
-        .insert({ course_id: currentCourseId, title: section.title, position: sectionIndex })
+        .insert({ course_id: currentCourseId, title: section.title, overview: section.overview, position: sectionIndex })
         .select('id')
         .single();
       
@@ -947,6 +958,7 @@ const CourseBuilder = () => {
           section_id: savedSection.id,
           title: lesson.title,
           type: lesson.type,
+          overview: lesson.overview,
           content: typeof lesson.content === 'string' ? lesson.content : undefined,
           position: lessonIndex,
         });
@@ -1636,20 +1648,33 @@ const CourseBuilder = () => {
                         <SortableItem key={section.id} id={section.id} type="section">
                           {(dragHandleProps) => (
                             <Card className={`bg-muted/50 ${activeId === section.id ? 'opacity-50' : ''}`}>
-                              <CardHeader className="flex flex-row items-center justify-between p-4">
-                                <div className="flex items-center gap-2">
-                                  <div {...dragHandleProps} className="cursor-move">
+                              <CardHeader className="flex flex-row items-start justify-between p-4 gap-4">
+                                <div className="flex items-start gap-2 flex-1">
+                                  <div {...dragHandleProps} className="cursor-move pt-2.5">
                                     <GripVertical className="text-muted-foreground" />
                                   </div>
-                                  <Input
-                                    value={section.title}
-                                    onChange={(e) => {
-                                      const newSections = [...courseData.sections];
-                                      newSections[sectionIndex].title = e.target.value;
-                                      setCourseData(prev => ({ ...prev, sections: newSections }));
-                                    }}
-                                    className="text-lg font-semibold border-none focus-visible:ring-0"
-                                  />
+                                  <div className="flex-1 space-y-1">
+                                    <Input
+                                      value={section.title}
+                                      onChange={(e) => {
+                                        const newSections = [...courseData.sections];
+                                        newSections[sectionIndex].title = e.target.value;
+                                        setCourseData(prev => ({ ...prev, sections: newSections }));
+                                      }}
+                                      className="font-semibold"
+                                    />
+                                    <Textarea
+                                      value={section.overview || ''}
+                                      onChange={(e) => {
+                                        const newSections = [...courseData.sections];
+                                        newSections[sectionIndex].overview = e.target.value;
+                                        setCourseData(prev => ({ ...prev, sections: newSections }));
+                                      }}
+                                      placeholder="Section overview or summary (optional)"
+                                      rows={1}
+                                      className="text-sm resize-none"
+                                    />
+                                  </div>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <Button onClick={() => addLesson(section.id)} variant="outline">

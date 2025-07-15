@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
@@ -33,6 +33,7 @@ export const DashboardSidebar = ({
 }: DashboardSidebarProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigationCategories = getCategorizedNavigation(userRole);
+  const location = useLocation();
 
   const SidebarComponent = () => (
     <Sidebar className="border-r border-border bg-background h-full">
@@ -46,26 +47,31 @@ export const DashboardSidebar = ({
                 {category.items.map(item => (
                   <SidebarMenuItem key={item.path}>
                     <SidebarMenuButton asChild>
-                      <NavLink 
-                        to={item.path} 
+                      <NavLink
+                        to={item.path}
                         end={item.path === '/dashboard'}
                         onClick={() => setIsMobileMenuOpen(false)}
                       >
-                        {({ isActive }) => (
-                          <div className={`flex items-center space-x-3 px-3 py-2 mx-2 rounded-lg transition-all duration-200 ${
-                            isActive 
-                              ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 font-medium shadow-sm' 
-                              : 'text-foreground hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-foreground'
-                          }`}>
-                            <item.icon className="h-5 w-5" />
-                            <span className="font-medium">{item.title}</span>
-                            {item.badge && (
-                              <span className="ml-auto bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded-full">
-                                {item.badge}
-                              </span>
-                            )}
-                          </div>
-                        )}
+                        {({ isActive }) => {
+                          const isMyCoursesActive = item.path === '/dashboard/courses' && location.pathname.startsWith('/dashboard/course');
+                          const finalIsActive = isActive || isMyCoursesActive;
+
+                          return (
+                            <div className={`flex items-center space-x-3 px-3 py-2 mx-2 rounded-lg transition-all duration-200 ${
+                              finalIsActive 
+                                ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 font-medium shadow-sm' 
+                                : 'text-foreground hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-foreground'
+                            }`}>
+                              <item.icon className="h-5 w-5" />
+                              <span className="font-medium">{item.title}</span>
+                              {item.badge && (
+                                <span className="ml-auto bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded-full">
+                                  {item.badge}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        }}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -121,13 +127,16 @@ export const DashboardSidebar = ({
                               to={item.path}
                               end={item.path === '/dashboard'}
                               onClick={() => setIsMobileMenuOpen(false)}
-                              className={({ isActive }) => 
-                                `flex items-center space-x-3 px-3 py-2 mx-2 rounded-lg transition-all duration-200 ${
-                                  isActive 
+                              className={({ isActive }) => {
+                                const isMyCoursesActive = item.path === '/dashboard/courses' && location.pathname.startsWith('/dashboard/course');
+                                const finalIsActive = isActive || isMyCoursesActive;
+                                
+                                return `flex items-center space-x-3 px-3 py-2 mx-2 rounded-lg transition-all duration-200 ${
+                                  finalIsActive 
                                     ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 font-medium shadow-sm' 
                                     : 'text-foreground hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-foreground'
-                                }`
-                              }
+                                }`;
+                              }}
                             >
                               <item.icon className="h-5 w-5" />
                               <span className="font-medium">{item.title}</span>
