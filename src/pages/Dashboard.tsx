@@ -18,6 +18,14 @@ import { UsersManagement } from '@/components/admin/UsersManagement';
 import CourseManagement from '@/components/admin/CourseManagement';
 import { StageZero } from '@/pages/practice/StageZero';
 import { LessonDetail } from '@/pages/practice/LessonDetail';
+import { StageOne } from '@/pages/practice/StageOne';
+import { RepeatAfterMe } from '@/pages/practice/RepeatAfterMe';
+import { QuickResponse } from '@/pages/practice/QuickResponse';
+import { ListenAndReply } from '@/pages/practice/ListenAndReply';
+import { StageTwo } from '@/pages/practice/StageTwo';
+import DailyRoutine from '@/pages/practice/DailyRoutine';
+import QuickAnswer from '@/pages/practice/QuickAnswer';
+import RoleplaySimulation from '@/pages/practice/RoleplaySimulation';
 import { ReportsOverview } from '@/components/admin/ReportsOverview';
 import { ObservationReports } from '@/components/admin/ObservationReports';
 import { Discussions } from '@/components/admin/Discussions';
@@ -139,6 +147,14 @@ const Dashboard = () => {
                           <Route path="/ai-progress" element={<AIStudentProgress />} />
                           <Route path="/practice/stage-0" element={<StageZero />} />
                           <Route path="/practice/stage-0/lesson/:lessonId" element={<LessonDetail />} />
+                          <Route path="/practice/stage-1" element={<StageOne />} />
+                          <Route path="/practice/stage-1/repeat-after-me" element={<RepeatAfterMe />} />
+                          <Route path="/practice/stage-1/quick-response" element={<QuickResponse />} />
+                          <Route path="/practice/stage-1/listen-and-reply" element={<ListenAndReply />} />
+                          <Route path="/practice/stage-2" element={<StageTwo />} />
+                          <Route path="/practice/stage-2/daily-routine" element={<DailyRoutine />} />
+                          <Route path="/practice/stage-2/quick-answer" element={<QuickAnswer />} />
+                          <Route path="/practice/stage-2/roleplay-simulation" element={<RoleplaySimulation />} />
                         </>
                       ) : (
                     <>

@@ -63,6 +63,10 @@ const CourseCard = ({ course }) => {
   const handleContinue = () => {
     if (course.id === 0) {
       navigate('/dashboard/practice/stage-0');
+    } else if (course.id === 1) {
+      navigate('/dashboard/practice/stage-1');
+    } else if (course.id === 2) {
+      navigate('/dashboard/practice/stage-2');
     }
     // TODO: Add navigation for other stages
   };
