@@ -58,7 +58,7 @@ export const DashboardSidebar = ({
                           <div className={`flex items-center space-x-3 px-3 py-2 mx-2 rounded-lg transition-all duration-200 ${
                             isActive 
                               ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 font-medium shadow-sm' 
-                              : 'text-foreground hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-foreground'
+                              : 'text-foreground hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-600 dark:hover:text-green-400'
                           }`}>
                             <item.icon className="h-5 w-5" />
                             <span className="font-medium">{item.title}</span>
@@ -131,7 +131,7 @@ export const DashboardSidebar = ({
                                 `flex items-center space-x-3 px-3 py-2 mx-2 rounded-lg transition-all duration-200 ${
                                   isActive 
                                     ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 font-medium shadow-sm' 
-                                    : 'text-foreground hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-foreground'
+                                    : 'text-foreground hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-600 dark:hover:text-green-400'
                                 }`
                               }
                             >
