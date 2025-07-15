@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
@@ -49,8 +49,8 @@ export const DashboardSidebar = ({
                 {category.items.map(item => (
                   <SidebarMenuItem key={item.path}>
                     <SidebarMenuButton asChild>
-                      <NavLink 
-                        to={item.path} 
+                      <NavLink
+                        to={item.path}
                         end={item.path === '/dashboard'}
                         onClick={() => setIsMobileMenuOpen(false)}
                       >
@@ -127,13 +127,16 @@ export const DashboardSidebar = ({
                               to={item.path}
                               end={item.path === '/dashboard'}
                               onClick={() => setIsMobileMenuOpen(false)}
-                              className={({ isActive }) => 
-                                `flex items-center space-x-3 px-3 py-2 mx-2 rounded-lg transition-all duration-200 ${
-                                  isActive 
+                              className={({ isActive }) => {
+                                const isMyCoursesActive = item.path === '/dashboard/courses' && location.pathname.startsWith('/dashboard/course');
+                                const finalIsActive = isActive || isMyCoursesActive;
+                                
+                                return `flex items-center space-x-3 px-3 py-2 mx-2 rounded-lg transition-all duration-200 ${
+                                  finalIsActive 
                                     ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 font-medium shadow-sm' 
                                     : 'text-foreground hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-600 dark:hover:text-green-400'
                                 }`
-                              }
+                              }}
                             >
                               <item.icon className="h-5 w-5" />
                               <span className="font-medium">{item.title}</span>
