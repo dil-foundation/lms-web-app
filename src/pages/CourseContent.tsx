@@ -570,7 +570,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                 </div>
               </div>
               <div className="hidden lg:flex items-center gap-3">
-                <Button variant="outline" size="sm" onClick={() => navigate(-1)} className="hover:bg-accent"><ChevronLeft className="w-4 h-4 mr-2" />Back to Course</Button>
+                <Button variant="outline" size="sm" onClick={() => navigate(`/dashboard/courses/${actualCourseId}`)} className="hover:bg-accent"><ChevronLeft className="w-4 h-4 mr-2" />Back to Course</Button>
               </div>
             </div>
           </div>

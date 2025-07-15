@@ -45,7 +45,7 @@ export const StudentCourses = ({ userProfile }: StudentCoursesProps) => {
           description: "Please try reloading the page.",
         });
       } else if (data) {
-        const coursesWithImages = await Promise.all(data.map(async (course) => {
+        const coursesWithDetails = await Promise.all(data.map(async (course) => {
           let imageUrl = '/placeholder.svg';
           if (course.image_url) {
             const { data: signedUrlData, error } = await supabase.storage
@@ -58,9 +58,38 @@ export const StudentCourses = ({ userProfile }: StudentCoursesProps) => {
               imageUrl = signedUrlData.signedUrl;
             }
           }
-          return { ...course, image_url: imageUrl, progress: 0 };
+
+          let progress = 0;
+          const { data: sections, error: sectionsError } = await supabase
+            .from('course_sections')
+            .select('lessons:course_lessons(id)')
+            .eq('course_id', course.id);
+
+          if (sectionsError) {
+            console.error(`Error fetching lessons for course ${course.id}:`, sectionsError);
+          } else {
+            const lessonIds = sections.flatMap(s => s.lessons.map(l => l.id));
+            const totalLessons = lessonIds.length;
+
+            if (totalLessons > 0) {
+              const { count: completedCount, error: progressError } = await supabase
+                .from('user_course_progress')
+                .select('*', { count: 'exact', head: true })
+                .eq('user_id', userProfile.id)
+                .in('lesson_id', lessonIds)
+                .not('completed_at', 'is', null);
+
+              if (progressError) {
+                console.error(`Error fetching progress for course ${course.id}:`, progressError);
+              } else if (completedCount) {
+                progress = Math.round((completedCount / totalLessons) * 100);
+              }
+            }
+          }
+          
+          return { ...course, image_url: imageUrl, progress };
         }));
-        setCourses(coursesWithImages);
+        setCourses(coursesWithDetails);
       }
       setLoading(false);
     };
@@ -134,7 +163,7 @@ export const StudentCourses = ({ userProfile }: StudentCoursesProps) => {
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium">{course.progress || 0}% Complete</span>
                 <Button asChild variant="secondary" size="sm">
-                  <Link to={`/dashboard/course/${course.id}`}>
+                  <Link to={course.progress && course.progress > 0 ? `/dashboard/courses/${course.id}/content` : `/dashboard/courses/${course.id}`}>
                     {course.progress && course.progress > 0 ? 'Continue' : 'Start Course'}
                   </Link>
                 </Button>

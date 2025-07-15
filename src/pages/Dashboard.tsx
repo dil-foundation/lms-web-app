@@ -136,8 +136,8 @@ const Dashboard = () => {
                 <Routes>
                   <Route path="/" element={<DashboardOverview />} />
                   <Route path="/profile-settings" element={<ProfileSettings />} />
-                  <Route path="/course/:id" element={<CourseOverview />} />
-                  <Route path="/course/:id/content" element={<CourseContent />} />
+                  <Route path="/courses/:id" element={<CourseOverview />} />
+                  <Route path="/courses/:id/content" element={<CourseContent />} />
           {finalRole === 'student' && (
                     <>
                       {isAIMode ? (
