@@ -69,6 +69,13 @@ const vocabularySets = [
             { number: '1', phonetic: '(wun)', word: 'One', translation: 'ایک' },
             { number: '2', phonetic: '(too)', word: 'Two', translation: 'دو' },
             { number: '3', phonetic: '(three)', word: 'Three', translation: 'تین' },
+            { number: '4', phonetic: '(for)', word: 'Four', translation: 'چار' },
+            { number: '5', phonetic: '(fa-iv)', word: 'Five', translation: 'پانچ' },
+            { number: '6', phonetic: '(siks)', word: 'Six', translation: 'چھ' },
+            { number: '7', phonetic: '(sev-en)', word: 'Seven', translation: 'سات' },
+            { number: '8', phonetic: '(eyt)', word: 'Eight', translation: 'آٹھ' },
+            { number: '9', phonetic: '(na-in)', word: 'Nine', translation: 'نو' },
+            { number: '10', phonetic: '(ten)', word: 'Ten', translation: 'دس' },
         ]
     },
     {
@@ -79,6 +86,10 @@ const vocabularySets = [
             { word: 'Monday', phonetic: '(mun-day)', translation: 'پیر' },
             { word: 'Tuesday', phonetic: '(tuz-day)', translation: 'منگل' },
             { word: 'Wednesday', phonetic: '(wenz-day)', translation: 'بدھ' },
+            { word: 'Thursday', phonetic: '(thurs-day)', translation: 'جمعرات' },
+            { word: 'Friday', phonetic: '(fri-day)', translation: 'جمعہ' },
+            { word: 'Saturday', phonetic: '(sat-ur-day)', translation: 'ہفتہ' },
+            { word: 'Sunday', phonetic: '(sun-day)', translation: 'اتوار' },
         ]
     },
     {
@@ -89,6 +100,9 @@ const vocabularySets = [
             { word: 'Red', phonetic: '(red)', translation: 'سرخ' },
             { word: 'Blue', phonetic: '(bloo)', translation: 'نیلا' },
             { word: 'Green', phonetic: '(green)', translation: 'سبز' },
+            { word: 'Yellow', phonetic: '(yel-low)', translation: 'پیلا' },
+            { word: 'Black', phonetic: '(blak)', translation: 'کالا' },
+            { word: 'White', phonetic: '(wha-it)', translation: 'سفید' },
         ]
     },
     {
@@ -99,6 +113,8 @@ const vocabularySets = [
             { word: 'Book', phonetic: '(buk)', translation: 'کتاب' },
             { word: 'Pen', phonetic: '(pen)', translation: 'قلم' },
             { word: 'Chair', phonetic: '(chair)', translation: 'کرسی' },
+            { word: 'Table', phonetic: '(tay-bul)', translation: 'میز' },
+            { word: 'Bag', phonetic: '(bag)', translation: 'بیگ' },
         ]
     }
 ];
