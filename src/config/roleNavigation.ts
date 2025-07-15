@@ -1,5 +1,5 @@
 
-import { Home, BookOpen, FileQuestion, TrendingUp, Users, Settings, BarChart3, GraduationCap, ClipboardList, Award, UserCheck, Database, Shield, MessageSquare, Link, Eye, MessageCircle } from 'lucide-react';
+import { Home, BookOpen, FileQuestion, TrendingUp, Users, Settings, BarChart3, GraduationCap, ClipboardList, Award, UserCheck, Database, Shield, MessageSquare, Link, Eye, MessageCircle, Bot, Brain, Zap, Target, Sparkles, BookCheck } from 'lucide-react';
 
 export type UserRole = 'student' | 'teacher' | 'admin';
 
@@ -59,11 +59,17 @@ export const getRoleNavigation = (role?: UserRole): NavigationItem[] => {
   }
 };
 
-export const getCategorizedNavigation = (role?: UserRole): NavigationCategory[] => {
+export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean): NavigationCategory[] => {
   if (!role) {
     return [];
   }
   
+  // AI Mode Navigation
+  if (isAIMode) {
+    return getAICategorizedNavigation(role);
+  }
+  
+  // LMS Mode Navigation (existing)
   switch (role) {
     case 'student':
       return [
@@ -147,6 +153,92 @@ export const getCategorizedNavigation = (role?: UserRole): NavigationCategory[] 
           title: 'MAIN',
           items: [
             { title: 'Overview', path: '/dashboard', icon: Home },
+          ]
+        }
+      ];
+  }
+};
+
+export const getAICategorizedNavigation = (role: UserRole): NavigationCategory[] => {
+  switch (role) {
+    case 'student':
+      return [
+        {
+          title: 'LEARNING',
+          items: [
+            { title: 'Overview', path: '/dashboard', icon: Bot },
+            { title: 'Learn', path: '/dashboard/ai-learn', icon: BookOpen },
+          ]
+        },
+        {
+          title: 'ASSESSMENT',
+          items: [
+            { title: 'Practice', path: '/dashboard/ai-practice', icon: Brain },
+            { title: 'Progress', path: '/dashboard/ai-progress', icon: TrendingUp },
+          ]
+        }
+      ];
+    
+    case 'teacher':
+      return [
+        {
+          title: 'AI TEACHING',
+          items: [
+            { title: 'AI Dashboard', path: '/dashboard', icon: Bot },
+            { title: 'AI Assistant', path: '/dashboard/ai-assistant', icon: Brain },
+            { title: 'Content Generator', path: '/dashboard/ai-content', icon: Zap },
+            { title: 'Smart Grading', path: '/dashboard/ai-grading', icon: BookCheck },
+          ]
+        },
+        {
+          title: 'CLASSROOM AI',
+          items: [
+            { title: 'Student Insights', path: '/dashboard/ai-insights', icon: Users },
+            { title: 'Performance Analytics', path: '/dashboard/ai-performance', icon: FileQuestion },
+          ]
+        },
+        {
+          title: 'AI TOOLS',
+          items: [
+            { title: 'Lesson Planner', path: '/dashboard/ai-planner', icon: Target },
+            { title: 'AI Feedback', path: '/dashboard/ai-feedback', icon: MessageSquare },
+          ]
+        }
+      ];
+    
+    case 'admin':
+      return [
+        {
+          title: 'AI OVERSIGHT',
+          items: [
+            { title: 'AI Dashboard', path: '/dashboard', icon: Bot },
+            { title: 'AI Management', path: '/dashboard/ai-management', icon: Settings },
+          ]
+        },
+        {
+          title: 'AI ANALYTICS',
+          items: [
+            { title: 'Platform Analytics', path: '/dashboard/ai-platform-analytics', icon: BarChart3 },
+            { title: 'AI Performance', path: '/dashboard/ai-performance-admin', icon: TrendingUp },
+            { title: 'Usage Reports', path: '/dashboard/ai-usage', icon: FileQuestion },
+          ]
+        },
+        {
+          title: 'AI CONTROL',
+          items: [
+            { title: 'Model Configuration', path: '/dashboard/ai-models', icon: Brain },
+            { title: 'Safety & Ethics', path: '/dashboard/ai-safety', icon: Shield },
+            { title: 'AI Training', path: '/dashboard/ai-training', icon: Zap },
+          ]
+        }
+      ];
+    
+    default:
+      return [
+        {
+          title: 'AI MAIN',
+          items: [
+            { title: 'AI Dashboard', path: '/dashboard', icon: Bot },
           ]
         }
       ];

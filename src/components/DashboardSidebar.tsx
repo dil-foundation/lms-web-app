@@ -11,6 +11,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Logo } from './header/Logo';
 import { ThemeToggle } from './header/ThemeToggle';
 import { AuthButton } from './header/AuthButton';
+import { useAILMS } from '@/contexts/AILMSContext';
+import { AILMSToggle } from '@/components/ui/AILMSToggle';
 
 type Profile = {
   first_name: string | null;
@@ -32,8 +34,8 @@ export const DashboardSidebar = ({
   userProfile
 }: DashboardSidebarProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const navigationCategories = getCategorizedNavigation(userRole);
-  const location = useLocation();
+  const { isAIMode } = useAILMS();
+  const navigationCategories = getCategorizedNavigation(userRole, isAIMode);
 
   const SidebarComponent = () => (
     <Sidebar className="border-r border-border bg-background h-full">
@@ -52,26 +54,21 @@ export const DashboardSidebar = ({
                         end={item.path === '/dashboard'}
                         onClick={() => setIsMobileMenuOpen(false)}
                       >
-                        {({ isActive }) => {
-                          const isMyCoursesActive = item.path === '/dashboard/courses' && location.pathname.startsWith('/dashboard/course');
-                          const finalIsActive = isActive || isMyCoursesActive;
-
-                          return (
-                            <div className={`flex items-center space-x-3 px-3 py-2 mx-2 rounded-lg transition-all duration-200 ${
-                              finalIsActive 
-                                ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 font-medium shadow-sm' 
-                                : 'text-foreground hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-foreground'
-                            }`}>
-                              <item.icon className="h-5 w-5" />
-                              <span className="font-medium">{item.title}</span>
-                              {item.badge && (
-                                <span className="ml-auto bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded-full">
-                                  {item.badge}
-                                </span>
-                              )}
-                            </div>
-                          );
-                        }}
+                        {({ isActive }) => (
+                          <div className={`flex items-center space-x-3 px-3 py-2 mx-2 rounded-lg transition-all duration-200 ${
+                            isActive 
+                              ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 font-medium shadow-sm' 
+                              : 'text-foreground hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-600 dark:hover:text-green-400'
+                          }`}>
+                            <item.icon className="h-5 w-5" />
+                            <span className="font-medium">{item.title}</span>
+                            {item.badge && (
+                              <span className="ml-auto bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded-full">
+                                {item.badge}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -91,6 +88,9 @@ export const DashboardSidebar = ({
         <div className="sticky top-0 z-10 flex items-center justify-between h-16 p-4 bg-background border-b border-border">
           <div className="w-32">
             <Logo />
+          </div>
+          <div className="flex items-center justify-center">
+            <AILMSToggle size="sm" />
           </div>
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetTrigger asChild>
@@ -134,8 +134,8 @@ export const DashboardSidebar = ({
                                 return `flex items-center space-x-3 px-3 py-2 mx-2 rounded-lg transition-all duration-200 ${
                                   finalIsActive 
                                     ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 font-medium shadow-sm' 
-                                    : 'text-foreground hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-foreground'
-                                }`;
+                                    : 'text-foreground hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-600 dark:hover:text-green-400'
+                                }`
                               }}
                             >
                               <item.icon className="h-5 w-5" />
