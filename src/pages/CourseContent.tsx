@@ -115,17 +115,34 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     };
   };
 
-  const markLessonAsComplete = useCallback(async (lessonId: string, courseId: string) => {
+  const markLessonAsComplete = useCallback(async (lessonId: string, courseId: string, duration?: number) => {
     if (!user) {
       return;
     }
+
+    const upsertData: {
+      user_id: string;
+      course_id: string;
+      lesson_id: string;
+      completed_at: string;
+      progress_seconds?: number;
+    } = {
+      user_id: user.id,
+      course_id: courseId,
+      lesson_id: lessonId,
+      completed_at: new Date().toISOString(),
+    };
+
+    if (duration) {
+      upsertData.progress_seconds = duration;
+    }
+
     const { error } = await supabase.from('user_course_progress').upsert(
-      { user_id: user.id, course_id: courseId, lesson_id: lessonId, completed_at: new Date().toISOString() },
+      upsertData,
       { onConflict: 'user_id,lesson_id' }
     );
     if (error) {
       toast.error("Failed to mark lesson complete.");
-      console.error("[markLessonAsComplete] Error:", error.message);
       return;
     }
     toast.success("Lesson completed!");
@@ -136,10 +153,16 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       const updatedModules = prevCourse.modules.map((module: any) => ({
         ...module,
         lessons: module.lessons.map((lesson: any) => {
-          let isCompleted = lesson.completed;
-          if (lesson.id === lessonId) isCompleted = true;
-          if (isCompleted) completedCount++;
-          return { ...lesson, completed: isCompleted };
+          const newLesson = { ...lesson };
+          if (lesson.id === lessonId) {
+            newLesson.completed = true;
+            newLesson.status = 'completed';
+            if (duration) {
+              newLesson.progressSeconds = duration;
+            }
+          }
+          if (newLesson.completed) completedCount++;
+          return newLesson;
         })
       }));
       const totalProgress = totalLessons > 0 ? (completedCount / totalLessons) * 100 : 0;
@@ -156,7 +179,6 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     const { currentTime, duration } = videoNode;
     const lesson = lessonRef.current;
     
-  
     if (!user || !duration || !isFinite(duration) || duration === 0 || !lesson) {
       return;
     }
@@ -165,23 +187,19 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     if (now - lastUpdateTimeRef.current > 15000) {
       lastUpdateTimeRef.current = now;
       const progressData = { user_id: user.id, course_id: actualCourseId, lesson_id: lesson.id, progress_seconds: currentTime };
-        
+      
       supabase.from('user_course_progress').upsert(
         progressData,
         { onConflict: 'user_id,lesson_id' }
       ).then(({ error }) => {
         if (error) {
-          console.error("[TimeUpdate] Error saving progress:", error);
           toast.error("Failed to save progress", { description: error.message });
-        } else {
-          console.log('[TimeUpdate] Progress saved successfully!');
         }
       });
     }
   
     if ((currentTime / duration) >= 1 && !lesson.completed) {
-      console.log('[TimeUpdate] Lesson completion threshold reached. Marking as complete.');
-      markLessonAsComplete(lesson.id, actualCourseId);
+      markLessonAsComplete(lesson.id, actualCourseId, duration);
     }
   }, [user, actualCourseId, markLessonAsComplete]);
 
@@ -218,7 +236,6 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
               if ((lesson.type === 'video' || lesson.content_type === 'video') && lesson.content) {
                 const { data: signedUrlData, error: urlError } = await supabase.storage.from('dil-lms').createSignedUrl(lesson.content, 3600);
                 if (urlError) {
-                  console.error(`Failed to get signed URL for ${lesson.content}`, urlError);
                   lesson.video_url = null;
                 } else {
                   lesson.video_url = signedUrlData.signedUrl;
@@ -231,20 +248,29 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
             const lessonIds = data.sections.flatMap((s: any) => s.lessons.map((l: any) => l.id));
             if (lessonIds.length > 0) {
               const { data: progressData, error: progressError } = await supabase.from('user_course_progress').select('lesson_id, completed_at, progress_seconds').eq('user_id', user.id).in('lesson_id', lessonIds);
-              if (progressError) console.error("Failed to fetch user progress", progressError);
-              else userProgress = progressData;
+              if (progressError) {
+                // console.error("Failed to fetch user progress", progressError);
+              } else {
+                userProgress = progressData || [];
+              }
             }
           }
           const transformedCourse = transformCourseData(data, userProgress);
           setCourse(transformedCourse);
-          if (transformedCourse?.modules?.[0]?.lessons?.[0]) {
-            setCurrentLessonId(transformedCourse.modules[0].lessons[0].id);
+          if (transformedCourse) {
+            const allLessons = transformedCourse.modules.flatMap((m: any) => m.lessons);
+            const firstUncompletedLesson = allLessons.find((l: any) => !l.completed);
+            
+            if (firstUncompletedLesson) {
+              setCurrentLessonId(firstUncompletedLesson.id);
+            } else if (allLessons.length > 0) {
+              setCurrentLessonId(allLessons[0].id);
+            }
           }
         } else {
           throw new Error("Course not found");
         }
       } catch (err: any) {
-        console.error("Error fetching course data:", err);
         setError(err.message);
         toast.error("Failed to load course content", { description: err.message });
       } finally {
