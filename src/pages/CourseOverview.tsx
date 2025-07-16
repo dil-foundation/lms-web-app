@@ -130,14 +130,6 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
       }
     }
 
-    console.log("Calculated Progress:", {
-      totalLessons,
-      completedLessonsCount,
-      progressPercentage,
-      lastAccessedDate,
-      nextLessonTitle,
-    });
-
     return {
       id: data.id || 'preview',
       title: data.title,
@@ -220,7 +212,6 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
 
         if (error) throw error;
         if (data) {
-          console.log("Fetched raw course data:", data);
           const teacherProfile = data.members?.find((m: any) => m.role === 'teacher')?.profile;
           let instructorExtraData = {};
 
@@ -291,7 +282,6 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                       toast.warning("Could not load your course progress.");
                   } else {
                       userProgress = progressData || [];
-                      console.log("Fetched user progress data:", userProgress);
                   }
               }
           }
@@ -303,7 +293,6 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
             }
           }
           const finalCourseObject = mapDataToCourse(data, instructorExtraData, userProgress);
-          console.log("Final mapped course object:", finalCourseObject);
           setCourse(finalCourseObject);
         } else {
           throw new Error("Course not found.");
@@ -329,7 +318,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
 
   const handleStartLearning = () => {
     if (course) {
-      navigate(`/dashboard/course/${course.id}/content`);
+      navigate(`/dashboard/courses/${course.id}/content`);
     }
   };
 
