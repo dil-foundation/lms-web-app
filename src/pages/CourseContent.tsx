@@ -35,7 +35,6 @@ interface CourseContentProps {
 }
 
 export const CourseContent = ({ courseId }: CourseContentProps) => {
-  console.log('[CourseContent] Component rendering...');
   const { id } = useParams();
   const navigate = useNavigate();
   const [currentLessonId, setCurrentLessonId] = useState<string | null>(null);
@@ -117,9 +116,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
   };
 
   const markLessonAsComplete = useCallback(async (lessonId: string, courseId: string) => {
-    console.log(`[markLessonAsComplete] Called for lesson: ${lessonId}`);
     if (!user) {
-      console.log('[markLessonAsComplete] No user, aborting.');
       return;
     }
     const { error } = await supabase.from('user_course_progress').upsert(
@@ -131,7 +128,6 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       console.error("[markLessonAsComplete] Error:", error.message);
       return;
     }
-    console.log(`[markLessonAsComplete] Success for lesson: ${lessonId}`);
     toast.success("Lesson completed!");
     setCourse((prevCourse: any) => {
       if (!prevCourse) return null;
@@ -154,28 +150,22 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
   const handleTimeUpdate = useCallback(() => {
     const videoNode = videoRef.current;
     if (!videoNode) {
-      console.log('[TimeUpdate] No video node.');
       return;
     }
   
     const { currentTime, duration } = videoNode;
     const lesson = lessonRef.current;
     
-    console.log(`[TimeUpdate] Fired at: ${currentTime}s / ${duration}s`);
   
     if (!user || !duration || !isFinite(duration) || duration === 0 || !lesson) {
-      console.log('[TimeUpdate] Progress save skipped:', { hasUser: !!user, hasDuration: !!duration, isFinite: isFinite(duration), duration, hasLesson: !!lesson });
       return;
     }
   
     const now = Date.now();
     if (now - lastUpdateTimeRef.current > 15000) {
-      console.log('[TimeUpdate] 15-second interval reached. Attempting to save progress.');
       lastUpdateTimeRef.current = now;
       const progressData = { user_id: user.id, course_id: actualCourseId, lesson_id: lesson.id, progress_seconds: currentTime };
-      
-      console.log('[TimeUpdate] Upserting data to user_course_progress:', progressData);
-  
+        
       supabase.from('user_course_progress').upsert(
         progressData,
         { onConflict: 'user_id,lesson_id' }
@@ -198,13 +188,10 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
   const handleLoadedMetadata = useCallback(() => {
     const videoNode = videoRef.current;
     if (!videoNode) {
-      console.log('[LoadedMetadata] No video node.');
       return;
     }
     const lesson = lessonRef.current;
-    console.log('[LoadedMetadata] Fired. Current lesson:', lesson?.title);
     if (lesson && lesson.progressSeconds > 0 && videoNode.duration > lesson.progressSeconds) {
-      console.log(`[LoadedMetadata] Seeking to saved progress: ${lesson.progressSeconds}s`);
       videoNode.currentTime = lesson.progressSeconds;
     }
   }, []);
