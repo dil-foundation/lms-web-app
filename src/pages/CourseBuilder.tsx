@@ -60,6 +60,7 @@ import { CourseOverview } from './CourseOverview';
 interface CourseSection {
   id: string;
   title: string;
+  overview?: string;
   lessons: CourseLesson[];
   isCollapsed?: boolean;
 }
@@ -67,6 +68,7 @@ interface CourseSection {
 interface CourseLesson {
   id:string;
   title: string;
+  overview?: string;
   type: 'video' | 'attachment' | 'assignment' | 'quiz';
   content?: string | File | QuizData;
   duration?: number;
@@ -170,19 +172,11 @@ interface LessonItemProps {
 }
 
 const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, dragHandleProps, onToggleCollapse, courseId }: LessonItemProps) => {
-  const [localContent, setLocalContent] = useState(typeof lesson.content === 'string' ? lesson.content : '');
   const [isUploading, setIsUploading] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [attachmentInfo, setAttachmentInfo] = useState<{ url: string; name: string } | null>(null);
   const [isConfirmingChange, setIsConfirmingChange] = useState(false);
   const [pendingLessonType, setPendingLessonType] = useState<CourseLesson['type'] | null>(null);
-
-  // Keep local state in sync if the prop changes from parent
-  useEffect(() => {
-    // If the parent content is a string, sync it to local state.
-    // If it's not a string (e.g., undefined, QuizData), reset local state to empty string.
-    setLocalContent(typeof lesson.content === 'string' ? lesson.content : '');
-  }, [lesson.content]);
 
   useEffect(() => {
     let isMounted = true;
@@ -327,7 +321,7 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, d
 
   const handleBlur = () => {
     // Sync with parent state only when user is done editing
-    onUpdate(sectionId, lesson.id, { content: localContent });
+    onUpdate(sectionId, lesson.id, { content: typeof lesson.content === 'string' ? lesson.content : '' });
   };
   
   const renderLessonContentEditor = () => {
@@ -396,9 +390,8 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, d
       case 'assignment':
         return (
           <RichTextEditor
-            value={localContent}
-            onChange={setLocalContent}
-            onBlur={handleBlur}
+            value={typeof lesson.content === 'string' ? lesson.content : ''}
+            onChange={(content) => onUpdate(sectionId, lesson.id, { content })}
             placeholder="Write the assignment details here..."
             onImageUpload={handleAssignmentImageUpload}
             onFileUpload={handleAssignmentFileUpload}
@@ -418,17 +411,26 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, d
 
   return (
     <div className="p-4 rounded-lg bg-background border space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 flex-1">
-          <div {...dragHandleProps} className="cursor-move">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start gap-2 flex-1">
+          <div {...dragHandleProps} className="cursor-move pt-2.5">
             <GripVertical className="text-muted-foreground" />
           </div>
-          <Input
-            value={lesson.title}
-            onChange={(e) => onUpdate(sectionId, lesson.id, { title: e.target.value })}
-            placeholder="Lesson Title"
-            className="flex-1"
-          />
+          <div className="flex-1 space-y-1">
+            <Input
+              value={lesson.title}
+              onChange={(e) => onUpdate(sectionId, lesson.id, { title: e.target.value })}
+              placeholder="Lesson Title"
+              className="font-semibold"
+            />
+            <Textarea
+              value={lesson.overview || ''}
+              onChange={(e) => onUpdate(sectionId, lesson.id, { overview: e.target.value })}
+              placeholder="Lesson overview (optional, e.g., 'Video - 5min')"
+              rows={1}
+              className="text-sm resize-none"
+            />
+          </div>
         </div>
         <div className="flex items-center gap-2 ml-4">
           <Select
@@ -935,7 +937,7 @@ const CourseBuilder = () => {
     for (const [sectionIndex, section] of courseToSave.sections.entries()) {
       const { data: savedSection, error: sectionError } = await supabase
         .from('course_sections')
-        .insert({ course_id: currentCourseId, title: section.title, position: sectionIndex })
+        .insert({ course_id: currentCourseId, title: section.title, overview: section.overview, position: sectionIndex })
         .select('id')
         .single();
       
@@ -943,11 +945,19 @@ const CourseBuilder = () => {
       if (!savedSection) throw new Error("Failed to save a course section.");
 
       for (const [lessonIndex, lesson] of section.lessons.entries()) {
+        let contentToSave: string | undefined;
+        if (typeof lesson.content === 'string') {
+          contentToSave = lesson.content;
+        } else if (lesson.type === 'quiz' && typeof lesson.content === 'object' && lesson.content) {
+          contentToSave = JSON.stringify(lesson.content);
+        }
+        
         await supabase.from('course_lessons').insert({
           section_id: savedSection.id,
           title: lesson.title,
           type: lesson.type,
-          content: typeof lesson.content === 'string' ? lesson.content : undefined,
+          overview: lesson.overview,
+          content: contentToSave,
           position: lessonIndex,
         });
       }
@@ -1636,20 +1646,33 @@ const CourseBuilder = () => {
                         <SortableItem key={section.id} id={section.id} type="section">
                           {(dragHandleProps) => (
                             <Card className={`bg-muted/50 ${activeId === section.id ? 'opacity-50' : ''}`}>
-                              <CardHeader className="flex flex-row items-center justify-between p-4">
-                                <div className="flex items-center gap-2">
-                                  <div {...dragHandleProps} className="cursor-move">
+                              <CardHeader className="flex flex-row items-start justify-between p-4 gap-4">
+                                <div className="flex items-start gap-2 flex-1">
+                                  <div {...dragHandleProps} className="cursor-move pt-2.5">
                                     <GripVertical className="text-muted-foreground" />
                                   </div>
-                                  <Input
-                                    value={section.title}
-                                    onChange={(e) => {
-                                      const newSections = [...courseData.sections];
-                                      newSections[sectionIndex].title = e.target.value;
-                                      setCourseData(prev => ({ ...prev, sections: newSections }));
-                                    }}
-                                    className="text-lg font-semibold border-none focus-visible:ring-0"
-                                  />
+                                  <div className="flex-1 space-y-1">
+                                    <Input
+                                      value={section.title}
+                                      onChange={(e) => {
+                                        const newSections = [...courseData.sections];
+                                        newSections[sectionIndex].title = e.target.value;
+                                        setCourseData(prev => ({ ...prev, sections: newSections }));
+                                      }}
+                                      className="font-semibold"
+                                    />
+                                    <Textarea
+                                      value={section.overview || ''}
+                                      onChange={(e) => {
+                                        const newSections = [...courseData.sections];
+                                        newSections[sectionIndex].overview = e.target.value;
+                                        setCourseData(prev => ({ ...prev, sections: newSections }));
+                                      }}
+                                      placeholder="Section overview or summary (optional)"
+                                      rows={1}
+                                      className="text-sm resize-none"
+                                    />
+                                  </div>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <Button onClick={() => addLesson(section.id)} variant="outline">

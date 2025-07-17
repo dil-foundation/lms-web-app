@@ -67,6 +67,7 @@ import ProfileSettings from './ProfileSettings';
 import { ContentLoader } from '@/components/ContentLoader';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { Logo } from '@/components/header/Logo';
+import { useLocation } from 'react-router-dom';
 
 type Profile = {
   first_name: string | null;
@@ -81,6 +82,7 @@ const Dashboard = () => {
   const { profile, loading: profileLoading, error: profileError } = useUserProfile();
   const { isAIMode } = useAILMS();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const resetToDashboard = () => {
     navigate('/dashboard');
@@ -152,8 +154,8 @@ const Dashboard = () => {
                 <Routes>
                   <Route path="/" element={<DashboardOverview />} />
                   <Route path="/profile-settings" element={<ProfileSettings />} />
-                  <Route path="/course/:id" element={<CourseOverview />} />
-                  <Route path="/course/:id/content" element={<CourseContent />} />
+                  <Route path="/courses/:id" element={<CourseOverview />} />
+                  <Route path="/courses/:id/content" element={<CourseContent key={location.pathname} />} />
           {finalRole === 'student' && (
                     <>
                       {isAIMode ? (

@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
@@ -36,6 +36,7 @@ export const DashboardSidebar = ({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { isAIMode } = useAILMS();
   const navigationCategories = getCategorizedNavigation(userRole, isAIMode);
+  const location = useLocation();
 
   const SidebarComponent = () => (
     <Sidebar className="border-r border-border bg-background h-full">
@@ -49,8 +50,8 @@ export const DashboardSidebar = ({
                 {category.items.map(item => (
                   <SidebarMenuItem key={item.path}>
                     <SidebarMenuButton asChild>
-                      <NavLink 
-                        to={item.path} 
+                      <NavLink
+                        to={item.path}
                         end={item.path === '/dashboard'}
                         onClick={() => setIsMobileMenuOpen(false)}
                       >
@@ -137,11 +138,6 @@ export const DashboardSidebar = ({
                             >
                               <item.icon className="h-5 w-5" />
                               <span className="font-medium">{item.title}</span>
-                              {item.badge && (
-                                <span className="ml-auto bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded-full">
-                                  {item.badge}
-                                </span>
-                              )}
                             </NavLink>
                           ))}
                         </div>

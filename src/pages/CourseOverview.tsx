@@ -33,6 +33,7 @@ import { useEffect, useState } from 'react';
 import { ContentLoader } from '@/components/ContentLoader';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 
 // This is a subset of the CourseData from CourseBuilder.
 // In a real app, this might live in a shared types file.
@@ -69,6 +70,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
   const [course, setCourse] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   const courseId = propCourseId || paramId;
 
@@ -100,27 +102,50 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
     return isVideo && !isPlaceholder;
   };
 
-  const mapDataToCourse = (data: any) => {
-    const firstTeacher = data.teachers?.[0] || data.members?.find((m: any) => m.role === 'teacher')?.profile || { first_name: 'Instructor', last_name: 'TBD' };
+  const mapDataToCourse = (data: any, instructorExtraData?: any, progressData: any[] = []) => {
+    const teacherProfile = data.members?.find((m: any) => m.role === 'teacher')?.profile;
+    const firstTeacher = teacherProfile || { first_name: 'Instructor', last_name: 'TBD', email: 'Not available' };
     const teacherName = `${firstTeacher.first_name || ''} ${firstTeacher.last_name || ''}`.trim();
     const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
     const totalLessons = data.sections?.reduce((acc: number, section: any) => acc + (section.lessons?.length || 0), 0) || 0;
+
+    const completedLessonsCount = progressData.filter(p => p.completed_at).length;
+    const progressPercentage = totalLessons > 0 ? Math.round((completedLessonsCount / totalLessons) * 100) : 0;
+    
+    const lastAccessedProgress = [...progressData].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())[0];
+    const lastAccessedDate = lastAccessedProgress ? new Date(lastAccessedProgress.updated_at).toLocaleDateString() : "Never";
+
+    const allLessons = data.sections?.flatMap((s: any) => s.lessons) || [];
+    let nextLessonTitle: string;
+
+    if (totalLessons === 0) {
+      nextLessonTitle = "No lessons yet";
+    } else {
+      const completedLessonIds = new Set(progressData.filter(p => p.completed_at).map(p => p.lesson_id));
+      if (completedLessonsCount === totalLessons && totalLessons > 0) {
+        nextLessonTitle = "Course Complete!";
+      } else {
+        const firstUncompletedLesson = allLessons.find((l: any) => !completedLessonIds.has(l.id));
+        nextLessonTitle = firstUncompletedLesson?.title || allLessons[0]?.title || "First Lesson";
+      }
+    }
 
     return {
       id: data.id || 'preview',
       title: data.title,
       subtitle: data.subtitle,
       description: data.description,
-      thumbnail: data.image || data.image_url || data.thumbnail_url || "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+      category: data.category?.name,
+      thumbnail: data.image || data.image_url || data.thumbnail_url,
       videoUrl: data.video_url || data.preview_video_url,
       hasValidVideo: isValidVideoUrl(data.video_url || data.preview_video_url),
       instructor: {
         name: teacherName,
-        title: "English Language Expert",
+        title: instructorExtraData?.email || firstTeacher.email || "Email not available",
         avatar: getInitials(teacherName),
-        rating: 4.8,
-        students: 12000,
-        courses: 15
+        rating: instructorExtraData?.rating || 4.8,
+        students: instructorExtraData?.students || 0,
+        courses: instructorExtraData?.courses || 0
       },
       stats: {
         rating: 4.9,
@@ -128,32 +153,30 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
         students: data.students?.length || data.members?.filter((m: any) => m.role === 'student').length || 0,
         duration: data.duration || "N/A",
         lessons: totalLessons,
-        level: data.level || "All Levels",
-        language: data.language || "English",
+        level: data.level?.name || "All Levels",
+        language: data.language?.name || "English",
         lastUpdated: new Date(data.updated_at || Date.now()).toLocaleString('en-US', { month: 'long', year: 'numeric' })
       },
-      progress: { // This would be fetched per-user in a real app
-        completed: 0,
+      progress: {
+        completed: completedLessonsCount,
         total: totalLessons,
-        percentage: 0,
-        lastAccessed: "Never",
-        nextLesson: data.sections?.[0]?.lessons?.[0]?.title || "First Lesson"
+        percentage: progressPercentage,
+        lastAccessed: lastAccessedDate,
+        nextLesson: nextLessonTitle
       },
       features: [
         `${data.duration || 'Comprehensive'} of on-demand video`,
-        `${totalLessons} downloadable lessons`,
-        "Interactive quizzes and exercises",
-        "Mobile and desktop access",
-        "Certificate of completion",
+        `${totalLessons} downloadable lessons`
       ],
       whatYouLearn: data.learning_outcomes || [],
       requirements: data.requirements || [],
       curriculum: data.sections?.map((section: any, index: number) => ({
         id: section.id,
         title: section.title,
+        overview: section.overview,
         duration: `${section.lessons?.length * 5}m`,
         lessons: section.lessons?.length || 0,
-        description: `An overview of ${section.title}.`,
+        description: section.overview || `An overview of ${section.title}.`,
         topics: section.lessons?.map((lesson: any) => lesson.title) || []
       })) || []
     };
@@ -179,22 +202,98 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
               profile:profiles (
                 *
               )
-            )
+            ),
+            category:course_categories(name),
+            language:course_languages(name),
+            level:course_levels(name)
           `)
           .eq('id', id)
           .single();
 
         if (error) throw error;
         if (data) {
-          // The fetched data structure is different from the builder's state.
-          // We need to resolve the image URL for the fetched course.
+          const teacherProfile = data.members?.find((m: any) => m.role === 'teacher')?.profile;
+          let instructorExtraData = {};
+
+          if (teacherProfile) {
+            // First, get all the course_ids for the current instructor
+            const { data: teacherCourseMemberships, error: membershipsError } = await supabase
+              .from('course_members')
+              .select('course_id')
+              .eq('user_id', teacherProfile.id)
+              .eq('role', 'teacher');
+
+            let coursesCount = 0;
+            let studentCount = 0;
+
+            if (membershipsError) {
+              console.error("Error fetching teacher's courses:", membershipsError.message);
+            } else if (teacherCourseMemberships && teacherCourseMemberships.length > 0) {
+              const courseIds = teacherCourseMemberships.map(m => m.course_id);
+
+              // Count only the published courses
+              const { count: publishedCoursesCount, error: coursesError } = await supabase
+                .from('courses')
+                .select('id', { count: 'exact', head: true })
+                .in('id', courseIds)
+                .eq('status', 'Published');
+
+              if (coursesError) {
+                console.error("Error fetching published courses count:", coursesError.message);
+              } else {
+                coursesCount = publishedCoursesCount || 0;
+              }
+
+              // Now, count all the students in the teacher's courses
+              if (courseIds.length > 0) {
+                const { count, error: studentCountError } = await supabase
+                  .from('course_members')
+                  .select('id', { count: 'exact', head: true })
+                  .in('course_id', courseIds)
+                  .eq('role', 'student');
+                
+                if (studentCountError) {
+                  console.error("Error fetching student count:", studentCountError.message);
+                } else {
+                  studentCount = count || 0;
+                }
+              }
+            }
+            
+            instructorExtraData = {
+              email: teacherProfile.email,
+              courses: coursesCount,
+              students: studentCount,
+              rating: teacherProfile.rating || 4.8,
+            };
+          }
+          
+          let userProgress: any[] = [];
+          if (user && !isPreviewMode) {
+              const lessonIds = data.sections?.flatMap((s: any) => s.lessons?.map((l: any) => l.id)).filter(Boolean) || [];
+              if (lessonIds.length > 0) {
+                  const { data: progressData, error: progressError } = await supabase
+                      .from('user_course_progress')
+                      .select('*')
+                      .eq('user_id', user.id)
+                      .in('lesson_id', lessonIds);
+                  if (progressError) {
+                      console.error("Failed to fetch user progress:", progressError.message);
+                      toast.warning("Could not load your course progress.");
+                  } else {
+                      userProgress = progressData || [];
+                  }
+              }
+          }
+
           if (data.image_url) {
             const { data: signedUrlData, error: urlError } = await supabase.storage.from('dil-lms').createSignedUrl(data.image_url, 3600);
             if (!urlError) {
               data.image = signedUrlData.signedUrl;
             }
           }
-          setCourse(mapDataToCourse(data));
+          const finalCourseObject = mapDataToCourse(data, instructorExtraData, userProgress);
+          setCourse(finalCourseObject);
         } else {
           throw new Error("Course not found.");
         }
@@ -215,11 +314,11 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
       setIsLoading(false);
       setError("No course specified.");
     }
-  }, [initialCourseData, courseId]);
+  }, [initialCourseData, courseId, user, isPreviewMode]);
 
   const handleStartLearning = () => {
     if (course) {
-      navigate(`/dashboard/course/${course.id}/content`);
+      navigate(`/dashboard/courses/${course.id}/content`);
     }
   };
 
@@ -263,7 +362,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
           <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 py-4">
             <Button 
               variant="ghost" 
-              onClick={() => navigate(-1)}
+              onClick={() => navigate('/dashboard/courses')}
               className="mb-4"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -280,9 +379,11 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
             {/* Course Info */}
             <div className="text-center space-y-6">
               <div>
-                <Badge className="bg-green-600 hover:bg-green-700 text-white mb-4">
-                  AI Tutor Enabled
-                </Badge>
+                {course.category && (
+                  <Badge className="bg-blue-600 hover:bg-blue-700 text-white mb-4">
+                    {course.category}
+                  </Badge>
+                )}
                 <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
                   {course.title}
                 </h1>
@@ -293,11 +394,6 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
 
               {/* Course Stats */}
               <div className="flex flex-wrap items-center justify-center gap-6 text-sm">
-                <div className="flex items-center gap-1">
-                  <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                  <span className="font-semibold">{course.stats.rating}</span>
-                  <span className="text-muted-foreground">({course.stats.totalRatings.toLocaleString()})</span>
-                </div>
                 <div className="flex items-center gap-1">
                   <Users className="w-4 h-4 text-blue-500" />
                   <span>{course.stats.students.toLocaleString()} students</span>
@@ -499,9 +595,11 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                       </AccordionTrigger>
                       <AccordionContent>
                         <div className="space-y-4 pt-4">
-                          <p className="text-sm text-muted-foreground">
-                            {module.description}
-                          </p>
+                          {module.overview && (
+                            <p className="text-sm text-muted-foreground">
+                              {module.overview}
+                            </p>
+                          )}
                           
                           <div className="space-y-2">
                             <h5 className="text-sm font-medium text-foreground">Topics covered:</h5>
@@ -549,10 +647,6 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                     </p>
                     <div className="flex flex-wrap gap-6 text-sm">
                       <div className="flex items-center gap-1">
-                        <Star className="w-4 h-4 text-yellow-500" />
-                        <span>{course.instructor.rating} Instructor Rating</span>
-                      </div>
-                      <div className="flex items-center gap-1">
                         <Users className="w-4 h-4 text-blue-500" />
                         <span>{course.instructor.students.toLocaleString()} Students</span>
                       </div>
@@ -593,23 +687,6 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                       <Globe className="w-4 h-4" />
                       {course.stats.language}
                     </p>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Smartphone className="w-4 h-4 text-green-500" />
-                    <span className="text-sm">Mobile and desktop access</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Download className="w-4 h-4 text-blue-500" />
-                    <span className="text-sm">Downloadable content</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Award className="w-4 h-4 text-purple-500" />
-                    <span className="text-sm">Certificate of completion</span>
                   </div>
                 </div>
 
