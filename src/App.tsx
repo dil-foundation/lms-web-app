@@ -15,6 +15,7 @@ import AdminAuth from './pages/AdminAuth';
 import ProfileSettings from './pages/ProfileSettings';
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AILMSProvider } from "@/contexts/AILMSContext";
+import ScrollToTop from "@/components/ScrollToTop";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,6 +31,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <ScrollToTop />
         <AuthProvider>
           <AILMSProvider>
         <Routes>
