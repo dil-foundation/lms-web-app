@@ -27,8 +27,12 @@ import {
   Menu,
   X,
   Timer,
+  Paperclip,
+  ClipboardList,
+  XCircle,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { cn } from '@/lib/utils';
 
 interface CourseContentProps {
   courseId?: string;
@@ -42,6 +46,11 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
   const [course, setCourse] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [openAccordionItems, setOpenAccordionItems] = useState<string[]>([]);
+  const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
+  const [isQuizSubmitted, setIsQuizSubmitted] = useState(false);
+  const [quizResults, setQuizResults] = useState<Record<string, boolean>>({});
   const { user } = useAuth();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const lastUpdateTimeRef = useRef(0);
@@ -92,27 +101,88 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
           } else if (lessonProgress?.progress_seconds > 0) {
             status = 'in_progress';
           }
+
+          const type = lesson.content_type || lesson.type || 'video';
+          let lessonSpecificContent = {};
+          if (type === 'quiz') {
+            // After fetch, lesson.content for quizzes is already an object
+            if (typeof lesson.content === 'object' && lesson.content?.questions) {
+              lessonSpecificContent = lesson.content;
+            } else {
+              lessonSpecificContent = { questions: [] };
+            }
+          } else {
+            // For other types, content is a string (html, path, etc.)
+            lessonSpecificContent = { text: lesson.content || 'No content available.' };
+          }
+
           return {
-          id: lesson.id,
-          title: lesson.title,
-            type: lesson.content_type || lesson.type || 'video',
-          duration: lesson.duration || '10:00',
+            id: lesson.id,
+            title: lesson.title,
+            type: type,
+            duration: lesson.duration || '10:00',
             completed: status === 'completed',
             status: status,
             progressSeconds: lessonProgress?.progress_seconds || 0,
-          content: {
-            videoUrl: lesson.video_url,
-            thumbnailUrl: lesson.thumbnail_url || lesson.image_url || lesson.cover_image,
-            transcript: lesson.transcript || 'No transcript available.',
+            content: {
+              videoUrl: lesson.video_url,
+              thumbnailUrl: lesson.thumbnail_url || lesson.image_url || lesson.cover_image,
+              transcript: lesson.transcript || 'No transcript available.',
               description: lesson.overview || 'No description available.',
-            title: lesson.title,
-            text: lesson.content || 'No content available.',
-            hasValidVideo: isValidVideoUrl(lesson.video_url)
-          }
+              title: lesson.title,
+              ...lessonSpecificContent,
+              hasValidVideo: isValidVideoUrl(lesson.video_url),
+              attachmentUrl: lesson.attachment_url,
+              attachmentFilename: lesson.attachment_filename,
+            },
           };
         }) || []
       })) || []
     };
+  };
+
+  const handleDownload = async (url: string, filename: string) => {
+    if (!url) {
+      toast.error('No attachment URL found.');
+      return;
+    }
+    setIsDownloading(true);
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const blob = await response.blob();
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.download = filename;
+      
+      document.body.appendChild(link);
+      link.click();
+      
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(link.href);
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error('Failed to download the attachment.');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const handleNavigation = (lesson: any) => {
+    if (!lesson) return;
+
+    const moduleForLesson = course.modules.find((m: any) => m.lessons.some((l: any) => l.id === lesson.id));
+    
+    if (moduleForLesson && !openAccordionItems.includes(moduleForLesson.id)) {
+      setOpenAccordionItems(prev => [...prev, moduleForLesson.id]);
+    }
+
+    // Delay setting the current lesson to allow the accordion animation to start smoothly
+    setTimeout(() => {
+      setCurrentLessonId(lesson.id);
+    }, 50);
   };
 
   const markLessonAsComplete = useCallback(async (lessonId: string, courseId: string, duration?: number) => {
@@ -203,17 +273,6 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     }
   }, [user, actualCourseId, markLessonAsComplete]);
 
-  const handleLoadedMetadata = useCallback(() => {
-    const videoNode = videoRef.current;
-    if (!videoNode) {
-      return;
-    }
-    const lesson = lessonRef.current;
-    if (lesson && lesson.progressSeconds > 0 && videoNode.duration > lesson.progressSeconds) {
-      videoNode.currentTime = lesson.progressSeconds;
-    }
-  }, []);
-
   useEffect(() => {
     lessonRef.current = currentLesson;
   }, [currentLesson]);
@@ -240,6 +299,22 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                 } else {
                   lesson.video_url = signedUrlData.signedUrl;
                 }
+              } else if ((lesson.type === 'attachment' || lesson.content_type === 'attachment') && lesson.content) {
+                const { data: signedUrlData, error: urlError } = await supabase.storage.from('dil-lms').createSignedUrl(lesson.content, 3600);
+                if (urlError) {
+                  lesson.attachment_url = null;
+                  lesson.attachment_filename = null;
+                } else {
+                  lesson.attachment_url = signedUrlData.signedUrl;
+                  lesson.attachment_filename = lesson.content.split('/').pop();
+                }
+              } else if (lesson.type === 'quiz' && typeof lesson.content === 'string') {
+                try {
+                  lesson.content = JSON.parse(lesson.content);
+                } catch (e) {
+                  console.error("Failed to parse quiz content:", e);
+                  lesson.content = { questions: [] }; // Set a default value
+                }
               }
             }
           }
@@ -261,10 +336,19 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
             const allLessons = transformedCourse.modules.flatMap((m: any) => m.lessons);
             const firstUncompletedLesson = allLessons.find((l: any) => !l.completed);
             
+            let lessonToStartWith;
             if (firstUncompletedLesson) {
-              setCurrentLessonId(firstUncompletedLesson.id);
+              lessonToStartWith = firstUncompletedLesson;
             } else if (allLessons.length > 0) {
-              setCurrentLessonId(allLessons[0].id);
+              lessonToStartWith = allLessons[0];
+            }
+
+            if (lessonToStartWith) {
+              setCurrentLessonId(lessonToStartWith.id);
+              const moduleForLesson = transformedCourse.modules.find((m: any) => m.lessons.some((l: any) => l.id === lessonToStartWith.id));
+              if (moduleForLesson) {
+                setOpenAccordionItems([moduleForLesson.id]);
+              }
             }
           }
         } else {
@@ -279,6 +363,26 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     };
     fetchCourseData();
   }, [actualCourseId, user]);
+
+  useEffect(() => {
+    // Reset quiz state when lesson changes
+    if (currentLesson?.type === 'quiz') {
+      setIsQuizSubmitted(false);
+      setUserAnswers({});
+      setQuizResults({});
+    }
+  }, [currentLesson]);
+
+  const handleLoadedMetadata = useCallback(() => {
+    const videoNode = videoRef.current;
+    if (!videoNode) {
+      return;
+    }
+    const lesson = lessonRef.current;
+    if (lesson && lesson.progressSeconds > 0 && videoNode.duration > lesson.progressSeconds) {
+      videoNode.currentTime = lesson.progressSeconds;
+    }
+  }, []);
 
   if (isLoading) {
     return (
@@ -384,6 +488,110 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
             </Card>
           </div>
         );
+      case 'assignment':
+        return (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ClipboardList className="w-5 h-5 text-indigo-500" />
+                  Assignment Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: currentLesson.content.text }} />
+              </CardContent>
+            </Card>
+
+            {currentLesson.content.attachmentUrl && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Paperclip className="w-5 h-5 text-gray-500" />
+                    Attached Files
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <FileText className="w-6 h-6 text-muted-foreground" />
+                      <span className="font-medium">{currentLesson.content.attachmentFilename || 'Attachment'}</span>
+                    </div>
+                    <div className="flex items-center gap-2 self-end sm:self-center">
+                      <a href={currentLesson.content.attachmentUrl} target="_blank" rel="noopener noreferrer" onClick={() => {
+                        if (currentLesson && !currentLesson.completed) {
+                          markLessonAsComplete(currentLesson.id, actualCourseId);
+                        }
+                      }}>
+                        <Button variant="outline">View</Button>
+                      </a>
+                      <Button onClick={() => {
+                        if (currentLesson && !currentLesson.completed) {
+                          markLessonAsComplete(currentLesson.id, actualCourseId);
+                        }
+                        handleDownload(currentLesson.content.attachmentUrl, currentLesson.content.attachmentFilename);
+                      }} disabled={isDownloading}>
+                        {isDownloading ? 'Downloading...' : 'Download'}
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            <div className="text-center">
+              <Button onClick={() => navigate('/dashboard/assignments')}>Go to Assignments</Button>
+            </div>
+          </div>
+        );
+      case 'attachment':
+        const handleAttachmentInteraction = () => {
+          if (currentLesson && !currentLesson.completed) {
+            markLessonAsComplete(currentLesson.id, actualCourseId);
+          }
+        };
+
+        return (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Paperclip className="w-5 h-5 text-gray-500" />
+                  Attachment
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {currentLesson.content.attachmentUrl ? (
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <FileText className="w-6 h-6 text-muted-foreground" />
+                      <span className="font-medium">{currentLesson.content.attachmentFilename || 'Attachment'}</span>
+                    </div>
+                    <div className="flex items-center gap-2 self-end sm:self-center">
+                      <a href={currentLesson.content.attachmentUrl} target="_blank" rel="noopener noreferrer" onClick={handleAttachmentInteraction}>
+                        <Button variant="outline">View</Button>
+                      </a>
+                      <Button onClick={() => {
+                        handleAttachmentInteraction();
+                        handleDownload(currentLesson.content.attachmentUrl, currentLesson.content.attachmentFilename);
+                      }} disabled={isDownloading}>
+                        {isDownloading ? 'Downloading...' : 'Download'}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground">Attachment not available.</p>
+                )}
+                {currentLesson.content.description && currentLesson.content.description !== 'No description available.' && (
+                  <div className="mt-6">
+                    <h3 className="font-semibold mb-2">Description</h3>
+                    <p className="text-muted-foreground">{currentLesson.content.description}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        );
       case 'quiz':
         return (
           <div className="space-y-6">
@@ -395,23 +603,53 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                {currentLesson.content.questions.map((question: any, index: number) => (
+                {currentLesson.content.questions?.map((question: any, index: number) => (
                   <div key={question.id} className="space-y-4">
                     <div className="flex gap-3">
                       <div className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
                         <span className="text-sm font-semibold text-purple-600 dark:text-purple-400">{index + 1}</span>
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-medium mb-3">{question.question}</h4>
+                        <h4 className="font-medium mb-3">{question.text}</h4>
                         <div className="space-y-2">
-                          {question.options.map((option: any, optionIndex: number) => (
-                            <Button key={optionIndex} variant="outline" className="w-full justify-start h-auto p-3 text-left">
-                              <div className="flex items-center gap-3">
-                                <Circle className="w-4 h-4" />
-                                <span>{option}</span>
+                          {question.options?.map((option: any) => {
+                            const isSelected = userAnswers[question.id] === option.id;
+                            const isCorrect = question.correctOptionId === option.id;
+                            
+                            const showAsCorrect = isQuizSubmitted && isCorrect;
+                            const showAsIncorrect = isQuizSubmitted && isSelected && !isCorrect;
+
+                            let icon = <Circle className="w-4 h-4" />;
+                            if (showAsCorrect) {
+                                icon = <CheckCircle className="w-4 h-4 text-green-600" />;
+                            } else if (showAsIncorrect) {
+                                icon = <XCircle className="w-4 h-4 text-red-600" />;
+                            } else if (isSelected) {
+                                icon = <CheckCircle className="w-4 h-4 text-purple-600" />;
+                            }
+
+                            return (
+                              <div key={option.id}>
+                                <Button
+                                  variant={isSelected && !isQuizSubmitted ? "secondary" : "outline"}
+                                  className={cn(
+                                    "w-full justify-start h-auto p-3 text-left",
+                                    showAsCorrect && "border-green-500 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300",
+                                    showAsIncorrect && "border-red-500 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300",
+                                    isQuizSubmitted && !isSelected && !isCorrect && "opacity-60"
+                                  )}
+                                  onClick={() => !isQuizSubmitted && setUserAnswers(prev => ({...prev, [question.id]: option.id}))}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    {icon}
+                                    <span>{option.text}</span>
+                                  </div>
+                                </Button>
+                                {showAsCorrect && <p className="text-sm text-green-600 mt-1 pl-8">Correct Answer</p>}
+                                {showAsIncorrect && <p className="text-sm text-red-600 mt-1 pl-8">Wrong Answer</p>}
                               </div>
-                            </Button>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     </div>
@@ -419,8 +657,32 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                   </div>
                 ))}
                 <div className="flex gap-2 pt-4">
-                  <Button className="bg-green-600 hover:bg-green-700">Submit Quiz</Button>
-                  <Button variant="outline">Reset Answers</Button>
+                  <Button 
+                    className="bg-green-600 hover:bg-green-700" 
+                    onClick={() => {
+                      if (isQuizSubmitted) {
+                        setIsQuizSubmitted(false);
+                        setUserAnswers({});
+                        setQuizResults({});
+                      } else {
+                        const results: Record<string, boolean> = {};
+                        currentLesson.content.questions.forEach((q: any) => {
+                          results[q.id] = userAnswers[q.id] === q.correctOptionId;
+                        });
+                        setQuizResults(results);
+                        setIsQuizSubmitted(true);
+                      }
+                    }}
+                  >
+                    {isQuizSubmitted ? 'Try Again' : 'Submit Quiz'}
+                  </Button>
+                  {isQuizSubmitted && (
+                     <Button variant="outline" onClick={() => {
+                        setIsQuizSubmitted(false);
+                        setUserAnswers({});
+                        setQuizResults({});
+                     }}>Reset Answers</Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -436,6 +698,8 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       case 'video': return <PlayCircle className="w-4 h-4 text-red-600 dark:text-red-400" />;
       case 'text': return <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />;
       case 'quiz': return <HelpCircle className="w-4 h-4 text-purple-600 dark:text-purple-400" />;
+      case 'attachment': return <Paperclip className="w-4 h-4 text-gray-600 dark:text-gray-400" />;
+      case 'assignment': return <ClipboardList className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />;
       default: return <Circle className="w-4 h-4 text-gray-500" />;
     }
   };
@@ -461,7 +725,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
             </div>
           </div>
           <ScrollArea className="flex-1 p-2">
-            <Accordion type="multiple" defaultValue={[currentModule?.id || '']}>
+            <Accordion type="multiple" value={openAccordionItems} onValueChange={setOpenAccordionItems}>
               {course.modules.map((module: any) => (
                 <AccordionItem key={module.id} value={module.id} className="border-none">
                   <AccordionTrigger className="hover:no-underline hover:bg-accent/50 rounded-lg px-3 py-4 transition-colors">
@@ -477,7 +741,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                           key={lesson.id}
                           variant="ghost"
                           className={`w-full justify-start h-auto p-4 rounded-xl transition-all ${lesson.id === currentLessonId ? 'bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 shadow-sm' : 'hover:bg-accent/50'}`}
-                          onClick={() => { setCurrentLessonId(lesson.id); setIsSidebarOpen(false); }}
+                          onClick={() => { handleNavigation(lesson); setIsSidebarOpen(false); }}
                         >
                           <div className="flex items-center gap-3 w-full">
                             <div className="flex-shrink-0">
@@ -486,13 +750,13 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                               ) : lesson.status === 'in_progress' ? (
                                 <div className="p-1 bg-yellow-100 dark:bg-yellow-900/30 rounded-full"><Timer className="w-4 h-4 text-yellow-600 dark:text-yellow-400" /></div>
                               ) : (
-                                <div className={`p-1 rounded-full ${lesson.type === 'video' ? 'bg-red-100 dark:bg-red-900/30' : lesson.type === 'text' ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-purple-100 dark:bg-purple-900/30'}`}>{getTypeIcon(lesson.type)}</div>
+                                <div className={`p-1 rounded-full ${lesson.type === 'video' ? 'bg-red-100 dark:bg-red-900/30' : lesson.type === 'text' ? 'bg-blue-100 dark:bg-blue-900/30' : lesson.type === 'attachment' ? 'bg-gray-100 dark:bg-gray-900/30' : lesson.type === 'assignment' ? 'bg-indigo-100 dark:bg-indigo-900/30' : 'bg-purple-100 dark:bg-purple-900/30'}`}>{getTypeIcon(lesson.type)}</div>
                               )}
                             </div>
                             <div className="flex-1 text-left">
                               <div className={`font-medium text-sm ${lesson.id === currentLessonId ? 'text-green-700 dark:text-green-300' : 'text-foreground'}`}>{lesson.title}</div>
                               <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                                <Badge variant="outline" className={`text-xs capitalize ${lesson.type === 'video' ? 'border-red-200 text-red-600 dark:border-red-800 dark:text-red-400' : lesson.type === 'text' ? 'border-blue-200 text-blue-600 dark:border-blue-800 dark:text-blue-400' : 'border-purple-200 text-purple-600 dark:border-purple-800 dark:text-purple-400'}`}>{lesson.type}</Badge>
+                                <Badge variant="outline" className={`text-xs capitalize ${lesson.type === 'video' ? 'border-red-200 text-red-600 dark:border-red-800 dark:text-red-400' : lesson.type === 'text' ? 'border-blue-200 text-blue-600 dark:border-blue-800 dark:text-blue-400' : lesson.type === 'attachment' ? 'border-gray-200 text-gray-600 dark:border-gray-800 dark:text-gray-400' : lesson.type === 'assignment' ? 'border-indigo-200 text-indigo-600 dark:border-indigo-800 dark:text-indigo-400' : 'border-purple-200 text-purple-600 dark:border-purple-800 dark:text-purple-400'}`}>{lesson.type}</Badge>
                               </div>
                             </div>
                           </div>
@@ -525,7 +789,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
             </div>
           </div>
           <ScrollArea className="flex-1 p-2">
-            <Accordion type="multiple" defaultValue={[currentModule?.id || '']}>
+            <Accordion type="multiple" value={openAccordionItems} onValueChange={setOpenAccordionItems}>
               {course.modules.map((module: any) => (
                 <AccordionItem key={module.id} value={module.id} className="border-none">
                   <AccordionTrigger className="hover:no-underline hover:bg-accent/50 rounded-lg px-3 py-4 transition-colors">
@@ -541,7 +805,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                           key={lesson.id}
                           variant="ghost"
                           className={`w-full justify-start h-auto p-4 rounded-xl transition-all ${lesson.id === currentLessonId ? 'bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 shadow-sm' : 'hover:bg-accent/50'}`}
-                          onClick={() => setCurrentLessonId(lesson.id)}
+                          onClick={() => handleNavigation(lesson)}
                         >
                           <div className="flex items-center gap-3 w-full">
                             <div className="flex-shrink-0">
@@ -550,13 +814,13 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                               ) : lesson.status === 'in_progress' ? (
                                 <div className="p-1 bg-yellow-100 dark:bg-yellow-900/30 rounded-full"><Timer className="w-4 h-4 text-yellow-600 dark:text-yellow-400" /></div>
                               ) : (
-                                <div className={`p-1 rounded-full ${lesson.type === 'video' ? 'bg-red-100 dark:bg-red-900/30' : lesson.type === 'text' ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-purple-100 dark:bg-purple-900/30'}`}>{getTypeIcon(lesson.type)}</div>
+                                <div className={`p-1 rounded-full ${lesson.type === 'video' ? 'bg-red-100 dark:bg-red-900/30' : lesson.type === 'text' ? 'bg-blue-100 dark:bg-blue-900/30' : lesson.type === 'attachment' ? 'bg-gray-100 dark:bg-gray-900/30' : lesson.type === 'assignment' ? 'bg-indigo-100 dark:bg-indigo-900/30' : 'bg-purple-100 dark:bg-purple-900/30'}`}>{getTypeIcon(lesson.type)}</div>
                               )}
                             </div>
                             <div className="flex-1 text-left">
                               <div className={`font-medium text-sm ${lesson.id === currentLessonId ? 'text-green-700 dark:text-green-300' : 'text-foreground'}`}>{lesson.title}</div>
                               <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                                <Badge variant="outline" className={`text-xs capitalize ${lesson.type === 'video' ? 'border-red-200 text-red-600 dark:border-red-800 dark:text-red-400' : lesson.type === 'text' ? 'border-blue-200 text-blue-600 dark:border-blue-800 dark:text-blue-400' : 'border-purple-200 text-purple-600 dark:border-purple-800 dark:text-purple-400'}`}>{lesson.type}</Badge>
+                                <Badge variant="outline" className={`text-xs capitalize ${lesson.type === 'video' ? 'border-red-200 text-red-600 dark:border-red-800 dark:text-red-400' : lesson.type === 'text' ? 'border-blue-200 text-blue-600 dark:border-blue-800 dark:text-blue-400' : lesson.type === 'attachment' ? 'border-gray-200 text-gray-600 dark:border-gray-800 dark:text-gray-400' : lesson.type === 'assignment' ? 'border-indigo-200 text-indigo-600 dark:border-indigo-800 dark:text-indigo-400' : 'border-purple-200 text-purple-600 dark:border-purple-800 dark:text-purple-400'}`}>{lesson.type}</Badge>
                               </div>
                             </div>
                           </div>
@@ -598,14 +862,14 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
             <div className="flex items-center justify-between max-w-4xl mx-auto">
               <div className="flex items-center gap-2">
                 {prevLesson && (
-                  <Button variant="outline" onClick={() => setCurrentLessonId(prevLesson.id)} className="hover:bg-accent" size="sm" >
+                  <Button variant="outline" onClick={() => handleNavigation(prevLesson)} className="hover:bg-accent" size="sm" >
                     <ChevronLeft className="w-4 h-4 mr-1" /><span className="hidden sm:inline">Previous</span>
                   </Button>
                 )}
               </div>
               <div className="flex items-center gap-2">
                 {nextLesson && (
-                  <Button className="bg-green-600 hover:bg-green-700 text-white shadow-sm" onClick={() => setCurrentLessonId(nextLesson.id)} size="sm">
+                  <Button className="bg-green-600 hover:bg-green-700 text-white shadow-sm" onClick={() => handleNavigation(nextLesson)} size="sm">
                     <span className="hidden sm:inline">Next</span><ChevronRight className="w-4 h-4 ml-1" />
                   </Button>
                 )}
