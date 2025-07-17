@@ -172,19 +172,11 @@ interface LessonItemProps {
 }
 
 const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, dragHandleProps, onToggleCollapse, courseId }: LessonItemProps) => {
-  const [localContent, setLocalContent] = useState(typeof lesson.content === 'string' ? lesson.content : '');
   const [isUploading, setIsUploading] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [attachmentInfo, setAttachmentInfo] = useState<{ url: string; name: string } | null>(null);
   const [isConfirmingChange, setIsConfirmingChange] = useState(false);
   const [pendingLessonType, setPendingLessonType] = useState<CourseLesson['type'] | null>(null);
-
-  // Keep local state in sync if the prop changes from parent
-  useEffect(() => {
-    // If the parent content is a string, sync it to local state.
-    // If it's not a string (e.g., undefined, QuizData), reset local state to empty string.
-    setLocalContent(typeof lesson.content === 'string' ? lesson.content : '');
-  }, [lesson.content]);
 
   useEffect(() => {
     let isMounted = true;
@@ -329,7 +321,7 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, d
 
   const handleBlur = () => {
     // Sync with parent state only when user is done editing
-    onUpdate(sectionId, lesson.id, { content: localContent });
+    onUpdate(sectionId, lesson.id, { content: typeof lesson.content === 'string' ? lesson.content : '' });
   };
   
   const renderLessonContentEditor = () => {
@@ -398,9 +390,8 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, d
       case 'assignment':
         return (
           <RichTextEditor
-            value={localContent}
-            onChange={setLocalContent}
-            onBlur={handleBlur}
+            value={typeof lesson.content === 'string' ? lesson.content : ''}
+            onChange={(content) => onUpdate(sectionId, lesson.id, { content })}
             placeholder="Write the assignment details here..."
             onImageUpload={handleAssignmentImageUpload}
             onFileUpload={handleAssignmentFileUpload}
@@ -954,12 +945,19 @@ const CourseBuilder = () => {
       if (!savedSection) throw new Error("Failed to save a course section.");
 
       for (const [lessonIndex, lesson] of section.lessons.entries()) {
+        let contentToSave: string | undefined;
+        if (typeof lesson.content === 'string') {
+          contentToSave = lesson.content;
+        } else if (lesson.type === 'quiz' && typeof lesson.content === 'object' && lesson.content) {
+          contentToSave = JSON.stringify(lesson.content);
+        }
+        
         await supabase.from('course_lessons').insert({
           section_id: savedSection.id,
           title: lesson.title,
           type: lesson.type,
           overview: lesson.overview,
-          content: typeof lesson.content === 'string' ? lesson.content : undefined,
+          content: contentToSave,
           position: lessonIndex,
         });
       }
