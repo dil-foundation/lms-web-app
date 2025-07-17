@@ -26,6 +26,22 @@ import { StageTwo } from '@/pages/practice/StageTwo';
 import DailyRoutine from '@/pages/practice/DailyRoutine';
 import QuickAnswer from '@/pages/practice/QuickAnswer';
 import RoleplaySimulation from '@/pages/practice/RoleplaySimulation';
+import StageThree from '@/pages/practice/StageThree';
+import StorytellingPractice from '@/pages/practice/StorytellingPractice';
+import GroupDialogue from '@/pages/practice/GroupDialogue';
+import ProblemSolvingSimulations from '@/pages/practice/ProblemSolvingSimulations';
+import StageFour from '@/pages/practice/StageFour';
+import AbstractTopicMonologue from '@/pages/practice/AbstractTopicMonologue';
+import MockInterviewPractice from '@/pages/practice/MockInterviewPractice';
+import NewsSummaryChallenge from '@/pages/practice/NewsSummaryChallenge';
+import StageFive from '@/pages/practice/StageFive';
+import CriticalThinkingDialogues from '@/pages/practice/CriticalThinkingDialogues';
+import AcademicPresentations from '@/pages/practice/AcademicPresentations';
+import InDepthInterviewSimulation from '@/pages/practice/InDepthInterviewSimulation';
+import StageSix from '@/pages/practice/StageSix';
+import AIGuidedSpontaneousSpeech from '@/pages/practice/AIGuidedSpontaneousSpeech';
+import SensitiveScenarioRoleplay from '@/pages/practice/SensitiveScenarioRoleplay';
+import CriticalOpinionBuilder from '@/pages/practice/CriticalOpinionBuilder';
 import { ReportsOverview } from '@/components/admin/ReportsOverview';
 import { ObservationReports } from '@/components/admin/ObservationReports';
 import { Discussions } from '@/components/admin/Discussions';
@@ -155,6 +171,22 @@ const Dashboard = () => {
                           <Route path="/practice/stage-2/daily-routine" element={<DailyRoutine />} />
                           <Route path="/practice/stage-2/quick-answer" element={<QuickAnswer />} />
                           <Route path="/practice/stage-2/roleplay-simulation" element={<RoleplaySimulation />} />
+                          <Route path="/practice/stage-3" element={<StageThree />} />
+                          <Route path="/practice/stage-3/storytelling" element={<StorytellingPractice />} />
+                          <Route path="/practice/stage-3/group-dialogue" element={<GroupDialogue />} />
+                          <Route path="/practice/stage-3/problem-solving" element={<ProblemSolvingSimulations />} />
+                          <Route path="/practice/stage-4" element={<StageFour />} />
+                          <Route path="/practice/stage-4/abstract-topic" element={<AbstractTopicMonologue />} />
+                          <Route path="/practice/stage-4/mock-interview" element={<MockInterviewPractice />} />
+                          <Route path="/practice/stage-4/news-summary" element={<NewsSummaryChallenge />} />
+                          <Route path="/practice/stage-5" element={<StageFive />} />
+                          <Route path="/practice/stage-5/critical-thinking" element={<CriticalThinkingDialogues />} />
+                          <Route path="/practice/stage-5/academic-presentations" element={<AcademicPresentations />} />
+                          <Route path="/practice/stage-5/indepth-interview" element={<InDepthInterviewSimulation />} />
+                          <Route path="/practice/stage-6" element={<StageSix />} />
+                          <Route path="/practice/stage-6/spontaneous-speech" element={<AIGuidedSpontaneousSpeech />} />
+                          <Route path="/practice/stage-6/sensitive-scenario" element={<SensitiveScenarioRoleplay />} />
+                          <Route path="/practice/stage-6/opinion-builder" element={<CriticalOpinionBuilder />} />
                         </>
                       ) : (
                     <>

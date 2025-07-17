@@ -18,16 +18,16 @@ const practiceActivities = [
     title: 'Quick Response',
     description: 'Answer simple questions quickly to build fluency',
     icon: Zap,
-    color: 'from-teal-400 to-teal-600',
-    bgColor: 'bg-teal-500',
+    color: 'from-green-400 to-green-600',
+    bgColor: 'bg-green-500',
   },
   {
     id: 'listen-and-reply',
     title: 'Listen and Reply',
     description: 'Improve listening skills by responding to audio prompts',
     icon: Ear,
-    color: 'from-blue-400 to-blue-600',
-    bgColor: 'bg-blue-500',
+    color: 'from-green-400 to-green-600',
+    bgColor: 'bg-green-500',
   },
 ];
 

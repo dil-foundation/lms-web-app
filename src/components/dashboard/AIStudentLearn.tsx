@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Globe, Mic, Volume2, X, Target } from 'lucide-react';
+import { Globe, Mic, X, Target } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 type LearnStep = 'welcome' | 'translate' | 'conversation';
@@ -18,7 +18,7 @@ export const AIStudentLearn: React.FC = () => {
       <p className="text-muted-foreground text-lg mb-8">Let's begin your English speaking adventure</p>
       <Card className="w-full max-w-md shadow-lg">
         <CardContent className="p-6 text-center">
-          <p className="text-xl font-urdu mb-2">سیکھنے کے پلیٹ فارم میں خوش آمدید، آئیے انگریزی سیکھتے ہیں؟</p>
+          <p className="text-xl font-urdu mb-4">سیکھنے کے پلیٹ فارم میں خوش آمدید، آئیے انگریزی سیکھتے ہیں؟</p>
           <p className="text-muted-foreground">Welcome to the learning platform, shall we learn English?</p>
         </CardContent>
       </Card>
@@ -74,9 +74,8 @@ export const AIStudentLearn: React.FC = () => {
         </CardContent>
       </Card>
       <div className="relative mb-12">
-        {/* Placeholder for audio waveform */}
         <div className="w-64 h-64 border-4 border-dashed rounded-full flex items-center justify-center">
-            <p className="text-muted-foreground text-sm">Audio Visualizer</p>
+            <p className="text-muted-foreground text-sm">Conversation Interface</p>
         </div>
       </div>
       <div className="flex items-center gap-8">
@@ -84,7 +83,7 @@ export const AIStudentLearn: React.FC = () => {
             <X className="w-8 h-8" />
         </Button>
         <Button size="icon" className="w-24 h-24 rounded-full bg-green-500 hover:bg-green-600">
-            <Volume2 className="w-12 h-12" />
+            <Mic className="w-12 h-12" />
         </Button>
       </div>
     </div>
