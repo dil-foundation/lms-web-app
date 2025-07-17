@@ -64,6 +64,34 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       ?.find((lesson: any) => lesson.id === currentLessonId) || null;
   }, [course, currentLessonId]);
 
+  const { mainContentHtml, attachments } = useMemo(() => {
+    if (currentLesson?.type !== 'assignment' || !currentLesson?.content?.text || typeof currentLesson.content.text !== 'string') {
+      return { mainContentHtml: '', attachments: [] };
+    }
+
+    const htmlString = currentLesson.content.text;
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlString, 'text/html');
+    const links = Array.from(doc.querySelectorAll('a'));
+    const foundAttachments: { url: string, name: string }[] = [];
+
+    for (const link of links) {
+      if (link.href.includes('/assignment-assets/files/')) {
+        foundAttachments.push({
+          url: link.href,
+          name: link.textContent || 'download',
+        });
+        if (link.parentElement?.tagName === 'P' && link.parentElement.childNodes.length === 1) {
+          link.parentElement.remove();
+        } else {
+          link.remove();
+        }
+      }
+    }
+
+    return { mainContentHtml: doc.body.innerHTML, attachments: foundAttachments };
+  }, [currentLesson]);
+
   const isValidVideoUrl = (url: string | null | undefined): boolean => {
     if (!url) return false;
     const videoPatterns = [
@@ -499,11 +527,11 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: currentLesson.content.text }} />
+                <div className="prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: mainContentHtml }} />
               </CardContent>
             </Card>
 
-            {currentLesson.content.attachmentUrl && (
+            {attachments.length > 0 && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -512,29 +540,22 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <FileText className="w-6 h-6 text-muted-foreground" />
-                      <span className="font-medium">{currentLesson.content.attachmentFilename || 'Attachment'}</span>
+                  {attachments.map((att, index) => (
+                    <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <FileText className="w-6 h-6 text-muted-foreground" />
+                        <span className="font-medium">{att.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2 self-end sm:self-center">
+                        <a href={att.url} target="_blank" rel="noopener noreferrer">
+                          <Button variant="outline">View</Button>
+                        </a>
+                        <Button onClick={() => handleDownload(att.url, att.name)} disabled={isDownloading}>
+                          {isDownloading ? 'Downloading...' : 'Download'}
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 self-end sm:self-center">
-                      <a href={currentLesson.content.attachmentUrl} target="_blank" rel="noopener noreferrer" onClick={() => {
-                        if (currentLesson && !currentLesson.completed) {
-                          markLessonAsComplete(currentLesson.id, actualCourseId);
-                        }
-                      }}>
-                        <Button variant="outline">View</Button>
-                      </a>
-                      <Button onClick={() => {
-                        if (currentLesson && !currentLesson.completed) {
-                          markLessonAsComplete(currentLesson.id, actualCourseId);
-                        }
-                        handleDownload(currentLesson.content.attachmentUrl, currentLesson.content.attachmentFilename);
-                      }} disabled={isDownloading}>
-                        {isDownloading ? 'Downloading...' : 'Download'}
-                      </Button>
-                    </div>
-                  </div>
+                  ))}
                 </CardContent>
               </Card>
             )}
