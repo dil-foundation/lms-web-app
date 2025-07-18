@@ -55,6 +55,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { ContentLoader } from '@/components/ContentLoader';
 import { CourseOverview } from './CourseOverview';
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
 
 // #region Interfaces
 interface CourseSection {
@@ -72,6 +76,7 @@ interface CourseLesson {
   type: 'video' | 'attachment' | 'assignment' | 'quiz';
   content?: string | File | QuizData;
   duration?: number;
+  due_date?: string;
   isCollapsed?: boolean;
 }
 
@@ -430,6 +435,32 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, d
               rows={1}
               className="text-sm resize-none"
             />
+             {lesson.type === 'assignment' && (
+              <div className="pt-1">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !lesson.due_date && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {lesson.due_date ? `Due: ${format(new Date(lesson.due_date), "PPP")}` : <span>Set Due Date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={lesson.due_date ? new Date(lesson.due_date) : undefined}
+                      onSelect={(date) => onUpdate(sectionId, lesson.id, { due_date: date?.toISOString() })}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2 ml-4">
@@ -959,6 +990,7 @@ const CourseBuilder = () => {
           overview: lesson.overview,
           content: contentToSave,
           position: lessonIndex,
+          due_date: lesson.due_date
         });
       }
     }

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Avatar,
   AvatarFallback,
@@ -15,14 +16,25 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
   ArrowLeft,
   CheckCircle2,
   Clock,
   FileText,
   Search,
   Users,
+  ChevronRight,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 
 const assignmentDetails = {
   title: 'QUIZTESTING',
@@ -34,22 +46,22 @@ const assignmentDetails = {
 const statCards = [
   {
     title: 'Total Students',
-    value: '2',
+    value: '3',
     icon: Users,
   },
   {
     title: 'Submitted',
-    value: '0',
+    value: '2',
     icon: FileText,
   },
   {
     title: 'Pending Grading',
-    value: '0',
+    value: '1',
     icon: Clock,
   },
   {
     title: 'Average Score',
-    value: '0.0%',
+    value: '85.0%',
     icon: CheckCircle2,
   },
 ];
@@ -58,20 +70,50 @@ const submissions = [
   {
     id: 1,
     studentName: 'Student1',
-    studentInitials: 'S',
-    status: 'not submitted',
-    score: null,
+    studentInitials: 'S1',
+    status: 'graded',
+    score: 85,
+    feedback: 'Good work.',
   },
   {
     id: 2,
     studentName: 'Student2',
-    studentInitials: 'S',
-    status: 'not submitted',
+    studentInitials: 'S2',
+    status: 'submitted',
     score: null,
+    feedback: '',
+  },
+];
+
+const studentsNotSubmitted = [
+  {
+    id: 3,
+    studentName: 'Student3',
+    studentInitials: 'S3',
+    status: 'not submitted',
   },
 ];
 
 export const AssignmentSubmissions = () => {
+  const { id: assignmentId } = useParams();
+  const [isGradingOpen, setIsGradingOpen] = useState(false);
+  const [selectedSubmission, setSelectedSubmission] = useState<any>(null);
+  const [grade, setGrade] = useState('');
+  const [feedback, setFeedback] = useState('');
+
+  const handleOpenGrader = (submission: any) => {
+    setSelectedSubmission(submission);
+    setGrade(submission.score?.toString() || '');
+    setFeedback(submission.feedback || '');
+    setIsGradingOpen(true);
+  };
+
+  const handleSaveGrade = () => {
+    console.log('Saving grade for submission', selectedSubmission.id, { grade, feedback });
+    // In a real app, this would be a Supabase call to update the assignment_submissions table.
+    setIsGradingOpen(false);
+  };
+  
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <Link
@@ -91,7 +133,6 @@ export const AssignmentSubmissions = () => {
             <p className="text-muted-foreground">
               Grade submissions and provide feedback • {assignmentDetails.course}
             </p>
-            <Badge variant="outline">{assignmentDetails.type}</Badge>
             <Badge>{assignmentDetails.status}</Badge>
           </div>
         </div>
@@ -143,40 +184,158 @@ export const AssignmentSubmissions = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
-              <h2 className="text-lg font-semibold">
-                Student Submissions ({submissions.length})
-              </h2>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Review and grade student submissions for this assignment
-            </p>
+          <div className="space-y-6">
+            {/* Actual Submissions Section */}
             <div className="space-y-4">
-              {submissions.map((sub) => (
-                <Card key={sub.id} className="hover:bg-muted/50 transition-colors">
-                  <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage
-                          src={`https://api.dicebear.com/6.x/initials/svg?seed=${sub.studentName}`}
-                        />
-                        <AvatarFallback>{sub.studentInitials}</AvatarFallback>
-                      </Avatar>
-                      <p className="font-semibold">{sub.studentName}</p>
-                    </div>
-                    <div className="text-right">
-                        <Badge variant="warning" className="capitalize">{sub.status}</Badge>
-                        <p className="text-sm text-muted-foreground mt-1">{sub.score ?? '%'}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-semibold">
+                  Student Submissions ({submissions.length})
+                </h2>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Review and grade student submissions for this assignment
+              </p>
+              <div className="space-y-4">
+                {submissions.map((sub) => (
+                  <div
+                    key={sub.id} 
+                    onClick={() => handleOpenGrader(sub)}
+                    className="block"
+                  >
+                    <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
+                      <CardContent className="p-4 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage
+                              src={`https://api.dicebear.com/6.x/initials/svg?seed=${sub.studentName}`}
+                            />
+                            <AvatarFallback>{sub.studentInitials}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-semibold">{sub.studentName}</p>
+                            <p className="text-sm text-muted-foreground">
+                              Click to view submission
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <Badge 
+                              variant={
+                                sub.status === 'submitted' ? 'default' : 
+                                sub.status === 'graded' ? 'secondary' : 
+                                'destructive'
+                              } 
+                              className="capitalize"
+                            >
+                              {sub.status}
+                            </Badge>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {sub.score ? `${sub.score}%` : 'Not graded'}
+                            </p>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                ))}
+              </div>
             </div>
+
+            {/* Students Who Haven't Submitted Section */}
+            {studentsNotSubmitted.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-orange-500" />
+                  <h2 className="text-lg font-semibold">
+                    Students Who Haven't Submitted ({studentsNotSubmitted.length})
+                  </h2>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Students who have not yet submitted their work for this assignment
+                </p>
+                <div className="space-y-4">
+                  {studentsNotSubmitted.map((student) => (
+                    <Card key={student.id} className="opacity-75">
+                      <CardContent className="p-4 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage
+                              src={`https://api.dicebear.com/6.x/initials/svg?seed=${student.studentName}`}
+                            />
+                            <AvatarFallback>{student.studentInitials}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-semibold">{student.studentName}</p>
+                            <p className="text-sm text-muted-foreground">
+                              No submission yet
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <Badge variant="destructive" className="capitalize">
+                            Not Submitted
+                          </Badge>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Waiting for submission
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
+      <Dialog open={isGradingOpen} onOpenChange={setIsGradingOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Grade Submission: {selectedSubmission?.studentName}</DialogTitle>
+            <DialogDescription>
+              View the submission and provide a grade and feedback.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            {/* Placeholder for submission content */}
+            <div className="p-4 border rounded-lg bg-muted/50 min-h-[150px]">
+              <p className="text-sm text-muted-foreground italic">Submission content would be displayed here...</p>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="grade" className="text-right">
+                Grade
+              </Label>
+              <Input
+                id="grade"
+                type="number"
+                value={grade}
+                onChange={(e) => setGrade(e.target.value)}
+                className="col-span-3"
+                placeholder="Enter score"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="feedback" className="text-right">
+                Feedback
+              </Label>
+              <Textarea
+                id="feedback"
+                value={feedback}
+                onChange={(e) => setFeedback(e.target.value)}
+                className="col-span-3"
+                placeholder="Provide feedback for the student..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsGradingOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveGrade}>Save Grade</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }; 
