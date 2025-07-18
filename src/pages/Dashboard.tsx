@@ -247,6 +247,7 @@ const Dashboard = () => {
                           <Route path="/reports" element={<ReportsOverview />} />
                           <Route path="/observation-reports" element={<ObservationReports />} />
                           <Route path="/discussion" element={<Discussions />} />
+                          <Route path="/discussion/:id" element={<DiscussionView />} />
                           <Route path="/grade-assignments" element={<GradeAssignments />} />
                           <Route path="/grade-assignments/:id" element={<AssignmentSubmissions />} />
                           <Route path="/grade-assignments/:assignmentId/student/:studentId" element={<StudentSubmissionDetail />} />
