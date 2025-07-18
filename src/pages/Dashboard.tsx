@@ -48,6 +48,7 @@ import { Discussions } from '@/components/admin/Discussions';
 import { DiscussionView } from '@/components/admin/DiscussionView';
 import { GradeAssignments } from '@/components/admin/GradeAssignments';
 import { AssignmentSubmissions } from '@/components/admin/AssignmentSubmissions';
+import { StudentSubmissionDetail } from '@/components/admin/StudentSubmissionDetail';
 import { AdminSettings } from '@/components/admin/AdminSettings';
 import { AdminSecurity } from '@/components/admin/AdminSecurity';
 import CourseBuilder from './CourseBuilder';
@@ -211,15 +212,17 @@ const Dashboard = () => {
                           <Route path="/ai-planner" element={<RolePlaceholder title="Lesson Planner" description="AI-assisted lesson planning and curriculum design" icon={BookOpen} />} />
                           <Route path="/ai-feedback" element={<RolePlaceholder title="AI Feedback" description="Get AI-powered feedback on your teaching methods" icon={MessageSquare} />} />
                         </>
-                      ) : (
-                    <>
-                      <Route path="/courses" element={<CourseManagement />} />
-                      <Route path="/courses/builder/:courseId" element={<CourseBuilder />} />
-                      <Route path="/students" element={<StudentsPage />} />
-                      <Route path="/reports" element={<ReportsPage />} />
-                      <Route path="/grade-assignments" element={<GradeAssignments />} />
-                      <Route path="/messages" element={<MessagesPage />} />
-                      <Route path="/discussion" element={<DiscussionsPage />} />
+                                            ) : (
+                        <>
+                          <Route path="/courses" element={<CourseManagement />} />
+                          <Route path="/courses/builder/:courseId" element={<CourseBuilder />} />
+                          <Route path="/students" element={<StudentsPage />} />
+                          <Route path="/reports" element={<ReportsPage />} />
+                          <Route path="/grade-assignments" element={<GradeAssignments />} />
+                          <Route path="/grade-assignments/:id" element={<AssignmentSubmissions />} />
+                          <Route path="/grade-assignments/:assignmentId/student/:studentId" element={<StudentSubmissionDetail />} />
+                          <Route path="/messages" element={<MessagesPage />} />
+                          <Route path="/discussion" element={<DiscussionsPage />} />
                         </>
                       )}
                     </>
@@ -243,6 +246,9 @@ const Dashboard = () => {
                           <Route path="/reports" element={<ReportsOverview />} />
                           <Route path="/observation-reports" element={<ObservationReports />} />
                           <Route path="/discussion" element={<Discussions />} />
+                          <Route path="/grade-assignments" element={<GradeAssignments />} />
+                          <Route path="/grade-assignments/:id" element={<AssignmentSubmissions />} />
+                          <Route path="/grade-assignments/:assignmentId/student/:studentId" element={<StudentSubmissionDetail />} />
                           <Route path="/settings" element={<AdminSettings />} />
                           <Route path="/security" element={<AdminSecurity />} />
                         </>

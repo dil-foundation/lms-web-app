@@ -21,7 +21,6 @@ import {
   Clock,
   TrendingUp,
   Search,
-  MoreHorizontal,
   FileText,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -186,9 +185,6 @@ export const GradeAssignments = () => {
                         <div className="flex items-center gap-2 justify-self-end">
                             <Badge variant="outline">{assignment.type}</Badge>
                             <Badge>{assignment.status}</Badge>
-                            <Button variant="ghost" size="icon" onClick={(e) => e.preventDefault()}>
-                                <MoreHorizontal className="h-4 w-4" />
-                            </Button>
                         </div>
                       </div>
                     </CardContent>
