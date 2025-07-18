@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/EmptyState';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -47,8 +47,6 @@ interface Assignment {
   status: 'pending' | 'submitted' | 'graded';
   courseTitle: string;
   courseId: string;
-  points: number;
-  earnedPoints?: number;
   submissionType: 'file' | 'text' | 'link';
   submittedAt?: string;
   gradedAt?: string;
@@ -64,6 +62,8 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isSubmissionModalOpen, setIsSubmissionModalOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'submitted' | 'graded'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [submissionText, setSubmissionText] = useState('');
@@ -80,7 +80,6 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
       status: 'pending',
       courseTitle: 'Environmental Science 101',
       courseId: 'env101',
-      points: 100,
       submissionType: 'text',
       attachments: ['assignment_guidelines.pdf', 'sample_essay.docx']
     },
@@ -92,7 +91,6 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
       status: 'pending',
       courseTitle: 'Web Development Fundamentals',
       courseId: 'web101',
-      points: 150,
       submissionType: 'link'
     },
     {
@@ -103,7 +101,6 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
       status: 'pending',
       courseTitle: 'Data Science Basics',
       courseId: 'ds101',
-      points: 120,
       submissionType: 'file',
       attachments: ['dataset.csv', 'analysis_template.ipynb']
     },
@@ -115,7 +112,6 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
       status: 'submitted',
       courseTitle: 'English Literature',
       courseId: 'eng201',
-      points: 80,
       submissionType: 'text',
       submittedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
     },
@@ -127,8 +123,6 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
       status: 'graded',
       courseTitle: 'Physics I',
       courseId: 'phy101',
-      points: 90,
-      earnedPoints: 85,
       submissionType: 'file',
       submittedAt: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(),
       gradedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
@@ -142,7 +136,6 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
       status: 'pending',
       courseTitle: 'Business Marketing',
       courseId: 'biz301',
-      points: 110,
       submissionType: 'file',
       attachments: ['presentation_template.pptx']
     },
@@ -154,7 +147,6 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
       status: 'submitted',
       courseTitle: 'Database Systems',
       courseId: 'cs301',
-      points: 140,
       submissionType: 'link',
       submittedAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString() // Submitted 6 hours ago
     },
@@ -166,8 +158,6 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
       status: 'graded',
       courseTitle: 'World History',
       courseId: 'hist201',
-      points: 75,
-      earnedPoints: 70,
       submissionType: 'link',
       submittedAt: new Date(Date.now() - 22 * 24 * 60 * 60 * 1000).toISOString(),
       gradedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
@@ -221,8 +211,6 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
     });
   };
 
@@ -256,7 +244,7 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
     setSubmissionText('');
     setSubmissionLink('');
     setSubmissionFile(null);
-    setSelectedAssignment(null);
+    setIsSubmissionModalOpen(false); // Close modal on submission
   };
 
   const AssignmentCard = ({ assignment }: { assignment: Assignment }) => (
@@ -291,33 +279,25 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
                 Due: {formatDate(assignment.dueDate)}
               </span>
             </div>
-            <div className="flex items-center space-x-1">
-              <GraduationCap className="h-4 w-4 text-muted-foreground" />
-              <span>{assignment.points} pts</span>
-            </div>
           </div>
           
           <div className="flex items-center space-x-2">
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" onClick={() => setSelectedAssignment(assignment)}>
-                  <Eye className="h-4 w-4 mr-2" />
-                  View Details
-                </Button>
-              </DialogTrigger>
-              <AssignmentDetailModal assignment={assignment} />
-            </Dialog>
+            <Button variant="outline" size="sm" onClick={() => {
+              setSelectedAssignment(assignment);
+              setIsDetailModalOpen(true);
+            }}>
+              <Eye className="h-4 w-4 mr-2" />
+              View Details
+            </Button>
             
             {assignment.status === 'pending' && (
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button size="sm" onClick={() => setSelectedAssignment(assignment)}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Submit
-                  </Button>
-                </DialogTrigger>
-                <AssignmentSubmissionModal assignment={assignment} />
-              </Dialog>
+              <Button size="sm" onClick={() => {
+                setSelectedAssignment(assignment);
+                setIsSubmissionModalOpen(true);
+              }}>
+                <Edit className="h-4 w-4 mr-2" />
+                Submit
+              </Button>
             )}
           </div>
         </div>
@@ -325,7 +305,7 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
         {assignment.status === 'graded' && (
           <div className="p-3 bg-muted rounded-lg">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Grade: {assignment.earnedPoints}/{assignment.points}</span>
+              <span className="text-sm font-medium">Graded</span>
               <span className="text-sm text-muted-foreground">
                 Graded on {assignment.gradedAt && formatDate(assignment.gradedAt)}
               </span>
@@ -339,169 +319,178 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
     </Card>
   );
 
-  const AssignmentDetailModal = ({ assignment }: { assignment: Assignment }) => (
-    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-      <DialogHeader>
-        <DialogTitle>{assignment.title}</DialogTitle>
-      </DialogHeader>
-      <div className="space-y-4">
-        <div>
-          <Label className="text-sm font-medium">Course</Label>
-          <p className="text-sm text-muted-foreground">{assignment.courseTitle}</p>
-        </div>
-        
-        <div>
-          <Label className="text-sm font-medium">Description</Label>
-          <p className="text-sm text-muted-foreground mt-1">{assignment.description}</p>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label className="text-sm font-medium">Due Date</Label>
-            <p className="text-sm text-muted-foreground">{formatDate(assignment.dueDate)}</p>
-          </div>
-          <div>
-            <Label className="text-sm font-medium">Points</Label>
-            <p className="text-sm text-muted-foreground">{assignment.points} pts</p>
-          </div>
-        </div>
-        
-        <div>
-          <Label className="text-sm font-medium">Status</Label>
-          <div className="flex items-center space-x-2 mt-1">
-            <Badge variant={getStatusColor(assignment.status)} className="capitalize">
-              {getStatusIcon(assignment.status)}
-              <span className="ml-1">{assignment.status}</span>
-            </Badge>
-            {isOverdue(assignment.dueDate, assignment.status) && (
-              <Badge variant="destructive">Overdue</Badge>
-            )}
-          </div>
-        </div>
-        
-        {assignment.submittedAt && (
-          <div>
-            <Label className="text-sm font-medium">Submitted</Label>
-            <p className="text-sm text-muted-foreground">{formatDate(assignment.submittedAt)}</p>
-          </div>
-        )}
-        
-        {assignment.attachments && assignment.attachments.length > 0 && (
-          <div>
-            <Label className="text-sm font-medium">Attachments</Label>
-            <div className="space-y-2 mt-1">
-              {assignment.attachments.map((attachment, index) => (
-                <div key={index} className="flex items-center justify-between p-2 border rounded">
-                  <span className="text-sm">{attachment}</span>
-                  <Button variant="ghost" size="sm">
-                    <Download className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </DialogContent>
-  );
+  const AssignmentDetailModal = ({ assignment }: { assignment: Assignment | null }) => {
+    if (!assignment) return null;
 
-  const AssignmentSubmissionModal = ({ assignment }: { assignment: Assignment }) => (
-    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-      <DialogHeader>
-        <DialogTitle>Submit Assignment: {assignment.title}</DialogTitle>
-      </DialogHeader>
-      <div className="space-y-4">
-        <div className="p-4 bg-muted rounded-lg">
-          <h4 className="font-medium">Assignment Details</h4>
-          <p className="text-sm text-muted-foreground mt-1">{assignment.description}</p>
-          <p className="text-sm mt-2">
-            <strong>Due:</strong> {formatDate(assignment.dueDate)} | <strong>Points:</strong> {assignment.points}
-          </p>
-        </div>
-        
-        <Tabs defaultValue="text" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="text">Text Submission</TabsTrigger>
-            <TabsTrigger value="file">File Upload</TabsTrigger>
-            <TabsTrigger value="link">Link Submission</TabsTrigger>
-          </TabsList>
+    return (
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{assignment.title}</DialogTitle>
+          <DialogDescription className="sr-only">
+            Details for assignment: {assignment.title}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div>
+            <Label className="text-sm font-medium">Course</Label>
+            <p className="text-sm text-muted-foreground">{assignment.courseTitle}</p>
+          </div>
           
-          <TabsContent value="text" className="space-y-4">
+          <div>
+            <Label className="text-sm font-medium">Description</Label>
+            <p className="text-sm text-muted-foreground mt-1">{assignment.description}</p>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="submission-text">Your Submission</Label>
-              <Textarea
-                id="submission-text"
-                placeholder="Enter your assignment submission here..."
-                value={submissionText}
-                onChange={(e) => setSubmissionText(e.target.value)}
-                className="mt-2 min-h-[200px]"
-              />
+              <Label className="text-sm font-medium">Due Date</Label>
+              <p className="text-sm text-muted-foreground">{formatDate(assignment.dueDate)}</p>
             </div>
-            <Button 
-              onClick={() => handleSubmission(assignment.id)}
-              disabled={!submissionText.trim()}
-              className="w-full"
-            >
-              Submit Assignment
-            </Button>
-          </TabsContent>
-          
-          <TabsContent value="file" className="space-y-4">
             <div>
-              <Label htmlFor="submission-file">Upload File</Label>
-              <div className="mt-2 border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
-                <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">Click to upload or drag and drop</p>
-                  <p className="text-xs text-muted-foreground">
-                    PDF, DOC, DOCX, TXT files up to 10MB
-                  </p>
-                  <Input
-                    id="submission-file"
-                    type="file"
-                    accept=".pdf,.doc,.docx,.txt"
-                    onChange={(e) => setSubmissionFile(e.target.files?.[0] || null)}
-                    className="mt-4"
-                  />
-                </div>
+              <Label className="text-sm font-medium">Status</Label>
+              <div className="flex items-center space-x-2 mt-1">
+                <Badge variant={getStatusColor(assignment.status)} className="capitalize">
+                  {getStatusIcon(assignment.status)}
+                  <span className="ml-1">{assignment.status}</span>
+                </Badge>
+                {isOverdue(assignment.dueDate, assignment.status) && (
+                  <Badge variant="destructive">Overdue</Badge>
+                )}
               </div>
             </div>
-            <Button 
-              onClick={() => handleSubmission(assignment.id)}
-              disabled={!submissionFile}
-              className="w-full"
-            >
-              Submit Assignment
-            </Button>
-          </TabsContent>
+          </div>
           
-          <TabsContent value="link" className="space-y-4">
+          {assignment.submittedAt && (
             <div>
-              <Label htmlFor="submission-link">Submission Link</Label>
-              <Input
-                id="submission-link"
-                type="url"
-                placeholder="https://example.com/your-submission"
-                value={submissionLink}
-                onChange={(e) => setSubmissionLink(e.target.value)}
-                className="mt-2"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Provide a link to your submission (e.g., Google Drive, GitHub, etc.)
-              </p>
+              <Label className="text-sm font-medium">Submitted</Label>
+              <p className="text-sm text-muted-foreground">{formatDate(assignment.submittedAt)}</p>
             </div>
-            <Button 
-              onClick={() => handleSubmission(assignment.id)}
-              disabled={!submissionLink.trim()}
-              className="w-full"
-            >
-              Submit Assignment
-            </Button>
-          </TabsContent>
-        </Tabs>
-      </div>
-    </DialogContent>
-  );
+          )}
+          
+          {assignment.attachments && assignment.attachments.length > 0 && (
+            <div>
+              <Label className="text-sm font-medium">Attachments</Label>
+              <div className="space-y-2 mt-1">
+                {assignment.attachments.map((attachment, index) => (
+                  <div key={index} className="flex items-center justify-between p-2 border rounded">
+                    <span className="text-sm">{attachment}</span>
+                    <Button variant="ghost" size="sm">
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    );
+  };
+
+  const AssignmentSubmissionModal = ({ assignment }: { assignment: Assignment | null }) => {
+    if (!assignment) return null;
+
+    return (
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Submit Assignment: {assignment.title}</DialogTitle>
+          <DialogDescription className="sr-only">
+            Submission form for assignment: {assignment.title}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="p-4 bg-muted rounded-lg">
+            <h4 className="font-medium">Assignment Details</h4>
+            <p className="text-sm text-muted-foreground mt-1">{assignment.description}</p>
+            <p className="text-sm mt-2">
+              <strong>Due:</strong> {formatDate(assignment.dueDate)}
+            </p>
+          </div>
+          
+          <Tabs defaultValue="text" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="text">Text Submission</TabsTrigger>
+              <TabsTrigger value="file">File Upload</TabsTrigger>
+              <TabsTrigger value="link">Link Submission</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="text" className="space-y-4">
+              <div>
+                <Label htmlFor="submission-text">Your Submission</Label>
+                <Textarea
+                  id="submission-text"
+                  placeholder="Enter your assignment submission here..."
+                  value={submissionText}
+                  onChange={(e) => setSubmissionText(e.target.value)}
+                  className="mt-2 min-h-[200px]"
+                />
+              </div>
+              <Button 
+                onClick={() => handleSubmission(assignment.id)}
+                disabled={!submissionText.trim()}
+                className="w-full"
+              >
+                Submit Assignment
+              </Button>
+            </TabsContent>
+            
+            <TabsContent value="file" className="space-y-4">
+              <div>
+                <Label htmlFor="submission-file">Upload File</Label>
+                <div className="mt-2 border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+                  <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Click to upload or drag and drop</p>
+                    <p className="text-xs text-muted-foreground">
+                      PDF, DOC, DOCX, TXT files up to 10MB
+                    </p>
+                    <Input
+                      id="submission-file"
+                      type="file"
+                      accept=".pdf,.doc,.docx,.txt"
+                      onChange={(e) => setSubmissionFile(e.target.files?.[0] || null)}
+                      className="mt-4"
+                    />
+                  </div>
+                </div>
+              </div>
+              <Button 
+                onClick={() => handleSubmission(assignment.id)}
+                disabled={!submissionFile}
+                className="w-full"
+              >
+                Submit Assignment
+              </Button>
+            </TabsContent>
+            
+            <TabsContent value="link" className="space-y-4">
+              <div>
+                <Label htmlFor="submission-link">Submission Link</Label>
+                <Input
+                  id="submission-link"
+                  type="url"
+                  placeholder="https://example.com/your-submission"
+                  value={submissionLink}
+                  onChange={(e) => setSubmissionLink(e.target.value)}
+                  className="mt-2"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Provide a link to your submission (e.g., Google Drive, GitHub, etc.)
+                </p>
+              </div>
+              <Button 
+                onClick={() => handleSubmission(assignment.id)}
+                disabled={!submissionLink.trim()}
+                className="w-full"
+              >
+                Submit Assignment
+              </Button>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </DialogContent>
+    );
+  };
 
   if (loading) {
     return (
@@ -634,6 +623,14 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
           </div>
         </>
       )}
+
+      <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
+        <AssignmentDetailModal assignment={selectedAssignment} />
+      </Dialog>
+      
+      <Dialog open={isSubmissionModalOpen} onOpenChange={setIsSubmissionModalOpen}>
+        <AssignmentSubmissionModal assignment={selectedAssignment} />
+      </Dialog>
     </div>
   );
 }; 

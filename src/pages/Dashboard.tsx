@@ -185,6 +185,7 @@ const Dashboard = () => {
                       <Route path="/courses/builder/:courseId" element={<CourseBuilder />} />
                       <Route path="/students" element={<StudentsPage />} />
                       <Route path="/reports" element={<ReportsPage />} />
+                      <Route path="/grade-assignments" element={<GradeAssignments />} />
                       <Route path="/messages" element={<MessagesPage />} />
                       <Route path="/discussion" element={<DiscussionsPage />} />
                         </>
@@ -204,20 +205,14 @@ const Dashboard = () => {
                           <Route path="/ai-training" element={<RolePlaceholder title="AI Training" description="Train and fine-tune AI models" icon={BookOpen} />} />
                         </>
                       ) : (
-                    <>
-                      <Route path="/users" element={<UsersManagement />} />
-                      <Route path="/courses" element={<CourseManagement />} />
-                      <Route path="/courses/builder/:courseId" element={<CourseBuilder />} />
-                      <Route path="/analytics" element={<RolePlaceholder title="System Analytics" description="View comprehensive system analytics" icon={BarChart3} />} />
-                      <Route path="/reports" element={<ReportsOverview />} />
-              <Route path="/observation-reports" element={<ObservationReports />} />
-                      <Route path="/secure-links" element={<RolePlaceholder title="Secure Links" description="Manage secure links and access controls" icon={Link} />} />
-                      <Route path="/settings" element={<AdminSettings />} />
-                      <Route path="/security" element={<AdminSecurity />} />
-                      <Route path="/discussion" element={<Discussions />} />
-                      <Route path="/discussion/:discussionId" element={<DiscussionView />} />
-                      <Route path="/grade-assignments" element={<GradeAssignments />} />
-                      <Route path="/grade-assignments/:assignmentId" element={<AssignmentSubmissions />} />
+                        <>
+                          <Route path="/users" element={<UsersManagement />} />
+                          <Route path="/courses" element={<CourseManagement />} />
+                          <Route path="/reports" element={<ReportsOverview />} />
+                          <Route path="/observation-reports" element={<ObservationReports />} />
+                          <Route path="/discussion" element={<Discussions />} />
+                          <Route path="/settings" element={<AdminSettings />} />
+                          <Route path="/security" element={<AdminSecurity />} />
                         </>
                       )}
                     </>

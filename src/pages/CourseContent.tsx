@@ -30,9 +30,11 @@ import {
   Paperclip,
   ClipboardList,
   XCircle,
+  CalendarClock,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
 interface CourseContentProps {
   courseId?: string;
@@ -151,6 +153,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
             duration: lesson.duration || '10:00',
             completed: status === 'completed',
             status: status,
+            due_date: lesson.due_date,
             progressSeconds: lessonProgress?.progress_seconds || 0,
             content: {
               videoUrl: lesson.video_url,
@@ -521,10 +524,18 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ClipboardList className="w-5 h-5 text-indigo-500" />
-                  Assignment Details
-                </CardTitle>
+                <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-2">
+                  <CardTitle className="flex items-center gap-2">
+                    <ClipboardList className="w-5 h-5 text-indigo-500" />
+                    Assignment Details
+                  </CardTitle>
+                  {currentLesson.due_date && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted px-3 py-1.5 rounded-full">
+                      <CalendarClock className="w-4 h-4" />
+                      <span>Due: {format(new Date(currentLesson.due_date), 'PPP')}</span>
+                    </div>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: mainContentHtml }} />
