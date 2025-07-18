@@ -373,7 +373,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
       )}
 
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20">
+      <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20">
         <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 py-12">
           <div className="space-y-8">
             {/* Course Info */}
@@ -410,11 +410,11 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
             </div>
 
             {/* Full-width Video Player */}
-            <div className="mx-auto">
+            <div className="mx-auto w-[90%]">
               <Card>
                 <CardContent className="p-0">
-                  {/* Video/Image Preview - Full Width */}
-                  <div className="relative aspect-video bg-gray-100 rounded-t-lg overflow-hidden min-h-[400px] md:min-h-[500px]">
+                  {/* Video/Image Preview - Reduced Width */}
+                  <div className="relative aspect-video bg-gray-100 rounded-t-lg overflow-hidden min-h-[360px] md:min-h-[450px]">
                     {course.hasValidVideo && course.videoUrl ? (
                       // Valid video available
                       isVideoPlaying ? (
