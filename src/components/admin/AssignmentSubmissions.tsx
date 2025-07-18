@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Avatar,
   AvatarFallback,
@@ -15,13 +16,22 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
   ArrowLeft,
   CheckCircle2,
   Clock,
   FileText,
   Search,
   Users,
-  Eye,
   ChevronRight,
 } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
@@ -63,6 +73,7 @@ const submissions = [
     studentInitials: 'S1',
     status: 'graded',
     score: 85,
+    feedback: 'Good work.',
   },
   {
     id: 2,
@@ -70,6 +81,7 @@ const submissions = [
     studentInitials: 'S2',
     status: 'submitted',
     score: null,
+    feedback: '',
   },
 ];
 
@@ -84,6 +96,23 @@ const studentsNotSubmitted = [
 
 export const AssignmentSubmissions = () => {
   const { id: assignmentId } = useParams();
+  const [isGradingOpen, setIsGradingOpen] = useState(false);
+  const [selectedSubmission, setSelectedSubmission] = useState<any>(null);
+  const [grade, setGrade] = useState('');
+  const [feedback, setFeedback] = useState('');
+
+  const handleOpenGrader = (submission: any) => {
+    setSelectedSubmission(submission);
+    setGrade(submission.score?.toString() || '');
+    setFeedback(submission.feedback || '');
+    setIsGradingOpen(true);
+  };
+
+  const handleSaveGrade = () => {
+    console.log('Saving grade for submission', selectedSubmission.id, { grade, feedback });
+    // In a real app, this would be a Supabase call to update the assignment_submissions table.
+    setIsGradingOpen(false);
+  };
   
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
@@ -104,7 +133,6 @@ export const AssignmentSubmissions = () => {
             <p className="text-muted-foreground">
               Grade submissions and provide feedback • {assignmentDetails.course}
             </p>
-            <Badge variant="outline">{assignmentDetails.type}</Badge>
             <Badge>{assignmentDetails.status}</Badge>
           </div>
         </div>
@@ -170,9 +198,9 @@ export const AssignmentSubmissions = () => {
               </p>
               <div className="space-y-4">
                 {submissions.map((sub) => (
-                  <Link 
+                  <div
                     key={sub.id} 
-                    to={`/dashboard/grade-assignments/${assignmentId}/student/${sub.id}`}
+                    onClick={() => handleOpenGrader(sub)}
                     className="block"
                   >
                     <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
@@ -211,7 +239,7 @@ export const AssignmentSubmissions = () => {
                         </div>
                       </CardContent>
                     </Card>
-                  </Link>
+                  </div>
                 ))}
               </div>
             </div>
@@ -263,6 +291,51 @@ export const AssignmentSubmissions = () => {
           </div>
         </CardContent>
       </Card>
+      <Dialog open={isGradingOpen} onOpenChange={setIsGradingOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Grade Submission: {selectedSubmission?.studentName}</DialogTitle>
+            <DialogDescription>
+              View the submission and provide a grade and feedback.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            {/* Placeholder for submission content */}
+            <div className="p-4 border rounded-lg bg-muted/50 min-h-[150px]">
+              <p className="text-sm text-muted-foreground italic">Submission content would be displayed here...</p>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="grade" className="text-right">
+                Grade
+              </Label>
+              <Input
+                id="grade"
+                type="number"
+                value={grade}
+                onChange={(e) => setGrade(e.target.value)}
+                className="col-span-3"
+                placeholder="Enter score"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="feedback" className="text-right">
+                Feedback
+              </Label>
+              <Textarea
+                id="feedback"
+                value={feedback}
+                onChange={(e) => setFeedback(e.target.value)}
+                className="col-span-3"
+                placeholder="Provide feedback for the student..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsGradingOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveGrade}>Save Grade</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }; 

@@ -243,6 +243,7 @@ const Dashboard = () => {
                         <>
                           <Route path="/users" element={<UsersManagement />} />
                           <Route path="/courses" element={<CourseManagement />} />
+                          <Route path="/courses/builder/:courseId" element={<CourseBuilder />} />
                           <Route path="/reports" element={<ReportsOverview />} />
                           <Route path="/observation-reports" element={<ObservationReports />} />
                           <Route path="/discussion" element={<Discussions />} />

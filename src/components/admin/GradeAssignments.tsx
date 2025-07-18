@@ -115,10 +115,13 @@ export const GradeAssignments = () => {
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <Select>
                 <SelectTrigger className="w-full sm:w-auto">
-                  <SelectValue placeholder="All Courses" />
+                  <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Courses</SelectItem>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  <SelectItem value="technology">Technology</SelectItem>
+                  <SelectItem value="science">Science</SelectItem>
+                  <SelectItem value="mathematics">Mathematics</SelectItem>
                 </SelectContent>
               </Select>
               <Select>
@@ -183,7 +186,6 @@ export const GradeAssignments = () => {
                             <p className="text-muted-foreground">Average</p>
                         </div>
                         <div className="flex items-center gap-2 justify-self-end">
-                            <Badge variant="outline">{assignment.type}</Badge>
                             <Badge>{assignment.status}</Badge>
                         </div>
                       </div>
