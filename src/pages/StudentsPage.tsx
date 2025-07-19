@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -20,7 +20,6 @@ import {
   Clock, 
   Search,
   Filter,
-  SortAsc,
   Mail,
   Eye,
   FileText,
@@ -28,24 +27,35 @@ import {
   AlertCircle,
   UserPlus,
   X,
-  Check
+  Check,
+  Edit
 } from 'lucide-react';
+import { useDebounce } from '@/hooks/useDebounce';
+import { ContentLoader } from '@/components/ContentLoader';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { Label } from '@/components/ui/label';
 
 // Types
 interface Student {
   id: string;
   name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   avatar: string;
   enrolledDate: string;
   course: string;
   progress: number;
-  status: 'Active' | 'Behind' | 'Excellent' | 'Inactive';
+  status: 'active' | 'inactive' | 'unverified';
   lastActive: string;
-  grade: string;
-  assignments: string;
-  phone?: string;
-  location?: string;
+  grade?: string;
 }
 
 interface StudentData {
@@ -53,9 +63,8 @@ interface StudentData {
   totalCount: number;
   activeCount: number;
   averageProgress: number;
-  atRiskCount: number;
+  unverifiedCount: number;
   courses: string[];
-  statuses: string[];
 }
 
 interface AvailableStudent {
@@ -85,25 +94,15 @@ const formatDate = (dateString: string): string => {
   }
 };
 
-const getStatusFromProgress = (progress: number): Student['status'] => {
-  if (progress >= 90) return 'Excellent';
-  if (progress >= 70) return 'Active';
-  if (progress >= 40) return 'Active';
-  return 'Behind';
-};
-
-const getGradeFromProgress = (progress: number): string => {
-  if (progress >= 95) return 'A+';
-  if (progress >= 90) return 'A';
-  if (progress >= 85) return 'A-';
-  if (progress >= 80) return 'B+';
-  if (progress >= 75) return 'B';
-  if (progress >= 70) return 'B-';
-  if (progress >= 65) return 'C+';
-  if (progress >= 60) return 'C';
-  if (progress >= 55) return 'C-';
-  if (progress >= 50) return 'D';
-  return 'F';
+const getStatusBadgeVariant = (status: string) => {
+  switch (status) {
+    case 'active':
+      return 'default';
+    case 'unverified':
+      return 'destructive';
+    default:
+      return 'secondary';
+  }
 };
 
 const getLastActiveText = (lastActiveDate: string): string => {
@@ -131,21 +130,32 @@ export default function StudentsPage() {
   
   // State
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [selectedCourse, setSelectedCourse] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const [sortBy, setSortBy] = useState('name');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [studentData, setStudentData] = useState<StudentData>({
     students: [],
     totalCount: 0,
     activeCount: 0,
     averageProgress: 0,
-    atRiskCount: 0,
+    unverifiedCount: 0,
     courses: [],
-    statuses: []
   });
   const [loading, setLoading] = useState(true);
+  const [isTableLoading, setIsTableLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalStudentsInFilter, setTotalStudentsInFilter] = useState(0);
+  const rowsPerPage = 10;
+
+  // Profile modal state
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [editableStudent, setEditableStudent] = useState<Partial<Student>>({});
+  const [modalMode, setModalMode] = useState<'view' | 'edit'>('view');
+  const [isUpdatingUser, setIsUpdatingUser] = useState(false);
 
   // Enrollment modal state
   const [enrollModalOpen, setEnrollModalOpen] = useState(false);
@@ -156,125 +166,80 @@ export default function StudentsPage() {
   const [availableStudents, setAvailableStudents] = useState<AvailableStudent[]>([]);
   const [availableCourses, setAvailableCourses] = useState<AvailableCourse[]>([]);
   const [loadingEnrollData, setLoadingEnrollData] = useState(false);
+  const [filterableCourses, setFilterableCourses] = useState<string[]>([]);
+
+  const fetchStudentStats = async () => {
+    if(!user) return;
+    try {
+        const { data, error } = await supabase.rpc('get_student_stats_for_teacher', { p_teacher_id: user.id });
+        if(error) throw error;
+
+        setStudentData(prev => ({
+            ...prev,
+            totalCount: data.totalCount,
+            activeCount: data.activeCount,
+            unverifiedCount: data.unverifiedCount
+        }));
+    } catch(err: any) {
+        console.error('Failed to fetch student stats:', err);
+    }
+  }
 
   // Fetch student data
-  const fetchStudentData = async () => {
+  const fetchStudentDataAndCount = async () => {
     if (!user) return;
     
-    setLoading(true);
+    setIsTableLoading(true);
     setError(null);
     
     try {
-      // Get teacher's courses
-      const { data: teacherCourses, error: coursesError } = await supabase
-        .from('course_members')
-        .select('course_id, courses(id, title)')
-        .eq('user_id', user.id)
-        .eq('role', 'teacher');
+      const params = { 
+        p_teacher_id: user.id,
+        p_search_term: debouncedSearchTerm,
+        p_course_filter: selectedCourse,
+        p_status_filter: selectedStatus
+      };
 
-      if (coursesError) throw coursesError;
-
-      const courseIds = teacherCourses?.map(tc => tc.course_id) || [];
+      const countPromise = supabase.rpc('get_students_for_teacher_count', params);
+      const dataPromise = supabase.rpc('get_students_for_teacher', { ...params, p_page: currentPage, p_rows_per_page: rowsPerPage });
       
-      if (courseIds.length === 0) {
-        setStudentData({
-          students: [],
-          totalCount: 0,
-          activeCount: 0,
-          averageProgress: 0,
-          atRiskCount: 0,
-          courses: [],
-          statuses: []
-        });
-        setLoading(false);
-        return;
-      }
+      const [{ data: count, error: countError }, { data: studentsData, error: dataError }] = await Promise.all([countPromise, dataPromise]);
 
-      // Get students enrolled in teacher's courses
-      let { data: enrolledStudents, error: studentsError } = await supabase
-        .from('course_members')
-        .select(`
-          user_id,
-          created_at,
-          course_id,
-          courses(id, title),
-          profiles(id, first_name, last_name, email)
-        `)
-        .in('course_id', courseIds)
-        .eq('role', 'student');
-
-      // If the complex query fails, try a simpler fallback
-      if (studentsError) {
-        console.warn('Complex query failed, trying fallback:', studentsError);
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('course_members')
-          .select(`
-            user_id,
-            created_at,
-            course_id,
-            courses(id, title)
-          `)
-          .in('course_id', courseIds)
-          .eq('role', 'student');
-
-        if (fallbackError) throw fallbackError;
-        
-        // Transform fallback data to include empty profile info
-        enrolledStudents = fallbackData?.map(item => ({
-          ...item,
-          profiles: null
-        })) || [];
-      }
-
-      // Transform data to Student format
-      const students: Student[] = (enrolledStudents || [])
-        .filter(enrollment => enrollment && enrollment.user_id) // Filter out invalid entries
-        .map(enrollment => {
-          const profile = enrollment.profiles;
-          const course = enrollment.courses;
-          
-          // Generate mock data for missing fields (in real app, these would come from progress tracking)
+      if (countError) throw countError;
+      if (dataError) throw dataError;
+      
+      const students: Student[] = (studentsData || []).map((student: any) => {
           const mockProgress = Math.floor(Math.random() * 100);
-          const mockAssignments = `${Math.floor(Math.random() * 10) + 1}/${Math.floor(Math.random() * 5) + 10}`;
           
-          const firstName = profile?.first_name || 'Unknown';
-          const lastName = profile?.last_name || 'User';
+          const firstName = student.first_name || 'Unknown';
+          const lastName = student.last_name || 'User';
           const fullName = `${firstName} ${lastName}`.trim();
           
           return {
-            id: enrollment.user_id,
-            name: fullName || 'Unknown Student',
-            email: profile?.email || 'N/A',
+            id: student.id,
+            name: fullName,
+            firstName,
+            lastName,
+            email: student.email || 'N/A',
             avatar: getInitials(fullName || 'Unknown Student'),
-            enrolledDate: enrollment.created_at || new Date().toISOString(),
-            course: course?.title || 'Unknown Course',
+            enrolledDate: student.enrolled_at || new Date().toISOString(),
+            course: student.course_title || 'Unknown Course',
             progress: mockProgress,
-            status: getStatusFromProgress(mockProgress),
-            lastActive: getLastActiveText(enrollment.created_at || new Date().toISOString()),
-            grade: getGradeFromProgress(mockProgress),
-            assignments: mockAssignments,
-            phone: undefined,
-            location: undefined
+            status: student.status,
+            lastActive: getLastActiveText(student.last_active),
+            grade: student.grade,
           };
         });
 
-      // Calculate metrics
-      const totalCount = students.length;
-      const activeCount = students.filter(s => s.status === 'Active' || s.status === 'Excellent').length;
-      const averageProgress = totalCount > 0 ? Math.round(students.reduce((acc, s) => acc + s.progress, 0) / totalCount) : 0;
-      const atRiskCount = students.filter(s => s.status === 'Behind').length;
-      const courses = [...new Set(students.map(s => s.course))];
-      const statuses = [...new Set(students.map(s => s.status))];
+      // Calculate metrics from the filtered set
+      const averageProgress = students.length > 0 ? Math.round(students.reduce((acc, s) => acc + s.progress, 0) / students.length) : 0;
+      setTotalStudentsInFilter(count || 0);
 
-      setStudentData({
+      setStudentData(prev => ({
+        ...prev,
         students,
-        totalCount,
-        activeCount,
-        averageProgress,
-        atRiskCount,
-        courses,
-        statuses
-      });
+        averageProgress
+      }));
 
     } catch (err: any) {
       console.error('Error fetching student data:', err);
@@ -286,24 +251,106 @@ export default function StudentsPage() {
         variant: 'destructive'
       });
       
-      // Set empty data on error to show proper empty state
-      setStudentData({
-        students: [],
-        totalCount: 0,
-        activeCount: 0,
-        averageProgress: 0,
-        atRiskCount: 0,
-        courses: [],
-        statuses: []
-      });
+      setStudentData(prev => ({ ...prev, students: [] }));
     } finally {
-      setLoading(false);
+        setIsTableLoading(false);
+    }
+  };
+
+  const fetchFilterableCourses = async () => {
+    if (!user) return;
+    try {
+        const { data: teacherCourseMembers, error: coursesError } = await supabase
+            .from('course_members')
+            .select('course_id')
+            .eq('user_id', user.id)
+            .eq('role', 'teacher');
+
+        if (coursesError) throw coursesError;
+
+        const courseIds = (teacherCourseMembers || []).map(tcm => tcm.course_id);
+        if (courseIds.length === 0) {
+            setFilterableCourses([]);
+            return;
+        }
+
+        const { data: courseDetails, error: courseDetailsError } = await supabase
+            .from('courses')
+            .select('title')
+            .in('id', courseIds)
+            .eq('status', 'Published');
+        
+        if (courseDetailsError) throw courseDetailsError;
+
+        const courseTitles = (courseDetails || []).map(c => c.title).filter((c): c is string => c !== null);
+        setFilterableCourses(courseTitles);
+    } catch (err: any) {
+        console.error('Failed to fetch filterable courses:', err);
+        toast({
+            title: 'Error',
+            description: `Failed to load course filters.`,
+            variant: 'destructive'
+        });
     }
   };
 
   useEffect(() => {
-    fetchStudentData();
+    const loadInitialData = async () => {
+        if (!user) return;
+        setLoading(true);
+        await Promise.all([
+            fetchStudentStats(),
+            fetchFilterableCourses()
+        ]);
+        setLoading(false);
+    };
+    loadInitialData();
   }, [user]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchTerm, selectedCourse, selectedStatus]);
+
+  useEffect(() => {
+    if(user) {
+      fetchStudentDataAndCount();
+    }
+  }, [user, currentPage, debouncedSearchTerm, selectedCourse, selectedStatus]);
+
+  const handleUpdateStudent = async () => {
+    if (!editableStudent || !editableStudent.id) return;
+    setIsUpdatingUser(true);
+    try {
+        const { error } = await supabase.functions.invoke('update-user', {
+            body: {
+                userId: editableStudent.id,
+                firstName: editableStudent.firstName,
+                lastName: editableStudent.lastName,
+                grade: editableStudent.grade,
+                role: 'student'
+            },
+        });
+
+        if (error) throw error;
+        
+        toast({
+            title: "Success",
+            description: "Student profile has been updated.",
+        });
+        
+        setIsProfileModalOpen(false);
+        fetchStudentDataAndCount();
+
+    } catch (err: any) {
+        toast({
+            title: "Update Failed",
+            description: err.message || "Failed to update student profile.",
+            variant: 'destructive',
+        });
+    } finally {
+        setIsUpdatingUser(false);
+    }
+  };
 
   // Fetch available students and courses for enrollment
   const fetchEnrollmentData = async () => {
@@ -452,7 +499,7 @@ export default function StudentsPage() {
       setEnrollModalOpen(false);
 
       // Refresh student data
-      fetchStudentData();
+      fetchStudentDataAndCount();
 
     } catch (err: any) {
       console.error('Error enrolling student:', err);
@@ -489,36 +536,8 @@ export default function StudentsPage() {
   };
 
   // Filter and sort students
-  const filteredStudents = studentData.students
-    .filter(student => {
-      const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          student.email.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCourse = selectedCourse === 'all' || student.course === selectedCourse;
-      const matchesStatus = selectedStatus === 'all' || student.status === selectedStatus;
-      return matchesSearch && matchesCourse && matchesStatus;
-    })
-    .sort((a, b) => {
-      let aValue = a[sortBy as keyof typeof a];
-      let bValue = b[sortBy as keyof typeof b];
-      
-      if (sortBy === 'progress') {
-        aValue = a.progress;
-        bValue = b.progress;
-      } else if (sortBy === 'enrolledDate') {
-        aValue = new Date(a.enrolledDate).getTime();
-        bValue = new Date(b.enrolledDate).getTime();
-      }
-      
-      if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
-    });
-
-  // Get unique courses and statuses for filters
-  const uniqueCourses = studentData.courses;
-  const uniqueStatuses = studentData.statuses;
+  const filteredStudents = studentData.students;
+  const totalPages = Math.ceil(totalStudentsInFilter / rowsPerPage);
 
   return (
     <div className="space-y-6">
@@ -626,11 +645,6 @@ export default function StudentsPage() {
                         <SelectItem key={course.id} value={course.id} className="focus:bg-accent focus:text-white [&[data-highlighted]]:bg-accent [&[data-highlighted]]:text-white">
                           <div className="flex flex-col">
                             <span className="font-medium">{course.title}</span>
-                            {course.description && (
-                              <span className="text-xs opacity-80 line-clamp-1">
-                                {course.description}
-                              </span>
-                            )}
                           </div>
                         </SelectItem>
                       ))
@@ -736,17 +750,17 @@ export default function StudentsPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">At Risk</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Unverified</CardTitle>
+            <AlertCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {loading ? (
               <Skeleton className="h-8 w-16" />
             ) : (
-              <div className="text-2xl font-bold">{studentData.atRiskCount}</div>
+              <div className="text-2xl font-bold">{studentData.unverifiedCount}</div>
             )}
             <p className="text-xs text-muted-foreground">
-              Students behind schedule
+              Students who have not verified their email
             </p>
           </CardContent>
         </Card>
@@ -764,7 +778,7 @@ export default function StudentsPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={fetchStudentData}
+                  onClick={fetchStudentDataAndCount}
                   className="mt-2"
                   disabled={loading}
                 >
@@ -799,7 +813,7 @@ export default function StudentsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Courses</SelectItem>
-                  {uniqueCourses.map(course => (
+                  {filterableCourses.map(course => (
                     <SelectItem key={course} value={course}>{course}</SelectItem>
                   ))}
                 </SelectContent>
@@ -810,39 +824,11 @@ export default function StudentsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
-                  {uniqueStatuses.map(status => (
-                    <SelectItem key={status} value={status}>{status}</SelectItem>
-                  ))}
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="unverified">Unverified</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
                 </SelectContent>
               </Select>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="w-full sm:w-auto">
-                    <SortAsc className="h-4 w-4 mr-2" />
-                    Sort
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => { setSortBy('name'); setSortOrder('asc'); }}>
-                    Name A-Z
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => { setSortBy('name'); setSortOrder('desc'); }}>
-                    Name Z-A
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => { setSortBy('progress'); setSortOrder('desc'); }}>
-                    Progress High-Low
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => { setSortBy('progress'); setSortOrder('asc'); }}>
-                    Progress Low-High
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => { setSortBy('enrolledDate'); setSortOrder('desc'); }}>
-                    Recently Enrolled
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => { setSortBy('enrolledDate'); setSortOrder('asc'); }}>
-                    Oldest Enrolled
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
           </div>
 
@@ -852,55 +838,19 @@ export default function StudentsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Student</TableHead>
-                  <TableHead>Course</TableHead>
-                  <TableHead>Progress</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Grade</TableHead>
-                  <TableHead>Last Active</TableHead>
+                  <TableHead className="hidden md:table-cell">Joined</TableHead>
+                  <TableHead className="hidden md:table-cell">Last Active</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading ? (
-                  // Loading skeleton
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell>
-                        <div className="flex items-center space-x-3">
-                          <Skeleton className="h-8 w-8 rounded-full" />
-                          <div className="space-y-1">
-                            <Skeleton className="h-4 w-32" />
-                            <Skeleton className="h-3 w-48" />
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <Skeleton className="h-4 w-24" />
-                          <Skeleton className="h-3 w-20" />
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <Skeleton className="h-4 w-12" />
-                          <Skeleton className="h-2 w-20" />
-                          <Skeleton className="h-3 w-16" />
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-6 w-16" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-4 w-8" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-4 w-16" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-8 w-8" />
-                      </TableCell>
-                    </TableRow>
-                  ))
+                {isTableLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-48">
+                      <ContentLoader message="Loading students..." />
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   filteredStudents.map((student) => (
                     <TableRow key={student.id}>
@@ -918,40 +868,14 @@ export default function StudentsPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="text-sm">
-                          <div className="font-medium">{student.course}</div>
-                          <div className="text-muted-foreground">
-                            Enrolled: {formatDate(student.enrolledDate)}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium">{student.progress}%</span>
-                          </div>
-                          <Progress value={student.progress} className="h-2" />
-                          <div className="text-xs text-muted-foreground">
-                            {student.assignments}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            student.status === 'Active' ? 'default' :
-                            student.status === 'Excellent' ? 'secondary' :
-                            student.status === 'Behind' ? 'destructive' :
-                            'outline'
-                          }
-                        >
-                          {student.status}
+                        <Badge variant={getStatusBadgeVariant(student.status)}>
+                          {student.status.charAt(0).toUpperCase() + student.status.slice(1)}
                         </Badge>
                       </TableCell>
-                      <TableCell>
-                        <span className="font-medium">{student.grade}</span>
+                      <TableCell className="hidden md:table-cell text-muted-foreground">
+                        {formatDate(student.enrolledDate)}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         <span className="text-sm text-muted-foreground">
                           {student.lastActive}
                         </span>
@@ -965,17 +889,31 @@ export default function StudentsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedStudent(student);
+                                setModalMode('view');
+                                setIsProfileModalOpen(true);
+                              }}
+                            >
                               <Eye className="mr-2 h-4 w-4" />
                               View Profile
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Mail className="mr-2 h-4 w-4" />
-                              Send Message
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <FileText className="mr-2 h-4 w-4" />
-                              View Progress
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedStudent(student);
+                                setEditableStudent({
+                                  id: student.id,
+                                  firstName: student.firstName,
+                                  lastName: student.lastName,
+                                  grade: student.grade
+                                });
+                                setModalMode('edit');
+                                setIsProfileModalOpen(true);
+                              }}
+                            >
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit Profile
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -987,22 +925,64 @@ export default function StudentsPage() {
             </Table>
           </div>
           
+          {/* Pagination */}
+          {!isTableLoading && totalPages > 0 && (
+            <Pagination className="mt-6">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setCurrentPage((prev) => Math.max(1, prev - 1));
+                    }}
+                    className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                  />
+                </PaginationItem>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <PaginationItem key={page}>
+                    <PaginationLink
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setCurrentPage(page);
+                      }}
+                      isActive={currentPage === page}
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setCurrentPage((prev) => Math.min(totalPages, prev + 1));
+                    }}
+                    className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
+
           {/* Empty State */}
-          {!loading && filteredStudents.length === 0 && studentData.totalCount === 0 && (
+          {!isTableLoading && filteredStudents.length === 0 && studentData.totalCount === 0 && (
             <div className="text-center py-12">
               <Users className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
               <h3 className="text-lg font-medium mb-2">No Students Found</h3>
               <p className="text-muted-foreground mb-4">
                 You don't have any students enrolled in your courses yet.
               </p>
-              <Button variant="outline" onClick={fetchStudentData} disabled={loading}>
+              <Button variant="outline" onClick={fetchStudentDataAndCount} disabled={loading}>
                 Refresh Data
               </Button>
             </div>
           )}
           
           {/* No Results State */}
-          {!loading && filteredStudents.length === 0 && studentData.totalCount > 0 && (
+          {!isTableLoading && filteredStudents.length === 0 && studentData.totalCount > 0 && (
             <div className="text-center py-8">
               <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground">No students found matching your search criteria.</p>
@@ -1022,6 +1002,73 @@ export default function StudentsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Profile View/Edit Modal */}
+      <Dialog open={isProfileModalOpen} onOpenChange={setIsProfileModalOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>
+                    {modalMode === 'edit' ? 'Edit Student Profile' : 'View Student Profile'}
+                </DialogTitle>
+                <DialogDescription>
+                    {modalMode === 'edit' ? "Update the student's details below." : "Viewing student details."}
+                </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                        <Label htmlFor="firstName">First Name</Label>
+                        <Input
+                            id="firstName"
+                            value={(modalMode === 'edit' ? editableStudent.firstName : selectedStudent?.firstName) || ''}
+                            onChange={(e) => modalMode === 'edit' && setEditableStudent(prev => ({ ...prev, firstName: e.target.value }))}
+                            disabled={modalMode === 'view'}
+                        />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="lastName">Last Name</Label>
+                        <Input
+                            id="lastName"
+                            value={(modalMode === 'edit' ? editableStudent.lastName : selectedStudent?.lastName) || ''}
+                            onChange={(e) => modalMode === 'edit' && setEditableStudent(prev => ({ ...prev, lastName: e.target.value }))}
+                            disabled={modalMode === 'view'}
+                        />
+                    </div>
+                </div>
+                <div className="grid gap-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input id="email" value={selectedStudent?.email || ''} disabled />
+                </div>
+                <div className="grid gap-2">
+                    <Label htmlFor="grade">Grade</Label>
+                    <Select
+                        value={(modalMode === 'edit' ? editableStudent.grade : selectedStudent?.grade) || ''}
+                        onValueChange={(value) => modalMode === 'edit' && setEditableStudent(prev => ({ ...prev, grade: value }))}
+                        disabled={modalMode === 'view'}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select a grade" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {[...Array(12)].map((_, i) => (
+                                <SelectItem key={i + 1} value={`${i + 1}`}>{`${i + 1}${['st', 'nd', 'rd'][i] ?? 'th'} Grade`}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+            <DialogFooter>
+                <Button variant="outline" onClick={() => setIsProfileModalOpen(false)}>
+                    {modalMode === 'edit' ? 'Cancel' : 'Close'}
+                </Button>
+                {modalMode === 'edit' && (
+                    <Button onClick={handleUpdateStudent} disabled={isUpdatingUser}>
+                        {isUpdatingUser ? "Saving..." : "Save Changes"}
+                    </Button>
+                )}
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 
