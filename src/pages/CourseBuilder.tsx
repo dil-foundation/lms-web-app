@@ -435,7 +435,7 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, d
               rows={1}
               className="text-sm resize-none"
             />
-             {lesson.type === 'assignment' && (
+             {(lesson.type === 'assignment' || lesson.type === 'quiz') && (
               <div className="pt-1">
                 <Popover>
                   <PopoverTrigger asChild>
@@ -764,21 +764,19 @@ const CourseBuilder = () => {
 
         setUserProfiles(fetchedProfiles);
         
-        const teachers = profilesWithAvatars
+        const teachers = fetchedProfiles
           .filter(p => p.role === 'teacher')
           .map(p => ({ 
             label: `${p.first_name} ${p.last_name}`, 
             value: p.id,
-            imageUrl: p.avatarUrl,
             subLabel: p.email,
           }));
 
-        const students = profilesWithAvatars
+        const students = fetchedProfiles
           .filter(p => p.role === 'student')
           .map(p => ({ 
             label: `${p.first_name} ${p.last_name}`,
             value: p.id,
-            imageUrl: p.avatarUrl,
             subLabel: p.email,
           }));
 
@@ -845,7 +843,20 @@ const CourseBuilder = () => {
               published_course_id: data.published_course_id,
               sections: data.sections.sort((a: any, b: any) => a.position - b.position).map((s: any) => ({
                 ...s,
-                lessons: s.lessons.sort((a: any, b: any) => a.position - b.position)
+                lessons: s.lessons
+                  .sort((a: any, b: any) => a.position - b.position)
+                  .map((l: any) => {
+                    if (l.type === 'quiz' && typeof l.content === 'string') {
+                      try {
+                        return { ...l, content: JSON.parse(l.content) };
+                      } catch (e) {
+                        console.error(`Failed to parse quiz content for lesson ${l.id}:`, l.content, e);
+                        // If parsing fails, return a default structure to avoid crashing the UI
+                        return { ...l, content: { questions: [] } };
+                      }
+                    }
+                    return l;
+                  }),
               })),
               teachers: courseTeachers,
               students: courseStudents,
