@@ -35,7 +35,6 @@ export const getRoleNavigation = (role?: UserRole): NavigationItem[] => {
         { title: 'My Courses', path: '/dashboard/courses', icon: BookOpen },
         { title: 'Students', path: '/dashboard/students', icon: Users },
         { title: 'Reports', path: '/dashboard/reports', icon: FileQuestion },
-        { title: 'Messages', path: '/dashboard/messages', icon: MessageSquare },
         { title: 'Discussion', path: '/dashboard/discussion', icon: MessageCircle },
       ];
     
@@ -109,7 +108,6 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean): N
         {
           title: 'COMMUNICATION',
           items: [
-            { title: 'Messages', path: '/dashboard/messages', icon: MessageSquare },
             { title: 'Discussion', path: '/dashboard/discussion', icon: MessageCircle },
           ]
         }
@@ -141,7 +139,6 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean): N
         {
           title: 'SYSTEM',
           items: [
-            { title: 'Settings', path: '/dashboard/settings', icon: Settings },
             { title: 'Security', path: '/dashboard/security', icon: Shield },
           ]
         }
