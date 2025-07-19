@@ -18,9 +18,8 @@ const validateApiUrl = (url: string): string => {
   }
 };
 
-// Environment-specific configurations
-const DEVELOPMENT_API_URL = 'https://api.dil.lms-staging.com'; // Local development server
-const PRODUCTION_API_URL = 'https://api.dil.lms-staging.com'; // Production/staging server
+// Use same staging URL for both development and production
+const API_URL = 'https://api.dil.lms-staging.com';
 
 // Custom API URL can be set via window global (for runtime configuration)
 const CUSTOM_API_URL = (window as any)?.DIL_API_URL;
@@ -32,14 +31,10 @@ if (CUSTOM_API_URL) {
   // Use custom URL if provided via environment variable
   apiUrl = validateApiUrl(CUSTOM_API_URL);
   console.log('Using custom API URL:', apiUrl);
-} else if (isDevelopment) {
-  // Use development URL
-  apiUrl = DEVELOPMENT_API_URL;
-  console.log('Using development API URL:', apiUrl);
 } else {
-  // Use production URL
-  apiUrl = validateApiUrl(PRODUCTION_API_URL);
-  console.log('Using production API URL:', apiUrl);
+  // Use staging URL for both dev and production
+  apiUrl = validateApiUrl(API_URL);
+  console.log(`Using ${isDevelopment ? 'development' : 'production'} API URL:`, apiUrl);
 }
 
 export const BASE_API_URL: string = apiUrl;
