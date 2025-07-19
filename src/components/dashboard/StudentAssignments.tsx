@@ -66,6 +66,7 @@ interface Assignment {
   submissionId?: string;
   submissionContent?: string;
   submissionType?: 'text' | 'file' | 'link';
+  score?: number;
 }
 
 interface StudentAssignmentsProps {
@@ -121,6 +122,22 @@ const AssignmentDetailModal = memo(({
               </div>
             </div>
           </div>
+          
+          {assignment.status === 'graded' && (
+            <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800 space-y-3">
+              <h3 className="font-medium flex items-center gap-2"><GraduationCap className="h-5 w-5 text-green-600" /> Grade & Feedback</h3>
+              <div>
+                <Label className="text-sm font-medium">Grade</Label>
+                <p className="text-2xl font-bold mt-1">{assignment.score != null ? `${assignment.score}%` : 'Not Graded'}</p>
+              </div>
+              {assignment.feedback && (
+                <div>
+                  <Label className="text-sm font-medium">Feedback from your teacher</Label>
+                  <p className="text-sm text-muted-foreground mt-1">{assignment.feedback}</p>
+                </div>
+              )}
+            </div>
+          )}
           
           {assignment.submittedAt && (
             <div>
@@ -536,6 +553,7 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
           submissionId: item.submission_id,
           submissionContent: item.submission_content,
           submissionType: item.submission_type,
+          score: item.grade,
         };
       });
 
@@ -707,15 +725,21 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
         </div>
         
         {assignment.status === 'graded' && (
-          <div className="p-3 bg-muted rounded-lg">
+          <div className="p-3 bg-muted rounded-lg space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Graded</span>
+              <div>
+                <span className="text-sm font-medium">Grade: </span>
+                <span className="text-sm font-bold">{assignment.score != null ? `${assignment.score}%` : 'N/A'}</span>
+              </div>
               <span className="text-sm text-muted-foreground">
                 Graded on {assignment.gradedAt && formatDate(assignment.gradedAt)}
               </span>
             </div>
             {assignment.feedback && (
-              <p className="text-sm text-muted-foreground mt-2">{assignment.feedback}</p>
+              <div>
+                <span className="text-sm font-medium">Feedback: </span>
+                <p className="text-sm text-muted-foreground inline">{assignment.feedback}</p>
+              </div>
             )}
           </div>
         )}

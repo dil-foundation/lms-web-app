@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Avatar,
@@ -26,90 +26,169 @@ import {
   Award,
   MessageSquare,
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { ContentLoader } from '@/components/ContentLoader';
 
-// Mock data - replace with actual data fetching
-const mockSubmissionData = {
-  1: {
-    id: 1,
-    studentName: 'Student1',
-    studentEmail: 'student1@example.com',
-    studentInitials: 'S1',
-    assignmentTitle: 'QUIZTESTING',
-    assignmentId: 1,
-    course: 'DIL-SE',
-    submissionDate: '2024-01-15T10:30:00Z',
-    status: 'submitted',
-    score: 85,
-    maxScore: 100,
-    content: 'This is the student\'s submission content. They have provided detailed answers to all the questions in the quiz. The answers demonstrate a good understanding of the material.',
-    attachments: [
-      { name: 'quiz_answers.pdf', size: '256 KB', url: '#' },
-      { name: 'additional_notes.docx', size: '128 KB', url: '#' }
-    ],
-    feedback: 'Good work overall. Your understanding of the core concepts is evident.',
-    gradedAt: '2024-01-16T14:20:00Z',
-    gradedBy: 'Teacher Name'
-  },
-  2: {
-    id: 2,
-    studentName: 'Student2',
-    studentEmail: 'student2@example.com',
-    studentInitials: 'S2',
-    assignmentTitle: 'QUIZTESTING',
-    assignmentId: 1,
-    course: 'DIL-SE',
-    submissionDate: '2024-01-16T14:30:00Z',
-    status: 'submitted',
-    score: null,
-    maxScore: 100,
-    content: 'This is Student2\'s submission. They have attempted to answer the questions but need some guidance on certain topics. The work shows effort but could benefit from more detailed explanations.',
-    attachments: [
-      { name: 'my_answers.pdf', size: '180 KB', url: '#' }
-    ],
-    feedback: null,
-    gradedAt: null,
-    gradedBy: null
-  },
-  3: {
-    id: 3,
-    studentName: 'Student3',
-    studentEmail: 'student3@example.com',
-    studentInitials: 'S3',
-    assignmentTitle: 'QUIZTESTING',
-    assignmentId: 1,
-    course: 'DIL-SE',
-    submissionDate: null,
-    status: 'not submitted',
-    score: null,
-    maxScore: 100,
-    content: null,
-    attachments: [],
-    feedback: null,
-    gradedAt: null,
-    gradedBy: null
-  }
-};
+interface Student {
+  id: string;
+  name: string;
+  email: string;
+}
+
+interface Attachment {
+  name: string;
+  url: string;
+}
+
+interface Submission {
+  id?: number | string; // submission id
+  student: Student;
+  assignmentTitle: string;
+  assignmentId: string;
+  course: string;
+  type: 'quiz' | 'assignment';
+  submissionDate: string | null;
+  status: 'graded' | 'submitted' | 'not submitted';
+  score: number | null;
+  maxScore: number;
+  content: any; // Assignment content string or quiz questions object
+  attachments: Attachment[];
+  feedback: string | null;
+  gradedAt: string | null;
+  gradedBy: string | null;
+  // For quizzes
+  answers?: any;
+  results?: any;
+}
+
 
 export const StudentSubmissionDetail = () => {
   const { assignmentId, studentId } = useParams();
   const navigate = useNavigate();
+
+  const [loading, setLoading] = useState(true);
+  const [submission, setSubmission] = useState<Submission | null>(null);
+  const [error, setError] = useState<string | null>(null);
   
-  // Get submission data (mock data for now)
-  const submission = mockSubmissionData[parseInt(studentId || '1') as keyof typeof mockSubmissionData];
-  
-  const [score, setScore] = useState(submission?.score?.toString() || '');
-  const [feedback, setFeedback] = useState(submission?.feedback || '');
+  const [score, setScore] = useState('');
+  const [feedback, setFeedback] = useState('');
   const [isGrading, setIsGrading] = useState(false);
 
+  const fetchDetails = useCallback(async () => {
+    if (!assignmentId || !studentId) {
+      setError("Assignment or Student ID is missing.");
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+
+    try {
+      const [lessonRes, studentRes] = await Promise.all([
+        supabase.from('course_lessons').select('*, course_sections(course_id, courses(title))').eq('id', assignmentId).single(),
+        supabase.from('profiles').select('id, first_name, last_name, email').eq('id', studentId).single()
+      ]);
+
+      if (lessonRes.error) throw new Error(`Failed to fetch assignment: ${lessonRes.error.message}`);
+      if (!lessonRes.data) throw new Error("Assignment not found.");
+      if (studentRes.error) throw new Error(`Failed to fetch student: ${studentRes.error.message}`);
+      if (!studentRes.data) throw new Error("Student not found.");
+
+      const lesson = lessonRes.data;
+      const studentProfile = studentRes.data;
+
+      const student: Student = {
+        id: studentProfile.id,
+        name: `${studentProfile.first_name || ''} ${studentProfile.last_name || ''}`.trim(),
+        email: studentProfile.email,
+      };
+
+      let submissionData: Submission = {
+        student,
+        assignmentTitle: lesson.title,
+        assignmentId,
+        course: lesson.course_sections?.courses?.title || 'Unknown Course',
+        type: lesson.type as 'quiz' | 'assignment',
+        submissionDate: null,
+        status: 'not submitted',
+        score: null,
+        maxScore: 100,
+        content: null,
+        attachments: [],
+        feedback: null,
+        gradedAt: null,
+        gradedBy: null,
+      };
+
+      if (lesson.type === 'assignment') {
+        const { data: assgnSubmission, error } = await supabase.from('assignment_submissions')
+          .select('*').eq('assignment_id', assignmentId).eq('user_id', studentId).single();
+        if (error && error.code !== 'PGRST116') throw error; // Ignore 'no rows' error
+        
+        if (assgnSubmission) {
+          submissionData = {
+            ...submissionData,
+            id: assgnSubmission.id,
+            submissionDate: assgnSubmission.submitted_at,
+            status: assgnSubmission.status,
+            score: assgnSubmission.grade,
+            content: assgnSubmission.content,
+            feedback: assgnSubmission.feedback,
+            // attachments logic to be added if available
+          };
+        }
+      } else if (lesson.type === 'quiz') {
+        const { data: quizSubmission, error } = await supabase.from('quiz_submissions')
+          .select('*').eq('lesson_id', assignmentId).eq('user_id', studentId).single();
+        if (error && error.code !== 'PGRST116') throw error;
+        
+        if (quizSubmission) {
+          submissionData = {
+            ...submissionData,
+            id: quizSubmission.id,
+            submissionDate: quizSubmission.submitted_at,
+            status: 'graded',
+            score: quizSubmission.score,
+            content: typeof lesson.content === 'string' ? JSON.parse(lesson.content) : lesson.content,
+            answers: quizSubmission.answers,
+            results: quizSubmission.results,
+          };
+        }
+      }
+      
+      setSubmission(submissionData);
+      setScore(submissionData.score?.toString() || '');
+      setFeedback(submissionData.feedback || '');
+
+    } catch (err: any) {
+      setError(err.message);
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [assignmentId, studentId]);
+
+  useEffect(() => {
+    fetchDetails();
+  }, [fetchDetails]);
+
+
   const handleSaveGrade = async () => {
+    if (!submission || !submission.id || submission.type !== 'assignment') return;
     setIsGrading(true);
     try {
-      // Mock save operation - replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { error } = await supabase.from('assignment_submissions')
+        .update({
+          grade: parseFloat(score),
+          feedback: feedback,
+          status: 'graded'
+        })
+        .eq('id', submission.id);
+
+      if (error) throw error;
       
       toast.success('Grade saved successfully!');
-      console.log('Saving grade:', { score, feedback, studentId, assignmentId });
-    } catch (error) {
+      fetchDetails(); // Refresh data
+    } catch (error: any) {
       toast.error('Failed to save grade');
       console.error('Error saving grade:', error);
     } finally {
@@ -120,6 +199,21 @@ export const StudentSubmissionDetail = () => {
   const handleGoBack = () => {
     navigate(`/dashboard/grade-assignments/${assignmentId}`);
   };
+
+  if (loading) return <ContentLoader message="Loading submission details..." />;
+
+  if (error) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6 text-center">
+        <h1 className="text-2xl font-bold text-destructive">Error</h1>
+        <p className="text-muted-foreground mt-2">{error}</p>
+        <Button onClick={() => navigate(-1)} className="mt-4">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Go Back
+        </Button>
+      </div>
+    );
+  }
 
   if (!submission) {
     return (
@@ -164,7 +258,7 @@ export const StudentSubmissionDetail = () => {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-            {submission.assignmentTitle} - {submission.studentName}
+            {submission.assignmentTitle} - {submission.student.name}
           </h1>
           <div className="flex items-center gap-2 mt-1">
             <p className="text-muted-foreground">
@@ -187,13 +281,13 @@ export const StudentSubmissionDetail = () => {
             <div className="flex items-center gap-3">
               <Avatar className="h-8 w-8">
                 <AvatarImage
-                  src={`https://api.dicebear.com/6.x/initials/svg?seed=${submission.studentName}`}
+                  src={`https://api.dicebear.com/6.x/initials/svg?seed=${submission.student.name}`}
                 />
-                <AvatarFallback>{submission.studentInitials}</AvatarFallback>
+                <AvatarFallback>{submission.student.name.substring(0, 2)}</AvatarFallback>
               </Avatar>
               <div>
-                <p className="font-semibold">{submission.studentName}</p>
-                <p className="text-xs text-muted-foreground">{submission.studentEmail}</p>
+                <p className="font-semibold">{submission.student.name}</p>
+                <p className="text-xs text-muted-foreground">{submission.student.email}</p>
               </div>
             </div>
           </CardContent>
@@ -232,14 +326,51 @@ export const StudentSubmissionDetail = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {submission.content ? (
+            {submission.type === 'assignment' && submission.content && (
               <div className="bg-muted/50 p-4 rounded-lg">
                 <p className="text-sm whitespace-pre-wrap">{submission.content}</p>
               </div>
-            ) : (
+            )}
+            
+            {submission.type === 'quiz' && (
+               <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-4">
+                 {submission.content?.questions?.map((q: any, index: number) => (
+                   <div key={q.id} className="space-y-3 border-b pb-4">
+                     <p className="font-semibold">{index + 1}. {q.text}</p>
+                     <div className="space-y-2">
+                       {q.options.map((opt: any) => {
+                         const isSelected = submission.answers[q.id] === opt.id;
+                         const isCorrect = q.correctOptionId === opt.id;
+                         return (
+                           <div key={opt.id}
+                             className={`flex items-center gap-2 p-2 rounded-md border ${
+                               isCorrect ? 'bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700' :
+                               isSelected ? 'bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700' : ''
+                             }`}
+                           >
+                             <span className="flex-1">{opt.text}</span>
+                             {isSelected && <Badge variant={isCorrect ? "default" : "destructive"}>Student's Answer</Badge>}
+                             {isCorrect && !isSelected && <Badge variant="secondary">Correct Answer</Badge>}
+                           </div>
+                         );
+                       })}
+                     </div>
+                   </div>
+                 ))}
+               </div>
+            )}
+
+            {!submission.content && submission.status !== 'not submitted' && (
+              <div className="text-center py-8">
+                <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">No submission content was provided.</p>
+              </div>
+            )}
+            
+            {submission.status === 'not submitted' && (
               <div className="text-center py-8">
                 <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">No submission content available</p>
+                <p className="text-muted-foreground">Student hasn't submitted yet.</p>
               </div>
             )}
             
@@ -253,15 +384,18 @@ export const StudentSubmissionDetail = () => {
                       <div className="flex items-center gap-2">
                         <FileText className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm">{attachment.name}</span>
-                        <span className="text-xs text-muted-foreground">({attachment.size})</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <Download className="h-4 w-4" />
-                        </Button>
+                        {attachment.url && (
+                          <Button variant="ghost" size="sm" onClick={() => window.open(attachment.url, '_blank')}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {attachment.url && (
+                          <Button variant="ghost" size="sm" onClick={() => window.open(attachment.url, '_blank')}>
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -292,54 +426,64 @@ export const StudentSubmissionDetail = () => {
                </div>
              ) : (
                <>
-                 {!submission.gradedAt && (
+                 {!submission.gradedAt && submission.type === 'assignment' && (
                    <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
                      <p className="text-sm text-blue-800 dark:text-blue-200 font-medium">
                        ✨ First time grading this submission
                      </p>
                    </div>
                  )}
-                 <div className="space-y-2">
-                  <Label htmlFor="score">Score (out of {submission.maxScore})</Label>
-                  <Input
-                    id="score"
-                    type="number"
-                    min="0"
-                    max={submission.maxScore}
-                    value={score}
-                    onChange={(e) => setScore(e.target.value)}
-                    placeholder={submission.score ? `Current: ${submission.score}` : "Enter score"}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="feedback">Feedback</Label>
-                  <Textarea
-                    id="feedback"
-                    value={feedback}
-                    onChange={(e) => setFeedback(e.target.value)}
-                    placeholder={submission.feedback ? "Update feedback..." : "Provide feedback to the student..."}
-                    rows={4}
-                  />
-                </div>
-
-                <Button 
-                  onClick={handleSaveGrade} 
-                  disabled={isGrading}
-                  className="w-full"
-                >
-                  {isGrading ? (
-                    <>
-                      <Clock className="h-4 w-4 mr-2 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-2" />
-                      {submission.gradedAt ? 'Update Grade' : 'Save Grade'}
-                    </>
-                  )}
-                </Button>
+                 {submission.type === 'assignment' ? (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="score">Score (out of {submission.maxScore})</Label>
+                      <Input
+                        id="score"
+                        type="number"
+                        min="0"
+                        max={submission.maxScore}
+                        value={score}
+                        onChange={(e) => setScore(e.target.value)}
+                        placeholder={submission.score ? `Current: ${submission.score}` : "Enter score"}
+                      />
+                    </div>
+    
+                    <div className="space-y-2">
+                      <Label htmlFor="feedback">Feedback</Label>
+                      <Textarea
+                        id="feedback"
+                        value={feedback}
+                        onChange={(e) => setFeedback(e.target.value)}
+                        placeholder={submission.feedback ? "Update feedback..." : "Provide feedback to the student..."}
+                        rows={4}
+                      />
+                    </div>
+    
+                    <Button 
+                      onClick={handleSaveGrade} 
+                      disabled={isGrading}
+                      className="w-full"
+                    >
+                      {isGrading ? (
+                        <>
+                          <Clock className="h-4 w-4 mr-2 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4 mr-2" />
+                          {submission.gradedAt ? 'Update Grade' : 'Save Grade'}
+                        </>
+                      )}
+                    </Button>
+                  </>
+                 ) : (
+                  <div className="p-4 text-center">
+                    <CheckCircle2 className="h-12 w-12 mx-auto text-green-500 mb-4" />
+                    <p className="font-semibold">Quiz Auto-Graded</p>
+                    <p className="text-muted-foreground text-sm">The student's score has been automatically calculated.</p>
+                  </div>
+                 )}
 
                 {submission.gradedAt && (
                   <div className="mt-4 p-3 bg-muted/50 rounded-lg">
