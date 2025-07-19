@@ -764,21 +764,19 @@ const CourseBuilder = () => {
 
         setUserProfiles(fetchedProfiles);
         
-        const teachers = profilesWithAvatars
+        const teachers = fetchedProfiles
           .filter(p => p.role === 'teacher')
           .map(p => ({ 
             label: `${p.first_name} ${p.last_name}`, 
             value: p.id,
-            imageUrl: p.avatarUrl,
             subLabel: p.email,
           }));
 
-        const students = profilesWithAvatars
+        const students = fetchedProfiles
           .filter(p => p.role === 'student')
           .map(p => ({ 
             label: `${p.first_name} ${p.last_name}`,
             value: p.id,
-            imageUrl: p.avatarUrl,
             subLabel: p.email,
           }));
 

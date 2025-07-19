@@ -110,7 +110,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     return isVideo && !isPlaceholder;
   };
 
-  const transformCourseData = (data: any, progress: any[] = []) => {
+  const transformCourseData = (data: any, progress: any[] = [], quizSubmissions: any[] = []) => {
     if (!data) return null;
     const totalLessons = data.sections?.reduce((acc: number, section: any) => acc + (section.lessons?.length || 0), 0) || 0;
     const completedLessonsCount = progress.filter(p => p.completed_at).length;
@@ -125,6 +125,8 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         duration: `${(section.lessons?.length || 0) * 15}m`,
         lessons: section.lessons?.map((lesson: any) => {
           const lessonProgress = progress.find(p => p.lesson_id === lesson.id);
+          const quizSubmission = quizSubmissions.find(s => s.lesson_id === lesson.id);
+
           let status = 'not_started';
           if (lessonProgress?.completed_at) {
             status = 'completed';
@@ -155,6 +157,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
             status: status,
             due_date: lesson.due_date,
             progressSeconds: lessonProgress?.progress_seconds || 0,
+            submission: quizSubmission,
             content: {
               videoUrl: lesson.video_url,
               thumbnailUrl: lesson.thumbnail_url || lesson.image_url || lesson.cover_image,
@@ -350,6 +353,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
             }
           }
           let userProgress = [];
+          let quizSubmissions = [];
           if (user) {
             const lessonIds = data.sections.flatMap((s: any) => s.lessons.map((l: any) => l.id));
             if (lessonIds.length > 0) {
@@ -360,8 +364,23 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                 userProgress = progressData || [];
               }
             }
+
+            const quizLessonIds = data.sections.flatMap((s: any) => s.lessons).filter((l: any) => l.type === 'quiz').map((l: any) => l.id);
+            if (quizLessonIds.length > 0) {
+                const { data: submissionsData, error: submissionsError } = await supabase
+                    .from('quiz_submissions')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .in('lesson_id', quizLessonIds);
+
+                if (submissionsError) {
+                    console.error("Failed to fetch quiz submissions", submissionsError);
+                } else {
+                    quizSubmissions = submissionsData || [];
+                }
+            }
           }
-          const transformedCourse = transformCourseData(data, userProgress);
+          const transformedCourse = transformCourseData(data, userProgress, quizSubmissions);
           setCourse(transformedCourse);
           if (transformedCourse) {
             const allLessons = transformedCourse.modules.flatMap((m: any) => m.lessons);
@@ -414,6 +433,57 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       videoNode.currentTime = lesson.progressSeconds;
     }
   }, []);
+
+  const handleQuizSubmit = async () => {
+    if (!user || !currentLesson || !course || currentLesson.submission) return;
+
+    const results: Record<string, boolean> = {};
+    let correctAnswers = 0;
+    const totalQuestions = currentLesson.content.questions.length;
+
+    currentLesson.content.questions.forEach((q: any) => {
+        const isCorrect = userAnswers[q.id] === q.correctOptionId;
+        results[q.id] = isCorrect;
+        if (isCorrect) {
+            correctAnswers++;
+        }
+    });
+
+    const score = totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0;
+
+    const submissionData = {
+        user_id: user.id,
+        lesson_id: currentLesson.id,
+        course_id: course.id,
+        answers: userAnswers,
+        results: results,
+        score: score,
+    };
+
+    const { data: newSubmission, error } = await supabase.from('quiz_submissions').insert(submissionData).select().single();
+
+    if (error) {
+        toast.error("Failed to submit quiz.", { description: error.message });
+        return;
+    }
+
+    setQuizResults(results);
+    setIsQuizSubmitted(true);
+    
+    setCourse((prevCourse: any) => {
+        if (!prevCourse) return null;
+        const updatedModules = prevCourse.modules.map((module: any) => ({
+            ...module,
+            lessons: module.lessons.map((lesson: any) => 
+                lesson.id === currentLesson.id ? { ...lesson, submission: newSubmission } : lesson
+            ),
+        }));
+        return { ...prevCourse, modules: updatedModules };
+    });
+
+    await markLessonAsComplete(currentLesson.id, course.id);
+    toast.success(`Quiz submitted! Your score: ${score.toFixed(0)}%`);
+  };
 
   if (isLoading) {
     return (
@@ -653,11 +723,13 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                         <h4 className="font-medium mb-3">{question.text}</h4>
                         <div className="space-y-2">
                           {question.options?.map((option: any) => {
-                            const isSelected = userAnswers[question.id] === option.id;
+                            const hasSubmitted = !!currentLesson.submission;
+                            const submittedAnswers = hasSubmitted ? currentLesson.submission.answers : userAnswers;
+                            const isSelected = submittedAnswers[question.id] === option.id;
                             const isCorrect = question.correctOptionId === option.id;
                             
-                            const showAsCorrect = isQuizSubmitted && isCorrect;
-                            const showAsIncorrect = isQuizSubmitted && isSelected && !isCorrect;
+                            const showAsCorrect = (isQuizSubmitted || hasSubmitted) && isCorrect;
+                            const showAsIncorrect = (isQuizSubmitted || hasSubmitted) && isSelected && !isCorrect;
 
                             let icon = <Circle className="w-4 h-4" />;
                             if (showAsCorrect) {
@@ -671,14 +743,14 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                             return (
                               <div key={option.id}>
                                 <Button
-                                  variant={isSelected && !isQuizSubmitted ? "secondary" : "outline"}
+                                  variant={isSelected && !(isQuizSubmitted || hasSubmitted) ? "secondary" : "outline"}
                                   className={cn(
                                     "w-full justify-start h-auto p-3 text-left",
                                     showAsCorrect && "border-green-500 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300",
                                     showAsIncorrect && "border-red-500 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300",
-                                    isQuizSubmitted && !isSelected && !isCorrect && "opacity-60"
+                                    (isQuizSubmitted || hasSubmitted) && !isSelected && !isCorrect && "opacity-60"
                                   )}
-                                  onClick={() => !isQuizSubmitted && setUserAnswers(prev => ({...prev, [question.id]: option.id}))}
+                                  onClick={() => !(isQuizSubmitted || hasSubmitted) && setUserAnswers(prev => ({...prev, [question.id]: option.id}))}
                                 >
                                   <div className="flex items-center gap-3">
                                     {icon}
@@ -696,34 +768,27 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                     {index < currentLesson.content.questions.length - 1 && <Separator />}
                   </div>
                 ))}
-                <div className="flex gap-2 pt-4">
-                  <Button 
-                    className="bg-green-600 hover:bg-green-700" 
-                    onClick={() => {
-                      if (isQuizSubmitted) {
-                        setIsQuizSubmitted(false);
-                        setUserAnswers({});
-                        setQuizResults({});
-                      } else {
-                        const results: Record<string, boolean> = {};
-                        currentLesson.content.questions.forEach((q: any) => {
-                          results[q.id] = userAnswers[q.id] === q.correctOptionId;
-                        });
-                        setQuizResults(results);
-                        setIsQuizSubmitted(true);
-                      }
-                    }}
-                  >
-                    {isQuizSubmitted ? 'Try Again' : 'Submit Quiz'}
-                  </Button>
-                  {isQuizSubmitted && (
-                     <Button variant="outline" onClick={() => {
-                        setIsQuizSubmitted(false);
-                        setUserAnswers({});
-                        setQuizResults({});
-                     }}>Reset Answers</Button>
-                  )}
-                </div>
+                {!currentLesson.submission && (
+                  <div className="flex gap-2 pt-4">
+                    <Button 
+                      className="bg-green-600 hover:bg-green-700" 
+                      onClick={handleQuizSubmit}
+                      disabled={isQuizSubmitted || Object.keys(userAnswers).length !== currentLesson.content.questions.length}
+                    >
+                      {isQuizSubmitted ? 'Submitted' : 'Submit Quiz'}
+                    </Button>
+                  </div>
+                )}
+                {currentLesson.submission && (
+                    <div className="pt-4">
+                        <div className="p-4 rounded-lg bg-muted border">
+                            <h4 className="font-semibold">Quiz Submitted</h4>
+                            <p className="text-muted-foreground text-sm mt-1">
+                                You scored {currentLesson.submission.score.toFixed(0)}%. This lesson is now complete.
+                            </p>
+                        </div>
+                    </div>
+                )}
               </CardContent>
             </Card>
           </div>
