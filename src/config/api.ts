@@ -19,7 +19,7 @@ const validateApiUrl = (url: string): string => {
 };
 
 // Use same staging URL for both development and production
-const API_URL = 'https://api.dil.lms-staging.com';
+const API_URL = 'https://dil.lovable.app';
 
 // Custom API URL can be set via window global (for runtime configuration)
 const CUSTOM_API_URL = (window as any)?.DIL_API_URL;
