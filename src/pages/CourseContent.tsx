@@ -629,10 +629,18 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <HelpCircle className="w-5 h-5 text-purple-500" />
-                  Knowledge Check
-                </CardTitle>
+                <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-2">
+                  <CardTitle className="flex items-center gap-2">
+                    <HelpCircle className="w-5 h-5 text-purple-500" />
+                    Knowledge Check
+                  </CardTitle>
+                  {currentLesson.due_date && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted px-3 py-1.5 rounded-full">
+                      <CalendarClock className="w-4 h-4" />
+                      <span>Due: {format(new Date(currentLesson.due_date), 'PPP')}</span>
+                    </div>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="space-y-6">
                 {currentLesson.content.questions?.map((question: any, index: number) => (
