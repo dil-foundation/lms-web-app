@@ -123,7 +123,7 @@ export const ReportsOverview = () => {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 sm:gap-6">
         {summaryCards.map((card, index) => (
-          <Card key={index}>
+          <Card key={index} className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
               <card.icon className={`h-4 w-4 ${card.color}`} />

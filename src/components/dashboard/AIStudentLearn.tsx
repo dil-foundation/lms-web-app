@@ -102,8 +102,21 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
         );
         
         // Clean up any audio or learning state
-        cleanupAudio();
-        resetLearningState();
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.src = '';
+          audioRef.current = null;
+        }
+        setIsPlayingAudio(false);
+        
+        // Reset learning state directly
+        setCurrentWords([]);
+        setCurrentWordIndex(0);
+        setFullSentence('');
+        setUserSaidText('');
+        setEnglishSentence('');
+        setUrduSentence('');
+        setFeedbackText('');
         
         stateTimeoutRef.current = null;
       }, recoveryTime);
@@ -123,8 +136,14 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
       (window as any).currentProcessingTimeout = null;
     }
     
-         // Clean up audio and state will be handled by individual functions
-     resetLearningState();
+         // Clean up audio and state directly
+        setCurrentWords([]);
+        setCurrentWordIndex(0);
+        setFullSentence('');
+        setUserSaidText('');
+        setEnglishSentence('');
+        setUrduSentence('');
+        setFeedbackText('');
     
     // Set appropriate recovery message
     const recoveryMessage = (() => {
@@ -153,7 +172,7 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
     setCurrentMessage(recoveryMessage);
     
     console.log(`✅ Recovery complete. Ready for user input.`);
-     }, [languageMode, resetLearningState]);
+     }, [languageMode]);
 
   // Cleanup audio resources
   const cleanupAudio = useCallback((): void => {
@@ -376,7 +395,14 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
         setTimeout(() => {
           setConversationStateWithRecovery('waiting');
           setCurrentMessage(languageMode === 'english' ? 'Ready for next sentence. Press and hold to speak.' : 'اگلے جملے کے لیے تیار۔ بولنے کے لیے دبائیں اور رکھیں۔');
-          resetLearningState();
+          // Reset learning state directly
+          setCurrentWords([]);
+          setCurrentWordIndex(0);
+          setFullSentence('');
+          setUserSaidText('');
+          setEnglishSentence('');
+          setUrduSentence('');
+          setFeedbackText('');
         }, 2000);
       }, 3000);
       return;
@@ -389,6 +415,7 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
         break;
         
       case 'you_said_audio':
+        console.log('🎤 Received you_said_audio step - waiting for binary audio data');
         setConversationStateWithRecovery('you_said');
         setUserSaidText(data.response || '');
         if (data.english_sentence) {
@@ -397,11 +424,12 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
         if (data.urdu_sentence) {
           setUrduSentence(data.urdu_sentence);
         }
-        setCurrentMessage(`${languageMode === 'english' ? 'You said:' : 'آپ نے کہا:'} ${data.response || ''}. ${languageMode === 'english' ? 'Now repeat after me.' : 'اب میرے پیچھے دہرائیں۔'}`);
-        // Auto-complete you_said step after a brief delay
-        setTimeout(() => {
-          sendCompletionEventRef.current?.('you_said_complete');
-        }, 3000);
+        // Store the sentence data for later use
+        setCurrentWords(data.words || []);
+        setCurrentMessage(`${languageMode === 'english' ? 'You said:' : 'آپ نے کہا:'} ${data.response || ''}`);
+        
+        // Don't auto-complete - wait for audio to finish playing
+        // The completion will be sent when audio finishes in handleAudioData -> playAudio -> onended
         break;
         
       case 'repeat_prompt':
@@ -422,6 +450,7 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
         break;
         
       case 'full_sentence_audio':
+        console.log('🎤 Received full_sentence_audio step - waiting for binary audio data');
         setConversationStateWithRecovery('full_sentence');
         if (data.english_sentence) {
           setFullSentence(data.english_sentence);
@@ -430,23 +459,20 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
         if (data.urdu_sentence) {
           setUrduSentence(data.urdu_sentence);
         }
-        setCurrentMessage(`${languageMode === 'english' ? 'Now repeat the full sentence:' : 'اب پورا جملہ دہرائیں:'} ${data.english_sentence || data.response || ''}.`);
+        setCurrentMessage(`${languageMode === 'english' ? 'Now repeat the full sentence:' : 'اب پورا جملہ دہرائیں:'} ${data.english_sentence || data.response || ''}`);
+        
+        // Don't auto-transition - wait for audio to arrive and finish playing
+        // User will be able to speak after audio finishes (handled in playAudio onended)
         break;
         
       case 'feedback_step':
+        console.log('📝 Received feedback_step - negative feedback, will retry with word-by-word');
         setConversationStateWithRecovery('feedback');
         setFeedbackText(data.response || '');
-        setCurrentMessage(data.response || (languageMode === 'english' ? 'Great job!' : 'شاباش!'));
-        // Auto-complete feedback step after allowing user to read it
-        setTimeout(() => {
-          sendCompletionEventRef.current?.('feedback_complete');
-          // Reset for next sentence
-          setTimeout(() => {
-            setConversationStateWithRecovery('waiting');
-            setCurrentMessage(languageMode === 'english' ? 'Ready for next sentence. Press and hold to speak.' : 'اگلے جملے کے لیے تیار۔ بولنے کے لیے دبائیں اور رکھیں۔');
-            resetLearningState();
-          }, 2000);
-        }, 5000);
+        setCurrentMessage(data.response || (languageMode === 'english' ? 'Let\'s try again.' : 'آئیے دوبارہ کوشش کریں۔'));
+        
+        // Don't auto-complete - wait for audio to arrive and finish playing
+        // The completion will be sent when feedback audio finishes playing
         break;
         
       case 'no_speech':
@@ -459,8 +485,13 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
         break;
         
       case 'await_next':
-        setConversationStateWithRecovery('waiting');
-        setCurrentMessage(data.response || (languageMode === 'english' ? 'Please continue' : 'براہ کرم جاری رکھیں'));
+        console.log('✅ Received await_next step - positive feedback, moving to next sentence');
+        setConversationStateWithRecovery('feedback'); // Use feedback state to handle audio properly
+        setFeedbackText(data.response || '');
+        setCurrentMessage(data.response || (languageMode === 'english' ? 'Great job! Let\'s try the next sentence.' : 'شاباش! آئیے اگلا جملہ کرتے ہیں۔'));
+        
+        // Don't auto-complete - wait for audio to arrive and finish playing
+        // After audio, we'll clear messages and restart the conversation
         break;
         
       case 'english_input_edge_case':
@@ -474,7 +505,14 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
           setTimeout(() => {
             setConversationState('waiting');
             setCurrentMessage(languageMode === 'english' ? 'Ready for next sentence. Press and hold to speak.' : 'اگلے جملے کے لیے تیار۔ بولنے کے لیے دبائیں اور رکھیں۔');
-            resetLearningState();
+            // Reset learning state directly
+            setCurrentWords([]);
+            setCurrentWordIndex(0);
+            setFullSentence('');
+            setUserSaidText('');
+            setEnglishSentence('');
+            setUrduSentence('');
+            setFeedbackText('');
           }, 2000);
         }, 4000);
         break;
@@ -492,13 +530,20 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
               setTimeout(() => {
                 setConversationState('waiting');
                 setCurrentMessage(languageMode === 'english' ? 'Ready for next sentence. Press and hold to speak.' : 'اگلے جملے کے لیے تیار۔ بولنے کے لیے دبائیں اور رکھیں۔');
-                resetLearningState();
+                // Reset learning state directly
+                setCurrentWords([]);
+                setCurrentWordIndex(0);
+                setFullSentence('');
+                setUserSaidText('');
+                setEnglishSentence('');
+                setUrduSentence('');
+                setFeedbackText('');
               }, 2000);
             }, 3000);
          }
          break;
     }
-  }, [languageMode, resetLearningState]);
+  }, [languageMode]);
 
   // Send completion events to server
   const sendCompletionEvent = useCallback((eventType: 'word_by_word_complete' | 'feedback_complete' | 'you_said_complete'): void => {
@@ -532,7 +577,8 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
   }, [sendCompletionEvent]);
 
   const handleAudioData = useCallback((audioBuffer: ArrayBuffer): void => {
-    console.log('Received binary audio data:', audioBuffer.byteLength, 'bytes');
+    console.log('🎵 Received binary audio data:', audioBuffer.byteLength, 'bytes');
+    console.log('🎵 Current conversation state when audio received:', conversationState);
     
     // Clear any processing timeout since we got a response
     if (typeof window !== 'undefined' && (window as any).currentProcessingTimeout) {
@@ -542,9 +588,14 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
     
     const blob = new Blob([audioBuffer], { type: 'audio/mpeg' });
     const audioUrl = URL.createObjectURL(blob);
+    
+    // Keep the conversation state context for the audio completion handler
+    console.log('🎵 Playing audio with state context:', conversationState);
     playAudio(audioUrl);
+    
+    // Set to speaking but preserve the original context in playAudio
     setConversationState('speaking');
-  }, []);
+  }, [conversationState]);
 
   const handleConnectionClose = useCallback((): void => {
     console.warn('🔌 WebSocket connection closed - initiating recovery');
@@ -555,8 +606,21 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
       'کنکشن ٹوٹ گیا۔ دوبارہ جڑنے کی کوشش...');
     
     // Clear any ongoing audio or state
-    cleanupAudio();
-    resetLearningState();
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = '';
+      audioRef.current = null;
+    }
+    setIsPlayingAudio(false);
+    
+    // Reset learning state directly
+    setCurrentWords([]);
+    setCurrentWordIndex(0);
+    setFullSentence('');
+    setUserSaidText('');
+    setEnglishSentence('');
+    setUrduSentence('');
+    setFeedbackText('');
   }, [languageMode]);
 
   // Handle WebSocket reconnection
@@ -671,13 +735,25 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
       return () => {
         isCurrentConnection = false; // Prevent stale state updates
         closeLearnSocket();
-        cleanupAudio();
+        // Cleanup audio directly
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.src = '';
+          audioRef.current = null;
+        }
+        setIsPlayingAudio(false);
       };
     }
-  }, [step, languageMode, hasPlayedGreeting, handleWebSocketMessage, handleAudioData, handleConnectionClose, handleError, handleReconnect, cleanupAudio]);
+  }, [step, languageMode, hasPlayedGreeting]);
 
   const playAudio = useCallback((audioUrl: string): void => {
-    cleanupAudio();
+    // Cleanup audio directly
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = '';
+      audioRef.current = null;
+    }
+    setIsPlayingAudio(false);
     
     audioRef.current = new Audio(audioUrl);
     audioRef.current.play().catch((error: Error) => {
@@ -686,19 +762,76 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
       setCurrentMessage(languageMode === 'english' ? 'Audio playback failed' : 'آڈیو چلانے میں خرابی');
     });
     
-    audioRef.current.onended = () => {
-      setConversationState('waiting');
-      setCurrentMessage(languageMode === 'english' ? 'Press and hold to speak' : 'بولنے کے لیے دبائیں اور رکھیں');
-      // Clean up the object URL to prevent memory leaks
-      URL.revokeObjectURL(audioUrl);
-    };
+          audioRef.current.onended = () => {
+        console.log('🎵 Audio playback ended, determining next action based on current state');
+        
+        // Handle different completion scenarios based on current state
+        if (conversationState === 'you_said') {
+          console.log('🎤 "You said" audio finished - sending completion event to backend');
+          setConversationState('waiting');
+          setCurrentMessage(languageMode === 'english' ? 'Now repeat after me.' : 'اب میرے پیچھے دہرائیں۔');
+          
+          // Send completion event to trigger next step (repeat_prompt)
+          setTimeout(() => {
+            sendCompletionEventRef.current?.('you_said_complete');
+          }, 500);
+        } else if (conversationState === 'speaking' && (fullSentence || englishSentence)) {
+          console.log('🎤 Full sentence audio finished - ready for user to repeat full sentence');
+          setConversationState('waiting');
+          const sentence = fullSentence || englishSentence;
+          setCurrentMessage(`${languageMode === 'english' ? 'Press and hold to repeat:' : 'دہرانے کے لیے دبائیں:'} "${sentence}"`);
+        } else if (conversationState === 'feedback') {
+          console.log('📝 Feedback audio finished - determining if positive or negative feedback');
+          
+          // Check if this is positive feedback (await_next) by checking the feedback text
+          const isPositiveFeedback = feedbackText && (
+            feedbackText.toLowerCase().includes('great') ||
+            feedbackText.toLowerCase().includes('excellent') ||
+            feedbackText.toLowerCase().includes('perfect') ||
+            feedbackText.toLowerCase().includes('good job') ||
+            feedbackText.includes('شاباش') ||
+            feedbackText.includes('بہترین')
+          );
+          
+          if (isPositiveFeedback) {
+            console.log('✅ Positive feedback - restarting conversation for next sentence');
+            setConversationState('waiting');
+            setCurrentMessage(languageMode === 'english' ? 'Ready for next sentence. Press and hold to speak.' : 'اگلے جملے کے لیے تیار۔ بولنے کے لیے دبائیں اور رکھیں۔');
+            
+            // Clear all learning state for fresh start
+            setCurrentWords([]);
+            setCurrentWordIndex(0);
+            setFullSentence('');
+            setUserSaidText('');
+            setEnglishSentence('');
+            setUrduSentence('');
+            setFeedbackText('');
+          } else {
+            console.log('📝 Negative feedback - sending completion event for word-by-word retry');
+            setConversationState('waiting');
+            setCurrentMessage(languageMode === 'english' ? 'Let\'s practice the words again.' : 'آئیے الفاظ کی دوبارہ مشق کریں۔');
+            
+            // Send feedback completion event to trigger word-by-word retry
+            setTimeout(() => {
+              sendCompletionEventRef.current?.('feedback_complete');
+            }, 500);
+          }
+        } else {
+          // Default behavior
+          setConversationState('waiting');
+          setCurrentMessage(languageMode === 'english' ? 'Press and hold to speak' : 'بولنے کے لیے دبائیں اور رکھیں');
+        }
+        
+        // Clean up the object URL to prevent memory leaks
+        URL.revokeObjectURL(audioUrl);
+      };
 
     audioRef.current.onerror = () => {
       setConversationState('waiting');
       setCurrentMessage(languageMode === 'english' ? 'Audio error occurred' : 'آڈیو میں خرابی ہوئی');
       URL.revokeObjectURL(audioUrl);
     };
-  }, [cleanupAudio, languageMode]);
+  }, [languageMode]);
 
   const playIntroAudio = useCallback((): void => {
     setConversationState('playing_intro');
@@ -716,15 +849,20 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
     
     setIsPlayingAudio(true);
     
-    const playNextWord = (index: number) => {
-      if (index >= words.length) {
-        // Word-by-word playback complete
-        setIsPlayingAudio(false);
-        setTimeout(() => {
-          sendCompletionEvent('word_by_word_complete');
-        }, 1000);
-        return;
-      }
+          const playNextWord = (index: number) => {
+        if (index >= words.length) {
+          // Word-by-word playback complete
+          console.log('✅ Word-by-word speaking completed, sending completion event');
+          setIsPlayingAudio(false);
+          setConversationState('waiting');
+          setCurrentMessage(languageMode === 'english' ? 'Now repeat the full sentence.' : 'اب پورا جملہ دہرائیں۔');
+          
+          // Send completion event to backend to trigger full_sentence_audio step
+          setTimeout(() => {
+            sendCompletionEventRef.current?.('word_by_word_complete');
+          }, 500);
+          return;
+        }
       
       setCurrentWordIndex(index);
       const word = words[index];
@@ -778,7 +916,13 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
          );
          
          // Also reset any learning state that might be stuck
-         resetLearningState();
+         setCurrentWords([]);
+         setCurrentWordIndex(0);
+         setFullSentence('');
+         setUserSaidText('');
+         setEnglishSentence('');
+         setUrduSentence('');
+         setFeedbackText('');
       }, 20000); // 20 second timeout (reduced from 30)
       
       // Store timeout in a ref so we can clear it when we get a response
@@ -872,7 +1016,7 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
       setConversationState('waiting');
       setCurrentMessage(languageMode === 'english' ? 'Error processing audio' : 'آڈیو پروسیسنگ میں خرابی');
     }
-  }, [languageMode, isConnected, handleWebSocketMessage]);
+  }, [languageMode, isConnected]);
 
   const handleMicPress = useCallback((): void => {
     console.log('🎤 ==========================================');
@@ -915,10 +1059,16 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      cleanupAudio();
+      // Cleanup audio directly
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+        audioRef.current = null;
+      }
+      setIsPlayingAudio(false);
       closeLearnSocket();
     };
-  }, [cleanupAudio]);
+  }, []);
 
   const getStatusColor = (): string => {
     switch (conversationState) {
@@ -1272,7 +1422,14 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
                     console.log('🧪 Resetting to waiting state');
                     setConversationStateWithRecovery('waiting');
                     setCurrentMessage('Press and hold to speak');
-                    resetLearningState();
+                    // Reset learning state directly
+                    setCurrentWords([]);
+                    setCurrentWordIndex(0);
+                    setFullSentence('');
+                    setUserSaidText('');
+                    setEnglishSentence('');
+                    setUrduSentence('');
+                    setFeedbackText('');
                   }}
                 >
                   Reset

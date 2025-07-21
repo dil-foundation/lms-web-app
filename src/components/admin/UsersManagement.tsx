@@ -531,7 +531,7 @@ export const UsersManagement = () => {
 
       {/* Metrics Cards */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-        <Card>
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -544,7 +544,7 @@ export const UsersManagement = () => {
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Students</CardTitle>
             <GraduationCap className="h-4 w-4 text-muted-foreground" />
@@ -557,7 +557,7 @@ export const UsersManagement = () => {
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Teachers</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
@@ -570,7 +570,7 @@ export const UsersManagement = () => {
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Admins</CardTitle>
             <Shield className="h-4 w-4 text-muted-foreground" />

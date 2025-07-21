@@ -155,7 +155,7 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Enrolled Courses</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
@@ -168,7 +168,7 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Completed Lessons</CardTitle>
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
@@ -181,7 +181,7 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Discussions</CardTitle>
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
@@ -194,7 +194,7 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Study Streak</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />

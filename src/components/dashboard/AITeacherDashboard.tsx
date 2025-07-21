@@ -87,7 +87,7 @@ export const AITeacherDashboard = ({ userProfile }: AITeacherDashboardProps) => 
 
       {/* AI Stats Grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="relative overflow-hidden">
+        <Card className="relative overflow-hidden bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">AI Interactions</CardTitle>
             <MessageCircle className="h-4 w-4 text-muted-foreground" />
@@ -100,7 +100,7 @@ export const AITeacherDashboard = ({ userProfile }: AITeacherDashboardProps) => 
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Content Generated</CardTitle>
             <Zap className="h-4 w-4 text-muted-foreground" />
@@ -113,7 +113,7 @@ export const AITeacherDashboard = ({ userProfile }: AITeacherDashboardProps) => 
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Students Helped</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -126,7 +126,7 @@ export const AITeacherDashboard = ({ userProfile }: AITeacherDashboardProps) => 
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Time Saved</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
