@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +14,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   Dialog,
   DialogContent,
@@ -44,125 +55,217 @@ import {
   SortDesc,
   Users,
   BookOpen,
-  AlertCircle
+  AlertCircle,
+  Edit,
+  Trash
 } from 'lucide-react';
+import { MultiSelect } from '@/components/ui/MultiSelect';
+import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { format } from 'date-fns';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { useDebounce } from '@/hooks/useDebounce';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { ContentLoader } from '@/components/ContentLoader';
+import { DiscussionDialog } from '@/components/discussions/DiscussionDialog';
 
-// Mock data for discussions - in production this would come from a database
-const discussionStats = [
-  {
-    title: 'Total Discussions',
-    value: '1',
-    description: 'Across all courses',
-    icon: MessageSquare,
-    color: 'text-blue-600'
-  },
-  {
-    title: 'Course Discussions',
-    value: '0',
-    description: 'Course-specific topics',
-    icon: FileText,
-    color: 'text-green-600'
-  },
-  {
-    title: 'Announcements',
-    value: '0',
-    description: 'Official announcements',
-    icon: Megaphone,
-    color: 'text-purple-600'
-  },
-  {
-    title: 'Recent Activity',
-    value: '1',
-    description: 'New in the last 7 days',
-    icon: Clock,
-    color: 'text-orange-600'
-  }
-];
+const fetchDiscussions = async (searchTerm: string, courseFilter: string, typeFilter: string, page: number, rowsPerPage: number) => {
+  const { data, error } = await supabase.rpc('get_discussions_for_user', {
+    p_search_term: searchTerm,
+    p_course_filter: courseFilter,
+    p_type_filter: typeFilter,
+    p_page: page,
+    p_rows_per_page: rowsPerPage,
+  });
 
-const mockDiscussions = [
-  {
-    id: 1,
-    title: 'test',
-    content: 'Hello',
-    author: 'Demo Teacher',
-    authorInitials: 'DT',
-    date: 'Just now',
-    fullDate: 'Jul 10, 2025, 06:47 PM',
-    type: 'Regular Post',
-    replies: 0,
-    likes: 8,
-    course: null,
-    isLiked: false,
-    avatar: null
+  if (error) {
+    throw new Error(error.message);
   }
+  return data;
+};
+
+const fetchDiscussionsCount = async (searchTerm: string, courseFilter: string, typeFilter: string) => {
+  const { data, error } = await supabase.rpc('get_discussions_for_user_count', {
+    p_search_term: searchTerm,
+    p_course_filter: courseFilter,
+    p_type_filter: typeFilter,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+  return data;
+};
+
+const fetchDiscussionParticipants = async (discussionId: string) => {
+  const { data, error } = await supabase
+    .from('discussion_participants')
+    .select('role')
+    .eq('discussion_id', discussionId);
+  if (error) {
+    console.error("Failed to fetch participants", error);
+    return ['admin']; // Fallback
+  }
+  return data.map(p => p.role);
+};
+
+const fetchUserCourses = async () => {
+  const { data, error } = await supabase.rpc('get_courses_for_user');
+  if (error) {
+    throw new Error(error.message);
+  }
+  return data;
+};
+
+const roles = [
+  { value: 'student', label: 'Students' },
+  { value: 'teacher', label: 'Teachers' },
+  { value: 'admin', label: 'Admins', disabled: true },
 ];
 
 export default function DiscussionsPage() {
   const [isNewDiscussionOpen, setIsNewDiscussionOpen] = useState(false);
-  const [selectedDiscussion, setSelectedDiscussion] = useState<any>(null);
+  const [editingDiscussion, setEditingDiscussion] = useState<any | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [selectedCourse, setSelectedCourse] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
-  const [sortBy, setSortBy] = useState('recent');
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 10;
+  const [discussionToDelete, setDiscussionToDelete] = useState<any | null>(null);
+  const { user } = useAuth();
+  const { profile, loading: isProfileLoading } = useUserProfile();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
-  // New discussion form state
-  const [newDiscussion, setNewDiscussion] = useState({
-    type: 'regular',
-    title: '',
-    course: 'general',
-    content: ''
+  const { data: discussionsCount = 0 } = useQuery({
+    queryKey: ['discussionsCount', debouncedSearchTerm, selectedCourse, selectedType],
+    queryFn: () => fetchDiscussionsCount(debouncedSearchTerm, selectedCourse, selectedType),
   });
 
-  const handleNewDiscussion = () => {
-    // In production, this would create a new discussion
-    console.log('Creating new discussion:', newDiscussion);
+  const { data: discussions = [], isFetching } = useQuery({
+    queryKey: ['discussions', debouncedSearchTerm, selectedCourse, selectedType, currentPage],
+    queryFn: () => fetchDiscussions(debouncedSearchTerm, selectedCourse, selectedType, currentPage, rowsPerPage),
+  });
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchTerm, selectedCourse, selectedType]);
+
+  const { data: courses = [], isLoading: isLoadingCourses } = useQuery({
+    queryKey: ['userCourses'],
+    queryFn: fetchUserCourses,
+  });
+
+  const createDiscussionMutation = useMutation({
+    mutationFn: async (newDiscussion: any) => {
+      const { data: discussionData, error: discussionError } = await supabase
+        .from('discussions')
+        .insert({
+          title: newDiscussion.title,
+          content: newDiscussion.content,
+          creator_id: user?.id,
+          course_id: newDiscussion.course === 'general' ? null : newDiscussion.course,
+          type: newDiscussion.type,
+        })
+        .select()
+        .single();
+
+      if (discussionError) throw new Error(discussionError.message);
+
+      const participantsToInsert = newDiscussion.participants.map((role: string) => ({
+        discussion_id: discussionData.id,
+        role,
+      }));
+
+      const { error: participantsError } = await supabase
+        .from('discussion_participants')
+        .insert(participantsToInsert);
+
+      if (participantsError) throw new Error(participantsError.message);
+
+      return discussionData;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['discussions'] });
+      closeAndResetDialog();
+    },
+  });
+
+  const updateDiscussionMutation = useMutation({
+    mutationFn: async (discussionToUpdate: any) => {
+      const { data, error } = await supabase
+        .from('discussions')
+        .update({
+          title: discussionToUpdate.title,
+          content: discussionToUpdate.content,
+          course_id: discussionToUpdate.course === 'general' ? null : discussionToUpdate.course,
+          type: discussionToUpdate.type,
+        })
+        .eq('id', discussionToUpdate.id)
+        .select()
+        .single();
+      
+      if (error) throw new Error(error.message);
+
+      // Delete and re-insert participants
+      await supabase.from('discussion_participants').delete().eq('discussion_id', discussionToUpdate.id);
+      
+      const participantsToInsert = discussionToUpdate.participants.map((role: string) => ({
+        discussion_id: discussionToUpdate.id,
+        role,
+      }));
+
+      await supabase.from('discussion_participants').insert(participantsToInsert);
+      
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['discussions'] });
+      closeAndResetDialog();
+    },
+  });
+
+  const deleteDiscussionMutation = useMutation({
+    mutationFn: async (discussionId: string) => {
+      const { error } = await supabase.from('discussions').delete().eq('id', discussionId);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['discussions'] });
+      queryClient.invalidateQueries({ queryKey: ['discussionsCount'] });
+      setDiscussionToDelete(null);
+    },
+  });
+
+  const handleSaveDiscussion = (discussionData: any) => {
+    if (editingDiscussion) {
+      updateDiscussionMutation.mutate({ ...discussionData, id: editingDiscussion.id });
+    } else {
+      createDiscussionMutation.mutate(discussionData);
+    }
+  };
+
+  const openEditDialog = async (discussion: any) => {
+    const participants = await fetchDiscussionParticipants(discussion.id);
+    setEditingDiscussion({ ...discussion, participants });
+    setIsNewDiscussionOpen(true);
+  };
+
+  const closeAndResetDialog = () => {
     setIsNewDiscussionOpen(false);
-    setNewDiscussion({
-      type: 'regular',
-      title: '',
-      course: 'general',
-      content: ''
-    });
+    setEditingDiscussion(null);
   };
 
-  const handleDiscussionClick = (discussion: any) => {
-    setSelectedDiscussion(discussion);
-  };
-
-  const handleBackToDiscussions = () => {
-    setSelectedDiscussion(null);
-  };
-
-  const handleLike = (discussionId: number) => {
-    // In production, this would toggle like status
-    console.log('Toggling like for discussion:', discussionId);
-  };
-
-  const handleReply = (content: string) => {
-    // In production, this would add a reply
-    console.log('Adding reply:', content);
-  };
-
-  // Filter discussions based on search and filters
-  const filteredDiscussions = mockDiscussions.filter(discussion => {
-    const matchesSearch = discussion.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         discussion.content.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCourse = selectedCourse === 'all' || 
-                         discussion.course === selectedCourse || 
-                         (selectedCourse === 'general' && !discussion.course);
-    const matchesType = selectedType === 'all' || discussion.type.toLowerCase().includes(selectedType.toLowerCase());
-    
-    return matchesSearch && matchesCourse && matchesType;
-  });
-
-  if (selectedDiscussion) {
-    return <DiscussionDetailView 
-      discussion={selectedDiscussion}
-      onBack={handleBackToDiscussions}
-      onLike={handleLike}
-      onReply={handleReply}
-    />;
-  }
+  const totalPages = Math.ceil(discussionsCount / rowsPerPage);
 
   return (
     <div className="space-y-6">
@@ -174,6 +277,7 @@ export default function DiscussionsPage() {
             Engage with the community and participate in course discussions.
           </p>
         </div>
+        {profile?.role !== 'student' && (
         <Button 
           onClick={() => setIsNewDiscussionOpen(true)}
           className="bg-green-600 hover:bg-green-700 text-white"
@@ -181,26 +285,12 @@ export default function DiscussionsPage() {
           <Plus className="mr-2 h-4 w-4" />
           New Discussion
         </Button>
+        )}
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards - consider making these dynamic */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {discussionStats.map((stat) => (
-          <Card key={stat.title} className="hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {stat.title}
-              </CardTitle>
-              <stat.icon className={`h-4 w-4 ${stat.color}`} />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {stat.description}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
+        {/* Replace with dynamic data */}
       </div>
 
       {/* Search and Filters */}
@@ -222,9 +312,13 @@ export default function DiscussionsPage() {
             <SelectContent>
               <SelectItem value="all">All Courses</SelectItem>
               <SelectItem value="general">General Discussion</SelectItem>
-              <SelectItem value="javascript">JavaScript Basics</SelectItem>
-              <SelectItem value="react">React Fundamentals</SelectItem>
-              <SelectItem value="nodejs">Node.js Backend</SelectItem>
+              {isLoadingCourses ? (
+                <SelectItem value="loading" disabled>Loading courses...</SelectItem>
+              ) : (
+                courses.map((course) => (
+                  <SelectItem key={course.id} value={course.id}>{course.title}</SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
           
@@ -239,17 +333,6 @@ export default function DiscussionsPage() {
               <SelectItem value="question">Question</SelectItem>
             </SelectContent>
           </Select>
-
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-full sm:w-[130px]">
-              <SelectValue placeholder="Most Recent" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="recent">Most Recent</SelectItem>
-              <SelectItem value="popular">Most Popular</SelectItem>
-              <SelectItem value="replies">Most Replies</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
       </div>
 
@@ -258,18 +341,21 @@ export default function DiscussionsPage() {
         <div className="flex items-center gap-2">
           <MessageSquare className="h-6 w-6 text-primary" />
           <h2 className="text-xl font-semibold">
-            Discussions ({filteredDiscussions.length})
+            Discussions ({discussions.length})
           </h2>
         </div>
 
-        {filteredDiscussions.length === 0 ? (
+        {isFetching ? (
+          <ContentLoader message="Loading discussions..." />
+        ) : discussions.length === 0 ? (
           <Card className="text-center py-12">
             <CardContent>
               <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium mb-2">No discussions found</h3>
               <p className="text-muted-foreground mb-4">
-                {searchTerm ? 'Try adjusting your search or filters' : 'Start the conversation by creating a new discussion'}
+                {searchTerm ? 'Try adjusting your search or filters' : (profile?.role !== 'student' ? 'Start the conversation by creating a new discussion' : 'No discussions available to view.')}
               </p>
+              {profile?.role !== 'student' && (
               <Button 
                 onClick={() => setIsNewDiscussionOpen(true)}
                 className="bg-green-600 hover:bg-green-700 text-white"
@@ -277,22 +363,23 @@ export default function DiscussionsPage() {
                 <Plus className="mr-2 h-4 w-4" />
                 New Discussion
               </Button>
+              )}
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-3">
-            {filteredDiscussions.map((discussion) => (
+            {discussions.map((discussion) => (
               <Card 
                 key={discussion.id} 
                 className="hover:shadow-md transition-all cursor-pointer hover:bg-muted/50"
-                onClick={() => handleDiscussionClick(discussion)}
+                onClick={() => navigate(`/dashboard/discussion/${discussion.id}`)}
               >
                 <CardContent className="p-4">
                   <div className="flex items-center gap-4">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src={discussion.avatar} />
+                        <AvatarImage src={undefined} />
                       <AvatarFallback className="bg-green-100 text-green-700">
-                        {discussion.authorInitials}
+                          {discussion.creator_first_name?.[0]}{discussion.creator_last_name?.[0]}
                       </AvatarFallback>
                     </Avatar>
                     
@@ -301,9 +388,20 @@ export default function DiscussionsPage() {
                         <h3 className="font-medium text-base truncate">
                           {discussion.title}
                         </h3>
+                          {discussion.discussion_type && (
+                            <Badge variant="secondary" className="text-xs capitalize">
+                              {discussion.discussion_type}
+                            </Badge>
+                          )}
+                          {discussion.course_title ? (
+                            <Badge variant="outline" className="text-xs">
+                              {discussion.course_title}
+                            </Badge>
+                          ) : (
                         <Badge variant="outline" className="text-xs">
-                          {discussion.type}
+                              General Discussion
                         </Badge>
+                          )}
                       </div>
                       
                       <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
@@ -311,39 +409,57 @@ export default function DiscussionsPage() {
                       </p>
                       
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span className="font-medium">{discussion.author}</span>
+                          <span className="font-medium">{discussion.creator_first_name} {discussion.creator_last_name}</span>
                         <span>•</span>
-                        <span>{discussion.date}</span>
+                          <span>{format(new Date(discussion.created_at), 'MMM d, yyyy')}</span>
                       </div>
                     </div>
                     
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <MessageCircle className="h-4 w-4" />
-                        <span>{discussion.replies}</span>
+                          <span>{discussion.replies_count}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <ThumbsUp className="h-4 w-4" />
-                        <span>{discussion.likes}</span>
+                          <span>{discussion.likes_count}</span>
                       </div>
+                        {(user?.id === discussion.creator_id || profile?.role === 'admin') && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button 
                             variant="ghost" 
                             size="sm"
                             className="h-8 w-8 p-0"
-                            onClick={(e) => e.stopPropagation()}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                }}
                           >
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>Edit</DropdownMenuItem>
-                          <DropdownMenuItem>Pin</DropdownMenuItem>
+                              <DropdownMenuItem onClick={(e) => {
+                                e.stopPropagation();
+                                openEditDialog(discussion);
+                              }}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit
+                              </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-red-600"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDiscussionToDelete(discussion);
+                                }}
+                              >
+                                <Trash className="mr-2 h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
+                        )}
                     </div>
                   </div>
                 </CardContent>
@@ -351,244 +467,78 @@ export default function DiscussionsPage() {
             ))}
           </div>
         )}
-      </div>
 
-      {/* New Discussion Dialog */}
-      <Dialog open={isNewDiscussionOpen} onOpenChange={setIsNewDiscussionOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-green-600" />
-              Start a New Discussion
-            </DialogTitle>
-            <p className="text-sm text-muted-foreground">
-              Share your thoughts, ask questions, or make an announcement.
-            </p>
-          </DialogHeader>
-          
-          <div className="space-y-6 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="type">Type</Label>
-              <Select 
-                value={newDiscussion.type} 
-                onValueChange={(value) => setNewDiscussion({...newDiscussion, type: value})}
-              >
-                <SelectTrigger id="type">
-                  <SelectValue placeholder="Select a type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="regular">Regular Post</SelectItem>
-                  <SelectItem value="announcement">Announcement</SelectItem>
-                  <SelectItem value="question">Question</SelectItem>
-                </SelectContent>
-              </Select>
+        {!isFetching && totalPages > 0 && (
+          <Pagination className="mt-6">
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setCurrentPage((prev) => Math.max(1, prev - 1));
+                  }}
+                  className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <PaginationItem key={page}>
+                  <PaginationLink
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setCurrentPage(page);
+                    }}
+                    isActive={currentPage === page}
+                  >
+                    {page}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setCurrentPage((prev) => Math.min(totalPages, prev + 1));
+                  }}
+                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
-              <Input
-                id="title"
-                placeholder="Enter title (optional)"
-                value={newDiscussion.title}
-                onChange={(e) => setNewDiscussion({...newDiscussion, title: e.target.value})}
-              />
-            </div>
+      <DiscussionDialog
+        isOpen={isNewDiscussionOpen}
+        onOpenChange={closeAndResetDialog}
+        editingDiscussion={editingDiscussion}
+        onSave={handleSaveDiscussion}
+        isSaving={createDiscussionMutation.isPending || updateDiscussionMutation.isPending}
+        courses={courses}
+        isLoadingCourses={isLoadingCourses}
+      />
 
-            <div className="space-y-2">
-              <Label htmlFor="course">Course</Label>
-              <Select 
-                value={newDiscussion.course} 
-                onValueChange={(value) => setNewDiscussion({...newDiscussion, course: value})}
-              >
-                <SelectTrigger id="course">
-                  <SelectValue placeholder="Select course (optional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="general">General Discussion</SelectItem>
-                  <SelectItem value="javascript">JavaScript Basics</SelectItem>
-                  <SelectItem value="react">React Fundamentals</SelectItem>
-                  <SelectItem value="nodejs">Node.js Backend</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-sm text-muted-foreground">
-                Leave empty for general discussions visible to everyone.
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="content">Content <span className="text-red-500">*</span></Label>
-              <Textarea
-                id="content"
-                placeholder="What would you like to discuss?"
-                className="min-h-[100px]"
-                value={newDiscussion.content}
-                onChange={(e) => setNewDiscussion({...newDiscussion, content: e.target.value})}
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-end space-x-2">
-            <Button 
-              variant="outline" 
-              onClick={() => setIsNewDiscussionOpen(false)}
+      <AlertDialog open={!!discussionToDelete} onOpenChange={(isOpen) => !isOpen && setDiscussionToDelete(null)}>
+        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete this discussion and all of its replies.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => deleteDiscussionMutation.mutate(discussionToDelete.id)}
             >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleNewDiscussion}
-              disabled={!newDiscussion.content.trim()}
-              className="flex items-center gap-2"
-            >
-              <MessageSquare className="h-4 w-4" />
-              Create Discussion
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
-
-// Discussion Detail View Component
-function DiscussionDetailView({ 
-  discussion, 
-  onBack, 
-  onLike, 
-  onReply 
-}: { 
-  discussion: any;
-  onBack: () => void;
-  onLike: (id: number) => void;
-  onReply: (content: string) => void;
-}) {
-  const [replyContent, setReplyContent] = useState('');
-
-  const handleReplySubmit = () => {
-    if (replyContent.trim()) {
-      onReply(replyContent);
-      setReplyContent('');
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      {/* Back Button */}
-      <Button 
-        variant="ghost" 
-        onClick={onBack}
-        className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
-      >
-        <ChevronLeft className="h-4 w-4" />
-        Back to Discussions
-      </Button>
-
-      {/* Discussion Content */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-start gap-4">
-            <Avatar className="h-12 w-12">
-              <AvatarImage src={discussion.avatar} />
-              <AvatarFallback className="bg-green-100 text-green-700">
-                {discussion.authorInitials}
-              </AvatarFallback>
-            </Avatar>
-            
-            <div className="flex-1 space-y-4">
-              <div>
-                <h1 className="text-2xl font-bold mb-2">{discussion.title}</h1>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                  <span className="font-medium text-foreground">{discussion.author}</span>
-                  <span>•</span>
-                  <span>{discussion.fullDate}</span>
-                </div>
-                <p className="text-base leading-relaxed">{discussion.content}</p>
-              </div>
-              
-              <div className="flex items-center gap-4 pt-4 border-t">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => onLike(discussion.id)}
-                  className="flex items-center gap-2"
-                >
-                  <ThumbsUp className="h-4 w-4" />
-                  <span>{discussion.likes}</span>
-                </Button>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <MessageCircle className="h-4 w-4" />
-                  <span>{discussion.replies} replies</span>
-                </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem>Edit</DropdownMenuItem>
-                    <DropdownMenuItem>Pin</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Reply Section */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-start gap-2 mb-4">
-            <MessageCircle className="h-5 w-5 text-primary mt-0.5" />
-            <h3 className="text-lg font-semibold">Add Your Reply</h3>
-          </div>
-          
-          <div className="space-y-4">
-            <Textarea
-              placeholder="Write your reply here..."
-              value={replyContent}
-              onChange={(e) => setReplyContent(e.target.value)}
-              className="min-h-[100px]"
-            />
-            <div className="flex justify-end">
-              <Button 
-                onClick={handleReplySubmit}
-                disabled={!replyContent.trim()}
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
-                <Send className="mr-2 h-4 w-4" />
-                Post Reply
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Replies Section */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center gap-2 mb-6">
-            <MessageCircle className="h-5 w-5 text-primary" />
-            <h3 className="text-lg font-semibold">Replies ({discussion.replies})</h3>
-          </div>
-          
-          {discussion.replies === 0 ? (
-            <div className="text-center py-12">
-              <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h4 className="text-lg font-medium mb-2">No replies yet. Be the first to reply!</h4>
-              <p className="text-muted-foreground">
-                Share your thoughts and engage with the discussion.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {/* Replies would be rendered here */}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 } 

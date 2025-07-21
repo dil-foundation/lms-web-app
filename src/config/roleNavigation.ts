@@ -85,6 +85,12 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean): N
           items: [
             { title: 'Progress', path: '/dashboard/progress', icon: TrendingUp },
           ]
+        },
+        {
+          title: 'COMMUNICATION',
+          items: [
+            { title: 'Discussions', path: '/dashboard/discussion', icon: MessageCircle },
+          ]
         }
       ];
     
