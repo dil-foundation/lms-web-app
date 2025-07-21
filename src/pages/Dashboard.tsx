@@ -44,8 +44,6 @@ import SensitiveScenarioRoleplay from '@/pages/practice/SensitiveScenarioRolepla
 import CriticalOpinionBuilder from '@/pages/practice/CriticalOpinionBuilder';
 import { ReportsOverview } from '@/components/admin/ReportsOverview';
 import { ObservationReports } from '@/components/admin/ObservationReports';
-import { Discussions } from '@/components/admin/Discussions';
-import { DiscussionView } from '@/components/admin/DiscussionView';
 import { GradeAssignments } from '@/components/admin/GradeAssignments';
 import { AssignmentSubmissions } from '@/components/admin/AssignmentSubmissions';
 import { StudentSubmissionDetail } from '@/components/admin/StudentSubmissionDetail';
@@ -57,6 +55,7 @@ import { CourseContent } from './CourseContent';
 import StudentsPage from './StudentsPage';
 import ReportsPage from './ReportsPage';
 import DiscussionsPage from './DiscussionsPage';
+import { DiscussionViewPage } from './DiscussionViewPage';
 import MessagesPage from './MessagesPage';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/useAuth';
@@ -196,6 +195,8 @@ const Dashboard = () => {
                       <Route path="/courses" element={<StudentCourses userProfile={finalProfile} />} />
                       <Route path="/assignments" element={<StudentAssignments userProfile={finalProfile} />} />
                       <Route path="/progress" element={<StudentProgress userProfile={finalProfile} />} />
+                      <Route path="/discussion" element={<DiscussionsPage />} />
+                      <Route path="/discussion/:id" element={<DiscussionViewPage />} />
                         </>
                       )}
                     </>
@@ -223,6 +224,7 @@ const Dashboard = () => {
                           <Route path="/grade-assignments/:assignmentId/student/:studentId" element={<StudentSubmissionDetail />} />
                           <Route path="/messages" element={<MessagesPage />} />
                           <Route path="/discussion" element={<DiscussionsPage />} />
+                          <Route path="/discussion/:id" element={<DiscussionViewPage />} />
                         </>
                       )}
                     </>
@@ -246,8 +248,8 @@ const Dashboard = () => {
                           <Route path="/courses/builder/:courseId" element={<CourseBuilder />} />
                           <Route path="/reports" element={<ReportsOverview />} />
                           <Route path="/observation-reports" element={<ObservationReports />} />
-                          <Route path="/discussion" element={<Discussions />} />
-                          <Route path="/discussion/:id" element={<DiscussionView />} />
+                          <Route path="/discussion" element={<DiscussionsPage />} />
+                          <Route path="/discussion/:id" element={<DiscussionViewPage />} />
                           <Route path="/grade-assignments" element={<GradeAssignments />} />
                           <Route path="/grade-assignments/:id" element={<AssignmentSubmissions />} />
                           <Route path="/grade-assignments/:assignmentId/student/:studentId" element={<StudentSubmissionDetail />} />

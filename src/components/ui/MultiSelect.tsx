@@ -35,6 +35,7 @@ interface MultiSelectProps
     icon?: React.ComponentType<{ className?: string }>;
     imageUrl?: string;
     subLabel?: string;
+    disabled?: boolean;
   }[];
   onValueChange: (value: string[]) => void;
   value: string[];
@@ -76,6 +77,9 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
     };
 
     const handleSelectOption = (selectedValue: string) => {
+      const option = options.find((o) => o.value === selectedValue);
+      if (option?.disabled) return;
+
       setInputValue('');
       if (value.includes(selectedValue)) {
         onValueChange(value.filter((v) => v !== selectedValue));
@@ -137,6 +141,7 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                     handleSelectOption(selectedValue);
                   }}
                   aria-label={`Remove ${option.label}`}
+                  style={{ visibility: option.disabled ? 'hidden' : 'visible' }}
                 >
                   <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
                 </button>
