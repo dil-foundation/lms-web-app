@@ -81,7 +81,7 @@ interface SecureLink {
 }
 
 const StatCard = ({ title, value, icon: Icon, iconColor, bgColor }) => (
-  <Card className="shadow-sm hover:shadow-md transition-shadow bg-white dark:bg-card">
+  <Card className="shadow-sm hover:shadow-md transition-shadow bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
     <CardContent className="p-4 flex items-center justify-between">
       <div>
         <p className="text-sm text-muted-foreground">{title}</p>

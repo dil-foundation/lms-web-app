@@ -393,7 +393,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     trend?: 'up' | 'down' | 'neutral';
     subtitle?: string;
   }) => (
-    <Card className="relative overflow-hidden transition-all duration-200 hover:shadow-lg">
+    <Card className="relative overflow-hidden transition-all duration-200 hover:shadow-lg bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
         <Icon className={`h-4 w-4 ${color}`} />
@@ -649,7 +649,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         <TabsContent value="students" className="space-y-6">
           {/* Students Summary Metrics */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
+            <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Students</CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
@@ -661,7 +661,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                 </p>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Active Students</CardTitle>
                 <Activity className="h-4 w-4 text-muted-foreground" />
@@ -673,7 +673,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                 </p>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Avg Progress</CardTitle>
                 <Target className="h-4 w-4 text-muted-foreground" />
@@ -687,7 +687,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                 </p>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">At Risk</CardTitle>
                 <Clock className="h-4 w-4 text-muted-foreground" />

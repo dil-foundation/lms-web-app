@@ -397,7 +397,7 @@ const CourseManagement = () => {
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Courses</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
@@ -406,7 +406,7 @@ const CourseManagement = () => {
             <div className="text-2xl font-bold">{total}</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Published</CardTitle>
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
@@ -415,7 +415,7 @@ const CourseManagement = () => {
             <div className="text-2xl font-bold">{published}</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Draft Courses</CardTitle>
             <Edit3 className="h-4 w-4 text-muted-foreground" />
@@ -424,7 +424,7 @@ const CourseManagement = () => {
             <div className="text-2xl font-bold">{draft}</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Students</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />

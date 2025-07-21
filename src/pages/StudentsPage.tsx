@@ -700,7 +700,7 @@ export default function StudentsPage() {
 
       {/* Students Summary Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Students</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -716,7 +716,7 @@ export default function StudentsPage() {
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Students</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
@@ -732,7 +732,7 @@ export default function StudentsPage() {
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Avg Progress</CardTitle>
             <Target className="h-4 w-4 text-muted-foreground" />
@@ -748,7 +748,7 @@ export default function StudentsPage() {
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Unverified</CardTitle>
             <AlertCircle className="h-4 w-4 text-muted-foreground" />
