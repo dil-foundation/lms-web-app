@@ -50,11 +50,15 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { ContentLoader } from '@/components/ContentLoader';
 import { CourseOverview } from './CourseOverview';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Terminal } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
@@ -105,13 +109,14 @@ interface CourseData {
   sections: CourseSection[];
   teachers: { id: string; name: string; email: string }[];
   students: { id: string; name: string; email: string }[];
-  status?: 'Draft' | 'Published' | 'Under Review';
+  status?: 'Draft' | 'Published' | 'Under Review' | 'Rejected';
   duration?: string;
   published_course_id?: string;
   authorId?: string;
+  review_feedback?: string;
 }
 
-type ValidationErrors = Partial<Record<keyof Omit<CourseData, 'sections'|'teachers'|'students'|'image'|'status'|'duration'|'published_course_id'|'authorId'|'id'>, string>>;
+type ValidationErrors = Partial<Record<keyof Omit<CourseData, 'sections'|'teachers'|'students'|'image'|'status'|'duration'|'published_course_id'|'authorId'|'id'|'review_feedback'>, string>>;
 
 const validateCourseData = (data: CourseData): ValidationErrors => {
   const errors: ValidationErrors = {};
@@ -652,10 +657,12 @@ const CourseBuilder = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('details');
-  const [saveAction, setSaveAction] = useState<null | 'draft' | 'publish' | 'unpublish'>(null);
+  const [saveAction, setSaveAction] = useState<null | 'draft' | 'publish' | 'unpublish' | 'review' | 'approve' | 'reject'>(null);
   const isSaving = saveAction !== null;
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isCreateDraftConfirmOpen, setIsCreateDraftConfirmOpen] = useState(false);
+  const [isRejectionDialogOpen, setIsRejectionDialogOpen] = useState(false);
+  const [rejectionFeedback, setRejectionFeedback] = useState("");
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const preDragLessonStatesRef = useRef<Record<string, boolean>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -665,6 +672,7 @@ const CourseBuilder = () => {
   const [allTeachers, setAllTeachers] = useState<{ label: string; value: string; }[]>([]);
   const [allStudents, setAllStudents] = useState<{ label: string; value: string; }[]>([]);
   const [userProfiles, setUserProfiles] = useState<Profile[]>([]);
+  const [currentUserRole, setCurrentUserRole] = useState<'student' | 'teacher' | 'admin' | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [touchedFields, setTouchedFields] = useState<Partial<Record<keyof ValidationErrors, boolean>>>({});
@@ -698,6 +706,7 @@ const CourseBuilder = () => {
     ],
     teachers: [],
     students: [],
+    review_feedback: '',
   }));
 
   const handleBlur = (field: keyof ValidationErrors) => {
@@ -726,11 +735,6 @@ const CourseBuilder = () => {
         if (levelRes.error) throw levelRes.error;
         
         const fetchedProfiles = usersRes.data as Profile[];
-        
-        // Log the first profile to inspect its structure
-        if (fetchedProfiles.length > 0) {
-            console.log("Inspecting fetched profile:", fetchedProfiles[0]);
-        }
         
         const fetchedCategories = catRes.data as { id: number; name: string; }[];
         const fetchedLanguages = langRes.data as { id: number; name: string; }[];
@@ -783,11 +787,17 @@ const CourseBuilder = () => {
         setAllTeachers(teachers);
         setAllStudents(students);
         
+        const userProfile = fetchedProfiles.find(p => p.id === user?.id);
+        if(userProfile) {
+            setCurrentUserRole(userProfile.role);
+        }
+        
         if (courseId && courseId !== 'new') {
           const { data, error } = await supabase
             .from('courses')
             .select(`
               *,
+              review_feedback,
               published_course_id,
               sections:course_sections (
                 *,
@@ -841,6 +851,7 @@ const CourseBuilder = () => {
               learningOutcomes: data.learning_outcomes || [''],
               status: data.status || 'Draft',
               published_course_id: data.published_course_id,
+              review_feedback: data.review_feedback,
               sections: data.sections.sort((a: any, b: any) => a.position - b.position).map((s: any) => ({
                 ...s,
                 lessons: s.lessons
@@ -876,7 +887,7 @@ const CourseBuilder = () => {
     };
 
     initializeCourseBuilder();
-  }, [courseId, navigate]);
+  }, [courseId, navigate, user]);
 
   const handleImageUpload = async (file: File) => {
     if (!file) return;
@@ -973,7 +984,8 @@ const CourseBuilder = () => {
 
     const currentCourseId = savedCourse.id;
 
-    await supabase.from('course_members').delete().eq('course_id', currentCourseId);
+    // First, manage the curriculum. The user's membership is still intact at this point,
+    // so RLS policies on sections and lessons that check for membership will pass.
     await supabase.from('course_sections').delete().eq('course_id', currentCourseId);
 
     for (const [sectionIndex, section] of courseToSave.sections.entries()) {
@@ -1006,12 +1018,81 @@ const CourseBuilder = () => {
       }
     }
 
-    const teachersToInsert = courseToSave.teachers.map(t => ({ course_id: currentCourseId, user_id: t.id, role: 'teacher' as const }));
-    const studentsToInsert = courseToSave.students.map(s => ({ course_id: currentCourseId, user_id: s.id, role: 'student' as const }));
-    const membersToInsert = [...teachersToInsert, ...studentsToInsert];
+    // Now that curriculum is saved, sync the members as the final step using
+    // a safe "UPSERT then DELETE" strategy to avoid RLS policy violations.
+
+    // Step 1: Prepare the final list of members from the UI state.
+    const membersMap = new Map<string, { role: 'teacher' | 'student' }>();
+    courseToSave.teachers.forEach(t => membersMap.set(t.id, { role: 'teacher' }));
+    courseToSave.students.forEach(s => {
+      if (!membersMap.has(s.id)) {
+        membersMap.set(s.id, { role: 'student' });
+      }
+    });
+
+    const desiredMembers = Array.from(membersMap.entries()).map(([user_id, { role }]) => ({
+      course_id: currentCourseId,
+      user_id,
+      role: role as 'teacher' | 'student'
+    }));
+
+    // Step 2: UPSERT the desired members. This adds new members and updates existing ones.
+    // The user's own membership is preserved throughout this, so RLS checks should pass.
+    if (desiredMembers.length > 0) {
+      const { error: upsertError } = await supabase
+        .from('course_members')
+        .upsert(desiredMembers, {
+          onConflict: 'course_id,user_id' // This tells Supabase how to find duplicates
+        });
+
+      if (upsertError) {
+        throw new Error(`There was an issue updating course members: ${upsertError.message}`);
+      }
+    }
+
+    // Step 3: DELETE members who are in the DB but no longer in the desired list.
+    const { data: currentDbMembers, error: fetchError } = await supabase
+      .from('course_members')
+      .select('user_id')
+      .eq('course_id', currentCourseId);
+
+    if (fetchError) {
+      // If we can't fetch, we shouldn't proceed with deletes.
+      // The upsert already handled additions/updates, so it's safer to stop here.
+      toast.warning("Could not verify member list for cleanup. Some old members may remain.", {
+        description: fetchError.message
+      });
+    } else {
+        const desiredMemberIds = new Set(desiredMembers.map(m => m.user_id));
+        const membersToRemove = currentDbMembers
+          .filter(dbMember => !desiredMemberIds.has(dbMember.user_id))
+          .map(dbMember => dbMember.user_id);
     
-    if (membersToInsert.length > 0) {
-      await supabase.from('course_members').insert(membersToInsert);
+        if (membersToRemove.length > 0) {
+          const { error: deleteError } = await supabase
+            .from('course_members')
+            .delete()
+            .eq('course_id', currentCourseId)
+            .in('user_id', membersToRemove);
+          
+          if (deleteError) {
+            // This delete is non-critical for the main save, so we'll toast a warning instead of throwing.
+            toast.warning("Failed to clean up old course members.", {
+              description: deleteError.message
+            });
+          }
+        } else if (currentDbMembers.length > 0 && desiredMembers.length === 0) {
+            // Handle case where all members are removed.
+            const { error: deleteAllError } = await supabase
+                .from('course_members')
+                .delete()
+                .eq('course_id', currentCourseId);
+            if (deleteAllError) {
+                 toast.warning("Failed to remove all course members.", {
+                    description: deleteAllError.message
+                });
+            }
+        }
     }
     
     return currentCourseId;
@@ -1158,6 +1239,74 @@ const CourseBuilder = () => {
       navigate('/dashboard/courses');
     }
     setIsDeleteDialogOpen(false);
+  };
+
+  const handleSubmitForReview = async () => {
+    setSaveAction('review');
+    try {
+      // First, ensure the course is saved as a draft. This will create a new one if it's new,
+      // or update the existing one.
+      const savedId = await saveCourseData({ ...courseData, status: 'Draft' });
+      
+      if (!savedId) {
+        throw new Error("Failed to save the course before submitting for review.");
+      }
+      
+      // Now that we're sure we have a saved course, call the RPC.
+      const { error } = await supabase.rpc('submit_for_review', { course_id_in: savedId });
+      if (error) throw error;
+      
+      toast.success("Course submitted for review successfully!");
+      // Update the local state to reflect the new status and ID if it was a new course
+      setCourseData(prev => ({ ...prev, id: savedId, status: 'Under Review' }));
+    } catch (error: any) {
+      toast.error('Failed to submit for review.', { description: error.message });
+      console.error(error);
+    } finally {
+      setSaveAction(null);
+    }
+  };
+
+  const handleApproveSubmission = async () => {
+    if (!courseData.id) return;
+    setSaveAction('approve');
+    try {
+      const { error } = await supabase.rpc('approve_submission', { course_id_in: courseData.id });
+      if (error) throw error;
+      
+      toast.success("Course approved and published successfully!");
+      navigate('/dashboard/courses');
+    } catch (error: any) {
+      toast.error('Failed to approve submission.', { description: error.message });
+      console.error(error);
+    } finally {
+      setSaveAction(null);
+    }
+  };
+
+  const handleRejectSubmission = async () => {
+    if (!courseData.id || !rejectionFeedback.trim()) {
+      toast.error("Rejection feedback cannot be empty.");
+      return;
+    }
+    setSaveAction('reject');
+    try {
+      const { error } = await supabase.rpc('reject_submission', {
+        course_id_in: courseData.id,
+        feedback: rejectionFeedback,
+      });
+      if (error) throw error;
+      
+      toast.success("Submission rejected.");
+      setCourseData(prev => ({ ...prev, status: 'Rejected', review_feedback: rejectionFeedback }));
+      setIsRejectionDialogOpen(false);
+      setRejectionFeedback("");
+    } catch (error: any) {
+      toast.error('Failed to reject submission.', { description: error.message });
+      console.error(error);
+    } finally {
+      setSaveAction(null);
+    }
   };
 
   const sensors = useSensors(
@@ -1420,8 +1569,8 @@ const CourseBuilder = () => {
   };
 
   const canDelete = user && courseData.id && courseData.authorId && (
-    (user.app_metadata.role === 'admin' || userProfiles.find(p => p.id === user.id)?.role === 'admin') ||
-    (user.app_metadata.role === 'teacher' && courseData.status === 'Draft' && user.id === courseData.authorId)
+    currentUserRole === 'admin' ||
+    (currentUserRole === 'teacher' && user.id === courseData.authorId && (courseData.status === 'Draft' || courseData.status === 'Rejected'))
   );
 
   const isFormValid = Object.keys(validationErrors).length === 0;
@@ -1448,7 +1597,14 @@ const CourseBuilder = () => {
                 {courseData.title || 'New Course'}
               </h1>
               <div className="flex items-center gap-2 mt-1">
-                <Badge variant={courseData.status === 'Published' ? 'default' : 'secondary'}>{courseData.status || 'Draft'}</Badge>
+                <Badge variant={
+                  courseData.status === 'Published' ? 'default' :
+                  courseData.status === 'Under Review' ? 'outline' :
+                  courseData.status === 'Rejected' ? 'destructive' :
+                  'secondary'
+                }>
+                  {courseData.status || 'Draft'}
+                </Badge>
                 <span className="text-sm text-muted-foreground">
                   Last saved: 2 minutes ago
                 </span>
@@ -1461,20 +1617,70 @@ const CourseBuilder = () => {
               <Eye className="w-4 h-4 mr-2" />
               Preview
             </Button>
-            <Button onClick={handleSaveDraftClick} disabled={isSaving}>
-              <Save className="w-4 h-4 mr-2" />
-              {saveAction === 'draft' ? 'Saving...' : 'Save Draft'}
-            </Button>
-            {courseData.status === 'Published' ? (
-              <Button onClick={handleUnpublishClick} className="bg-yellow-600 hover:bg-yellow-700" disabled={isSaving}>
-                {saveAction === 'unpublish' ? 'Unpublishing...' : 'Unpublish'}
-            </Button>
-            ) : (
-              <Button onClick={handlePublishClick} className="bg-green-600 hover:bg-green-700" disabled={isSaving || !isFormValid}>
-                {saveAction === 'publish' ? 'Publishing...' : 'Publish'}
-              </Button>
+
+            {/* Teacher Buttons */}
+            {currentUserRole === 'teacher' && (
+              <>
+                {(courseData.status === 'Draft' || courseData.status === 'Rejected') && (
+                  <>
+                    <Button onClick={handleSaveDraftClick} disabled={isSaving}>
+                      <Save className="w-4 h-4 mr-2" />
+                      {saveAction === 'draft' ? 'Saving...' : (courseData.id ? 'Update Draft' : 'Save Draft')}
+                    </Button>
+                    <Button onClick={handleSubmitForReview} className="bg-blue-600 hover:bg-blue-700" disabled={isSaving || !isFormValid}>
+                      {saveAction === 'review' ? 'Submitting...' : 'Submit for Review'}
+                    </Button>
+                  </>
+                )}
+                {courseData.status === 'Published' && (
+                   <Button onClick={handleSaveDraftClick} disabled={isSaving}>
+                      <Save className="w-4 h-4 mr-2" />
+                      {saveAction === 'draft' ? 'Creating...' : 'Create New Draft'}
+                    </Button>
+                )}
+              </>
             )}
-             {canDelete && (
+
+            {/* Admin Buttons */}
+            {currentUserRole === 'admin' && (
+              <>
+                {(courseData.status === 'Draft' || courseData.status === 'Rejected') && (
+                   <Button onClick={handleSaveDraftClick} disabled={isSaving}>
+                    <Save className="w-4 h-4 mr-2" />
+                    {saveAction === 'draft' ? 'Saving...' : (courseData.id ? 'Update Draft' : 'Save Draft')}
+                  </Button>
+                )}
+                {courseData.status === 'Published' ? (
+                  <>
+                    <Button onClick={handleSaveDraftClick} disabled={isSaving}>
+                       <Save className="w-4 h-4 mr-2" />
+                       {saveAction === 'draft' ? 'Creating...' : 'Create New Draft'}
+                     </Button>
+                    <Button onClick={handleUnpublishClick} className="bg-yellow-600 hover:bg-yellow-700" disabled={isSaving}>
+                      {saveAction === 'unpublish' ? 'Unpublishing...' : 'Unpublish'}
+                    </Button>
+                  </>
+                ) : (
+                  (courseData.status === 'Draft' || courseData.status === 'Rejected') && (
+                    <Button onClick={handlePublishClick} className="bg-green-600 hover:bg-green-700" disabled={isSaving || !isFormValid}>
+                      {saveAction === 'publish' ? 'Publishing...' : 'Publish'}
+                    </Button>
+                  )
+                )}
+                {courseData.status === 'Under Review' && (
+                  <>
+                    <Button onClick={() => setIsRejectionDialogOpen(true)} variant="destructive" disabled={isSaving}>
+                        {saveAction === 'reject' ? 'Rejecting...' : 'Reject'}
+                    </Button>
+                    <Button onClick={handleApproveSubmission} className="bg-green-600 hover:bg-green-700" disabled={isSaving}>
+                      {saveAction === 'approve' ? 'Approving...' : 'Approve & Publish'}
+                    </Button>
+                  </>
+                )}
+              </>
+            )}
+            
+            {canDelete && (
                 <Button variant="destructive" onClick={() => setIsDeleteDialogOpen(true)} disabled={isSaving}>
                     Delete
                 </Button>
@@ -1485,6 +1691,19 @@ const CourseBuilder = () => {
 
       {/* Main Content */}
       <div className="flex-1">
+        {courseData.status === 'Rejected' && courseData.review_feedback && (
+          <div className="p-6 pt-6 pb-0">
+            <Alert variant="destructive">
+              <Terminal className="h-4 w-4" />
+              <AlertTitle>Submission Rejected</AlertTitle>
+              <AlertDescription>
+                <p className="font-semibold">An admin provided the following feedback:</p>
+                <p className="mt-2 p-2 bg-background rounded-md">{courseData.review_feedback}</p>
+                <p className="mt-2 text-sm text-muted-foreground">Please address the feedback and resubmit the course for review.</p>
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
           <div className="border-b">
             <TabsList className="w-full justify-start rounded-none h-12 bg-transparent p-0">
@@ -1934,6 +2153,35 @@ const CourseBuilder = () => {
           <div className="flex-1 overflow-y-auto">
             <CourseOverview courseData={courseData} isPreviewMode={true} />
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isRejectionDialogOpen} onOpenChange={setIsRejectionDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject Submission</DialogTitle>
+            <DialogDescription>
+              Please provide feedback for the teacher explaining why the submission is being rejected. This feedback will be visible to them.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Textarea
+              placeholder="Enter rejection feedback..."
+              value={rejectionFeedback}
+              onChange={(e) => setRejectionFeedback(e.target.value)}
+              rows={4}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsRejectionDialogOpen(false)}>Cancel</Button>
+            <Button
+              variant="destructive"
+              onClick={handleRejectSubmission}
+              disabled={!rejectionFeedback.trim()}
+            >
+              Confirm Rejection
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
