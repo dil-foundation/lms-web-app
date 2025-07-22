@@ -61,7 +61,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 
-type CourseStatus = "Published" | "Draft" | "Under Review";
+type CourseStatus = "Published" | "Draft" | "Under Review" | "Rejected";
 
 interface Course {
   id: string;
@@ -89,7 +89,15 @@ const CourseCard = ({ course, onDelete }: { course: Course, onDelete: (course: C
     <Card>
       <CardHeader className="p-0 relative">
         <img src={course.imageUrl} alt={course.title} className="w-full h-40 object-cover rounded-t-lg" />
-        <Badge variant={course.status === 'Published' ? 'default' : 'secondary'} className="absolute top-2 left-2">
+        <Badge
+          variant={
+            course.status === 'Published' ? 'default' :
+            course.status === 'Rejected' ? 'destructive' :
+            course.status === 'Under Review' ? 'warning' :
+            'secondary'
+          }
+          className="absolute top-2 left-2"
+        >
           {course.status}
       </Badge>
       </CardHeader>
@@ -136,18 +144,15 @@ const CourseManagement = () => {
 
   const fetchStats = useCallback(async () => {
     if (!user) {
-      console.log("fetchStats: No user found, aborting.");
       return;
     }
     setLoadingStats(true);
-    console.log("fetchStats: Starting for user:", user.id, "with initial app_metadata.role:", user.app_metadata.role);
 
     try {
       let role = user.app_metadata.role;
 
       // If role is not in metadata, fetch it from the user's profile as a fallback.
       if (!role) {
-        console.log("fetchStats: Role not in metadata, fetching from profiles table...");
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('role')
@@ -160,11 +165,9 @@ const CourseManagement = () => {
         }
 
         role = profileData?.role;
-        console.log("fetchStats: Role fetched from profile:", role);
       }
 
       if (role === 'admin') {
-        console.log("fetchStats: Admin role detected. Fetching admin stats.");
         const [totalRes, publishedRes, draftRes, studentsRes] = await Promise.all([
             supabase.from('courses').select('id', { count: 'exact', head: true }),
             supabase.from('courses').select('id', { count: 'exact', head: true }).eq('status', 'Published'),
@@ -172,7 +175,6 @@ const CourseManagement = () => {
             supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student')
         ]);
 
-        console.log("fetchStats (Admin) - Raw responses:", { totalRes, publishedRes, draftRes, studentsRes });
 
         if (totalRes.error || publishedRes.error || draftRes.error || studentsRes.error) {
             console.error("fetchStats (Admin) - Error in Promise.all:", {
@@ -191,66 +193,55 @@ const CourseManagement = () => {
         };
         const studentsToSet = studentsRes.count || 0;
 
-        console.log("fetchStats (Admin) - Setting stats:", statsToSet);
-        console.log("fetchStats (Admin) - Setting total students:", studentsToSet);
-
         setStats(statsToSet);
         setTotalStudents(studentsToSet);
 
       } else if (role === 'teacher') {
-        console.log("fetchStats: Teacher role detected. Fetching teacher stats.");
-        const { data: authoredCourses, error: authoredError } = await supabase.from('courses').select('id').eq('author_id', user.id);
-        if (authoredError) throw authoredError;
-        console.log("fetchStats (Teacher) - Authored courses:", authoredCourses);
+        // RLS will automatically filter to courses the teacher can access.
+        const [totalRes, publishedRes, draftRes] = await Promise.all([
+            supabase.from('courses').select('id', { count: 'exact', head: true }),
+            supabase.from('courses').select('id', { count: 'exact', head: true }).eq('status', 'Published'),
+            supabase.from('courses').select('id', { count: 'exact', head: true }).eq('status', 'Draft'),
+        ]);
+        
 
-        const { data: memberCourses, error: memberError } = await supabase.from('course_members').select('course_id').eq('user_id', user.id).eq('role', 'teacher');
-        if (memberError) throw memberError;
-        console.log("fetchStats (Teacher) - Member courses:", memberCourses);
+        if (totalRes.error || publishedRes.error || draftRes.error) {
+            console.error("fetchStats (Teacher) - Error fetching course counts:", { totalRes, publishedRes, draftRes });
+            throw totalRes.error || publishedRes.error || draftRes.error;
+        }
 
-        const courseIds = [...new Set([...(authoredCourses || []).map(c => c.id), ...(memberCourses || []).map(m => m.course_id)])];
-        console.log("fetchStats (Teacher) - Combined course IDs:", courseIds);
+        const statsToSet = {
+            total: totalRes.count || 0,
+            published: publishedRes.count || 0,
+            draft: draftRes.count || 0,
+        };
+        setStats(statsToSet);
 
-        if (courseIds.length === 0) {
-          console.log("fetchStats (Teacher) - No courses found, setting stats to zero.");
-          setStats({ total: 0, published: 0, draft: 0 });
-          setTotalStudents(0);
-        } else {
-            const [totalRes, publishedRes, draftRes, studentsRes] = await Promise.all([
-                supabase.from('courses').select('id', { count: 'exact', head: true }).in('id', courseIds),
-                supabase.from('courses').select('id', { count: 'exact', head: true }).in('id', courseIds).eq('status', 'Published'),
-                supabase.from('courses').select('id', { count: 'exact', head: true }).in('id', courseIds).eq('status', 'Draft'),
-                supabase.from('course_members').select('user_id').in('course_id', courseIds).eq('role', 'student')
-            ]);
+        // For student count, we need the IDs of visible courses.
+        const { data: visibleCourses, error: coursesError } = await supabase.from('courses').select('id');
+        if (coursesError) throw coursesError;
 
-            console.log("fetchStats (Teacher) - Raw responses:", { totalRes, publishedRes, draftRes, studentsRes });
+        if (visibleCourses && visibleCourses.length > 0) {
+            const courseIds = visibleCourses.map(c => c.id);
+            const { data: studentMembers, error: studentsError } = await supabase
+                .from('course_members')
+                .select('user_id')
+                .in('course_id', courseIds)
+                .eq('role', 'student');
+            
+            if (studentsError) throw studentsError;
 
-            if (totalRes.error || publishedRes.error || draftRes.error || studentsRes.error) {
-                 console.error("fetchStats (Teacher) - Error in Promise.all:", {
-                    totalError: totalRes.error,
-                    publishedError: publishedRes.error,
-                    draftError: draftRes.error,
-                    studentsError: studentsRes.error
-                 });
-                 throw totalRes.error || publishedRes.error || draftRes.error || studentsRes.error;
+            if (studentMembers) {
+                const uniqueStudentIds = new Set(studentMembers.map(member => member.user_id));
+                const studentsToSet = uniqueStudentIds.size;
+                setTotalStudents(studentsToSet);
+            } else {
+                setTotalStudents(0);
             }
-
-            const uniqueStudentIds = new Set((studentsRes.data || []).map(s => s.user_id));
-
-            const statsToSet = {
-                total: totalRes.count || 0,
-                published: publishedRes.count || 0,
-                draft: draftRes.count || 0,
-            };
-            const studentsToSet = uniqueStudentIds.size;
-
-            console.log("fetchStats (Teacher) - Setting stats:", statsToSet);
-            console.log("fetchStats (Teacher) - Setting total students:", studentsToSet);
-
-            setStats(statsToSet);
-            setTotalStudents(studentsToSet);
+        } else {
+            setTotalStudents(0);
         }
       } else {
-        console.warn(`fetchStats: User has no recognized role ('admin' or 'teacher'). Role found: ${role}. Stats will be zero.`);
         setStats({ total: 0, published: 0, draft: 0 });
         setTotalStudents(0);
       }
@@ -258,7 +249,6 @@ const CourseManagement = () => {
       toast.error("Failed to load dashboard statistics.", { description: error.message });
       console.error("Error fetching stats:", error);
     } finally {
-      console.log("fetchStats: Finished.");
       setLoadingStats(false);
     }
   }, [user]);
@@ -268,6 +258,7 @@ const CourseManagement = () => {
   }, [fetchStats]);
 
   const fetchData = useCallback(async () => {
+    if (!user) return;
     setLoading(true);
     try {
       const from = (currentPage - 1) * rowsPerPage;
@@ -290,6 +281,11 @@ const CourseManagement = () => {
           sections:course_sections(lessons:course_lessons(id))
         `, { count: 'exact' });
 
+      // RLS (Row Level Security) in Supabase is already configured to only return courses
+      // that the logged-in user (teacher or admin) is allowed to see.
+      // The previous client-side logic to filter courses for teachers was redundant
+      // and was causing a discrepancy with the RLS policy, leading to missing courses.
+      // By removing it, we rely on the RLS as the single source of truth.
 
       if (searchQuery) {
         query = query.ilike('title', `%${searchQuery}%`);
@@ -339,7 +335,7 @@ const CourseManagement = () => {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, statusFilter, currentPage, rowsPerPage]);
+  }, [searchQuery, statusFilter, currentPage, rowsPerPage, user]);
 
   useEffect(() => {
     fetchData();
@@ -482,6 +478,12 @@ const CourseManagement = () => {
                   onCheckedChange={() => setStatusFilter('Under Review')}
                 >
                   Under Review
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={statusFilter === 'Rejected'}
+                  onCheckedChange={() => setStatusFilter('Rejected')}
+                >
+                  Rejected
                 </DropdownMenuCheckboxItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

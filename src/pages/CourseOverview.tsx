@@ -50,7 +50,7 @@ interface CourseData {
       title: string;
       lessons: { id: string; title: string; }[];
   }[];
-  teachers: { name: string; }[];
+  teachers: { name: string; email: string; }[];
   students: { id: string; }[];
   duration?: string;
   level?: string;
@@ -103,10 +103,6 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
   };
 
   const mapDataToCourse = (data: any, instructorExtraData?: any, progressData: any[] = []) => {
-    const teacherProfile = data.members?.find((m: any) => m.role === 'teacher')?.profile;
-    const firstTeacher = teacherProfile || { first_name: 'Instructor', last_name: 'TBD', email: 'Not available' };
-    const teacherName = `${firstTeacher.first_name || ''} ${firstTeacher.last_name || ''}`.trim();
-    const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
     const totalLessons = data.sections?.reduce((acc: number, section: any) => acc + (section.lessons?.length || 0), 0) || 0;
 
     const completedLessonsCount = progressData.filter(p => p.completed_at).length;
@@ -117,6 +113,28 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
 
     const allLessons = data.sections?.flatMap((s: any) => s.lessons) || [];
     let nextLessonTitle: string;
+
+    const teacherProfile = data.members?.find((m: any) => m.role === 'teacher')?.profile;
+    const previewTeacher = data.teachers?.[0]; // Teachers from CourseBuilder state
+
+    let teacherName: string;
+    let teacherEmail: string;
+
+    if (previewTeacher && previewTeacher.name) {
+      // Use data from preview mode if available and valid
+      teacherName = previewTeacher.name;
+      teacherEmail = previewTeacher.email || 'Not available';
+    } else if (teacherProfile) {
+      // Use data from fetched live course
+      teacherName = `${teacherProfile.first_name || ''} ${teacherProfile.last_name || ''}`.trim() || 'Teacher TBD';
+      teacherEmail = teacherProfile.email || 'Not available';
+    } else {
+      // Fallback
+      teacherName = 'Teacher TBD';
+      teacherEmail = 'Not available';
+    }
+
+    const getInitials = (name: string) => (name.split(' ').map(n => n[0]).join('').toUpperCase() || 'T');
 
     if (totalLessons === 0) {
       nextLessonTitle = "No lessons yet";
@@ -141,7 +159,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
       hasValidVideo: isValidVideoUrl(data.video_url || data.preview_video_url),
       instructor: {
         name: teacherName,
-        title: instructorExtraData?.email || firstTeacher.email || "Email not available",
+        title: instructorExtraData?.email || teacherEmail,
         avatar: getInitials(teacherName),
         rating: instructorExtraData?.rating || 4.8,
         students: instructorExtraData?.students || 0,
@@ -183,7 +201,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
   }
 
   useEffect(() => {
-    const fetchCourseData = async (id: string) => {
+    const fetchAndSetCourse = async (id: string) => {
       setIsLoading(true);
       setError(null);
       try {
@@ -244,18 +262,19 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                 coursesCount = publishedCoursesCount || 0;
               }
 
-              // Now, count all the students in the teacher's courses
+              // Now, count all the unique students in the teacher's courses
               if (courseIds.length > 0) {
-                const { count, error: studentCountError } = await supabase
+                const { data: studentMembers, error: studentCountError } = await supabase
                   .from('course_members')
-                  .select('id', { count: 'exact', head: true })
+                  .select('user_id')
                   .in('course_id', courseIds)
                   .eq('role', 'student');
                 
                 if (studentCountError) {
                   console.error("Error fetching student count:", studentCountError.message);
-                } else {
-                  studentCount = count || 0;
+                } else if (studentMembers) {
+                  const uniqueStudentIds = new Set(studentMembers.map(m => m.user_id));
+                  studentCount = uniqueStudentIds.size;
                 }
               }
             }
@@ -306,10 +325,28 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
     };
 
     if (initialCourseData) {
-      setCourse(mapDataToCourse(initialCourseData));
+      // Logic for Preview Mode
+      const primaryTeacher = initialCourseData.teachers?.[0];
+      let instructorExtraData = {};
+
+      if (primaryTeacher) {
+        // In a real app with more complex data, you might need to fetch this.
+        // For preview, we can derive it or use placeholder logic.
+        // This is a simplified calculation for the preview.
+        instructorExtraData = {
+          email: primaryTeacher.email,
+          courses: 1, // Placeholder: Represents the current course
+          students: initialCourseData.students?.length || 0,
+          rating: 4.8, // Placeholder rating
+        };
+      }
+      
+      const mappedCourse = mapDataToCourse(initialCourseData, instructorExtraData);
+      setCourse(mappedCourse);
       setIsLoading(false);
     } else if (courseId) {
-      fetchCourseData(courseId);
+      // Logic for Live Mode
+      fetchAndSetCourse(courseId);
     } else {
       setIsLoading(false);
       setError("No course specified.");
@@ -629,7 +666,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
             {/* Instructor */}
             <Card>
               <CardHeader>
-                <CardTitle>Instructor</CardTitle>
+                <CardTitle>Teacher</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-start gap-4">
