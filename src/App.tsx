@@ -13,8 +13,11 @@ import StudentAuth from './pages/StudentAuth';
 import TeacherAuth from './pages/TeacherAuth';
 import AdminAuth from './pages/AdminAuth';
 import ProfileSettings from './pages/ProfileSettings';
+import SecureObserverFormPage from './pages/SecureObserverFormPage';
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AILMSProvider } from "@/contexts/AILMSContext";
+import { ObservationReportsProvider } from "@/contexts/ObservationReportsContext";
+import { SecureLinksProvider } from "@/contexts/SecureLinksContext";
 import ScrollToTop from "@/components/ScrollToTop";
 
 const queryClient = new QueryClient({
@@ -34,18 +37,23 @@ const App = () => (
         <ScrollToTop />
         <AuthProvider>
           <AILMSProvider>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/auth" element={<RoleSelection />} />
-          <Route path="/auth/student" element={<StudentAuth />} />
-          <Route path="/auth/teacher" element={<TeacherAuth />} />
-          <Route path="/auth/admin" element={<AdminAuth />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/dashboard/*" element={<Dashboard />} />
-          <Route path="/course-builder/:courseId" element={<CourseBuilder />} />
-          <Route path="/profile-settings" element={<ProfileSettings />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+            <ObservationReportsProvider>
+              <SecureLinksProvider>
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/auth" element={<RoleSelection />} />
+                  <Route path="/auth/student" element={<StudentAuth />} />
+                  <Route path="/auth/teacher" element={<TeacherAuth />} />
+                  <Route path="/auth/admin" element={<AdminAuth />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/dashboard/*" element={<Dashboard />} />
+                  <Route path="/course-builder/:courseId" element={<CourseBuilder />} />
+                  <Route path="/profile-settings" element={<ProfileSettings />} />
+                  <Route path="/secure-form/:token" element={<SecureObserverFormPage />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </SecureLinksProvider>
+            </ObservationReportsProvider>
           </AILMSProvider>
         </AuthProvider>
       </BrowserRouter>

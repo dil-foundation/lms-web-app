@@ -1,320 +1,857 @@
-import { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Zap, Mic, CheckCircle, XCircle, Volume2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Zap, Play, Mic, AlertCircle, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ContentLoader } from '@/components/ContentLoader';
+import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
+import { useAuth } from '@/hooks/useAuth';
 
-interface Question {
+// Types
+interface QuickAnswerQuestion {
+  id: string;
   question: string;
-  expectedAnswer: string;
-  hints: string[];
+  urdu_text?: string;
+  expected_answers?: string[];
+  expected_answers_urdu?: string[];
+  keywords?: string[];
+  hint?: string;
+  type?: string;
+  difficulty_level?: string;
+  created_at?: string;
 }
 
-const whQuestions: Question[] = [
-  {
-    question: "Where do you live?",
-    expectedAnswer: "I live in [city/place]",
-    hints: ["Use 'I live in...'", "Mention your city or area"]
-  },
-  {
-    question: "What time do you wake up?",
-    expectedAnswer: "I wake up at [time]",
-    hints: ["Use 'I wake up at...'", "Mention the time like '7 AM'"]
-  },
-  {
-    question: "Who is your best friend?",
-    expectedAnswer: "My best friend is [name]",
-    hints: ["Use 'My best friend is...'", "You can say a name or describe them"]
-  },
-  {
-    question: "When do you have lunch?",
-    expectedAnswer: "I have lunch at [time]",
-    hints: ["Use 'I have lunch at...'", "Mention the time like '12 PM'"]
-  },
-  {
-    question: "How do you go to work?",
-    expectedAnswer: "I go to work by [transport]",
-    hints: ["Use 'I go by...' or 'I take...'", "Mention bus, car, walking, etc."]
-  },
-  {
-    question: "Why do you study English?",
-    expectedAnswer: "I study English because [reason]",
-    hints: ["Use 'I study English because...'", "Give a reason like 'for work' or 'to travel'"]
-  }
-];
+interface EvaluationFeedback {
+  score?: number;
+  feedback?: string;
+  accuracy?: number;
+  pronunciation?: string;
+  suggestions?: string[];
+  message?: string;
+}
 
-const mockUserResponses = [
-  "I live in Lahore city with my family",
-  "I wake up at 6:30 in the morning",
-  "My best friend is Ahmed from school",
-  "I have lunch at 1 PM usually",
-  "I go to work by bus every day",
-  "I study English because I want to get better job",
-  "I live in Karachi near the beach",
-  "I wake up early at 5 AM for prayers",
-  "My best friend is my sister Fatima",
-  "I have lunch at 12:30 with colleagues",
-  "I go to work by motorcycle",
-  "I study English because I like to travel"
-];
+// API Functions
+const fetchQuickAnswerQuestions = async (): Promise<QuickAnswerQuestion[]> => {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+    const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.QUICK_ANSWER_QUESTIONS}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => 'No response text');
+      throw new Error(`HTTP ${response.status}: ${response.statusText}${errorText ? ` - ${errorText}` : ''}`);
+    }
+
+    const responseText = await response.text();
+    
+    let result: any;
+    try {
+      result = JSON.parse(responseText);
+    } catch (parseError) {
+      throw new Error('Invalid JSON response from server');
+    }
+
+    // Handle different possible response formats
+    let questions: any[] = [];
+
+    if (Array.isArray(result)) {
+      questions = result;
+    } else if (result && typeof result === 'object' && result.data && Array.isArray(result.data)) {
+      questions = result.data;
+    } else if (result && typeof result === 'object' && result.questions && Array.isArray(result.questions)) {
+      questions = result.questions;
+    } else if (result && typeof result === 'object') {
+      const arrayProperties = Object.keys(result).filter(key => Array.isArray(result[key]));
+      if (arrayProperties.length > 0) {
+        questions = result[arrayProperties[0]];
+      } else {
+        throw new Error('No question array found in response');
+      }
+    } else {
+      throw new Error('Unexpected response format from server');
+    }
+
+    // Normalize questions to our expected format
+    const normalizedQuestions: QuickAnswerQuestion[] = questions.map((item: any, index: number) => {
+      let question: QuickAnswerQuestion;
+      
+      // Helper function to safely extract string value
+      const getStringValue = (obj: any, ...keys: string[]): string | undefined => {
+        for (const key of keys) {
+          if (obj[key] !== undefined && obj[key] !== null) {
+            if (typeof obj[key] === 'string') {
+              return obj[key];
+            } else if (typeof obj[key] === 'object') {
+              return JSON.stringify(obj[key]);
+            } else {
+              return String(obj[key]);
+            }
+          }
+        }
+        return undefined;
+      };
+
+      // Helper function to safely extract array
+      const getArrayValue = (obj: any, ...keys: string[]): string[] | undefined => {
+        for (const key of keys) {
+          if (obj[key] !== undefined && obj[key] !== null) {
+            if (Array.isArray(obj[key])) {
+              return obj[key].map((item: any) => 
+                typeof item === 'string' ? item : String(item)
+              );
+            } else if (typeof obj[key] === 'string') {
+              return [obj[key]];
+            }
+          }
+        }
+        return undefined;
+      };
+      
+      if (typeof item === 'string') {
+        question = {
+          id: String(index + 1),
+          question: item,
+        };
+      } else if (item && typeof item === 'object') {
+        question = {
+          id: item.id ? String(item.id) : String(index + 1),
+          question: getStringValue(item, 'question', 'prompt', 'text', 'query') || String(item),
+          urdu_text: getStringValue(item, 'urdu_text', 'question_urdu', 'urdu', 'urdu_translation', 'translation'),
+          expected_answers: getArrayValue(item, 'expected_answers', 'answers', 'expected', 'responses'),
+          expected_answers_urdu: getArrayValue(item, 'expected_answers_urdu', 'answers_urdu', 'expected_urdu'),
+          keywords: getArrayValue(item, 'keywords', 'key_words', 'important_words'),
+          hint: getStringValue(item, 'hint', 'tip', 'help', 'guidance'),
+          type: getStringValue(item, 'type', 'category'),
+          difficulty_level: getStringValue(item, 'difficulty_level', 'difficulty', 'level'),
+          created_at: getStringValue(item, 'created_at', 'createdAt', 'timestamp'),
+        };
+      } else {
+        question = {
+          id: String(index + 1),
+          question: String(item),
+        };
+      }
+
+      if (!question.question || question.question.trim() === '' || question.question === '[object Object]') {
+        return null;
+      }
+
+      return question;
+    }).filter((question): question is QuickAnswerQuestion => question !== null);
+
+    if (normalizedQuestions.length === 0) {
+      throw new Error('No valid questions found in API response');
+    }
+
+    return normalizedQuestions;
+
+  } catch (error) {
+    console.error('Error fetching quick answer questions:', error);
+    
+    if (error.name === 'AbortError') {
+      throw new Error('Request timed out. Please check your internet connection.');
+    }
+    
+    if (error.message.includes('fetch')) {
+      throw new Error('Unable to connect to the server. Please check your internet connection.');
+    }
+    
+    throw error;
+  }
+};
 
 export default function QuickAnswer() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [questions, setQuestions] = useState<QuickAnswerQuestion[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [userAnswer, setUserAnswer] = useState('');
-  const [feedback, setFeedback] = useState<{
-    pronunciation: string;
-    grammar: string;
-    answerMatch: string;
-    overall: 'good' | 'needs_improvement';
-  } | null>(null);
-  const [showHints, setShowHints] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isEvaluating, setIsEvaluating] = useState(false);
+  const [feedback, setFeedback] = useState<EvaluationFeedback | null>(null);
+  const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
+  const [showExpectedAnswers, setShowExpectedAnswers] = useState(false);
+  
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const currentQuestion = whQuestions[currentQuestionIndex];
+  const currentQuestion = questions[currentQuestionIndex];
 
-  const generateFeedback = (answer: string) => {
-    const feedbackOptions = {
-      pronunciation: [
-        "Great pronunciation! Very clear.",
-        "Good pronunciation. Try to speak a bit slower.",
-        "Nice effort! Work on the 'th' sound.",
-        "Clear speaking. Good job!",
-        "Excellent pronunciation!"
-      ],
-      grammar: [
-        "Perfect grammar structure!",
-        "Good sentence structure. Well done!",
-        "Grammar is correct. Nice work!",
-        "Try to use complete sentences.",
-        "Good use of grammar rules!"
-      ],
-      answerMatch: [
-        "Perfect answer! You understood the question well.",
-        "Good answer! Very relevant to the question.",
-        "Nice response! You answered correctly.",
-        "Great! Your answer matches the question perfectly.",
-        "Excellent! You gave a complete answer."
-      ]
-    };
+  // Fetch audio for a question
+  const fetchAudio = async (questionId: string): Promise<string> => {
+    try {
+      const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.QUICK_ANSWER_AUDIO(questionId)}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      });
 
-    const randomPronunciation = feedbackOptions.pronunciation[Math.floor(Math.random() * feedbackOptions.pronunciation.length)];
-    const randomGrammar = feedbackOptions.grammar[Math.floor(Math.random() * feedbackOptions.grammar.length)];
-    const randomAnswerMatch = feedbackOptions.answerMatch[Math.floor(Math.random() * feedbackOptions.answerMatch.length)];
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => 'No response text');
+        throw new Error(`HTTP ${response.status}: ${response.statusText}${errorText ? ` - ${errorText}` : ''}`);
+      }
 
-    return {
-      pronunciation: randomPronunciation,
-      grammar: randomGrammar,
-      answerMatch: randomAnswerMatch,
-      overall: 'good' as const
-    };
-  };
+      const responseText = await response.text();
+      
+      let result: any;
+      try {
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        throw new Error('Invalid JSON response from server');
+      }
 
-  const handleSubmit = () => {
-    if (userAnswer.trim()) {
-      const newFeedback = generateFeedback(userAnswer);
-      setFeedback(newFeedback);
+      // Handle different possible response formats
+      let audioUrl: string | null = null;
+      
+      if (typeof result === 'string') {
+        audioUrl = result;
+      } else if (result && typeof result === 'object') {
+        // Check for base64 audio data first
+        if (result.audio_base64) {
+          try {
+            const base64Data = result.audio_base64.replace(/^data:audio\/[^;]+;base64,/, '');
+            
+            const binaryString = atob(base64Data);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+              bytes[i] = binaryString.charCodeAt(i);
+            }
+            
+            const audioBlob = new Blob([bytes], { type: 'audio/mpeg' });
+            audioUrl = URL.createObjectURL(audioBlob);
+          } catch (base64Error) {
+            throw new Error('Failed to process base64 audio data');
+          }
+        } else {
+          audioUrl = result.audio_url || result.audioUrl || result.url || result.audio || result.file_url;
+        }
+      }
+
+      if (!audioUrl) {
+        throw new Error('No audio URL or base64 data found in response');
+      }
+
+      return audioUrl;
+    } catch (error) {
+      console.error('Error fetching audio:', error);
+      throw error;
     }
   };
 
-  const handleNextQuestion = () => {
-    if (currentQuestionIndex < whQuestions.length - 1) {
+  // Play audio from URL
+  const playAudio = async (audioUrl: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const audio = new Audio(audioUrl);
+      
+      const cleanup = () => {
+        if (audioUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(audioUrl);
+        }
+      };
+      
+      audio.oncanplaythrough = () => {
+        audio.play()
+          .then(() => {
+            // Audio started playing successfully
+          })
+          .catch((playError) => {
+            cleanup();
+            reject(new Error('Failed to start audio playback'));
+          });
+      };
+      
+      audio.onerror = () => {
+        cleanup();
+        reject(new Error('Failed to load audio file'));
+      };
+      
+      audio.onended = () => {
+        cleanup();
+        resolve();
+      };
+      
+      setTimeout(() => {
+        if (audio.readyState < 3) {
+          cleanup();
+          reject(new Error('Audio loading timeout'));
+        }
+      }, 10000);
+    });
+  };
+
+  // Convert blob to base64
+  const blobToBase64 = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          const base64Data = reader.result.split(',')[1];
+          resolve(base64Data);
+        } else {
+          reject(new Error('Failed to convert blob to base64'));
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
+
+  // Start audio recording
+  const startRecording = async (): Promise<void> => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          sampleRate: 44100,
+          channelCount: 1
+        } 
+      });
+      
+      audioChunksRef.current = [];
+      mediaRecorderRef.current = new MediaRecorder(stream, {
+        mimeType: 'audio/webm;codecs=opus'
+      });
+      
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+      
+      mediaRecorderRef.current.start();
+      setRecordingStartTime(Date.now());
+      
+    } catch (error) {
+      throw new Error('Failed to start recording. Please check microphone permissions.');
+    }
+  };
+
+  // Stop recording and get audio blob
+  const stopRecording = (): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      if (!mediaRecorderRef.current) {
+        reject(new Error('No media recorder available'));
+        return;
+      }
+      
+      mediaRecorderRef.current.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm;codecs=opus' });
+        
+        if (mediaRecorderRef.current?.stream) {
+          mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+        }
+        
+        resolve(audioBlob);
+      };
+      
+      mediaRecorderRef.current.stop();
+    });
+  };
+
+  // Evaluate recorded audio
+  const evaluateAudio = async (audioBase64: string, timeSpentSeconds: number): Promise<EvaluationFeedback> => {
+    try {
+      const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.EVALUATE_QUICK_ANSWER}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          audio_base64: audioBase64,
+          question_id: Number(currentQuestion.id),
+          filename: `quick_answer_${currentQuestion.id}_${Date.now()}.webm`,
+          user_id: user?.id || 'anonymous',
+          time_spent_seconds: timeSpentSeconds,
+          urdu_used: !!currentQuestion.urdu_text
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => 'No response text');
+        throw new Error(`HTTP ${response.status}: ${response.statusText}${errorText ? ` - ${errorText}` : ''}`);
+      }
+
+      const result = await response.json();
+      
+      // Handle API error responses (like no_speech_detected)
+      if (result.success === false || result.error) {
+        const errorMessage = result.message || result.error || 'Speech evaluation failed';
+        
+        // Create feedback object for error cases
+        const feedback: EvaluationFeedback = {
+          score: 0,
+          feedback: errorMessage,
+          suggestions: result.keywords ? 
+            [`Try using keywords: ${result.keywords.join(', ')}`] : 
+            ['Please speak more clearly and try again']
+        };
+        
+        return feedback;
+      }
+      
+      // Handle successful evaluation responses
+      const evaluation = result.evaluation || result;
+      
+      const feedback: EvaluationFeedback = {
+        score: evaluation.score,
+        feedback: evaluation.feedback,
+        accuracy: evaluation.accuracy || evaluation.score,
+        pronunciation: evaluation.pronunciation,
+        suggestions: evaluation.suggestions,
+        message: evaluation.message || evaluation.feedback
+      };
+      
+      return feedback;
+    } catch (error) {
+      console.error('Error evaluating audio:', error);
+      throw error;
+    }
+  };
+
+  // Process recorded audio for evaluation
+  const processRecordedAudio = async () => {
+    if (!recordingStartTime) return;
+    
+    if (recordingTimeoutRef.current) {
+      clearTimeout(recordingTimeoutRef.current);
+      recordingTimeoutRef.current = null;
+    }
+    
+    setIsRecording(false);
+    setIsEvaluating(true);
+    
+    try {
+      const audioBlob = await stopRecording();
+      const audioBase64 = await blobToBase64(audioBlob);
+      const timeSpentSeconds = Math.round((Date.now() - recordingStartTime) / 1000);
+      
+      const evaluationResult = await evaluateAudio(audioBase64, timeSpentSeconds);
+      setFeedback(evaluationResult);
+      
+    } catch (error: any) {
+      console.error('Processing error:', error);
+      setError(error.message || 'Failed to process recording');
+    } finally {
+      setIsEvaluating(false);
+      setRecordingStartTime(null);
+    }
+  };
+
+  // Fetch questions on component mount
+  useEffect(() => {
+    const loadQuestions = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const fetchedQuestions = await fetchQuickAnswerQuestions();
+        setQuestions(fetchedQuestions);
+      } catch (err: any) {
+        setError(err.message || 'Failed to load quick answer questions from API');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadQuestions();
+  }, []);
+
+  const handlePlayAudio = async () => {
+    if (!currentQuestion) return;
+
+    setIsLoadingAudio(true);
+    
+    try {
+      const audioUrl = await fetchAudio(currentQuestion.id);
+      await playAudio(audioUrl);
+    } catch (error: any) {
+      console.error('Audio playback failed:', error.message);
+      // Silent fail for better user experience
+    } finally {
+      setIsLoadingAudio(false);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
-      setUserAnswer('');
-      setFeedback(null);
-      setShowHints(false);
     } else {
-      // Reset to first question
       setCurrentQuestionIndex(0);
-      setUserAnswer('');
-      setFeedback(null);
-      setShowHints(false);
+    }
+    setFeedback(null); // Clear feedback when navigating
+    setShowExpectedAnswers(false); // Reset toggle when changing questions
+  };
+
+  const handlePrevious = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(currentQuestionIndex - 1);
+    } else {
+      setCurrentQuestionIndex(questions.length - 1);
+    }
+    setFeedback(null); // Clear feedback when navigating
+    setShowExpectedAnswers(false); // Reset toggle when changing questions
+  };
+
+  const handleStartRecording = async () => {
+    if (!currentQuestion) return;
+    
+    setFeedback(null);
+    setIsRecording(true);
+    
+    try {
+      await startRecording();
+      
+      // Auto-stop recording after 10 seconds for quick answers
+      recordingTimeoutRef.current = setTimeout(() => {
+        if (mediaRecorderRef.current?.state === 'recording') {
+          processRecordedAudio().catch(error => {
+            console.error('Auto-stop processing error:', error);
+            setError('Failed to process recording');
+            setIsRecording(false);
+            setIsEvaluating(false);
+          });
+        }
+      }, 10000);
+      
+    } catch (error: any) {
+      setIsRecording(false);
+      setError(error.message || 'Failed to start recording');
     }
   };
 
-  const handleMockResponse = () => {
-    const randomResponse = mockUserResponses[Math.floor(Math.random() * mockUserResponses.length)];
-    setUserAnswer(randomResponse);
+  const handleStopRecording = async () => {
+    if (!mediaRecorderRef.current || mediaRecorderRef.current.state !== 'recording') return;
+    
+    await processRecordedAudio();
   };
 
-  const handleTryAgain = () => {
-    setUserAnswer('');
-    setFeedback(null);
-    setShowHints(false);
+  // Cleanup effect
+  useEffect(() => {
+    return () => {
+      if (recordingTimeoutRef.current) {
+        clearTimeout(recordingTimeoutRef.current);
+      }
+      
+      if (mediaRecorderRef.current?.state === 'recording') {
+        mediaRecorderRef.current.stop();
+        if (mediaRecorderRef.current.stream) {
+          mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+        }
+      }
+    };
+  }, []);
+
+  const handleRetry = () => {
+    setError(null);
+    setLoading(true);
+    
+    const loadQuestions = async () => {
+      try {
+        const fetchedQuestions = await fetchQuickAnswerQuestions();
+        setQuestions(fetchedQuestions);
+      } catch (err: any) {
+        setError(err.message || 'Failed to load quick answer questions from API');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadQuestions();
   };
 
+  // Helper function to safely display values
+  const safeDisplay = (value: any, fallback: string = ''): string => {
+    if (value === null || value === undefined) return fallback;
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number') return String(value);
+    if (typeof value === 'object') return JSON.stringify(value);
+    return String(value);
+  };
+
+  // Loading state
+  if (loading) {
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => navigate('/dashboard/practice/stage-2')}
-            className="shrink-0"
-          >
+      <div className="min-h-screen bg-background">
+        <div className="relative flex items-center justify-center mb-6 p-4 sm:p-6 lg:p-8">
+          <Button variant="outline" size="icon" className="absolute left-4 sm:left-6 lg:left-8" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          
-          <div className="text-center flex-1">
-            <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-2">
-              <Zap className="h-6 w-6 text-green-600 dark:text-green-400" />
+          <div className="text-center">
+            <div className="inline-block p-3 bg-primary/20 rounded-full mb-2">
+              <Zap className="h-8 w-8 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold">Quick Answer</h1>
-            <p className="text-muted-foreground">Practice responding to WH-questions</p>
+            <h1 className="text-3xl font-bold">Quick Answer</h1>
+            <p className="text-muted-foreground">Answer Questions Naturally</p>
           </div>
-          
-          <div className="w-10"></div>
         </div>
 
-        {/* Progress */}
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm text-muted-foreground">Question {currentQuestionIndex + 1} of {whQuestions.length}</span>
+        <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
+          <ContentLoader message="Loading questions..." />
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="relative flex items-center justify-center mb-6 p-4 sm:p-6 lg:p-8">
+          <Button variant="outline" size="icon" className="absolute left-4 sm:left-6 lg:left-8" onClick={() => navigate(-1)}>
+            <ArrowLeft className="h-4 w-4" />
+            </Button>
+          <div className="text-center">
+            <div className="inline-block p-3 bg-primary/20 rounded-full mb-2">
+              <Zap className="h-8 w-8 text-primary" />
+          </div>
+            <h1 className="text-3xl font-bold">Quick Answer</h1>
+            <p className="text-muted-foreground">Answer Questions Naturally</p>
+          </div>
+        </div>
+
+        <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
+          <Card className="w-full max-w-md">
+            <CardContent className="p-8">
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="mb-4">
+                  <strong>Failed to load questions:</strong><br />
+                  {error}
+                </AlertDescription>
+              </Alert>
+              
+              <Button 
+                onClick={handleRetry}
+                className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Try Again
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentQuestion) {
+    return null;
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="relative flex items-center justify-center mb-6 p-4 sm:p-6 lg:p-8">
+        <Button variant="outline" size="icon" className="absolute left-4 sm:left-6 lg:left-8" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-4 w-4" />
+                </Button>
+        <div className="text-center">
+          <div className="inline-block p-3 bg-primary/20 rounded-full mb-2">
+            <Zap className="h-8 w-8 text-primary" />
+          </div>
+          <h1 className="text-3xl font-bold">Quick Answer</h1>
+          <p className="text-muted-foreground">Answer Questions Naturally</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Question: {currentQuestionIndex + 1} of {questions.length}
+          </p>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 px-4 pb-4">
+        <Card className="max-w-md mx-auto">
+          <CardContent className="p-8 text-center">
+            {/* Question */}
+            <h2 className="text-2xl font-bold mb-4">
+              {safeDisplay(currentQuestion.question, 'No question available')}
+            </h2>
+            
+            {/* Urdu Text */}
+            {currentQuestion.urdu_text && (
+              <p className="text-xl text-muted-foreground mb-6" style={{ fontFamily: 'Noto Nastaliq Urdu, Arial, sans-serif' }}>
+                {safeDisplay(currentQuestion.urdu_text)}
+              </p>
+            )}
+
+            {/* Expected Answers */}
+            {currentQuestion.expected_answers && currentQuestion.expected_answers.length > 0 && (
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-medium text-green-700 dark:text-green-300">
+                    Expected Answers:
+                  </p>
+                <Button
+                  variant="outline"
+                    size="sm"
+                    onClick={() => setShowExpectedAnswers(!showExpectedAnswers)}
+                    className="text-xs px-3 py-1 h-7"
+                >
+                    {showExpectedAnswers ? 'Hide' : 'Show'}
+                </Button>
+                </div>
+                
+                {showExpectedAnswers && (
+                  <div className="space-y-3">
+                    {currentQuestion.expected_answers.map((answer, index) => (
+                      <div key={index} className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                        <p className="text-green-600 dark:text-green-400 font-medium mb-2">
+                          {safeDisplay(answer)}
+                        </p>
+                        {currentQuestion.expected_answers_urdu && currentQuestion.expected_answers_urdu[index] && (
+                          <p className="text-green-600 dark:text-green-400 text-sm" style={{ fontFamily: 'Noto Nastaliq Urdu, Arial, sans-serif' }}>
+                            {safeDisplay(currentQuestion.expected_answers_urdu[index])}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Keywords */}
+            {currentQuestion.keywords && currentQuestion.keywords.length > 0 && (
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6">
+                <p className="text-sm font-medium text-yellow-700 dark:text-yellow-300 mb-2">
+                  Keywords to Include:
+                </p>
+                <p className="text-yellow-600 dark:text-yellow-400 font-medium">
+                  {currentQuestion.keywords.map(keyword => safeDisplay(keyword)).join(', ')}
+                </p>
+            </div>
+            )}
+
+            {/* Play Button */}
             <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowHints(!showHints)}
+              onClick={handlePlayAudio}
+              disabled={isLoadingAudio}
+              className={`w-20 h-20 rounded-full text-white shadow-lg mb-6 ${
+                isLoadingAudio 
+                  ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed' 
+                  : 'bg-green-500 hover:bg-green-600'
+              }`}
+              size="icon"
             >
-              {showHints ? 'Hide' : 'Show'} Hints
+              {isLoadingAudio ? (
+                <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Play className="w-10 h-10" />
+              )}
+            </Button>
+
+            {/* Instruction */}
+            <p className="text-muted-foreground text-sm">
+              Listen to the question and answer naturally
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Navigation buttons */}
+        {questions.length > 1 && (
+          <div className="flex gap-4 mt-6 max-w-md mx-auto">
+            <Button
+              onClick={handlePrevious}
+              variant="outline"
+              className="flex-1"
+            >
+              Previous
+            </Button>
+            <Button
+              onClick={handleNext}
+              variant="outline"
+              className="flex-1"
+            >
+              Next
             </Button>
           </div>
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-            <div 
-              className="bg-green-600 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${((currentQuestionIndex + 1) / whQuestions.length) * 100}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Question Card */}
-        <Card className="mb-6 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                  <span className="text-green-600 dark:text-green-400 font-bold">AI</span>
-                </div>
-                <p className="text-lg font-medium text-green-800 dark:text-green-200">
-                  {currentQuestion.question}
-                </p>
-              </div>
-              <Button variant="ghost" size="icon" className="text-green-600 dark:text-green-400">
-                <Volume2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Hints */}
-        {showHints && (
-          <Card className="mb-6 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
-            <CardContent className="p-4">
-              <h3 className="font-medium text-blue-800 dark:text-blue-200 mb-2">💡 Hints:</h3>
-              <ul className="space-y-1">
-                {currentQuestion.hints.map((hint, index) => (
-                  <li key={index} className="text-sm text-blue-700 dark:text-blue-300">
-                    • {hint}
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
         )}
 
-        {/* Answer Input */}
-        <Card className="mb-6">
-          <CardContent className="p-4">
-            <div className="space-y-4">
-              <textarea
-                placeholder="Type your answer here..."
-                value={userAnswer}
-                onChange={(e) => setUserAnswer(e.target.value)}
-                className="w-full min-h-20 p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-800 dark:border-gray-700"
-              />
-              
-              <div className="flex gap-2">
-                <Button
-                  onClick={handleSubmit}
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                  disabled={!userAnswer.trim()}
-                >
-                  Submit Answer
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  onClick={handleMockResponse}
-                  className="px-4"
-                >
-                  Try Example
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="bg-green-600 hover:bg-green-700 text-white border-green-600"
-                >
-                  <Mic className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Feedback */}
+        {/* Feedback Display */}
         {feedback && (
-          <Card className="mb-6">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2 mb-4">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                <h3 className="font-medium">Feedback</h3>
-              </div>
-              
-              <div className="space-y-3">
-                <div className="flex items-start space-x-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                  <div>
-                    <p className="font-medium text-sm">Pronunciation:</p>
-                    <p className="text-sm text-muted-foreground">{feedback.pronunciation}</p>
+          <Card className="w-full max-w-md mt-6 mx-auto">
+            <CardContent className="p-6">
+              <div className="text-center">
+                {feedback.score !== undefined && (
+                  <div className="flex items-center justify-center mb-4">
+                    {feedback.score >= 80 ? (
+                      <CheckCircle className="w-8 h-8 text-green-500 mr-2" />
+                    ) : feedback.score >= 60 ? (
+                      <AlertCircle className="w-8 h-8 text-yellow-500 mr-2" />
+                    ) : (
+                      <XCircle className="w-8 h-8 text-red-500 mr-2" />
+                    )}
+                    <span className="text-2xl font-bold">
+                      {Math.round(feedback.score)}%
+                    </span>
                   </div>
-                </div>
+                )}
                 
-                <div className="flex items-start space-x-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                  <div>
-                    <p className="font-medium text-sm">Grammar:</p>
-                    <p className="text-sm text-muted-foreground">{feedback.grammar}</p>
+                {feedback.feedback && (
+                  <p className="text-muted-foreground mb-4">
+                    {safeDisplay(feedback.feedback)}
+                  </p>
+                )}
+                
+                {feedback.suggestions && feedback.suggestions.length > 0 && (
+                  <div className="text-left">
+                    <h4 className="font-semibold mb-2">Suggestions:</h4>
+                    <ul className="list-disc list-inside text-sm text-muted-foreground">
+                      {feedback.suggestions.map((suggestion, index) => (
+                        <li key={index}>{safeDisplay(suggestion)}</li>
+                      ))}
+                    </ul>
                   </div>
-                </div>
-                
-                <div className="flex items-start space-x-2">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
-                  <div>
-                    <p className="font-medium text-sm">Answer Match:</p>
-                    <p className="text-sm text-muted-foreground">{feedback.answerMatch}</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex gap-2 mt-4">
-                <Button
-                  onClick={handleNextQuestion}
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                >
-                  {currentQuestionIndex < whQuestions.length - 1 ? 'Next Question' : 'Start Over'}
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  onClick={handleTryAgain}
-                >
-                  Try Again
-                </Button>
+                )}
               </div>
             </CardContent>
           </Card>
         )}
+      </div>
+
+      {/* Speak Button */}
+      <div className="p-4 bg-background">
+        <div className="max-w-md mx-auto">
+          <Button 
+            onClick={handleStartRecording}
+            disabled={isRecording || isEvaluating}
+            className={`w-full h-16 text-xl font-semibold rounded-xl shadow-lg transition-all duration-300 ${
+              isRecording 
+                ? 'bg-red-500 hover:bg-red-600' 
+                : isEvaluating
+                ? 'bg-yellow-500 hover:bg-yellow-600'
+                : 'bg-green-500 hover:bg-green-600'
+            } text-white`}
+          >
+            <Mic className="w-6 h-6 mr-3" />
+            {isRecording ? 'Recording...' : isEvaluating ? 'Evaluating...' : 'Speak Now'}
+          </Button>
+
+          {/* Stop Recording Button */}
+          {isRecording && (
+            <Button
+              onClick={handleStopRecording}
+              className="w-full mt-4 bg-red-600 hover:bg-red-700 text-white"
+            >
+              Stop Recording
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );
