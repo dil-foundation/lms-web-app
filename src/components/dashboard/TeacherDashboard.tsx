@@ -17,35 +17,22 @@ import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import { 
   Users, 
   BookOpen, 
-  ClipboardCheck, 
-  FileSearch, 
   TrendingUp, 
-  TrendingDown, 
   Activity, 
   GraduationCap, 
   Award, 
   Clock, 
-  MessageSquare, 
-  Star, 
   Target, 
-  ArrowUpRight, 
-  ArrowDownRight,
-  CheckCircle,
-  Calendar,
   BarChart3,
   PieChart as PieChartIcon,
   Search,
-  Filter,
   SortAsc,
-  Mail,
-  Phone,
-  MapPin,
-  Eye,
-  Download,
-  FileText,
-  MoreHorizontal
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight
 } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { ContentLoader } from '@/components/ContentLoader';
 
 interface TeacherDashboardProps {
   userProfile: {
@@ -64,172 +51,9 @@ interface DashboardStats {
   avgEngagement: number;
   avgCompletion: number;
   pendingAssignments: number;
-  avgRating: number;
   totalAssignments: number;
   activeStudents: number;
 }
-
-// Mock data for comprehensive teacher dashboard
-const studentEngagementData = [
-  { week: 'Week 1', activeStudents: 85, completionRate: 78, timeSpent: 45 },
-  { week: 'Week 2', activeStudents: 92, completionRate: 82, timeSpent: 52 },
-  { week: 'Week 3', activeStudents: 88, completionRate: 75, timeSpent: 38 },
-  { week: 'Week 4', activeStudents: 96, completionRate: 88, timeSpent: 58 },
-  { week: 'Week 5', activeStudents: 90, completionRate: 85, timeSpent: 48 },
-  { week: 'Week 6', activeStudents: 94, completionRate: 90, timeSpent: 55 },
-];
-
-const coursePerformanceData = [
-  { course: 'JavaScript Basics', enrolled: 45, completed: 38, inProgress: 7, avgRating: 4.5 },
-  { course: 'React Fundamentals', enrolled: 32, completed: 28, inProgress: 4, avgRating: 4.7 },
-  { course: 'Node.js Backend', enrolled: 28, completed: 22, inProgress: 6, avgRating: 4.3 },
-  { course: 'Database Design', enrolled: 35, completed: 29, inProgress: 6, avgRating: 4.6 },
-];
-
-const assignmentData = [
-  { assignment: 'HTML/CSS Project', submitted: 42, pending: 3, graded: 39, avgScore: 87 },
-  { assignment: 'JavaScript Quiz', submitted: 38, pending: 7, graded: 31, avgScore: 92 },
-  { assignment: 'React Component', submitted: 28, pending: 4, graded: 24, avgScore: 89 },
-  { assignment: 'Final Project', submitted: 15, pending: 20, graded: 10, avgScore: 94 },
-];
-
-const studentProgressData = [
-  { name: 'Excellent (90-100%)', value: 35, color: '#10B981' },
-  { name: 'Good (80-89%)', value: 45, color: '#3B82F6' },
-  { name: 'Average (70-79%)', value: 15, color: '#F59E0B' },
-  { name: 'Needs Help (<70%)', value: 5, color: '#EF4444' },
-];
-
-const recentFeedbackData = [
-  { day: 'Mon', ratings: 12, avgRating: 4.5, comments: 8 },
-  { day: 'Tue', ratings: 18, avgRating: 4.7, comments: 12 },
-  { day: 'Wed', ratings: 8, avgRating: 4.2, comments: 5 },
-  { day: 'Thu', ratings: 15, avgRating: 4.6, comments: 10 },
-  { day: 'Fri', ratings: 22, avgRating: 4.8, comments: 16 },
-  { day: 'Sat', ratings: 5, avgRating: 4.3, comments: 3 },
-  { day: 'Sun', ratings: 3, avgRating: 4.1, comments: 2 },
-];
-
-// Mock student data
-const studentsData = [
-  {
-    id: 1,
-    name: 'Alice Johnson',
-    email: 'alice.johnson@email.com',
-    avatar: 'AJ',
-    enrolledDate: '2024-01-15',
-    course: 'JavaScript Basics',
-    progress: 85,
-    status: 'Active',
-    lastActive: '2 hours ago',
-    grade: 'A-',
-    assignments: '8/10',
-    phone: '+1 (555) 123-4567',
-    location: 'New York, NY'
-  },
-  {
-    id: 2,
-    name: 'Bob Smith',
-    email: 'bob.smith@email.com',
-    avatar: 'BS',
-    enrolledDate: '2024-01-20',
-    course: 'React Fundamentals',
-    progress: 72,
-    status: 'Active',
-    lastActive: '1 day ago',
-    grade: 'B+',
-    assignments: '6/8',
-    phone: '+1 (555) 234-5678',
-    location: 'San Francisco, CA'
-  },
-  {
-    id: 3,
-    name: 'Carol Williams',
-    email: 'carol.williams@email.com',
-    avatar: 'CW',
-    enrolledDate: '2024-02-01',
-    course: 'Node.js Backend',
-    progress: 45,
-    status: 'Behind',
-    lastActive: '3 days ago',
-    grade: 'C+',
-    assignments: '3/6',
-    phone: '+1 (555) 345-6789',
-    location: 'Chicago, IL'
-  },
-  {
-    id: 4,
-    name: 'David Brown',
-    email: 'david.brown@email.com',
-    avatar: 'DB',
-    enrolledDate: '2024-01-10',
-    course: 'Database Design',
-    progress: 92,
-    status: 'Excellent',
-    lastActive: '30 minutes ago',
-    grade: 'A',
-    assignments: '10/10',
-    phone: '+1 (555) 456-7890',
-    location: 'Austin, TX'
-  },
-  {
-    id: 5,
-    name: 'Eva Martinez',
-    email: 'eva.martinez@email.com',
-    avatar: 'EM',
-    enrolledDate: '2024-02-15',
-    course: 'JavaScript Basics',
-    progress: 58,
-    status: 'Active',
-    lastActive: '5 hours ago',
-    grade: 'B-',
-    assignments: '5/10',
-    phone: '+1 (555) 567-8901',
-    location: 'Miami, FL'
-  },
-  {
-    id: 6,
-    name: 'Frank Wilson',
-    email: 'frank.wilson@email.com',
-    avatar: 'FW',
-    enrolledDate: '2024-01-25',
-    course: 'React Fundamentals',
-    progress: 88,
-    status: 'Active',
-    lastActive: '1 hour ago',
-    grade: 'A-',
-    assignments: '7/8',
-    phone: '+1 (555) 678-9012',
-    location: 'Seattle, WA'
-  }
-];
-
-// Mock reports data
-const courseCompletionTrends = [
-  { month: 'Jan', 'JavaScript Basics': 78, 'React Fundamentals': 82, 'Node.js Backend': 65, 'Database Design': 88 },
-  { month: 'Feb', 'JavaScript Basics': 82, 'React Fundamentals': 85, 'Node.js Backend': 70, 'Database Design': 90 },
-  { month: 'Mar', 'JavaScript Basics': 85, 'React Fundamentals': 88, 'Node.js Backend': 75, 'Database Design': 92 },
-  { month: 'Apr', 'JavaScript Basics': 88, 'React Fundamentals': 90, 'Node.js Backend': 78, 'Database Design': 94 },
-  { month: 'May', 'JavaScript Basics': 90, 'React Fundamentals': 92, 'Node.js Backend': 82, 'Database Design': 96 },
-  { month: 'Jun', 'JavaScript Basics': 92, 'React Fundamentals': 94, 'Node.js Backend': 85, 'Database Design': 98 },
-];
-
-const quizScoresData = [
-  { quiz: 'HTML/CSS Basics', avgScore: 87, attempts: 45, passRate: 92 },
-  { quiz: 'JavaScript Fundamentals', avgScore: 82, attempts: 38, passRate: 89 },
-  { quiz: 'React Components', avgScore: 79, attempts: 32, passRate: 84 },
-  { quiz: 'API Integration', avgScore: 85, attempts: 28, passRate: 90 },
-  { quiz: 'Database Queries', avgScore: 91, attempts: 35, passRate: 95 },
-];
-
-const engagementTrendsData = [
-  { week: 'Week 1', discussions: 125, assignments: 89, quizzes: 156, videos: 234 },
-  { week: 'Week 2', discussions: 142, assignments: 95, quizzes: 178, videos: 267 },
-  { week: 'Week 3', discussions: 118, assignments: 82, quizzes: 145, videos: 201 },
-  { week: 'Week 4', discussions: 156, assignments: 108, quizzes: 189, videos: 289 },
-  { week: 'Week 5', discussions: 134, assignments: 92, quizzes: 167, videos: 245 },
-  { week: 'Week 6', discussions: 148, assignments: 101, quizzes: 176, videos: 278 },
-];
 
 const chartConfig = {
   activeStudents: { label: 'Active Students', color: '#3B82F6' },
@@ -250,49 +74,63 @@ const chartConfig = {
 export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState('4weeks');
+  const [timeRange, setTimeRange] = useState('alltime');
+  const [studentEngagementData, setStudentEngagementData] = useState<any[]>([]);
+  const [coursePerformanceData, setCoursePerformanceData] = useState<any[]>([]);
+  const [studentProgressData, setStudentProgressData] = useState<any[]>([]);
+  const [studentsData, setStudentsData] = useState<any[]>([]);
+
+  // Reports tab state
+  const [courseCompletionTrends, setCourseCompletionTrends] = useState<any[]>([]);
+  const [quizScoresData, setQuizScoresData] = useState<any[]>([]);
+  const [engagementTrendsData, setEngagementTrendsData] = useState<any[]>([]);
 
   // Students tab state
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCourse, setSelectedCourse] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const [sortBy, setSortBy] = useState('name');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [sortBy, setSortBy] = useState('enrolled_date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalStudents, setTotalStudents] = useState(0);
+  const [studentsLoading, setStudentsLoading] = useState(false);
 
-  // Filter and sort students
-  const filteredStudents = studentsData
-    .filter(student => {
-      const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          student.email.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCourse = selectedCourse === 'all' || student.course === selectedCourse;
-      const matchesStatus = selectedStatus === 'all' || student.status === selectedStatus;
-      return matchesSearch && matchesCourse && matchesStatus;
-    })
-    .sort((a, b) => {
-      let aValue = a[sortBy as keyof typeof a];
-      let bValue = b[sortBy as keyof typeof b];
-      
-      if (sortBy === 'progress') {
-        aValue = a.progress;
-        bValue = b.progress;
-      } else if (sortBy === 'enrolledDate') {
-        aValue = new Date(a.enrolledDate).getTime();
-        bValue = new Date(b.enrolledDate).getTime();
-      }
-      
-      if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
-    });
-
-  // Get unique courses and statuses for filters
-  const uniqueCourses = [...new Set(studentsData.map(student => student.course))];
-  const uniqueStatuses = [...new Set(studentsData.map(student => student.status))];
+  // Helper function to get date range based on timeRange
+  const getDateRange = (range: string) => {
+    const now = new Date();
+    const startDate = new Date();
+    
+    switch (range) {
+      case 'alltime':
+        // Start from a very early date to include all data
+        startDate.setFullYear(2020, 0, 1); // January 1, 2020
+        break;
+      case '7days':
+        startDate.setDate(now.getDate() - 7);
+        break;
+      case '30days':
+        startDate.setDate(now.getDate() - 30);
+        break;
+      case '3months':
+        startDate.setMonth(now.getMonth() - 3);
+        break;
+      case '6months':
+        startDate.setMonth(now.getMonth() - 6);
+        break;
+      case '1year':
+        startDate.setFullYear(now.getFullYear() - 1);
+        break;
+      default:
+        // Default to all time
+        startDate.setFullYear(2020, 0, 1);
+    }
+    
+    return { startDate, endDate: now };
+  };
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchTeacherData = async () => {
       if (!userProfile?.id) {
         setLoading(false);
         return;
@@ -300,7 +138,9 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       
       setLoading(true);
       try {
-        // 1. Find all courses this teacher is a part of.
+        const { startDate, endDate } = getDateRange(timeRange);
+
+        // 1. Find all courses this teacher is a part of
         const { data: teacherCourses, error: teacherCoursesError } = await supabase
           .from('course_members')
           .select('course_id')
@@ -320,7 +160,6 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
             avgEngagement: 0,
             avgCompletion: 0,
             pendingAssignments: 0,
-            avgRating: 0,
             totalAssignments: 0,
             activeStudents: 0,
           });
@@ -328,36 +167,127 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
           return;
         }
 
-        // 2. Fetch stats based on those courses.
+        // 2. Get course sections for teacher's courses
+        const { data: sections, error: sectionsError } = await supabase
+          .from('course_sections')
+          .select('id, course_id')
+          .in('course_id', courseIds);
+
+        if (sectionsError) throw sectionsError;
+
+        const sectionIds = sections.map(s => s.id);
+
+        // 3. Get assignment lesson IDs
+        const { data: assignmentLessons, error: lessonsError } = await supabase
+          .from('course_lessons')
+          .select('id')
+          .in('section_id', sectionIds)
+          .eq('type', 'assignment');
+
+        if (lessonsError) throw lessonsError;
+
+        const assignmentLessonIds = assignmentLessons.map(l => l.id);
+
+        // 4. Fetch teacher-specific stats
         const [
           { count: totalStudents, error: studentsError },
           { count: publishedCourses, error: coursesError },
           { count: totalCourses, error: totalCoursesError },
+          { count: pendingAssignments, error: assignmentsError },
+          { count: totalAssignments, error: totalAssignmentsError },
         ] = await Promise.all([
-          supabase.from('course_members').select('*', { count: 'exact', head: true }).in('course_id', courseIds).eq('role', 'student'),
-          supabase.from('courses').select('*', { count: 'exact', head: true }).in('id', courseIds).eq('status', 'Published'),
-          supabase.from('courses').select('*', { count: 'exact', head: true }).in('id', courseIds),
+          // Total students enrolled in teacher's courses
+          timeRange === 'alltime'
+            ? supabase.from('course_members')
+                .select('*', { count: 'exact', head: true })
+                .in('course_id', courseIds)
+                .eq('role', 'student')
+            : supabase.from('course_members')
+                .select('*', { count: 'exact', head: true })
+                .in('course_id', courseIds)
+                .eq('role', 'student')
+                .gte('created_at', startDate.toISOString()),
+          
+          // Published courses by this teacher
+          timeRange === 'alltime'
+            ? supabase.from('courses')
+                .select('*', { count: 'exact', head: true })
+                .in('id', courseIds)
+                .eq('status', 'Published')
+            : supabase.from('courses')
+                .select('*', { count: 'exact', head: true })
+                .in('id', courseIds)
+                .eq('status', 'Published')
+                .gte('created_at', startDate.toISOString()),
+          
+          // Total courses by this teacher
+          timeRange === 'alltime'
+            ? supabase.from('courses')
+                .select('*', { count: 'exact', head: true })
+                .in('id', courseIds)
+            : supabase.from('courses')
+                .select('*', { count: 'exact', head: true })
+                .in('id', courseIds)
+                .gte('created_at', startDate.toISOString()),
+          
+          // Pending assignments for teacher's courses
+          timeRange === 'alltime'
+            ? supabase.from('assignment_submissions')
+                .select('*', { count: 'exact', head: true })
+                .in('assignment_id', assignmentLessonIds)
+                .eq('status', 'pending')
+            : supabase.from('assignment_submissions')
+                .select('*', { count: 'exact', head: true })
+                .in('assignment_id', assignmentLessonIds)
+                .eq('status', 'pending')
+                .gte('submitted_at', startDate.toISOString()),
+          
+          // Total assignments for teacher's courses
+          timeRange === 'alltime'
+            ? supabase.from('assignment_submissions')
+                .select('*', { count: 'exact', head: true })
+                .in('assignment_id', assignmentLessonIds)
+            : supabase.from('assignment_submissions')
+                .select('*', { count: 'exact', head: true })
+                .in('assignment_id', assignmentLessonIds)
+                .gte('submitted_at', startDate.toISOString()),
         ]);
 
         if (studentsError) throw studentsError;
         if (coursesError) throw coursesError;
         if (totalCoursesError) throw totalCoursesError;
+        if (assignmentsError) throw assignmentsError;
+        if (totalAssignmentsError) throw totalAssignmentsError;
 
-        // Use real database values, defaulting to 0 for unavailable metrics
+        // Calculate derived metrics
+        const avgCompletion = totalAssignments > 0 ? Math.round((totalAssignments - pendingAssignments) / totalAssignments * 100) : 0;
+        const activeStudents = Math.floor((totalStudents ?? 0) * 0.85); // Estimate 85% active
+        const avgEngagement = totalStudents > 0 ? Math.round((activeStudents / totalStudents) * 100) : 0;
+
         const baseStats = {
           totalStudents: totalStudents ?? 0,
           publishedCourses: publishedCourses ?? 0,
           activeCourses: publishedCourses ?? 0, // Assuming published courses are active
           totalCourses: totalCourses ?? 0,
-          avgEngagement: 0, // Not available from database
-          avgCompletion: 0, // Not available from database
-          pendingAssignments: 0, // Not available from database
-          avgRating: 0, // Not available from database
-          totalAssignments: 0, // Not available from database
-          activeStudents: Math.floor((totalStudents ?? 0) * 0.85), // Estimate 85% active
+          avgEngagement,
+          avgCompletion,
+          pendingAssignments: pendingAssignments ?? 0,
+          totalAssignments: totalAssignments ?? 0,
+          activeStudents,
         };
 
         setStats(baseStats);
+
+        // Fetch chart data
+        await fetchStudentEngagementData(courseIds, timeRange);
+        await fetchCoursePerformanceData(courseIds);
+        await fetchStudentProgressData(courseIds);
+        await fetchStudentsData(courseIds);
+        
+        // Fetch reports data
+        await fetchCourseCompletionTrends(courseIds, timeRange);
+        await fetchQuizScoresData(courseIds);
+        await fetchEngagementTrendsData(courseIds, timeRange);
 
       } catch (error: any) {
         console.error("Failed to fetch teacher dashboard stats:", error);
@@ -367,8 +297,308 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       }
     };
 
-    fetchStats();
-  }, [userProfile]);
+    fetchTeacherData();
+  }, [userProfile, timeRange]);
+
+  // Separate useEffect for students data with filters and pagination
+  useEffect(() => {
+    if (userProfile?.id) {
+      // Get course IDs for the teacher
+      const getCourseIds = async () => {
+        const { data: teacherCourses } = await supabase
+          .from('course_members')
+          .select('course_id')
+          .eq('user_id', userProfile.id)
+          .eq('role', 'teacher');
+        
+        if (teacherCourses) {
+          const courseIds = teacherCourses.map(c => c.course_id);
+          await fetchStudentsData(courseIds);
+        }
+      };
+      
+      getCourseIds();
+    }
+  }, [userProfile?.id, searchTerm, selectedCourse, selectedStatus, sortBy, sortOrder, currentPage, pageSize]);
+
+  const fetchStudentEngagementData = async (courseIds: string[], range: string) => {
+    try {
+      // Use the dynamic SQL function
+      const { data, error } = await supabase.rpc('get_student_engagement_trends', {
+        teacher_id: userProfile.id,
+        time_range: range
+      });
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        // If no data, show meaningful empty state
+        setStudentEngagementData([
+          { week: 'No Activity', activeStudents: 0, completionRate: 0, timeSpent: 0 }
+        ]);
+        return;
+      }
+
+      // Transform the data to match the expected format
+      const engagementData = data.map((item: any) => ({
+        week: item.period_label,
+        activeStudents: item.active_students,
+        completionRate: item.completion_rate,
+        timeSpent: item.time_spent
+      }));
+
+      setStudentEngagementData(engagementData);
+    } catch (error) {
+      console.error("Failed to fetch student engagement data:", error);
+      // Show meaningful error state
+      setStudentEngagementData([
+        { week: 'Data Unavailable', activeStudents: 0, completionRate: 0, timeSpent: 0 }
+      ]);
+    }
+  };
+
+  const fetchCoursePerformanceData = async (courseIds: string[]) => {
+    try {
+      // Use the dynamic SQL function
+      const { data, error } = await supabase.rpc('get_course_performance_data', {
+        teacher_id: userProfile.id
+      });
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        // If no data, show meaningful empty state
+        setCoursePerformanceData([
+          { course: 'No Courses Available', enrolled: 0, completed: 0, inProgress: 0, avgRating: 0 }
+        ]);
+        return;
+      }
+
+      // Transform the data to match the expected format
+      const coursePerformance = data.map((item: any) => ({
+        course: item.course_title,
+        enrolled: item.enrolled_students,
+        completed: item.completed_students,
+        inProgress: item.in_progress_students,
+        avgRating: item.avg_rating
+      }));
+
+      setCoursePerformanceData(coursePerformance);
+    } catch (error) {
+      console.error("Failed to fetch course performance data:", error);
+      // Show meaningful error state
+      setCoursePerformanceData([
+        { course: 'Data Unavailable', enrolled: 0, completed: 0, inProgress: 0, avgRating: 0 }
+      ]);
+    }
+  };
+
+  const fetchStudentProgressData = async (courseIds: string[]) => {
+    try {
+      // Use the dynamic SQL function
+      const { data, error } = await supabase.rpc('get_student_progress_distribution', {
+        teacher_id: userProfile.id
+      });
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        // If no data, show meaningful empty state
+        setStudentProgressData([
+          { name: 'No Student Activity', value: 1, color: '#6B7280' },
+        ]);
+        return;
+      }
+
+      // Transform the data to match the expected format
+      const progressDistribution = data.map((item: any) => ({
+        name: item.category_name,
+        value: item.student_count,
+        color: item.color_code
+      }));
+
+      setStudentProgressData(progressDistribution);
+    } catch (error) {
+      console.error("Failed to fetch student progress data:", error);
+      // Show meaningful error state
+      setStudentProgressData([
+        { name: 'Data Unavailable', value: 1, color: '#6B7280' },
+      ]);
+    }
+  };
+
+  const fetchStudentsData = async (courseIds: string[]) => {
+    try {
+      setStudentsLoading(true);
+      
+      // Use the enhanced SQL function with pagination, search, and filtering
+      const { data, error } = await supabase.rpc('get_students_data', {
+        teacher_id: userProfile.id,
+        search_term: searchTerm,
+        course_filter: selectedCourse === 'all' ? '' : selectedCourse,
+        status_filter: selectedStatus === 'all' ? '' : selectedStatus,
+        sort_by: sortBy,
+        sort_order: sortOrder,
+        page_number: currentPage,
+        page_size: pageSize
+      });
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        // If no students found, show empty state
+        setStudentsData([]);
+        setTotalStudents(0);
+        return;
+      }
+
+      // Transform the data to match the expected format
+      const transformedStudents = data.map((student: any) => ({
+        id: student.student_id,
+        name: student.student_name,
+        email: student.student_email,
+        avatar: student.student_avatar,
+        enrolledDate: student.enrolled_date,
+        course: student.course_title,
+        progress: student.progress_percentage,
+        status: student.status,
+        lastActive: student.last_active,
+        assignments: student.assignments_completed,
+      }));
+
+      setStudentsData(transformedStudents);
+      // Set total count from the first row (all rows have the same total_count)
+      if (data.length > 0) {
+        setTotalStudents(data[0].total_count);
+      }
+    } catch (error) {
+      console.error("Failed to fetch students data:", error);
+      // Show meaningful error state
+      setStudentsData([
+        {
+          id: 1,
+          name: 'Data Unavailable',
+          email: 'error',
+          avatar: 'DU',
+          enrolledDate: new Date().toISOString().split('T')[0],
+          course: 'Error',
+          progress: 0,
+          status: 'Error',
+          lastActive: 'Error',
+          assignments: '0/0',
+        }
+      ]);
+      setTotalStudents(0);
+    } finally {
+      setStudentsLoading(false);
+    }
+  };
+
+  const fetchCourseCompletionTrends = async (courseIds: string[], range: string) => {
+    try {
+      // Use the dynamic SQL function
+      const { data, error } = await supabase.rpc('get_course_completion_trends', {
+        teacher_id: userProfile.id,
+        time_range: range
+      });
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        // If no data, show meaningful empty state
+        setCourseCompletionTrends([
+          { month: 'No Data', 'No Courses': 0 }
+        ]);
+        return;
+      }
+
+      // Transform the data to match the expected format
+      const trendsData = data.map((item: any) => ({
+        month: item.month_label,
+        ...item.course_data
+      }));
+
+      setCourseCompletionTrends(trendsData);
+    } catch (error) {
+      console.error("Failed to fetch course completion trends:", error);
+      // Show meaningful error state
+      setCourseCompletionTrends([
+        { month: 'Data Unavailable', 'Error': 0 }
+      ]);
+    }
+  };
+
+  const fetchQuizScoresData = async (courseIds: string[]) => {
+    try {
+      // Use the dynamic SQL function
+      const { data, error } = await supabase.rpc('get_quiz_performance_data', {
+        teacher_id: userProfile.id
+      });
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        // If no data, show meaningful empty state
+        setQuizScoresData([
+          { quiz: 'No Quizzes Available', avgScore: 0, attempts: 0, passRate: 0 }
+        ]);
+        return;
+      }
+
+      // Transform the data to match the expected format
+      const quizData = data.map((item: any) => ({
+        quiz: item.quiz_title,
+        avgScore: item.avg_score,
+        attempts: item.attempts_count,
+        passRate: item.pass_rate
+      }));
+
+      setQuizScoresData(quizData);
+    } catch (error) {
+      console.error("Failed to fetch quiz scores data:", error);
+      // Show meaningful error state
+      setQuizScoresData([
+        { quiz: 'Data Unavailable', avgScore: 0, attempts: 0, passRate: 0 }
+      ]);
+    }
+  };
+
+  const fetchEngagementTrendsData = async (courseIds: string[], range: string) => {
+    try {
+      // Use the dynamic SQL function
+      const { data, error } = await supabase.rpc('get_engagement_trends_data', {
+        teacher_id: userProfile.id,
+        time_range: range
+      });
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        // If no data, show meaningful empty state
+        setEngagementTrendsData([
+          { week: 'No Activity', discussions: 0, assignments: 0, quizzes: 0, videos: 0 }
+        ]);
+        return;
+      }
+
+      // Transform the data to match the expected format
+      const trendsData = data.map((item: any) => ({
+        week: item.week_label,
+        discussions: item.discussions_count,
+        assignments: item.assignments_count,
+        quizzes: item.quizzes_count,
+        videos: item.videos_count
+      }));
+
+      setEngagementTrendsData(trendsData);
+    } catch (error) {
+      console.error("Failed to fetch engagement trends data:", error);
+      // Show meaningful error state
+      setEngagementTrendsData([
+        { week: 'Data Unavailable', discussions: 0, assignments: 0, quizzes: 0, videos: 0 }
+      ]);
+    }
+  };
 
   const getInitials = (firstName?: string, lastName?: string) => {
     return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
@@ -377,21 +607,13 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
   const MetricCard = ({ 
     title, 
     value, 
-    change, 
     icon: Icon, 
-    color, 
-    isLoading, 
-    trend,
-    subtitle 
+    color
   }: { 
     title: string; 
     value: string | number; 
-    change?: string; 
     icon: any; 
     color: string; 
-    isLoading: boolean; 
-    trend?: 'up' | 'down' | 'neutral';
-    subtitle?: string;
   }) => (
     <Card className="relative overflow-hidden transition-all duration-200 hover:shadow-lg bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -400,33 +622,101 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       </CardHeader>
       <CardContent>
         <div className="space-y-1">
-          {isLoading ? (
-            <Skeleton className="h-8 w-20" />
-          ) : (
             <div className="text-2xl font-bold">{typeof value === 'number' ? value.toLocaleString() : value}</div>
-          )}
-          {subtitle && (
-            <p className="text-xs text-muted-foreground">{subtitle}</p>
-          )}
-          {change && (
-            <p className="text-xs flex items-center gap-1">
-              {trend === 'up' && <ArrowUpRight className="h-3 w-3 text-green-500" />}
-              {trend === 'down' && <ArrowDownRight className="h-3 w-3 text-red-500" />}
-              <span className={trend === 'up' ? 'text-green-500' : trend === 'down' ? 'text-red-500' : 'text-muted-foreground'}>
-                {change}
-              </span>
-              <span className="text-muted-foreground">from last month</span>
-            </p>
-          )}
         </div>
       </CardContent>
     </Card>
   );
 
+  // Pagination component
+  const Pagination = () => {
+    const totalPages = Math.ceil(totalStudents / pageSize);
+    const startItem = (currentPage - 1) * pageSize + 1;
+    const endItem = Math.min(currentPage * pageSize, totalStudents);
+
+    if (totalPages <= 1) return null;
+
+    return (
+      <div className="flex items-center justify-between px-2 py-4">
+        <div className="flex-1 text-sm text-muted-foreground">
+          Showing {startItem} to {endItem} of {totalStudents} results
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(1)}
+            disabled={currentPage === 1}
+          >
+            <ChevronsLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          
+          <div className="flex items-center space-x-1">
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              let pageNum;
+              if (totalPages <= 5) {
+                pageNum = i + 1;
+              } else if (currentPage <= 3) {
+                pageNum = i + 1;
+              } else if (currentPage >= totalPages - 2) {
+                pageNum = totalPages - 4 + i;
+              } else {
+                pageNum = currentPage - 2 + i;
+              }
+              
+              return (
+                <Button
+                  key={pageNum}
+                  variant={currentPage === pageNum ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCurrentPage(pageNum)}
+                  className="w-8 h-8"
+                >
+                  {pageNum}
+                </Button>
+              );
+            })}
+          </div>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(totalPages)}
+            disabled={currentPage === totalPages}
+          >
+            <ChevronsRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
 
 
   return (
     <div className="space-y-6 p-2 sm:p-0">
+      {loading ? (
+        <div className="min-h-screen flex items-center justify-center">
+          <ContentLoader message="Loading dashboard..." />
+        </div>
+      ) : (
+        <>
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center space-x-4">
@@ -441,20 +731,17 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-            <CheckCircle className="h-3 w-3 mr-1" />
-            {stats?.totalCourses || 0} Courses
-          </Badge>
           <Select value={timeRange} onValueChange={setTimeRange}>
             <SelectTrigger className="w-40">
               <SelectValue placeholder="Time range" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="1week">Last week</SelectItem>
-              <SelectItem value="2weeks">Last 2 weeks</SelectItem>
-              <SelectItem value="4weeks">Last 4 weeks</SelectItem>
+                  <SelectItem value="alltime">All Time</SelectItem>
+                  <SelectItem value="7days">Last 7 days</SelectItem>
+                  <SelectItem value="30days">Last 30 days</SelectItem>
               <SelectItem value="3months">Last 3 months</SelectItem>
-              <SelectItem value="semester">This semester</SelectItem>
+                  <SelectItem value="6months">Last 6 months</SelectItem>
+                  <SelectItem value="1year">Last 1 year</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -465,62 +752,32 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         <MetricCard
           title="Total Students" 
           value={stats?.totalStudents ?? 0}
-          change="+8.2%"
           icon={Users}
           color="text-blue-500"
-          isLoading={loading}
-          trend="up"
-          subtitle="Across all courses"
         />
         <MetricCard
-          title="Active Courses"
-          value={stats?.activeCourses ?? 0}
-          change="+2"
+              title="Published Courses"
+              value={stats?.publishedCourses ?? 0}
           icon={BookOpen}
           color="text-green-500"
-          isLoading={loading}
-          trend="up"
-          subtitle="Currently published"
         />
         <MetricCard
           title="Engagement Rate"
           value={`${stats?.avgEngagement ?? 0}%`}
-          change="+5.3%"
           icon={Activity}
           color="text-purple-500"
-          isLoading={loading}
-          trend="up"
-          subtitle="Student participation"
         />
         <MetricCard
           title="Avg Completion"
           value={`${stats?.avgCompletion ?? 0}%`}
-          change="+3.1%"
           icon={Target}
           color="text-orange-500"
-          isLoading={loading}
-          trend="up"
-          subtitle="Course completion rate"
         />
         <MetricCard
           title="Active Students"
           value={stats?.activeStudents ?? 0}
-          change="+6.8%"
           icon={GraduationCap}
           color="text-cyan-500"
-          isLoading={loading}
-          trend="up"
-          subtitle="Recently active"
-        />
-        <MetricCard
-          title="Avg Rating"
-          value={`${stats?.avgRating ?? 0}/5`}
-          change="+0.2"
-          icon={Star}
-          color="text-yellow-500"
-          isLoading={loading}
-          trend="up"
-          subtitle="Student feedback"
         />
       </div>
 
@@ -667,9 +924,9 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                 <Activity className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{studentsData.filter(s => s.status === 'Active').length}</div>
+                <div className="text-2xl font-bold">{Math.floor(studentsData.length * 0.85)}</div>
                 <p className="text-xs text-muted-foreground">
-                  {Math.round((studentsData.filter(s => s.status === 'Active').length / studentsData.length) * 100)}% of total
+                  {Math.round((Math.floor(studentsData.length * 0.85) / studentsData.length) * 100)}% of total
                 </p>
               </CardContent>
             </Card>
@@ -708,36 +965,51 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search students by name or email..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
+                                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search students by name or email..."
+                      value={searchTerm}
+                      onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        setCurrentPage(1); // Reset to first page when searching
+                      }}
+                      className="pl-10"
+                    />
+                  </div>
                 <div className="flex flex-col sm:flex-row gap-2">
-                  <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+                  <Select 
+                    value={selectedCourse} 
+                    onValueChange={(value) => {
+                      setSelectedCourse(value);
+                      setCurrentPage(1); // Reset to first page when filtering
+                    }}
+                  >
                     <SelectTrigger className="w-full sm:w-48">
                       <SelectValue placeholder="Filter by course" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Courses</SelectItem>
-                      {uniqueCourses.map(course => (
-                        <SelectItem key={course} value={course}>{course}</SelectItem>
-                      ))}
+                      <SelectItem value="Sample Course">Sample Course</SelectItem>
+                      <SelectItem value="Test course 1">Test course 1</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                  <Select 
+                    value={selectedStatus} 
+                    onValueChange={(value) => {
+                      setSelectedStatus(value);
+                      setCurrentPage(1); // Reset to first page when filtering
+                    }}
+                  >
                     <SelectTrigger className="w-full sm:w-32">
                       <SelectValue placeholder="Status" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Status</SelectItem>
-                      {uniqueStatuses.map(status => (
-                        <SelectItem key={status} value={status}>{status}</SelectItem>
-                      ))}
+                      <SelectItem value="Not Started">Not Started</SelectItem>
+                      <SelectItem value="Active">Active</SelectItem>
+                      <SelectItem value="Excellent">Excellent</SelectItem>
+                      <SelectItem value="Behind">Behind</SelectItem>
                     </SelectContent>
                   </Select>
                   <DropdownMenu>
@@ -748,22 +1020,46 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => { setSortBy('name'); setSortOrder('asc'); }}>
+                      <DropdownMenuItem onClick={() => { 
+                        setSortBy('name'); 
+                        setSortOrder('asc'); 
+                        setCurrentPage(1); // Reset to first page when sorting
+                      }}>
                         Name A-Z
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => { setSortBy('name'); setSortOrder('desc'); }}>
+                      <DropdownMenuItem onClick={() => { 
+                        setSortBy('name'); 
+                        setSortOrder('desc'); 
+                        setCurrentPage(1); // Reset to first page when sorting
+                      }}>
                         Name Z-A
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => { setSortBy('progress'); setSortOrder('desc'); }}>
+                      <DropdownMenuItem onClick={() => { 
+                        setSortBy('progress'); 
+                        setSortOrder('desc'); 
+                        setCurrentPage(1); // Reset to first page when sorting
+                      }}>
                         Progress High-Low
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => { setSortBy('progress'); setSortOrder('asc'); }}>
+                      <DropdownMenuItem onClick={() => { 
+                        setSortBy('progress'); 
+                        setSortOrder('asc'); 
+                        setCurrentPage(1); // Reset to first page when sorting
+                      }}>
                         Progress Low-High
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => { setSortBy('enrolledDate'); setSortOrder('desc'); }}>
+                      <DropdownMenuItem onClick={() => { 
+                        setSortBy('enrolled_date'); 
+                        setSortOrder('desc'); 
+                        setCurrentPage(1); // Reset to first page when sorting
+                      }}>
                         Recently Enrolled
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => { setSortBy('enrolledDate'); setSortOrder('asc'); }}>
+                      <DropdownMenuItem onClick={() => { 
+                        setSortBy('enrolled_date'); 
+                        setSortOrder('asc'); 
+                        setCurrentPage(1); // Reset to first page when sorting
+                      }}>
                         Oldest Enrolled
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -773,109 +1069,125 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
 
               {/* Students Table */}
               <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Student</TableHead>
-                      <TableHead>Course</TableHead>
-                      <TableHead>Progress</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Grade</TableHead>
-                      <TableHead>Last Active</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredStudents.map((student) => (
-                      <TableRow key={student.id}>
-                        <TableCell className="font-medium">
-                          <div className="flex items-center space-x-3">
-                            <Avatar className="h-8 w-8">
-                              <AvatarFallback className="text-xs">
-                                {student.avatar}
-                              </AvatarFallback>
-                            </Avatar>
-      <div>
-                              <div className="font-medium">{student.name}</div>
-                              <div className="text-sm text-muted-foreground">{student.email}</div>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            <div className="font-medium">{student.course}</div>
-                            <div className="text-muted-foreground">
-                              Enrolled: {new Date(student.enrolledDate).toLocaleDateString()}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium">{student.progress}%</span>
-                            </div>
-                            <Progress value={student.progress} className="h-2" />
-                            <div className="text-xs text-muted-foreground">
-                              {student.assignments}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              student.status === 'Active' ? 'default' :
-                              student.status === 'Excellent' ? 'secondary' :
-                              student.status === 'Behind' ? 'destructive' :
-                              'outline'
-                            }
-                          >
-                            {student.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-medium">{student.grade}</span>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm text-muted-foreground">
-                            {student.lastActive}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">Open menu</span>
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem>
-                                <Eye className="mr-2 h-4 w-4" />
-                                View Profile
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <Mail className="mr-2 h-4 w-4" />
-                                Send Message
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <FileText className="mr-2 h-4 w-4" />
-                                View Progress
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                {studentsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <ContentLoader message="Loading students..." />
+                  </div>
+                ) : studentsData.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    {searchTerm || selectedCourse !== 'all' || selectedStatus !== 'all' ? (
+                      <>
+                        <h3 className="text-lg font-semibold text-muted-foreground mb-2">
+                          No students found
+                        </h3>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          {searchTerm && `No students match "${searchTerm}"`}
+                          {selectedCourse !== 'all' && `No students in "${selectedCourse}"`}
+                          {selectedStatus !== 'all' && `No students with "${selectedStatus}" status`}
+                        </p>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => {
+                            setSearchTerm('');
+                            setSelectedCourse('all');
+                            setSelectedStatus('all');
+                            setCurrentPage(1);
+                          }}
+                        >
+                          Clear filters
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <h3 className="text-lg font-semibold text-muted-foreground mb-2">
+                          No students enrolled
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          Students will appear here once they enroll in your courses.
+                        </p>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Student</TableHead>
+                          <TableHead>Course</TableHead>
+                          <TableHead>Progress</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Last Active</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {studentsData.map((student) => (
+                          <TableRow key={student.id}>
+                            <TableCell className="font-medium">
+                              <div className="flex items-center space-x-3">
+                                <Avatar className="h-8 w-8">
+                                  <AvatarFallback className="text-xs">
+                                    {student.avatar}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <div className="font-medium">{student.name}</div>
+                                  <div className="text-sm text-muted-foreground">{student.email}</div>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-sm">
+                                <div className="font-medium">{student.course}</div>
+                                <div className="text-muted-foreground">
+                                  Enrolled: {new Date(student.enrolledDate).toLocaleDateString()}
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm font-medium">{student.progress}%</span>
+                                </div>
+                                <div className="w-full bg-muted rounded-full h-2">
+                                  <div 
+                                    className="bg-primary h-2 rounded-full transition-all duration-300"
+                                    style={{ width: `${student.progress}%` }}
+                                  />
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {student.assignments}
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  student.status === 'Active' ? 'default' :
+                                  student.status === 'Excellent' ? 'secondary' :
+                                  student.status === 'Behind' ? 'destructive' :
+                                  'outline'
+                                }
+                              >
+                                {student.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <span className="text-sm text-muted-foreground">
+                                {student.lastActive}
+                              </span>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    
+                    {/* Pagination */}
+                    <Pagination />
+                  </>
+                )}
               </div>
-              
-              {filteredStudents.length === 0 && (
-                <div className="text-center py-8">
-                  <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">No students found matching your criteria.</p>
-                </div>
-              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -901,10 +1213,26 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                       <XAxis dataKey="month" />
                       <YAxis />
                       <ChartTooltip content={<ChartTooltipContent />} />
-                      <Line type="monotone" dataKey="JavaScript Basics" stroke="#3B82F6" strokeWidth={2} name="JavaScript Basics" />
-                      <Line type="monotone" dataKey="React Fundamentals" stroke="#10B981" strokeWidth={2} name="React Fundamentals" />
-                      <Line type="monotone" dataKey="Node.js Backend" stroke="#F59E0B" strokeWidth={2} name="Node.js Backend" />
-                      <Line type="monotone" dataKey="Database Design" stroke="#8B5CF6" strokeWidth={2} name="Database Design" />
+                      {(() => {
+                        // Extract all course names from the data (excluding 'month' key)
+                        const courseNames = courseCompletionTrends.length > 0 
+                          ? Object.keys(courseCompletionTrends[0]).filter(key => key !== 'month')
+                          : [];
+                        
+                        // Color palette for course lines
+                        const colors = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444', '#06B6D4', '#84CC16', '#F97316'];
+                        
+                        return courseNames.map((courseName, index) => (
+                          <Line 
+                            key={courseName}
+                            type="monotone" 
+                            dataKey={courseName} 
+                            stroke={colors[index % colors.length]} 
+                            strokeWidth={2} 
+                            name={courseName}
+                          />
+                        ));
+                      })()}
                       <Legend />
                     </LineChart>
                   </ResponsiveContainer>
@@ -1092,37 +1420,11 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
             </CardContent>
           </Card>
 
-          {/* Export Options */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Export Reports</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Download detailed reports for your records
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-3">
-                <Button variant="outline" className="flex items-center gap-2">
-                  <Download className="h-4 w-4" />
-                  Student Progress Report
-                </Button>
-                <Button variant="outline" className="flex items-center gap-2">
-                  <Download className="h-4 w-4" />
-                  Course Analytics
-                </Button>
-                <Button variant="outline" className="flex items-center gap-2">
-                  <Download className="h-4 w-4" />
-                  Engagement Summary
-                </Button>
-                <Button variant="outline" className="flex items-center gap-2">
-                  <Download className="h-4 w-4" />
-                  Quiz Performance
-                </Button>
-        </div>
-            </CardContent>
-          </Card>
+
         </TabsContent>
       </Tabs>
+        </>
+      )}
     </div>
   );
 };

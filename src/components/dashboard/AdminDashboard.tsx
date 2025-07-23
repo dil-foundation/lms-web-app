@@ -731,7 +731,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
     title: string; 
     value: string | number; 
     icon: any; 
-    color: string;
+    color: string; 
   }) => (
     <Card className="relative overflow-hidden transition-all duration-200 hover:shadow-lg bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -740,7 +740,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
       </CardHeader>
       <CardContent>
         <div className="space-y-1">
-          <div className="text-2xl font-bold">{typeof value === 'number' ? value.toLocaleString() : value}</div>
+            <div className="text-2xl font-bold">{typeof value === 'number' ? value.toLocaleString() : value}</div>
         </div>
       </CardContent>
     </Card>
@@ -754,201 +754,201 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
         </div>
       ) : (
         <>
-          {/* Header Section */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex items-center space-x-4">
-              <Avatar className="h-12 w-12">
-                <AvatarFallback className="bg-primary text-primary-foreground font-bold">
-                  {getInitials(userProfile?.first_name, userProfile?.last_name)}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-                <p className="text-muted-foreground">Welcome back, {userProfile?.first_name || 'Administrator'}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Select value={timeRange} onValueChange={setTimeRange}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Time range" />
-                </SelectTrigger>
-                <SelectContent>
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center space-x-4">
+          <Avatar className="h-12 w-12">
+            <AvatarFallback className="bg-primary text-primary-foreground font-bold">
+              {getInitials(userProfile?.first_name, userProfile?.last_name)}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+            <p className="text-muted-foreground">Welcome back, {userProfile?.first_name || 'Administrator'}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Select value={timeRange} onValueChange={setTimeRange}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Time range" />
+            </SelectTrigger>
+            <SelectContent>
                   <SelectItem value="alltime">All Time</SelectItem>
-                  <SelectItem value="7days">Last 7 days</SelectItem>
-                  <SelectItem value="30days">Last 30 days</SelectItem>
-                  <SelectItem value="3months">Last 3 months</SelectItem>
-                  <SelectItem value="6months">Last 6 months</SelectItem>
-                  <SelectItem value="1year">Last year</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+              <SelectItem value="7days">Last 7 days</SelectItem>
+              <SelectItem value="30days">Last 30 days</SelectItem>
+              <SelectItem value="3months">Last 3 months</SelectItem>
+              <SelectItem value="6months">Last 6 months</SelectItem>
+              <SelectItem value="1year">Last year</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
-          {/* Key Metrics Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            <MetricCard
-              title="Total Users"
-              value={stats?.totalUsers ?? 0}
-              icon={Users}
-              color="text-blue-500"
-            />
-            <MetricCard
+      {/* Key Metrics Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <MetricCard
+          title="Total Users"
+          value={stats?.totalUsers ?? 0}
+          icon={Users}
+          color="text-blue-500"
+        />
+        <MetricCard
               title="Published Courses"
-              value={stats?.activeCourses ?? 0}
-              icon={BookOpen}
-              color="text-green-500"
-            />
-            <MetricCard
-              title="Engagement Rate"
-              value={`${stats?.avgEngagement ?? 0}%`}
-              icon={Activity}
-              color="text-purple-500"
-            />
-            <MetricCard
-              title="Course Completion"
-              value={`${stats?.courseCompletionRate ?? 0}%`}
-              icon={Award}
-              color="text-orange-500"
-            />
-            <MetricCard
-              title="New Users"
-              value={stats?.newUsersThisMonth ?? 0}
-              icon={TrendingUp}
-              color="text-cyan-500"
-            />
-            <MetricCard
-              title="Total Logins"
-              value={stats?.totalLogins ?? 0}
-              icon={Eye}
-              color="text-indigo-500"
-            />
-          </div>
+          value={stats?.activeCourses ?? 0}
+          icon={BookOpen}
+          color="text-green-500"
+        />
+        <MetricCard
+          title="Engagement Rate"
+          value={`${stats?.avgEngagement ?? 0}%`}
+          icon={Activity}
+          color="text-purple-500"
+        />
+        <MetricCard
+          title="Course Completion"
+          value={`${stats?.courseCompletionRate ?? 0}%`}
+          icon={Award}
+          color="text-orange-500"
+        />
+        <MetricCard
+          title="New Users"
+          value={stats?.newUsersThisMonth ?? 0}
+          icon={TrendingUp}
+          color="text-cyan-500"
+        />
+        <MetricCard
+          title="Total Logins"
+          value={stats?.totalLogins ?? 0}
+          icon={Eye}
+          color="text-indigo-500"
+        />
+      </div>
 
-          {/* Charts and Analytics */}
-          <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="users">Users</TabsTrigger>
-              <TabsTrigger value="courses">Courses</TabsTrigger>
-              <TabsTrigger value="engagement">Engagement</TabsTrigger>
-            </TabsList>
+      {/* Charts and Analytics */}
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="users">Users</TabsTrigger>
+          <TabsTrigger value="courses">Courses</TabsTrigger>
+          <TabsTrigger value="engagement">Engagement</TabsTrigger>
+        </TabsList>
 
-            <TabsContent value="overview" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5" />
-                      User Growth Trends
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-[300px]">
-                      <ChartContainer config={chartConfig} className="w-full h-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={userGrowthData}>
-                            <defs>
-                              <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
-                                <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
-                              </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="month" />
-                            <YAxis />
-                            <ChartTooltip content={<ChartTooltipContent />} />
-                            <Area 
-                              type="monotone" 
-                              dataKey="users" 
-                              stroke="#3B82F6" 
-                              fillOpacity={1} 
-                              fill="url(#colorUsers)"
-                              name="Total Users"
-                            />
-                            <Line 
-                              type="monotone" 
-                              dataKey="active" 
-                              stroke="#10B981" 
-                              strokeWidth={2}
-                              name="Active Users"
-                            />
-                          </AreaChart>
-                        </ResponsiveContainer>
-                      </ChartContainer>
-                    </div>
-                  </CardContent>
-                </Card>
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  User Growth Trends
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ChartContainer config={chartConfig} className="w-full h-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={userGrowthData}>
+                        <defs>
+                          <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Area 
+                          type="monotone" 
+                          dataKey="users" 
+                          stroke="#3B82F6" 
+                          fillOpacity={1} 
+                          fill="url(#colorUsers)"
+                          name="Total Users"
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="active" 
+                          stroke="#10B981" 
+                          strokeWidth={2}
+                          name="Active Users"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                </div>
+              </CardContent>
+            </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Globe className="h-5 w-5" />
-                      Platform Distribution
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-[300px]">
-                      <ChartContainer config={chartConfig} className="w-full h-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={platformStatsData}
-                              cx="50%"
-                              cy="50%"
-                              labelLine={false}
-                              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                              outerRadius={100}
-                              fill="#8884d8"
-                              dataKey="value"
-                            >
-                              {platformStatsData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.color} />
-                              ))}
-                            </Pie>
-                            <ChartTooltip />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </ChartContainer>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe className="h-5 w-5" />
+                  Platform Distribution
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ChartContainer config={chartConfig} className="w-full h-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={platformStatsData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          outerRadius={100}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {platformStatsData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <ChartTooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                </div>
+              </CardContent>
+            </Card>
+                     </div>
+         </TabsContent>
 
-            <TabsContent value="users" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>User Role Distribution</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-[300px]">
-                      <ChartContainer config={chartConfig} className="w-full h-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={userGrowthData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="month" />
-                            <YAxis />
-                            <ChartTooltip content={<ChartTooltipContent />} />
-                            <Bar dataKey="students" fill="#8B5CF6" name="Students" />
-                            <Bar dataKey="teachers" fill="#10B981" name="Teachers" />
-                            <Bar dataKey="admins" fill="#F59E0B" name="Admins" />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </ChartContainer>
-                    </div>
-                  </CardContent>
-                </Card>
+        <TabsContent value="users" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>User Role Distribution</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ChartContainer config={chartConfig} className="w-full h-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={userGrowthData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Bar dataKey="students" fill="#8B5CF6" name="Students" />
+                        <Bar dataKey="teachers" fill="#10B981" name="Teachers" />
+                        <Bar dataKey="admins" fill="#F59E0B" name="Admins" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                </div>
+              </CardContent>
+            </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>User Activity Overview</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center">
+            <Card>
+              <CardHeader>
+                <CardTitle>User Activity Overview</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
                         <span className="text-sm font-medium w-32">Active Users</span>
-                        <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2">
                           <div className="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                             <div 
                               className="h-full bg-green-500 transition-all duration-300 ease-in-out"
@@ -956,11 +956,11 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                             />
                           </div>
                           <span className="text-sm w-8 text-right">{stats?.activeUsersPercentage ?? 0}%</span>
-                        </div>
-                      </div>
-                      <div className="flex justify-between items-center">
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
                         <span className="text-sm font-medium w-32">Course Engagement</span>
-                        <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2">
                           <div className="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                             <div 
                               className="h-full bg-green-500 transition-all duration-300 ease-in-out"
@@ -968,11 +968,11 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                             />
                           </div>
                           <span className="text-sm w-8 text-right">{stats?.courseEngagementPercentage ?? 0}%</span>
-                        </div>
-                      </div>
-                      <div className="flex justify-between items-center">
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
                         <span className="text-sm font-medium w-32">Discussion Participation</span>
-                        <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2">
                           <div className="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                             <div 
                               className="h-full bg-green-500 transition-all duration-300 ease-in-out"
@@ -980,11 +980,11 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                             />
                           </div>
                           <span className="text-sm w-8 text-right">{stats?.discussionParticipationPercentage ?? 0}%</span>
-                        </div>
-                      </div>
-                      <div className="flex justify-between items-center">
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
                         <span className="text-sm font-medium w-32">Assignment Completion</span>
-                        <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2">
                           <div className="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                             <div 
                               className="h-full bg-green-500 transition-all duration-300 ease-in-out"
@@ -992,69 +992,69 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                             />
                           </div>
                           <span className="text-sm w-8 text-right">{stats?.assignmentCompletionPercentage ?? 0}%</span>
-                        </div>
-                      </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="courses" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Course Performance Analytics</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[400px]">
+                <ChartContainer config={chartConfig} className="w-full h-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={courseAnalyticsData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis 
+                        dataKey="course" 
+                        angle={-45}
+                        textAnchor="end"
+                        height={80}
+                        interval={0}
+                      />
+                      <YAxis />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Bar dataKey="enrolled" fill="#3B82F6" name="Enrolled" />
+                      <Bar dataKey="completed" fill="#10B981" name="Completed" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
               </div>
-            </TabsContent>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-            <TabsContent value="courses" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Course Performance Analytics</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-[400px]">
-                    <ChartContainer config={chartConfig} className="w-full h-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={courseAnalyticsData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis 
-                            dataKey="course" 
-                            angle={-45}
-                            textAnchor="end"
-                            height={80}
-                            interval={0}
-                          />
-                          <YAxis />
-                          <ChartTooltip content={<ChartTooltipContent />} />
-                          <Bar dataKey="enrolled" fill="#3B82F6" name="Enrolled" />
-                          <Bar dataKey="completed" fill="#10B981" name="Completed" />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </ChartContainer>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="engagement" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Daily Engagement Metrics</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-[400px]">
-                    <ChartContainer config={chartConfig} className="w-full h-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={engagementData}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="day" />
-                          <YAxis />
-                          <ChartTooltip content={<ChartTooltipContent />} />
-                          <Line type="monotone" dataKey="activeUsers" stroke="#3B82F6" strokeWidth={2} name="Active Users" />
-                          <Line type="monotone" dataKey="timeSpent" stroke="#10B981" strokeWidth={2} name="Time Spent" />
-                          <Line type="monotone" dataKey="discussions" stroke="#F59E0B" strokeWidth={2} name="Discussions" />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </ChartContainer>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+        <TabsContent value="engagement" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Daily Engagement Metrics</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[400px]">
+                <ChartContainer config={chartConfig} className="w-full h-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={engagementData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="day" />
+                      <YAxis />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Line type="monotone" dataKey="activeUsers" stroke="#3B82F6" strokeWidth={2} name="Active Users" />
+                      <Line type="monotone" dataKey="timeSpent" stroke="#10B981" strokeWidth={2} name="Time Spent" />
+                      <Line type="monotone" dataKey="discussions" stroke="#F59E0B" strokeWidth={2} name="Discussions" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
         </>
       )}
     </div>
