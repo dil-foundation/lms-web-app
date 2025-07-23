@@ -40,97 +40,150 @@ interface Course {
   progress?: number;
 }
 
+interface DashboardStats {
+  enrolled_courses_count: number;
+  total_lessons_count: number;
+  completed_lessons_count: number;
+  active_discussions_count: number;
+  study_streak_days: number;
+  total_study_time_minutes: number;
+  average_grade: number;
+  upcoming_assignments_count: number;
+}
+
+interface UpcomingAssignment {
+  assignment_id: string;
+  assignment_title: string;
+  course_title: string;
+  due_date: string;
+  days_remaining: number;
+  priority: string;
+  submission_status: string;
+}
+
+interface RecentActivity {
+  activity_type: string;
+  activity_description: string;
+  activity_time: string;
+  course_title: string;
+  lesson_title: string;
+}
+
 interface StudentDashboardProps {
   userProfile: Profile;
 }
 
 export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
   const [courses, setCourses] = useState<Course[]>([]);
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
+  const [upcomingAssignments, setUpcomingAssignments] = useState<UpcomingAssignment[]>([]);
+  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Mock data for demo purposes - replace with real data from your backend
-  const mockStats = {
-    totalLessons: courses.length * 12, // Estimate 12 lessons per course
-    completedLessons: 0,
-    activeDiscussions: 0,
-    upcomingDeadlines: 0,
-    studyStreak: 0,
-    totalStudyTime: 0,
-    averageGrade: 0,
-    recentActivity: []
-  };
-
-  const mockUpcomingAssignments = [
-    // Empty for demonstration of empty state
-  ];
-
-  const mockRecentActivity = [
-    // Empty for demonstration of empty state
-  ];
-
   useEffect(() => {
-    const fetchCourses = async () => {
+    const fetchDashboardData = async () => {
+      if (!userProfile?.id) {
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
-      
-      const { data, error } = await supabase.rpc('get_student_courses');
+      try {
+        // Fetch all dashboard data in parallel
+        const [
+          { data: statsData, error: statsError },
+          { data: coursesData, error: coursesError },
+          { data: assignmentsData, error: assignmentsError },
+          { data: activityData, error: activityError }
+        ] = await Promise.all([
+          // Dashboard stats
+          supabase.rpc('get_student_dashboard_stats', {
+            student_id: userProfile.id
+          }),
+          // Courses with progress
+          supabase.rpc('get_student_courses_with_progress', {
+            student_id: userProfile.id
+          }),
+          // Upcoming assignments
+          supabase.rpc('get_student_upcoming_assignments', {
+            student_id: userProfile.id,
+            days_ahead: 7
+          }),
+          // Recent activity
+          supabase.rpc('get_student_recent_activity', {
+            student_id: userProfile.id,
+            days_back: 7
+          })
+        ]);
 
-      if (error) {
-        console.error("Error fetching student courses:", error);
-        toast.error("Failed to load your courses.", {
-          description: "Please try reloading the page.",
-        });
-      } else if (data) {
-        const coursesWithDetails = await Promise.all(data.map(async (course) => {
-          let imageUrl = '/placeholder.svg';
-          if (course.image_url) {
-            const { data: signedUrlData, error } = await supabase.storage
-              .from('dil-lms')
-              .createSignedUrl(course.image_url, 60);
+        // Handle errors
+        if (statsError) {
+          console.error("Error fetching dashboard stats:", statsError);
+          toast.error("Failed to load dashboard statistics.");
+        }
+        if (coursesError) {
+          console.error("Error fetching courses:", coursesError);
+          toast.error("Failed to load your courses.");
+        }
+        if (assignmentsError) {
+          console.error("Error fetching assignments:", assignmentsError);
+        }
+        if (activityError) {
+          console.error("Error fetching activity:", activityError);
+        }
 
-            if (error) {
-              console.error(`Failed to get signed URL for course image: ${course.image_url}`, error);
-            } else {
-              imageUrl = signedUrlData.signedUrl;
-            }
-          }
+        // Set dashboard stats
+        if (statsData && statsData.length > 0) {
+          setDashboardStats(statsData[0]);
+        }
 
-          let progress = 0;
-          const { data: sections, error: sectionsError } = await supabase
-            .from('course_sections')
-            .select('lessons:course_lessons(id)')
-            .eq('course_id', course.id);
+        // Process courses with signed URLs
+        if (coursesData) {
+          const coursesWithSignedUrls = await Promise.all(coursesData.map(async (course: any) => {
+            let imageUrl = '/placeholder.svg';
+            if (course.image_url) {
+              const { data: signedUrlData, error } = await supabase.storage
+                .from('dil-lms')
+                .createSignedUrl(course.image_url, 60);
 
-          if (sectionsError) {
-            console.error(`Error fetching lessons for course ${course.id}:`, sectionsError);
-          } else {
-            const lessonIds = sections.flatMap(s => s.lessons.map(l => l.id));
-            const totalLessons = lessonIds.length;
-
-            if (totalLessons > 0) {
-              const { data: completedLessons, error: progressError } = await supabase
-                .from('user_course_progress')
-                .select('lesson_id', { count: 'exact' })
-                .eq('user_id', userProfile.id)
-                .in('lesson_id', lessonIds)
-                .not('completed_at', 'is', null);
-
-              if (progressError) {
-                console.error(`Error fetching progress for course ${course.id}:`, progressError);
-              } else if (completedLessons) {
-                progress = Math.round((completedLessons.length / totalLessons) * 100);
+              if (error) {
+                console.error(`Failed to get signed URL for course image: ${course.image_url}`, error);
+              } else {
+                imageUrl = signedUrlData.signedUrl;
               }
             }
-          }
 
-          return { ...course, image_url: imageUrl, progress };
-        }));
-        setCourses(coursesWithDetails);
+            return {
+              id: course.course_id,
+              title: course.title,
+              subtitle: course.subtitle,
+              image_url: imageUrl,
+              progress: course.progress_percentage
+            };
+          }));
+          setCourses(coursesWithSignedUrls);
+        }
+
+        // Set upcoming assignments
+        if (assignmentsData) {
+          setUpcomingAssignments(assignmentsData);
+        }
+
+        // Set recent activity
+        if (activityData) {
+          setRecentActivity(activityData);
+        }
+
+      } catch (error: any) {
+        console.error("Failed to fetch dashboard data:", error);
+        toast.error("Failed to load dashboard data.", { description: error.message });
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
-    fetchCourses();
-  }, []);
+    fetchDashboardData();
+  }, [userProfile?.id]);
 
   if (loading) {
     return (
@@ -139,8 +192,6 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
       </div>
     );
   }
-
-  // Show empty state only in the courses section, not the entire dashboard
 
   return (
     <div className="space-y-6">
@@ -161,9 +212,9 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{courses.length}</div>
+            <div className="text-2xl font-bold">{dashboardStats?.enrolled_courses_count || 0}</div>
             <p className="text-xs text-muted-foreground">
-              {courses.length === 1 ? 'Course available' : 'Courses available'}
+              {dashboardStats?.enrolled_courses_count === 1 ? 'Course available' : 'Courses available'}
             </p>
           </CardContent>
         </Card>
@@ -174,9 +225,9 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockStats.completedLessons}</div>
+            <div className="text-2xl font-bold">{dashboardStats?.completed_lessons_count || 0}</div>
             <p className="text-xs text-muted-foreground">
-              of {mockStats.totalLessons} total lessons
+              of {dashboardStats?.total_lessons_count || 0} total lessons
             </p>
           </CardContent>
         </Card>
@@ -187,7 +238,7 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockStats.activeDiscussions}</div>
+            <div className="text-2xl font-bold">{dashboardStats?.active_discussions_count || 0}</div>
             <p className="text-xs text-muted-foreground">
               Discussions you're participating in
             </p>
@@ -200,9 +251,9 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockStats.studyStreak}</div>
+            <div className="text-2xl font-bold">{dashboardStats?.study_streak_days || 0}</div>
             <p className="text-xs text-muted-foreground">
-              {mockStats.studyStreak === 1 ? 'Day in a row' : 'Days in a row'}
+              {dashboardStats?.study_streak_days === 1 ? 'Day in a row' : 'Days in a row'}
             </p>
           </CardContent>
         </Card>
@@ -267,7 +318,7 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {mockUpcomingAssignments.length === 0 ? (
+            {upcomingAssignments.length === 0 ? (
               <div className="text-center py-8">
                 <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <p className="text-sm text-muted-foreground">No upcoming assignments</p>
@@ -275,20 +326,32 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
               </div>
             ) : (
               <div className="space-y-3">
-                {mockUpcomingAssignments.map((assignment, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                {upcomingAssignments.map((assignment) => (
+                  <div key={assignment.assignment_id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center space-x-3">
                       <div className="flex-shrink-0">
                         <FileText className="h-4 w-4 text-muted-foreground" />
                       </div>
                       <div>
-                        <p className="font-medium">{assignment.title}</p>
-                        <p className="text-sm text-muted-foreground">{assignment.course}</p>
+                        <p className="font-medium">{assignment.assignment_title}</p>
+                        <p className="text-sm text-muted-foreground">{assignment.course_title}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-medium">{assignment.dueDate}</p>
-                      <Badge variant="outline">{assignment.priority}</Badge>
+                      <p className="text-sm font-medium">
+                        {assignment.days_remaining === 0 ? 'Due today' : 
+                         assignment.days_remaining === 1 ? 'Due tomorrow' : 
+                         `Due in ${assignment.days_remaining} days`}
+                      </p>
+                      <Badge 
+                        variant={
+                          assignment.priority === 'High' ? 'destructive' :
+                          assignment.priority === 'Medium' ? 'secondary' :
+                          'outline'
+                        }
+                      >
+                        {assignment.priority}
+                      </Badge>
                     </div>
                   </div>
                 ))}
@@ -305,7 +368,7 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {mockRecentActivity.length === 0 ? (
+            {recentActivity.length === 0 ? (
               <div className="text-center py-8">
                 <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <p className="text-sm text-muted-foreground">No recent activity</p>
@@ -313,14 +376,16 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
               </div>
             ) : (
               <div className="space-y-3">
-                {mockRecentActivity.map((activity, index) => (
+                {recentActivity.map((activity, index) => (
                   <div key={index} className="flex items-start space-x-3 p-3 border rounded-lg">
                     <div className="flex-shrink-0 mt-1">
                       <div className="w-2 h-2 bg-primary rounded-full" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm">{activity.description}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{activity.time}</p>
+                      <p className="text-sm">{activity.activity_description}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {new Date(activity.activity_time).toLocaleDateString()} • {activity.course_title}
+                      </p>
                     </div>
                   </div>
                 ))}
