@@ -461,6 +461,11 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, d
                       selected={lesson.due_date ? new Date(lesson.due_date) : undefined}
                       onSelect={(date) => onUpdate(sectionId, lesson.id, { due_date: date?.toISOString() })}
                       initialFocus
+                      defaultMonth={lesson.due_date ? new Date(lesson.due_date) : new Date()}
+                      classNames={{
+                        day_today: "text-foreground font-semibold"
+                      }}
+                      disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                     />
                   </PopoverContent>
                 </Popover>
