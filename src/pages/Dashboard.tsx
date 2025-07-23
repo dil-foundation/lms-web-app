@@ -10,6 +10,8 @@ import { AdminDashboard } from '@/components/dashboard/AdminDashboard';
 import { AIStudentDashboard } from '@/components/dashboard/AIStudentDashboard';
 import { AITeacherDashboard } from '@/components/dashboard/AITeacherDashboard';
 import { AIAdminDashboard } from '@/components/dashboard/AIAdminDashboard';
+import { AIAdminPractice } from '@/components/dashboard/AIAdminPractice';
+import { AITeacherPractice } from '@/components/dashboard/AITeacherPractice';
 import { AIStudentProgress } from '@/components/dashboard/AIStudentProgress';
 import { AIStudentPractice } from '@/components/dashboard/AIStudentPractice';
 import { AIStudentLearn } from '@/components/dashboard/AIStudentLearn';
@@ -195,6 +197,7 @@ const Dashboard = () => {
                       <Route path="/courses" element={<StudentCourses userProfile={finalProfile} />} />
                       <Route path="/assignments" element={<StudentAssignments userProfile={finalProfile} />} />
                       <Route path="/progress" element={<StudentProgress userProfile={finalProfile} />} />
+                      <Route path="/messages" element={<MessagesPage />} />
                       <Route path="/discussion" element={<DiscussionsPage />} />
                       <Route path="/discussion/:id" element={<DiscussionViewPage />} />
                         </>
@@ -212,6 +215,36 @@ const Dashboard = () => {
                           <Route path="/ai-performance" element={<RolePlaceholder title="Performance Analytics" description="AI-powered analytics on teaching effectiveness" icon={BarChart3} />} />
                           <Route path="/ai-planner" element={<RolePlaceholder title="Lesson Planner" description="AI-assisted lesson planning and curriculum design" icon={BookOpen} />} />
                           <Route path="/ai-feedback" element={<RolePlaceholder title="AI Feedback" description="Get AI-powered feedback on your teaching methods" icon={MessageSquare} />} />
+                          <Route path="/ai-learn" element={<RolePlaceholder title="AI Learn" description="🚧 Work in Progress - Advanced learning features coming soon!" icon={BookOpen} />} />
+                          <Route path="/ai-practice" element={<AITeacherPractice />} />
+                          <Route path="/ai-progress" element={<RolePlaceholder title="AI Progress" description="🚧 Work in Progress - Progress tracking features coming soon!" icon={TrendingUp} />} />
+                          {/* Practice Stage Routes for Teacher Viewing */}
+                          <Route path="/practice/stage-0" element={<StageZero />} />
+                          <Route path="/practice/stage-0/lesson/:lessonId" element={<LessonDetail />} />
+                          <Route path="/practice/stage-1" element={<StageOne />} />
+                          <Route path="/practice/stage-1/repeat-after-me" element={<RepeatAfterMe />} />
+                          <Route path="/practice/stage-1/quick-response" element={<QuickResponse />} />
+                          <Route path="/practice/stage-1/listen-and-reply" element={<ListenAndReply />} />
+                          <Route path="/practice/stage-2" element={<StageTwo />} />
+                          <Route path="/practice/stage-2/daily-routine" element={<DailyRoutine />} />
+                          <Route path="/practice/stage-2/quick-answer" element={<QuickAnswer />} />
+                          <Route path="/practice/stage-2/roleplay-simulation" element={<RoleplaySimulation />} />
+                          <Route path="/practice/stage-3" element={<StageThree />} />
+                          <Route path="/practice/stage-3/storytelling" element={<StorytellingPractice />} />
+                          <Route path="/practice/stage-3/group-dialogue" element={<GroupDialogue />} />
+                          <Route path="/practice/stage-3/problem-solving" element={<ProblemSolvingSimulations />} />
+                          <Route path="/practice/stage-4" element={<StageFour />} />
+                          <Route path="/practice/stage-4/abstract-topic" element={<AbstractTopicMonologue />} />
+                          <Route path="/practice/stage-4/mock-interview" element={<MockInterviewPractice />} />
+                          <Route path="/practice/stage-4/news-summary" element={<NewsSummaryChallenge />} />
+                          <Route path="/practice/stage-5" element={<StageFive />} />
+                          <Route path="/practice/stage-5/critical-thinking" element={<CriticalThinkingDialogues />} />
+                          <Route path="/practice/stage-5/academic-presentations" element={<AcademicPresentations />} />
+                          <Route path="/practice/stage-5/indepth-interview" element={<InDepthInterviewSimulation />} />
+                          <Route path="/practice/stage-6" element={<StageSix />} />
+                          <Route path="/practice/stage-6/spontaneous-speech" element={<AIGuidedSpontaneousSpeech />} />
+                          <Route path="/practice/stage-6/sensitive-scenario" element={<SensitiveScenarioRoleplay />} />
+                          <Route path="/practice/stage-6/opinion-builder" element={<CriticalOpinionBuilder />} />
                         </>
                                             ) : (
                         <>
@@ -240,6 +273,36 @@ const Dashboard = () => {
                           <Route path="/ai-models" element={<RolePlaceholder title="Model Configuration" description="Configure and manage AI models" icon={Settings} />} />
                           <Route path="/ai-safety" element={<RolePlaceholder title="Safety & Ethics" description="AI safety monitoring and ethical guidelines" icon={Shield} />} />
                           <Route path="/ai-training" element={<RolePlaceholder title="AI Training" description="Train and fine-tune AI models" icon={BookOpen} />} />
+                          <Route path="/ai-learn" element={<RolePlaceholder title="AI Learn" description="🚧 Work in Progress - Advanced learning features coming soon!" icon={BookOpen} />} />
+                          <Route path="/ai-practice" element={<AIAdminPractice />} />
+                          <Route path="/ai-progress" element={<RolePlaceholder title="AI Progress" description="🚧 Work in Progress - Progress tracking features coming soon!" icon={TrendingUp} />} />
+                          {/* Practice Stage Routes for Admin Viewing */}
+                          <Route path="/practice/stage-0" element={<StageZero />} />
+                          <Route path="/practice/stage-0/lesson/:lessonId" element={<LessonDetail />} />
+                          <Route path="/practice/stage-1" element={<StageOne />} />
+                          <Route path="/practice/stage-1/repeat-after-me" element={<RepeatAfterMe />} />
+                          <Route path="/practice/stage-1/quick-response" element={<QuickResponse />} />
+                          <Route path="/practice/stage-1/listen-and-reply" element={<ListenAndReply />} />
+                          <Route path="/practice/stage-2" element={<StageTwo />} />
+                          <Route path="/practice/stage-2/daily-routine" element={<DailyRoutine />} />
+                          <Route path="/practice/stage-2/quick-answer" element={<QuickAnswer />} />
+                          <Route path="/practice/stage-2/roleplay-simulation" element={<RoleplaySimulation />} />
+                          <Route path="/practice/stage-3" element={<StageThree />} />
+                          <Route path="/practice/stage-3/storytelling" element={<StorytellingPractice />} />
+                          <Route path="/practice/stage-3/group-dialogue" element={<GroupDialogue />} />
+                          <Route path="/practice/stage-3/problem-solving" element={<ProblemSolvingSimulations />} />
+                          <Route path="/practice/stage-4" element={<StageFour />} />
+                          <Route path="/practice/stage-4/abstract-topic" element={<AbstractTopicMonologue />} />
+                          <Route path="/practice/stage-4/mock-interview" element={<MockInterviewPractice />} />
+                          <Route path="/practice/stage-4/news-summary" element={<NewsSummaryChallenge />} />
+                          <Route path="/practice/stage-5" element={<StageFive />} />
+                          <Route path="/practice/stage-5/critical-thinking" element={<CriticalThinkingDialogues />} />
+                          <Route path="/practice/stage-5/academic-presentations" element={<AcademicPresentations />} />
+                          <Route path="/practice/stage-5/indepth-interview" element={<InDepthInterviewSimulation />} />
+                          <Route path="/practice/stage-6" element={<StageSix />} />
+                          <Route path="/practice/stage-6/spontaneous-speech" element={<AIGuidedSpontaneousSpeech />} />
+                          <Route path="/practice/stage-6/sensitive-scenario" element={<SensitiveScenarioRoleplay />} />
+                          <Route path="/practice/stage-6/opinion-builder" element={<CriticalOpinionBuilder />} />
                         </>
                       ) : (
                         <>
@@ -248,6 +311,7 @@ const Dashboard = () => {
                           <Route path="/courses/builder/:courseId" element={<CourseBuilder />} />
                           <Route path="/reports" element={<ReportsOverview />} />
                           <Route path="/observation-reports" element={<ObservationReports />} />
+                          <Route path="/messages" element={<MessagesPage />} />
                           <Route path="/discussion" element={<DiscussionsPage />} />
                           <Route path="/discussion/:id" element={<DiscussionViewPage />} />
                           <Route path="/grade-assignments" element={<GradeAssignments />} />

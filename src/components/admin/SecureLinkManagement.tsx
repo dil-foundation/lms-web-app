@@ -1,151 +1,41 @@
-import {
-  ArrowLeft,
-  RefreshCw,
-  Plus,
-  Link as LinkIcon,
-  CheckCircle,
-  Shield,
-  XCircle,
-  Clock,
-  Copy,
-  Trash2,
-  AlertCircle,
-  Eye,
-  Download,
-  ExternalLink,
-  Check,
-  AlertTriangle,
-} from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { ArrowLeft, Plus, Link2, Eye, Copy, Trash2, Shield, RefreshCw, BarChart3, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-  DialogClose,
-} from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useToast } from '@/components/ui/use-toast';
-import { EmptyState } from '@/components/EmptyState';
-import { cn } from '@/lib/utils';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ContentLoader } from '@/components/ContentLoader';
+import { SecureLinksDatabaseSetupAlert } from './SecureLinksDatabaseSetupAlert';
+import { useSecureLinks, SecureLink } from '@/contexts/SecureLinksContext';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 interface SecureLinkManagementProps {
   onBack: () => void;
 }
 
-interface SecureLink {
-  id: string;
-  role: string;
-  token: string;
-  fullUrl: string;
-  expiry: Date;
-  status: 'active' | 'expired' | 'used' | 'deactivated';
-  usedBy?: string;
-  usedAt?: Date;
-  created: Date;
-  createdBy: string;
-  expiryDays: number;
-}
-
-const StatCard = ({ title, value, icon: Icon, iconColor, bgColor }) => (
-  <Card className="shadow-sm hover:shadow-md transition-shadow bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-    <CardContent className="p-4 flex items-center justify-between">
-      <div>
-        <p className="text-sm text-muted-foreground">{title}</p>
-        <p className="text-2xl font-bold">{value}</p>
-      </div>
-      <div className={cn("p-3 rounded-lg", bgColor)}>
-        <Icon className={cn("h-6 w-6", iconColor)} />
-      </div>
-    </CardContent>
-  </Card>
-);
-
-const getRoleBadgeClass = (role: string) => {
-  switch (role) {
-    case 'Principal':
-      return 'bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/50 dark:text-blue-300';
-    case 'ECE Observer':
-      return 'bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/50 dark:text-green-300';
-    case 'School Officer':
-      return 'bg-purple-100 text-purple-800 hover:bg-purple-200 dark:bg-purple-900/50 dark:text-purple-300';
-    case 'Project Manager':
-      return 'bg-orange-100 text-orange-800 hover:bg-orange-200 dark:bg-orange-900/50 dark:text-orange-300';
-    default:
-      return 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-900/50 dark:text-gray-300';
-  }
-};
-
-const getStatusBadgeClass = (status: string) => {
-  switch (status) {
-    case 'active':
-      return 'bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/50 dark:text-green-300';
-    case 'expired':
-      return 'bg-red-100 text-red-800 hover:bg-red-200 dark:bg-red-900/50 dark:text-red-300';
-    case 'used':
-      return 'bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/50 dark:text-blue-300';
-    case 'deactivated':
-      return 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-900/50 dark:text-gray-300';
-    default:
-      return 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-900/50 dark:text-gray-300';
-  }
-};
-
-const generateSecureToken = (): string => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+// Generate secure token
+const generateSecureToken = () => {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';
   for (let i = 0; i < 32; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
   }
   return result;
 };
 
-const GenerateLinkModalContent = ({ onGenerate, isGenerating }) => {
+const GenerateLinkModal = ({ onGenerate, isGenerating }: { onGenerate: (link: SecureLink) => void; isGenerating: boolean }) => {
   const [role, setRole] = useState('');
   const [expiry, setExpiry] = useState('7');
   const [generatedLink, setGeneratedLink] = useState<SecureLink | null>(null);
-  const { toast } = useToast();
+  const [isOpen, setIsOpen] = useState(false);
+  const { user } = useAuth();
 
   const handleGenerate = async () => {
-    if (!role) {
-      toast({
-        title: "Validation Error",
-        description: "Please select an observer role.",
-        variant: "destructive",
-      });
+    if (!role || !user?.id) {
+      toast.error('Please select an observer role');
       return;
     }
 
@@ -153,62 +43,70 @@ const GenerateLinkModalContent = ({ onGenerate, isGenerating }) => {
     const baseUrl = window.location.origin;
     const fullUrl = `${baseUrl}/secure-form/${fullToken}`;
     
+    const roleMapping: Record<string, { display: string; observerRole: string }> = {
+      'principal': { display: 'Principal', observerRole: 'principal' },
+      'ece': { display: 'ECE Observer', observerRole: 'ece' },
+      'school-officer': { display: 'School Officer', observerRole: 'school-officer' },
+      'project-manager': { display: 'Project Manager', observerRole: 'project-manager' }
+    };
+
+    const roleInfo = roleMapping[role];
+    
     const newLink: SecureLink = {
-      id: `link_${Date.now()}`,
-      role: role === 'principal' ? 'Principal' : 
-            role === 'ece' ? 'ECE Observer' : 
-            role === 'school-officer' ? 'School Officer' : 'Project Manager',
-      token: fullToken.substring(0, 8) + '...',
+      id: `link_${Date.now()}`, // Will be replaced by database
+      role: roleInfo.display,
+      observerRole: roleInfo.observerRole,
+      token: fullToken,
       fullUrl,
       expiry: new Date(Date.now() + parseInt(expiry) * 24 * 60 * 60 * 1000),
       status: 'active',
       created: new Date(),
-      createdBy: 'Admin User',
-      expiryDays: parseInt(expiry)
+      createdBy: user.id,
+      expiryDays: parseInt(expiry),
     };
 
-    // Simulate API call
-    setTimeout(() => {
-      setGeneratedLink(newLink);
-      onGenerate(newLink);
-      toast({
-        title: "Secure Link Generated",
-        description: "The secure link has been created successfully.",
-      });
-    }, 1000);
+    setGeneratedLink(newLink);
+    onGenerate(newLink);
   };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast({
-      title: "Copied!",
-      description: "Link copied to clipboard.",
-    });
+    toast.success('Link copied to clipboard!');
+  };
+
+  const resetForm = () => {
+    setRole('');
+    setExpiry('7');
+    setGeneratedLink(null);
+  };
+
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (!open) {
+      resetForm();
+    }
   };
 
   return (
-    <>
-      <DialogHeader>
-        <div className="flex items-center gap-3 mb-4">
-          <div className="bg-green-100 dark:bg-green-900/20 p-2 rounded-full">
-            <LinkIcon className="w-5 h-5 text-green-600" />
-          </div>
-          <DialogTitle className="text-xl font-bold">Generate Secure Link</DialogTitle>
-        </div>
-        <DialogDescription>
-          Create a secure link for observation reporting. The link will be
-          valid for the specified number of days.
-        </DialogDescription>
-      </DialogHeader>
-      
-      {!generatedLink ? (
-        <>
-          <div className="grid gap-6 py-4">
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogTrigger asChild>
+        <Button className="bg-green-600 hover:bg-green-700 text-white">
+          <Plus className="w-4 h-4 mr-2" />
+          Generate Secure Link
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Generate Secure Observer Link</DialogTitle>
+        </DialogHeader>
+        
+        {!generatedLink ? (
+          <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="observer-role">Observer Role</Label>
+              <label className="text-sm font-medium">Observer Role</label>
               <Select value={role} onValueChange={setRole}>
-                <SelectTrigger id="observer-role" className="h-11">
-                  <SelectValue placeholder="Select role" />
+                <SelectTrigger>
+                  <SelectValue placeholder="Select observer role" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="principal">Principal</SelectItem>
@@ -218,573 +116,485 @@ const GenerateLinkModalContent = ({ onGenerate, isGenerating }) => {
                 </SelectContent>
               </Select>
             </div>
+            
             <div className="space-y-2">
-              <Label htmlFor="expiry-days">Expiry (Days)</Label>
+              <label className="text-sm font-medium">Expiry Duration</label>
               <Select value={expiry} onValueChange={setExpiry}>
-                <SelectTrigger id="expiry-days" className="h-11">
+                <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">1 day</SelectItem>
-                  <SelectItem value="3">3 days</SelectItem>
-                  <SelectItem value="7">7 days</SelectItem>
-                  <SelectItem value="14">14 days</SelectItem>
-                  <SelectItem value="30">30 days</SelectItem>
+                  <SelectItem value="1">1 Day</SelectItem>
+                  <SelectItem value="3">3 Days</SelectItem>
+                  <SelectItem value="7">7 Days</SelectItem>
+                  <SelectItem value="14">14 Days</SelectItem>
+                  <SelectItem value="30">30 Days</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
-            <Button 
-              onClick={handleGenerate} 
-              disabled={isGenerating}
-              className="bg-green-600 hover:bg-green-700 text-white"
-            >
-              {isGenerating ? (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <LinkIcon className="w-4 h-4 mr-2" />
-                  Generate Link
-                </>
-              )}
+            
+            <Button onClick={handleGenerate} disabled={isGenerating} className="w-full">
+              {isGenerating ? 'Generating...' : 'Generate Link'}
             </Button>
-          </DialogFooter>
-        </>
-      ) : (
-        <div className="py-4 space-y-4">
-          <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
-            <div className="flex items-start gap-3">
-              <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-              <div className="space-y-2 flex-1">
-                <h4 className="font-medium text-green-800 dark:text-green-200">
-                  Secure Link Generated Successfully!
-                </h4>
-                <p className="text-sm text-green-700 dark:text-green-300">
-                  Share this link with the {generatedLink.role} observer.
-                </p>
-                <div className="bg-white dark:bg-green-950 p-3 rounded border border-green-200 dark:border-green-800">
-                  <div className="flex items-center gap-2">
-                    <code className="text-sm font-mono text-green-700 dark:text-green-300 flex-1 break-all">
-                      {generatedLink.fullUrl}
-                    </code>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => copyToClipboard(generatedLink.fullUrl)}
-                      className="flex-shrink-0"
-                    >
-                      <Copy className="w-3 h-3 mr-1" />
-                      Copy
-                    </Button>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 text-sm text-green-700 dark:text-green-300">
-                  <span>Role: {generatedLink.role}</span>
-                  <span>Expires: {generatedLink.expiry.toLocaleDateString()}</span>
-                </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <Alert>
+              <Shield className="h-4 w-4" />
+              <AlertDescription>
+                Secure link generated successfully! Share this link with the {generatedLink.role.toLowerCase()}.
+              </AlertDescription>
+            </Alert>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Generated Link</label>
+              <div className="flex items-center space-x-2">
+                <code className="flex-1 p-2 bg-gray-100 dark:bg-gray-800 rounded text-xs break-all">
+                  {generatedLink.fullUrl}
+                </code>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => copyToClipboard(generatedLink.fullUrl)}
+                >
+                  <Copy className="w-4 h-4" />
+                </Button>
               </div>
             </div>
+            
+            <div className="text-sm text-muted-foreground">
+              <p><strong>Role:</strong> {generatedLink.role}</p>
+              <p><strong>Expires:</strong> {generatedLink.expiry.toLocaleDateString()}</p>
+            </div>
+            
+            <Button onClick={() => handleOpenChange(false)} className="w-full">
+              Done
+            </Button>
           </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button className="bg-green-600 hover:bg-green-700 text-white">
-                <Check className="w-4 h-4 mr-2" />
-                Done
-              </Button>
-            </DialogClose>
-          </DialogFooter>
-        </div>
-      )}
-    </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 };
 
-export const SecureLinkManagement = ({ onBack }: SecureLinkManagementProps) => {
-  const [links, setLinks] = useState<SecureLink[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [actionLoading, setActionLoading] = useState<{[key: string]: boolean}>({});
-  const { toast } = useToast();
+const LinkCard = ({ 
+  link, 
+  onDelete, 
+  onDeactivate,
+  isDeleting 
+}: { 
+  link: SecureLink; 
+  onDelete: () => void;
+  onDeactivate: () => void;
+  isDeleting: boolean;
+}) => {
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success('Link copied to clipboard!');
+  };
 
-  // Check for expired links
-  const checkExpiredLinks = () => {
-    const now = new Date();
-    const updatedLinks = links.map(link => ({
-      ...link,
-      status: link.expiry < now && link.status === 'active' ? 'expired' as const : link.status
-    }));
-    
-    // Only update if there are changes
-    const hasChanges = updatedLinks.some((link, index) => link.status !== links[index]?.status);
-    if (hasChanges) {
-      setLinks(updatedLinks);
-      saveLinksToStorage(updatedLinks);
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+      case 'expired': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
+      case 'used': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
+      case 'deactivated': return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
     }
   };
 
-  // Auto-refresh every 30 seconds to check for expired links
-  useEffect(() => {
-    const interval = setInterval(checkExpiredLinks, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Persistent storage key
-  const STORAGE_KEY = 'secure-links-data';
-
-  // Load links from localStorage or use initial mock data
-  const loadLinks = () => {
-    setLoading(true);
-    // Simulate loading from database
-    setTimeout(() => {
-      try {
-        const storedLinks = localStorage.getItem(STORAGE_KEY);
-        let linksToLoad: SecureLink[] = [];
-
-        if (storedLinks) {
-          // Parse stored links and convert date strings back to Date objects
-          const parsedLinks = JSON.parse(storedLinks);
-          linksToLoad = parsedLinks.map((link: any) => ({
-            ...link,
-            expiry: new Date(link.expiry),
-            created: new Date(link.created),
-            usedAt: link.usedAt ? new Date(link.usedAt) : undefined
-          }));
-        } else {
-          // First time loading - use initial mock data
-          linksToLoad = [
-            {
-              id: 'link_1',
-              role: 'Principal',
-              token: '1c87fa...',
-              fullUrl: `${window.location.origin}/secure-form/1c87fa9b2d3e4f5g6h7i8j9k`,
-              expiry: new Date('2025-07-21T12:26:00'),
-              status: 'active',
-              created: new Date('2025-07-07T12:26:00'),
-              createdBy: 'Admin User',
-              expiryDays: 14
-            },
-            {
-              id: 'link_2',
-              role: 'ECE Observer',
-              token: '1621b0...',
-              fullUrl: `${window.location.origin}/secure-form/1621b0c3d4e5f6g7h8i9j0k1`,
-              expiry: new Date('2025-07-12T15:33:00'),
-              status: 'active',
-              created: new Date('2025-07-05T15:33:00'),
-              createdBy: 'Admin User',
-              expiryDays: 7
-            },
-          ];
-          // Save initial data to localStorage
-          saveLinksToStorage(linksToLoad);
-        }
-
-        setLinks(linksToLoad);
-        setLoading(false);
-        checkExpiredLinks();
-      } catch (error) {
-        console.error('Error loading links:', error);
-        setLinks([]);
-        setLoading(false);
-      }
-    }, 1000);
-  };
-
-  // Save links to localStorage
-  const saveLinksToStorage = (linksToSave: SecureLink[]) => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(linksToSave));
-    } catch (error) {
-      console.error('Error saving links:', error);
-    }
-  };
-
-  // Mock database operations
-  useEffect(() => {
-    loadLinks();
-  }, []);
-
-  const handleGenerate = (newLink: SecureLink) => {
-    const updatedLinks = [...links, newLink];
-    setLinks(updatedLinks);
-    saveLinksToStorage(updatedLinks);
-  };
-
-  const handleRefresh = () => {
-    loadLinks();
-    toast({
-      title: "Refreshed",
-      description: "Secure links data has been refreshed from storage.",
-    });
-  };
-
-  // Development helper - clear all stored data (you can remove this in production)
-  const handleClearStorage = () => {
-    localStorage.removeItem(STORAGE_KEY);
-    setLinks([]);
-    toast({
-      title: "Storage Cleared",
-      description: "All secure links have been cleared from storage.",
-      variant: "destructive",
-    });
-  };
-
-  const handleCopyLink = async (link: SecureLink) => {
-    setActionLoading(prev => ({ ...prev, [`copy-${link.id}`]: true }));
-    
-    try {
-      await navigator.clipboard.writeText(link.fullUrl);
-      toast({
-        title: "Copied!",
-        description: "Link copied to clipboard.",
-      });
-    } catch (error) {
-      toast({
-        title: "Copy Failed",
-        description: "Failed to copy link to clipboard.",
-        variant: "destructive",
-      });
-    } finally {
-      setTimeout(() => {
-        setActionLoading(prev => ({ ...prev, [`copy-${link.id}`]: false }));
-      }, 500);
-    }
-  };
-
-  const handleDeactivate = (linkId: string) => {
-    setActionLoading(prev => ({ ...prev, [`deactivate-${linkId}`]: true }));
-    
-    // Simulate API call
-    setTimeout(() => {
-      const updatedLinks = links.map(link => 
-        link.id === linkId ? { ...link, status: 'deactivated' as const } : link
-      );
-      setLinks(updatedLinks);
-      saveLinksToStorage(updatedLinks);
-      toast({
-        title: "Link Deactivated",
-        description: "The secure link has been deactivated and can no longer be used.",
-      });
-      setActionLoading(prev => ({ ...prev, [`deactivate-${linkId}`]: false }));
-    }, 1000);
-  };
-
-  const handleDelete = (linkId: string) => {
-    setActionLoading(prev => ({ ...prev, [`delete-${linkId}`]: true }));
-    
-    // Simulate API call
-    setTimeout(() => {
-      const updatedLinks = links.filter(link => link.id !== linkId);
-      setLinks(updatedLinks);
-      saveLinksToStorage(updatedLinks);
-      toast({
-        title: "Link Deleted",
-        description: "The secure link has been permanently deleted.",
-        variant: "destructive",
-      });
-      setActionLoading(prev => ({ ...prev, [`delete-${linkId}`]: false }));
-    }, 1000);
-  };
-
-  const handleOpenLink = (link: SecureLink) => {
-    if (link.status === 'active') {
-      window.open(link.fullUrl, '_blank', 'noopener,noreferrer');
-      toast({
-        title: "Link Opened",
-        description: "Secure form opened in new tab.",
-      });
-    } else {
-      toast({
-        title: "Cannot Open Link",
-        description: `This link is ${link.status} and cannot be opened.`,
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleReactivate = (linkId: string) => {
-    setActionLoading(prev => ({ ...prev, [`reactivate-${linkId}`]: true }));
-    
-    // Simulate API call
-    setTimeout(() => {
-      const updatedLinks = links.map(link => 
-        link.id === linkId ? { ...link, status: 'active' as const } : link
-      );
-      setLinks(updatedLinks);
-      saveLinksToStorage(updatedLinks);
-      toast({
-        title: "Link Reactivated",
-        description: "The secure link has been reactivated.",
-      });
-      setActionLoading(prev => ({ ...prev, [`reactivate-${linkId}`]: false }));
-    }, 1000);
-  };
-
-  const getStats = () => {
-    const total = links.length;
-    const active = links.filter(l => l.status === 'active').length;
-    const used = links.filter(l => l.status === 'used').length;
-    const deactivated = links.filter(l => l.status === 'deactivated').length;
-    const expired = links.filter(l => l.status === 'expired').length;
-    
-    return { total, active, used, deactivated, expired };
-  };
-
-  const stats = getStats();
-
-  const isExpiringSoon = (expiry: Date) => {
-    const now = new Date();
-    const timeDiff = expiry.getTime() - now.getTime();
-    const hoursDiff = timeDiff / (1000 * 3600);
-    return hoursDiff > 0 && hoursDiff < 24; // Expires within 24 hours
-  };
+  const isExpired = new Date() > link.expiry;
+  const displayStatus = isExpired && link.status === 'active' ? 'expired' : link.status;
 
   return (
-    <div className="space-y-6 mx-auto p-4 sm:p-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" onClick={onBack} className="text-muted-foreground">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Observation Reporting
-        </Button>
-      </div>
+    <Card className="transition-all duration-200 hover:shadow-md">
+      <CardContent className="p-6">
+        <div className="flex items-start justify-between gap-6">
+          {/* Left section - Main info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center gap-2">
+                <Shield className="w-5 h-5 text-green-600" />
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  {link.role}
+                </h3>
+              </div>
+              <Badge className={`${getStatusColor(displayStatus)} font-medium px-3 py-1`}>
+                {displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1)}
+              </Badge>
+            </div>
+            
+            {/* Token and URL info */}
+            <div className="space-y-3 mb-4">
+              <div className="flex items-center gap-2">
+                <code className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-sm font-mono text-gray-700 dark:text-gray-300">
+                  {link.token.substring(0, 12)}...
+                </code>
+                {displayStatus === 'active' && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => copyToClipboard(link.fullUrl)}
+                    className="h-6 px-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
+                    <Copy className="w-3 h-3 mr-1" />
+                    Copy URL
+                  </Button>
+                )}
+              </div>
+            </div>
 
+            {/* Date and usage info grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div>
+                <p className="text-gray-500 dark:text-gray-400 font-medium mb-1">Created</p>
+                <p className="text-gray-900 dark:text-white">
+                  {link.created.toLocaleDateString()}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {link.created.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </div>
+              
+              <div>
+                <p className="text-gray-500 dark:text-gray-400 font-medium mb-1">Expires</p>
+                <p className={`${isExpired ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'}`}>
+                  {link.expiry.toLocaleDateString()}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {link.expiry.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </div>
+
+              {link.usedBy && (
+                <div>
+                  <p className="text-gray-500 dark:text-gray-400 font-medium mb-1">Used By</p>
+                  <p className="text-gray-900 dark:text-white truncate" title={link.usedBy}>
+                    {link.usedBy}
+                  </p>
+                </div>
+              )}
+
+              {link.usedAt && (
+                <div>
+                  <p className="text-gray-500 dark:text-gray-400 font-medium mb-1">Used At</p>
+                  <p className="text-gray-900 dark:text-white">
+                    {link.usedAt.toLocaleDateString()}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {link.usedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Right section - Actions */}
+          <div className="flex flex-col gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => window.open(link.fullUrl, '_blank')}
+              disabled={displayStatus !== 'active'}
+              className="w-24"
+            >
+              <Eye className="w-4 h-4 mr-2" />
+              View
+            </Button>
+            
+            {link.status === 'active' && !isExpired && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onDeactivate}
+                className="w-24"
+              >
+                Deactivate
+              </Button>
+            )}
+            
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={onDelete}
+              disabled={isDeleting}
+              className="w-24"
+            >
+              {isDeleting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+const StatisticsCards = ({ statistics }: { statistics: any }) => (
+  <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+    <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">Total Links</CardTitle>
+        <Link2 className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{statistics.totalLinks}</div>
+        <p className="text-xs text-muted-foreground">
+          All secure observation links
+        </p>
+      </CardContent>
+    </Card>
+    
+    <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">Active</CardTitle>
+        <Shield className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{statistics.activeLinks}</div>
+        <p className="text-xs text-muted-foreground">
+          Ready for observation
+        </p>
+      </CardContent>
+    </Card>
+    
+    <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">Used</CardTitle>
+        <Eye className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{statistics.usedLinks}</div>
+        <p className="text-xs text-muted-foreground">
+          Successfully submitted
+        </p>
+      </CardContent>
+    </Card>
+    
+    <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">Expired</CardTitle>
+        <Trash2 className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{statistics.expiredLinks}</div>
+        <p className="text-xs text-muted-foreground">
+          Past expiration date
+        </p>
+      </CardContent>
+    </Card>
+    
+    <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">Deactivated</CardTitle>
+        <BarChart3 className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{statistics.deactivatedLinks}</div>
+        <p className="text-xs text-muted-foreground">
+          Manually disabled
+        </p>
+      </CardContent>
+    </Card>
+  </div>
+);
+
+export const SecureLinkManagement = ({ onBack }: SecureLinkManagementProps) => {
+  const { 
+    links, 
+    addLink, 
+    deleteLink, 
+    updateLink, 
+    isLoading, 
+    error, 
+    refreshLinks, 
+    getStatistics 
+  } = useSecureLinks();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [statistics, setStatistics] = useState({
+    totalLinks: 0,
+    activeLinks: 0,
+    usedLinks: 0,
+    deactivatedLinks: 0,
+    expiredLinks: 0,
+  });
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  // Load statistics
+  useEffect(() => {
+    const loadStatistics = async () => {
+      try {
+        setStatsLoading(true);
+        const stats = await getStatistics();
+        setStatistics(stats);
+      } catch (err) {
+        console.error('Error loading statistics:', err);
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+
+    if (!isLoading && !error) {
+      loadStatistics();
+    }
+  }, [links, isLoading, error, getStatistics]);
+
+  const handleGenerateLink = async (newLink: SecureLink) => {
+    try {
+      await addLink(newLink);
+      toast.success('Secure link generated successfully!');
+    } catch (err) {
+      toast.error('Failed to generate secure link');
+      console.error('Error generating link:', err);
+    }
+  };
+
+  const handleDeleteLink = async (linkId: string) => {
+    setDeletingId(linkId);
+    try {
+      await deleteLink(linkId);
+      toast.success('Link deleted successfully');
+    } catch (err) {
+      toast.error('Failed to delete link');
+      console.error('Error deleting link:', err);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleDeactivateLink = async (linkId: string) => {
+    try {
+      await updateLink(linkId, { status: 'deactivated' });
+      toast.success('Link deactivated successfully');
+    } catch (err) {
+      toast.error('Failed to deactivate link');
+      console.error('Error deactivating link:', err);
+    }
+  };
+
+  const handleRefresh = async () => {
+    try {
+      await refreshLinks();
+      toast.success('Links refreshed successfully');
+    } catch (err) {
+      toast.error('Failed to refresh links');
+      console.error('Error refreshing links:', err);
+    }
+  };
+
+  if (isLoading) {
+    return <ContentLoader />;
+  }
+
+  // Show database setup alert if there's a database-related error
+  if (error && error.includes('Database table not set up yet')) {
+    return (
+      <div className="space-y-6 mx-auto p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Secure Link Management</h1>
+            <p className="text-muted-foreground mt-1">
+              Generate and manage secure observation form links
+            </p>
+          </div>
+          <Button variant="outline" onClick={onBack}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+        </div>
+
+        <SecureLinksDatabaseSetupAlert error={error} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 mx-auto p-4">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Secure Link Management</h1>
           <p className="text-muted-foreground mt-1">
-            Generate and manage secure links for observation reporting.
+            Generate and manage secure observation form links for external observers
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handleRefresh} disabled={loading}>
-            <RefreshCw className={cn("w-4 h-4 mr-2", loading && "animate-spin")} />
+          <Button variant="outline" onClick={handleRefresh}>
+            <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
-          {/* Development helper - remove in production */}
-          {process.env.NODE_ENV === 'development' && (
-            <Button 
-              variant="outline" 
-              onClick={handleClearStorage}
-              className="text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-900/20"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Clear All
-            </Button>
-          )}
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button className="bg-green-600 hover:bg-green-700 text-white">
-                <Plus className="w-4 h-4 mr-2" />
-                Generate Link
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
-              <GenerateLinkModalContent onGenerate={handleGenerate} isGenerating={isGenerating} />
-            </DialogContent>
-          </Dialog>
+          <Button variant="outline" onClick={onBack}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        <StatCard title="Total Links" value={stats.total} icon={LinkIcon} iconColor="text-green-600" bgColor="bg-green-100 dark:bg-green-900/20" />
-        <StatCard title="Active" value={stats.active} icon={CheckCircle} iconColor="text-green-600" bgColor="bg-green-100 dark:bg-green-900/20" />
-        <StatCard title="Used" value={stats.used} icon={Shield} iconColor="text-blue-600" bgColor="bg-blue-100 dark:bg-blue-900/20" />
-        <StatCard title="Deactivated" value={stats.deactivated} icon={XCircle} iconColor="text-gray-600" bgColor="bg-gray-100 dark:bg-gray-900/20" />
-        <StatCard title="Expired" value={stats.expired} icon={Clock} iconColor="text-red-600" bgColor="bg-red-100 dark:bg-red-900/20" />
+      {/* Statistics */}
+      {statsLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-4">
+                <div className="h-16 bg-gray-200 dark:bg-gray-700 animate-pulse rounded" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <StatisticsCards statistics={statistics} />
+      )}
+
+      {/* Actions */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold">Active Links</h2>
+        <GenerateLinkModal 
+          onGenerate={handleGenerateLink} 
+          isGenerating={false}
+        />
       </div>
 
-      {loading ? (
-        <Card>
-          <CardContent className="p-8">
-            <div className="flex items-center justify-center">
-              <RefreshCw className="w-6 h-6 animate-spin text-muted-foreground" />
-              <span className="ml-2 text-muted-foreground">Loading secure links...</span>
-            </div>
-          </CardContent>
-        </Card>
-      ) : links.length === 0 ? (
-        <EmptyState
-          icon={<LinkIcon className="w-8 h-8 text-muted-foreground" />}
-          title="No Secure Links Yet"
-          description="Create your first secure link to allow observers to submit reports without logging in."
-          action={
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button className="bg-green-600 hover:bg-green-700 text-white">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Generate First Link
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px]">
-                <GenerateLinkModalContent onGenerate={handleGenerate} isGenerating={isGenerating} />
-              </DialogContent>
-            </Dialog>
-          }
-        />
-      ) : (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <LinkIcon className="w-5 h-5 text-muted-foreground" />
-              <CardTitle>Secure Links</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Expiry</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Used By</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {links.map((link) => (
-                    <TableRow key={link.id}>
-                      <TableCell>
-                        <Badge className={cn("font-medium", getRoleBadgeClass(link.role))}>
-                          {link.role}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        <div className="flex items-center gap-2">
-                          <div>
-                            {link.expiry.toLocaleDateString()}
-                            <br />
-                            <span className="text-xs">{link.expiry.toLocaleTimeString()}</span>
-                          </div>
-                          {isExpiringSoon(link.expiry) && link.status === 'active' && (
-                            <span title="Expires within 24 hours">
-                              <AlertTriangle className="w-4 h-4 text-orange-500" />
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={cn("font-medium", getStatusBadgeClass(link.status))}>
-                          {link.status.charAt(0).toUpperCase() + link.status.slice(1)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {link.usedBy || '—'}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {link.created.toLocaleDateString()}
-                        <br />
-                        <span className="text-xs">{link.created.toLocaleTimeString()}</span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleOpenLink(link)}
-                            disabled={link.status !== 'active'}
-                          >
-                            <ExternalLink className="w-3 h-3 mr-2" />
-                            Open
-                          </Button>
-                          
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleCopyLink(link)}
-                            disabled={actionLoading[`copy-${link.id}`]}
-                          >
-                            {actionLoading[`copy-${link.id}`] ? (
-                              <RefreshCw className="w-3 h-3 mr-2 animate-spin" />
-                            ) : (
-                              <Copy className="w-3 h-3 mr-2" />
-                            )}
-                            Copy
-                          </Button>
-                          
-                          {link.status === 'active' ? (
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleDeactivate(link.id)}
-                              disabled={actionLoading[`deactivate-${link.id}`]}
-                            >
-                              {actionLoading[`deactivate-${link.id}`] ? (
-                                <RefreshCw className="w-3 h-3 mr-2 animate-spin" />
-                              ) : (
-                                <XCircle className="w-3 h-3 mr-2" />
-                              )}
-                              Deactivate
-                            </Button>
-                          ) : link.status === 'deactivated' ? (
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleReactivate(link.id)}
-                              disabled={actionLoading[`reactivate-${link.id}`]}
-                            >
-                              {actionLoading[`reactivate-${link.id}`] ? (
-                                <RefreshCw className="w-3 h-3 mr-2 animate-spin" />
-                              ) : (
-                                <CheckCircle className="w-3 h-3 mr-2" />
-                              )}
-                              Reactivate
-                            </Button>
-                          ) : null}
-                          
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-900/20"
-                                disabled={actionLoading[`delete-${link.id}`]}
-                              >
-                                {actionLoading[`delete-${link.id}`] ? (
-                                  <RefreshCw className="w-3 h-3 mr-2 animate-spin" />
-                                ) : (
-                                  <Trash2 className="w-3 h-3 mr-2" />
-                                )}
-                                Delete
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This action cannot be undone. This will permanently delete the secure link
-                                  and remove it from our servers. The link will no longer be accessible.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction 
-                                  onClick={() => handleDelete(link.id)}
-                                  className="bg-red-600 hover:bg-red-700"
-                                >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Error Alert */}
+      {error && !error.includes('Database table not set up yet') && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
+
+      {/* Links List */}
+      <div className="space-y-4">
+        {links.length === 0 ? (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <Shield className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium mb-2">No secure links created yet</h3>
+              <p className="text-muted-foreground mb-4">
+                Generate your first secure link to allow external observers to submit reports.
+              </p>
+              <GenerateLinkModal 
+                onGenerate={handleGenerateLink} 
+                isGenerating={false}
+              />
+            </CardContent>
+          </Card>
+        ) : (
+          links.map((link) => (
+            <LinkCard
+              key={link.id}
+              link={link}
+              onDelete={() => handleDeleteLink(link.id)}
+              onDeactivate={() => handleDeactivateLink(link.id)}
+              isDeleting={deletingId === link.id}
+            />
+          ))
+        )}
+      </div>
     </div>
   );
 }; 
