@@ -129,54 +129,6 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     return { startDate, endDate: now };
   };
 
-  // Helper function to generate fallback data for charts
-  const generateFallbackEngagementData = (range: string) => {
-    const periods = range === '7days' ? 7 : range === '30days' ? 4 : range === '3months' ? 3 : 12;
-    return Array.from({ length: periods }, (_, i) => ({
-      week: range === '7days' ? `Day ${i + 1}` : range === '30days' ? `Week ${i + 1}` : `Month ${i + 1}`,
-      activeStudents: Math.floor(Math.random() * 10) + 1,
-      completionRate: Math.floor(Math.random() * 30) + 10,
-      timeSpent: Math.floor(Math.random() * 60) + 10
-    }));
-  };
-
-  const generateFallbackProgressData = () => {
-    return [
-      { name: 'Excellent (90-100%)', value: Math.floor(Math.random() * 5) + 1, color: '#10B981' },
-      { name: 'Good (80-89%)', value: Math.floor(Math.random() * 8) + 2, color: '#3B82F6' },
-      { name: 'Average (70-79%)', value: Math.floor(Math.random() * 6) + 1, color: '#F59E0B' },
-      { name: 'Needs Help (<70%)', value: Math.floor(Math.random() * 4) + 1, color: '#EF4444' },
-      { name: 'Not Started', value: Math.floor(Math.random() * 3) + 1, color: '#6B7280' }
-    ];
-  };
-
-  const generateFallbackCourseData = () => {
-    return [
-      { course: 'Sample Course', enrolled: Math.floor(Math.random() * 20) + 5, completed: Math.floor(Math.random() * 10) + 2, inProgress: Math.floor(Math.random() * 8) + 1, avgRating: 4.5 },
-      { course: 'Test course 1', enrolled: Math.floor(Math.random() * 15) + 3, completed: Math.floor(Math.random() * 8) + 1, inProgress: Math.floor(Math.random() * 6) + 1, avgRating: 4.2 }
-    ];
-  };
-
-  const generateFallbackCompletionTrends = (range: string) => {
-    const periods = range === '7days' ? 7 : range === '30days' ? 4 : range === '3months' ? 3 : 12;
-    return Array.from({ length: periods }, (_, i) => ({
-      month: range === '7days' ? `Day ${i + 1}` : range === '30days' ? `Week ${i + 1}` : `Month ${i + 1}`,
-      'Sample Course': Math.floor(Math.random() * 5) + 1,
-      'Test course 1': Math.floor(Math.random() * 3) + 1
-    }));
-  };
-
-  const generateFallbackEngagementTrends = (range: string) => {
-    const periods = range === '7days' ? 7 : range === '30days' ? 4 : range === '3months' ? 3 : 12;
-    return Array.from({ length: periods }, (_, i) => ({
-      week: range === '7days' ? `Day ${i + 1}` : range === '30days' ? `Week ${i + 1}` : `Month ${i + 1}`,
-      discussions: Math.floor(Math.random() * 5) + 1,
-      assignments: Math.floor(Math.random() * 8) + 2,
-      quizzes: Math.floor(Math.random() * 6) + 1,
-      videos: Math.floor(Math.random() * 10) + 3
-    }));
-  };
-
   // Add useEffect to track chart data state changes
   useEffect(() => {
     console.log('🔍 [DEBUG] Chart data state updated:', {
@@ -254,26 +206,32 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         const assignmentLessonIds = assignmentLessons.map(l => l.id);
         console.log('🔍 [DEBUG] Assignment lesson IDs:', assignmentLessonIds);
 
-        // 4. Fetch teacher-specific stats
+        // 4. Fetch teacher-specific stats using the new engagement metrics function
+        const { data: engagementMetrics, error: engagementError } = await supabase.rpc('get_teacher_engagement_metrics', {
+          teacher_id: userProfile.id,
+          time_range: timeRange
+        });
+
+        if (engagementError) throw engagementError;
+
+        console.log('🔍 [DEBUG] Engagement metrics from SQL:', engagementMetrics);
+
+        // Debug: Check what data exists for this teacher
+        const { data: debugData, error: debugError } = await supabase.rpc('debug_teacher_data', {
+          teacher_id: userProfile.id
+        });
+        
+        if (!debugError) {
+          console.log('🔍 [DEBUG] Teacher data debug info:', debugData);
+        } else {
+          console.log('🔍 [DEBUG] Debug function error:', debugError);
+        }
+
+        // Also fetch course counts for the dashboard
         const [
-          { count: totalStudents, error: studentsError },
           { count: publishedCourses, error: coursesError },
           { count: totalCourses, error: totalCoursesError },
-          { count: pendingAssignments, error: assignmentsError },
-          { count: totalAssignments, error: totalAssignmentsError },
         ] = await Promise.all([
-          // Total students enrolled in teacher's courses
-          timeRange === 'alltime'
-            ? supabase.from('course_members')
-                .select('*', { count: 'exact', head: true })
-                .in('course_id', courseIds)
-                .eq('role', 'student')
-            : supabase.from('course_members')
-                .select('*', { count: 'exact', head: true })
-                .in('course_id', courseIds)
-                .eq('role', 'student')
-                .gte('created_at', startDate.toISOString()),
-          
           // Published courses by this teacher
           timeRange === 'alltime'
             ? supabase.from('courses')
@@ -295,51 +253,34 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                 .select('*', { count: 'exact', head: true })
                 .in('id', courseIds)
                 .gte('created_at', startDate.toISOString()),
-          
-          // Pending assignments for teacher's courses
-          timeRange === 'alltime'
-            ? supabase.from('assignment_submissions')
-                .select('*', { count: 'exact', head: true })
-                .in('assignment_id', assignmentLessonIds)
-                .eq('status', 'pending')
-            : supabase.from('assignment_submissions')
-                .select('*', { count: 'exact', head: true })
-                .in('assignment_id', assignmentLessonIds)
-                .eq('status', 'pending')
-                .gte('submitted_at', startDate.toISOString()),
-          
-          // Total assignments for teacher's courses
-          timeRange === 'alltime'
-            ? supabase.from('assignment_submissions')
-                .select('*', { count: 'exact', head: true })
-                .in('assignment_id', assignmentLessonIds)
-            : supabase.from('assignment_submissions')
-                .select('*', { count: 'exact', head: true })
-                .in('assignment_id', assignmentLessonIds)
-                .gte('submitted_at', startDate.toISOString()),
         ]);
 
-        if (studentsError) throw studentsError;
         if (coursesError) throw coursesError;
         if (totalCoursesError) throw totalCoursesError;
-        if (assignmentsError) throw assignmentsError;
-        if (totalAssignmentsError) throw totalAssignmentsError;
 
-        // Calculate derived metrics
-        const avgCompletion = totalAssignments > 0 ? Math.round((totalAssignments - pendingAssignments) / totalAssignments * 100) : 0;
-        const activeStudents = Math.floor((totalStudents ?? 0) * 0.85); // Estimate 85% active
-        const avgEngagement = totalStudents > 0 ? Math.round((activeStudents / totalStudents) * 100) : 0;
+        console.log('🔍 [DEBUG] Course counts:', { publishedCourses, totalCourses });
+
+        // Use real engagement metrics from SQL function
+        const realStats = engagementMetrics?.[0] || {
+          total_students: 0,
+          active_students: 0,
+          engagement_rate: 0,
+          avg_completion_rate: 0,
+          total_assignments: 0,
+          pending_assignments: 0,
+          completion_rate: 0
+        };
 
         const baseStats = {
-          totalStudents: totalStudents ?? 0,
+          totalStudents: realStats.total_students,
           publishedCourses: publishedCourses ?? 0,
           activeCourses: publishedCourses ?? 0, // Assuming published courses are active
           totalCourses: totalCourses ?? 0,
-          avgEngagement,
-          avgCompletion,
-          pendingAssignments: pendingAssignments ?? 0,
-          totalAssignments: totalAssignments ?? 0,
-          activeStudents,
+          avgEngagement: realStats.engagement_rate,
+          avgCompletion: realStats.completion_rate,
+          pendingAssignments: realStats.pending_assignments,
+          totalAssignments: realStats.total_assignments,
+          activeStudents: realStats.active_students,
         };
 
         console.log('🔍 [DEBUG] Calculated stats:', baseStats);
@@ -405,9 +346,14 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        console.log('🔍 [DEBUG] No engagement data found, using fallback');
-        // Use fallback data instead of empty state
-        const fallbackData = generateFallbackEngagementData(range);
+        console.log('🔍 [DEBUG] No engagement data found, using minimal fallback');
+        // Create minimal fallback data to show chart structure
+        const fallbackData = [
+          { week: 'Week 1', activeStudents: 0, completionRate: 0, timeSpent: 0 },
+          { week: 'Week 2', activeStudents: 0, completionRate: 0, timeSpent: 0 },
+          { week: 'Week 3', activeStudents: 0, completionRate: 0, timeSpent: 0 },
+          { week: 'Week 4', activeStudents: 0, completionRate: 0, timeSpent: 0 }
+        ];
         setStudentEngagementData(fallbackData);
         return;
       }
@@ -424,8 +370,13 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       setStudentEngagementData(engagementData);
     } catch (error) {
       console.error("Failed to fetch student engagement data:", error);
-      // Use fallback data instead of error state
-      const fallbackData = generateFallbackEngagementData(range);
+      // Create minimal fallback data on error
+      const fallbackData = [
+        { week: 'Week 1', activeStudents: 0, completionRate: 0, timeSpent: 0 },
+        { week: 'Week 2', activeStudents: 0, completionRate: 0, timeSpent: 0 },
+        { week: 'Week 3', activeStudents: 0, completionRate: 0, timeSpent: 0 },
+        { week: 'Week 4', activeStudents: 0, completionRate: 0, timeSpent: 0 }
+      ];
       setStudentEngagementData(fallbackData);
     }
   };
@@ -444,10 +395,8 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        console.log('🔍 [DEBUG] No course performance data found, using fallback');
-        // Use fallback data instead of empty state
-        const fallbackData = generateFallbackCourseData();
-        setCoursePerformanceData(fallbackData);
+        console.log('🔍 [DEBUG] No course performance data found, setting empty array');
+        setCoursePerformanceData([]);
         return;
       }
 
@@ -464,9 +413,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       setCoursePerformanceData(coursePerformance);
     } catch (error) {
       console.error("Failed to fetch course performance data:", error);
-      // Use fallback data instead of error state
-      const fallbackData = generateFallbackCourseData();
-      setCoursePerformanceData(fallbackData);
+      setCoursePerformanceData([]);
     }
   };
 
@@ -485,8 +432,14 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
 
       if (!data || data.length === 0) {
         console.log('🔍 [DEBUG] No student progress data found, using fallback');
-        // Use fallback data instead of empty state
-        const fallbackData = generateFallbackProgressData();
+        // Create fallback data to show chart structure
+        const fallbackData = [
+          { name: 'Not Started', value: 0, color: '#6B7280' },
+          { name: 'Needs Help (<70%)', value: 0, color: '#EF4444' },
+          { name: 'Average (70-79%)', value: 0, color: '#F59E0B' },
+          { name: 'Good (80-89%)', value: 0, color: '#3B82F6' },
+          { name: 'Excellent (90-100%)', value: 0, color: '#10B981' }
+        ];
         setStudentProgressData(fallbackData);
         return;
       }
@@ -502,8 +455,14 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       setStudentProgressData(progressDistribution);
     } catch (error) {
       console.error("Failed to fetch student progress data:", error);
-      // Use fallback data instead of error state
-      const fallbackData = generateFallbackProgressData();
+      // Create fallback data on error
+      const fallbackData = [
+        { name: 'Not Started', value: 0, color: '#6B7280' },
+        { name: 'Needs Help (<70%)', value: 0, color: '#EF4444' },
+        { name: 'Average (70-79%)', value: 0, color: '#F59E0B' },
+        { name: 'Good (80-89%)', value: 0, color: '#3B82F6' },
+        { name: 'Excellent (90-100%)', value: 0, color: '#10B981' }
+      ];
       setStudentProgressData(fallbackData);
     }
   };
@@ -590,10 +549,8 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        console.log('🔍 [DEBUG] No course completion trends data found, using fallback');
-        // Use fallback data instead of empty state
-        const fallbackData = generateFallbackCompletionTrends(range);
-        setCourseCompletionTrends(fallbackData);
+        console.log('🔍 [DEBUG] No course completion trends data found, setting empty array');
+        setCourseCompletionTrends([]);
         return;
       }
 
@@ -607,9 +564,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       setCourseCompletionTrends(trendsData);
     } catch (error) {
       console.error("Failed to fetch course completion trends:", error);
-      // Use fallback data instead of error state
-      const fallbackData = generateFallbackCompletionTrends(range);
-      setCourseCompletionTrends(fallbackData);
+      setCourseCompletionTrends([]);
     }
   };
 
@@ -628,11 +583,11 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
 
       if (!data || data.length === 0) {
         console.log('🔍 [DEBUG] No quiz scores data found, using fallback');
-        // Use fallback data instead of empty state
-        setQuizScoresData([
-          { quiz: 'Sample Quiz 1', avgScore: 85, attempts: 12, passRate: 75 },
-          { quiz: 'Test Quiz 2', avgScore: 78, attempts: 8, passRate: 62 }
-        ]);
+        // Create fallback data to show chart structure
+        const fallbackData = [
+          { quiz: 'No Quizzes Available', avgScore: 0, attempts: 0, passRate: 0 }
+        ];
+        setQuizScoresData(fallbackData);
         return;
       }
 
@@ -648,11 +603,11 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       setQuizScoresData(quizData);
     } catch (error) {
       console.error("Failed to fetch quiz scores data:", error);
-      // Use fallback data instead of error state
-      setQuizScoresData([
-        { quiz: 'Sample Quiz 1', avgScore: 85, attempts: 12, passRate: 75 },
-        { quiz: 'Test Quiz 2', avgScore: 78, attempts: 8, passRate: 62 }
-      ]);
+      // Create fallback data on error
+      const fallbackData = [
+        { quiz: 'No Quizzes Available', avgScore: 0, attempts: 0, passRate: 0 }
+      ];
+      setQuizScoresData(fallbackData);
     }
   };
 
@@ -671,10 +626,8 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        console.log('🔍 [DEBUG] No engagement trends data found, using fallback');
-        // Use fallback data instead of empty state
-        const fallbackData = generateFallbackEngagementTrends(range);
-        setEngagementTrendsData(fallbackData);
+        console.log('🔍 [DEBUG] No engagement trends data found, setting empty array');
+        setEngagementTrendsData([]);
         return;
       }
 
@@ -691,9 +644,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       setEngagementTrendsData(trendsData);
     } catch (error) {
       console.error("Failed to fetch engagement trends data:", error);
-      // Use fallback data instead of error state
-      const fallbackData = generateFallbackEngagementTrends(range);
-      setEngagementTrendsData(fallbackData);
+      setEngagementTrendsData([]);
     }
   };
 

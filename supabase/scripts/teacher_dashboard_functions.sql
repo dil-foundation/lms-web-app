@@ -2,7 +2,8 @@
 -- TEACHER DASHBOARD DYNAMIC FUNCTIONS
 -- =====================================================
 
--- Function 1: Get Student Engagement Trends (Improved with proper period ordering)
+-- Function 1: Get Student Engagement Trends (Improved with better data handling)
+DROP FUNCTION IF EXISTS get_student_engagement_trends(UUID, TEXT);
 CREATE OR REPLACE FUNCTION get_student_engagement_trends(
   teacher_id UUID,
   time_range TEXT DEFAULT 'alltime'
@@ -11,7 +12,8 @@ RETURNS TABLE (
   period_label TEXT,
   active_students INTEGER,
   completion_rate INTEGER,
-  time_spent INTEGER
+  time_spent INTEGER,
+  period_number INTEGER
 ) 
 LANGUAGE plpgsql
 AS $$
@@ -105,21 +107,37 @@ BEGIN
     LEFT JOIN course_lessons cl ON ucp.lesson_id = cl.id
     GROUP BY p.period_number, p.period_label, p.period_start
   )
-  SELECT 
-    ad.period_label,
-    GREATEST(ad.active_students, 1) as active_students, -- Ensure at least 1 for chart visibility
-    CASE 
-      WHEN ad.total_activities > 0 THEN 
-        ROUND((ad.completed_lessons::DECIMAL / ad.total_activities) * 100)::INTEGER
-      ELSE 15 -- Default completion rate for empty periods
-    END as completion_rate,
-    GREATEST(ROUND(ad.total_time_spent / 60), 5)::INTEGER as time_spent -- Ensure at least 5 minutes
-  FROM activity_data ad
-  ORDER BY ad.period_number;
+  SELECT * FROM (
+    SELECT 
+      ad.period_label,
+      GREATEST(ad.active_students, 1) as active_students,
+      CASE 
+        WHEN ad.total_activities > 0 THEN 
+          ROUND((ad.completed_lessons::DECIMAL / ad.total_activities) * 100)::INTEGER
+        ELSE 15
+      END as completion_rate,
+      GREATEST(ROUND(ad.total_time_spent / 60), 5)::INTEGER as time_spent,
+      ad.period_number::INTEGER as period_number
+    FROM activity_data ad
+    
+    UNION ALL
+    
+    -- If no activity data, return a placeholder
+    SELECT 
+      'No Activity'::TEXT as period_label,
+      1::INTEGER as active_students,
+      0::INTEGER as completion_rate,
+      5::INTEGER as time_spent,
+      999::INTEGER as period_number
+    WHERE NOT EXISTS (
+      SELECT 1 FROM activity_data ad WHERE ad.active_students > 0
+    )
+  ) combined_data
+  ORDER BY period_number;
 END;
 $$;
 
--- Function 2: Get Student Progress Distribution (Improved)
+-- Function 2: Get Student Progress Distribution (Improved with better data handling)
 CREATE OR REPLACE FUNCTION get_student_progress_distribution(
   teacher_id UUID
 )
@@ -173,10 +191,20 @@ BEGIN
         WHEN (sp.completed_lessons::DECIMAL / sp.total_lessons) >= 0.7 THEN 'Average (70-79%)'
         ELSE 'Needs Help (<70%)'
       END
+    
+    UNION ALL
+    
+    -- Add placeholder if no data exists
+    SELECT 
+      'No Data Available'::TEXT as category,
+      1::INTEGER as student_count
+    WHERE NOT EXISTS (
+      SELECT 1 FROM student_progress sp
+    )
   )
   SELECT 
     pc.category as category_name,
-    GREATEST(pc.student_count, 1) as student_count, -- Ensure at least 1 for chart visibility
+    GREATEST(pc.student_count, 1) as student_count,
     CASE pc.category
       WHEN 'Excellent (90-100%)' THEN '#10B981'
       WHEN 'Good (80-89%)' THEN '#3B82F6'
@@ -186,18 +214,20 @@ BEGIN
     END as color_code
   FROM progress_categories pc
   WHERE pc.student_count > 0
+  
   ORDER BY 
     CASE pc.category
       WHEN 'Excellent (90-100%)' THEN 1
       WHEN 'Good (80-89%)' THEN 2
       WHEN 'Average (70-79%)' THEN 3
       WHEN 'Needs Help (<70%)' THEN 4
-      ELSE 5
+      WHEN 'Not Started' THEN 5
+      ELSE 6
     END;
 END;
 $$;
 
--- Function 3: Get Course Performance Data (Improved)
+-- Function 3: Get Course Performance Data (Improved with better data handling)
 CREATE OR REPLACE FUNCTION get_course_performance_data(
   teacher_id UUID
 )
@@ -233,13 +263,27 @@ BEGIN
   )
   SELECT 
     cs.course_title,
-    GREATEST(cs.enrolled_students, 1) as enrolled_students, -- Ensure at least 1 for chart visibility
+    GREATEST(cs.enrolled_students, 1) as enrolled_students,
     cs.completed_students,
     GREATEST(0, cs.enrolled_students - cs.completed_students)::INTEGER as in_progress_students,
-    4.5 as avg_rating -- Placeholder, can be enhanced with actual ratings
+    4.5 as avg_rating
   FROM course_stats cs
   WHERE cs.enrolled_students > 0
-  ORDER BY cs.enrolled_students DESC
+  
+  UNION ALL
+  
+  -- If no courses with students, return a placeholder
+  SELECT 
+    'No Active Courses'::TEXT as course_title,
+    0::INTEGER as enrolled_students,
+    0::INTEGER as completed_students,
+    0::INTEGER as in_progress_students,
+    0.0::DECIMAL as avg_rating
+  WHERE NOT EXISTS (
+    SELECT 1 FROM course_stats cs WHERE cs.enrolled_students > 0
+  )
+  
+  ORDER BY enrolled_students DESC
   LIMIT 5;
 END;
 $$;
@@ -309,11 +353,24 @@ BEGIN
   SELECT 
     qs.quiz_title,
     qs.avg_score::INTEGER as avg_score,
-    GREATEST(qs.attempts_count, 1)::INTEGER as attempts_count, -- Ensure at least 1 attempt
+    GREATEST(qs.attempts_count, 1)::INTEGER as attempts_count,
     qs.pass_rate::INTEGER as pass_rate
   FROM quiz_stats qs
   WHERE qs.attempts_count > 0
-  ORDER BY qs.attempts_count DESC
+  
+  UNION ALL
+  
+  -- If no quiz data, return a placeholder
+  SELECT 
+    'No Quizzes Available'::TEXT as quiz_title,
+    0::INTEGER as avg_score,
+    1::INTEGER as attempts_count,
+    0::INTEGER as pass_rate
+  WHERE NOT EXISTS (
+    SELECT 1 FROM quiz_stats qs WHERE qs.attempts_count > 0
+  )
+  
+  ORDER BY attempts_count DESC
   LIMIT 5;
 END;
 $$;
@@ -680,6 +737,156 @@ BEGIN
 END;
 $$;
 
+-- Function 8: Get Teacher Engagement Metrics (New)
+CREATE OR REPLACE FUNCTION get_teacher_engagement_metrics(
+  teacher_id UUID,
+  time_range TEXT DEFAULT 'alltime'
+)
+RETURNS TABLE (
+  total_students INTEGER,
+  active_students INTEGER,
+  engagement_rate INTEGER,
+  avg_completion_rate INTEGER,
+  total_assignments INTEGER,
+  pending_assignments INTEGER,
+  completion_rate INTEGER
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  start_date TIMESTAMP;
+BEGIN
+  -- Set date range based on time_range parameter
+  CASE time_range
+    WHEN '7days' THEN
+      start_date := NOW() - INTERVAL '7 days';
+    WHEN '30days' THEN
+      start_date := NOW() - INTERVAL '30 days';
+    WHEN '3months' THEN
+      start_date := NOW() - INTERVAL '3 months';
+    WHEN '6months' THEN
+      start_date := NOW() - INTERVAL '6 months';
+    WHEN '1year' THEN
+      start_date := NOW() - INTERVAL '1 year';
+    ELSE -- alltime
+      start_date := '2020-01-01'::TIMESTAMP;
+  END CASE;
+
+  RETURN QUERY
+  WITH teacher_courses AS (
+    SELECT DISTINCT cm.course_id
+    FROM course_members cm
+    WHERE cm.user_id = teacher_id AND cm.role = 'teacher'
+  ),
+  course_lessons AS (
+    SELECT cl.id, cl.section_id, cl.type
+    FROM course_lessons cl
+    JOIN course_sections cs ON cl.section_id = cs.id
+    JOIN teacher_courses tc ON cs.course_id = tc.course_id
+  ),
+  student_enrollments AS (
+    SELECT DISTINCT cm.user_id
+    FROM course_members cm
+    JOIN teacher_courses tc ON cm.course_id = tc.course_id
+    WHERE cm.role = 'student'
+  ),
+  active_students AS (
+    SELECT COUNT(DISTINCT ucp.user_id)::INTEGER as active_count
+    FROM user_course_progress ucp
+    JOIN course_lessons cl ON ucp.lesson_id = cl.id
+    WHERE ucp.updated_at >= start_date
+  ),
+  assignment_stats AS (
+    SELECT 
+      COUNT(*)::INTEGER as assignment_total_count,
+      COUNT(CASE WHEN assignment_submissions.status = 'pending' THEN 1 END)::INTEGER as assignment_pending_count
+    FROM assignment_submissions
+    JOIN course_lessons cl ON assignment_submissions.assignment_id = cl.id
+    WHERE assignment_submissions.submitted_at >= start_date
+  ),
+  completion_stats AS (
+    SELECT 
+      COUNT(*) as activity_total_count,
+      COUNT(CASE WHEN ucp.completed_at IS NOT NULL THEN 1 END) as activity_completed_count
+    FROM user_course_progress ucp
+    JOIN course_lessons cl ON ucp.lesson_id = cl.id
+    WHERE ucp.updated_at >= start_date
+  )
+  SELECT 
+    (SELECT COUNT(*) FROM student_enrollments)::INTEGER as total_students,
+    COALESCE((SELECT active_count FROM active_students), 0)::INTEGER as active_students,
+    CASE 
+      WHEN (SELECT COUNT(*) FROM student_enrollments) > 0 THEN
+        ROUND((COALESCE((SELECT active_count FROM active_students), 0)::DECIMAL / (SELECT COUNT(*) FROM student_enrollments)) * 100)::INTEGER
+      ELSE 0 
+    END as engagement_rate,
+    CASE 
+      WHEN (SELECT activity_total_count FROM completion_stats) > 0 THEN
+        ROUND(((SELECT activity_completed_count FROM completion_stats)::DECIMAL / (SELECT activity_total_count FROM completion_stats)) * 100)::INTEGER
+      ELSE 0 
+    END as avg_completion_rate,
+    COALESCE((SELECT assignment_total_count FROM assignment_stats), 0)::INTEGER as total_assignments,
+    COALESCE((SELECT assignment_pending_count FROM assignment_stats), 0)::INTEGER as pending_assignments,
+    CASE 
+      WHEN COALESCE((SELECT assignment_total_count FROM assignment_stats), 0) > 0 THEN
+        ROUND(((COALESCE((SELECT assignment_total_count FROM assignment_stats), 0) - COALESCE((SELECT assignment_pending_count FROM assignment_stats), 0))::DECIMAL / COALESCE((SELECT assignment_total_count FROM assignment_stats), 0)) * 100)::INTEGER
+      ELSE 0 
+    END as completion_rate;
+END;
+$$;
+
+-- Function 9: Debug Teacher Data (NEW - for troubleshooting)
+CREATE OR REPLACE FUNCTION debug_teacher_data(
+  teacher_id UUID
+)
+RETURNS TABLE (
+  data_type TEXT,
+  count_value INTEGER,
+  details TEXT
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 'teacher_courses'::TEXT, COUNT(*)::INTEGER, 'Courses where teacher is a member'::TEXT
+  FROM course_members cm
+  WHERE cm.user_id = teacher_id AND cm.role = 'teacher'
+  
+  UNION ALL
+  
+  SELECT 'total_students'::TEXT, COUNT(DISTINCT cm.user_id)::INTEGER, 'Students in teacher courses'::TEXT
+  FROM course_members cm
+  JOIN course_members cm_teacher ON cm.course_id = cm_teacher.course_id
+  WHERE cm_teacher.user_id = teacher_id AND cm_teacher.role = 'teacher' AND cm.role = 'student'
+  
+  UNION ALL
+  
+  SELECT 'course_lessons'::TEXT, COUNT(*)::INTEGER, 'Lessons in teacher courses'::TEXT
+  FROM course_lessons cl
+  JOIN course_sections cs ON cl.section_id = cs.id
+  JOIN course_members cm ON cs.course_id = cm.course_id
+  WHERE cm.user_id = teacher_id AND cm.role = 'teacher'
+  
+  UNION ALL
+  
+  SELECT 'user_progress'::TEXT, COUNT(*)::INTEGER, 'User progress records'::TEXT
+  FROM user_course_progress ucp
+  JOIN course_lessons cl ON ucp.lesson_id = cl.id
+  JOIN course_sections cs ON cl.section_id = cs.id
+  JOIN course_members cm ON cs.course_id = cm.course_id
+  WHERE cm.user_id = teacher_id AND cm.role = 'teacher'
+  
+  UNION ALL
+  
+  SELECT 'assignment_submissions'::TEXT, COUNT(*)::INTEGER, 'Assignment submissions'::TEXT
+  FROM assignment_submissions as2
+  JOIN course_lessons cl ON as2.assignment_id = cl.id
+  JOIN course_sections cs ON cl.section_id = cs.id
+  JOIN course_members cm ON cs.course_id = cm.course_id
+  WHERE cm.user_id = teacher_id AND cm.role = 'teacher';
+END;
+$$;
+
 -- =====================================================
 -- USAGE EXAMPLES:
 -- =====================================================
@@ -704,3 +911,9 @@ $$;
 
 -- Get students data with real progress
 -- SELECT * FROM get_students_data('teacher-uuid-here'); 
+
+-- Get teacher engagement metrics (NEW)
+-- SELECT * FROM get_teacher_engagement_metrics('teacher-uuid-here', 'alltime');
+
+-- Debug teacher data (NEW - for troubleshooting)
+-- SELECT * FROM debug_teacher_data('teacher-uuid-here'); 
