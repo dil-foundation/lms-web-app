@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import SightWordsLesson from './SightWordsLesson';
 import AppUIWordsLesson from './AppUIWordsLesson';
+import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
 
 const alphabetSets = [
     [
@@ -318,12 +319,15 @@ export const LessonDetail: React.FC = () => {
     const { lessonId } = useParams<{ lessonId?: string }>();
 
     return (
-        <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto flex items-center justify-center">
-            {lessonId === '1' && <AlphabetLesson />}
-            {lessonId === '2' && <PhonicsLesson />}
-            {lessonId === '3' && <VocabularyLesson />}
-            {lessonId === '4' && <SightWordsLesson />}
-            {lessonId === '5' && <AppUIWordsLesson />}
+        <div className="p-4 sm:p-6 lg:p-8">
+            <PracticeBreadcrumb className="mb-6" />
+            <div className="max-w-4xl mx-auto flex items-center justify-center">
+                {lessonId === '1' && <AlphabetLesson />}
+                {lessonId === '2' && <PhonicsLesson />}
+                {lessonId === '3' && <VocabularyLesson />}
+                {lessonId === '4' && <SightWordsLesson />}
+                {lessonId === '5' && <AppUIWordsLesson />}
+            </div>
         </div>
     );
 }; 

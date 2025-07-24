@@ -5,6 +5,7 @@ import { ArrowLeft, Users, Mic, Send, Play, Utensils, Stethoscope, ChevronLeft, 
 import { useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ContentLoader } from '@/components/ContentLoader';
+import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
 import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
 import { useAuth } from '@/hooks/useAuth';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
@@ -1185,9 +1186,14 @@ export default function RoleplaySimulation() {
   const isCompleted = selectedScenario && selectedScenario.conversation_flow && currentStep >= selectedScenario.conversation_flow.length - 1;
 
   // Scenario Selection Screen
-  if (!selectedScenario) {
+    if (!selectedScenario) {  
   return (
       <div className="min-h-screen bg-background">
+        {/* Breadcrumb */}
+        <div className="p-4 sm:p-6 lg:p-8 pb-0">
+          <PracticeBreadcrumb />
+        </div>
+        
         {/* Header */}
         <div className="relative flex items-center justify-center mb-6 p-4 sm:p-6 lg:p-8">
           <Button variant="outline" size="icon" className="absolute left-4 sm:left-6 lg:left-8" onClick={() => navigate(-1)}>
@@ -1352,6 +1358,11 @@ export default function RoleplaySimulation() {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto">
+        {/* Breadcrumb */}
+        <div className="px-6 pt-6">
+          <PracticeBreadcrumb />
+        </div>
+        
         {/* Header */}
         <div className="flex items-center justify-between p-6">
           <Button
