@@ -1,14 +1,16 @@
 import { useState, useCallback } from 'react';
-import { useDropzone } from 'react-dropzone';
+import { useDropzone, FileRejection } from 'react-dropzone';
 import { UploadCloud, File as FileIcon, X } from 'lucide-react';
 import { Button } from './button';
 import { Progress } from '@/components/ui/progress';
+import { toast } from 'sonner';
 
 interface FileUploadProps {
   onUpload: (file: File) => void;
   acceptedFileTypes?: string[];
   label?: string;
   disabled?: boolean;
+  maxSize?: number; // in bytes
 }
 
 export const FileUpload = ({
@@ -16,6 +18,7 @@ export const FileUpload = ({
   acceptedFileTypes = [],
   label = 'Drag & drop a file here, or click to select a file',
   disabled = false,
+  maxSize = 5 * 1024 * 1024, // 5MB default
 }: FileUploadProps) => {
   const [file, setFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -40,17 +43,40 @@ export const FileUpload = ({
     }
   }, [onUpload]);
 
+  const onDropRejected = useCallback((fileRejections: FileRejection[]) => {
+    const rejection = fileRejections[0];
+    if (rejection.errors.find(e => e.code === 'file-too-large')) {
+      toast.error(`Error: File is larger than ${formatBytes(maxSize)}.`);
+    } else {
+      toast.error(`Error: ${rejection.errors[0].message}`);
+    }
+  }, [maxSize]);
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
+    onDropRejected,
     accept: acceptedFileTypes.length > 0 ? acceptedFileTypes.reduce((acc, type) => ({ ...acc, [type]: [] }), {}) : undefined,
     multiple: false,
     disabled,
+    maxSize,
   });
 
   const removeFile = () => {
     setFile(null);
     setUploadProgress(0);
   };
+  
+  const formatBytes = (bytes: number, decimals = 2) => {
+    if (!+bytes) return '0 Bytes'
+
+    const k = 1024
+    const dm = decimals < 0 ? 0 : decimals
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
+
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
+  }
 
   return (
     <div className="w-full">
@@ -78,6 +104,7 @@ export const FileUpload = ({
           <div className="flex flex-col items-center gap-2 text-muted-foreground">
             <UploadCloud className="h-10 w-10" />
             <p>{label}</p>
+            <p className="text-xs text-muted-foreground">Max file size: {formatBytes(maxSize)}</p>
           </div>
         </div>
       )}

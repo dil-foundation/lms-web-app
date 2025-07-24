@@ -298,6 +298,11 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, d
       toast.error("No file selected.");
       throw new Error("No file selected.");
     }
+    const MAX_IMAGE_SIZE = 20 * 1024 * 1024; // 20MB
+    if (file.size > MAX_IMAGE_SIZE) {
+        toast.error(`Image size cannot exceed 20MB.`);
+        throw new Error("File too large");
+    }
     const filePath = `assignment-assets/images/${courseId || 'new'}/${lesson.id}/${crypto.randomUUID()}/${file.name}`;
     try {
       const { error: uploadError } = await supabase.storage.from('dil-lms').upload(filePath, file);
@@ -315,6 +320,11 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, d
     if (!file) {
       toast.error("No file selected.");
       throw new Error("No file selected.");
+    }
+    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+    if (file.size > MAX_FILE_SIZE) {
+        toast.error(`File size cannot exceed 50MB.`);
+        throw new Error("File too large");
     }
     const filePath = `assignment-assets/files/${courseId || 'new'}/${lesson.id}/${crypto.randomUUID()}/${file.name}`;
     try {
@@ -360,6 +370,7 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, d
                   label={isUploading ? "Uploading..." : "Upload Video (MP4, MOV)"}
                   acceptedFileTypes={['video/mp4', 'video/quicktime']}
                   disabled={isUploading}
+                  maxSize={500 * 1024 * 1024} // 500MB
                 />;
       case 'attachment':
         if (attachmentInfo) {
@@ -396,6 +407,7 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, d
                     'application/zip'
                   ]}
                   disabled={isUploading}
+                  maxSize={10 * 1024 * 1024} // 10MB
                 />;
       case 'assignment':
         return (
@@ -1876,8 +1888,10 @@ const CourseBuilder = () => {
                   ) : (
                     <FileUpload 
                       onUpload={handleImageUpload} 
-                      label={isUploading ? "Uploading..." : "Upload course thumbnail"}
+                      label={isUploading ? "Uploading..." : "Upload course thumbnail (JPG, PNG)"}
+                      acceptedFileTypes={['image/jpeg', 'image/png']}
                       disabled={isUploading}
+                      maxSize={2 * 1024 * 1024} // 2MB
                     />
                   )}
                 </CardContent>
