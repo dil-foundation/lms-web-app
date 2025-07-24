@@ -1,8 +1,10 @@
-import { useRef, useMemo, useCallback } from 'react';
+import { useRef, useMemo, useCallback, useEffect } from 'react';
 import ReactQuill, { Quill } from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { toast } from 'sonner';
 import { Paperclip } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import ReactDOM from 'react-dom';
 
 // Custom Icons
 const icons = Quill.import('ui/icons');
@@ -26,6 +28,21 @@ interface RichTextEditorProps {
 
 export const RichTextEditor = ({ value, onChange, onBlur, placeholder, className, onImageUpload, onFileUpload }: RichTextEditorProps) => {
   const quillRef = useRef<ReactQuill>(null);
+
+  useEffect(() => {
+    if (quillRef.current) {
+      const toolbar = quillRef.current.getEditor().getModule('toolbar');
+      const imageButton = toolbar.container.querySelector('.ql-image');
+      const fileButton = toolbar.container.querySelector('.ql-file');
+
+      if (imageButton) {
+        imageButton.setAttribute('title', 'Max 20MB');
+      }
+      if (fileButton) {
+        fileButton.setAttribute('title', 'Max 50MB');
+      }
+    }
+  }, []);
 
   const imageHandler = useCallback(async () => {
     if (!quillRef.current || !onImageUpload) {
@@ -114,17 +131,19 @@ export const RichTextEditor = ({ value, onChange, onBlur, placeholder, className
   }), [imageHandler, fileHandler]);
 
   return (
-    <div className={className}>
-      <ReactQuill
-        ref={quillRef}
-        theme="snow"
-        value={value}
-        onChange={onChange}
-        onBlur={onBlur}
-        modules={modules}
-        placeholder={placeholder}
-        className="bg-background"
-      />
-    </div>
+    <TooltipProvider>
+      <div className={className}>
+        <ReactQuill
+          ref={quillRef}
+          theme="snow"
+          value={value}
+          onChange={onChange}
+          onBlur={onBlur}
+          modules={modules}
+          placeholder={placeholder}
+          className="bg-background"
+        />
+      </div>
+    </TooltipProvider>
   );
 }; 
