@@ -790,11 +790,15 @@ BEGIN
     JOIN teacher_courses tc ON cm.course_id = tc.course_id
     WHERE cm.role = 'student'
   ),
-  active_students AS (
-    SELECT COUNT(DISTINCT ucp.user_id)::INTEGER as active_count
+  engagement_activity AS (
+    SELECT DISTINCT ucp.user_id
     FROM user_course_progress ucp
     JOIN course_lessons cl ON ucp.lesson_id = cl.id
+    JOIN course_sections cs ON cl.section_id = cs.id
+    JOIN teacher_courses tc ON cs.course_id = tc.course_id
     WHERE ucp.updated_at >= start_date
+      OR (ucp.completed_at IS NOT NULL AND ucp.completed_at >= start_date)
+      OR ucp.progress_seconds > 0  -- Include students who have spent time on lessons
   ),
   assignment_stats AS (
     SELECT 
@@ -814,16 +818,24 @@ BEGIN
   )
   SELECT 
     (SELECT COUNT(*) FROM student_enrollments)::INTEGER as total_students,
-    COALESCE((SELECT active_count FROM active_students), 0)::INTEGER as active_students,
+    CASE 
+      WHEN (SELECT COUNT(*) FROM engagement_activity) > 0 THEN
+        (SELECT COUNT(*) FROM engagement_activity)::INTEGER
+      ELSE 0  -- If no progress data, active students should be 0, not all enrolled students
+    END as active_students,
     CASE 
       WHEN (SELECT COUNT(*) FROM student_enrollments) > 0 THEN
-        ROUND((COALESCE((SELECT active_count FROM active_students), 0)::DECIMAL / (SELECT COUNT(*) FROM student_enrollments)) * 100)::INTEGER
+        CASE 
+          WHEN (SELECT COUNT(*) FROM engagement_activity) > 0 THEN
+            ROUND((COALESCE((SELECT COUNT(*) FROM engagement_activity), 0)::DECIMAL / (SELECT COUNT(*) FROM student_enrollments)) * 100)::INTEGER
+          ELSE 0  -- If no progress data, engagement rate should be 0, not 100
+        END
       ELSE 0 
     END as engagement_rate,
     CASE 
       WHEN (SELECT activity_total_count FROM completion_stats) > 0 THEN
         ROUND(((SELECT activity_completed_count FROM completion_stats)::DECIMAL / (SELECT activity_total_count FROM completion_stats)) * 100)::INTEGER
-      ELSE 0 
+      ELSE 0  -- If no activity data, completion rate should be 0, not 50
     END as avg_completion_rate,
     COALESCE((SELECT assignment_total_count FROM assignment_stats), 0)::INTEGER as total_assignments,
     COALESCE((SELECT assignment_pending_count FROM assignment_stats), 0)::INTEGER as pending_assignments,
@@ -887,6 +899,175 @@ BEGIN
 END;
 $$;
 
+-- Function 10: Get Student Status Counts (NEW - for dashboard metrics)
+CREATE OR REPLACE FUNCTION get_student_status_counts(
+  teacher_id UUID
+)
+RETURNS TABLE (
+  total_students INTEGER,
+  active_students INTEGER,
+  behind_students INTEGER,
+  excellent_students INTEGER,
+  not_started_students INTEGER
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RETURN QUERY
+  WITH teacher_courses AS (
+    SELECT DISTINCT cm.course_id
+    FROM course_members cm
+    WHERE cm.user_id = teacher_id AND cm.role = 'teacher'
+  ),
+  course_lessons AS (
+    SELECT cl.id, cl.section_id
+    FROM course_lessons cl
+    JOIN course_sections cs ON cl.section_id = cs.id
+    JOIN teacher_courses tc ON cs.course_id = tc.course_id
+  ),
+  student_progress AS (
+    SELECT 
+      ucp.user_id,
+      COUNT(DISTINCT cl.id) as total_lessons,
+      COUNT(CASE WHEN ucp.completed_at IS NOT NULL THEN 1 END) as completed_lessons
+    FROM user_course_progress ucp
+    JOIN course_lessons cl ON ucp.lesson_id = cl.id
+    GROUP BY ucp.user_id
+  ),
+  student_statuses AS (
+    SELECT 
+      CASE 
+        WHEN sp.total_lessons = 0 THEN 'Not Started'
+        WHEN sp.completed_lessons = 0 THEN 'Not Started'
+        WHEN (sp.completed_lessons::DECIMAL / sp.total_lessons) >= 0.9 THEN 'Excellent'
+        WHEN (sp.completed_lessons::DECIMAL / sp.total_lessons) >= 0.7 THEN 'Active'
+        ELSE 'Behind'
+      END as status
+    FROM student_progress sp
+  ),
+  status_counts AS (
+    SELECT 
+      COUNT(*)::INTEGER as total_students,
+      COUNT(CASE WHEN status = 'Active' THEN 1 END)::INTEGER as active_students,
+      COUNT(CASE WHEN status = 'Behind' THEN 1 END)::INTEGER as behind_students,
+      COUNT(CASE WHEN status = 'Excellent' THEN 1 END)::INTEGER as excellent_students,
+      COUNT(CASE WHEN status = 'Not Started' THEN 1 END)::INTEGER as not_started_students
+    FROM student_statuses
+  )
+  SELECT 
+    sc.total_students,
+    sc.active_students,
+    sc.behind_students,
+    sc.excellent_students,
+    sc.not_started_students
+  FROM status_counts sc;
+END;
+$$;
+
+-- Function 11: Debug Engagement Metrics (NEW - for troubleshooting active students)
+CREATE OR REPLACE FUNCTION debug_engagement_metrics(
+  teacher_id UUID,
+  time_range TEXT DEFAULT 'alltime'
+)
+RETURNS TABLE (
+  debug_info TEXT,
+  count_value INTEGER,
+  details TEXT
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  start_date TIMESTAMP;
+BEGIN
+  -- Set date range based on time_range parameter
+  CASE time_range
+    WHEN '7days' THEN
+      start_date := NOW() - INTERVAL '7 days';
+    WHEN '30days' THEN
+      start_date := NOW() - INTERVAL '30 days';
+    WHEN '3months' THEN
+      start_date := NOW() - INTERVAL '3 months';
+    WHEN '6months' THEN
+      start_date := NOW() - INTERVAL '6 months';
+    WHEN '1year' THEN
+      start_date := NOW() - INTERVAL '1 year';
+    ELSE -- alltime
+      start_date := '2020-01-01'::TIMESTAMP;
+  END CASE;
+
+  RETURN QUERY
+  WITH teacher_courses AS (
+    SELECT DISTINCT cm.course_id
+    FROM course_members cm
+    WHERE cm.user_id = teacher_id AND cm.role = 'teacher'
+  ),
+  student_enrollments AS (
+    SELECT DISTINCT cm.user_id
+    FROM course_members cm
+    JOIN teacher_courses tc ON cm.course_id = tc.course_id
+    WHERE cm.role = 'student'
+  ),
+  course_lessons AS (
+    SELECT cl.id, cl.section_id, cl.type
+    FROM course_lessons cl
+    JOIN course_sections cs ON cl.section_id = cs.id
+    JOIN teacher_courses tc ON cs.course_id = tc.course_id
+  ),
+  progress_data AS (
+    SELECT 
+      ucp.user_id,
+      ucp.updated_at,
+      ucp.completed_at,
+      ucp.progress_seconds
+    FROM user_course_progress ucp
+    JOIN course_lessons cl ON ucp.lesson_id = cl.id
+  )
+  SELECT 'teacher_courses'::TEXT, COUNT(*)::INTEGER, 'Courses where teacher is a member'::TEXT
+  FROM teacher_courses
+  
+  UNION ALL
+  
+  SELECT 'enrolled_students'::TEXT, COUNT(*)::INTEGER, 'Students enrolled in teacher courses'::TEXT
+  FROM student_enrollments
+  
+  UNION ALL
+  
+  SELECT 'course_lessons'::TEXT, COUNT(*)::INTEGER, 'Lessons in teacher courses'::TEXT
+  FROM course_lessons
+  
+  UNION ALL
+  
+  SELECT 'progress_records'::TEXT, COUNT(*)::INTEGER, 'Total progress records'::TEXT
+  FROM progress_data
+  
+  UNION ALL
+  
+  SELECT 'recent_activity'::TEXT, COUNT(DISTINCT user_id)::INTEGER, 'Students with recent activity'::TEXT
+  FROM progress_data
+  WHERE updated_at >= start_date
+  
+  UNION ALL
+  
+  SELECT 'completed_lessons'::TEXT, COUNT(DISTINCT user_id)::INTEGER, 'Students with completed lessons'::TEXT
+  FROM progress_data
+  WHERE completed_at IS NOT NULL
+  
+  UNION ALL
+  
+  SELECT 'time_spent'::TEXT, COUNT(DISTINCT user_id)::INTEGER, 'Students who spent time on lessons'::TEXT
+  FROM progress_data
+  WHERE progress_seconds > 0
+  
+  UNION ALL
+  
+  SELECT 'engagement_activity'::TEXT, COUNT(DISTINCT user_id)::INTEGER, 'Students with any engagement activity'::TEXT
+  FROM progress_data
+  WHERE updated_at >= start_date
+     OR (completed_at IS NOT NULL AND completed_at >= start_date)
+     OR progress_seconds > 0;
+END;
+$$;
+
 -- =====================================================
 -- USAGE EXAMPLES:
 -- =====================================================
@@ -917,3 +1098,9 @@ $$;
 
 -- Debug teacher data (NEW - for troubleshooting)
 -- SELECT * FROM debug_teacher_data('teacher-uuid-here'); 
+
+-- Get student status counts (NEW)
+-- SELECT * FROM get_student_status_counts('teacher-uuid-here'); 
+
+-- Debug engagement metrics (NEW - for troubleshooting active students)
+-- SELECT * FROM debug_engagement_metrics('teacher-uuid-here', 'alltime'); 

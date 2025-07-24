@@ -85,6 +85,15 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
   const [quizScoresData, setQuizScoresData] = useState<any[]>([]);
   const [engagementTrendsData, setEngagementTrendsData] = useState<any[]>([]);
 
+  // Student status counts state
+  const [studentStatusCounts, setStudentStatusCounts] = useState<{
+    total_students: number;
+    active_students: number;
+    behind_students: number;
+    excellent_students: number;
+    not_started_students: number;
+  } | null>(null);
+
   // Students tab state
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCourse, setSelectedCourse] = useState('all');
@@ -298,6 +307,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         await fetchCourseCompletionTrends(courseIds, timeRange);
         await fetchQuizScoresData(courseIds);
         await fetchEngagementTrendsData(courseIds, timeRange);
+        await fetchStudentStatusCounts(courseIds);
 
       } catch (error: any) {
         console.error("Failed to fetch teacher dashboard stats:", error);
@@ -648,6 +658,46 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     }
   };
 
+  const fetchStudentStatusCounts = async (courseIds: string[]) => {
+    try {
+      console.log('🔍 [DEBUG] fetchStudentStatusCounts called with:', { courseIds, teacherId: userProfile.id });
+      
+      // Use the new SQL function
+      const { data, error } = await supabase.rpc('get_student_status_counts', {
+        teacher_id: userProfile.id
+      });
+
+      console.log('🔍 [DEBUG] get_student_status_counts response:', { data, error });
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        console.log('🔍 [DEBUG] No student status counts found, using defaults');
+        setStudentStatusCounts({
+          total_students: 0,
+          active_students: 0,
+          behind_students: 0,
+          excellent_students: 0,
+          not_started_students: 0
+        });
+        return;
+      }
+
+      const statusCounts = data[0];
+      console.log('🔍 [DEBUG] Student status counts:', statusCounts);
+      setStudentStatusCounts(statusCounts);
+    } catch (error) {
+      console.error("Failed to fetch student status counts:", error);
+      setStudentStatusCounts({
+        total_students: 0,
+        active_students: 0,
+        behind_students: 0,
+        excellent_students: 0,
+        not_started_students: 0
+      });
+    }
+  };
+
   const getInitials = (firstName?: string, lastName?: string) => {
     return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
   };
@@ -960,7 +1010,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{studentsData.length}</div>
+                <div className="text-2xl font-bold">{stats?.totalStudents ?? 0}</div>
                 <p className="text-xs text-muted-foreground">
                   Across all courses
                 </p>
@@ -972,9 +1022,9 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                 <Activity className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{Math.floor(studentsData.length * 0.85)}</div>
+                <div className="text-2xl font-bold">{stats?.activeStudents ?? 0}</div>
                 <p className="text-xs text-muted-foreground">
-                  {Math.round((Math.floor(studentsData.length * 0.85) / studentsData.length) * 100)}% of total
+                  {stats?.totalStudents && stats?.activeStudents ? Math.round((stats.activeStudents / stats.totalStudents) * 100) : 0}% of total
                 </p>
               </CardContent>
             </Card>
@@ -985,7 +1035,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {Math.round(studentsData.reduce((acc, s) => acc + s.progress, 0) / studentsData.length)}%
+                  {stats?.avgCompletion ?? 0}%
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Course completion
@@ -998,7 +1048,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                 <Clock className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{studentsData.filter(s => s.status === 'Behind').length}</div>
+                <div className="text-2xl font-bold">{studentStatusCounts?.behind_students ?? 0}</div>
                 <p className="text-xs text-muted-foreground">
                   Students behind schedule
                 </p>
