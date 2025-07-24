@@ -30,9 +30,12 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
-  ChevronsRight
+  ChevronsRight,
+  Filter
 } from 'lucide-react';
 import { ContentLoader } from '@/components/ContentLoader';
+import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
+import { Label } from '@/components/ui/label';
 
 interface TeacherDashboardProps {
   userProfile: {
@@ -842,6 +845,171 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                   <SelectItem value="1year">Last 1 year</SelectItem>
             </SelectContent>
           </Select>
+
+          <Drawer>
+            <DrawerTrigger asChild>
+              <Button variant="outline">
+                <Filter className="h-4 w-4 mr-2" />
+                Filters
+              </Button>
+            </DrawerTrigger>
+            <DrawerContent>
+              <div className="mx-auto w-full max-w-4xl">
+                <DrawerHeader>
+                  <DrawerTitle>Filter Dashboard Data</DrawerTitle>
+                  <DrawerDescription>Apply filters to refine the data shown on the dashboard.</DrawerDescription>
+                </DrawerHeader>
+                <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {/* Age Group / Grade Level */}
+                  <div className="space-y-2">
+                    <Label htmlFor="age-group">Age Group / Grade Level</Label>
+                    <Select>
+                      <SelectTrigger id="age-group">
+                        <SelectValue placeholder="Select age group" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="primary">Primary (Grades 1-5)</SelectItem>
+                        <SelectItem value="middle">Middle (Grades 6-8)</SelectItem>
+                        <SelectItem value="high">High School (Grades 9-12)</SelectItem>
+                        <SelectItem value="university">University</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Location */}
+                  <div className="space-y-2">
+                    <Label htmlFor="location">Location</Label>
+                    <Select>
+                      <SelectTrigger id="location">
+                        <SelectValue placeholder="Select location type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="province">Province</SelectItem>
+                        <SelectItem value="city">City</SelectItem>
+                        <SelectItem value="rural">Rural</SelectItem>
+                        <SelectItem value="urban">Urban</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Language Proficiency */}
+                  <div className="space-y-2">
+                    <Label htmlFor="language-proficiency">Language Proficiency</Label>
+                    <Select>
+                      <SelectTrigger id="language-proficiency">
+                        <SelectValue placeholder="Select proficiency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="beginner">Beginner</SelectItem>
+                        <SelectItem value="intermediate">Intermediate</SelectItem>
+                        <SelectItem value="advanced">Advanced</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* School Type */}
+                  <div className="space-y-2">
+                    <Label htmlFor="school-type">School Type</Label>
+                    <Select>
+                      <SelectTrigger id="school-type">
+                        <SelectValue placeholder="Select school type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="private">Private</SelectItem>
+                        <SelectItem value="public">Public</SelectItem>
+                        <SelectItem value="madarsa">Madarsa</SelectItem>
+                        <SelectItem value="homeschool">Homeschool</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Device Type */}
+                  <div className="space-y-2">
+                    <Label htmlFor="device-type">Device Type</Label>
+                    <Select>
+                      <SelectTrigger id="device-type">
+                        <SelectValue placeholder="Select device type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="desktop">Desktop</SelectItem>
+                        <SelectItem value="mobile">Mobile</SelectItem>
+                        <SelectItem value="tablet">Tablet</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Internet Accessibility */}
+                  <div className="space-y-2">
+                    <Label htmlFor="internet-accessibility">Internet Accessibility</Label>
+                    <Select>
+                      <SelectTrigger id="internet-accessibility">
+                        <SelectValue placeholder="Select accessibility" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="limited">Limited Connectivity</SelectItem>
+                        <SelectItem value="offline">Offline Usage</SelectItem>
+                        <SelectItem value="online">Stable Connection</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Engagement Metrics */}
+                  <div className="space-y-2">
+                    <Label htmlFor="engagement-metrics">Engagement Metrics</Label>
+                    <Select>
+                      <SelectTrigger id="engagement-metrics">
+                        <SelectValue placeholder="Select metric" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active-users">Active Users</SelectItem>
+                        <SelectItem value="session-time">Session Time</SelectItem>
+                        <SelectItem value="drop-off">Drop-off Points</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Content Usage Type */}
+                  <div className="space-y-2">
+                    <Label htmlFor="content-usage">Content Usage Type</Label>
+                    <Select>
+                      <SelectTrigger id="content-usage">
+                        <SelectValue placeholder="Select content type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="listening">Listening Modules</SelectItem>
+                        <SelectItem value="grammar">Grammar Exercises</SelectItem>
+                        <SelectItem value="speaking">Speaking Practice</SelectItem>
+                        <SelectItem value="reading">Reading Comprehension</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {/* Feedback Trends */}
+                  <div className="space-y-2">
+                    <Label htmlFor="feedback-trends">Feedback Trends</Label>
+                    <Select>
+                      <SelectTrigger id="feedback-trends">
+                        <SelectValue placeholder="Select feedback trend" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="by-region">By Region</SelectItem>
+                        <SelectItem value="by-persona">By Persona</SelectItem>
+                        <SelectItem value="by-module">By Module</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <DrawerFooter>
+                  <div className="flex justify-end gap-2">
+                    <DrawerClose asChild>
+                      <Button variant="outline">Cancel</Button>
+                    </DrawerClose>
+                    <Button>Apply Filters</Button>
+                  </div>
+                </DrawerFooter>
+              </div>
+            </DrawerContent>
+          </Drawer>
         </div>
       </div>
 
