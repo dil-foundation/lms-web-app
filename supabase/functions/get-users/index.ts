@@ -70,7 +70,7 @@ serve(async (req) => {
       return {
         ...p,
         email_confirmed_at: authUser ? authUser.email_confirmed_at : null,
-        last_active_at: authUser ? authUser.last_sign_in_at : p.updated_at,
+        last_active_at: authUser ? authUser.last_sign_in_at : null,
       };
     });
 
