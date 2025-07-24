@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
 import { ArrowLeft, Mic, Bot, User, Rocket, Clock, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -103,6 +104,11 @@ export default function AIGuidedSpontaneousSpeech() {
     return (
       <div className="min-h-screen bg-background p-4">
         <div className="max-w-4xl mx-auto">
+          {/* Breadcrumb */}
+          <div className="mb-6">
+            <PracticeBreadcrumb />
+          </div>
+          
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <Button
@@ -219,6 +225,11 @@ export default function AIGuidedSpontaneousSpeech() {
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-4xl mx-auto">
+        {/* Breadcrumb */}
+        <div className="mb-6">
+          <PracticeBreadcrumb />
+        </div>
+        
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <Button

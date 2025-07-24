@@ -42,6 +42,7 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
   const { isRecording, audioBlob, startRecording, stopRecording, error: recordingError } = useAudioRecorder();
   const [connectionError, setConnectionError] = useState<string>('');
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const welcomeAudioRef = useRef<HTMLAudioElement | null>(null);
   const sendCompletionEventRef = useRef<((eventType: 'word_by_word_complete' | 'feedback_complete' | 'you_said_complete') => void) | null>(null);
 
   // Helper function for translations
@@ -176,62 +177,99 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
 
   // Cleanup audio resources
   const cleanupAudio = useCallback((): void => {
+    // Cleanup main audio
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.src = '';
       audioRef.current = null;
     }
     setIsPlayingAudio(false);
+    
+    // Cleanup welcome audio
+    try {
+      if (welcomeAudioRef.current) {
+        welcomeAudioRef.current.pause();
+        welcomeAudioRef.current.src = '';
+        welcomeAudioRef.current.onerror = null;
+        welcomeAudioRef.current.onended = null;
+        welcomeAudioRef.current = null;
+      }
+    } catch (e) {
+      console.warn('Error during welcome audio cleanup:', e);
+      welcomeAudioRef.current = null;
+    }
+    setIsPlayingWelcomeAudio(false);
+    
+    // Cleanup speech synthesis
+    if (typeof speechSynthesis !== 'undefined') {
+      speechSynthesis.cancel();
+    }
   }, []);
 
-  // Play welcome audio using pre-recorded S3 file
-  const playWelcomeAudio = useCallback((isAutomatic: boolean = false): void => {
+
+
+  // Handler for manual play button click
+  const handleManualPlayClick = useCallback((): void => {
     if (isPlayingWelcomeAudio) return; // Prevent multiple plays
     
-    // If this is an automatic attempt and we've already tried or user has played it, skip
-    if (isAutomatic && (hasTriedAutoplay || hasPlayedWelcomeAudio)) {
-      return;
+    // Cleanup any existing welcome audio first
+    try {
+      if (welcomeAudioRef.current) {
+        welcomeAudioRef.current.pause();
+        welcomeAudioRef.current.src = '';
+        welcomeAudioRef.current.onerror = null;
+        welcomeAudioRef.current.onended = null;
+        welcomeAudioRef.current = null;
+      }
+    } catch (e) {
+      console.warn('Error during welcome audio cleanup:', e);
+      welcomeAudioRef.current = null;
     }
     
     setIsPlayingWelcomeAudio(true);
     
     // Play pre-recorded static audio from S3
-    const audio = new Audio('https://dil-lms.s3.us-east-1.amazonaws.com/greeting_message_multilingual.mp3');
+    welcomeAudioRef.current = new Audio('https://dil-lms.s3.us-east-1.amazonaws.com/greeting_message_multilingual.mp3');
     
-    audio.play().then(() => {
-      // Audio started playing successfully
-      console.log('Welcome audio started playing');
-      setShowManualPlayButton(false); // Hide manual button if autoplay worked
+    welcomeAudioRef.current.play().then(() => {
+      console.log('Welcome audio started playing (manual)');
+      setShowManualPlayButton(false);
     }).catch((error: Error) => {
-      console.error('Error playing welcome audio:', error);
+      console.error('Error playing welcome audio (manual):', error);
       setIsPlayingWelcomeAudio(false);
-      
-      // If this was an automatic attempt and failed, show manual button
-      if (isAutomatic) {
-        setShowManualPlayButton(true);
-        console.log('Autoplay blocked, showing manual play button');
-      }
     });
     
-    audio.onended = () => {
-      console.log('Welcome audio finished playing');
+    welcomeAudioRef.current.onended = () => {
+      console.log('Welcome audio finished playing (manual)');
       setIsPlayingWelcomeAudio(false);
       setHasPlayedWelcomeAudio(true);
-    };
-
-    audio.onerror = () => {
-      console.error('Error loading welcome audio');
-      setIsPlayingWelcomeAudio(false);
-      if (isAutomatic) {
-        setShowManualPlayButton(true);
+      try {
+        if (welcomeAudioRef.current) {
+          welcomeAudioRef.current.src = '';
+          welcomeAudioRef.current.onerror = null;
+          welcomeAudioRef.current.onended = null;
+          welcomeAudioRef.current = null;
+        }
+      } catch (e) {
+        console.warn('Error during audio cleanup on end (manual):', e);
       }
     };
-  }, [isPlayingWelcomeAudio, hasTriedAutoplay, hasPlayedWelcomeAudio]);
 
-  // Handler for manual play button click
-  const handleManualPlayClick = useCallback((): void => {
-    playWelcomeAudio(false);
-  }, [playWelcomeAudio]);
+    welcomeAudioRef.current.onerror = (error) => {
+      console.error('Error loading welcome audio (manual):', error);
+      setIsPlayingWelcomeAudio(false);
+      try {
+        if (welcomeAudioRef.current) {
+          welcomeAudioRef.current.src = '';
+          welcomeAudioRef.current.onerror = null;
+          welcomeAudioRef.current.onended = null;
+          welcomeAudioRef.current = null;
+        }
+      } catch (e) {
+        console.warn('Error during audio cleanup (manual):', e);
+      }
+    };
+  }, [isPlayingWelcomeAudio]);
 
   // Always start with welcome screen
   // useEffect(() => {
@@ -247,18 +285,118 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
       // Try automatic playback only once, will show manual button if blocked
       const timeoutId = setTimeout(() => {
         setHasTriedAutoplay(true);
-        playWelcomeAudio(true);
+        // Play welcome audio directly to avoid useEffect dependency loops
+        if (isPlayingWelcomeAudio) return; // Prevent multiple plays
+        
+        // Cleanup any existing welcome audio first
+        try {
+          if (welcomeAudioRef.current) {
+            welcomeAudioRef.current.pause();
+            welcomeAudioRef.current.src = '';
+            welcomeAudioRef.current.onerror = null;
+            welcomeAudioRef.current.onended = null;
+            welcomeAudioRef.current = null;
+          }
+        } catch (e) {
+          console.warn('Error during welcome audio cleanup:', e);
+          welcomeAudioRef.current = null;
+        }
+        
+        setIsPlayingWelcomeAudio(true);
+        
+        // Play pre-recorded static audio from S3
+        welcomeAudioRef.current = new Audio('https://dil-lms.s3.us-east-1.amazonaws.com/greeting_message_multilingual.mp3');
+        
+        welcomeAudioRef.current.play().then(() => {
+          console.log('Welcome audio started playing');
+          setShowManualPlayButton(false);
+        }).catch((error: Error) => {
+          console.error('Error playing welcome audio:', error);
+          setIsPlayingWelcomeAudio(false);
+          setShowManualPlayButton(true);
+          console.log('Autoplay blocked, showing manual play button');
+        });
+        
+        welcomeAudioRef.current.onended = () => {
+          console.log('Welcome audio finished playing');
+          setIsPlayingWelcomeAudio(false);
+          setHasPlayedWelcomeAudio(true);
+          try {
+            if (welcomeAudioRef.current) {
+              welcomeAudioRef.current.src = '';
+              welcomeAudioRef.current.onerror = null;
+              welcomeAudioRef.current.onended = null;
+              welcomeAudioRef.current = null;
+            }
+          } catch (e) {
+            console.warn('Error during audio cleanup on end:', e);
+          }
+        };
+
+        welcomeAudioRef.current.onerror = (error) => {
+          console.error('Error loading welcome audio:', error);
+          setIsPlayingWelcomeAudio(false);
+          setShowManualPlayButton(true);
+          try {
+            if (welcomeAudioRef.current) {
+              welcomeAudioRef.current.src = '';
+              welcomeAudioRef.current.onerror = null;
+              welcomeAudioRef.current.onended = null;
+              welcomeAudioRef.current = null;
+            }
+          } catch (e) {
+            console.warn('Error during audio cleanup:', e);
+          }
+        };
       }, 500); // Small delay to ensure page is fully loaded
       
       return () => clearTimeout(timeoutId);
     }
     
-    // Reset autoplay attempt when leaving welcome screen
+    // Clean up welcome audio and reset state when leaving welcome screen
     if (step !== 'welcome') {
+      // Stop welcome audio if it's playing
+      try {
+        if (welcomeAudioRef.current) {
+          welcomeAudioRef.current.pause();
+          welcomeAudioRef.current.src = '';
+          welcomeAudioRef.current.onerror = null;
+          welcomeAudioRef.current.onended = null;
+          welcomeAudioRef.current = null;
+        }
+      } catch (e) {
+        console.warn('Error cleaning up welcome audio on step change:', e);
+        welcomeAudioRef.current = null;
+      }
+      setIsPlayingWelcomeAudio(false);
       setHasTriedAutoplay(false);
       setShowManualPlayButton(false);
     }
-  }, [step, hasPlayedWelcomeAudio, hasTriedAutoplay, playWelcomeAudio]);
+    
+    // Clean up all audio when switching away from any step to prevent stacking
+    return () => {
+      try {
+        if (welcomeAudioRef.current) {
+          welcomeAudioRef.current.pause();
+          welcomeAudioRef.current.src = '';
+          welcomeAudioRef.current.onerror = null;
+          welcomeAudioRef.current.onended = null;
+          welcomeAudioRef.current = null;
+        }
+      } catch (e) {
+        console.warn('Error cleaning up welcome audio on useEffect cleanup:', e);
+        welcomeAudioRef.current = null;
+      }
+      
+      try {
+        if (typeof speechSynthesis !== 'undefined') {
+          speechSynthesis.cancel();
+        }
+      } catch (e) {
+        console.warn('Error canceling speech synthesis:', e);
+      }
+    }
+  }, [step, hasPlayedWelcomeAudio, hasTriedAutoplay, isPlayingWelcomeAudio]);
 
   // Handle audio upload when recording stops
   useEffect(() => {
@@ -1059,13 +1197,38 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      // Cleanup audio directly
+      // Cleanup main audio
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.src = '';
         audioRef.current = null;
       }
       setIsPlayingAudio(false);
+      
+      // Cleanup welcome audio
+      try {
+        if (welcomeAudioRef.current) {
+          welcomeAudioRef.current.pause();
+          welcomeAudioRef.current.src = '';
+          welcomeAudioRef.current.onerror = null;
+          welcomeAudioRef.current.onended = null;
+          welcomeAudioRef.current = null;
+        }
+      } catch (e) {
+        console.warn('Error cleaning up welcome audio on unmount:', e);
+        welcomeAudioRef.current = null;
+      }
+      setIsPlayingWelcomeAudio(false);
+      
+      // Cleanup speech synthesis
+      try {
+        if (typeof speechSynthesis !== 'undefined') {
+          speechSynthesis.cancel();
+        }
+      } catch (e) {
+        console.warn('Error canceling speech synthesis on unmount:', e);
+      }
+      
       closeLearnSocket();
     };
   }, []);

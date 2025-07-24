@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, Zap, Play, Mic, AlertCircle, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ContentLoader } from '@/components/ContentLoader';
+import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
 import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -612,6 +613,11 @@ export const QuickResponse: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Breadcrumb */}
+      <div className="p-4 sm:p-6 lg:p-8 pb-0">
+        <PracticeBreadcrumb />
+      </div>
+      
       {/* Header */}
       <div className="relative flex items-center justify-center mb-6 p-4 sm:p-6 lg:p-8">
         <Button variant="outline" size="icon" className="absolute left-4 sm:left-6 lg:left-8" onClick={() => navigate(-1)}>

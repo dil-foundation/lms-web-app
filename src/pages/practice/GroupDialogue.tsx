@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
 import { ArrowLeft, Users, Mic, Plus, GraduationCap, Heart, ShoppingCart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -161,6 +162,11 @@ export default function GroupDialogue() {
     return (
       <div className="min-h-screen bg-background p-4">
         <div className="max-w-4xl mx-auto">
+          {/* Breadcrumb */}
+          <div className="mb-6">
+            <PracticeBreadcrumb />
+          </div>
+          
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <Button
@@ -293,6 +299,11 @@ export default function GroupDialogue() {
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-4xl mx-auto">
+        {/* Breadcrumb */}
+        <div className="mb-6">
+          <PracticeBreadcrumb />
+        </div>
+        
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <Button
