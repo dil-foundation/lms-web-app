@@ -85,6 +85,15 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
   const [quizScoresData, setQuizScoresData] = useState<any[]>([]);
   const [engagementTrendsData, setEngagementTrendsData] = useState<any[]>([]);
 
+  // Student status counts state
+  const [studentStatusCounts, setStudentStatusCounts] = useState<{
+    total_students: number;
+    active_students: number;
+    behind_students: number;
+    excellent_students: number;
+    not_started_students: number;
+  } | null>(null);
+
   // Students tab state
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCourse, setSelectedCourse] = useState('all');
@@ -129,16 +138,30 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     return { startDate, endDate: now };
   };
 
+  // Add useEffect to track chart data state changes
+  useEffect(() => {
+    console.log('🔍 [DEBUG] Chart data state updated:', {
+      studentEngagementData: studentEngagementData.length,
+      coursePerformanceData: coursePerformanceData.length,
+      studentProgressData: studentProgressData.length,
+      courseCompletionTrends: courseCompletionTrends.length,
+      engagementTrendsData: engagementTrendsData.length
+    });
+  }, [studentEngagementData, coursePerformanceData, studentProgressData, courseCompletionTrends, engagementTrendsData]);
+
   useEffect(() => {
     const fetchTeacherData = async () => {
       if (!userProfile?.id) {
+        console.log('🔍 [DEBUG] No userProfile.id, skipping data fetch');
         setLoading(false);
         return;
       }
       
+      console.log('🔍 [DEBUG] Starting fetchTeacherData for teacher:', userProfile.id);
       setLoading(true);
       try {
         const { startDate, endDate } = getDateRange(timeRange);
+        console.log('🔍 [DEBUG] Date range:', { timeRange, startDate, endDate });
 
         // 1. Find all courses this teacher is a part of
         const { data: teacherCourses, error: teacherCoursesError } = await supabase
@@ -150,8 +173,10 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         if (teacherCoursesError) throw teacherCoursesError;
 
         const courseIds = teacherCourses.map(c => c.course_id);
+        console.log('🔍 [DEBUG] Teacher course IDs:', courseIds);
 
         if (courseIds.length === 0) {
+          console.log('🔍 [DEBUG] No courses found for teacher, setting empty stats');
           setStats({
             totalStudents: 0,
             publishedCourses: 0,
@@ -176,6 +201,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         if (sectionsError) throw sectionsError;
 
         const sectionIds = sections.map(s => s.id);
+        console.log('🔍 [DEBUG] Section IDs:', sectionIds);
 
         // 3. Get assignment lesson IDs
         const { data: assignmentLessons, error: lessonsError } = await supabase
@@ -187,27 +213,34 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         if (lessonsError) throw lessonsError;
 
         const assignmentLessonIds = assignmentLessons.map(l => l.id);
+        console.log('🔍 [DEBUG] Assignment lesson IDs:', assignmentLessonIds);
 
-        // 4. Fetch teacher-specific stats
+        // 4. Fetch teacher-specific stats using the new engagement metrics function
+        const { data: engagementMetrics, error: engagementError } = await supabase.rpc('get_teacher_engagement_metrics', {
+          teacher_id: userProfile.id,
+          time_range: timeRange
+        });
+
+        if (engagementError) throw engagementError;
+
+        console.log('🔍 [DEBUG] Engagement metrics from SQL:', engagementMetrics);
+
+        // Debug: Check what data exists for this teacher
+        const { data: debugData, error: debugError } = await supabase.rpc('debug_teacher_data', {
+          teacher_id: userProfile.id
+        });
+        
+        if (!debugError) {
+          console.log('🔍 [DEBUG] Teacher data debug info:', debugData);
+        } else {
+          console.log('🔍 [DEBUG] Debug function error:', debugError);
+        }
+
+        // Also fetch course counts for the dashboard
         const [
-          { count: totalStudents, error: studentsError },
           { count: publishedCourses, error: coursesError },
           { count: totalCourses, error: totalCoursesError },
-          { count: pendingAssignments, error: assignmentsError },
-          { count: totalAssignments, error: totalAssignmentsError },
         ] = await Promise.all([
-          // Total students enrolled in teacher's courses
-          timeRange === 'alltime'
-            ? supabase.from('course_members')
-                .select('*', { count: 'exact', head: true })
-                .in('course_id', courseIds)
-                .eq('role', 'student')
-            : supabase.from('course_members')
-                .select('*', { count: 'exact', head: true })
-                .in('course_id', courseIds)
-                .eq('role', 'student')
-                .gte('created_at', startDate.toISOString()),
-          
           // Published courses by this teacher
           timeRange === 'alltime'
             ? supabase.from('courses')
@@ -229,65 +262,52 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                 .select('*', { count: 'exact', head: true })
                 .in('id', courseIds)
                 .gte('created_at', startDate.toISOString()),
-          
-          // Pending assignments for teacher's courses
-          timeRange === 'alltime'
-            ? supabase.from('assignment_submissions')
-                .select('*', { count: 'exact', head: true })
-                .in('assignment_id', assignmentLessonIds)
-                .eq('status', 'pending')
-            : supabase.from('assignment_submissions')
-                .select('*', { count: 'exact', head: true })
-                .in('assignment_id', assignmentLessonIds)
-                .eq('status', 'pending')
-                .gte('submitted_at', startDate.toISOString()),
-          
-          // Total assignments for teacher's courses
-          timeRange === 'alltime'
-            ? supabase.from('assignment_submissions')
-                .select('*', { count: 'exact', head: true })
-                .in('assignment_id', assignmentLessonIds)
-            : supabase.from('assignment_submissions')
-                .select('*', { count: 'exact', head: true })
-                .in('assignment_id', assignmentLessonIds)
-                .gte('submitted_at', startDate.toISOString()),
         ]);
 
-        if (studentsError) throw studentsError;
         if (coursesError) throw coursesError;
         if (totalCoursesError) throw totalCoursesError;
-        if (assignmentsError) throw assignmentsError;
-        if (totalAssignmentsError) throw totalAssignmentsError;
 
-        // Calculate derived metrics
-        const avgCompletion = totalAssignments > 0 ? Math.round((totalAssignments - pendingAssignments) / totalAssignments * 100) : 0;
-        const activeStudents = Math.floor((totalStudents ?? 0) * 0.85); // Estimate 85% active
-        const avgEngagement = totalStudents > 0 ? Math.round((activeStudents / totalStudents) * 100) : 0;
+        console.log('🔍 [DEBUG] Course counts:', { publishedCourses, totalCourses });
+
+        // Use real engagement metrics from SQL function
+        const realStats = engagementMetrics?.[0] || {
+          total_students: 0,
+          active_students: 0,
+          engagement_rate: 0,
+          avg_completion_rate: 0,
+          total_assignments: 0,
+          pending_assignments: 0,
+          completion_rate: 0
+        };
 
         const baseStats = {
-          totalStudents: totalStudents ?? 0,
+          totalStudents: realStats.total_students,
           publishedCourses: publishedCourses ?? 0,
           activeCourses: publishedCourses ?? 0, // Assuming published courses are active
           totalCourses: totalCourses ?? 0,
-          avgEngagement,
-          avgCompletion,
-          pendingAssignments: pendingAssignments ?? 0,
-          totalAssignments: totalAssignments ?? 0,
-          activeStudents,
+          avgEngagement: realStats.engagement_rate,
+          avgCompletion: realStats.completion_rate,
+          pendingAssignments: realStats.pending_assignments,
+          totalAssignments: realStats.total_assignments,
+          activeStudents: realStats.active_students,
         };
 
+        console.log('🔍 [DEBUG] Calculated stats:', baseStats);
         setStats(baseStats);
 
         // Fetch chart data
+        console.log('🔍 [DEBUG] Fetching chart data...');
         await fetchStudentEngagementData(courseIds, timeRange);
         await fetchCoursePerformanceData(courseIds);
         await fetchStudentProgressData(courseIds);
         await fetchStudentsData(courseIds);
         
         // Fetch reports data
+        console.log('🔍 [DEBUG] Fetching reports data...');
         await fetchCourseCompletionTrends(courseIds, timeRange);
         await fetchQuizScoresData(courseIds);
         await fetchEngagementTrendsData(courseIds, timeRange);
+        await fetchStudentStatusCounts(courseIds);
 
       } catch (error: any) {
         console.error("Failed to fetch teacher dashboard stats:", error);
@@ -323,19 +343,28 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
 
   const fetchStudentEngagementData = async (courseIds: string[], range: string) => {
     try {
+      console.log('🔍 [DEBUG] fetchStudentEngagementData called with:', { courseIds, range, teacherId: userProfile.id });
+      
       // Use the dynamic SQL function
       const { data, error } = await supabase.rpc('get_student_engagement_trends', {
         teacher_id: userProfile.id,
         time_range: range
       });
 
+      console.log('🔍 [DEBUG] get_student_engagement_trends response:', { data, error });
+
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        // If no data, show meaningful empty state
-        setStudentEngagementData([
-          { week: 'No Activity', activeStudents: 0, completionRate: 0, timeSpent: 0 }
-        ]);
+        console.log('🔍 [DEBUG] No engagement data found, using minimal fallback');
+        // Create minimal fallback data to show chart structure
+        const fallbackData = [
+          { week: 'Week 1', activeStudents: 0, completionRate: 0, timeSpent: 0 },
+          { week: 'Week 2', activeStudents: 0, completionRate: 0, timeSpent: 0 },
+          { week: 'Week 3', activeStudents: 0, completionRate: 0, timeSpent: 0 },
+          { week: 'Week 4', activeStudents: 0, completionRate: 0, timeSpent: 0 }
+        ];
+        setStudentEngagementData(fallbackData);
         return;
       }
 
@@ -347,30 +376,37 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         timeSpent: item.time_spent
       }));
 
+      console.log('🔍 [DEBUG] Transformed engagement data:', engagementData);
       setStudentEngagementData(engagementData);
     } catch (error) {
       console.error("Failed to fetch student engagement data:", error);
-      // Show meaningful error state
-      setStudentEngagementData([
-        { week: 'Data Unavailable', activeStudents: 0, completionRate: 0, timeSpent: 0 }
-      ]);
+      // Create minimal fallback data on error
+      const fallbackData = [
+        { week: 'Week 1', activeStudents: 0, completionRate: 0, timeSpent: 0 },
+        { week: 'Week 2', activeStudents: 0, completionRate: 0, timeSpent: 0 },
+        { week: 'Week 3', activeStudents: 0, completionRate: 0, timeSpent: 0 },
+        { week: 'Week 4', activeStudents: 0, completionRate: 0, timeSpent: 0 }
+      ];
+      setStudentEngagementData(fallbackData);
     }
   };
 
   const fetchCoursePerformanceData = async (courseIds: string[]) => {
     try {
+      console.log('🔍 [DEBUG] fetchCoursePerformanceData called with:', { courseIds, teacherId: userProfile.id });
+      
       // Use the dynamic SQL function
       const { data, error } = await supabase.rpc('get_course_performance_data', {
         teacher_id: userProfile.id
       });
 
+      console.log('🔍 [DEBUG] get_course_performance_data response:', { data, error });
+
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        // If no data, show meaningful empty state
-        setCoursePerformanceData([
-          { course: 'No Courses Available', enrolled: 0, completed: 0, inProgress: 0, avgRating: 0 }
-        ]);
+        console.log('🔍 [DEBUG] No course performance data found, setting empty array');
+        setCoursePerformanceData([]);
         return;
       }
 
@@ -383,30 +419,38 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         avgRating: item.avg_rating
       }));
 
+      console.log('🔍 [DEBUG] Transformed course performance data:', coursePerformance);
       setCoursePerformanceData(coursePerformance);
     } catch (error) {
       console.error("Failed to fetch course performance data:", error);
-      // Show meaningful error state
-      setCoursePerformanceData([
-        { course: 'Data Unavailable', enrolled: 0, completed: 0, inProgress: 0, avgRating: 0 }
-      ]);
+      setCoursePerformanceData([]);
     }
   };
 
   const fetchStudentProgressData = async (courseIds: string[]) => {
     try {
+      console.log('🔍 [DEBUG] fetchStudentProgressData called with:', { courseIds, teacherId: userProfile.id });
+      
       // Use the dynamic SQL function
       const { data, error } = await supabase.rpc('get_student_progress_distribution', {
         teacher_id: userProfile.id
       });
 
+      console.log('🔍 [DEBUG] get_student_progress_distribution response:', { data, error });
+
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        // If no data, show meaningful empty state
-        setStudentProgressData([
-          { name: 'No Student Activity', value: 1, color: '#6B7280' },
-        ]);
+        console.log('🔍 [DEBUG] No student progress data found, using fallback');
+        // Create fallback data to show chart structure
+        const fallbackData = [
+          { name: 'Not Started', value: 0, color: '#6B7280' },
+          { name: 'Needs Help (<70%)', value: 0, color: '#EF4444' },
+          { name: 'Average (70-79%)', value: 0, color: '#F59E0B' },
+          { name: 'Good (80-89%)', value: 0, color: '#3B82F6' },
+          { name: 'Excellent (90-100%)', value: 0, color: '#10B981' }
+        ];
+        setStudentProgressData(fallbackData);
         return;
       }
 
@@ -417,13 +461,19 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         color: item.color_code
       }));
 
+      console.log('🔍 [DEBUG] Transformed student progress data:', progressDistribution);
       setStudentProgressData(progressDistribution);
     } catch (error) {
       console.error("Failed to fetch student progress data:", error);
-      // Show meaningful error state
-      setStudentProgressData([
-        { name: 'Data Unavailable', value: 1, color: '#6B7280' },
-      ]);
+      // Create fallback data on error
+      const fallbackData = [
+        { name: 'Not Started', value: 0, color: '#6B7280' },
+        { name: 'Needs Help (<70%)', value: 0, color: '#EF4444' },
+        { name: 'Average (70-79%)', value: 0, color: '#F59E0B' },
+        { name: 'Good (80-89%)', value: 0, color: '#3B82F6' },
+        { name: 'Excellent (90-100%)', value: 0, color: '#10B981' }
+      ];
+      setStudentProgressData(fallbackData);
     }
   };
 
@@ -496,19 +546,21 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
 
   const fetchCourseCompletionTrends = async (courseIds: string[], range: string) => {
     try {
+      console.log('🔍 [DEBUG] fetchCourseCompletionTrends called with:', { courseIds, range, teacherId: userProfile.id });
+      
       // Use the dynamic SQL function
       const { data, error } = await supabase.rpc('get_course_completion_trends', {
         teacher_id: userProfile.id,
         time_range: range
       });
 
+      console.log('🔍 [DEBUG] get_course_completion_trends response:', { data, error });
+
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        // If no data, show meaningful empty state
-        setCourseCompletionTrends([
-          { month: 'No Data', 'No Courses': 0 }
-        ]);
+        console.log('🔍 [DEBUG] No course completion trends data found, setting empty array');
+        setCourseCompletionTrends([]);
         return;
       }
 
@@ -518,30 +570,34 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         ...item.course_data
       }));
 
+      console.log('🔍 [DEBUG] Transformed course completion trends data:', trendsData);
       setCourseCompletionTrends(trendsData);
     } catch (error) {
       console.error("Failed to fetch course completion trends:", error);
-      // Show meaningful error state
-      setCourseCompletionTrends([
-        { month: 'Data Unavailable', 'Error': 0 }
-      ]);
+      setCourseCompletionTrends([]);
     }
   };
 
   const fetchQuizScoresData = async (courseIds: string[]) => {
     try {
+      console.log('🔍 [DEBUG] fetchQuizScoresData called with:', { courseIds, teacherId: userProfile.id });
+      
       // Use the dynamic SQL function
       const { data, error } = await supabase.rpc('get_quiz_performance_data', {
         teacher_id: userProfile.id
       });
 
+      console.log('🔍 [DEBUG] get_quiz_performance_data response:', { data, error });
+
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        // If no data, show meaningful empty state
-        setQuizScoresData([
+        console.log('🔍 [DEBUG] No quiz scores data found, using fallback');
+        // Create fallback data to show chart structure
+        const fallbackData = [
           { quiz: 'No Quizzes Available', avgScore: 0, attempts: 0, passRate: 0 }
-        ]);
+        ];
+        setQuizScoresData(fallbackData);
         return;
       }
 
@@ -553,31 +609,35 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         passRate: item.pass_rate
       }));
 
+      console.log('🔍 [DEBUG] Transformed quiz scores data:', quizData);
       setQuizScoresData(quizData);
     } catch (error) {
       console.error("Failed to fetch quiz scores data:", error);
-      // Show meaningful error state
-      setQuizScoresData([
-        { quiz: 'Data Unavailable', avgScore: 0, attempts: 0, passRate: 0 }
-      ]);
+      // Create fallback data on error
+      const fallbackData = [
+        { quiz: 'No Quizzes Available', avgScore: 0, attempts: 0, passRate: 0 }
+      ];
+      setQuizScoresData(fallbackData);
     }
   };
 
   const fetchEngagementTrendsData = async (courseIds: string[], range: string) => {
     try {
+      console.log('🔍 [DEBUG] fetchEngagementTrendsData called with:', { courseIds, range, teacherId: userProfile.id });
+      
       // Use the dynamic SQL function
       const { data, error } = await supabase.rpc('get_engagement_trends_data', {
         teacher_id: userProfile.id,
         time_range: range
       });
 
+      console.log('🔍 [DEBUG] get_engagement_trends_data response:', { data, error });
+
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        // If no data, show meaningful empty state
-        setEngagementTrendsData([
-          { week: 'No Activity', discussions: 0, assignments: 0, quizzes: 0, videos: 0 }
-        ]);
+        console.log('🔍 [DEBUG] No engagement trends data found, setting empty array');
+        setEngagementTrendsData([]);
         return;
       }
 
@@ -590,13 +650,51 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         videos: item.videos_count
       }));
 
+      console.log('🔍 [DEBUG] Transformed engagement trends data:', trendsData);
       setEngagementTrendsData(trendsData);
     } catch (error) {
       console.error("Failed to fetch engagement trends data:", error);
-      // Show meaningful error state
-      setEngagementTrendsData([
-        { week: 'Data Unavailable', discussions: 0, assignments: 0, quizzes: 0, videos: 0 }
-      ]);
+      setEngagementTrendsData([]);
+    }
+  };
+
+  const fetchStudentStatusCounts = async (courseIds: string[]) => {
+    try {
+      console.log('🔍 [DEBUG] fetchStudentStatusCounts called with:', { courseIds, teacherId: userProfile.id });
+      
+      // Use the new SQL function
+      const { data, error } = await supabase.rpc('get_student_status_counts', {
+        teacher_id: userProfile.id
+      });
+
+      console.log('🔍 [DEBUG] get_student_status_counts response:', { data, error });
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        console.log('🔍 [DEBUG] No student status counts found, using defaults');
+        setStudentStatusCounts({
+          total_students: 0,
+          active_students: 0,
+          behind_students: 0,
+          excellent_students: 0,
+          not_started_students: 0
+        });
+        return;
+      }
+
+      const statusCounts = data[0];
+      console.log('🔍 [DEBUG] Student status counts:', statusCounts);
+      setStudentStatusCounts(statusCounts);
+    } catch (error) {
+      console.error("Failed to fetch student status counts:", error);
+      setStudentStatusCounts({
+        total_students: 0,
+        active_students: 0,
+        behind_students: 0,
+        excellent_students: 0,
+        not_started_students: 0
+      });
     }
   };
 
@@ -912,7 +1010,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{studentsData.length}</div>
+                <div className="text-2xl font-bold">{stats?.totalStudents ?? 0}</div>
                 <p className="text-xs text-muted-foreground">
                   Across all courses
                 </p>
@@ -924,9 +1022,9 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                 <Activity className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{Math.floor(studentsData.length * 0.85)}</div>
+                <div className="text-2xl font-bold">{stats?.activeStudents ?? 0}</div>
                 <p className="text-xs text-muted-foreground">
-                  {Math.round((Math.floor(studentsData.length * 0.85) / studentsData.length) * 100)}% of total
+                  {stats?.totalStudents && stats?.activeStudents ? Math.round((stats.activeStudents / stats.totalStudents) * 100) : 0}% of total
                 </p>
               </CardContent>
             </Card>
@@ -937,7 +1035,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {Math.round(studentsData.reduce((acc, s) => acc + s.progress, 0) / studentsData.length)}%
+                  {stats?.avgCompletion ?? 0}%
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Course completion
@@ -950,7 +1048,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                 <Clock className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{studentsData.filter(s => s.status === 'Behind').length}</div>
+                <div className="text-2xl font-bold">{studentStatusCounts?.behind_students ?? 0}</div>
                 <p className="text-xs text-muted-foreground">
                   Students behind schedule
                 </p>
