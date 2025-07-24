@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { UploadCloud, File as FileIcon, X } from 'lucide-react';
 import { Button } from './button';
-import { Progress } from './progress';
+import { Progress } from '@/components/ui/progress';
 
 interface FileUploadProps {
   onUpload: (file: File) => void;
