@@ -107,6 +107,7 @@ const getStatusBadgeVariant = (status: string) => {
 
 const getLastActiveText = (lastActiveDate: string): string => {
   try {
+    if (!lastActiveDate) return 'Never';
     const now = new Date();
     const lastActive = new Date(lastActiveDate);
     const diffInHours = Math.floor((now.getTime() - lastActive.getTime()) / (1000 * 60 * 60));
