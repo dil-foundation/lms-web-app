@@ -2,9 +2,10 @@ import { getWebSocketUrl, API_ENDPOINTS } from '../config/api';
 
 let socket: WebSocket | null = null;
 let reconnectAttempts = 0;
-let maxReconnectAttempts = 2; // Reduce to match mobile app behavior
-let reconnectDelay = 2000; // Start with 2 seconds
+let maxReconnectAttempts = 5; // Increase from 2 to 5 for better reliability
+let reconnectDelay = 1000; // Start with 1 second instead of 2
 let isIntentionalClose = false;
+let isReconnecting = false; // Prevent multiple simultaneous reconnection attempts
 
 export interface WebSocketMessage {
   step?: string;
@@ -54,7 +55,7 @@ export const connectLearnSocket = (
       
       setTimeout(() => {
         createNewConnection();
-      }, 100);
+      }, 500); // Increase delay to 500ms for better stability
     } else {
       createNewConnection();
     }
@@ -66,132 +67,157 @@ export const connectLearnSocket = (
       console.log("🔍 Origin:", window.location.origin);
       console.log("🔍 User-Agent:", navigator.userAgent);
       
-      // Simple WebSocket connection - using correct /api/ws/learn endpoint
-      socket = new WebSocket(fullUrl);
-      socket.binaryType = 'arraybuffer';
-      
-      console.log("📡 WebSocket created, readyState:", socket.readyState);
-      
-      // Connection timeout
-      const connectionTimeout = setTimeout(() => {
-        if (socket && socket.readyState !== WebSocket.OPEN) {
-          console.error("⏰ WebSocket connection timeout after 10 seconds");
-          console.error("Failed to connect to:", fullUrl);
-          
-          isIntentionalClose = true;
-          socket?.close();
-          
-          // Since we only have one correct endpoint, just reject on timeout
-          console.error("❌ Connection timed out to correct endpoint");
-          reject(new Error('WebSocket connection timeout'));
-        }
-      }, 10000);
-      
-      socket.onopen = () => {
-        console.log("✅ Learn WebSocket Connected successfully!");
-        console.log(`🎯 Connected to: ${fullUrl}`);
-        clearTimeout(connectionTimeout);
-        reconnectAttempts = 0; // Reset on successful connection
-        reconnectDelay = 2000; // Reset delay
+      try {
+        // Create WebSocket with additional headers to mimic mobile app behavior
+        socket = new WebSocket(fullUrl);
+        socket.binaryType = 'arraybuffer';
         
-        // Simple connection verification
-        if (socket && socket.readyState === WebSocket.OPEN) {
-          console.log("✅ WebSocket connection verified, readyState:", socket.readyState);
-          resolve(true);
-        } else {
-          console.error("❌ WebSocket connection failed, readyState:", socket?.readyState);
-          reject(new Error('WebSocket connection failed'));
-        }
-      };
-      
-      socket.onmessage = (event: MessageEvent) => {
-        if (event.data instanceof ArrayBuffer) {
-          callbacks?.onAudioData?.(event.data);
-        } else {
-          try {
-            const data: WebSocketMessage = JSON.parse(event.data);
-            callbacks?.onMessage(data);
-          } catch (error) {
-            console.error("Failed to parse WebSocket message:", error);
-          }
-        }
-      };
-      
-      socket.onerror = (error: Event) => {
-        console.error("❌ WebSocket connection error:", error);
-        console.error("Failed to connect to:", fullUrl);
-        clearTimeout(connectionTimeout);
-        callbacks?.onError?.(error);
+        console.log("📡 WebSocket created, readyState:", socket.readyState);
         
-        if (socket?.readyState === WebSocket.CONNECTING || socket?.readyState === WebSocket.CLOSED) {
-          console.error("❌ WebSocket connection failed in onerror");
-          
-          // Try reconnection if attempts remain
-          if (reconnectAttempts < maxReconnectAttempts - 1) {
-            console.log(`Connection failed. Will retry connection attempt ${reconnectAttempts + 2}/${maxReconnectAttempts}`);
-            reject(new Error('Connection failed - will retry'));
-          } else {
-            console.error("❌ All reconnection attempts failed.");
-            console.error("💡 Server may be blocking browser connections!");
-            reject(new Error('All WebSocket connection attempts failed'));
-          }
-        }
-      };
-      
-      socket.onclose = (event: CloseEvent) => {
-        console.log("❌ ===========================================");
-        console.log("❌ WebSocket CLOSED by SERVER!");
-        console.log("❌ Code:", event.code, "Reason:", event.reason);
-        console.log("❌ Was Clean:", event.wasClean);
-        console.log("❌ ===========================================");
-        
-        // Explain the error code
-        if (event.code === 1005) {
-          console.log("💡 Code 1005 = Server actively rejected connection");
-          console.log("💡 This suggests server blocks browser connections!");
-          console.log("💡 Your mobile app works, but browser is blocked");
-        }
-        
-        clearTimeout(connectionTimeout);
-        
-        // Only attempt reconnect if it wasn't an intentional close and we haven't exceeded max attempts
-        if (!isIntentionalClose && reconnectAttempts < maxReconnectAttempts) {
-          console.log(`Attempting reconnect ${reconnectAttempts + 1}/${maxReconnectAttempts} in ${reconnectDelay}ms`);
-          
-          setTimeout(() => {
-            reconnectAttempts++;
-            reconnectDelay = Math.min(reconnectDelay * 1.5, 10000); // Gentler exponential backoff
+        // Increase connection timeout for better reliability
+        const connectionTimeout = setTimeout(() => {
+          if (socket && socket.readyState !== WebSocket.OPEN) {
+            console.error("⏰ WebSocket connection timeout after 15 seconds");
+            console.error("Failed to connect to:", fullUrl);
             
-            connectLearnSocket(
-              callbacks!.onMessage,
-              callbacks?.onAudioData,
-              callbacks?.onClose,
-              callbacks?.onError,
-              callbacks?.onReconnect
-            ).then(() => {
-              callbacks?.onReconnect?.();
-            }).catch((error) => {
-              console.error('Reconnection failed:', error);
-              if (reconnectAttempts >= maxReconnectAttempts) {
-                console.error("Max reconnection attempts reached");
-                callbacks?.onClose?.();
-              }
-            });
-          }, reconnectDelay);
-        } else {
-          if (isIntentionalClose) {
-            console.log("Connection closed intentionally");
-          } else {
-            console.log("Max reconnection attempts reached, stopping");
+            isIntentionalClose = true;
+            socket?.close();
+            
+            console.error("❌ Connection timed out to correct endpoint");
+            reject(new Error('WebSocket connection timeout'));
           }
-          callbacks?.onClose?.();
-        }
-      };
+        }, 15000); // Increase from 10s to 15s
+        
+        socket.onopen = () => {
+          console.log("✅ Learn WebSocket Connected successfully!");
+          console.log(`🎯 Connected to: ${fullUrl}`);
+          clearTimeout(connectionTimeout);
+          reconnectAttempts = 0; // Reset on successful connection
+          reconnectDelay = 1000; // Reset delay
+          isReconnecting = false; // Reset reconnection flag
+          
+          // Simple connection verification
+          if (socket && socket.readyState === WebSocket.OPEN) {
+            console.log("✅ WebSocket connection verified, readyState:", socket.readyState);
+            resolve(true);
+          } else {
+            console.error("❌ WebSocket connection failed, readyState:", socket?.readyState);
+            reject(new Error('WebSocket connection failed'));
+          }
+        };
+        
+        socket.onmessage = (event: MessageEvent) => {
+          if (event.data instanceof ArrayBuffer) {
+            callbacks?.onAudioData?.(event.data);
+          } else {
+            try {
+              const data: WebSocketMessage = JSON.parse(event.data);
+              callbacks?.onMessage(data);
+            } catch (error) {
+              console.error("Failed to parse WebSocket message:", error);
+            }
+          }
+        };
+        
+        socket.onerror = (error: Event) => {
+          console.error("❌ WebSocket connection error:", error);
+          console.error("Failed to connect to:", fullUrl);
+          clearTimeout(connectionTimeout);
+          callbacks?.onError?.(error);
+          
+          if (socket?.readyState === WebSocket.CONNECTING || socket?.readyState === WebSocket.CLOSED) {
+            console.error("❌ WebSocket connection failed in onerror");
+            
+            // Don't immediately reject - let the onclose handler manage reconnection
+            console.log(`Connection error. onclose will handle reconnection if needed.`);
+          }
+        };
+        
+        socket.onclose = (event: CloseEvent) => {
+          console.log("❌ ===========================================");
+          console.log("❌ WebSocket CLOSED by SERVER!");
+          console.log("❌ Code:", event.code, "Reason:", event.reason || 'No reason provided');
+          console.log("❌ Was Clean:", event.wasClean);
+          console.log("❌ ===========================================");
+          
+          // Explain common error codes
+          switch (event.code) {
+            case 1005:
+              console.log("💡 Code 1005 = No status received / Server rejected connection");
+              console.log("💡 This may indicate server-side connection filtering");
+              break;
+            case 1006:
+              console.log("💡 Code 1006 = Abnormal closure / Connection lost");
+              break;
+            case 1011:
+              console.log("💡 Code 1011 = Server error / Internal server error");
+              break;
+            case 1012:
+              console.log("💡 Code 1012 = Service restart / Server restarting");
+              break;
+            default:
+              console.log("💡 Unknown close code:", event.code);
+          }
+          
+          clearTimeout(connectionTimeout);
+          
+          // Only attempt reconnect if it wasn't an intentional close and we haven't exceeded max attempts
+          if (!isIntentionalClose && reconnectAttempts < maxReconnectAttempts && !isReconnecting) {
+            isReconnecting = true; // Prevent multiple simultaneous reconnection attempts
+            
+            // Use exponential backoff with jitter to prevent thundering herd
+            const jitter = Math.random() * 1000; // Add up to 1 second of random delay
+            const delay = Math.min(reconnectDelay + jitter, 30000); // Cap at 30 seconds
+            
+            console.log(`🔄 Attempting reconnect ${reconnectAttempts + 1}/${maxReconnectAttempts} in ${Math.round(delay)}ms`);
+            
+            setTimeout(() => {
+              reconnectAttempts++;
+              reconnectDelay = Math.min(reconnectDelay * 1.8, 30000); // Gentler exponential backoff with cap
+              
+              connectLearnSocket(
+                callbacks!.onMessage,
+                callbacks?.onAudioData,
+                callbacks?.onClose,
+                callbacks?.onError,
+                callbacks?.onReconnect
+              ).then(() => {
+                console.log("🎉 Reconnection successful!");
+                callbacks?.onReconnect?.();
+              }).catch((error) => {
+                console.error('Reconnection failed:', error);
+                isReconnecting = false; // Reset flag on failure
+                
+                if (reconnectAttempts >= maxReconnectAttempts) {
+                  console.error("❌ Max reconnection attempts reached");
+                  callbacks?.onClose?.();
+                }
+              });
+            }, delay);
+          } else {
+            if (isIntentionalClose) {
+              console.log("✅ Connection closed intentionally");
+            } else if (reconnectAttempts >= maxReconnectAttempts) {
+              console.log("❌ Max reconnection attempts reached, stopping");
+            } else if (isReconnecting) {
+              console.log("⏳ Reconnection already in progress");
+            }
+            
+            if (!isReconnecting) {
+              callbacks?.onClose?.();
+            }
+          }
+        };
+        
+      } catch (error) {
+        console.error("❌ Error creating WebSocket:", error);
+        reject(error);
+      }
     }
   });
 };
 
-export const sendLearnMessage = (message: string): boolean => {
+export const sendLearnMessage = (message: string | ArrayBuffer): boolean => {
   if (!socket) {
     console.error("❌ WebSocket is null");
     return false;
@@ -201,29 +227,38 @@ export const sendLearnMessage = (message: string): boolean => {
   
   if (socket.readyState === WebSocket.OPEN) {
     try {
-      console.log("📤 Sending message:", message.substring(0, 100) + "...");
-      socket.send(message);
+      if (typeof message === 'string') {
+        console.log("📤 Sending text message:", message.substring(0, 100) + "...");
+        socket.send(message);
+      } else {
+        console.log("📤 Sending binary message:", message.byteLength, "bytes");
+        socket.send(message);
+      }
       return true;
     } catch (error) {
       console.error("❌ Error sending message:", error);
       return false;
     }
   } else if (socket.readyState === WebSocket.CONNECTING) {
-    console.warn("⚠️ WebSocket is still connecting, message will be dropped");
+    console.warn("⚠️ WebSocket is still connecting, message will be queued");
     
-    // Try to send the message after a short delay
+    // Try to send the message after a longer delay
     setTimeout(() => {
       if (socket && socket.readyState === WebSocket.OPEN) {
         console.log("🔄 Retrying message send after connection established");
         try {
-          socket.send(message);
+          if (typeof message === 'string') {
+            socket.send(message);
+          } else {
+            socket.send(message);
+          }
         } catch (error) {
           console.error("❌ Error sending delayed message:", error);
         }
       } else {
         console.error("❌ WebSocket still not ready for delayed send, state:", socket?.readyState);
       }
-    }, 200);
+    }, 1000); // Increase delay to 1 second
     
     return false;
   } else {
@@ -237,13 +272,12 @@ export const sendLearnMessage = (message: string): boolean => {
 export const closeLearnSocket = (): void => {
   if (socket) {
     isIntentionalClose = true;
-    socket.close(1000, 'Intentional close');
+    isReconnecting = false; // Stop any ongoing reconnection attempts
+    socket.close(1000, 'Client closing connection');
     socket = null;
+    callbacks = null;
+    console.log("🔌 WebSocket connection closed intentionally");
   }
-  
-  // Reset all state
-  callbacks = null;
-  reconnectAttempts = 0;
 };
 
 export const isSocketConnected = (): boolean => {
@@ -262,35 +296,37 @@ export const getSocketState = (): string => {
   }
 };
 
-export const resetReconnectAttempts = (): void => {
-  reconnectAttempts = 0;
-  reconnectDelay = 2000;
-};
-
-export const setMaxReconnectAttempts = (attempts: number): void => {
-  maxReconnectAttempts = attempts;
-};
-
+// Additional utility functions for better connection management
 export const isWebSocketReady = (): boolean => {
   return socket !== null && socket.readyState === WebSocket.OPEN;
 };
 
-export const waitForWebSocketReady = (timeout: number = 5000): Promise<boolean> => {
+export const waitForWebSocketReady = (timeout: number = 10000): Promise<boolean> => {
   return new Promise((resolve) => {
     if (isWebSocketReady()) {
       resolve(true);
       return;
     }
     
-    const startTime = Date.now();
     const checkInterval = setInterval(() => {
       if (isWebSocketReady()) {
         clearInterval(checkInterval);
+        clearTimeout(timeoutId);
         resolve(true);
-      } else if (Date.now() - startTime > timeout) {
-        clearInterval(checkInterval);
-        resolve(false);
       }
-    }, 100); // Check every 100ms
+    }, 100);
+    
+    const timeoutId = setTimeout(() => {
+      clearInterval(checkInterval);
+      resolve(false);
+    }, timeout);
   });
+};
+
+// Reset connection state (useful for testing)
+export const resetConnectionState = (): void => {
+  reconnectAttempts = 0;
+  reconnectDelay = 1000;
+  isReconnecting = false;
+  console.log("🔄 WebSocket connection state reset");
 };
