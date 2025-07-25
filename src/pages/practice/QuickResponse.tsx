@@ -8,6 +8,7 @@ import { ContentLoader } from '@/components/ContentLoader';
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
 import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
 import { useAuth } from '@/hooks/useAuth';
+import { initializeUserProgress, getCurrentTopicProgress, updateCurrentProgress } from '@/utils/progressTracker';
 
 // Types
 interface Prompt {
@@ -152,6 +153,8 @@ export const QuickResponse: React.FC = () => {
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [feedback, setFeedback] = useState<EvaluationFeedback | null>(null);
   const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
+  const [progressInitialized, setProgressInitialized] = useState(false);
+  const [resumeDataLoaded, setResumeDataLoaded] = useState(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -412,6 +415,9 @@ export const QuickResponse: React.FC = () => {
       const evaluationResult = await evaluateAudio(audioBase64, timeSpentSeconds);
       setFeedback(evaluationResult);
       
+      // Save progress after successful evaluation
+      saveProgress(currentPromptIndex);
+      
     } catch (error: any) {
       console.error('Processing error:', error);
       setError(error.message || 'Failed to process recording');
@@ -421,15 +427,61 @@ export const QuickResponse: React.FC = () => {
     }
   };
 
-  // Fetch prompts on component mount
+  // Initialize progress and fetch prompts on component mount with resume functionality
   useEffect(() => {
-    const loadPrompts = async () => {
+    const initializeAndLoadPrompts = async () => {
       setLoading(true);
       setError(null);
       
       try {
+        // First, load practice prompts
         const fetchedPrompts = await fetchPrompts();
         setPrompts(fetchedPrompts);
+
+        // If user is authenticated, handle progress and resume
+        if (user?.id && !resumeDataLoaded) {
+          console.log('Loading user progress for Stage 1 QuickResponse practice...');
+          
+          // Try to get current progress to resume from where user left off
+          const currentProgress = await getCurrentTopicProgress(user.id, 1, 2); // Stage 1, Exercise 2
+          
+          if (currentProgress.success && currentProgress.data && currentProgress.data.success) {
+            const { current_topic_id } = currentProgress.data;
+            
+            if (current_topic_id !== undefined && current_topic_id > 0) {
+              // Convert topic ID to prompt index (topic ID is 1-based, array index is 0-based)
+              const resumeIndex = Math.min(Math.max(0, current_topic_id - 1), fetchedPrompts.length - 1);
+              console.log(`Resuming Stage 1 QuickResponse from topic ${current_topic_id} (prompt ${resumeIndex + 1})`);
+              setCurrentPromptIndex(resumeIndex);
+            } else {
+              console.log('No resume data for Stage 1 QuickResponse, starting from beginning');
+              setCurrentPromptIndex(0);
+            }
+          } else {
+            console.log('Could not get current progress, initializing new progress...');
+            
+            // Initialize user progress if we couldn't get current progress
+            if (!progressInitialized) {
+              const progressResult = await initializeUserProgress(user.id);
+              
+              if (progressResult.success) {
+                console.log('Progress initialized successfully:', progressResult.message);
+                setProgressInitialized(true);
+              } else {
+                console.warn('Progress initialization failed:', progressResult.error);
+              }
+            }
+            
+            // Start from beginning
+            setCurrentPromptIndex(0);
+          }
+          
+          setResumeDataLoaded(true);
+        } else if (!user?.id) {
+          // No user, start from beginning
+          setCurrentPromptIndex(0);
+        }
+
       } catch (err: any) {
         setError(err.message || 'Failed to load prompts from API');
       } finally {
@@ -437,8 +489,27 @@ export const QuickResponse: React.FC = () => {
       }
     };
 
-    loadPrompts();
-  }, []);
+    if (!resumeDataLoaded || !user?.id) {
+      initializeAndLoadPrompts();
+    }
+  }, [user?.id, resumeDataLoaded, progressInitialized]);
+
+  // Save current progress to API
+  const saveProgress = async (promptIndex: number) => {
+    if (user?.id && prompts.length > 0) {
+      try {
+        await updateCurrentProgress(
+          user.id,
+          1, // Stage 1
+          2  // Exercise 2 (QuickResponse)
+        );
+        console.log(`Progress saved: Stage 1, Exercise 2, Prompt ${promptIndex + 1}/${prompts.length}`);
+      } catch (error) {
+        console.warn('Failed to save progress:', error);
+        // Don't show error to user, just log it
+      }
+    }
+  };
 
   const handlePlayAudio = async () => {
     if (!currentPrompt) return;
@@ -457,21 +528,27 @@ export const QuickResponse: React.FC = () => {
   };
 
   const handleNext = () => {
+    let newIndex;
     if (currentPromptIndex < prompts.length - 1) {
-      setCurrentPromptIndex(currentPromptIndex + 1);
+      newIndex = currentPromptIndex + 1;
     } else {
-      setCurrentPromptIndex(0);
+      newIndex = 0;
     }
+    setCurrentPromptIndex(newIndex);
     setFeedback(null); // Clear feedback when navigating
+    saveProgress(newIndex); // Save progress when navigating
   };
 
   const handlePrevious = () => {
+    let newIndex;
     if (currentPromptIndex > 0) {
-      setCurrentPromptIndex(currentPromptIndex - 1);
+      newIndex = currentPromptIndex - 1;
     } else {
-      setCurrentPromptIndex(prompts.length - 1);
+      newIndex = prompts.length - 1;
     }
+    setCurrentPromptIndex(newIndex);
     setFeedback(null); // Clear feedback when navigating
+    saveProgress(newIndex); // Save progress when navigating
   };
 
   const handleStartRecording = async () => {

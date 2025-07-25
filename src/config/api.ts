@@ -77,6 +77,10 @@ export const API_ENDPOINTS = {
   ROLEPLAY_START: '/api/roleplay/start',
   ROLEPLAY_RESPOND: '/api/roleplay/respond',
   ROLEPLAY_EVALUATE: '/api/roleplay/evaluate',
+  // Progress tracking endpoints
+  INITIALIZE_PROGRESS: '/api/progress/initialize-progress',
+  GET_CURRENT_TOPIC: '/api/progress/get-current-topic',
+  COMPREHENSIVE_PROGRESS: '/api/progress/comprehensive-progress',
   // Observation Reports endpoints
   OBSERVATION_REPORTS: '/api/observation-reports',
   OBSERVATION_REPORT_DETAIL: (reportId: string) => `/api/observation-reports/${reportId}`,

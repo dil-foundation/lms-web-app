@@ -8,6 +8,7 @@ import { ContentLoader } from '@/components/ContentLoader';
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
 import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
 import { useAuth } from '@/hooks/useAuth';
+import { initializeUserProgress, getCurrentTopicProgress, updateCurrentProgress } from '@/utils/progressTracker';
 
 // Types
 interface Phrase {
@@ -159,6 +160,8 @@ export const RepeatAfterMe: React.FC = () => {
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [feedback, setFeedback] = useState<EvaluationFeedback | null>(null);
   const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
+  const [progressInitialized, setProgressInitialized] = useState(false);
+  const [resumeDataLoaded, setResumeDataLoaded] = useState(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -385,6 +388,9 @@ export const RepeatAfterMe: React.FC = () => {
       const evaluationResult = await evaluateAudio(audioBase64, timeSpentSeconds);
       setFeedback(evaluationResult);
       
+      // Save progress after successful evaluation
+      saveProgress(currentPhraseIndex);
+      
     } catch (error: any) {
       console.error('Processing error:', error);
       setError(error.message || 'Failed to process recording');
@@ -439,15 +445,61 @@ export const RepeatAfterMe: React.FC = () => {
     }
   };
 
-  // Fetch phrases on component mount
+  // Initialize progress and fetch phrases on component mount with resume functionality
   useEffect(() => {
-    const loadPhrases = async () => {
+    const initializeAndLoadPhrases = async () => {
       setLoading(true);
       setError(null);
       
       try {
+        // First, load practice phrases
         const fetchedPhrases = await fetchPhrases();
         setPhrases(fetchedPhrases);
+
+        // If user is authenticated, handle progress and resume
+        if (user?.id && !resumeDataLoaded) {
+          console.log('Loading user progress for Stage 1 practice...');
+          
+          // Try to get current progress to resume from where user left off
+          const currentProgress = await getCurrentTopicProgress(user.id, 1, 1); // Stage 1, Exercise 1
+          
+          if (currentProgress.success && currentProgress.data && currentProgress.data.success) {
+            const { current_topic_id } = currentProgress.data;
+            
+            if (current_topic_id !== undefined && current_topic_id > 0) {
+              // Convert topic ID to phrase index (topic ID is 1-based, array index is 0-based)
+              const resumeIndex = Math.min(Math.max(0, current_topic_id - 1), fetchedPhrases.length - 1);
+              console.log(`Resuming Stage 1 RepeatAfterMe from topic ${current_topic_id} (phrase ${resumeIndex + 1})`);
+              setCurrentPhraseIndex(resumeIndex);
+            } else {
+              console.log('No resume data for Stage 1 RepeatAfterMe, starting from beginning');
+              setCurrentPhraseIndex(0);
+            }
+          } else {
+            console.log('Could not get current progress, initializing new progress...');
+            
+            // Initialize user progress if we couldn't get current progress
+            if (!progressInitialized) {
+              const progressResult = await initializeUserProgress(user.id);
+              
+              if (progressResult.success) {
+                console.log('Progress initialized successfully:', progressResult.message);
+                setProgressInitialized(true);
+              } else {
+                console.warn('Progress initialization failed:', progressResult.error);
+              }
+            }
+            
+            // Start from beginning
+            setCurrentPhraseIndex(0);
+          }
+          
+          setResumeDataLoaded(true);
+        } else if (!user?.id) {
+          // No user, start from beginning
+          setCurrentPhraseIndex(0);
+        }
+
       } catch (err: any) {
         setError(err.message || 'Failed to load phrases from API');
       } finally {
@@ -455,8 +507,10 @@ export const RepeatAfterMe: React.FC = () => {
       }
     };
 
-    loadPhrases();
-  }, []);
+    if (!resumeDataLoaded || !user?.id) {
+      initializeAndLoadPhrases();
+    }
+  }, [user?.id, resumeDataLoaded, progressInitialized]);
 
   // Cleanup effect
   useEffect(() => {
@@ -553,6 +607,23 @@ export const RepeatAfterMe: React.FC = () => {
     };
 
     loadPhrases();
+  };
+
+  // Save current progress to API
+  const saveProgress = async (phraseIndex: number) => {
+    if (user?.id && phrases.length > 0) {
+      try {
+        await updateCurrentProgress(
+          user.id,
+          1, // Stage 1
+          1  // Exercise 1 (RepeatAfterMe)
+        );
+        console.log(`Progress saved: Stage 1, Exercise 1, Phrase ${phraseIndex + 1}/${phrases.length}`);
+      } catch (error) {
+        console.warn('Failed to save progress:', error);
+        // Don't show error to user, just log it
+      }
+    }
   };
 
   // Loading state
@@ -818,8 +889,10 @@ export const RepeatAfterMe: React.FC = () => {
           <div className="flex gap-4 mt-6">
             <Button
               onClick={() => {
-                setCurrentPhraseIndex(Math.max(0, currentPhraseIndex - 1));
+                const newIndex = Math.max(0, currentPhraseIndex - 1);
+                setCurrentPhraseIndex(newIndex);
                 setFeedback(null); // Clear feedback when navigating
+                saveProgress(newIndex); // Save progress when navigating
               }}
               disabled={currentPhraseIndex === 0}
               variant="outline"
@@ -828,8 +901,10 @@ export const RepeatAfterMe: React.FC = () => {
             </Button>
             <Button
               onClick={() => {
-                setCurrentPhraseIndex(Math.min(phrases.length - 1, currentPhraseIndex + 1));
+                const newIndex = Math.min(phrases.length - 1, currentPhraseIndex + 1);
+                setCurrentPhraseIndex(newIndex);
                 setFeedback(null); // Clear feedback when navigating
+                saveProgress(newIndex); // Save progress when navigating
               }}
               disabled={currentPhraseIndex === phrases.length - 1}
               variant="outline"

@@ -8,6 +8,7 @@ import { ContentLoader } from '@/components/ContentLoader';
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
 import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
 import { useAuth } from '@/hooks/useAuth';
+import { initializeUserProgress, getCurrentTopicProgress, updateCurrentProgress } from '@/utils/progressTracker';
 
 // Types
 interface DailyRoutinePhrase {
@@ -184,6 +185,8 @@ export default function DailyRoutine() {
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [feedback, setFeedback] = useState<EvaluationFeedback | null>(null);
   const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
+  const [progressInitialized, setProgressInitialized] = useState(false);
+  const [resumeDataLoaded, setResumeDataLoaded] = useState(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -444,6 +447,9 @@ export default function DailyRoutine() {
       const evaluationResult = await evaluateAudio(audioBase64, timeSpentSeconds);
       setFeedback(evaluationResult);
       
+      // Save progress after successful evaluation
+      saveProgress(currentPhraseIndex);
+      
     } catch (error: any) {
       console.error('Processing error:', error);
       setError(error.message || 'Failed to process recording');
@@ -453,15 +459,61 @@ export default function DailyRoutine() {
     }
   };
 
-  // Fetch phrases on component mount
+  // Initialize progress and fetch phrases on component mount with resume functionality
   useEffect(() => {
-    const loadPhrases = async () => {
+    const initializeAndLoadPhrases = async () => {
       setLoading(true);
       setError(null);
       
       try {
+        // First, load daily routine phrases
         const fetchedPhrases = await fetchDailyRoutinePhrases();
         setPhrases(fetchedPhrases);
+
+        // If user is authenticated, handle progress and resume
+        if (user?.id && !resumeDataLoaded) {
+          console.log('Loading user progress for Stage 2 DailyRoutine practice...');
+          
+          // Try to get current progress to resume from where user left off
+          const currentProgress = await getCurrentTopicProgress(user.id, 2, 1); // Stage 2, Exercise 1
+          
+          if (currentProgress.success && currentProgress.data && currentProgress.data.success) {
+            const { current_topic_id } = currentProgress.data;
+            
+            if (current_topic_id !== undefined && current_topic_id > 0) {
+              // Convert topic ID to phrase index (topic ID is 1-based, array index is 0-based)
+              const resumeIndex = Math.min(Math.max(0, current_topic_id - 1), fetchedPhrases.length - 1);
+              console.log(`Resuming Stage 2 DailyRoutine from topic ${current_topic_id} (phrase ${resumeIndex + 1})`);
+              setCurrentPhraseIndex(resumeIndex);
+            } else {
+              console.log('No resume data for Stage 2 DailyRoutine, starting from beginning');
+              setCurrentPhraseIndex(0);
+            }
+          } else {
+            console.log('Could not get current progress, initializing new progress...');
+            
+            // Initialize user progress if we couldn't get current progress
+            if (!progressInitialized) {
+              const progressResult = await initializeUserProgress(user.id);
+              
+              if (progressResult.success) {
+                console.log('Progress initialized successfully:', progressResult.message);
+                setProgressInitialized(true);
+              } else {
+                console.warn('Progress initialization failed:', progressResult.error);
+              }
+            }
+            
+            // Start from beginning
+            setCurrentPhraseIndex(0);
+          }
+          
+          setResumeDataLoaded(true);
+        } else if (!user?.id) {
+          // No user, start from beginning
+          setCurrentPhraseIndex(0);
+        }
+
       } catch (err: any) {
         setError(err.message || 'Failed to load daily routine phrases from API');
       } finally {
@@ -469,8 +521,27 @@ export default function DailyRoutine() {
       }
     };
 
-    loadPhrases();
-  }, []);
+    if (!resumeDataLoaded || !user?.id) {
+      initializeAndLoadPhrases();
+    }
+  }, [user?.id, resumeDataLoaded, progressInitialized]);
+
+  // Save current progress to API
+  const saveProgress = async (phraseIndex: number) => {
+    if (user?.id && phrases.length > 0) {
+      try {
+        await updateCurrentProgress(
+          user.id,
+          2, // Stage 2
+          1  // Exercise 1 (DailyRoutine)
+        );
+        console.log(`Progress saved: Stage 2, Exercise 1, Phrase ${phraseIndex + 1}/${phrases.length}`);
+      } catch (error) {
+        console.warn('Failed to save progress:', error);
+        // Don't show error to user, just log it
+      }
+    }
+  };
 
   const handlePlayAudio = async () => {
     if (!currentPhrase) return;
@@ -489,21 +560,27 @@ export default function DailyRoutine() {
   };
 
   const handleNext = () => {
+    let newIndex;
     if (currentPhraseIndex < phrases.length - 1) {
-      setCurrentPhraseIndex(currentPhraseIndex + 1);
+      newIndex = currentPhraseIndex + 1;
     } else {
-      setCurrentPhraseIndex(0);
+      newIndex = 0;
     }
+    setCurrentPhraseIndex(newIndex);
     setFeedback(null); // Clear feedback when navigating
+    saveProgress(newIndex); // Save progress when navigating
   };
 
   const handlePrevious = () => {
+    let newIndex;
     if (currentPhraseIndex > 0) {
-      setCurrentPhraseIndex(currentPhraseIndex - 1);
+      newIndex = currentPhraseIndex - 1;
     } else {
-      setCurrentPhraseIndex(phrases.length - 1);
+      newIndex = phrases.length - 1;
     }
+    setCurrentPhraseIndex(newIndex);
     setFeedback(null); // Clear feedback when navigating
+    saveProgress(newIndex); // Save progress when navigating
   };
 
   const handleStartRecording = async () => {
