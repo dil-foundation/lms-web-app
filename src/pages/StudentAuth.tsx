@@ -220,6 +220,32 @@ const StudentAuth = () => {
     setIsLoading(true);
 
     try {
+      // Check if user exists and is confirmed before attempting signup
+      const { data: isConfirmed, error: rpcError } = await supabase.rpc('check_user_status', {
+        user_email: signupData.email,
+      });
+
+      if (rpcError) {
+        console.error('Error checking user status:', rpcError);
+        setValidationErrors(prev => ({
+          ...prev,
+          email: 'Could not verify email. Please try again.'
+        }));
+        setIsLoading(false);
+        return;
+      }
+
+      if (isConfirmed) {
+        console.log('🔐 Signup attempt for existing confirmed user:', signupData.email);
+        setValidationErrors(prev => ({
+          ...prev,
+          email: 'An account with this email already exists.'
+        }));
+        toast.error('An account with this email already exists. Please sign in instead.');
+        setIsLoading(false);
+        return;
+      }
+
       console.log('🔐 Attempting student signup...');
       const { data, error } = await supabase.auth.signUp({
         email: signupData.email,
