@@ -10,6 +10,7 @@ import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
 import { useAuth } from '@/hooks/useAuth';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
+import { initializeUserProgress, getCurrentTopicProgress, updateCurrentProgress } from '@/utils/progressTracker';
 
 interface Message {
   type: 'ai' | 'user';
@@ -699,6 +700,8 @@ export default function RoleplaySimulation() {
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [evaluationResult, setEvaluationResult] = useState<EvaluationResult | null>(null);
   const [conversationCompleted, setConversationCompleted] = useState(false);
+  const [progressInitialized, setProgressInitialized] = useState(false);
+  const [resumeDataLoaded, setResumeDataLoaded] = useState(false);
   const conversationContainerRef = useRef<HTMLDivElement>(null);
 
   const itemsPerPage = 6;
@@ -743,6 +746,83 @@ export default function RoleplaySimulation() {
     loadScenarios();
   }, [user?.id]); // Add user?.id to dependency array
 
+  // Initialize user progress for Stage 2 practice with resume functionality
+  useEffect(() => {
+    const initializeProgressWithResume = async () => {
+      // Initialize user progress if user is authenticated and not already initialized
+      if (user?.id && !resumeDataLoaded) {
+        console.log('Loading user progress for Stage 2 Roleplay practice...');
+        
+        try {
+          // Try to get current progress to resume from where user left off
+          const currentProgress = await getCurrentTopicProgress(user.id, 2, 3); // Stage 2, Exercise 3
+          
+          if (currentProgress.success && currentProgress.data && currentProgress.data.success) {
+            const { current_topic_id } = currentProgress.data;
+            
+            if (current_topic_id !== undefined && current_topic_id > 0) {
+              // For RoleplaySimulation, topic ID represents the page number directly
+              const totalPages = Math.ceil(allScenarios.length / itemsPerPage) || 1;
+              const resumePage = Math.min(Math.max(1, current_topic_id), totalPages);
+              console.log(`Resuming Stage 2 RoleplaySimulation from topic ${current_topic_id} (page ${resumePage})`);
+              setCurrentPage(resumePage);
+            } else {
+              console.log('No resume data for Stage 2 RoleplaySimulation, starting from beginning');
+              setCurrentPage(1);
+            }
+          } else {
+            console.log('Could not get current progress, initializing new progress...');
+            
+            // Initialize user progress if we couldn't get current progress
+            if (!progressInitialized) {
+              const progressResult = await initializeUserProgress(user.id);
+              
+              if (progressResult.success) {
+                console.log('Progress initialized successfully:', progressResult.message);
+                setProgressInitialized(true);
+              } else {
+                console.warn('Progress initialization failed:', progressResult.error);
+              }
+            }
+            
+            // Start from beginning
+            setCurrentPage(1);
+          }
+          
+          setResumeDataLoaded(true);
+        } catch (error) {
+          console.error('Error loading progress:', error);
+          // Start from beginning if error
+          setCurrentPage(1);
+          setResumeDataLoaded(true);
+        }
+      }
+    };
+
+    // Only run if we have scenarios loaded and haven't loaded resume data yet
+    if (allScenarios.length > 0 && !resumeDataLoaded) {
+      initializeProgressWithResume();
+    }
+  }, [user?.id, progressInitialized, allScenarios.length, resumeDataLoaded]);
+
+  // Save current progress to API
+  const saveProgress = async (pageNumber: number) => {
+    if (user?.id && allScenarios.length > 0) {
+      try {
+        const totalPages = Math.ceil(allScenarios.length / itemsPerPage);
+        await updateCurrentProgress(
+          user.id,
+          2, // Stage 2
+          3  // Exercise 3 (RoleplaySimulation)
+        );
+        console.log(`Progress saved: Stage 2, Exercise 3, Page ${pageNumber}/${totalPages}`);
+      } catch (error) {
+        console.warn('Failed to save progress:', error);
+        // Don't show error to user, just log it
+      }
+    }
+  };
+
   // Calculate pagination values
   const totalPages = Math.ceil(allScenarios.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -754,6 +834,7 @@ export default function RoleplaySimulation() {
       return;
     }
     setCurrentPage(newPage);
+    saveProgress(newPage); // Save progress when navigating pages
   };
 
   const handleRetry = () => {

@@ -8,6 +8,7 @@ import { ContentLoader } from '@/components/ContentLoader';
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
 import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
 import { useAuth } from '@/hooks/useAuth';
+import { initializeUserProgress, getCurrentTopicProgress, updateCurrentProgress } from '@/utils/progressTracker';
 
 // Types
 interface QuickAnswerQuestion {
@@ -185,6 +186,8 @@ export default function QuickAnswer() {
   const [feedback, setFeedback] = useState<EvaluationFeedback | null>(null);
   const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
   const [showExpectedAnswers, setShowExpectedAnswers] = useState(false);
+  const [progressInitialized, setProgressInitialized] = useState(false);
+  const [resumeDataLoaded, setResumeDataLoaded] = useState(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -445,6 +448,9 @@ export default function QuickAnswer() {
       const evaluationResult = await evaluateAudio(audioBase64, timeSpentSeconds);
       setFeedback(evaluationResult);
       
+      // Save progress after successful evaluation
+      saveProgress(currentQuestionIndex);
+      
     } catch (error: any) {
       console.error('Processing error:', error);
       setError(error.message || 'Failed to process recording');
@@ -454,15 +460,61 @@ export default function QuickAnswer() {
     }
   };
 
-  // Fetch questions on component mount
+  // Initialize progress and fetch questions on component mount with resume functionality
   useEffect(() => {
-    const loadQuestions = async () => {
+    const initializeAndLoadQuestions = async () => {
       setLoading(true);
       setError(null);
       
       try {
+        // First, load quick answer questions
         const fetchedQuestions = await fetchQuickAnswerQuestions();
         setQuestions(fetchedQuestions);
+
+        // If user is authenticated, handle progress and resume
+        if (user?.id && !resumeDataLoaded) {
+          console.log('Loading user progress for Stage 2 QuickAnswer practice...');
+          
+          // Try to get current progress to resume from where user left off
+          const currentProgress = await getCurrentTopicProgress(user.id, 2, 2); // Stage 2, Exercise 2
+          
+          if (currentProgress.success && currentProgress.data && currentProgress.data.success) {
+            const { current_topic_id } = currentProgress.data;
+            
+            if (current_topic_id !== undefined && current_topic_id > 0) {
+              // Convert topic ID to question index (topic ID is 1-based, array index is 0-based)
+              const resumeIndex = Math.min(Math.max(0, current_topic_id - 1), fetchedQuestions.length - 1);
+              console.log(`Resuming Stage 2 QuickAnswer from topic ${current_topic_id} (question ${resumeIndex + 1})`);
+              setCurrentQuestionIndex(resumeIndex);
+            } else {
+              console.log('No resume data for Stage 2 QuickAnswer, starting from beginning');
+              setCurrentQuestionIndex(0);
+            }
+          } else {
+            console.log('Could not get current progress, initializing new progress...');
+            
+            // Initialize user progress if we couldn't get current progress
+            if (!progressInitialized) {
+              const progressResult = await initializeUserProgress(user.id);
+              
+              if (progressResult.success) {
+                console.log('Progress initialized successfully:', progressResult.message);
+                setProgressInitialized(true);
+              } else {
+                console.warn('Progress initialization failed:', progressResult.error);
+              }
+            }
+            
+            // Start from beginning
+            setCurrentQuestionIndex(0);
+          }
+          
+          setResumeDataLoaded(true);
+        } else if (!user?.id) {
+          // No user, start from beginning
+          setCurrentQuestionIndex(0);
+        }
+
       } catch (err: any) {
         setError(err.message || 'Failed to load quick answer questions from API');
       } finally {
@@ -470,8 +522,27 @@ export default function QuickAnswer() {
       }
     };
 
-    loadQuestions();
-  }, []);
+    if (!resumeDataLoaded || !user?.id) {
+      initializeAndLoadQuestions();
+    }
+  }, [user?.id, resumeDataLoaded, progressInitialized]);
+
+  // Save current progress to API
+  const saveProgress = async (questionIndex: number) => {
+    if (user?.id && questions.length > 0) {
+      try {
+        await updateCurrentProgress(
+          user.id,
+          2, // Stage 2
+          2  // Exercise 2 (QuickAnswer)
+        );
+        console.log(`Progress saved: Stage 2, Exercise 2, Question ${questionIndex + 1}/${questions.length}`);
+      } catch (error) {
+        console.warn('Failed to save progress:', error);
+        // Don't show error to user, just log it
+      }
+    }
+  };
 
   const handlePlayAudio = async () => {
     if (!currentQuestion) return;
@@ -490,23 +561,29 @@ export default function QuickAnswer() {
   };
 
   const handleNext = () => {
+    let newIndex;
     if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
+      newIndex = currentQuestionIndex + 1;
     } else {
-      setCurrentQuestionIndex(0);
+      newIndex = 0;
     }
+    setCurrentQuestionIndex(newIndex);
     setFeedback(null); // Clear feedback when navigating
     setShowExpectedAnswers(false); // Reset toggle when changing questions
+    saveProgress(newIndex); // Save progress when navigating
   };
 
   const handlePrevious = () => {
+    let newIndex;
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
+      newIndex = currentQuestionIndex - 1;
     } else {
-      setCurrentQuestionIndex(questions.length - 1);
+      newIndex = questions.length - 1;
     }
+    setCurrentQuestionIndex(newIndex);
     setFeedback(null); // Clear feedback when navigating
     setShowExpectedAnswers(false); // Reset toggle when changing questions
+    saveProgress(newIndex); // Save progress when navigating
   };
 
   const handleStartRecording = async () => {
