@@ -30,7 +30,10 @@ BEGIN
   WITH student_courses AS (
     SELECT DISTINCT cm.course_id
     FROM course_members cm
-    WHERE cm.user_id = student_id AND cm.role = 'student'
+    JOIN courses c ON cm.course_id = c.id
+    WHERE cm.user_id = student_id 
+      AND cm.role = 'student' 
+      AND c.status = 'Published'
   ),
   course_lessons AS (
     SELECT cl.id, cl.section_id, cl.type, cl.due_date
