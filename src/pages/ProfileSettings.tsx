@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -33,6 +34,15 @@ type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 const ProfileSettings = () => {
   const { user } = useAuth();
   const { profile, loading: profileLoading } = useUserProfile();
+  const location = useLocation();
+  const [showResetPasswordWarning, setShowResetPasswordWarning] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('source') === 'reset') {
+      setShowResetPasswordWarning(true);
+    }
+  }, [location.search]);
 
   const {
     register: registerProfile,
@@ -154,7 +164,16 @@ const ProfileSettings = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {user?.user_metadata?.password_setup_required && (
+            {showResetPasswordWarning && (
+              <Alert variant="destructive" className="mb-4">
+                <Terminal className="h-4 w-4" />
+                <AlertTitle>Action Required: Secure Your Account</AlertTitle>
+                <AlertDescription>
+                  You have followed a password reset link. Please set a new password for your account now.
+                </AlertDescription>
+              </Alert>
+            )}
+            {user?.user_metadata?.password_setup_required && !showResetPasswordWarning && (
               <Alert variant="destructive" className="mb-4">
                 <Terminal className="h-4 w-4" />
                 <AlertTitle>Action Required: Set Your Password</AlertTitle>
