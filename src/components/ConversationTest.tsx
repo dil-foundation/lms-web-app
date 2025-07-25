@@ -1,648 +1,844 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { LanguageModeProvider, useLanguageMode, LanguageModeSelector } from '../contexts/LanguageModeContext.js';
-import { useAudioRecorder } from '../hooks/useAudioRecorder.js';
-import { useAudioPlayer } from '../hooks/useAudioPlayer.js';
-import { 
-  playAudio, 
-  stopCurrentAudio, 
-  isAnyAudioPlaying, 
-  getAudioStats, 
-  addAudioListener, 
-  removeAudioListener 
-} from '../utils/audioManager.js';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   connectLearnSocket, 
   sendLearnMessage, 
   closeLearnSocket, 
-  isSocketConnected,
+  isSocketConnected, 
   getSocketState,
-  addMessageListener,
-  removeMessageListener,
-  addOpenListener,
-  removeOpenListener,
-  addCloseListener,
-  removeCloseListener,
-  addErrorListener,
-  removeErrorListener,
-  blobToBase64
-} from '../utils/websocket.js';
-import { CHATGPT_TIMING_CONFIG } from '../utils/chatgptTimingConfig.js';
+  resetConnectionState
+} from '../utils/websocket';
+import { BASE_API_URL } from '../config/api';
 
-// Test component for integration testing
-const ConversationTest = () => {
-  const [testResults, setTestResults] = useState({
-    websocket: { status: 'pending', message: '', details: {} },
-    audioRecording: { status: 'pending', message: '', details: {} },
-    audioPlayback: { status: 'pending', message: '', details: {} },
-    voiceDetection: { status: 'pending', message: '', details: {} },
-    languageMode: { status: 'pending', message: '', details: {} },
-    integration: { status: 'pending', message: '', details: {} }
-  });
-  
+interface TestResult {
+  test: string;
+  status: 'passed' | 'failed' | 'running' | 'pending';
+  message: string;
+  details?: any;
+  timestamp: Date;
+}
+
+const ConversationTest: React.FC = () => {
+  const [testResults, setTestResults] = useState<TestResult[]>([]);
+  const [currentTest, setCurrentTest] = useState<string>('');
   const [isRunning, setIsRunning] = useState(false);
-  const [testLogs, setTestLogs] = useState([]);
-  const [currentTest, setCurrentTest] = useState(null);
-  const [testProgress, setTestProgress] = useState(0);
-  
-  const testLogRef = useRef([]);
-  const testStartTimeRef = useRef(null);
-  
-  const addTestLog = (message, type = 'info') => {
-    const logEntry = {
-      timestamp: Date.now(),
-      message,
-      type,
-      elapsed: Date.now() - (testStartTimeRef.current || Date.now())
-    };
-    
-    testLogRef.current.push(logEntry);
-    setTestLogs([...testLogRef.current]);
-    
-    console.log(`[${type.toUpperCase()}] ${message}`);
+  const [testLogs, setTestLogs] = useState<string[]>([]);
+
+  const addTestLog = (message: string) => {
+    const timestamp = new Date().toLocaleTimeString();
+    setTestLogs(prev => [...prev, `[${timestamp}] ${message}`]);
+    console.log(`[ConversationTest] ${message}`);
   };
-  
-  const updateTestResult = (testName, status, message, details = {}) => {
-    setTestResults(prev => ({
-      ...prev,
-      [testName]: { status, message, details }
-    }));
-    
-    addTestLog(`${testName}: ${status} - ${message}`, status === 'passed' ? 'success' : status === 'failed' ? 'error' : 'info');
+
+  const updateTestResult = (test: string, status: TestResult['status'], message: string, details?: any) => {
+    setTestResults(prev => {
+      const existing = prev.find(t => t.test === test);
+      if (existing) {
+        existing.status = status;
+        existing.message = message;
+        existing.details = details;
+        existing.timestamp = new Date();
+        return [...prev];
+      } else {
+        return [...prev, { test, status, message, details, timestamp: new Date() }];
+      }
+    });
   };
-  
-  const runAllTests = async () => {
-    setIsRunning(true);
-    setTestProgress(0);
-    testLogRef.current = [];
-    testStartTimeRef.current = Date.now();
-    
-    addTestLog('Starting comprehensive integration tests...');
+
+  const clearResults = () => {
+    setTestResults([]);
+    setTestLogs([]);
+    setCurrentTest('');
+  };
+
+  // Test API connectivity
+  const testApiConnectivity = async () => {
+    setCurrentTest('API Connectivity');
+    addTestLog('Testing basic API connectivity...');
     
     try {
-      // Test 1: Language Mode Context
-      await testLanguageMode();
-      setTestProgress(16);
-      
-      // Test 2: WebSocket Connection
-      await testWebSocketConnection();
-      setTestProgress(32);
-      
-      // Test 3: Audio Recording
-      await testAudioRecording();
-      setTestProgress(48);
-      
-      // Test 4: Audio Playback
-      await testAudioPlayback();
-      setTestProgress(64);
-      
-      // Test 5: Voice Activity Detection
-      await testVoiceActivityDetection();
-      setTestProgress(80);
-      
-      // Test 6: Integration Test
-      await testFullIntegration();
-      setTestProgress(100);
-      
-      addTestLog('All tests completed successfully!', 'success');
-      
-    } catch (error) {
-      addTestLog(`Test suite failed: ${error.message}`, 'error');
-      console.error('Test suite error:', error);
-    } finally {
-      setIsRunning(false);
-      setCurrentTest(null);
-    }
-  };
-  
-  const testLanguageMode = async () => {
-    setCurrentTest('Language Mode Context');
-    addTestLog('Testing language mode context...');
-    
-    try {
-      const { languageMode, changeLanguageMode, availableLanguages } = useLanguageMode();
-      
-      // Test default language mode
-      if (languageMode !== 'urdu') {
-        throw new Error(`Expected default language mode 'urdu', got '${languageMode}'`);
-      }
-      
-      // Test language switching
-      await changeLanguageMode('english');
-      
-      // Test available languages
-      if (availableLanguages.length < 2) {
-        throw new Error('Expected at least 2 available languages');
-      }
-      
-      // Switch back to urdu
-      await changeLanguageMode('urdu');
-      
-      updateTestResult('languageMode', 'passed', 'Language mode context working correctly', {
-        defaultMode: 'urdu',
-        availableLanguages: availableLanguages.length,
-        switchingWorks: true
+      const response = await fetch(`${BASE_API_URL}/health`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': navigator.userAgent,
+          'Origin': window.location.origin
+        }
       });
       
+      if (response.ok) {
+        updateTestResult('api', 'passed', 'API server is reachable', { 
+          status: response.status,
+          headers: Object.fromEntries(response.headers.entries())
+        });
+      } else {
+        updateTestResult('api', 'failed', `API returned ${response.status}`, { status: response.status });
+      }
     } catch (error) {
-      updateTestResult('languageMode', 'failed', error.message, { error: error.message });
+      updateTestResult('api', 'failed', (error as Error).message, { error: error.toString() });
     }
   };
-  
-  const testWebSocketConnection = async () => {
-    setCurrentTest('WebSocket Connection');
-    addTestLog('Testing WebSocket connection...');
+
+  // Test raw WebSocket connection
+  const testRawWebSocket = async () => {
+    setCurrentTest('Raw WebSocket');
+    addTestLog('Testing raw WebSocket connection...');
+    
+    return new Promise<void>((resolve) => {
+      try {
+        const wsUrl = BASE_API_URL.replace('https://', 'wss://').replace('http://', 'ws://');
+        const fullUrl = `${wsUrl}/api/ws/learn`;
+        
+        addTestLog(`Connecting to: ${fullUrl}`);
+        addTestLog(`User-Agent: ${navigator.userAgent}`);
+        addTestLog(`Origin: ${window.location.origin}`);
+        
+        const testSocket = new WebSocket(fullUrl);
+        testSocket.binaryType = 'arraybuffer';
+        
+        const timeout = setTimeout(() => {
+          if (testSocket.readyState === WebSocket.CONNECTING) {
+            addTestLog('⏰ Raw WebSocket connection timeout (15s)');
+            updateTestResult('raw-websocket', 'failed', 'Connection timeout', { timeout: '15s' });
+            testSocket.close();
+            resolve();
+          }
+        }, 15000);
+        
+        testSocket.onopen = () => {
+          addTestLog('✅ Raw WebSocket connection successful!');
+          clearTimeout(timeout);
+          updateTestResult('raw-websocket', 'passed', 'Raw WebSocket works', { 
+            url: fullUrl,
+            readyState: testSocket.readyState
+          });
+          
+          // Test sending a message
+          try {
+            const testMessage = JSON.stringify({
+              type: 'connection_test',
+              timestamp: Date.now(),
+              source: 'diagnostic'
+            });
+            testSocket.send(testMessage);
+            addTestLog('📤 Test message sent successfully');
+          } catch (err) {
+            addTestLog(`❌ Failed to send test message: ${err}`);
+          }
+          
+          setTimeout(() => {
+            testSocket.close(1000, 'Diagnostic test completed');
+            resolve();
+          }, 2000);
+        };
+        
+        testSocket.onerror = (error) => {
+          addTestLog(`❌ Raw WebSocket error: ${error}`);
+          clearTimeout(timeout);
+          updateTestResult('raw-websocket', 'failed', 'Raw WebSocket error', { 
+            error: error.toString(),
+            url: fullUrl
+          });
+          resolve();
+        };
+        
+        testSocket.onclose = (event) => {
+          addTestLog(`🔌 Raw WebSocket closed - Code: ${event.code}, Reason: ${event.reason || 'No reason'}`);
+          clearTimeout(timeout);
+          
+          if (event.code === 1005) {
+            addTestLog('💡 Code 1005: Server rejected connection or no status received');
+          } else if (event.code === 1006) {
+            addTestLog('💡 Code 1006: Abnormal closure, connection lost');
+          }
+          
+          if (!testResults.find(r => r.test === 'raw-websocket')) {
+            updateTestResult('raw-websocket', 'failed', `Connection closed with code ${event.code}`, {
+              code: event.code,
+              reason: event.reason,
+              wasClean: event.wasClean
+            });
+          }
+          resolve();
+        };
+        
+        testSocket.onmessage = (event) => {
+          addTestLog(`📨 Received message: ${typeof event.data === 'string' ? event.data.substring(0, 100) : 'Binary data'}`);
+        };
+        
+      } catch (error) {
+        updateTestResult('raw-websocket', 'failed', (error as Error).message, { error: error.toString() });
+        resolve();
+      }
+    });
+  };
+
+  // Test our WebSocket utility
+  const testWebSocketUtility = async () => {
+    setCurrentTest('WebSocket Utility');
+    addTestLog('Testing our WebSocket utility...');
     
     try {
-      // Test connection
-      const connectionPromise = connectLearnSocket();
+      resetConnectionState();
       
-      // Set timeout for connection
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Connection timeout')), 10000);
-      });
+      const connected = await connectLearnSocket(
+        (data) => {
+          addTestLog(`📨 Utility received message: ${JSON.stringify(data).substring(0, 100)}`);
+        },
+        (buffer) => {
+          addTestLog(`🎵 Utility received audio: ${buffer.byteLength} bytes`);
+        },
+        () => {
+          addTestLog('🔌 Utility connection closed');
+        },
+        (error) => {
+          addTestLog(`❌ Utility connection error: ${error}`);
+        },
+        () => {
+          addTestLog('🔄 Utility reconnected successfully');
+        }
+      );
       
-      await Promise.race([connectionPromise, timeoutPromise]);
+      if (!connected) {
+        throw new Error('Failed to connect via utility');
+      }
       
-      // Check connection status
       if (!isSocketConnected()) {
-        throw new Error('WebSocket not connected after connection attempt');
+        throw new Error('Utility reports not connected');
       }
       
       // Test message sending
       const testMessage = {
-        type: 'test',
-        message: 'Integration test message',
+        type: 'utility_test',
+        message: 'Test from WebSocket utility',
         timestamp: Date.now()
       };
       
-      sendLearnMessage(JSON.stringify(testMessage));
+      const sendResult = sendLearnMessage(JSON.stringify(testMessage));
+      if (!sendResult) {
+        throw new Error('Failed to send message via utility');
+      }
       
-      // Test binary message handling
-      const binaryData = new ArrayBuffer(8);
-      const view = new Uint8Array(binaryData);
-      view.set([0x48, 0x65, 0x6c, 0x6c, 0x6f]); // "Hello"
-      
-      sendLearnMessage(binaryData);
-      
-      updateTestResult('websocket', 'passed', 'WebSocket connection and messaging working', {
+      addTestLog('✅ WebSocket utility test successful');
+      updateTestResult('websocket-utility', 'passed', 'WebSocket utility works correctly', {
         connected: true,
         state: getSocketState(),
-        messagesSent: 2
+        messageSent: true
       });
       
     } catch (error) {
-      updateTestResult('websocket', 'failed', error.message, { 
+      updateTestResult('websocket-utility', 'failed', (error as Error).message, {
         connected: isSocketConnected(),
         state: getSocketState(),
-        error: error.message 
+        error: (error as Error).message
       });
     }
   };
-  
-  const testAudioRecording = async () => {
-    setCurrentTest('Audio Recording');
-    addTestLog('Testing audio recording capabilities...');
+
+  // Test connection stability
+  const testConnectionStability = async () => {
+    setCurrentTest('Connection Stability');
+    addTestLog('Testing connection stability...');
     
     try {
-      const audioRecorder = useAudioRecorder();
+      resetConnectionState();
+      const attempts = 3;
+      let successCount = 0;
       
-      // Test initialization
-      await audioRecorder.initialize();
-      
-      if (!audioRecorder.canRecord) {
-        throw new Error('Audio recorder not properly initialized');
-      }
-      
-      // Test recording start
-      await audioRecorder.startRecording();
-      
-      if (!audioRecorder.isRecording) {
-        throw new Error('Recording did not start');
-      }
-      
-      // Record for 2 seconds
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Test recording stop
-      audioRecorder.stopRecording();
-      
-      // Wait for audio to be processed
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Test audio blob creation
-      const audioBlob = audioRecorder.getAudioBlob();
-      if (!audioBlob || audioBlob.size === 0) {
-        throw new Error('No audio data recorded');
-      }
-      
-      // Test base64 conversion
-      const base64Audio = await audioRecorder.getAudioBase64();
-      if (!base64Audio || base64Audio.length === 0) {
-        throw new Error('Base64 conversion failed');
-      }
-      
-      updateTestResult('audioRecording', 'passed', 'Audio recording working correctly', {
-        canRecord: audioRecorder.canRecord,
-        permissions: audioRecorder.permissions,
-        recordingDuration: audioRecorder.recordingDuration,
-        audioBlobSize: audioBlob.size,
-        base64Length: base64Audio.length,
-        mimeType: audioRecorder.supportedMimeType
-      });
-      
-    } catch (error) {
-      updateTestResult('audioRecording', 'failed', error.message, { error: error.message });
-    }
-  };
-  
-  const testAudioPlayback = async () => {
-    setCurrentTest('Audio Playback');
-    addTestLog('Testing audio playback capabilities...');
-    
-    try {
-      const audioPlayer = useAudioPlayer();
-      
-      // Create a test audio blob (sine wave)
-      const testAudioBlob = createTestAudioBlob();
-      const testAudioUrl = URL.createObjectURL(testAudioBlob);
-      
-      // Test audio loading
-      await audioPlayer.loadAudio(testAudioUrl);
-      
-      if (!audioPlayer.isLoaded) {
-        throw new Error('Audio not loaded');
-      }
-      
-      // Test playback
-      await audioPlayer.playAudio();
-      
-      if (!audioPlayer.isPlaying) {
-        throw new Error('Audio not playing');
-      }
-      
-      // Test pause
-      audioPlayer.pauseAudio();
-      
-      if (audioPlayer.isPlaying) {
-        throw new Error('Audio not paused');
-      }
-      
-      // Test resume
-      await audioPlayer.playAudio();
-      
-      // Test stop
-      audioPlayer.stopAudio();
-      
-      if (audioPlayer.position !== 0) {
-        throw new Error('Audio position not reset after stop');
-      }
-      
-      // Test volume control
-      audioPlayer.setVolume(0.5);
-      
-      if (audioPlayer.volume !== 0.5) {
-        throw new Error('Volume not set correctly');
-      }
-      
-      // Clean up
-      URL.revokeObjectURL(testAudioUrl);
-      
-      updateTestResult('audioPlayback', 'passed', 'Audio playback working correctly', {
-        isLoaded: audioPlayer.isLoaded,
-        duration: audioPlayer.duration,
-        canPlay: audioPlayer.canPlay,
-        volumeControl: true,
-        playbackControl: true
-      });
-      
-    } catch (error) {
-      updateTestResult('audioPlayback', 'failed', error.message, { error: error.message });
-    }
-  };
-  
-  const testVoiceActivityDetection = async () => {
-    setCurrentTest('Voice Activity Detection');
-    addTestLog('Testing voice activity detection...');
-    
-    try {
-      const audioRecorder = useAudioRecorder();
-      
-      // Initialize if not already done
-      if (!audioRecorder.isInitialized) {
-        await audioRecorder.initialize();
-      }
-      
-      // Test VAD threshold settings
-      const initialThreshold = audioRecorder.vadThreshold;
-      const newThreshold = -50;
-      
-      audioRecorder.updateVADThreshold(newThreshold);
-      
-      // Start recording to test VAD
-      await audioRecorder.startRecording();
-      
-      // Monitor VAD for 3 seconds
-      let vadDetections = 0;
-      const vadMonitor = setInterval(() => {
-        if (audioRecorder.isVoiceDetected) {
-          vadDetections++;
-        }
-      }, 100);
-      
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
-      clearInterval(vadMonitor);
-      audioRecorder.stopRecording();
-      
-      updateTestResult('voiceDetection', 'passed', 'Voice activity detection working', {
-        initialThreshold,
-        newThreshold,
-        vadDetections,
-        volumeLevel: audioRecorder.volumeLevel,
-        isListening: audioRecorder.isListening
-      });
-      
-    } catch (error) {
-      updateTestResult('voiceDetection', 'failed', error.message, { error: error.message });
-    }
-  };
-  
-  const testFullIntegration = async () => {
-    setCurrentTest('Full Integration');
-    addTestLog('Testing full system integration...');
-    
-    try {
-      // Test audio manager integration
-      const audioStats = getAudioStats();
-      
-      // Test WebSocket + Audio Recording integration
-      const audioRecorder = useAudioRecorder();
-      
-      if (!audioRecorder.isInitialized) {
-        await audioRecorder.initialize();
-      }
-      
-      // Record audio
-      await audioRecorder.startRecording();
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      audioRecorder.stopRecording();
-      
-      // Wait for recording to complete
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Get audio blob and convert to base64
-      const audioBlob = audioRecorder.getAudioBlob();
-      const base64Audio = await blobToBase64(audioBlob);
-      
-      // Test WebSocket message sending
-      if (isSocketConnected()) {
-        const messagePayload = {
-          type: 'integration_test',
-          audio_base64: base64Audio,
-          language_mode: 'urdu',
-          timestamp: Date.now()
-        };
+      for (let i = 0; i < attempts; i++) {
+        addTestLog(`Stability test ${i + 1}/${attempts}`);
         
-        sendLearnMessage(JSON.stringify(messagePayload));
-        addTestLog('Sent audio message via WebSocket');
+        try {
+          const connected = await connectLearnSocket(
+            () => {}, // message handler
+            () => {}, // audio handler  
+            () => {}, // close handler
+            () => {}, // error handler
+            () => {} // reconnect handler
+          );
+          
+          if (connected && isSocketConnected()) {
+            successCount++;
+            addTestLog(`✅ Attempt ${i + 1} successful`);
+          } else {
+            addTestLog(`❌ Attempt ${i + 1} failed - not connected`);
+          }
+          
+          // Wait then close
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          closeLearnSocket();
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+        } catch (error) {
+          addTestLog(`❌ Attempt ${i + 1} failed: ${(error as Error).message}`);
+        }
       }
       
-      // Test audio manager with recorded audio
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const audioId = `test_${Date.now()}`;
+      const successRate = (successCount / attempts) * 100;
       
-      await playAudio(audioId, audioUrl);
-      
-      // Wait for audio to start playing
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      if (!isAnyAudioPlaying()) {
-        throw new Error('Audio manager not playing audio');
+      if (successRate >= 66) { // 2/3 success rate
+        updateTestResult('stability', 'passed', `Connection stability good (${successCount}/${attempts} successful)`, {
+          attempts,
+          successful: successCount,
+          successRate: `${successRate.toFixed(1)}%`
+        });
+      } else {
+        updateTestResult('stability', 'failed', `Connection stability poor (${successCount}/${attempts} successful)`, {
+          attempts,
+          successful: successCount,
+          successRate: `${successRate.toFixed(1)}%`
+        });
       }
-      
-      // Stop audio
-      await stopCurrentAudio();
-      
-      // Clean up
-      URL.revokeObjectURL(audioUrl);
-      
-      updateTestResult('integration', 'passed', 'Full integration test successful', {
-        audioManagerStats: audioStats,
-        recordingSize: audioBlob.size,
-        base64Length: base64Audio.length,
-        websocketConnected: isSocketConnected(),
-        audioPlaybackWorking: true
-      });
       
     } catch (error) {
-      updateTestResult('integration', 'failed', error.message, { error: error.message });
+      updateTestResult('stability', 'failed', (error as Error).message, { error: error.toString() });
     }
   };
-  
-  // Helper function to create test audio blob
-  const createTestAudioBlob = () => {
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const sampleRate = audioContext.sampleRate;
-    const duration = 1; // 1 second
-    const samples = sampleRate * duration;
+
+  // Test connection with different headers to detect server filtering
+  const testHeaderFiltering = async () => {
+    setCurrentTest('Header Filtering Detection');
+    addTestLog('Testing different headers to detect server-side filtering...');
     
-    const arrayBuffer = audioContext.createBuffer(1, samples, sampleRate);
-    const channelData = arrayBuffer.getChannelData(0);
+    const headerTests = [
+      {
+        name: 'Standard Browser',
+        headers: {
+          'User-Agent': navigator.userAgent,
+          'Origin': window.location.origin
+        }
+      },
+      {
+        name: 'Mobile Browser iOS',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
+          'Origin': window.location.origin
+        }
+      },
+      {
+        name: 'Mobile Browser Android',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Linux; Android 12; SM-G998B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Mobile Safari/537.36',
+          'Origin': window.location.origin
+        }
+      },
+      {
+        name: 'React Native WebView',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Linux; Android 12; SM-G998B) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/107.0.5304.141 Mobile Safari/537.36',
+          'Origin': 'file://'
+        }
+      },
+      {
+        name: 'Mobile App Native',
+        headers: {
+          'User-Agent': 'DILApp/1.0 (iOS 16.0; iPhone)',
+          'Origin': 'app://dil-mobile'
+        }
+      },
+      {
+        name: 'No Headers',
+        headers: {}
+      }
+    ];
+
+    const results = [];
     
-    // Generate sine wave
-    for (let i = 0; i < samples; i++) {
-      channelData[i] = Math.sin(2 * Math.PI * 440 * i / sampleRate) * 0.5;
+    for (const test of headerTests) {
+      addTestLog(`Testing ${test.name}...`);
+      
+      try {
+        const wsUrl = BASE_API_URL.replace('https://', 'wss://').replace('http://', 'ws://');
+        const fullUrl = `${wsUrl}/api/ws/learn`;
+        
+        const result = await new Promise<any>((resolve) => {
+          let testSocket: WebSocket;
+          let resolved = false;
+          
+          const timeout = setTimeout(() => {
+            if (!resolved) {
+              resolved = true;
+              if (testSocket && testSocket.readyState === WebSocket.CONNECTING) {
+                testSocket.close();
+              }
+              resolve({ success: false, reason: 'timeout', duration: 5000 });
+            }
+          }, 5000);
+          
+          try {
+            // Note: WebSocket constructor doesn't support custom headers in browsers
+            // But we can test the connection behavior
+            testSocket = new WebSocket(fullUrl);
+            testSocket.binaryType = 'arraybuffer';
+            
+            const startTime = Date.now();
+            
+            testSocket.onopen = () => {
+              if (!resolved) {
+                resolved = true;
+                clearTimeout(timeout);
+                const duration = Date.now() - startTime;
+                addTestLog(`✅ ${test.name}: Connected successfully (${duration}ms)`);
+                testSocket.close(1000, 'Test completed');
+                resolve({ success: true, duration, headers: test.headers });
+              }
+            };
+            
+            testSocket.onerror = (error) => {
+              if (!resolved) {
+                resolved = true;
+                clearTimeout(timeout);
+                const duration = Date.now() - startTime;
+                addTestLog(`❌ ${test.name}: Connection error (${duration}ms)`);
+                resolve({ success: false, reason: 'error', duration, error: error.toString() });
+              }
+            };
+            
+            testSocket.onclose = (event) => {
+              if (!resolved) {
+                resolved = true;
+                clearTimeout(timeout);
+                const duration = Date.now() - startTime;
+                addTestLog(`🔌 ${test.name}: Closed with code ${event.code} (${duration}ms)`);
+                resolve({ 
+                  success: false, 
+                  reason: 'closed', 
+                  duration, 
+                  code: event.code, 
+                  reason_text: event.reason 
+                });
+              }
+            };
+            
+          } catch (error) {
+            if (!resolved) {
+              resolved = true;
+              clearTimeout(timeout);
+              resolve({ success: false, reason: 'exception', error: error.toString() });
+            }
+          }
+        });
+        
+        results.push({
+          test: test.name,
+          headers: test.headers,
+          ...result
+        });
+        
+        // Small delay between tests
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+      } catch (error) {
+        addTestLog(`❌ ${test.name}: Exception - ${(error as Error).message}`);
+        results.push({
+          test: test.name,
+          headers: test.headers,
+          success: false,
+          reason: 'exception',
+          error: (error as Error).message
+        });
+      }
     }
     
-    // Convert to WAV blob (simplified)
-    const buffer = new ArrayBuffer(44 + samples * 2);
-    const view = new DataView(buffer);
+    // Analyze results
+    const successfulTests = results.filter(r => r.success);
+    const failedTests = results.filter(r => !r.success);
     
-    // WAV header
-    const writeString = (offset, string) => {
-      for (let i = 0; i < string.length; i++) {
-        view.setUint8(offset + i, string.charCodeAt(i));
+    addTestLog(`Header filtering analysis: ${successfulTests.length}/${results.length} successful`);
+    
+    if (successfulTests.length === 0) {
+      updateTestResult('header-filtering', 'failed', 'All header variations failed - likely server/infrastructure issue', {
+        results,
+        analysis: 'Server appears to be blocking all WebSocket connections regardless of headers'
+      });
+    } else if (successfulTests.length === results.length) {
+      updateTestResult('header-filtering', 'passed', 'No header-based filtering detected', {
+        results,
+        analysis: 'All header variations work - no server-side filtering detected'
+      });
+    } else {
+      const workingHeaders = successfulTests.map(t => t.test);
+      const failingHeaders = failedTests.map(t => t.test);
+      
+      updateTestResult('header-filtering', 'failed', `Selective header filtering detected`, {
+        results,
+        workingHeaders,
+        failingHeaders,
+        analysis: 'Server appears to filter connections based on headers/user-agent'
+      });
+    }
+  };
+
+  // Test connection timing patterns
+  const testConnectionTiming = async () => {
+    setCurrentTest('Connection Timing Analysis');
+    addTestLog('Analyzing connection timing patterns...');
+    
+    const attempts = 5;
+    const timings = [];
+    
+    for (let i = 0; i < attempts; i++) {
+      addTestLog(`Timing test ${i + 1}/${attempts}`);
+      
+      const startTime = Date.now();
+      
+      try {
+        const wsUrl = BASE_API_URL.replace('https://', 'wss://').replace('http://', 'ws://');
+        const fullUrl = `${wsUrl}/api/ws/learn`;
+        
+        const result = await new Promise<any>((resolve) => {
+          const testSocket = new WebSocket(fullUrl);
+          let resolved = false;
+          
+          const timeout = setTimeout(() => {
+            if (!resolved) {
+              resolved = true;
+              testSocket.close();
+              resolve({ success: false, reason: 'timeout', duration: 10000 });
+            }
+          }, 10000);
+          
+          testSocket.onopen = () => {
+            if (!resolved) {
+              resolved = true;
+              clearTimeout(timeout);
+              const duration = Date.now() - startTime;
+              testSocket.close(1000, 'Timing test');
+              resolve({ success: true, duration });
+            }
+          };
+          
+          testSocket.onerror = () => {
+            if (!resolved) {
+              resolved = true;
+              clearTimeout(timeout);
+              const duration = Date.now() - startTime;
+              resolve({ success: false, reason: 'error', duration });
+            }
+          };
+          
+          testSocket.onclose = (event) => {
+            if (!resolved) {
+              resolved = true;
+              clearTimeout(timeout);
+              const duration = Date.now() - startTime;
+              resolve({ success: false, reason: 'closed', duration, code: event.code });
+            }
+          };
+        });
+        
+        timings.push(result);
+        addTestLog(`Attempt ${i + 1}: ${result.success ? 'Success' : 'Failed'} (${result.duration}ms)`);
+        
+        // Wait between attempts
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+      } catch (error) {
+        const duration = Date.now() - startTime;
+        timings.push({ success: false, reason: 'exception', duration, error: (error as Error).message });
+        addTestLog(`Attempt ${i + 1}: Exception (${duration}ms)`);
       }
+    }
+    
+    // Analyze timing patterns
+    const successCount = timings.filter(t => t.success).length;
+    const averageSuccessTime = timings.filter(t => t.success).reduce((sum, t) => sum + t.duration, 0) / successCount || 0;
+    const averageFailTime = timings.filter(t => !t.success).reduce((sum, t) => sum + t.duration, 0) / (attempts - successCount) || 0;
+    
+    const analysis = {
+      successRate: `${successCount}/${attempts} (${((successCount / attempts) * 100).toFixed(1)}%)`,
+      averageSuccessTime: `${averageSuccessTime.toFixed(0)}ms`,
+      averageFailTime: `${averageFailTime.toFixed(0)}ms`,
+      timings,
+      pattern: successCount === 0 ? 'Always fails' : 
+               successCount === attempts ? 'Always succeeds' : 
+               'Intermittent failures'
     };
     
-    writeString(0, 'RIFF');
-    view.setUint32(4, 36 + samples * 2, true);
-    writeString(8, 'WAVE');
-    writeString(12, 'fmt ');
-    view.setUint32(16, 16, true);
-    view.setUint16(20, 1, true);
-    view.setUint16(22, 1, true);
-    view.setUint32(24, sampleRate, true);
-    view.setUint32(28, sampleRate * 2, true);
-    view.setUint16(32, 2, true);
-    view.setUint16(34, 16, true);
-    writeString(36, 'data');
-    view.setUint32(40, samples * 2, true);
+    if (successCount === 0) {
+      updateTestResult('connection-timing', 'failed', 'All connection attempts failed', analysis);
+    } else if (successCount < attempts * 0.8) {
+      updateTestResult('connection-timing', 'failed', `Unreliable connections (${analysis.successRate})`, analysis);
+    } else {
+      updateTestResult('connection-timing', 'passed', `Reliable connections (${analysis.successRate})`, analysis);
+    }
+  };
+
+  // Test different connection URLs and paths
+  const testUrlVariations = async () => {
+    setCurrentTest('URL Variations');
+    addTestLog('Testing different URL patterns...');
     
-    // PCM data
-    let offset = 44;
-    for (let i = 0; i < samples; i++) {
-      const sample = Math.max(-1, Math.min(1, channelData[i]));
-      view.setInt16(offset, sample * 0x7FFF, true);
-      offset += 2;
+    const baseWsUrl = BASE_API_URL.replace('https://', 'wss://').replace('http://', 'ws://');
+    
+    const urlTests = [
+      { name: 'Standard Path', url: `${baseWsUrl}/api/ws/learn` },
+      { name: 'Without /api', url: `${baseWsUrl}/ws/learn` },
+      { name: 'Root WebSocket', url: `${baseWsUrl}/ws` },
+      { name: 'Direct Domain', url: baseWsUrl },
+      { name: 'With Query String', url: `${baseWsUrl}/api/ws/learn?test=1` },
+      { name: 'Different Protocol', url: baseWsUrl.replace('wss://', 'ws://').replace('ws://', 'wss://') }
+    ];
+    
+    const results = [];
+    
+    for (const test of urlTests) {
+      addTestLog(`Testing ${test.name}: ${test.url}`);
+      
+      try {
+        const result = await new Promise<any>((resolve) => {
+          let testSocket: WebSocket;
+          let resolved = false;
+          
+          const timeout = setTimeout(() => {
+            if (!resolved) {
+              resolved = true;
+              if (testSocket) testSocket.close();
+              resolve({ success: false, reason: 'timeout' });
+            }
+          }, 5000);
+          
+          try {
+            testSocket = new WebSocket(test.url);
+            
+            testSocket.onopen = () => {
+              if (!resolved) {
+                resolved = true;
+                clearTimeout(timeout);
+                addTestLog(`✅ ${test.name}: Connected`);
+                testSocket.close(1000, 'URL test');
+                resolve({ success: true });
+              }
+            };
+            
+            testSocket.onerror = () => {
+              if (!resolved) {
+                resolved = true;
+                clearTimeout(timeout);
+                addTestLog(`❌ ${test.name}: Error`);
+                resolve({ success: false, reason: 'error' });
+              }
+            };
+            
+            testSocket.onclose = (event) => {
+              if (!resolved) {
+                resolved = true;
+                clearTimeout(timeout);
+                addTestLog(`🔌 ${test.name}: Closed (${event.code})`);
+                resolve({ success: false, reason: 'closed', code: event.code });
+              }
+            };
+            
+          } catch (error) {
+            if (!resolved) {
+              resolved = true;
+              clearTimeout(timeout);
+              resolve({ success: false, reason: 'exception', error: error.toString() });
+            }
+          }
+        });
+        
+        results.push({ ...test, ...result });
+        
+      } catch (error) {
+        results.push({ ...test, success: false, reason: 'exception', error: (error as Error).message });
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
     
-    return new Blob([buffer], { type: 'audio/wav' });
-  };
-  
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'passed':
-        return '✅';
-      case 'failed':
-        return '❌';
-      case 'running':
-        return '⏳';
-      default:
-        return '⏸️';
+    const workingUrls = results.filter(r => r.success);
+    
+    if (workingUrls.length === 0) {
+      updateTestResult('url-variations', 'failed', 'No URL variations work', { results });
+    } else if (workingUrls.length === 1 && workingUrls[0].name === 'Standard Path') {
+      updateTestResult('url-variations', 'passed', 'Standard path works correctly', { results });
+    } else {
+      updateTestResult('url-variations', 'passed', `${workingUrls.length} URL variations work`, { 
+        results, 
+        workingUrls: workingUrls.map(u => u.name) 
+      });
     }
   };
-  
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'passed':
-        return 'text-green-600';
-      case 'failed':
-        return 'text-red-600';
-      case 'running':
-        return 'text-blue-600';
-      default:
-        return 'text-gray-600';
+
+  const runAllTests = async () => {
+    if (isRunning) return;
+    
+    setIsRunning(true);
+    clearResults();
+    
+    try {
+      addTestLog('🚀 Starting comprehensive WebSocket diagnostics...');
+      
+      await testApiConnectivity();
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      await testUrlVariations();
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      await testHeaderFiltering();
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      await testConnectionTiming();
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      await testRawWebSocket();
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      await testWebSocketUtility();
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      await testConnectionStability();
+      
+      addTestLog('✅ All diagnostics completed!');
+      
+      // Provide summary analysis
+      addTestLog('📊 ANALYSIS SUMMARY:');
+      const allResults = testResults;
+      const passedTests = allResults.filter(r => r.status === 'passed').length;
+      const failedTests = allResults.filter(r => r.status === 'failed').length;
+      
+      addTestLog(`- Passed: ${passedTests}, Failed: ${failedTests}`);
+      
+      if (failedTests === 0) {
+        addTestLog('🎉 All tests passed - no connection issues detected');
+      } else {
+        addTestLog('🔍 Issues detected - check failed test details for solutions');
+      }
+      
+    } catch (error) {
+      addTestLog(`❌ Diagnostic error: ${(error as Error).message}`);
+    } finally {
+      setIsRunning(false);
+      setCurrentTest('');
+      
+      // Cleanup
+      try {
+        closeLearnSocket();
+      } catch (e) {
+        // Ignore cleanup errors
+      }
     }
   };
-  
+
+  const getStatusColor = (status: TestResult['status']) => {
+    switch (status) {
+      case 'passed': return 'bg-green-500 text-white';
+      case 'failed': return 'bg-red-500 text-white';
+      case 'running': return 'bg-blue-500 text-white';
+      default: return 'bg-gray-500 text-white';
+    }
+  };
+
+  const getStatusText = (status: TestResult['status']) => {
+    switch (status) {
+      case 'passed': return '✅ PASSED';
+      case 'failed': return '❌ FAILED';
+      case 'running': return '🔄 RUNNING';
+      default: return '⏳ PENDING';
+    }
+  };
+
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          Conversation System Integration Test
-        </h1>
-        <p className="text-gray-600">
-          Comprehensive testing of WebSocket communication, audio recording, playback, and voice activity detection.
-        </p>
-      </div>
-      
-      {/* Language Mode Selector */}
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold mb-2">Language Mode</h2>
-        <LanguageModeSelector style="segmented" />
-      </div>
-      
-      {/* Test Controls */}
-      <div className="mb-6">
-        <button
-          onClick={runAllTests}
-          disabled={isRunning}
-          className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-        >
-          {isRunning ? 'Running Tests...' : 'Run All Tests'}
-        </button>
-        
-        {isRunning && (
-          <div className="mt-4">
-            <div className="flex justify-between text-sm text-gray-600 mb-1">
-              <span>Progress</span>
-              <span>{testProgress}%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${testProgress}%` }}
-              />
-            </div>
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            🔍 WebSocket Diagnostics
+            {currentTest && (
+              <Badge variant="outline" className="ml-2">
+                Running: {currentTest}
+              </Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-2 mb-4">
+            <Button 
+              onClick={runAllTests} 
+              disabled={isRunning}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {isRunning ? '🔄 Running...' : '🚀 Run Diagnostics'}
+            </Button>
+            <Button 
+              onClick={clearResults} 
+              variant="outline"
+              disabled={isRunning}
+            >
+              🗑️ Clear Results
+            </Button>
           </div>
-        )}
-        
-        {currentTest && (
-          <div className="mt-2 text-sm text-blue-600">
-            Currently running: {currentTest}
+          
+          <div className="text-sm text-gray-600">
+            <p>This tool diagnoses WebSocket connection issues by testing:</p>
+            <ul className="list-disc list-inside mt-2 space-y-1">
+              <li>API server connectivity</li>
+              <li>Raw WebSocket connection</li>
+              <li>WebSocket utility functions</li>
+              <li>Connection stability over multiple attempts</li>
+            </ul>
           </div>
-        )}
-      </div>
-      
-      {/* Test Results */}
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold mb-4">Test Results</h2>
-        <div className="space-y-3">
-          {Object.entries(testResults).map(([testName, result]) => (
-            <div key={testName} className="border rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center space-x-2">
-                  <span className="text-lg">{getStatusIcon(result.status)}</span>
-                  <span className="font-medium capitalize">{testName.replace(/([A-Z])/g, ' $1')}</span>
+        </CardContent>
+      </Card>
+
+      {testResults.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>📊 Test Results</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {testResults.map((result, index) => (
+                <div key={index} className="border rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium">{result.test}</h4>
+                    <Badge className={getStatusColor(result.status)}>
+                      {getStatusText(result.status)}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-2">{result.message}</p>
+                  {result.details && (
+                    <details className="text-xs">
+                      <summary className="cursor-pointer text-blue-600">View Details</summary>
+                      <pre className="mt-2 p-2 bg-gray-100 rounded overflow-auto">
+                        {JSON.stringify(result.details, null, 2)}
+                      </pre>
+                    </details>
+                  )}
+                  <div className="text-xs text-gray-400 mt-1">
+                    {result.timestamp.toLocaleTimeString()}
+                  </div>
                 </div>
-                <span className={`text-sm font-medium ${getStatusColor(result.status)}`}>
-                  {result.status.toUpperCase()}
-                </span>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {testLogs.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>📝 Diagnostic Logs</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-64 w-full border rounded p-3 bg-gray-50">
+              <div className="space-y-1">
+                {testLogs.map((log, index) => (
+                  <div key={index} className="text-xs font-mono">
+                    {log}
+                  </div>
+                ))}
               </div>
-              <p className="text-sm text-gray-600 mb-2">{result.message}</p>
-              
-              {Object.keys(result.details).length > 0 && (
-                <details className="text-xs text-gray-500">
-                  <summary className="cursor-pointer">Details</summary>
-                  <pre className="mt-2 p-2 bg-gray-100 rounded overflow-x-auto">
-                    {JSON.stringify(result.details, null, 2)}
-                  </pre>
-                </details>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-      
-      {/* Test Logs */}
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold mb-4">Test Logs</h2>
-        <div className="bg-gray-900 text-green-400 font-mono text-sm p-4 rounded-lg h-64 overflow-y-auto">
-          {testLogs.map((log, index) => (
-            <div key={index} className="mb-1">
-              <span className="text-gray-500">[{log.elapsed}ms]</span>
-              <span className={`ml-2 ${
-                log.type === 'error' ? 'text-red-400' : 
-                log.type === 'success' ? 'text-green-400' : 
-                'text-blue-400'
-              }`}>
-                {log.message}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-      
-      {/* System Information */}
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold mb-4">System Information</h2>
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <strong>WebSocket State:</strong> {getSocketState()}
-          </div>
-          <div>
-            <strong>Audio Context:</strong> {window.AudioContext ? 'Supported' : 'Not Supported'}
-          </div>
-          <div>
-            <strong>MediaRecorder:</strong> {window.MediaRecorder ? 'Supported' : 'Not Supported'}
-          </div>
-          <div>
-            <strong>Speech Synthesis:</strong> {window.speechSynthesis ? 'Supported' : 'Not Supported'}
-          </div>
-        </div>
-      </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
 
-// Wrapper component with language mode provider
-const ConversationTestWithProvider = () => {
-  return (
-    <LanguageModeProvider>
-      <ConversationTest />
-    </LanguageModeProvider>
-  );
-};
-
-export default ConversationTestWithProvider; 
+export default ConversationTest; 
