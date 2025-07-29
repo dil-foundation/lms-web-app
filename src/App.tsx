@@ -21,6 +21,10 @@ const TeacherAuth = lazy(() => import('./pages/TeacherAuth'));
 const AdminAuth = lazy(() => import('./pages/AdminAuth'));
 const ProfileSettings = lazy(() => import('./pages/ProfileSettings'));
 const SecureObserverFormPage = lazy(() => import('./pages/SecureObserverFormPage'));
+// Layout Pages
+import HomeLayout2 from './pages/HomeLayout2';
+import HomeLayout3 from './pages/HomeLayout3';
+import HomeLayout4 from './pages/HomeLayout4';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -44,6 +48,9 @@ const App = () => (
                 <Suspense fallback={<div>Loading...</div>}>
                   <Routes>
                     <Route path="/" element={<Home />} />
+                    <Route path="/home-layout-2" element={<HomeLayout2 />} />
+                    <Route path="/home-layout-3" element={<HomeLayout3 />} />
+                    <Route path="/home-layout-4" element={<HomeLayout4 />} />
                     <Route path="/auth" element={<RoleSelection />} />
                     <Route path="/auth/student" element={<StudentAuth />} />
                     <Route path="/auth/teacher" element={<TeacherAuth />} />
