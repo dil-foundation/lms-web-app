@@ -14,7 +14,7 @@ import { AIAdminPractice } from '@/components/dashboard/AIAdminPractice';
 import { AITeacherPractice } from '@/components/dashboard/AITeacherPractice';
 import { AIStudentProgress } from '@/components/dashboard/AIStudentProgress';
 import { AIStudentPractice } from '@/components/dashboard/AIStudentPractice';
-// import { AIStudentLearn } from '@/components/dashboard/AIStudentLearn';
+import { AIStudentLearn } from '@/components/dashboard/AIStudentLearn';
 import { ComingSoon } from '@/components/ComingSoon';
 import { RolePlaceholder } from '@/components/dashboard/RolePlaceholder';
 import { UsersManagement } from '@/components/admin/UsersManagement';
@@ -163,7 +163,7 @@ const Dashboard = () => {
                     <>
                       {isAIMode ? (
                         <>
-                          <Route path="/ai-learn" element={<ComingSoon />} />
+                          <Route path="/ai-learn" element={<AIStudentLearn />} />
                           <Route path="/ai-practice" element={<AIStudentPractice />} />
                           <Route path="/ai-progress" element={<AIStudentProgress />} />
                           <Route path="/practice/stage-0" element={<StageZero />} />
@@ -216,7 +216,7 @@ const Dashboard = () => {
                           <Route path="/ai-performance" element={<RolePlaceholder title="Performance Analytics" description="AI-powered analytics on teaching effectiveness" icon={BarChart3} />} />
                           <Route path="/ai-planner" element={<RolePlaceholder title="Lesson Planner" description="AI-assisted lesson planning and curriculum design" icon={BookOpen} />} />
                           <Route path="/ai-feedback" element={<RolePlaceholder title="AI Feedback" description="Get AI-powered feedback on your teaching methods" icon={MessageSquare} />} />
-                          <Route path="/ai-learn" element={<ComingSoon title="AI Learn Feature" description="Advanced AI-powered learning features are currently under development and will be available soon." icon={BookOpen} />} />
+                          <Route path="/ai-learn" element={<AIStudentLearn />} />
                           <Route path="/ai-practice" element={<AITeacherPractice />} />
                           <Route path="/ai-progress" element={<RolePlaceholder title="AI Progress" description="🚧 Work in Progress - Progress tracking features coming soon!" icon={TrendingUp} />} />
                           {/* Practice Stage Routes for Teacher Viewing */}
@@ -274,7 +274,7 @@ const Dashboard = () => {
                           <Route path="/ai-models" element={<RolePlaceholder title="Model Configuration" description="Configure and manage AI models" icon={Settings} />} />
                           <Route path="/ai-safety" element={<RolePlaceholder title="Safety & Ethics" description="AI safety monitoring and ethical guidelines" icon={Shield} />} />
                           <Route path="/ai-training" element={<RolePlaceholder title="AI Training" description="Train and fine-tune AI models" icon={BookOpen} />} />
-                          <Route path="/ai-learn" element={<ComingSoon title="AI Learn Feature" description="Advanced AI-powered learning features are currently under development and will be available soon." icon={BookOpen} />} />
+                          <Route path="/ai-learn" element={<AIStudentLearn />} />
                           <Route path="/ai-practice" element={<AIAdminPractice />} />
                           <Route path="/ai-progress" element={<RolePlaceholder title="AI Progress" description="🚧 Work in Progress - Progress tracking features coming soon!" icon={TrendingUp} />} />
                           {/* Practice Stage Routes for Admin Viewing */}

@@ -20,6 +20,11 @@ import { ObservationReportsProvider } from "@/contexts/ObservationReportsContext
 import { SecureLinksProvider } from "@/contexts/SecureLinksContext";
 import ScrollToTop from "@/components/ScrollToTop";
 
+// Layout Pages
+import HomeLayout2 from './pages/HomeLayout2';
+import HomeLayout3 from './pages/HomeLayout3';
+import HomeLayout4 from './pages/HomeLayout4';
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -41,6 +46,9 @@ const App = () => (
               <SecureLinksProvider>
                 <Routes>
                   <Route path="/" element={<Home />} />
+                  <Route path="/home-layout-2" element={<HomeLayout2 />} />
+                  <Route path="/home-layout-3" element={<HomeLayout3 />} />
+                  <Route path="/home-layout-4" element={<HomeLayout4 />} />
                   <Route path="/auth" element={<RoleSelection />} />
                   <Route path="/auth/student" element={<StudentAuth />} />
                   <Route path="/auth/teacher" element={<TeacherAuth />} />

@@ -6,6 +6,7 @@ import { ThemeToggle } from './header/ThemeToggle';
 import { Navigation } from './header/Navigation';
 import { AuthButton } from './header/AuthButton';
 import { MobileMenu } from './header/MobileMenu';
+import { LayoutSwitcher } from './header/LayoutSwitcher';
 
 export const Header = memo(() => {
   const location = useLocation();
@@ -38,6 +39,7 @@ export const Header = memo(() => {
 
           {/* Desktop Navigation - Right Aligned */}
           <div className="hidden md:flex items-center space-x-6">
+            <LayoutSwitcher />
             <ThemeToggle />
             
             <Navigation user={user} />

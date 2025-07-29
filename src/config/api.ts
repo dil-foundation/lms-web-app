@@ -1,54 +1,20 @@
-// API Configuration
-// Simple environment detection - defaults to production for safety
-const isDevelopment = window.location.hostname === 'localhost' || 
-                     window.location.hostname === '127.0.0.1' ||
-                     window.location.hostname.includes('dev');
 
-// Validate environment variables
-const validateApiUrl = (url: string): string => {
-  if (!url) {
-    throw new Error('API URL is not configured');
-  }
-  
-  try {
-    new URL(url);
-    return url;
-  } catch (error) {
-    throw new Error(`Invalid API URL: ${url}`);
-  }
-};
 
 // Use same staging URL for both development and production
 const API_URL = 'https://api.dil.lms-staging.com';
 
-// Custom API URL can be set via window global (for runtime configuration)
-const CUSTOM_API_URL = (window as any)?.DIL_API_URL;
 
 // Determine the API URL
-let apiUrl: string;
+let apiUrl: string = API_URL;
 
-if (CUSTOM_API_URL) {
-  // Use custom URL if provided via environment variable
-  apiUrl = validateApiUrl(CUSTOM_API_URL);
-  console.log('Using custom API URL:', apiUrl);
-} else {
-  // Use staging URL for both dev and production
-  apiUrl = validateApiUrl(API_URL);
-  console.log(`Using ${isDevelopment ? 'development' : 'production'} API URL:`, apiUrl);
-}
+
 
 export const BASE_API_URL: string = apiUrl;
 
-// WebSocket URL helper
-export const getWebSocketUrl = (): string => {
-  const wsUrl = BASE_API_URL.replace('http://', 'ws://').replace('https://', 'wss://');
-  console.log('WebSocket URL generated:', wsUrl);
-  return wsUrl;
-};
-
 // API endpoints
 export const API_ENDPOINTS = {
-  WEBSOCKET_LEARN: '/api/ws/learn',
+ 
+  // Active Practice endpoints
   WEBSOCKET_PRACTICE: '/api/ws/practice',
   AUDIO_UPLOAD: '/api/audio/upload',
   AUDIO_PROCESS: '/api/audio/process',
