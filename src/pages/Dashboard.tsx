@@ -1,76 +1,75 @@
-import { Routes, Route, useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { DashboardSidebar } from '@/components/DashboardSidebar';
-import { StudentDashboard } from '@/components/dashboard/StudentDashboard';
-import { StudentCourses } from '@/components/dashboard/StudentCourses';
-import { StudentProgress } from '@/components/dashboard/StudentProgress';
-import { StudentAssignments } from '@/components/dashboard/StudentAssignments';
-import { TeacherDashboard } from '@/components/dashboard/TeacherDashboard';
-import { AdminDashboard } from '@/components/dashboard/AdminDashboard';
-import { AIStudentDashboard } from '@/components/dashboard/AIStudentDashboard';
-import { AITeacherDashboard } from '@/components/dashboard/AITeacherDashboard';
-import { AIAdminDashboard } from '@/components/dashboard/AIAdminDashboard';
-import { AIAdminPractice } from '@/components/dashboard/AIAdminPractice';
-import { AITeacherPractice } from '@/components/dashboard/AITeacherPractice';
-import { AIStudentProgress } from '@/components/dashboard/AIStudentProgress';
-import { AIStudentPractice } from '@/components/dashboard/AIStudentPractice';
-// import { AIStudentLearn } from '@/components/dashboard/AIStudentLearn';
-import { ComingSoon } from '@/components/ComingSoon';
-import { RolePlaceholder } from '@/components/dashboard/RolePlaceholder';
-import { UsersManagement } from '@/components/admin/UsersManagement';
-import CourseManagement from '@/components/admin/CourseManagement';
-import { StageZero } from '@/pages/practice/StageZero';
-import { LessonDetail } from '@/pages/practice/LessonDetail';
-import { StageOne } from '@/pages/practice/StageOne';
-import { RepeatAfterMe } from '@/pages/practice/RepeatAfterMe';
-import { QuickResponse } from '@/pages/practice/QuickResponse';
-import { ListenAndReply } from '@/pages/practice/ListenAndReply';
-import { StageTwo } from '@/pages/practice/StageTwo';
-import DailyRoutine from '@/pages/practice/DailyRoutine';
-import QuickAnswer from '@/pages/practice/QuickAnswer';
-import RoleplaySimulation from '@/pages/practice/RoleplaySimulation';
-import StageThree from '@/pages/practice/StageThree';
-import StorytellingPractice from '@/pages/practice/StorytellingPractice';
-import GroupDialogue from '@/pages/practice/GroupDialogue';
-import ProblemSolvingSimulations from '@/pages/practice/ProblemSolvingSimulations';
-import StageFour from '@/pages/practice/StageFour';
-import AbstractTopicMonologue from '@/pages/practice/AbstractTopicMonologue';
-import MockInterviewPractice from '@/pages/practice/MockInterviewPractice';
-import NewsSummaryChallenge from '@/pages/practice/NewsSummaryChallenge';
-import StageFive from '@/pages/practice/StageFive';
-import CriticalThinkingDialogues from '@/pages/practice/CriticalThinkingDialogues';
-import AcademicPresentations from '@/pages/practice/AcademicPresentations';
-import InDepthInterviewSimulation from '@/pages/practice/InDepthInterviewSimulation';
-import StageSix from '@/pages/practice/StageSix';
-import AIGuidedSpontaneousSpeech from '@/pages/practice/AIGuidedSpontaneousSpeech';
-import SensitiveScenarioRoleplay from '@/pages/practice/SensitiveScenarioRoleplay';
-import CriticalOpinionBuilder from '@/pages/practice/CriticalOpinionBuilder';
-import { ReportsOverview } from '@/components/admin/ReportsOverview';
-import { ObservationReports } from '@/components/admin/ObservationReports';
-import { GradeAssignments } from '@/components/admin/GradeAssignments';
-import { AssignmentSubmissions } from '@/components/admin/AssignmentSubmissions';
-import { StudentSubmissionDetail } from '@/components/admin/StudentSubmissionDetail';
-import { AdminSettings } from '@/components/admin/AdminSettings';
-import { AdminSecurity } from '@/components/admin/AdminSecurity';
-import CourseBuilder from './CourseBuilder';
-import { CourseOverview } from './CourseOverview';
-import { CourseContent } from './CourseContent';
-import StudentsPage from './StudentsPage';
-import ReportsPage from './ReportsPage';
-import DiscussionsPage from './DiscussionsPage';
-import { DiscussionViewPage } from './DiscussionViewPage';
-import MessagesPage from './MessagesPage';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useAILMS } from '@/contexts/AILMSContext';
 import { BookOpen, Users, ClipboardList, TrendingUp, BarChart3, Settings, GraduationCap, Award, Shield, MessageSquare, Link, Eye, FileText, MessageCircle } from 'lucide-react';
 import { type UserRole } from '@/config/roleNavigation';
-import ProfileSettings from './ProfileSettings';
 import { ContentLoader } from '@/components/ContentLoader';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { Logo } from '@/components/header/Logo';
-import { useLocation } from 'react-router-dom';
+
+const StudentDashboard = lazy(() => import('@/components/dashboard/StudentDashboard').then(module => ({ default: module.StudentDashboard })));
+const StudentCourses = lazy(() => import('@/components/dashboard/StudentCourses').then(module => ({ default: module.StudentCourses })));
+const StudentProgress = lazy(() => import('@/components/dashboard/StudentProgress').then(module => ({ default: module.StudentProgress })));
+const StudentAssignments = lazy(() => import('@/components/dashboard/StudentAssignments').then(module => ({ default: module.StudentAssignments })));
+const TeacherDashboard = lazy(() => import('@/components/dashboard/TeacherDashboard').then(module => ({ default: module.TeacherDashboard })));
+const AdminDashboard = lazy(() => import('@/components/dashboard/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
+const AIStudentDashboard = lazy(() => import('@/components/dashboard/AIStudentDashboard').then(module => ({ default: module.AIStudentDashboard })));
+const AITeacherDashboard = lazy(() => import('@/components/dashboard/AITeacherDashboard').then(module => ({ default: module.AITeacherDashboard })));
+const AIAdminDashboard = lazy(() => import('@/components/dashboard/AIAdminDashboard').then(module => ({ default: module.AIAdminDashboard })));
+const AIAdminPractice = lazy(() => import('@/components/dashboard/AIAdminPractice').then(module => ({ default: module.AIAdminPractice })));
+const AITeacherPractice = lazy(() => import('@/components/dashboard/AITeacherPractice').then(module => ({ default: module.AITeacherPractice })));
+const AIStudentProgress = lazy(() => import('@/components/dashboard/AIStudentProgress').then(module => ({ default: module.AIStudentProgress })));
+const AIStudentPractice = lazy(() => import('@/components/dashboard/AIStudentPractice').then(module => ({ default: module.AIStudentPractice })));
+const ComingSoon = lazy(() => import('@/components/ComingSoon').then(module => ({ default: module.ComingSoon })));
+const RolePlaceholder = lazy(() => import('@/components/dashboard/RolePlaceholder').then(module => ({ default: module.RolePlaceholder })));
+const UsersManagement = lazy(() => import('@/components/admin/UsersManagement').then(module => ({ default: module.UsersManagement })));
+const CourseManagement = lazy(() => import('@/components/admin/CourseManagement'));
+const StageZero = lazy(() => import('@/pages/practice/StageZero').then(module => ({ default: module.StageZero })));
+const LessonDetail = lazy(() => import('@/pages/practice/LessonDetail').then(module => ({ default: module.LessonDetail })));
+const StageOne = lazy(() => import('@/pages/practice/StageOne').then(module => ({ default: module.StageOne })));
+const RepeatAfterMe = lazy(() => import('@/pages/practice/RepeatAfterMe').then(module => ({ default: module.RepeatAfterMe })));
+const QuickResponse = lazy(() => import('@/pages/practice/QuickResponse').then(module => ({ default: module.QuickResponse })));
+const ListenAndReply = lazy(() => import('@/pages/practice/ListenAndReply').then(module => ({ default: module.ListenAndReply })));
+const StageTwo = lazy(() => import('@/pages/practice/StageTwo').then(module => ({ default: module.StageTwo })));
+const DailyRoutine = lazy(() => import('@/pages/practice/DailyRoutine'));
+const QuickAnswer = lazy(() => import('@/pages/practice/QuickAnswer'));
+const RoleplaySimulation = lazy(() => import('@/pages/practice/RoleplaySimulation'));
+const StageThree = lazy(() => import('@/pages/practice/StageThree'));
+const StorytellingPractice = lazy(() => import('@/pages/practice/StorytellingPractice'));
+const GroupDialogue = lazy(() => import('@/pages/practice/GroupDialogue'));
+const ProblemSolvingSimulations = lazy(() => import('@/pages/practice/ProblemSolvingSimulations'));
+const StageFour = lazy(() => import('@/pages/practice/StageFour'));
+const AbstractTopicMonologue = lazy(() => import('@/pages/practice/AbstractTopicMonologue'));
+const MockInterviewPractice = lazy(() => import('@/pages/practice/MockInterviewPractice'));
+const NewsSummaryChallenge = lazy(() => import('@/pages/practice/NewsSummaryChallenge'));
+const StageFive = lazy(() => import('@/pages/practice/StageFive'));
+const CriticalThinkingDialogues = lazy(() => import('@/pages/practice/CriticalThinkingDialogues'));
+const AcademicPresentations = lazy(() => import('@/pages/practice/AcademicPresentations'));
+const InDepthInterviewSimulation = lazy(() => import('@/pages/practice/InDepthInterviewSimulation'));
+const StageSix = lazy(() => import('@/pages/practice/StageSix'));
+const AIGuidedSpontaneousSpeech = lazy(() => import('@/pages/practice/AIGuidedSpontaneousSpeech'));
+const SensitiveScenarioRoleplay = lazy(() => import('@/pages/practice/SensitiveScenarioRoleplay'));
+const CriticalOpinionBuilder = lazy(() => import('@/pages/practice/CriticalOpinionBuilder'));
+const ReportsOverview = lazy(() => import('@/components/admin/ReportsOverview').then(module => ({ default: module.ReportsOverview })));
+const ObservationReports = lazy(() => import('@/components/admin/ObservationReports').then(module => ({ default: module.ObservationReports })));
+const GradeAssignments = lazy(() => import('@/components/admin/GradeAssignments').then(module => ({ default: module.GradeAssignments })));
+const AssignmentSubmissions = lazy(() => import('@/components/admin/AssignmentSubmissions').then(module => ({ default: module.AssignmentSubmissions })));
+const StudentSubmissionDetail = lazy(() => import('@/components/admin/StudentSubmissionDetail').then(module => ({ default: module.StudentSubmissionDetail })));
+const AdminSettings = lazy(() => import('@/components/admin/AdminSettings').then(module => ({ default: module.AdminSettings })));
+const AdminSecurity = lazy(() => import('@/components/admin/AdminSecurity').then(module => ({ default: module.AdminSecurity })));
+const CourseBuilder = lazy(() => import('./CourseBuilder'));
+const CourseOverview = lazy(() => import('./CourseOverview').then(module => ({ default: module.CourseOverview })));
+const CourseContent = lazy(() => import('./CourseContent').then(module => ({ default: module.CourseContent })));
+const StudentsPage = lazy(() => import('./StudentsPage'));
+const ReportsPage = lazy(() => import('./ReportsPage'));
+const DiscussionsPage = lazy(() => import('./DiscussionsPage'));
+const DiscussionViewPage = lazy(() => import('./DiscussionViewPage').then(module => ({ default: module.DiscussionViewPage })));
+const MessagesPage = lazy(() => import('./MessagesPage'));
+const ProfileSettings = lazy(() => import('./ProfileSettings'));
 
 type Profile = {
   first_name: string | null;
@@ -153,12 +152,13 @@ const Dashboard = () => {
   };
 
   return (
-              <div className="space-y-4 p-4 sm:p-6 lg:p-8 pt-0">
-                <Routes>
-                  <Route path="/" element={<DashboardOverview />} />
-                  <Route path="/profile-settings" element={<ProfileSettings />} />
-                  <Route path="/courses/:id" element={<CourseOverview />} />
-                  <Route path="/courses/:id/content" element={<CourseContent key={location.pathname} />} />
+    <div className="space-y-4 p-4 sm:p-6 lg:p-8 pt-0">
+      <Suspense fallback={<ContentLoader />}>
+        <Routes>
+          <Route path="/" element={<DashboardOverview />} />
+          <Route path="/profile-settings" element={<ProfileSettings />} />
+          <Route path="/courses/:id" element={<CourseOverview />} />
+          <Route path="/courses/:id/content" element={<CourseContent key={location.pathname} />} />
           {finalRole === 'student' && (
                     <>
                       {isAIMode ? (
@@ -324,8 +324,9 @@ const Dashboard = () => {
                       )}
                     </>
                   )}
-                </Routes>
-              </div>
+        </Routes>
+      </Suspense>
+    </div>
     );
   };
 
