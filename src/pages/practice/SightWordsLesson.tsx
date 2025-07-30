@@ -7,6 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { 
     ArrowLeft, BookOpen, ChevronRight, Play, Eye, User, Handshake, Smile, Search, Users, Hand, HelpCircle, Edit, MessageCircle, Tag, SmilePlus, Smartphone, Inbox, Settings, Bell, ClipboardList, CheckSquare, Puzzle, PartyPopper, LucideIcon
 } from 'lucide-react';
+import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 
 // --- Type Definitions ---
 interface Word {
@@ -136,6 +137,46 @@ const SightWordsLesson = () => {
     const [mainStep, setMainStep] = useState(0);
     const [subStep, setSubStep] = useState(0);
     const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
+    const [loadingAudio, setLoadingAudio] = useState<string | null>(null);
+    const { playAudio } = useAudioPlayer();
+
+    // Function to play text-to-speech audio
+    const handlePlayAudio = async (word: string) => {
+        if (loadingAudio) return; // Prevent multiple simultaneous plays
+        
+        setLoadingAudio(word);
+        try {
+            // Use browser's Speech Synthesis API
+            if ('speechSynthesis' in window) {
+                // Stop any current speech
+                window.speechSynthesis.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(word);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.8; // Slightly slower for learning
+                utterance.pitch = 1;
+                utterance.volume = 1;
+                
+                // Set up event handlers
+                utterance.onend = () => {
+                    setLoadingAudio(null);
+                };
+                
+                utterance.onerror = () => {
+                    setLoadingAudio(null);
+                    console.error('Speech synthesis error');
+                };
+                
+                window.speechSynthesis.speak(utterance);
+            } else {
+                console.warn('Speech synthesis not supported');
+                setLoadingAudio(null);
+            }
+        } catch (error) {
+            console.error('Error playing audio:', error);
+            setLoadingAudio(null);
+        }
+    };
 
     const currentStepData = sightWordsData[mainStep];
     const totalSteps = sightWordsData.length;
@@ -256,19 +297,29 @@ const SightWordsLesson = () => {
                     </Card>
                 ) : (
                     (currentPageContent as Word[]).map((item, index) => (
-                        <Card key={index} className="p-4 flex items-center bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 shadow-sm">
-                           <div className="flex items-center gap-4 flex-1">
-                                <div className="p-3 bg-white rounded-full"><item.icon className="w-8 h-8 text-green-500"/></div>
-                                <div>
-                                    <h3 className="text-2xl font-bold flex items-center gap-2">
-                                        {item.word}
-                                        <span className="text-lg text-muted-foreground font-normal">{item.pronunciation}</span>
-                                    </h3>
-                                    <p className="font-urdu text-muted-foreground text-xl">{item.translation}</p>
-                                </div>
+                        <Card key={index} className="p-4 flex items-center">
+                            <div className="flex-1">
+                                <h3 className="text-2xl font-bold flex items-center gap-3">
+                                    {item.word}
+                                    <span className="text-lg text-muted-foreground font-normal">{item.pronunciation}</span>
+                                </h3>
+                                <p className="font-urdu text-muted-foreground text-xl">{item.translation}</p>
                             </div>
-                           <Button size="icon" variant="ghost" className="w-16 h-16 rounded-full bg-green-500/20 hover:bg-green-500/30 text-green-600 dark:text-green-300">
-                                <Play className="w-8 h-8" />
+                            <Button 
+                                size="icon" 
+                                className={`w-14 h-14 rounded-full ${
+                                    loadingAudio === item.word 
+                                        ? 'bg-primary/60 cursor-not-allowed' 
+                                        : 'bg-primary/80 hover:bg-primary'
+                                }`}
+                                onClick={() => handlePlayAudio(item.word)}
+                                disabled={loadingAudio === item.word}
+                            >
+                                {loadingAudio === item.word ? (
+                                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                    <Play className="w-6 h-6" />
+                                )}
                             </Button>
                         </Card>
                     ))

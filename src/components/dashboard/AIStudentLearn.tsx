@@ -205,7 +205,59 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
     audioChunksRef.current = [];
   };
 
-  // Handle audio playback and visibility change
+  // Global visibility change handler to stop all audio when tab is hidden
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        console.log('⏸️ Tab became hidden - stopping all audio');
+        
+        // Stop HTML Audio element (greeting audio)
+        if (audioRef.current && !audioRef.current.paused) {
+          console.log('⏸️ Stopping HTML audio due to tab visibility change');
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+          setIsAudioPlaying(false);
+          setShowStartButton(true);
+          sessionStorage.setItem(AUDIO_PLAYED_KEY, 'true');
+        }
+        
+        // Stop Web Audio API source (WebSocket audio)
+        if (webAudioSourceRef.current) {
+          try {
+            console.log('⏸️ Stopping Web Audio source due to tab visibility change');
+            webAudioSourceRef.current.stop();
+            webAudioSourceRef.current = null;
+          } catch (error) {
+            // AudioBufferSourceNode can only be stopped once
+            console.log('Web audio source already stopped');
+          }
+        }
+        
+        // Reset all audio-related states
+        setIsGreetingAudioPlaying(false);
+        setIsAIResponsePlaying(false);
+        setIsProcessing(false);
+        setExpectingGreeting(false);
+        
+        // Stop any ongoing recording
+        if (isRecording) {
+          stopRecording();
+        }
+        
+        // Clear connection message
+        setConnectionMessage('');
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Cleanup function
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isRecording]); // Include isRecording as dependency to access current value
+
+  // Handle audio playback for greeting view
   useEffect(() => {
     if (currentView !== 'greeting') return;
 
@@ -273,20 +325,6 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
     audio.addEventListener('ended', handleAudioEnd);
     audio.addEventListener('error', handleAudioError);
 
-    // Handle tab visibility change - stop audio if tab becomes hidden
-    const handleVisibilityChange = () => {
-      if (document.hidden && audio && !audio.paused) {
-        console.log('⏸️ Stopping audio due to tab visibility change');
-        audio.pause();
-        audio.currentTime = 0;
-        setIsAudioPlaying(false);
-        setShowStartButton(true);
-        sessionStorage.setItem(AUDIO_PLAYED_KEY, 'true');
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
     // Cleanup function
     return () => {
       if (audio) {
@@ -302,8 +340,6 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
         audio.currentTime = 0;
         audioRef.current = null;
       }
-      
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [currentView]);
 
@@ -521,6 +557,28 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
   };
 
   const handleBackToGreeting = () => {
+    console.log('🔙 Going back to greeting - stopping all audio');
+    
+    // Stop HTML Audio element (greeting audio)
+    if (audioRef.current && !audioRef.current.paused) {
+      console.log('⏸️ Stopping HTML audio due to close button click');
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      setIsAudioPlaying(false);
+    }
+    
+    // Stop Web Audio API source (WebSocket audio)
+    if (webAudioSourceRef.current) {
+      try {
+        console.log('⏸️ Stopping Web Audio source due to close button click');
+        webAudioSourceRef.current.stop();
+        webAudioSourceRef.current = null;
+      } catch (error) {
+        // AudioBufferSourceNode can only be stopped once
+        console.log('Web audio source already stopped');
+      }
+    }
+    
     // Stop any ongoing recording
     stopRecording();
     cleanupAudioResources();

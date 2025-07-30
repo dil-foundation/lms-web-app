@@ -2,7 +2,7 @@ import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
-import { Brain, MessageCircle, Globe, Award, Languages, Target, ArrowRight, Sparkles, BookOpen, Users, Zap } from 'lucide-react';
+import { Brain, MessageCircle, Globe, Award, Languages, Target, ArrowRight, Sparkles, BookOpen, Users, Zap, Play } from 'lucide-react';
 
 const HomeLayout3 = () => {
   return (
@@ -22,32 +22,31 @@ const HomeLayout3 = () => {
                 📖 Chapter 1: Your Journey Begins
               </span>
               <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold leading-tight mb-8">
-                Once upon a time, there was a{' '}
+                Master English with{' '}
                 <span className="relative">
                   <span className="text-primary">
-                    learner
+                    AI-Powered Learning
                   </span>
                   <span className="absolute -bottom-2 left-0 right-0 h-1 bg-primary rounded-full animate-pulse"></span>
                 </span>
-                {' '}just like you...
               </h1>
             </div>
             <div className="animate-fade-in-up delay-500">
               <p className="text-xl md:text-2xl text-muted-foreground max-w-4xl mx-auto leading-relaxed mb-12">
-                Who dreamed of mastering English with the help of AI-powered learning. 
-                This is the story of how personalized tutoring, real-time feedback, 
-                and cultural context transformed their language journey forever.
+                Your personalized English tutor powered by artificial intelligence. Learn 
+                at your own pace with interactive lessons, real-time feedback, and 
+                cultural context.
               </p>
               <div className="flex flex-col sm:flex-row gap-6 justify-center">
                 <Link to="/auth">
                   <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-lg px-10 py-6 rounded-full hover:scale-110 transition-all duration-500 shadow-2xl hover:shadow-primary/25 group">
-                    Begin Your Story
+                    Start Learning
                     <ArrowRight className="ml-3 h-6 w-6 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>
                 <Button variant="outline" size="lg" className="border-2 border-primary text-primary hover:bg-primary/10 text-lg px-10 py-6 rounded-full hover:scale-110 transition-all duration-500 group">
-                  <BookOpen className="mr-3 h-6 w-6 group-hover:scale-110 transition-transform" />
-                  Preview the Adventure
+                  <Play className="mr-3 h-6 w-6 group-hover:scale-110 transition-transform" />
+                  Watch Demo
                 </Button>
               </div>
             </div>
