@@ -12,8 +12,7 @@ import { Layout, ChevronDown } from 'lucide-react';
 const layouts = [
   { id: '/', name: 'Classic Layout', description: 'Traditional hero-first design' },
   { id: '/home-layout-2', name: 'Modern Grid', description: 'Feature-focused grid layout' },
-  { id: '/home-layout-3', name: 'Story Flow', description: 'Narrative-driven experience' },
-  { id: '/home-layout-4', name: 'Interactive', description: 'Dynamic animated layout' }
+  { id: '/home-layout-3', name: 'Story Flow', description: 'Narrative-driven experience' }
 ];
 
 export const LayoutSwitcher = memo(() => {

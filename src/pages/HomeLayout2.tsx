@@ -44,35 +44,31 @@ const HomeLayout2 = () => {
             
             {/* Right Visual Grid - 5 columns */}
             <div className="lg:col-span-5">
-              <div className="grid grid-cols-2 gap-4 animate-fade-in-right">
-                <div className="space-y-4">
-                  <Card className="bg-card border-border hover:scale-105 transition-all duration-500">
-                    <CardContent className="p-6 text-center">
-                      <Brain className="h-12 w-12 text-primary mx-auto mb-3" />
-                      <h3 className="font-bold text-lg text-primary">AI-Powered</h3>
-                    </CardContent>
-                  </Card>
-                  <Card className="bg-card border-border hover:scale-105 transition-all duration-500">
-                    <CardContent className="p-6 text-center">
-                      <Globe className="h-12 w-12 text-primary mx-auto mb-3" />
-                      <h3 className="font-bold text-lg text-primary">Structured</h3>
-                    </CardContent>
-                  </Card>
-                </div>
-                <div className="space-y-4 pt-8">
-                  <Card className="bg-card border-border hover:scale-105 transition-all duration-500">
-                    <CardContent className="p-6 text-center">
-                      <MessageCircle className="h-12 w-12 text-primary mx-auto mb-3" />
-                      <h3 className="font-bold text-lg text-primary">Interactive</h3>
-                    </CardContent>
-                  </Card>
-                  <Card className="bg-card border-border hover:scale-105 transition-all duration-500">
-                    <CardContent className="p-6 text-center">
-                      <Award className="h-12 w-12 text-primary mx-auto mb-3" />
-                      <h3 className="font-bold text-lg text-primary">Certified</h3>
-                    </CardContent>
-                  </Card>
-                </div>
+              <div className="grid grid-cols-2 gap-6 animate-fade-in-right">
+                <Card className="bg-card border-border hover:scale-105 transition-all duration-500">
+                  <CardContent className="p-8 text-center">
+                    <Brain className="h-16 w-16 text-primary mx-auto mb-4" />
+                    <h3 className="font-bold text-xl text-primary">AI-Powered</h3>
+                  </CardContent>
+                </Card>
+                <Card className="bg-card border-border hover:scale-105 transition-all duration-500">
+                  <CardContent className="p-8 text-center">
+                    <MessageCircle className="h-16 w-16 text-primary mx-auto mb-4" />
+                    <h3 className="font-bold text-xl text-primary">Interactive</h3>
+                  </CardContent>
+                </Card>
+                <Card className="bg-card border-border hover:scale-105 transition-all duration-500">
+                  <CardContent className="p-8 text-center">
+                    <Globe className="h-16 w-16 text-primary mx-auto mb-4" />
+                    <h3 className="font-bold text-xl text-primary">Structured</h3>
+                  </CardContent>
+                </Card>
+                <Card className="bg-card border-border hover:scale-105 transition-all duration-500">
+                  <CardContent className="p-8 text-center">
+                    <Award className="h-16 w-16 text-primary mx-auto mb-4" />
+                    <h3 className="font-bold text-xl text-primary">Certified</h3>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </div>

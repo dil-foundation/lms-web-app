@@ -10,6 +10,7 @@ import {
 import SightWordsLesson from './SightWordsLesson';
 import AppUIWordsLesson from './AppUIWordsLesson';
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
+import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 
 const alphabetSets = [
     [
@@ -124,7 +125,47 @@ const vocabularySets = [
 const AlphabetLesson = () => {
     const navigate = useNavigate();
     const [step, setStep] = useState(0);
+    const [loadingAudio, setLoadingAudio] = useState<string | null>(null);
+    const { playAudio } = useAudioPlayer();
     const progress = ((step + 1) / alphabetSets.length) * 100;
+
+    // Function to play text-to-speech audio
+    const handlePlayAudio = async (word: string) => {
+        if (loadingAudio) return; // Prevent multiple simultaneous plays
+        
+        setLoadingAudio(word);
+        try {
+            // Use browser's Speech Synthesis API
+            if ('speechSynthesis' in window) {
+                // Stop any current speech
+                window.speechSynthesis.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(word);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.8; // Slightly slower for learning
+                utterance.pitch = 1;
+                utterance.volume = 1;
+                
+                // Set up event handlers
+                utterance.onend = () => {
+                    setLoadingAudio(null);
+                };
+                
+                utterance.onerror = () => {
+                    setLoadingAudio(null);
+                    console.error('Speech synthesis error');
+                };
+                
+                window.speechSynthesis.speak(utterance);
+            } else {
+                console.warn('Speech synthesis not supported');
+                setLoadingAudio(null);
+            }
+        } catch (error) {
+            console.error('Error playing audio:', error);
+            setLoadingAudio(null);
+        }
+    };
 
     const handleNext = () => {
         if (step < alphabetSets.length - 1) setStep(step + 1);
@@ -163,7 +204,22 @@ const AlphabetLesson = () => {
                             <p className="font-urdu text-muted-foreground text-lg">{item.translation}</p>
                         </div>
                         <div className="flex-1 flex justify-end">
-                            <Button size="icon" className="w-14 h-14 rounded-full bg-primary/80 hover:bg-primary"><Play className="w-6 h-6" /></Button>
+                            <Button 
+                                size="icon" 
+                                className={`w-14 h-14 rounded-full ${
+                                    loadingAudio === item.word 
+                                        ? 'bg-primary/60 cursor-not-allowed' 
+                                        : 'bg-primary/80 hover:bg-primary'
+                                }`}
+                                onClick={() => handlePlayAudio(item.word)}
+                                disabled={loadingAudio === item.word}
+                            >
+                                {loadingAudio === item.word ? (
+                                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                    <Play className="w-6 h-6" />
+                                )}
+                            </Button>
                         </div>
                     </Card>
                 ))}
@@ -180,7 +236,47 @@ const AlphabetLesson = () => {
 const PhonicsLesson = () => {
     const navigate = useNavigate();
     const [step, setStep] = useState(0);
+    const [loadingAudio, setLoadingAudio] = useState<string | null>(null);
+    const { playAudio } = useAudioPlayer();
     const progress = ((step + 1) / phonicsSets.length) * 100;
+
+    // Function to play text-to-speech audio
+    const handlePlayAudio = async (text: string) => {
+        if (loadingAudio) return; // Prevent multiple simultaneous plays
+        
+        setLoadingAudio(text);
+        try {
+            // Use browser's Speech Synthesis API
+            if ('speechSynthesis' in window) {
+                // Stop any current speech
+                window.speechSynthesis.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.7; // Even slower for phonics practice
+                utterance.pitch = 1;
+                utterance.volume = 1;
+                
+                // Set up event handlers
+                utterance.onend = () => {
+                    setLoadingAudio(null);
+                };
+                
+                utterance.onerror = () => {
+                    setLoadingAudio(null);
+                    console.error('Speech synthesis error');
+                };
+                
+                window.speechSynthesis.speak(utterance);
+            } else {
+                console.warn('Speech synthesis not supported');
+                setLoadingAudio(null);
+            }
+        } catch (error) {
+            console.error('Error playing audio:', error);
+            setLoadingAudio(null);
+        }
+    };
 
     const handleNext = () => {
         if (step < phonicsSets.length - 1) setStep(step + 1);
@@ -209,7 +305,22 @@ const PhonicsLesson = () => {
                         <div className="bg-primary/10 text-primary-foreground rounded-full w-16 h-16 flex items-center justify-center"><currentSet.icon className="w-8 h-8 text-primary" /></div>
                         <h2 className="text-2xl font-bold">{currentSet.title}</h2>
                     </div>
-                    <Button size="icon" className="w-14 h-14 rounded-full bg-primary/80 hover:bg-primary"><Play className="w-6 h-6" /></Button>
+                    <Button 
+                        size="icon" 
+                        className={`w-14 h-14 rounded-full ${
+                            loadingAudio === currentSet.title 
+                                ? 'bg-primary/60 cursor-not-allowed' 
+                                : 'bg-primary/80 hover:bg-primary'
+                        }`}
+                        onClick={() => handlePlayAudio(currentSet.title)}
+                        disabled={loadingAudio === currentSet.title}
+                    >
+                        {loadingAudio === currentSet.title ? (
+                            <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                            <Play className="w-6 h-6" />
+                        )}
+                    </Button>
                 </Card>
                 <Card className="p-6 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
                     <div className="flex items-center mb-4">
@@ -237,8 +348,48 @@ const PhonicsLesson = () => {
 const VocabularyLesson = () => {
     const navigate = useNavigate();
     const [step, setStep] = useState(0);
+    const [loadingAudio, setLoadingAudio] = useState<string | null>(null);
+    const { playAudio } = useAudioPlayer();
     const progress = ((step + 1) / vocabularySets.length) * 100;
     const isCompletion = step === vocabularySets.length;
+
+    // Function to play text-to-speech audio
+    const handlePlayAudio = async (word: string) => {
+        if (loadingAudio) return; // Prevent multiple simultaneous plays
+        
+        setLoadingAudio(word);
+        try {
+            // Use browser's Speech Synthesis API
+            if ('speechSynthesis' in window) {
+                // Stop any current speech
+                window.speechSynthesis.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(word);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.8; // Slightly slower for vocabulary learning
+                utterance.pitch = 1;
+                utterance.volume = 1;
+                
+                // Set up event handlers
+                utterance.onend = () => {
+                    setLoadingAudio(null);
+                };
+                
+                utterance.onerror = () => {
+                    setLoadingAudio(null);
+                    console.error('Speech synthesis error');
+                };
+                
+                window.speechSynthesis.speak(utterance);
+            } else {
+                console.warn('Speech synthesis not supported');
+                setLoadingAudio(null);
+            }
+        } catch (error) {
+            console.error('Error playing audio:', error);
+            setLoadingAudio(null);
+        }
+    };
 
     const handleNext = () => {
         if (step < vocabularySets.length) setStep(step + 1);
@@ -294,18 +445,36 @@ const VocabularyLesson = () => {
                         <p className="text-muted-foreground">{currentSet.wordsToLearn} words to learn</p>
                     </div>
                 </Card>
-                {currentSet.words.map((item, index) => (
-                    <Card key={index} className="p-4 flex items-center">
-                        <div className="flex-1">
-                            <h3 className="text-2xl font-bold flex items-center gap-3">
-                                {item.number || item.word}
-                                <span className="text-lg text-muted-foreground font-normal">{item.phonetic}</span>
-                            </h3>
-                            <p className="font-urdu text-muted-foreground text-xl">{item.translation}</p>
-                        </div>
-                        <Button size="icon" className="w-14 h-14 rounded-full bg-primary/80 hover:bg-primary"><Play className="w-6 h-6" /></Button>
-                    </Card>
-                ))}
+                {currentSet.words.map((item, index) => {
+                    const wordToPlay = item.word || item.number || '';
+                    return (
+                        <Card key={index} className="p-4 flex items-center">
+                            <div className="flex-1">
+                                <h3 className="text-2xl font-bold flex items-center gap-3">
+                                    {item.number || item.word}
+                                    <span className="text-lg text-muted-foreground font-normal">{item.phonetic}</span>
+                                </h3>
+                                <p className="font-urdu text-muted-foreground text-xl">{item.translation}</p>
+                            </div>
+                            <Button 
+                                size="icon" 
+                                className={`w-14 h-14 rounded-full ${
+                                    loadingAudio === wordToPlay 
+                                        ? 'bg-primary/60 cursor-not-allowed' 
+                                        : 'bg-primary/80 hover:bg-primary'
+                                }`}
+                                onClick={() => handlePlayAudio(wordToPlay)}
+                                disabled={loadingAudio === wordToPlay}
+                            >
+                                {loadingAudio === wordToPlay ? (
+                                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                    <Play className="w-6 h-6" />
+                                )}
+                            </Button>
+                        </Card>
+                    );
+                })}
             </div>
             <Button size="lg" className="w-full" onClick={handleNext}>
                 <ChevronRight className="w-5 h-5 mr-2" />

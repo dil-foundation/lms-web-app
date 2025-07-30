@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { 
     ArrowLeft, Smartphone, Play, ArrowRight, CheckCircle, Mic, Volume2, Flag, PartyPopper, LucideIcon
 } from 'lucide-react';
+import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 
 // --- Type Definitions ---
 interface AppWord {
@@ -27,9 +28,49 @@ const appUIWords: AppWord[] = [
 
 const AppUIWordsLesson = () => {
     const navigate = useNavigate();
+    const [loadingAudio, setLoadingAudio] = useState<string | null>(null);
+    const { playAudio } = useAudioPlayer();
+
+    // Function to play text-to-speech audio
+    const handlePlayAudio = async (word: string) => {
+        if (loadingAudio) return; // Prevent multiple simultaneous plays
+        
+        setLoadingAudio(word);
+        try {
+            // Use browser's Speech Synthesis API
+            if ('speechSynthesis' in window) {
+                // Stop any current speech
+                window.speechSynthesis.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(word);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.8; // Slightly slower for learning
+                utterance.pitch = 1;
+                utterance.volume = 1;
+                
+                // Set up event handlers
+                utterance.onend = () => {
+                    setLoadingAudio(null);
+                };
+                
+                utterance.onerror = () => {
+                    setLoadingAudio(null);
+                    console.error('Speech synthesis error');
+                };
+                
+                window.speechSynthesis.speak(utterance);
+            } else {
+                console.warn('Speech synthesis not supported');
+                setLoadingAudio(null);
+            }
+        } catch (error) {
+            console.error('Error playing audio:', error);
+            setLoadingAudio(null);
+        }
+    };
 
     return (
-        <div className="w-full max-w-md mx-auto">
+        <div className="w-full max-w-2xl mx-auto">
             {/* Header */}
             <div className="relative flex items-center justify-center mb-6 text-center">
                  <Button variant="ghost" size="icon" className="absolute left-0" onClick={() => navigate(-1)}>
@@ -56,16 +97,28 @@ const AppUIWordsLesson = () => {
             {/* Words List */}
             <div className="space-y-4 mb-8">
                 {appUIWords.map((item, index) => (
-                    <Card key={index} className="p-4 flex items-center bg-white dark:bg-gray-800 shadow-lg rounded-2xl">
-                        <Button className={`h-12 w-32 text-lg font-bold text-white bg-gradient-to-br ${item.color} shadow-md`}>
-                            {item.word}
-                        </Button>
-                        <p className="font-urdu text-muted-foreground text-xl flex-1 text-center">{item.translation}</p>
-                        <Button size="icon" variant="ghost" className="w-14 h-14 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 mr-2">
-                           <item.icon className="w-6 h-6" />
-                        </Button>
-                        <Button size="icon" className="w-14 h-14 rounded-full bg-green-500/90 hover:bg-green-500 text-white">
-                            <Play className="w-7 h-7" />
+                    <Card key={index} className="p-4 flex items-center">
+                        <div className="flex-1">
+                            <h3 className="text-2xl font-bold">
+                                {item.word}
+                            </h3>
+                            <p className="font-urdu text-muted-foreground text-xl">{item.translation}</p>
+                        </div>
+                        <Button 
+                            size="icon" 
+                            className={`w-14 h-14 rounded-full ${
+                                loadingAudio === item.word 
+                                    ? 'bg-primary/60 cursor-not-allowed' 
+                                    : 'bg-primary/80 hover:bg-primary'
+                            }`}
+                            onClick={() => handlePlayAudio(item.word)}
+                            disabled={loadingAudio === item.word}
+                        >
+                            {loadingAudio === item.word ? (
+                                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                                <Play className="w-6 h-6" />
+                            )}
                         </Button>
                     </Card>
                 ))}
