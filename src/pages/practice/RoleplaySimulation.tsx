@@ -1567,15 +1567,15 @@ export default function RoleplaySimulation() {
               <div className="space-y-4">
                 <div className="flex gap-3">
                   <div className="flex-1">
-                    <input
+                                        <input
                       type="text"
-                  placeholder="Type your response here..."
-                  value={userInput}
-                  onChange={(e) => setUserInput(e.target.value)}
+                      placeholder="Type your response here..."
+                      value={userInput}
+                      onChange={(e) => setUserInput(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
-                      className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-background text-foreground placeholder:text-muted-foreground dark:placeholder:text-muted-foreground"
                       disabled={isRecording}
-                />
+                    />
                   </div>
                 
                   <Button
