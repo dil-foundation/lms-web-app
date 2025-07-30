@@ -1,7 +1,7 @@
 
 
 // Use same staging URL for both development and production
-const API_URL = 'https://api.dil.lms-staging.com';
+const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 
 // Determine the API URL
