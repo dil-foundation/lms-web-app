@@ -191,6 +191,7 @@ export default function DailyRoutine() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   
   const currentPhrase = phrases[currentPhraseIndex];
 
@@ -257,15 +258,48 @@ export default function DailyRoutine() {
     }
   };
 
+  // Cleanup current audio properly
+  const cleanupCurrentAudio = () => {
+    if (audioRef.current) {
+      const audio = audioRef.current;
+      audio.pause();
+      audio.currentTime = 0;
+      
+      // Remove all event listeners to prevent memory leaks
+      audio.oncanplaythrough = null;
+      audio.onerror = null;
+      audio.onended = null;
+      audio.onloadstart = null;
+      audio.onloadeddata = null;
+      
+      audioRef.current = null;
+    }
+  };
+
   // Play audio from URL
   const playAudio = async (audioUrl: string): Promise<void> => {
     return new Promise((resolve, reject) => {
+      // Stop and cleanup any currently playing audio
+      cleanupCurrentAudio();
+      
       const audio = new Audio(audioUrl);
+      audioRef.current = audio;
       
       const cleanup = () => {
         if (audioUrl.startsWith('blob:')) {
           URL.revokeObjectURL(audioUrl);
         }
+      };
+      
+      const handleError = (error: string) => {
+        cleanup();
+        cleanupCurrentAudio();
+        reject(new Error(error));
+      };
+      
+      const handleSuccess = () => {
+        cleanup();
+        resolve();
       };
       
       audio.oncanplaythrough = () => {
@@ -274,19 +308,16 @@ export default function DailyRoutine() {
             // Audio started playing successfully
           })
           .catch((playError) => {
-            cleanup();
-            reject(new Error('Failed to start audio playback'));
+            handleError('Failed to start audio playback');
           });
       };
       
       audio.onerror = () => {
-        cleanup();
-        reject(new Error('Failed to load audio file'));
+        handleError('Failed to load audio file');
       };
       
       audio.onended = () => {
-        cleanup();
-        resolve();
+        handleSuccess();
       };
       
       setTimeout(() => {
@@ -629,6 +660,9 @@ export default function DailyRoutine() {
           mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
         }
       }
+      
+      // Stop audio playback if active
+      cleanupCurrentAudio();
     };
   }, []);
 

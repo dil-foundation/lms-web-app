@@ -683,7 +683,7 @@ export default function RoleplaySimulation() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isRecording, audioBlob, error: recordingError, startRecording, stopRecording, resetRecording } = useAudioRecorder();
-  const { playAudio } = useAudioPlayer();
+  const { playAudio, stopAudio } = useAudioPlayer();
   
   const [allScenarios, setAllScenarios] = useState<Scenario[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -955,6 +955,9 @@ export default function RoleplaySimulation() {
   };
 
   const handleBackToScenarios = () => {
+    // Stop any playing audio
+    stopAudio();
+    
     setSelectedScenario(null);
     setCurrentStep(0);
     setUserInput('');
@@ -1277,7 +1280,10 @@ export default function RoleplaySimulation() {
         
         {/* Header */}
         <div className="relative flex items-center justify-center mb-6 p-4 sm:p-6 lg:p-8">
-          <Button variant="outline" size="icon" className="absolute left-4 sm:left-6 lg:left-8" onClick={() => navigate(-1)}>
+          <Button variant="outline" size="icon" className="absolute left-4 sm:left-6 lg:left-8" onClick={() => {
+            stopAudio();
+            navigate(-1);
+          }}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="text-center">

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -139,6 +139,15 @@ const SightWordsLesson = () => {
     const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
     const [loadingAudio, setLoadingAudio] = useState<string | null>(null);
     const { playAudio } = useAudioPlayer();
+
+    // Cleanup effect to stop speech synthesis on component unmount
+    useEffect(() => {
+        return () => {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+        };
+    }, []);
 
     // Function to play text-to-speech audio
     const handlePlayAudio = async (word: string) => {

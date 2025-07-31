@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -129,6 +129,15 @@ const AlphabetLesson = () => {
     const { playAudio } = useAudioPlayer();
     const progress = ((step + 1) / alphabetSets.length) * 100;
 
+    // Cleanup effect to stop speech synthesis on component unmount
+    useEffect(() => {
+        return () => {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+        };
+    }, []);
+
     // Function to play text-to-speech audio
     const handlePlayAudio = async (word: string) => {
         if (loadingAudio) return; // Prevent multiple simultaneous plays
@@ -239,6 +248,15 @@ const PhonicsLesson = () => {
     const [loadingAudio, setLoadingAudio] = useState<string | null>(null);
     const { playAudio } = useAudioPlayer();
     const progress = ((step + 1) / phonicsSets.length) * 100;
+
+    // Cleanup effect to stop speech synthesis on component unmount
+    useEffect(() => {
+        return () => {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+        };
+    }, []);
 
     // Function to play text-to-speech audio
     const handlePlayAudio = async (text: string) => {
@@ -352,6 +370,15 @@ const VocabularyLesson = () => {
     const { playAudio } = useAudioPlayer();
     const progress = ((step + 1) / vocabularySets.length) * 100;
     const isCompletion = step === vocabularySets.length;
+
+    // Cleanup effect to stop speech synthesis on component unmount
+    useEffect(() => {
+        return () => {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+        };
+    }, []);
 
     // Function to play text-to-speech audio
     const handlePlayAudio = async (word: string) => {

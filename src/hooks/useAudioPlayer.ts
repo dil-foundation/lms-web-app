@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 
 export interface AudioPlayerState {
   isPlaying: boolean;
@@ -27,15 +27,38 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Cleanup current audio properly
+  const cleanupCurrentAudio = useCallback(() => {
+    if (audioRef.current) {
+      const audio = audioRef.current;
+      audio.pause();
+      audio.currentTime = 0;
+      
+      // Remove all event listeners to prevent memory leaks
+      audio.onloadedmetadata = null;
+      audio.ontimeupdate = null;
+      audio.onended = null;
+      audio.onerror = null;
+      audio.onloadstart = null;
+      audio.onloadeddata = null;
+      
+      audioRef.current = null;
+    }
+  }, []);
+
+  // Cleanup effect to stop audio when component unmounts
+  useEffect(() => {
+    return () => {
+      cleanupCurrentAudio();
+    };
+  }, [cleanupCurrentAudio]);
+
   const playAudio = useCallback(async (audioUrl: string): Promise<void> => {
     try {
       setState(prev => ({ ...prev, error: null }));
       
-      // Stop current audio if playing
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-      }
+      // Stop and cleanup any currently playing audio
+      cleanupCurrentAudio();
       
       audioRef.current = new Audio(audioUrl);
       
@@ -81,19 +104,16 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
         isPlaying: false,
       }));
     }
-  }, []);
+  }, [cleanupCurrentAudio]);
 
   const stopAudio = useCallback((): void => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
+    cleanupCurrentAudio();
     setState(prev => ({
       ...prev,
       isPlaying: false,
       position: 0,
     }));
-  }, []);
+  }, [cleanupCurrentAudio]);
 
   const pauseAudio = useCallback((): void => {
     if (audioRef.current) {
