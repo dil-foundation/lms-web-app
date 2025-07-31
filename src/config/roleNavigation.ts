@@ -1,5 +1,5 @@
 
-import { Home, BookOpen, FileQuestion, TrendingUp, Users, Settings, BarChart3, GraduationCap, ClipboardList, Award, UserCheck, Database, Shield, MessageSquare, Link, Eye, MessageCircle, Bot, Brain, Zap, Target, Sparkles, BookCheck } from 'lucide-react';
+import { Home, BookOpen, FileQuestion, TrendingUp, Users, Settings, BarChart3, GraduationCap, ClipboardList, Award, UserCheck, Database, Shield, MessageSquare, Link, Eye, MessageCircle, Bot, Brain, Zap, Target, Sparkles, BookCheck, FileText, Cog } from 'lucide-react';
 
 export type UserRole = 'student' | 'teacher' | 'admin';
 
@@ -188,17 +188,34 @@ export const getAICategorizedNavigation = (role: UserRole): NavigationCategory[]
     case 'teacher':
       return [
         {
-          title: 'LEARNING',
+          title: 'TEACHING TOOLS',
           items: [
             { title: 'Overview', path: '/dashboard', icon: Bot },
-            { title: 'Learn', path: '/dashboard/ai-learn', icon: BookOpen },
+            { title: 'Teaching Assistant', path: '/dashboard/ai-assistant', icon: GraduationCap },
+            { title: 'Content Generator', path: '/dashboard/ai-content', icon: FileText },
+            { title: 'Lesson Planner', path: '/dashboard/ai-planner', icon: BookOpen },
           ]
         },
         {
-          title: 'ASSESSMENT',
+          title: 'STUDENT MANAGEMENT',
           items: [
+            { title: 'Smart Grading', path: '/dashboard/ai-grading', icon: Award },
+            { title: 'Student Insights', path: '/dashboard/ai-insights', icon: Users },
+            { title: 'AI Feedback', path: '/dashboard/ai-feedback', icon: MessageSquare },
+          ]
+        },
+        {
+          title: 'ANALYTICS',
+          items: [
+            { title: 'Performance Analytics', path: '/dashboard/ai-performance', icon: BarChart3 },
+            { title: 'Progress Tracking', path: '/dashboard/ai-progress', icon: TrendingUp },
+          ]
+        },
+        {
+          title: 'EXPERIENCE',
+          items: [
+            { title: 'Learn', path: '/dashboard/ai-learn', icon: Target },
             { title: 'Practice', path: '/dashboard/ai-practice', icon: Brain },
-            { title: 'Progress', path: '/dashboard/ai-progress', icon: TrendingUp },
           ]
         }
       ];
@@ -206,15 +223,32 @@ export const getAICategorizedNavigation = (role: UserRole): NavigationCategory[]
     case 'admin':
       return [
         {
-          title: 'LEARNING',
+          title: 'SYSTEM MANAGEMENT',
           items: [
             { title: 'Overview', path: '/dashboard', icon: Bot },
-            { title: 'Learn', path: '/dashboard/ai-learn', icon: BookOpen },
+            { title: 'AI Management', path: '/dashboard/ai-management', icon: Settings },
+            { title: 'Model Configuration', path: '/dashboard/ai-models', icon: Cog },
+            { title: 'AI Training', path: '/dashboard/ai-training', icon: BookOpen },
           ]
         },
         {
-          title: 'ASSESSMENT',
+          title: 'ANALYTICS & MONITORING',
           items: [
+            { title: 'Platform Analytics', path: '/dashboard/ai-platform-analytics', icon: BarChart3 },
+            { title: 'AI Performance', path: '/dashboard/ai-performance-admin', icon: TrendingUp },
+            { title: 'Usage Reports', path: '/dashboard/ai-usage', icon: FileText },
+          ]
+        },
+        {
+          title: 'SAFETY & COMPLIANCE',
+          items: [
+            { title: 'Safety & Ethics', path: '/dashboard/ai-safety', icon: Shield },
+          ]
+        },
+        {
+          title: 'EXPERIENCE',
+          items: [
+            { title: 'Learn', path: '/dashboard/ai-learn', icon: Target },
             { title: 'Practice', path: '/dashboard/ai-practice', icon: Brain },
             { title: 'Progress', path: '/dashboard/ai-progress', icon: TrendingUp },
           ]

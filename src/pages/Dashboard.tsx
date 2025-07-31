@@ -29,6 +29,13 @@ const ComingSoon = lazy(() => import('@/components/ComingSoon').then(module => (
 const RolePlaceholder = lazy(() => import('@/components/dashboard/RolePlaceholder').then(module => ({ default: module.RolePlaceholder })));
 const UsersManagement = lazy(() => import('@/components/admin/UsersManagement').then(module => ({ default: module.UsersManagement })));
 const CourseManagement = lazy(() => import('@/components/admin/CourseManagement'));
+const AIManagement = lazy(() => import('@/components/admin/AIManagement').then(module => ({ default: module.AIManagement })));
+const ModelConfiguration = lazy(() => import('@/components/admin/ModelConfiguration').then(module => ({ default: module.ModelConfiguration })));
+const AITraining = lazy(() => import('@/components/admin/AITraining').then(module => ({ default: module.AITraining })));
+const PlatformAnalytics = lazy(() => import('@/components/admin/PlatformAnalytics').then(module => ({ default: module.PlatformAnalytics })));
+const UsageReports = lazy(() => import('@/components/admin/UsageReports').then(module => ({ default: module.UsageReports })));
+const AIPerformance = lazy(() => import('@/components/admin/AIPerformance').then(module => ({ default: module.AIPerformance })));
+const SafetyEthics = lazy(() => import('@/components/admin/SafetyEthics').then(module => ({ default: module.SafetyEthics })));
 const StageZero = lazy(() => import('@/pages/practice/StageZero').then(module => ({ default: module.StageZero })));
 const LessonDetail = lazy(() => import('@/pages/practice/LessonDetail').then(module => ({ default: module.LessonDetail })));
 const StageOne = lazy(() => import('@/pages/practice/StageOne').then(module => ({ default: module.StageOne })));
@@ -268,13 +275,13 @@ const Dashboard = () => {
                     <>
                       {isAIMode ? (
                         <>
-                          <Route path="/ai-management" element={<RolePlaceholder title="AI Management" description="Manage AI systems and configurations" icon={Settings} />} />
-                          <Route path="/ai-platform-analytics" element={<RolePlaceholder title="Platform Analytics" description="AI-powered platform performance analytics" icon={BarChart3} />} />
-                          <Route path="/ai-performance-admin" element={<RolePlaceholder title="AI Performance" description="Monitor AI system performance and usage" icon={TrendingUp} />} />
-                          <Route path="/ai-usage" element={<RolePlaceholder title="Usage Reports" description="Detailed AI usage and cost reports" icon={FileText} />} />
-                          <Route path="/ai-models" element={<RolePlaceholder title="Model Configuration" description="Configure and manage AI models" icon={Settings} />} />
-                          <Route path="/ai-safety" element={<RolePlaceholder title="Safety & Ethics" description="AI safety monitoring and ethical guidelines" icon={Shield} />} />
-                          <Route path="/ai-training" element={<RolePlaceholder title="AI Training" description="Train and fine-tune AI models" icon={BookOpen} />} />
+                          <Route path="/ai-management" element={<AIManagement />} />
+                          <Route path="/ai-platform-analytics" element={<PlatformAnalytics />} />
+                          <Route path="/ai-performance-admin" element={<AIPerformance />} />
+                          <Route path="/ai-usage" element={<UsageReports />} />
+                          <Route path="/ai-models" element={<ModelConfiguration />} />
+                          <Route path="/ai-safety" element={<SafetyEthics />} />
+                          <Route path="/ai-training" element={<AITraining />} />
                           <Route path="/ai-learn" element={<AIStudentLearn />} />
                           <Route path="/ai-practice" element={<AIAdminPractice />} />
                           <Route path="/ai-progress" element={<RolePlaceholder title="AI Progress" description="🚧 Work in Progress - Progress tracking features coming soon!" icon={TrendingUp} />} />
