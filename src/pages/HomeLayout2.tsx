@@ -271,10 +271,13 @@ const HomeLayout2 = () => {
                 Join thousands of learners who have achieved fluency with AI Tutor
               </p>
               <Link to="/auth">
-                <Button size="lg" className="bg-background text-primary hover:bg-background/90 font-bold text-xl px-12 py-6 rounded-2xl hover:scale-110 transition-all duration-300 shadow-2xl">
-                  Get Started Free
-                  <ArrowRight className="ml-3 h-6 w-6" />
-                </Button>
+              <Button 
+  size="lg" 
+  className="bg-white text-primary hover:bg-gray-200 font-bold text-xl px-12 py-6 rounded-2xl hover:scale-110 transition-all duration-300 shadow-2xl"
+>
+  Get Started Free
+  <ArrowRight className="ml-3 h-6 w-6" />
+</Button>
               </Link>
             </div>
           </div>
