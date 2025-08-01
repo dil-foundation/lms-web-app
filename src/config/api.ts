@@ -43,6 +43,20 @@ export const API_ENDPOINTS = {
   ROLEPLAY_START: '/api/roleplay/start',
   ROLEPLAY_RESPOND: '/api/roleplay/respond',
   ROLEPLAY_EVALUATE: '/api/roleplay/evaluate',
+  // Storytelling Practice endpoints (Stage 3)
+  STORYTELLING_PROMPTS: '/api/storytelling-prompts',
+  STORYTELLING_PROMPT_DETAIL: (promptId: string) => `/api/storytelling-prompts/${promptId}`,
+  STORYTELLING_PROMPT_AUDIO: (promptId: string) => `/api/storytelling/${promptId}`,
+  EVALUATE_STORYTELLING: '/api/evaluate-storytelling',
+  // Group Dialogue endpoints (Stage 3)
+  GROUP_DIALOGUE_SCENARIOS: '/api/group-dialogue-scenarios',
+  GROUP_DIALOGUE_SCENARIO_DETAIL: (scenarioId: string) => `/api/group-dialogue-scenarios/${scenarioId}`,
+  GROUP_DIALOGUE_SCENARIO_AUDIO: (scenarioId: string) => `/api/group-dialogue/${scenarioId}`,
+  EVALUATE_GROUP_DIALOGUE: '/api/evaluate-group-dialogue',
+  // Problem Solving Simulations endpoints (Stage 3)
+  PROBLEM_SOLVING_SCENARIOS: '/api/problem-solving-scenarios',
+  PROBLEM_SOLVING_SCENARIO_DETAIL: (scenarioId: string) => `/api/problem-solving-scenarios/${scenarioId}`,
+  EVALUATE_PROBLEM_SOLVING: '/api/evaluate-problem-solving',
   // Progress tracking endpoints
   INITIALIZE_PROGRESS: '/api/progress/initialize-progress',
   GET_CURRENT_TOPIC: '/api/progress/get-current-topic',

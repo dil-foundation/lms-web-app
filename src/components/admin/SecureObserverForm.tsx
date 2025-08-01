@@ -951,7 +951,7 @@ export const SecureObserverForm = ({ token }: SecureObserverFormProps) => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isValidating, setIsValidating] = useState(true);
   const { toast } = useToast();
-  const { validateToken, markAsUsed } = useSecureLinks();
+  const { validateToken, markAsUsed, enablePolling, disablePolling } = useSecureLinks();
 
   useEffect(() => {
     // Don't re-validate token if form has been successfully submitted
@@ -1008,6 +1008,14 @@ export const SecureObserverForm = ({ token }: SecureObserverFormProps) => {
 
     validateSecureToken();
   }, [token, validateToken, isSubmitted]);
+
+  // Enable polling when component mounts, disable when unmounts
+  useEffect(() => {
+    enablePolling();
+    return () => {
+      disablePolling();
+    };
+  }, [enablePolling, disablePolling]);
 
   const updateFormData = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
