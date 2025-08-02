@@ -104,11 +104,9 @@ class WebSocketManager {
       return;
     }
 
-    console.log('Attempting to connect to WebSocket:', `${API_BASE_URL.replace('http', 'ws')}/api/ws/${token}`);
     this.ws = new WebSocket(`${API_BASE_URL.replace('http', 'ws')}/api/ws/${token}`);
 
     this.ws.onopen = () => {
-      console.log('WebSocket connected');
       this.reconnectAttempts = 0;
     };
 
@@ -122,7 +120,6 @@ class WebSocketManager {
     };
 
     this.ws.onclose = () => {
-      console.log('WebSocket disconnected');
       this.attemptReconnect(token);
     };
 
@@ -135,28 +132,30 @@ class WebSocketManager {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
       setTimeout(() => {
-        console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
         this.connect(token);
       }, this.reconnectDelay * this.reconnectAttempts);
     }
   }
 
   private handleMessage(data: any) {
-    console.log('Received WebSocket message:', data);
-    
     // Handle connection confirmation
     if (data.type === 'connection_confirmed') {
-      console.log('WebSocket connection confirmed by backend');
+      // Connection confirmed
     }
     
     // Handle join confirmation
     if (data.type === 'join_confirmed') {
-      console.log('Successfully joined conversation:', data.conversation_id);
+      // Successfully joined conversation
+    }
+    
+    // Handle new conversations
+    if (data.type === 'new_conversation') {
+      // Received new conversation via WebSocket
     }
     
     // Handle new messages
     if (data.type === 'new_message') {
-      console.log('Received new message via WebSocket:', data.message);
+      // Received new message via WebSocket
     }
     
     const handlers = this.eventHandlers.get(data.type) || [];
@@ -180,15 +179,11 @@ class WebSocketManager {
 
   send(data: any) {
     if (this.ws?.readyState === WebSocket.OPEN) {
-      console.log('Sending WebSocket message:', data);
       this.ws.send(JSON.stringify(data));
-    } else {
-      console.log('WebSocket not open, cannot send message:', data);
     }
   }
 
   joinConversation(conversationId: string) {
-    console.log(`Joining WebSocket conversation: ${conversationId}`);
     this.send({
       type: 'join_conversation',
       conversation_id: conversationId
@@ -212,6 +207,14 @@ class WebSocketManager {
   stopTyping(conversationId: string) {
     this.send({
       type: 'typing_stop',
+      conversation_id: conversationId
+    });
+  }
+
+  markMessageDelivered(messageId: string, conversationId: string) {
+    this.send({
+      type: 'message_delivered',
+      message_id: messageId,
       conversation_id: conversationId
     });
   }
@@ -278,31 +281,43 @@ export const getStudentsForTeacherMessaging = async (teacherId: string, page: nu
 
     if (teacherCoursesError) throw teacherCoursesError;
 
-    if (!teacherCourses || teacherCourses.length === 0) {
-      return {
-        users: [],
-        hasMore: false,
-        total: 0
-      };
+    const students: any[] = [];
+    const teachers: any[] = [];
+
+    if (teacherCourses && teacherCourses.length > 0) {
+      const courseIds = teacherCourses.map(tc => tc.course_id);
+
+      // Then get all students in those courses
+      const { data: courseMembers, error: courseError } = await supabase
+        .from('course_members')
+        .select(`
+          profiles!inner(
+            id, first_name, last_name, email, role
+          )
+        `)
+        .in('course_id', courseIds)
+        .eq('role', 'student')
+        .eq('profiles.role', 'student');
+
+      if (courseError) throw courseError;
+      students.push(...(courseMembers?.map(cm => cm.profiles) || []));
+
+      // Get all teachers in those courses (excluding the current teacher)
+      const { data: courseTeachers, error: teachersError } = await supabase
+        .from('course_members')
+        .select(`
+          profiles!inner(
+            id, first_name, last_name, email, role
+          )
+        `)
+        .in('course_id', courseIds)
+        .eq('role', 'teacher')
+        .eq('profiles.role', 'teacher')
+        .neq('user_id', teacherId);
+
+      if (teachersError) throw teachersError;
+      teachers.push(...(courseTeachers?.map(cm => cm.profiles) || []));
     }
-
-    const courseIds = teacherCourses.map(tc => tc.course_id);
-
-    // Then get all students in those courses
-    const { data: courseMembers, error: courseError } = await supabase
-      .from('course_members')
-      .select(`
-        profiles!inner(
-          id, first_name, last_name, email, role
-        )
-      `)
-      .in('course_id', courseIds)
-      .eq('role', 'student')
-      .eq('profiles.role', 'student');
-
-    if (courseError) throw courseError;
-
-    const students = courseMembers?.map(cm => cm.profiles) || [];
 
     // Get all admins
     const { data: admins, error: adminsError } = await supabase
@@ -312,8 +327,28 @@ export const getStudentsForTeacherMessaging = async (teacherId: string, page: nu
 
     if (adminsError) throw adminsError;
 
+    // Get all other teachers (excluding the current teacher)
+    const { data: allTeachers, error: allTeachersError } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name, email, role')
+      .eq('role', 'teacher')
+      .neq('id', teacherId);
+
+    if (allTeachersError) throw allTeachersError;
+
+    // Combine all teachers (course teachers + all other teachers, removing duplicates)
+    const allTeacherIds = new Set();
+    const allTeacherUsers = [...teachers, ...(allTeachers || [])];
+    const uniqueTeachers = allTeacherUsers.filter(teacher => {
+      if (allTeacherIds.has(teacher.id)) {
+        return false;
+      }
+      allTeacherIds.add(teacher.id);
+      return true;
+    });
+
     // Combine and sort
-    const allUsers = [...(students || []), ...(admins || [])];
+    const allUsers = [...students, ...uniqueTeachers, ...(admins || [])];
     const sortedUsers = allUsers.sort((a, b) => {
       const nameA = `${a.first_name || ''} ${a.last_name || ''}`.trim();
       const nameB = `${b.first_name || ''} ${b.last_name || ''}`.trim();
@@ -329,7 +364,7 @@ export const getStudentsForTeacherMessaging = async (teacherId: string, page: nu
       total: allUsers.length
     };
   } catch (error) {
-    console.error('Error fetching students for teacher:', error);
+    console.error('Error fetching users for teacher:', error);
     throw error;
   }
 };
@@ -427,31 +462,43 @@ export const searchStudentsForTeacherMessaging = async (teacherId: string, searc
 
     if (teacherCoursesError) throw teacherCoursesError;
 
-    if (!teacherCourses || teacherCourses.length === 0) {
-      return {
-        users: [],
-        hasMore: false,
-        total: 0
-      };
+    const students: any[] = [];
+    const teachers: any[] = [];
+
+    if (teacherCourses && teacherCourses.length > 0) {
+      const courseIds = teacherCourses.map(tc => tc.course_id);
+
+      // Then get all students in those courses
+      const { data: courseMembers, error: courseError } = await supabase
+        .from('course_members')
+        .select(`
+          profiles!inner(
+            id, first_name, last_name, email, role
+          )
+        `)
+        .in('course_id', courseIds)
+        .eq('role', 'student')
+        .eq('profiles.role', 'student');
+
+      if (courseError) throw courseError;
+      students.push(...(courseMembers?.map(cm => cm.profiles) || []));
+
+      // Get all teachers in those courses (excluding the current teacher)
+      const { data: courseTeachers, error: teachersError } = await supabase
+        .from('course_members')
+        .select(`
+          profiles!inner(
+            id, first_name, last_name, email, role
+          )
+        `)
+        .in('course_id', courseIds)
+        .eq('role', 'teacher')
+        .eq('profiles.role', 'teacher')
+        .neq('user_id', teacherId);
+
+      if (teachersError) throw teachersError;
+      teachers.push(...(courseTeachers?.map(cm => cm.profiles) || []));
     }
-
-    const courseIds = teacherCourses.map(tc => tc.course_id);
-
-    // Then get all students in those courses
-    const { data: courseMembers, error: courseError } = await supabase
-      .from('course_members')
-      .select(`
-        profiles!inner(
-          id, first_name, last_name, email, role
-        )
-      `)
-      .in('course_id', courseIds)
-      .eq('role', 'student')
-      .eq('profiles.role', 'student');
-
-    if (courseError) throw courseError;
-
-    const students = courseMembers?.map(cm => cm.profiles) || [];
 
     // Get all admins
     const { data: admins, error: adminsError } = await supabase
@@ -461,8 +508,28 @@ export const searchStudentsForTeacherMessaging = async (teacherId: string, searc
 
     if (adminsError) throw adminsError;
 
+    // Get all other teachers (excluding the current teacher)
+    const { data: allTeachers, error: allTeachersError } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name, email, role')
+      .eq('role', 'teacher')
+      .neq('id', teacherId);
+
+    if (allTeachersError) throw allTeachersError;
+
+    // Combine all teachers (course teachers + all other teachers, removing duplicates)
+    const allTeacherIds = new Set();
+    const allTeacherUsers = [...teachers, ...(allTeachers || [])];
+    const uniqueTeachers = allTeacherUsers.filter(teacher => {
+      if (allTeacherIds.has(teacher.id)) {
+        return false;
+      }
+      allTeacherIds.add(teacher.id);
+      return true;
+    });
+
     // Combine and filter by search term
-    const allUsers = [...(students || []), ...(admins || [])];
+    const allUsers = [...students, ...uniqueTeachers, ...(admins || [])];
     const filteredUsers = allUsers.filter(user => {
       const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
       return fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -483,7 +550,7 @@ export const searchStudentsForTeacherMessaging = async (teacherId: string, searc
       total: filteredUsers.length
     };
   } catch (error) {
-    console.error('Error searching students for teacher:', error);
+    console.error('Error searching users for teacher:', error);
     throw error;
   }
 };
@@ -576,35 +643,60 @@ export const createConversation = async (data: CreateConversationRequest): Promi
   return response.json();
 };
 
-export const getConversations = async (page: number = 1, limit: number = 50): Promise<{ conversations: Conversation[], hasMore: boolean, total: number }> => {
+export const getConversations = async (page: number = 1, limit: number = 50, searchQuery?: string): Promise<{ conversations: Conversation[], hasMore: boolean, total: number }> => {
   const token = (await supabase.auth.getSession()).data.session?.access_token;
   
-  const response = await fetch(`${API_BASE_URL}/api/conversations?page=${page}&limit=${limit}`, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.detail || 'Failed to fetch conversations');
-  }
-
-  const data = await response.json();
+  // Add timeout to prevent hanging requests
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
   
-  // Handle both array response and object response formats
-  if (Array.isArray(data)) {
-    // Backend returns array directly
-    return {
-      conversations: data,
-      hasMore: false, // We don't have pagination info in this case
-      total: data.length
-    };
-  } else {
-    // Backend returns object with conversations property
-    return data;
+  try {
+    // Build query parameters
+    const params = new URLSearchParams();
+    params.append('page', page.toString());
+    params.append('limit', limit.toString());
+    if (searchQuery && searchQuery.trim()) {
+      params.append('q', searchQuery.trim());
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/api/conversations?${params.toString()}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to fetch conversations');
+    }
+
+    const data = await response.json();
+    
+    // Handle both array response and object response formats
+    if (Array.isArray(data)) {
+      // Backend returns array directly
+      return {
+        conversations: data,
+        hasMore: false, // We don't have pagination info in this case
+        total: data.length
+      };
+    } else {
+      // Backend returns object with conversations property
+      return data;
+    }
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Request timeout - conversations took too long to load');
+    }
+    throw error;
   }
 };
+
+
 
 export const getConversation = async (conversationId: string): Promise<Conversation> => {
   const token = (await supabase.auth.getSession()).data.session?.access_token;
@@ -732,6 +824,22 @@ export const deleteMessage = async (messageId: string): Promise<void> => {
   }
 };
 
+export const markMessageAsDelivered = async (messageId: string): Promise<void> => {
+  const token = (await supabase.auth.getSession()).data.session?.access_token;
+  
+  const response = await fetch(`${API_BASE_URL}/api/messages/${messageId}/delivered`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to mark message as delivered');
+  }
+};
+
 export const markMessageAsRead = async (messageId: string): Promise<void> => {
   const token = (await supabase.auth.getSession()).data.session?.access_token;
   
@@ -761,10 +869,25 @@ export const getUserStatus = async (userIds: string[]): Promise<Record<string, {
     });
 
     if (response.ok) {
-      return response.json();
+      const data = await response.json();
+      
+      // Transform array response to object with user_id as keys
+      if (Array.isArray(data)) {
+        const result: Record<string, { status: string, last_seen_at: string, is_typing: boolean }> = {};
+        data.forEach(item => {
+          result[item.user_id] = {
+            status: item.status || 'offline',
+            last_seen_at: item.last_seen_at || new Date().toISOString(),
+            is_typing: item.is_typing || false
+          };
+        });
+        return result;
+      }
+      
+      return data;
     }
   } catch (error) {
-    console.log('Backend user status API failed, using direct database query');
+    // Backend user status API failed, using direct database query
   }
 
   // Fallback to direct database query
@@ -800,7 +923,18 @@ export const getUserStatus = async (userIds: string[]): Promise<Record<string, {
     return result;
   } catch (error) {
     console.error('Error fetching user status from database:', error);
-    throw new Error('Failed to fetch user status');
+    
+    // Return all users as offline if database query fails
+    const result: Record<string, { status: string, last_seen_at: string, is_typing: boolean }> = {};
+    userIds.forEach(userId => {
+      result[userId] = {
+        status: 'offline',
+        last_seen_at: new Date().toISOString(),
+        is_typing: false
+      };
+    });
+    
+    return result;
   }
 };
 
@@ -822,7 +956,7 @@ export const updateUserStatus = async (data: { status?: string, is_typing?: bool
       return;
     }
   } catch (error) {
-    console.log('Backend user status API failed, using direct database update');
+    // Backend user status API failed, using direct database update
   }
 
   // Fallback to direct database update
@@ -864,6 +998,69 @@ export const updateUserStatus = async (data: { status?: string, is_typing?: bool
   } catch (error) {
     console.error('Error updating user status in database:', error);
     throw new Error('Failed to update user status');
+  }
+};
+
+export const markConversationAsRead = async (conversationId: string): Promise<void> => {
+  try {
+    // Try backend API first
+    const token = (await supabase.auth.getSession()).data.session?.access_token;
+    
+    const response = await fetch(`${API_BASE_URL}/api/conversations/${conversationId}/read`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (response.ok) {
+      return;
+    }
+  } catch (error) {
+    // Backend mark as read API failed, using direct database update
+  }
+
+  // Fallback to direct database update
+  try {
+    const session = await supabase.auth.getSession();
+    const userId = session.data.session?.user?.id;
+    
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+
+    // Update last_read_at in conversation_participants
+    const { error: participantError } = await supabase
+      .from('conversation_participants')
+      .update({ last_read_at: new Date().toISOString() })
+      .eq('conversation_id', conversationId)
+      .eq('user_id', userId);
+
+    if (participantError) throw participantError;
+
+    // Update message_status to 'read' for all unread messages in this conversation
+    // First get all message IDs for this conversation
+    const { data: messages, error: messagesError } = await supabase
+      .from('messages')
+      .select('id')
+      .eq('conversation_id', conversationId);
+
+    if (messagesError) throw messagesError;
+
+    if (messages && messages.length > 0) {
+      const messageIds = messages.map(m => m.id);
+      
+      const { error: messageError } = await supabase
+        .from('message_status')
+        .update({ status: 'read', updated_at: new Date().toISOString() })
+        .eq('user_id', userId)
+        .in('message_id', messageIds);
+
+      if (messageError) throw messageError;
+    }
+  } catch (error) {
+    console.error('Error marking conversation as read in database:', error);
+    throw new Error('Failed to mark conversation as read');
   }
 };
 
