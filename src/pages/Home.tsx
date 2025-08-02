@@ -27,6 +27,12 @@ const Home = () => {
                 <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </Link>
+            <Link to="/dashboard" className="w-full sm:w-auto">
+              <Button size="lg" className="w-full sm:w-auto bg-secondary hover:bg-secondary/90 text-secondary-foreground font-semibold text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 rounded-full hover-scale transition-all duration-300">
+                Dashboard
+                <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
+              </Button>
+            </Link>
             <Button variant="outline" size="lg" className="w-full sm:w-auto border-primary text-primary hover:bg-primary/10 text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 rounded-full hover-scale transition-all duration-300">
               Watch Demo
             </Button>
