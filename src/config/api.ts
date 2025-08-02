@@ -67,6 +67,22 @@ export const API_ENDPOINTS = {
   SUBMIT_OBSERVATION_REPORT: '/api/observation-reports',
   UPDATE_OBSERVATION_REPORT: (reportId: string) => `/api/observation-reports/${reportId}`,
   DELETE_OBSERVATION_REPORT: (reportId: string) => `/api/observation-reports/${reportId}`,
+  // Abstract Topics endpoints (Stage 4)
+  ABSTRACT_TOPICS: '/api/abstract-topics',
+  ABSTRACT_TOPIC_DETAIL: (topicId: string) => `/api/abstract-topics/${topicId}`,
+  ABSTRACT_TOPIC_AUDIO: (topicId: string) => `/api/abstract-topic/${topicId}`,
+  ABSTRACT_TOPIC_CURRENT: (userId: string) => `/api/abstract-topic-current-topic/${userId}`,
+  EVALUATE_ABSTRACT_TOPIC: '/api/evaluate-abstract-topic',
+  // Mock Interview endpoints (Stage 4)
+  MOCK_INTERVIEW_QUESTIONS: '/api/mock-interview-questions',
+  MOCK_INTERVIEW_QUESTION_DETAIL: (questionId: string) => `/api/mock-interview-questions/${questionId}`,
+  MOCK_INTERVIEW_QUESTION_AUDIO: (questionId: string) => `/api/mock-interview/${questionId}`,
+  EVALUATE_MOCK_INTERVIEW: '/api/evaluate-mock-interview',
+  // News Summary endpoints (Stage 4)
+  NEWS_SUMMARY_ITEMS: '/api/news-summary-items',
+  NEWS_SUMMARY_ITEM_DETAIL: (newsId: string) => `/api/news-summary-items/${newsId}`,
+  NEWS_SUMMARY_AUDIO: (newsId: string) => `/api/news-summary/${newsId}`,
+  EVALUATE_NEWS_SUMMARY: '/api/evaluate-news-summary',
 } as const;
 
 // Health check function
