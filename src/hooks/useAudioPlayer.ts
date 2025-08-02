@@ -55,14 +55,17 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
 
   const playAudio = useCallback(async (audioUrl: string): Promise<void> => {
     try {
+      console.log('🎵 useAudioPlayer: Starting playAudio with URL:', audioUrl);
       setState(prev => ({ ...prev, error: null }));
       
       // Stop and cleanup any currently playing audio
       cleanupCurrentAudio();
       
+      console.log('🎵 useAudioPlayer: Creating new Audio element');
       audioRef.current = new Audio(audioUrl);
       
       audioRef.current.onloadedmetadata = () => {
+        console.log('🎵 useAudioPlayer: Audio metadata loaded');
         setState(prev => ({
           ...prev,
           isLoaded: true,
@@ -78,6 +81,7 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
       };
       
       audioRef.current.onended = () => {
+        console.log('🎵 useAudioPlayer: Audio playback ended');
         setState(prev => ({
           ...prev,
           isPlaying: false,
@@ -85,7 +89,8 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
         }));
       };
       
-      audioRef.current.onerror = () => {
+      audioRef.current.onerror = (e) => {
+        console.error('🎵 useAudioPlayer: Audio error:', e);
         setState(prev => ({
           ...prev,
           error: 'Failed to load audio',
@@ -93,11 +98,13 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
         }));
       };
       
+      console.log('🎵 useAudioPlayer: Attempting to play audio');
       await audioRef.current.play();
+      console.log('🎵 useAudioPlayer: Audio playback started successfully');
       setState(prev => ({ ...prev, isPlaying: true }));
       
     } catch (error) {
-      console.error('Error playing audio:', error);
+      console.error('🎵 useAudioPlayer: Error playing audio:', error);
       setState(prev => ({
         ...prev,
         error: 'Failed to play audio',

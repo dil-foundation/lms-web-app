@@ -40,6 +40,8 @@ interface SecureLinksContextType {
     deactivatedLinks: number;
     expiredLinks: number;
   }>;
+  enablePolling: () => void;
+  disablePolling: () => void;
 }
 
 const SecureLinksContext = createContext<SecureLinksContextType | undefined>(undefined);
@@ -61,6 +63,7 @@ export const SecureLinksProvider: React.FC<SecureLinksProviderProps> = ({ childr
   const [links, setLinks] = useState<SecureLink[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isPollingEnabled, setIsPollingEnabled] = useState(false);
 
   // Transform database record to component interface
   const transformDbRecord = (dbRecord: DbSecureLink): SecureLink => ({
@@ -129,9 +132,9 @@ export const SecureLinksProvider: React.FC<SecureLinksProviderProps> = ({ childr
     loadLinks();
   }, [user?.id]);
 
-  // Auto-refresh every 30 seconds to check for expired links
+  // Auto-refresh every 30 seconds to check for expired links (only when polling is enabled)
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id || !isPollingEnabled) return;
 
     const interval = setInterval(async () => {
       try {
@@ -146,7 +149,7 @@ export const SecureLinksProvider: React.FC<SecureLinksProviderProps> = ({ childr
     }, 30000); // 30 seconds
 
     return () => clearInterval(interval);
-  }, [user?.id]);
+  }, [user?.id, isPollingEnabled]);
 
   const addLink = async (link: SecureLink): Promise<void> => {
     if (!user?.id) {
@@ -308,6 +311,14 @@ export const SecureLinksProvider: React.FC<SecureLinksProviderProps> = ({ childr
     }
   };
 
+  const enablePolling = () => {
+    setIsPollingEnabled(true);
+  };
+
+  const disablePolling = () => {
+    setIsPollingEnabled(false);
+  };
+
   const value: SecureLinksContextType = {
     links,
     addLink,
@@ -320,6 +331,8 @@ export const SecureLinksProvider: React.FC<SecureLinksProviderProps> = ({ childr
     error,
     refreshLinks,
     getStatistics,
+    enablePolling,
+    disablePolling,
   };
 
   return (

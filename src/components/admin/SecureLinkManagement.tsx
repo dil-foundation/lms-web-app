@@ -414,7 +414,9 @@ export const SecureLinkManagement = ({ onBack }: SecureLinkManagementProps) => {
     isLoading, 
     error, 
     refreshLinks, 
-    getStatistics 
+    getStatistics,
+    enablePolling,
+    disablePolling
   } = useSecureLinks();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [statistics, setStatistics] = useState({
@@ -444,6 +446,14 @@ export const SecureLinkManagement = ({ onBack }: SecureLinkManagementProps) => {
       loadStatistics();
     }
   }, [links, isLoading, error, getStatistics]);
+
+  // Enable polling when component mounts, disable when unmounts
+  useEffect(() => {
+    enablePolling();
+    return () => {
+      disablePolling();
+    };
+  }, [enablePolling, disablePolling]);
 
   const handleGenerateLink = async (newLink: SecureLink) => {
     try {
