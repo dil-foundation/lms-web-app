@@ -218,18 +218,10 @@ const getUserInitials = (name: string, email?: string) => {
   return 'U'; // Default fallback
 };
 
-// Helper function to get message status tick icon
+// Helper function to get message status tick icon - TEMPORARILY DISABLED
 const getMessageStatusIcon = (status: string) => {
-  switch (status) {
-    case 'sent':
-      return <Check className="h-3 w-3 text-muted-foreground" />;
-    case 'delivered':
-      return <CheckCheck className="h-3 w-3 text-muted-foreground" />;
-    case 'read':
-      return <CheckCheck className="h-3 w-3 text-green-500" />;
-    default:
-      return <Check className="h-3 w-3 text-muted-foreground" />;
-  }
+  // Temporarily disabled - return null for all statuses
+  return null;
 };
 
 export default function MessagesPage() {
@@ -664,11 +656,10 @@ export default function MessagesPage() {
 
 
 
-  // Auto-scroll to bottom when new messages arrive and mark messages as read
+  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     scrollToBottom();
-    // Mark messages as read when they come into view
-    markMessagesAsRead();
+    // Message read marking temporarily disabled
   }, [selectedChat?.messages]);
 
   // Initialize WebSocket connection and status management
@@ -763,40 +754,7 @@ export default function MessagesPage() {
           return prevSelected;
         });
 
-        // If this is a message from another user, mark it as delivered immediately
-        if (data.message.sender_id !== user.id) {
-          // Send WebSocket event to mark message as delivered
-          wsManager.markMessageDelivered(data.message.id, data.message.conversation_id);
-          
-          // Update local message status to "delivered"
-          setTimeout(() => {
-            setChats(prevChats => {
-              return prevChats.map(chat => {
-                if (chat.id === data.message.conversation_id) {
-                  return {
-                    ...chat,
-                    messages: chat.messages.map(msg => 
-                      msg.id === data.message.id ? { ...msg, status: 'delivered' } : msg
-                    )
-                  };
-                }
-                return chat;
-              });
-            });
-
-            setSelectedChat(prevSelected => {
-              if (prevSelected?.id === data.message.conversation_id) {
-                return {
-                  ...prevSelected,
-                  messages: prevSelected.messages.map(msg => 
-                    msg.id === data.message.id ? { ...msg, status: 'delivered' } : msg
-                  )
-                };
-              }
-              return prevSelected;
-            });
-          }, 100); // Small delay to ensure message is added first
-        }
+        // Message status logic temporarily disabled
       }
     };
 
@@ -837,70 +795,13 @@ export default function MessagesPage() {
       });
     };
 
-    // Handle message delivered status changes
+    // Message status handlers temporarily disabled
     const handleMessageDelivered = (data: any) => {
-      if (data.message_id && data.conversation_id) {
-        // Update message status to "delivered" in all chats
-        setChats(prevChats => {
-          return prevChats.map(chat => {
-            if (chat.id === data.conversation_id) {
-              return {
-                ...chat,
-                messages: chat.messages.map(msg => 
-                  msg.id === data.message_id ? { ...msg, status: 'delivered' } : msg
-                )
-              };
-            }
-            return chat;
-          });
-        });
-
-        // Also update selected chat
-        setSelectedChat(prevSelected => {
-          if (prevSelected?.id === data.conversation_id) {
-            return {
-              ...prevSelected,
-              messages: prevSelected.messages.map(msg => 
-                msg.id === data.message_id ? { ...msg, status: 'delivered' } : msg
-              )
-            };
-          }
-          return prevSelected;
-        });
-      }
+      // Temporarily disabled
     };
 
-    // Handle message read status changes
     const handleMessageRead = (data: any) => {
-      if (data.message_id && data.conversation_id) {
-        // Update message status to "read" in all chats
-        setChats(prevChats => {
-          return prevChats.map(chat => {
-            if (chat.id === data.conversation_id) {
-              return {
-                ...chat,
-                messages: chat.messages.map(msg => 
-                  msg.id === data.message_id ? { ...msg, status: 'read' } : msg
-                )
-              };
-            }
-            return chat;
-          });
-        });
-
-        // Also update selected chat
-        setSelectedChat(prevSelected => {
-          if (prevSelected?.id === data.conversation_id) {
-            return {
-              ...prevSelected,
-              messages: prevSelected.messages.map(msg => 
-                msg.id === data.message_id ? { ...msg, status: 'read' } : msg
-              )
-            };
-          }
-          return prevSelected;
-        });
-      }
+      // Temporarily disabled
     };
 
     // Register event handlers
@@ -989,55 +890,9 @@ export default function MessagesPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Function to mark messages as read when they come into view
+  // Function to mark messages as read when they come into view - TEMPORARILY DISABLED
   const markMessagesAsRead = async () => {
-    if (!selectedChat || !user?.id) return;
-
-    // Get all unread messages from other users in the current conversation
-    const unreadMessages = selectedChat.messages.filter(msg => 
-      msg.sender === 'other' && msg.status !== 'read'
-    );
-
-    if (unreadMessages.length === 0) return;
-
-    try {
-      // Mark all unread messages as read
-      for (const message of unreadMessages) {
-        // Send WebSocket event
-        wsManager.markMessageRead(message.id, selectedChat.id);
-        
-        // Update local message status
-        setChats(prevChats => {
-          return prevChats.map(chat => {
-            if (chat.id === selectedChat.id) {
-              return {
-                ...chat,
-                messages: chat.messages.map(msg => 
-                  msg.id === message.id ? { ...msg, status: 'read' } : msg
-                ),
-                unreadCount: 0 // Reset unread count
-              };
-            }
-            return chat;
-          });
-        });
-
-        setSelectedChat(prevSelected => {
-          if (prevSelected?.id === selectedChat.id) {
-            return {
-              ...prevSelected,
-              messages: prevSelected.messages.map(msg => 
-                msg.id === message.id ? { ...msg, status: 'read' } : msg
-              ),
-              unreadCount: 0 // Reset unread count
-            };
-          }
-          return prevSelected;
-        });
-      }
-    } catch (error) {
-      console.error('Error marking messages as read:', error);
-    }
+    // Temporarily disabled
   };
 
   // Load more conversations function
@@ -1313,8 +1168,8 @@ export default function MessagesPage() {
                       key={chat.id}
                       className={`p-3 rounded-lg cursor-pointer transition-colors ${
                         selectedChat?.id === chat.id
-                          ? 'bg-accent'
-                          : 'hover:bg-accent/50'
+                          ? 'bg-green-100 dark:bg-accent'
+                          : 'hover:bg-green-50 dark:hover:bg-green-900/30'
                       }`}
                       onClick={() => handleSelectChat(chat)}
                     >
@@ -1322,7 +1177,7 @@ export default function MessagesPage() {
                         <div className="relative">
                           <Avatar className="h-10 w-10">
                             <AvatarImage src={chat.avatar} alt={chat.name} />
-                            <AvatarFallback className="bg-muted text-foreground font-medium">
+                            <AvatarFallback className="bg-gray-200 dark:bg-muted text-gray-900 dark:text-white font-semibold">
                               {getUserInitials(chat.name, chat.email)}
                             </AvatarFallback>
                           </Avatar>
@@ -1332,16 +1187,16 @@ export default function MessagesPage() {
                         </div>
                         
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <h3 className={`font-medium truncate ${selectedChat?.id === chat.id ? 'text-white' : ''}`}>{chat.name}</h3>
+                                                      <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <h3 className={`font-medium truncate ${selectedChat?.id === chat.id ? 'text-gray-900' : 'text-black dark:text-white'}`}>{chat.name}</h3>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span className={`text-xs ${selectedChat?.id === chat.id ? 'text-gray-700' : 'text-gray-700 dark:text-gray-300'}`}>
+                                  {formatDate(chat.timestamp)}
+                                </span>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <span className={`text-xs ${selectedChat?.id === chat.id ? 'text-white' : 'text-muted-foreground'}`}>
-                                {formatDate(chat.timestamp)}
-                              </span>
-                            </div>
-                          </div>
                         
                           <div className="flex items-center justify-between">
                             <div className="flex flex-col gap-0.5">
@@ -1351,10 +1206,10 @@ export default function MessagesPage() {
                                     const RoleIcon = getRoleIcon(chat.role);
                                     const isSelected = selectedChat?.id === chat.id;
                                     return (
-                                      <RoleIcon className={`h-3 w-3 ${isSelected ? 'text-white' : getRoleColor(chat.role)}`} />
+                                      <RoleIcon className={`h-3 w-3 ${isSelected ? 'text-gray-700' : 'text-gray-600 dark:text-gray-400'}`} />
                                     );
                                   })()}
-                                  <span className={`text-xs font-medium ${selectedChat?.id === chat.id ? 'text-white bg-white/20 px-1 rounded' : getRoleColor(chat.role)}`}>
+                                  <span className={`text-xs font-medium ${selectedChat?.id === chat.id ? 'text-gray-800 bg-white/80 px-1 rounded' : 'text-gray-800 dark:text-gray-200 bg-gray-200 dark:bg-gray-700 px-1 rounded'}`}>
                                     {chat.role.charAt(0).toUpperCase() + chat.role.slice(1)}
                                   </span>
                                 </div>
@@ -1377,7 +1232,7 @@ export default function MessagesPage() {
                   )}
                   {!hasMoreConversations && chats.length > 0 && (
                     <div className="flex items-center justify-center py-4">
-                      <div className="text-sm text-muted-foreground">No more conversations</div>
+                      <div className="text-sm text-gray-700 dark:text-gray-300">No more conversations</div>
                     </div>
                   )}
                 </>
@@ -1396,7 +1251,7 @@ export default function MessagesPage() {
                   <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10">
                       <AvatarImage src={selectedChat.avatar} alt={selectedChat.name} />
-                      <AvatarFallback className="bg-muted text-foreground font-medium">
+                      <AvatarFallback className="bg-gray-200 dark:bg-muted text-gray-900 dark:text-white font-semibold">
                         {getUserInitials(selectedChat.name, selectedChat.email)}
                       </AvatarFallback>
                     </Avatar>
@@ -1567,12 +1422,12 @@ export default function MessagesPage() {
 
             {/* Search Input */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 dark:text-gray-400" />
               <Input
                 placeholder="Search users by name or email..."
                 value={userSearchQuery}
                 onChange={(e) => setUserSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 placeholder:text-gray-500 dark:placeholder:text-gray-400"
               />
             </div>
             
@@ -1605,10 +1460,10 @@ export default function MessagesPage() {
                 >
                 {usersLoading && currentPage === 1 ? (
                   <div className="px-2 py-1.5 flex items-center justify-center">
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    <Loader2 className="h-4 w-4 animate-spin text-gray-500 dark:text-gray-400" />
                   </div>
                 ) : availableUsers.length === 0 && !usersLoading ? (
-                  <div className="px-2 py-1.5 text-sm text-muted-foreground text-center">
+                  <div className="px-2 py-1.5 text-sm text-gray-600 dark:text-gray-300 text-center">
                     {userSearchQuery.trim() 
                       ? `No ${profile?.role === 'admin' ? 'users' : profile?.role === 'teacher' ? 'students or admins' : 'teachers'} found matching "${userSearchQuery}"`
                       : `No ${profile?.role === 'admin' ? 'users' : profile?.role === 'teacher' ? 'students or admins' : 'teachers'} available to message`
@@ -1619,10 +1474,10 @@ export default function MessagesPage() {
                     {availableUsers.map((user) => {
                       const RoleIcon = getRoleIcon(user.role);
                       return (
-                        <SelectItem key={user.id} value={user.id} className="focus:bg-accent focus:text-white [&[data-highlighted]]:bg-accent [&[data-highlighted]]:text-white group">
+                        <SelectItem key={user.id} value={user.id} className="focus:bg-green-100 focus:text-gray-900 dark:focus:bg-green-900 dark:focus:text-white [&[data-highlighted]]:bg-green-100 [&[data-highlighted]]:text-gray-900 dark:[&[data-highlighted]]:bg-green-900 dark:[&[data-highlighted]]:text-white group">
                           <div className="flex items-center gap-2">
                             <Avatar className="h-6 w-6">
-                              <AvatarFallback className="text-xs font-medium bg-muted text-foreground group-hover:bg-white/20 group-hover:text-white group-focus:bg-white/20 group-focus:text-white" data-avatar>
+                              <AvatarFallback className="text-xs font-semibold bg-gray-200 dark:bg-muted text-gray-900 dark:text-white group-hover:bg-white/20 group-hover:text-white group-focus:bg-white/20 group-focus:text-white" data-avatar>
                                 {(() => {
                                   const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
                                   const initials = fullName.length > 0 
@@ -1634,21 +1489,21 @@ export default function MessagesPage() {
                             </Avatar>
                             <div className="flex flex-col">
                               <div className="flex items-center gap-1">
-                                <span className="font-medium text-foreground group-hover:text-white group-focus:text-white">{`${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Unknown'}</span>
+                                <span className="font-medium text-gray-900 dark:text-white group-hover:text-gray-900 dark:group-hover:text-white group-focus:text-gray-900 dark:group-focus:text-white">{`${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Unknown'}</span>
                                 {user.role ? (
                                   <>
-                                    <RoleIcon className={`h-3 w-3 ${getRoleColor(user.role)} group-hover:text-white group-focus:text-white`} />
-                                    <span className={`text-xs font-medium ${getRoleColor(user.role)} px-1 rounded group-hover:text-white group-hover:bg-white/20 group-focus:text-white group-focus:bg-white/20`}>
+                                    <RoleIcon className={`h-3 w-3 ${getRoleColor(user.role)} group-hover:text-gray-700 dark:group-hover:text-gray-300 group-focus:text-gray-700 dark:group-focus:text-gray-300`} />
+                                    <span className={`text-xs font-medium ${getRoleColor(user.role)} px-1 rounded group-hover:text-gray-800 group-hover:bg-gray-100 dark:group-hover:text-white dark:group-hover:bg-gray-700 group-focus:text-gray-800 group-focus:bg-gray-100 dark:group-focus:text-white dark:group-focus:bg-gray-700`}>
                                       {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                                     </span>
                                   </>
                                 ) : (
-                                  <span className="text-xs text-red-500 font-medium bg-red-100 px-1 rounded group-hover:text-white group-hover:bg-white/20 group-focus:text-white group-focus:bg-white/20">
+                                  <span className="text-xs text-red-500 font-medium bg-red-100 px-1 rounded group-hover:text-red-700 group-hover:bg-red-200 dark:group-hover:text-red-300 dark:group-hover:bg-red-900 group-focus:text-red-700 group-focus:bg-red-200 dark:group-focus:text-red-300 dark:group-focus:bg-red-900">
                                     No Role
                                   </span>
                                 )}
                               </div>
-                              <span className="text-xs text-muted-foreground group-hover:text-white group-focus:text-white">{user.email}</span>
+                              <span className="text-xs text-gray-600 dark:text-gray-300 group-hover:text-gray-700 dark:group-hover:text-gray-200 group-focus:text-gray-700 dark:group-focus:text-gray-200">{user.email}</span>
                             </div>
                           </div>
                         </SelectItem>
@@ -1656,11 +1511,11 @@ export default function MessagesPage() {
                     })}
                     {usersLoading && currentPage > 1 && (
                       <div className="px-2 py-1.5 flex items-center justify-center">
-                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                        <Loader2 className="h-4 w-4 animate-spin text-gray-500 dark:text-gray-400" />
                       </div>
                     )}
                     {!hasMoreUsers && availableUsers.length > 0 && (
-                      <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                      <div className="px-2 py-1.5 text-sm text-gray-600 dark:text-gray-300">
                         No more {profile?.role === 'admin' ? 'users' : profile?.role === 'teacher' ? 'students and admins' : 'teachers'}
                       </div>
                     )}
