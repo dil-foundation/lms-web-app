@@ -218,18 +218,10 @@ const getUserInitials = (name: string, email?: string) => {
   return 'U'; // Default fallback
 };
 
-// Helper function to get message status tick icon
+// Helper function to get message status tick icon - TEMPORARILY DISABLED
 const getMessageStatusIcon = (status: string) => {
-  switch (status) {
-    case 'sent':
-      return <Check className="h-3 w-3 text-muted-foreground" />;
-    case 'delivered':
-      return <CheckCheck className="h-3 w-3 text-muted-foreground" />;
-    case 'read':
-      return <CheckCheck className="h-3 w-3 text-green-500" />;
-    default:
-      return <Check className="h-3 w-3 text-muted-foreground" />;
-  }
+  // Temporarily disabled - return null for all statuses
+  return null;
 };
 
 export default function MessagesPage() {
@@ -664,11 +656,10 @@ export default function MessagesPage() {
 
 
 
-  // Auto-scroll to bottom when new messages arrive and mark messages as read
+  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     scrollToBottom();
-    // Mark messages as read when they come into view
-    markMessagesAsRead();
+    // Message read marking temporarily disabled
   }, [selectedChat?.messages]);
 
   // Initialize WebSocket connection and status management
@@ -763,40 +754,7 @@ export default function MessagesPage() {
           return prevSelected;
         });
 
-        // If this is a message from another user, mark it as delivered immediately
-        if (data.message.sender_id !== user.id) {
-          // Send WebSocket event to mark message as delivered
-          wsManager.markMessageDelivered(data.message.id, data.message.conversation_id);
-          
-          // Update local message status to "delivered"
-          setTimeout(() => {
-            setChats(prevChats => {
-              return prevChats.map(chat => {
-                if (chat.id === data.message.conversation_id) {
-                  return {
-                    ...chat,
-                    messages: chat.messages.map(msg => 
-                      msg.id === data.message.id ? { ...msg, status: 'delivered' } : msg
-                    )
-                  };
-                }
-                return chat;
-              });
-            });
-
-            setSelectedChat(prevSelected => {
-              if (prevSelected?.id === data.message.conversation_id) {
-                return {
-                  ...prevSelected,
-                  messages: prevSelected.messages.map(msg => 
-                    msg.id === data.message.id ? { ...msg, status: 'delivered' } : msg
-                  )
-                };
-              }
-              return prevSelected;
-            });
-          }, 100); // Small delay to ensure message is added first
-        }
+        // Message status logic temporarily disabled
       }
     };
 
@@ -837,70 +795,13 @@ export default function MessagesPage() {
       });
     };
 
-    // Handle message delivered status changes
+    // Message status handlers temporarily disabled
     const handleMessageDelivered = (data: any) => {
-      if (data.message_id && data.conversation_id) {
-        // Update message status to "delivered" in all chats
-        setChats(prevChats => {
-          return prevChats.map(chat => {
-            if (chat.id === data.conversation_id) {
-              return {
-                ...chat,
-                messages: chat.messages.map(msg => 
-                  msg.id === data.message_id ? { ...msg, status: 'delivered' } : msg
-                )
-              };
-            }
-            return chat;
-          });
-        });
-
-        // Also update selected chat
-        setSelectedChat(prevSelected => {
-          if (prevSelected?.id === data.conversation_id) {
-            return {
-              ...prevSelected,
-              messages: prevSelected.messages.map(msg => 
-                msg.id === data.message_id ? { ...msg, status: 'delivered' } : msg
-              )
-            };
-          }
-          return prevSelected;
-        });
-      }
+      // Temporarily disabled
     };
 
-    // Handle message read status changes
     const handleMessageRead = (data: any) => {
-      if (data.message_id && data.conversation_id) {
-        // Update message status to "read" in all chats
-        setChats(prevChats => {
-          return prevChats.map(chat => {
-            if (chat.id === data.conversation_id) {
-              return {
-                ...chat,
-                messages: chat.messages.map(msg => 
-                  msg.id === data.message_id ? { ...msg, status: 'read' } : msg
-                )
-              };
-            }
-            return chat;
-          });
-        });
-
-        // Also update selected chat
-        setSelectedChat(prevSelected => {
-          if (prevSelected?.id === data.conversation_id) {
-            return {
-              ...prevSelected,
-              messages: prevSelected.messages.map(msg => 
-                msg.id === data.message_id ? { ...msg, status: 'read' } : msg
-              )
-            };
-          }
-          return prevSelected;
-        });
-      }
+      // Temporarily disabled
     };
 
     // Register event handlers
@@ -989,55 +890,9 @@ export default function MessagesPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Function to mark messages as read when they come into view
+  // Function to mark messages as read when they come into view - TEMPORARILY DISABLED
   const markMessagesAsRead = async () => {
-    if (!selectedChat || !user?.id) return;
-
-    // Get all unread messages from other users in the current conversation
-    const unreadMessages = selectedChat.messages.filter(msg => 
-      msg.sender === 'other' && msg.status !== 'read'
-    );
-
-    if (unreadMessages.length === 0) return;
-
-    try {
-      // Mark all unread messages as read
-      for (const message of unreadMessages) {
-        // Send WebSocket event
-        wsManager.markMessageRead(message.id, selectedChat.id);
-        
-        // Update local message status
-        setChats(prevChats => {
-          return prevChats.map(chat => {
-            if (chat.id === selectedChat.id) {
-              return {
-                ...chat,
-                messages: chat.messages.map(msg => 
-                  msg.id === message.id ? { ...msg, status: 'read' } : msg
-                ),
-                unreadCount: 0 // Reset unread count
-              };
-            }
-            return chat;
-          });
-        });
-
-        setSelectedChat(prevSelected => {
-          if (prevSelected?.id === selectedChat.id) {
-            return {
-              ...prevSelected,
-              messages: prevSelected.messages.map(msg => 
-                msg.id === message.id ? { ...msg, status: 'read' } : msg
-              ),
-              unreadCount: 0 // Reset unread count
-            };
-          }
-          return prevSelected;
-        });
-      }
-    } catch (error) {
-      console.error('Error marking messages as read:', error);
-    }
+    // Temporarily disabled
   };
 
   // Load more conversations function
