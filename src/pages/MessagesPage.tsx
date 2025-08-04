@@ -240,7 +240,7 @@ export default function MessagesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [dialogJustOpened, setDialogJustOpened] = useState(false);
-  const [conversationsLoading, setConversationsLoading] = useState(true);
+  const [conversationsLoading, setConversationsLoading] = useState(false);
   const [conversationsLoaded, setConversationsLoaded] = useState(false);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [loadingMoreMessages, setLoadingMoreMessages] = useState(false);
@@ -254,7 +254,6 @@ export default function MessagesPage() {
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [loadingMessagesForChat, setLoadingMessagesForChat] = useState<string | null>(null);
   const initialLoadCompleteRef = useRef(false);
-  const autoSelectionCompleteRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const conversationsContainerRef = useRef<any>(null);
@@ -439,10 +438,17 @@ export default function MessagesPage() {
     };
   }, [conversationsSearchQuery]);
 
-  // Load conversations on component mount
+    // Consolidated conversation loading effect
   useEffect(() => {
-    // Prevent multiple simultaneous loads
-    if (initialLoadCompleteRef.current) {
+
+    
+    // Prevent duplicate requests by checking if we're already loading
+    if (conversationsLoading) {
+      return;
+    }
+    
+    // Only prevent duplicate initial loads if we have conversations already loaded
+    if (!conversationsSearchQuery.trim() && initialLoadCompleteRef.current && chats.length > 0) {
       return;
     }
     
@@ -451,16 +457,12 @@ export default function MessagesPage() {
         return;
       }
       
-      // Double-check to prevent race conditions
-      if (initialLoadCompleteRef.current) {
-        return;
-      }
       setConversationsLoading(true);
-      setConversationsLoaded(false); // Reset loaded state
+      setConversationsLoaded(false);
       
       try {
         // Use getConversations with optional search query
-        const result = await getConversations(1, 10, conversationsSearchQuery); // Limit to 10 for testing
+        const result = await getConversations(1, 10, conversationsSearchQuery);
         
         const convertedChats = result.conversations.map(conv => 
           convertAPIConversationToChat(conv, user.id)
@@ -469,7 +471,7 @@ export default function MessagesPage() {
         // Set default offline status - will be updated with actual status from API
         const chatsWithDefaultStatus = convertedChats.map(chat => ({
           ...chat,
-          isOnline: false // Default to offline, will be updated with actual status
+          isOnline: false
         }));
         
         setChats(chatsWithDefaultStatus);
@@ -480,7 +482,10 @@ export default function MessagesPage() {
         if (chatsWithDefaultStatus.length === 0) {
           setSelectedChat(null);
           setCurrentConversationId(null);
-          return; // Exit early since there are no conversations to process
+          setConversationsLoaded(true);
+          setInitialLoadComplete(true);
+          initialLoadCompleteRef.current = true;
+          return;
         }
 
         // Fetch user status for all participants
@@ -504,159 +509,41 @@ export default function MessagesPage() {
             });
             
             setChats(updatedChats);
-            
-            // Note: Auto-selection is handled in the consolidated logic below
-      } catch (statusError) {
-        console.error('Error fetching user status:', statusError);
-        // Keep default online status if API fails
-        // Don't auto-select here - it will be handled below
-      }
-    } else {
-      // No participants to fetch status for
-    }
-    
-    // Auto-select first conversation if not already selected (consolidated logic)
-    if (!selectedChat && chatsWithDefaultStatus.length > 0 && !autoSelectionCompleteRef.current) {
-      const firstChat = chatsWithDefaultStatus[0];
-      autoSelectionCompleteRef.current = true;
-      setSelectedChat(firstChat);
-      setCurrentConversationId(firstChat.id);
-      
-      // Join WebSocket room for the first conversation
-      wsManager.joinConversation(firstChat.id);
-      
-      // Load messages for the first conversation
-      loadMessagesForChat(firstChat);
-    }
-    
-    // Mark as loaded only after we've successfully processed the data
-    setConversationsLoaded(true);
-    setInitialLoadComplete(true);
-    initialLoadCompleteRef.current = true;
+          } catch (statusError) {
+            console.error('Error fetching user status:', statusError);
+            // Keep default online status if API fails
+          }
+        }
+        
+        // Mark as loaded only after we've successfully processed the data
+        setConversationsLoaded(true);
+        setInitialLoadComplete(true);
+        initialLoadCompleteRef.current = true;
       } catch (error) {
         console.error('Error loading conversations:', error);
         // Don't set conversationsLoaded to true on error
         // Keep loading state active so user can retry
       } finally {
         setConversationsLoading(false);
+        setConversationsSearchLoading(false);
       }
     };
 
-    loadConversations();
-  }, [user?.id]); // Removed initialLoadComplete from dependencies to prevent re-runs
-
-  // Debounced search effect for conversations
-  useEffect(() => {
-    // Don't run search effect on initial load
-    if (!initialLoadCompleteRef.current) {
-      return;
-    }
-    
-    // Set search loading state immediately when query changes
-    setConversationsSearchLoading(true);
-    
-    const timer = setTimeout(() => {
-      // Reset to page 1 when search changes
-      setConversationsPage(1);
-      setHasMoreConversations(true);
-      setConversationsSearchLoading(false);
-      
-      // Trigger conversation loading with debounced search query
-      if (user?.id) {
-        const loadConversations = async () => {
-          setConversationsLoading(true);
-          setConversationsLoaded(false);
-          
-          try {
-            const result = await getConversations(1, 10, conversationsSearchQuery);
-            
-            const convertedChats = result.conversations.map(conv => 
-              convertAPIConversationToChat(conv, user.id)
-            );
-            
-            const chatsWithDefaultStatus = convertedChats.map(chat => ({
-              ...chat,
-              isOnline: false
-            }));
-            
-            setChats(chatsWithDefaultStatus);
-            setHasMoreConversations(result.hasMore);
-            setConversationsPage(1);
-
-            // Clear selected chat if no conversations found
-            if (chatsWithDefaultStatus.length === 0) {
-              setSelectedChat(null);
-              setCurrentConversationId(null);
-              return;
-            }
-
-            // Fetch user status for all participants
-            const participantIds = convertedChats
-              .map(chat => chat.userId)
-              .filter(id => id && id !== user.id);
-
-            if (participantIds.length > 0) {
-              try {
-                const userStatuses = await getUserStatus(participantIds);
-                
-                const updatedChats = chatsWithDefaultStatus.map(chat => {
-                  if (chat.userId && userStatuses[chat.userId]) {
-                    const isOnline = userStatuses[chat.userId].status === 'online';
-                    return {
-                      ...chat,
-                      isOnline: isOnline
-                    };
-                  }
-                  return chat;
-                });
-                
-                setChats(updatedChats);
-                
-                // Auto-select the first conversation if no conversation is currently selected
-                if (!selectedChat && updatedChats.length > 0) {
-                  const firstChat = updatedChats[0];
-                  setSelectedChat(firstChat);
-                  setCurrentConversationId(firstChat.id);
-                  wsManager.joinConversation(firstChat.id);
-                  loadMessagesForChat(firstChat);
-                }
-              } catch (statusError) {
-                console.error('Error fetching user status:', statusError);
-                
-                if (!selectedChat && chatsWithDefaultStatus.length > 0) {
-                  const firstChat = chatsWithDefaultStatus[0];
-                  setSelectedChat(firstChat);
-                  setCurrentConversationId(firstChat.id);
-                  wsManager.joinConversation(firstChat.id);
-                  loadMessagesForChat(firstChat);
-                }
-              }
-            } else {
-              if (!selectedChat && chatsWithDefaultStatus.length > 0) {
-                const firstChat = chatsWithDefaultStatus[0];
-                setSelectedChat(firstChat);
-                setCurrentConversationId(firstChat.id);
-                wsManager.joinConversation(firstChat.id);
-                loadMessagesForChat(firstChat);
-              }
-            }
-            
-            setConversationsLoaded(true);
-          } catch (error) {
-            console.error('Error loading conversations:', error);
-          } finally {
-            setConversationsLoading(false);
-          }
-        };
-        
+    // Debounced loading for search queries
+    if (conversationsSearchQuery.trim()) {
+      setConversationsSearchLoading(true);
+      const timer = setTimeout(() => {
         loadConversations();
-      }
-    }, 800); // Increased delay to reduce API calls
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [conversationsSearchQuery, user?.id]);
+      }, 800);
+      
+      return () => {
+        clearTimeout(timer);
+      };
+    } else {
+      // Immediate loading for initial load or when search is cleared
+      loadConversations();
+    }
+  }, [user?.id, conversationsSearchQuery]);
 
 
 
@@ -721,12 +608,7 @@ export default function MessagesPage() {
         if (!existingChat) {
           setChats(prevChats => [newChat, ...prevChats]);
           
-          // If no conversation is currently selected, auto-select this new one
-          if (!selectedChat) {
-            setSelectedChat(newChat);
-            setCurrentConversationId(newChat.id);
-            wsManager.joinConversation(newChat.id);
-          }
+          // Auto-selection removed - user must manually select a conversation
         }
       }
     };
