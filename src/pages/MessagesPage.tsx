@@ -243,6 +243,7 @@ export default function MessagesPage() {
   const [conversationsLoading, setConversationsLoading] = useState(true);
   const [conversationsLoaded, setConversationsLoaded] = useState(false);
   const [messagesLoading, setMessagesLoading] = useState(false);
+  const [loadingMoreMessages, setLoadingMoreMessages] = useState(false);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [messagesPage, setMessagesPage] = useState(1);
   const [hasMoreMessages, setHasMoreMessages] = useState(true);
@@ -257,6 +258,9 @@ export default function MessagesPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const conversationsContainerRef = useRef<any>(null);
+  const justLoadedMessagesRef = useRef(false);
+  const componentMountedRef = useRef(false);
+  const loadingOlderMessagesRef = useRef(false);
 
 
 
@@ -658,9 +662,20 @@ export default function MessagesPage() {
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    scrollToBottom();
+    // Only auto-scroll if we have messages and we're not in the middle of loading more messages
+    // Also check if we're loading older messages (pagination) to prevent auto-scroll
+    if (selectedChat?.messages.length > 0 && !messagesLoading && !loadingMoreMessages && !loadingOlderMessagesRef.current) {
+      scrollToBottom();
+    }
     // Message read marking temporarily disabled
-  }, [selectedChat?.messages]);
+  }, [selectedChat?.messages, messagesLoading, loadingMoreMessages]);
+
+  // Set component as mounted after initial render
+  useEffect(() => {
+    componentMountedRef.current = true;
+  }, []);
+
+
 
   // Initialize WebSocket connection and status management
   useEffect(() => {
@@ -937,12 +952,15 @@ export default function MessagesPage() {
 
   // Load more messages function
   const loadMoreMessages = async () => {
-    if (!selectedChat || !hasMoreMessages || messagesLoading) return;
+    if (!selectedChat || !hasMoreMessages || messagesLoading || loadingMoreMessages) {
+      return;
+    }
 
-    setMessagesLoading(true);
+    setLoadingMoreMessages(true);
+    loadingOlderMessagesRef.current = true;
     try {
       const nextPage = messagesPage + 1;
-      const result = await getMessages(selectedChat.id, nextPage, 50);
+      const result = await getMessages(selectedChat.id, nextPage, 20);
       
       if (result.messages.length > 0) {
         const convertedMessages = result.messages.map(msg => 
@@ -966,14 +984,27 @@ export default function MessagesPage() {
     } catch (error) {
       console.error('Error loading more messages:', error);
     } finally {
-      setMessagesLoading(false);
+      setLoadingMoreMessages(false);
+      // Set flag to prevent immediate scroll-triggered loading
+      justLoadedMessagesRef.current = true;
+      setTimeout(() => {
+        justLoadedMessagesRef.current = false;
+      }, 500); // Prevent scroll loading for 500ms after loading more messages
+      
+      // Reset the loading older messages flag after a short delay
+      setTimeout(() => {
+        loadingOlderMessagesRef.current = false;
+      }, 100); // Small delay to ensure state updates are complete
     }
   };
 
   // Handle scroll to load more messages
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop } = e.currentTarget;
-    if (scrollTop === 0 && hasMoreMessages && !messagesLoading) {
+    // Check if we're near the top (within 100px) to account for padding and other UI elements
+    // Also check if we just loaded messages to prevent immediate loading
+    // And ensure component is fully mounted
+    if (scrollTop <= 100 && hasMoreMessages && !messagesLoading && !loadingMoreMessages && !justLoadedMessagesRef.current && componentMountedRef.current) {
       loadMoreMessages();
     }
   };
@@ -995,7 +1026,7 @@ export default function MessagesPage() {
     setSelectedChat(chat);
     setCurrentConversationId(chat.id);
     setMessagesPage(1);
-    setHasMoreMessages(true);
+    setHasMoreMessages(true); // Will be updated by loadMessagesForChat if needed
 
     // Join WebSocket room for this conversation
     wsManager.joinConversation(chat.id);
@@ -1030,7 +1061,7 @@ export default function MessagesPage() {
     }
   };
 
-  // Helper function to load messages for a chat
+    // Helper function to load messages for a chat
   const loadMessagesForChat = async (chat: Chat) => {
     if (chat.messages.length > 0) {
       return; // Already loaded
@@ -1043,8 +1074,9 @@ export default function MessagesPage() {
     
     setLoadingMessagesForChat(chat.id);
     setMessagesLoading(true);
+    loadingOlderMessagesRef.current = false; // Initial load should allow auto-scroll
     try {
-      const result = await getMessages(chat.id, 1, 50);
+      const result = await getMessages(chat.id, 1, 20);
       
       const convertedMessages = result.messages.map(msg => 
         convertAPIMessageToChatMessage(msg, user?.id || '')
@@ -1060,6 +1092,13 @@ export default function MessagesPage() {
         prevChats.map(c => c.id === chat.id ? updatedChat : c)
       );
       setHasMoreMessages(result.hasMore);
+      setMessagesPage(1); // Reset to page 1 for this chat
+      
+      // Set flag to prevent immediate scroll-triggered loading
+      justLoadedMessagesRef.current = true;
+      setTimeout(() => {
+        justLoadedMessagesRef.current = false;
+      }, 1000); // Prevent scroll loading for 1 second after initial load
     } catch (error) {
       console.error('Error loading messages:', error);
     } finally {
@@ -1284,13 +1323,13 @@ export default function MessagesPage() {
               </div>
 
               {/* Messages */}
-              {messagesLoading && messagesPage === 1 ? (
+              {messagesLoading ? (
                 <div className="flex-1 flex items-center justify-center">
                   <ContentLoader message="Loading messages..." />
                 </div>
               ) : (
-                <ScrollArea 
-                  className="flex-1 p-4 min-h-0" 
+                <div 
+                  className="flex-1 p-4 min-h-0 overflow-y-auto" 
                   ref={messagesContainerRef}
                   onScroll={handleScroll}
                 >
@@ -1301,9 +1340,20 @@ export default function MessagesPage() {
                       </div>
                     ) : (
                       <>
-                        {messagesLoading && (
+                        {loadingMoreMessages && (
                           <div className="flex items-center justify-center py-4">
                             <ContentLoader message="Loading more messages..." />
+                          </div>
+                        )}
+                        {hasMoreMessages && !messagesLoading && !loadingMoreMessages && (
+                          <div className="flex items-center justify-center py-4">
+                            <Button 
+                              variant="outline" 
+                              onClick={loadMoreMessages}
+                              className="text-sm"
+                            >
+                              Load More Messages
+                            </Button>
                           </div>
                         )}
                         {selectedChat.messages.map((message) => (
@@ -1342,7 +1392,7 @@ export default function MessagesPage() {
                       </>
                     )}
                   </div>
-                </ScrollArea>
+                </div>
               )}
 
               {/* Message Input */}
