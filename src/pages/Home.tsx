@@ -2,136 +2,143 @@ import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
-import { Brain, MessageCircle, Globe, Award, Languages, Target, ArrowRight, Sparkles } from 'lucide-react';
+import { Brain, MessageCircle, Globe, Award, Languages, Target, ArrowRight, Sparkles, CheckCircle } from 'lucide-react';
 
 const Home = () => {
-  return <div className="min-h-screen bg-background text-foreground">
+  return (
+    <div className="min-h-screen bg-background text-foreground relative overflow-hidden">
+      {/* Premium Background Elements */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(var(--primary),0.03),transparent_50%)]"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(var(--primary),0.02),transparent_50%)]"></div>
+      
       <Header />
       
-      {/* Hero Section */}
-      <section className="pt-20 sm:pt-32 md:pt-48 pb-12 sm:pb-16 md:pb-20 px-4">
-        <div className="container mx-auto text-center">
-          <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 sm:mb-6 animate-fade-in-up">
-            Master English with{' '}
-            <span className="text-primary">AI-Powered Learning</span>
-          </h1>
-          <p className="text-lg sm:text-xl text-muted-foreground mb-8 sm:mb-12 max-w-4xl mx-auto leading-relaxed animate-fade-in-delayed px-2">
-            Your personalized English tutor powered by artificial intelligence. Learn 
-            at your own pace with interactive lessons, real-time feedback, and 
-            cultural context.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center animate-fade-in-delayed stagger-2 px-4">
-            <Link to="/auth" className="w-full sm:w-auto">
-              <Button size="lg" className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 rounded-full hover-scale transition-all duration-300">
-                Start Learning
-                <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
-              </Button>
-            </Link>
-            <Link to="/dashboard" className="w-full sm:w-auto">
-              <Button size="lg" className="w-full sm:w-auto bg-secondary hover:bg-secondary/90 text-secondary-foreground font-semibold text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 rounded-full hover-scale transition-all duration-300">
-                Dashboard
-                <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
-              </Button>
-            </Link>
-            <Button variant="outline" size="lg" className="w-full sm:w-auto border-primary text-primary hover:bg-primary/10 text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 rounded-full hover-scale transition-all duration-300">
-              Watch Demo
-            </Button>
-          </div>
-        </div>
-      </section>
+             {/* Hero Section - Premium Redesign */}
+       <section className="relative pt-24 sm:pt-32 md:pt-40 pb-16 sm:pb-20 md:pb-24 px-4 sm:px-6 lg:px-8">
+         <div className="container mx-auto text-center max-w-7xl">
+           <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-6 sm:mb-8 leading-tight animate-fade-in-up">
+             Master English with{' '}
+             <span className="bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+               AI-Powered Learning
+             </span>
+           </h1>
+           
+           <p className="text-xl sm:text-2xl text-muted-foreground mb-10 sm:mb-12 max-w-4xl mx-auto leading-relaxed animate-fade-in-delayed px-4 font-light">
+             Your personalized English tutor powered by artificial intelligence. Learn 
+             at your own pace with interactive lessons, real-time feedback, and 
+             cultural context.
+           </p>
+           
+           <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center animate-fade-in-delayed stagger-2 px-4">
+             <Link to="/auth" className="w-full sm:w-auto group">
+               <Button size="lg" className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-lg px-8 sm:px-10 py-4 sm:py-5 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                 Start Learning
+                 <ArrowRight className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
+               </Button>
+             </Link>
+             <Button variant="outline" size="lg" className="w-full sm:w-auto border-2 border-primary/30 text-primary hover:bg-primary/5 hover:border-primary/50 font-semibold text-lg px-8 sm:px-10 py-4 sm:py-5 rounded-2xl transition-all duration-300 transform hover:-translate-y-1 shadow-sm hover:shadow-md">
+               Watch Demo
+             </Button>
+           </div>
+         </div>
+       </section>
 
-      {/* Features Section */}
-      <section className="py-12 sm:py-16 md:py-20 px-4">
-        <div className="container mx-auto">
-          <div className="text-center mb-8 sm:mb-12 md:mb-16">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 text-primary animate-fade-in-up">
-              Everything You Need To Master English
+      {/* Features Section - Premium Redesign */}
+      <section className="py-20 sm:py-24 md:py-32 px-4 sm:px-6 lg:px-8 relative">
+        <div className="container mx-auto max-w-7xl">
+          <div className="text-center mb-16 sm:mb-20 md:mb-24">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 sm:mb-8 text-foreground animate-fade-in-up">
+              Everything You Need To{' '}
+              <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+                Master English
+              </span>
             </h2>
-            <p className="text-lg sm:text-xl text-muted-foreground max-w-4xl mx-auto animate-fade-in-delayed px-2">
+            <p className="text-xl text-muted-foreground max-w-4xl mx-auto animate-fade-in-delayed px-4 font-light leading-relaxed">
               Comprehensive features designed to make English learning effective, enjoyable, and accessible for young minds.
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            <Card className="bg-card border-border text-card-foreground hover-lift animate-fade-in-up stagger-1">
-              <CardHeader className="text-center">
-                <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10 hover-scale transition-all duration-300">
-                  <Brain className="h-8 w-8 text-primary" />
+          
+          <div className="grid md:grid-cols-3 gap-8 lg:gap-10 max-w-7xl mx-auto">
+            <Card className="group bg-card/80 backdrop-blur-sm border border-border/50 text-card-foreground hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 animate-fade-in-up stagger-1 rounded-3xl overflow-hidden">
+              <CardHeader className="text-center pb-6">
+                <div className="mx-auto mb-6 p-4 rounded-2xl bg-primary/10 group-hover:scale-110 transition-transform duration-300">
+                  <Brain className="h-10 w-10 text-primary" />
                 </div>
-                <CardTitle className="text-xl">AI-Powered Lessons</CardTitle>
+                <CardTitle className="text-2xl font-bold text-foreground">AI-Powered Lessons</CardTitle>
               </CardHeader>
-              <CardContent className="text-center">
-                <p className="text-muted-foreground">
-                  Interactive and adaptive English learning
+              <CardContent className="text-center pb-8">
+                <p className="text-muted-foreground text-lg leading-relaxed">
+                  Interactive and adaptive English learning with personalized content
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="bg-card border-border text-card-foreground hover-lift animate-fade-in-up stagger-2">
-              <CardHeader className="text-center">
-                <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10 hover-scale transition-all duration-300">
-                  <MessageCircle className="h-8 w-8 text-primary" />
+            <Card className="group bg-card/80 backdrop-blur-sm border border-border/50 text-card-foreground hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 animate-fade-in-up stagger-2 rounded-3xl overflow-hidden">
+              <CardHeader className="text-center pb-6">
+                <div className="mx-auto mb-6 p-4 rounded-2xl bg-primary/10 group-hover:scale-110 transition-transform duration-300">
+                  <MessageCircle className="h-10 w-10 text-primary" />
                 </div>
-                <CardTitle className="text-xl">Conversational Practice</CardTitle>
+                <CardTitle className="text-2xl font-bold text-foreground">Conversational Practice</CardTitle>
               </CardHeader>
-              <CardContent className="text-center">
-                <p className="text-muted-foreground">
-                  Speak with your tutor in real-time
+              <CardContent className="text-center pb-8">
+                <p className="text-muted-foreground text-lg leading-relaxed">
+                  Speak with your tutor in real-time with natural language processing
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="bg-card border-border text-card-foreground hover-lift animate-fade-in-up stagger-3">
-              <CardHeader className="text-center">
-                <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10 hover-scale transition-all duration-300">
-                  <Globe className="h-8 w-8 text-primary" />
+            <Card className="group bg-card/80 backdrop-blur-sm border border-border/50 text-card-foreground hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 animate-fade-in-up stagger-3 rounded-3xl overflow-hidden">
+              <CardHeader className="text-center pb-6">
+                <div className="mx-auto mb-6 p-4 rounded-2xl bg-primary/10 group-hover:scale-110 transition-transform duration-300">
+                  <Globe className="h-10 w-10 text-primary" />
                 </div>
-                <CardTitle className="text-xl">Structured Learning Paths</CardTitle>
+                <CardTitle className="text-2xl font-bold text-foreground">Structured Learning Paths</CardTitle>
               </CardHeader>
-              <CardContent className="text-center">
-                <p className="text-muted-foreground">
-                  Follow guided curiculumn aligned to goals
+              <CardContent className="text-center pb-8">
+                <p className="text-muted-foreground text-lg leading-relaxed">
+                  Follow guided curriculum aligned to your specific goals and level
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="bg-card border-border text-card-foreground hover-lift animate-fade-in-up stagger-4">
-              <CardHeader className="text-center">
-                <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10 hover-scale transition-all duration-300">
-                  <Award className="h-8 w-8 text-primary" />
+            <Card className="group bg-card/80 backdrop-blur-sm border border-border/50 text-card-foreground hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 animate-fade-in-up stagger-4 rounded-3xl overflow-hidden">
+              <CardHeader className="text-center pb-6">
+                <div className="mx-auto mb-6 p-4 rounded-2xl bg-primary/10 group-hover:scale-110 transition-transform duration-300">
+                  <Award className="h-10 w-10 text-primary" />
                 </div>
-                <CardTitle className="text-xl">Verifiable Credentials</CardTitle>
+                <CardTitle className="text-2xl font-bold text-foreground">Verifiable Credentials</CardTitle>
               </CardHeader>
-              <CardContent className="text-center">
-                <p className="text-muted-foreground">
-                  Earn certifications recognized with sponsors
+              <CardContent className="text-center pb-8">
+                <p className="text-muted-foreground text-lg leading-relaxed">
+                  Earn certifications recognized by leading educational institutions
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="bg-card border-border text-card-foreground hover-lift animate-fade-in-up stagger-5">
-              <CardHeader className="text-center">
-                <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10 hover-scale transition-all duration-300">
-                  <Languages className="h-8 w-8 text-primary" />
+            <Card className="group bg-card/80 backdrop-blur-sm border border-border/50 text-card-foreground hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 animate-fade-in-up stagger-5 rounded-3xl overflow-hidden">
+              <CardHeader className="text-center pb-6">
+                <div className="mx-auto mb-6 p-4 rounded-2xl bg-primary/10 group-hover:scale-110 transition-transform duration-300">
+                  <Languages className="h-10 w-10 text-primary" />
                 </div>
-                <CardTitle className="text-xl">Bilingual (Urdu & English)</CardTitle>
+                <CardTitle className="text-2xl font-bold text-foreground">Bilingual Support</CardTitle>
               </CardHeader>
-              <CardContent className="text-center">
-                <p className="text-muted-foreground">
-                  Learn easily with bilingual (English & Urdu) support
+              <CardContent className="text-center pb-8">
+                <p className="text-muted-foreground text-lg leading-relaxed">
+                  Learn easily with bilingual (English & Urdu) support and cultural context
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="bg-card border-border text-card-foreground hover-lift animate-fade-in-up stagger-6">
-              <CardHeader className="text-center">
-                <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10 hover-scale transition-all duration-300">
-                  <Target className="h-8 w-8 text-primary" />
+            <Card className="group bg-card/80 backdrop-blur-sm border border-border/50 text-card-foreground hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 animate-fade-in-up stagger-6 rounded-3xl overflow-hidden">
+              <CardHeader className="text-center pb-6">
+                <div className="mx-auto mb-6 p-4 rounded-2xl bg-primary/10 group-hover:scale-110 transition-transform duration-300">
+                  <Target className="h-10 w-10 text-primary" />
                 </div>
-                <CardTitle className="text-xl">Progress & Analytics</CardTitle>
+                <CardTitle className="text-2xl font-bold text-foreground">Progress & Analytics</CardTitle>
               </CardHeader>
-              <CardContent className="text-center">
-                <p className="text-muted-foreground">
-                  Visualize improvement with data
+              <CardContent className="text-center pb-8">
+                <p className="text-muted-foreground text-lg leading-relaxed">
+                  Visualize your improvement with detailed analytics and insights
                 </p>
               </CardContent>
             </Card>
@@ -139,70 +146,97 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section className="py-12 sm:py-16 md:py-20 px-4">
-        <div className="container mx-auto">
-          <div className="text-center mb-8 sm:mb-12 md:mb-16">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 text-primary animate-fade-in-up">
-              Loved By Learners Worldwide
+      {/* Testimonials Section - Premium Redesign */}
+      <section className="py-20 sm:py-24 md:py-32 px-4 sm:px-6 lg:px-8 relative">
+        <div className="container mx-auto max-w-7xl">
+          <div className="text-center mb-16 sm:mb-20 md:mb-24">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 sm:mb-8 text-foreground animate-fade-in-up">
+              Loved By{' '}
+              <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+                Learners Worldwide
+              </span>
             </h2>
-            <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto animate-fade-in-delayed px-2">
-              Join thousands of satisfied students who have transformed their English skills
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto animate-fade-in-delayed px-4 font-light leading-relaxed">
+              Join thousands of satisfied students who have transformed their English skills with our AI-powered platform
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            <Card className="bg-card border-border text-card-foreground hover-lift animate-slide-in-left stagger-1">
-              <CardHeader>
+          
+          <div className="grid md:grid-cols-3 gap-8 lg:gap-10 max-w-7xl mx-auto">
+            <Card className="group bg-card/90 backdrop-blur-sm border border-border/50 text-card-foreground hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 animate-slide-in-left stagger-1 rounded-3xl overflow-hidden flex flex-col">
+              <CardHeader className="pb-6">
                 <div className="flex items-center mb-4">
-                  <Sparkles className="h-5 w-5 text-primary" />
+                  <div className="flex space-x-1">
+                    {[...Array(5)].map((_, i) => (
+                      <Sparkles key={i} className="h-4 w-4 text-primary" />
+                    ))}
+                  </div>
                 </div>
               </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-6 italic">
+              <CardContent className="pb-8 flex-1 flex flex-col">
+                <p className="text-muted-foreground mb-8 text-lg leading-relaxed italic flex-1">
                   "AI Tutor has completely transformed how I learn English. The 
-                  personalized approach makes all the difference."
+                  personalized approach makes all the difference in my learning journey."
                 </p>
-                <div>
-                  <p className="font-semibold text-foreground">Sarah Ahmed</p>
-                  <p className="text-sm text-muted-foreground">Student</p>
+                <div className="flex items-center space-x-4 mt-auto">
+                  <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-primary-foreground font-bold text-lg">SA</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground text-lg">Sarah Ahmed</p>
+                    <p className="text-muted-foreground">Student</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-card border-border text-card-foreground hover-lift animate-fade-in-up stagger-2">
-              <CardHeader>
+            <Card className="group bg-card/90 backdrop-blur-sm border border-border/50 text-card-foreground hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 animate-fade-in-up stagger-2 rounded-3xl overflow-hidden flex flex-col">
+              <CardHeader className="pb-6">
                 <div className="flex items-center mb-4">
-                  <Sparkles className="h-5 w-5 text-primary" />
+                  <div className="flex space-x-1">
+                    {[...Array(5)].map((_, i) => (
+                      <Sparkles key={i} className="h-4 w-4 text-primary" />
+                    ))}
+                  </div>
                 </div>
               </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-6 italic">
-                  "The cultural context and real-world scenarios 
-                  have helped me understand English in 
-                  practical situations."
+              <CardContent className="pb-8 flex-1 flex flex-col">
+                <p className="text-muted-foreground mb-8 text-lg leading-relaxed italic flex-1">
+                  "The cultural context and real-world scenarios have helped me understand English in practical situations."
                 </p>
-                <div>
-                  <p className="font-semibold text-foreground">Mohammad Khan</p>
-                  <p className="text-sm text-muted-foreground">Professional</p>
+                <div className="flex items-center space-x-4 mt-auto">
+                  <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-primary-foreground font-bold text-lg">MK</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground text-lg">Mohammad Khan</p>
+                    <p className="text-muted-foreground">Professional</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-card border-border text-card-foreground hover-lift animate-slide-in-right stagger-3">
-              <CardHeader>
+            <Card className="group bg-card/90 backdrop-blur-sm border border-border/50 text-card-foreground hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 animate-slide-in-right stagger-3 rounded-3xl overflow-hidden flex flex-col">
+              <CardHeader className="pb-6">
                 <div className="flex items-center mb-4">
-                  <Sparkles className="h-5 w-5 text-primary" />
+                  <div className="flex space-x-1">
+                    {[...Array(5)].map((_, i) => (
+                      <Sparkles key={i} className="h-4 w-4 text-primary" />
+                    ))}
+                  </div>
                 </div>
               </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-6 italic">
-                  "I love how the app adapts to my learning 
-                  style. It's like having a personal tutor available 
-                  24/7."
+              <CardContent className="pb-8 flex-1 flex flex-col">
+                <p className="text-muted-foreground mb-8 text-lg leading-relaxed italic flex-1">
+                  "I love how the app adapts to my learning style. It's like having a personal tutor available 24/7."
                 </p>
-                <div>
-                  <p className="font-semibold text-foreground">Fatima Ali</p>
-                  <p className="text-sm text-muted-foreground">Business Owner</p>
+                <div className="flex items-center space-x-4 mt-auto">
+                  <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-primary-foreground font-bold text-lg">FA</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground text-lg">Fatima Ali</p>
+                    <p className="text-muted-foreground">Business Owner</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -228,7 +262,8 @@ const Home = () => {
           </div>
         </div>
       </section>
-    </div>;
+    </div>
+  );
 };
 
 export default Home;

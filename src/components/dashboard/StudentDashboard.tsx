@@ -15,7 +15,8 @@ import {
   Users,
   PlayCircle,
   FileText,
-  AlertCircle
+  AlertCircle,
+  Sparkles
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
@@ -194,17 +195,28 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">
-          Welcome back, {userProfile.first_name}!
-        </h1>
-        <p className="text-muted-foreground">
-          Continue your learning journey and track your progress.
-        </p>
+    <div className="space-y-8">
+      {/* Premium Header Section */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
+        <div className="relative p-8 rounded-3xl">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+              <Sparkles className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                Welcome back, {userProfile.first_name}!
+              </h1>
+              <p className="text-lg text-muted-foreground font-light">
+                Continue your learning journey and track your progress.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Stats Grid */}
+      {/* Stats Grid - Original Clean Design */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -259,48 +271,59 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
         </Card>
       </div>
 
-      {/* My Courses */}
-      <div className="space-y-4">
-        <h2 className="text-2xl font-semibold tracking-tight">My Courses</h2>
+      {/* My Courses - Premium Redesign */}
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
+            <BookOpen className="w-4 h-4 text-primary" />
+          </div>
+          <h2 className="text-2xl font-bold tracking-tight">My Courses</h2>
+        </div>
         
         {courses.length === 0 ? (
-          <Card>
-            <CardContent className="py-12">
+          <Card className="bg-card/80 backdrop-blur-sm border border-border/50 rounded-3xl overflow-hidden">
+            <CardContent className="py-16">
               <EmptyState
                 title="No Courses Enrolled"
                 description="Wait for the teacher to enroll you into a course"
-                icon={<BookOpen className="h-8 w-8 text-muted-foreground" />}
+                icon={<BookOpen className="h-12 w-12 text-muted-foreground" />}
               />
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {courses.map((course) => (
-              <Card key={course.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                <img 
-                  src={course.image_url} 
-                  alt={course.title} 
-                  className="w-full h-40 object-cover" 
-                />
-                <CardHeader>
-                  <CardTitle className="truncate">{course.title}</CardTitle>
-                  <p className="text-sm text-muted-foreground truncate">{course.subtitle}</p>
+              <Card key={course.id} className="group bg-card/80 backdrop-blur-sm border border-border/50 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 hover:-translate-y-2 rounded-3xl overflow-hidden">
+                <div className="relative overflow-hidden">
+                  <img 
+                    src={course.image_url} 
+                    alt={course.title} 
+                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500" 
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                </div>
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg font-bold truncate">{course.title}</CardTitle>
+                  <p className="text-sm text-muted-foreground truncate leading-relaxed">{course.subtitle}</p>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="w-full bg-muted rounded-full h-2.5">
-                    <div 
-                      className="bg-primary h-2.5 rounded-full transition-all" 
-                      style={{ width: `${course.progress || 0}%` }}
-                    />
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-foreground">Progress</span>
+                      <span className="text-sm font-bold text-primary">{course.progress || 0}%</span>
+                    </div>
+                    <div className="w-full bg-muted/50 rounded-full h-3 overflow-hidden">
+                      <div 
+                        className="bg-gradient-to-r from-primary to-primary/80 h-3 rounded-full transition-all duration-500 ease-out" 
+                        style={{ width: `${course.progress || 0}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">{course.progress || 0}% Complete</span>
-                    <Button asChild variant="secondary" size="sm">
-                      <Link to={course.progress && course.progress > 0 ? `/dashboard/courses/${course.id}/content` : `/dashboard/courses/${course.id}`}>
-                        {course.progress && course.progress > 0 ? 'Continue' : 'Start Course'}
-                      </Link>
-                    </Button>
-                  </div>
+                  <Button asChild variant="secondary" size="lg" className="w-full rounded-xl font-semibold hover:bg-primary hover:text-primary-foreground transition-all duration-300">
+                    <Link to={course.progress && course.progress > 0 ? `/dashboard/courses/${course.id}/content` : `/dashboard/courses/${course.id}`}>
+                      {course.progress && course.progress > 0 ? 'Continue Learning' : 'Start Course'}
+                    </Link>
+                  </Button>
                 </CardContent>
               </Card>
             ))}
@@ -308,50 +331,57 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
         )}
       </div>
 
-      {/* Quick Actions & Upcoming Assignments */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
+      {/* Quick Actions & Upcoming Assignments - Premium Redesign */}
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <Card className="bg-card/80 backdrop-blur-sm border border-border/50 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 rounded-3xl overflow-hidden">
+          <CardHeader className="pb-6">
+            <CardTitle className="flex items-center gap-3 text-xl font-bold">
+              <div className="w-8 h-8 bg-gradient-to-br from-orange-500/10 to-orange-500/20 rounded-xl flex items-center justify-center">
+                <Clock className="h-4 w-4 text-orange-500" />
+              </div>
               Upcoming Assignments
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             {upcomingAssignments.length === 0 ? (
-              <div className="text-center py-8">
-                <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-gradient-to-br from-green-500/10 to-green-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Calendar className="h-8 w-8 text-green-500" />
+                </div>
+                <p className="text-lg font-semibold text-foreground mb-2">All Caught Up!</p>
                 <p className="text-sm text-muted-foreground">No upcoming assignments</p>
-                <p className="text-xs text-muted-foreground mt-1">You're all caught up!</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {upcomingAssignments.map((assignment) => (
-                  <div key={assignment.assignment_id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className="flex-shrink-0">
-                        <FileText className="h-4 w-4 text-muted-foreground" />
+                  <div key={assignment.assignment_id} className="group p-4 border border-border/50 rounded-2xl hover:bg-muted/30 transition-all duration-300">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
+                          <FileText className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-foreground">{assignment.assignment_title}</p>
+                          <p className="text-sm text-muted-foreground">{assignment.course_title}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium">{assignment.assignment_title}</p>
-                        <p className="text-sm text-muted-foreground">{assignment.course_title}</p>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-foreground">
+                          {assignment.days_remaining === 0 ? 'Due today' : 
+                           assignment.days_remaining === 1 ? 'Due tomorrow' : 
+                           `Due in ${assignment.days_remaining} days`}
+                        </p>
+                        <Badge 
+                          variant={
+                            assignment.priority === 'High' ? 'destructive' :
+                            assignment.priority === 'Medium' ? 'secondary' :
+                            'outline'
+                          }
+                          className="mt-1"
+                        >
+                          {assignment.priority}
+                        </Badge>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium">
-                        {assignment.days_remaining === 0 ? 'Due today' : 
-                         assignment.days_remaining === 1 ? 'Due tomorrow' : 
-                         `Due in ${assignment.days_remaining} days`}
-                      </p>
-                      <Badge 
-                        variant={
-                          assignment.priority === 'High' ? 'destructive' :
-                          assignment.priority === 'Medium' ? 'secondary' :
-                          'outline'
-                        }
-                      >
-                        {assignment.priority}
-                      </Badge>
                     </div>
                   </div>
                 ))}
@@ -360,32 +390,38 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5" />
+        <Card className="bg-card/80 backdrop-blur-sm border border-border/50 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 rounded-3xl overflow-hidden">
+          <CardHeader className="pb-6">
+            <CardTitle className="flex items-center gap-3 text-xl font-bold">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500/10 to-blue-500/20 rounded-xl flex items-center justify-center">
+                <AlertCircle className="h-4 w-4 text-blue-500" />
+              </div>
               Recent Activity
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             {recentActivity.length === 0 ? (
-              <div className="text-center py-8">
-                <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-sm text-muted-foreground">No recent activity</p>
-                <p className="text-xs text-muted-foreground mt-1">Start learning to see updates here</p>
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500/10 to-blue-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Users className="h-8 w-8 text-blue-500" />
+                </div>
+                <p className="text-lg font-semibold text-foreground mb-2">Start Learning</p>
+                <p className="text-sm text-muted-foreground">Begin your journey to see updates here</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {recentActivity.map((activity, index) => (
-                  <div key={index} className="flex items-start space-x-3 p-3 border rounded-lg">
-                    <div className="flex-shrink-0 mt-1">
-                      <div className="w-2 h-2 bg-primary rounded-full" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm">{activity.activity_description}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {new Date(activity.activity_time).toLocaleDateString()} • {activity.course_title}
-                      </p>
+                  <div key={index} className="group p-4 border border-border/50 rounded-2xl hover:bg-muted/30 transition-all duration-300">
+                    <div className="flex items-start space-x-4">
+                      <div className="flex-shrink-0 mt-1">
+                        <div className="w-3 h-3 bg-gradient-to-r from-primary to-primary/80 rounded-full" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-foreground">{activity.activity_description}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {new Date(activity.activity_time).toLocaleDateString()} • {activity.course_title}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 ))}

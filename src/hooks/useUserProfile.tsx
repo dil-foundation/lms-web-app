@@ -9,6 +9,9 @@ type Profile = {
   last_name: string | null;
   email: string | null;
   role: UserRole;
+  phone_number?: string | null;
+  timezone?: string | null;
+  avatar_url?: string | null;
   [key: string]: any;
 };
 

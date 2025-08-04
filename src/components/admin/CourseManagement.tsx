@@ -86,7 +86,7 @@ const CourseCard = ({ course, onDelete }: { course: Course, onDelete: (course: C
   );
 
     return (
-    <Card>
+    <Card className="bg-card border border-border">
       <CardHeader className="p-0 relative">
         <img src={course.imageUrl} alt={course.title} className="w-full h-40 object-cover rounded-t-lg" />
         <Badge
@@ -114,7 +114,7 @@ const CourseCard = ({ course, onDelete }: { course: Course, onDelete: (course: C
         </div>
       </CardContent>
       <CardFooter className="p-4 pt-0">
-        <Button className="w-full" onClick={() => navigate(`/dashboard/courses/builder/${course.id}`)}>
+        <Button className="w-full hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => navigate(`/dashboard/courses/builder/${course.id}`)}>
           Edit Course
         </Button>
       </CardFooter>
@@ -380,18 +380,38 @@ const CourseManagement = () => {
   const totalPages = Math.ceil(totalCourses / rowsPerPage);
 
   return (
-    <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
-      <div className="flex items-center">
-        <h1 className="text-2xl font-bold">Course Management</h1>
-        <div className="ml-auto flex items-center gap-2">
-          <Button onClick={handleCreateCourse}>
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Create Course
-          </Button>
+    <main className="space-y-8">
+      {/* Premium Header Section */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
+        <div className="relative p-8 rounded-3xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                <BookOpen className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                  Course Management
+                </h1>
+                <p className="text-lg text-muted-foreground font-light">
+                  Manage all courses in the system
+                </p>
+              </div>
+            </div>
+            
+            <Button 
+              onClick={handleCreateCourse}
+              className="h-10 px-6 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+            >
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Create Course
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards - Clean Design */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -400,6 +420,9 @@ const CourseManagement = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{total}</div>
+            <p className="text-xs text-muted-foreground">
+              All courses in system
+            </p>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
@@ -409,6 +432,9 @@ const CourseManagement = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{published}</div>
+            <p className="text-xs text-muted-foreground">
+              Live courses
+            </p>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
@@ -418,6 +444,9 @@ const CourseManagement = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{draft}</div>
+            <p className="text-xs text-muted-foreground">
+              In development
+            </p>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
@@ -427,6 +456,9 @@ const CourseManagement = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalStudents}</div>
+            <p className="text-xs text-muted-foreground">
+              Enrolled students
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -440,14 +472,14 @@ const CourseManagement = () => {
           <Input
                 type="search"
             placeholder="Search courses by title or instructor..."
-                className="w-full rounded-lg bg-background pl-8"
+                className="w-full rounded-lg bg-background pl-8 h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
               </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-1">
+                <Button variant="outline" className="gap-1 h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800">
                   <ListFilter className="h-3.5 w-3.5" />
                   <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                     {statusFilter === 'All' ? 'All Status' : statusFilter}

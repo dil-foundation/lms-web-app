@@ -56,15 +56,32 @@ export const AdminSecurity = () => {
   };
 
   return (
-    <div className="space-y-6 p-6 max-w-6xl mx-auto">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Security</h1>
-          <p className="text-muted-foreground mt-1">Manage your account security and access settings</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Shield className="h-5 w-5 text-green-500" />
-          <span className="text-sm font-medium text-green-500">Security Score: Strong</span>
+    <div className="space-y-8 mx-auto p-4">
+      {/* Premium Header Section */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
+        <div className="relative p-8 rounded-3xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                <Shield className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
+                  Security
+                </h1>
+                <p className="text-lg text-muted-foreground mt-2 leading-relaxed">
+                  Manage your account security and access settings
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 px-4 py-2 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200/50 dark:border-green-700/50">
+                <Shield className="h-5 w-5 text-green-500" />
+                <span className="text-sm font-medium text-green-600 dark:text-green-400">Security Score: Strong</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -188,10 +205,10 @@ export const AdminSecurity = () => {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline">
+            <Button variant="outline" className="hover:bg-gray-100 dark:hover:bg-gray-800">
               End All Other Sessions
             </Button>
-            <Button variant="outline">
+            <Button variant="outline" className="hover:bg-gray-100 dark:hover:bg-gray-800">
               Clear Session History
             </Button>
           </div>
@@ -241,7 +258,7 @@ export const AdminSecurity = () => {
             <p className="text-sm text-muted-foreground">
               Showing recent 5 login attempts
             </p>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="hover:bg-gray-100 dark:hover:bg-gray-800">
               View Full History
             </Button>
           </div>

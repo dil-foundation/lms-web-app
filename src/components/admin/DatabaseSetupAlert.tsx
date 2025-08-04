@@ -35,7 +35,7 @@ export const DatabaseSetupAlert: React.FC<DatabaseSetupAlertProps> = ({ error })
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="bg-white dark:bg-gray-900 rounded-lg p-4 border border-orange-200 dark:border-orange-800">
+        <div className="bg-card rounded-lg p-4 border border-orange-200 dark:border-orange-800">
           <h4 className="font-semibold text-orange-800 dark:text-orange-200 mb-3 flex items-center gap-2">
             <CheckCircle className="w-4 h-4" />
             Quick Setup Instructions

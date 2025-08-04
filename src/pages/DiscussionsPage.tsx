@@ -268,29 +268,92 @@ export default function DiscussionsPage() {
   const totalPages = Math.ceil(discussionsCount / rowsPerPage);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Discussions</h1>
-          <p className="text-muted-foreground">
-            Engage with the community and participate in course discussions.
-          </p>
+    <div className="space-y-8">
+      {/* Premium Header Section */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
+        <div className="relative p-8 rounded-3xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                <MessageSquare className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                  Discussions
+                </h1>
+                <p className="text-lg text-muted-foreground font-light">
+                  Engage with the community and participate in course discussions
+                </p>
+              </div>
+            </div>
+            
+            {profile?.role !== 'student' && (
+              <Button 
+                onClick={() => setIsNewDiscussionOpen(true)}
+                className="h-10 px-6 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                New Discussion
+              </Button>
+            )}
+          </div>
         </div>
-        {profile?.role !== 'student' && (
-        <Button 
-          onClick={() => setIsNewDiscussionOpen(true)}
-          className="bg-green-600 hover:bg-green-700 text-white"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          New Discussion
-        </Button>
-        )}
       </div>
 
-      {/* Stats Cards - consider making these dynamic */}
+      {/* Stats Cards - Clean Design */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Replace with dynamic data */}
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Discussions</CardTitle>
+            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{discussionsCount}</div>
+            <p className="text-xs text-muted-foreground">
+              All discussions
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Discussions</CardTitle>
+            <MessageCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{discussions.filter(d => d.status === 'active').length}</div>
+            <p className="text-xs text-muted-foreground">
+              Currently active
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Announcements</CardTitle>
+            <Megaphone className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{discussions.filter(d => d.discussion_type === 'announcement').length}</div>
+            <p className="text-xs text-muted-foreground">
+              Official announcements
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Questions</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{discussions.filter(d => d.discussion_type === 'question').length}</div>
+            <p className="text-xs text-muted-foreground">
+              Student questions
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Search and Filters */}
@@ -301,12 +364,12 @@ export default function DiscussionsPage() {
             placeholder="Search discussions..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-10 h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5"
           />
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
           <Select value={selectedCourse} onValueChange={setSelectedCourse}>
-            <SelectTrigger className="w-full sm:w-[140px]">
+            <SelectTrigger className="w-full sm:w-[140px] h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5">
               <SelectValue placeholder="All Courses" />
             </SelectTrigger>
             <SelectContent>
@@ -323,7 +386,7 @@ export default function DiscussionsPage() {
           </Select>
           
           <Select value={selectedType} onValueChange={setSelectedType}>
-            <SelectTrigger className="w-full sm:w-[120px]">
+            <SelectTrigger className="w-full sm:w-[120px] h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5">
               <SelectValue placeholder="All Types" />
             </SelectTrigger>
             <SelectContent>
