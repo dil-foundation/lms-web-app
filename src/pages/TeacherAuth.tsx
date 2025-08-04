@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, Users, Lock, UserPlus } from 'lucide-react';
 import { 
   validateFirstName, 
   validateLastName, 
@@ -323,37 +323,50 @@ const TeacherAuth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Premium Background Elements */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(var(--primary),0.03),transparent_50%)]"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(var(--primary),0.02),transparent_50%)]"></div>
+      
       <Header />
-      <div className="pt-16 min-h-screen flex items-center justify-center px-4">
+      <div className="pt-16 min-h-screen flex items-center justify-center px-4 relative z-10">
         <div className="w-full max-w-md mx-auto">
           <Button
             variant="ghost"
             onClick={() => navigate('/auth')}
-            className="mb-4 p-2"
+            className="mb-8 p-3 hover:bg-primary/5 rounded-xl transition-all duration-300 group"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
+            <ArrowLeft className="w-5 h-5 mr-3 group-hover:-translate-x-1 transition-transform duration-300" />
             Back to role selection
           </Button>
 
-          <Card>
-            <CardHeader className="text-center">
-              <CardTitle className="text-2xl font-bold">Teacher Portal</CardTitle>
-              <CardDescription>
+          <Card className="bg-card/80 backdrop-blur-sm border border-border/50 shadow-2xl shadow-primary/5 rounded-3xl overflow-hidden">
+            <CardHeader className="text-center pb-8">
+              <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <Users className="w-8 h-8 text-primary" />
+              </div>
+              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                Teacher Portal
+              </CardTitle>
+              <CardDescription className="text-lg leading-relaxed">
                 Sign in to your account or create a new one
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pb-8">
               <Tabs defaultValue="login" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="login">Sign In</TabsTrigger>
-                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-2 bg-muted/50 rounded-2xl p-1">
+                  <TabsTrigger value="login" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300">
+                    Sign In
+                  </TabsTrigger>
+                  <TabsTrigger value="signup" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300">
+                    Sign Up
+                  </TabsTrigger>
                 </TabsList>
                 
-                <TabsContent value="login" className="space-y-4 mt-6">
-                  <form onSubmit={handleLogin} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="login-email">Email</Label>
+                <TabsContent value="login" className="space-y-6 mt-8">
+                  <form onSubmit={handleLogin} className="space-y-6">
+                    <div className="space-y-3">
+                      <Label htmlFor="login-email" className="text-base font-medium">Email</Label>
                       <Input
                         id="login-email"
                         type="email"
@@ -364,14 +377,16 @@ const TeacherAuth = () => {
                           setLoginValidationErrors({ ...loginValidationErrors, email: '' });
                           setAuthError('');
                         }}
-                        className={loginValidationErrors.email ? 'border-red-500' : ''}
+                        className={`h-12 text-base rounded-xl border-2 transition-all duration-300 focus:border-primary focus:ring-2 focus:ring-primary/20 ${
+                          loginValidationErrors.email ? 'border-red-500' : 'border-border/50'
+                        }`}
                       />
                       {loginValidationErrors.email && (
-                        <p className="text-sm text-red-500">{loginValidationErrors.email}</p>
+                        <p className="text-sm text-red-500 font-medium">{loginValidationErrors.email}</p>
                       )}
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="login-password">Password</Label>
+                    <div className="space-y-3">
+                      <Label htmlFor="login-password" className="text-base font-medium">Password</Label>
                       <div className="relative">
                         <Input
                           id="login-password"
@@ -383,38 +398,52 @@ const TeacherAuth = () => {
                             setLoginValidationErrors({ ...loginValidationErrors, password: '' });
                             setAuthError('');
                           }}
-                          className={`pr-10 ${loginValidationErrors.password ? 'border-red-500' : ''}`}
+                          className={`h-12 text-base rounded-xl border-2 pr-12 transition-all duration-300 focus:border-primary focus:ring-2 focus:ring-primary/20 ${
+                            loginValidationErrors.password ? 'border-red-500' : 'border-border/50'
+                          }`}
                         />
                         <button
                           type="button"
-                          className="absolute right-3 top-[50%] transform -translate-y-[50%] text-gray-500"
+                          className="absolute right-4 top-[50%] transform -translate-y-[50%] text-muted-foreground hover:text-primary transition-colors duration-300"
                           onClick={() => setShowLoginPassword(!showLoginPassword)}
                         >
                           {showLoginPassword ? (
-                            <EyeOff className="h-4 w-4" />
+                            <EyeOff className="h-5 w-5" />
                           ) : (
-                            <Eye className="h-4 w-4" />
+                            <Eye className="h-5 w-5" />
                           )}
                         </button>
                       </div>
                       {loginValidationErrors.password && (
-                        <p className="text-sm text-red-500">{loginValidationErrors.password}</p>
+                        <p className="text-sm text-red-500 font-medium">{loginValidationErrors.password}</p>
                       )}
                       {authError && (
-                        <p className="text-sm text-red-500 mt-1 font-semibold">{authError}</p>
+                        <p className="text-sm text-red-500 font-semibold mt-2 p-3 bg-red-50 rounded-xl border border-red-200">
+                          {authError}
+                        </p>
                       )}
                     </div>
                     <Button 
                       type="submit" 
-                      className="w-full bg-primary hover:bg-primary/90"
+                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-lg px-8 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 disabled:transform-none"
                       disabled={isLoading}
                     >
-                      {isLoading ? 'Signing in...' : 'Sign In'}
+                      {isLoading ? (
+                        <div className="flex items-center">
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                          Signing in...
+                        </div>
+                      ) : (
+                        <div className="flex items-center">
+                          <Lock className="mr-2 h-5 w-5" />
+                          Sign In
+                        </div>
+                      )}
                     </Button>
                     <div className="text-center">
                       <Link 
                         to="/forgot-password?role=teacher"
-                        className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                        className="text-sm text-muted-foreground hover:text-primary transition-colors duration-300 font-medium"
                       >
                         Forgot Password?
                       </Link>
@@ -422,11 +451,11 @@ const TeacherAuth = () => {
                   </form>
                 </TabsContent>
                 
-                <TabsContent value="signup" className="space-y-4 mt-6">
-                  <form onSubmit={handleSignup} className="space-y-4">
+                <TabsContent value="signup" className="space-y-6 mt-8">
+                  <form onSubmit={handleSignup} className="space-y-6">
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="signup-firstname">First Name</Label>
+                      <div className="space-y-3">
+                        <Label htmlFor="signup-firstname" className="text-base font-medium">First Name</Label>
                         <Input
                           id="signup-firstname"
                           type="text"
@@ -436,14 +465,16 @@ const TeacherAuth = () => {
                             setSignupData({ ...signupData, firstName: e.target.value });
                             handleFieldValidation('firstName', e.target.value);
                           }}
-                          className={validationErrors.firstName ? 'border-red-500' : ''}
+                          className={`h-12 text-base rounded-xl border-2 transition-all duration-300 focus:border-primary focus:ring-2 focus:ring-primary/20 ${
+                            validationErrors.firstName ? 'border-red-500' : 'border-border/50'
+                          }`}
                         />
                         {validationErrors.firstName && (
-                          <p className="text-sm text-red-500">{validationErrors.firstName}</p>
+                          <p className="text-sm text-red-500 font-medium">{validationErrors.firstName}</p>
                         )}
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="signup-lastname">Last Name</Label>
+                      <div className="space-y-3">
+                        <Label htmlFor="signup-lastname" className="text-base font-medium">Last Name</Label>
                         <Input
                           id="signup-lastname"
                           type="text"
@@ -453,15 +484,17 @@ const TeacherAuth = () => {
                             setSignupData({ ...signupData, lastName: e.target.value });
                             handleFieldValidation('lastName', e.target.value);
                           }}
-                          className={validationErrors.lastName ? 'border-red-500' : ''}
+                          className={`h-12 text-base rounded-xl border-2 transition-all duration-300 focus:border-primary focus:ring-2 focus:ring-primary/20 ${
+                            validationErrors.lastName ? 'border-red-500' : 'border-border/50'
+                          }`}
                         />
                         {validationErrors.lastName && (
-                          <p className="text-sm text-red-500">{validationErrors.lastName}</p>
+                          <p className="text-sm text-red-500 font-medium">{validationErrors.lastName}</p>
                         )}
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-email">Email</Label>
+                    <div className="space-y-3">
+                      <Label htmlFor="signup-email" className="text-base font-medium">Email</Label>
                       <Input
                         id="signup-email"
                         type="email"
@@ -471,14 +504,16 @@ const TeacherAuth = () => {
                           setSignupData({ ...signupData, email: e.target.value });
                           handleFieldValidation('email', e.target.value);
                         }}
-                        className={validationErrors.email ? 'border-red-500' : ''}
+                        className={`h-12 text-base rounded-xl border-2 transition-all duration-300 focus:border-primary focus:ring-2 focus:ring-primary/20 ${
+                          validationErrors.email ? 'border-red-500' : 'border-border/50'
+                        }`}
                       />
                       {validationErrors.email && (
-                        <p className="text-sm text-red-500">{validationErrors.email}</p>
+                        <p className="text-sm text-red-500 font-medium">{validationErrors.email}</p>
                       )}
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="teacher-id">Teacher ID</Label>
+                    <div className="space-y-3">
+                      <Label htmlFor="teacher-id" className="text-base font-medium">Teacher ID</Label>
                       <Input
                         id="teacher-id"
                         type="text"
@@ -488,14 +523,16 @@ const TeacherAuth = () => {
                           setSignupData({ ...signupData, teacherId: e.target.value });
                           handleFieldValidation('teacherId', e.target.value);
                         }}
-                        className={validationErrors.teacherId ? 'border-red-500' : ''}
+                        className={`h-12 text-base rounded-xl border-2 transition-all duration-300 focus:border-primary focus:ring-2 focus:ring-primary/20 ${
+                          validationErrors.teacherId ? 'border-red-500' : 'border-border/50'
+                        }`}
                       />
                       {validationErrors.teacherId && (
-                        <p className="text-sm text-red-500">{validationErrors.teacherId}</p>
+                        <p className="text-sm text-red-500 font-medium">{validationErrors.teacherId}</p>
                       )}
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-password">Password</Label>
+                    <div className="space-y-3">
+                      <Label htmlFor="signup-password" className="text-base font-medium">Password</Label>
                       <div className="relative">
                         <Input
                           id="signup-password"
@@ -506,26 +543,28 @@ const TeacherAuth = () => {
                             setSignupData({ ...signupData, password: e.target.value });
                             handleFieldValidation('password', e.target.value);
                           }}
-                          className={`pr-10 ${validationErrors.password ? 'border-red-500' : ''}`}
+                          className={`h-12 text-base rounded-xl border-2 pr-12 transition-all duration-300 focus:border-primary focus:ring-2 focus:ring-primary/20 ${
+                            validationErrors.password ? 'border-red-500' : 'border-border/50'
+                          }`}
                         />
                         <button
                           type="button"
-                          className="absolute right-3 top-[50%] transform -translate-y-[50%] text-gray-500"
+                          className="absolute right-4 top-[50%] transform -translate-y-[50%] text-muted-foreground hover:text-primary transition-colors duration-300"
                           onClick={() => setShowSignupPassword(!showSignupPassword)}
                         >
                           {showSignupPassword ? (
-                            <EyeOff className="h-4 w-4" />
+                            <EyeOff className="h-5 w-5" />
                           ) : (
-                            <Eye className="h-4 w-4" />
+                            <Eye className="h-5 w-5" />
                           )}
                         </button>
                       </div>
                       {validationErrors.password && (
-                        <p className="text-sm text-red-500">{validationErrors.password}</p>
+                        <p className="text-sm text-red-500 font-medium">{validationErrors.password}</p>
                       )}
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="confirm-password">Confirm Password</Label>
+                    <div className="space-y-3">
+                      <Label htmlFor="confirm-password" className="text-base font-medium">Confirm Password</Label>
                       <div className="relative">
                         <Input
                           id="confirm-password"
@@ -536,33 +575,47 @@ const TeacherAuth = () => {
                             setSignupData({ ...signupData, confirmPassword: e.target.value });
                             handleFieldValidation('confirmPassword', e.target.value);
                           }}
-                          className={`pr-10 ${validationErrors.confirmPassword ? 'border-red-500' : ''}`}
+                          className={`h-12 text-base rounded-xl border-2 pr-12 transition-all duration-300 focus:border-primary focus:ring-2 focus:ring-primary/20 ${
+                            validationErrors.confirmPassword ? 'border-red-500' : 'border-border/50'
+                          }`}
                         />
                         <button
                           type="button"
-                          className="absolute right-3 top-[50%] transform -translate-y-[50%] text-gray-500"
+                          className="absolute right-4 top-[50%] transform -translate-y-[50%] text-muted-foreground hover:text-primary transition-colors duration-300"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                         >
                           {showConfirmPassword ? (
-                            <EyeOff className="h-4 w-4" />
+                            <EyeOff className="h-5 w-5" />
                           ) : (
-                            <Eye className="h-4 w-4" />
+                            <Eye className="h-5 w-5" />
                           )}
                         </button>
                       </div>
                       {validationErrors.confirmPassword && (
-                        <p className="text-sm text-red-500">{validationErrors.confirmPassword}</p>
+                        <p className="text-sm text-red-500 font-medium">{validationErrors.confirmPassword}</p>
                       )}
                     </div>
                     {signupSuccessMessage && (
-                      <p className="text-sm text-green-600 text-center py-2">{signupSuccessMessage}</p>
+                      <p className="text-sm text-green-600 text-center py-3 bg-green-50 rounded-xl border border-green-200 font-medium">
+                        {signupSuccessMessage}
+                      </p>
                     )}
                     <Button 
                       type="submit" 
-                      className="w-full bg-primary hover:bg-primary/90"
+                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-lg px-8 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 disabled:transform-none"
                       disabled={isLoading}
                     >
-                      {isLoading ? 'Creating account...' : 'Create Account'}
+                      {isLoading ? (
+                        <div className="flex items-center">
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                          Creating account...
+                        </div>
+                      ) : (
+                        <div className="flex items-center">
+                          <UserPlus className="mr-2 h-5 w-5" />
+                          Create Account
+                        </div>
+                      )}
                     </Button>
                   </form>
                 </TabsContent>

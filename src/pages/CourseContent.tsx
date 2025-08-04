@@ -487,8 +487,32 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <ContentLoader message="Loading course content..." />
+      <div className="space-y-8 mx-auto p-4">
+        {/* Premium Header Section */}
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
+          <div className="relative p-8 rounded-3xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                  <BookOpen className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
+                    Course Content
+                  </h1>
+                  <p className="text-lg text-muted-foreground mt-2 leading-relaxed">
+                    Interactive learning experience with enterprise-grade tracking
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="py-12">
+          <ContentLoader message="Loading course content..." />
+        </div>
       </div>
     );
   }
@@ -534,8 +558,8 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         return (
           <div className="space-y-6">
             {currentLesson?.content.hasValidVideo ? (
-              <div className="space-y-4">
-                <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+              <div className="space-y-6">
+                <div className="relative aspect-video bg-black rounded-xl overflow-hidden shadow-2xl">
                    <video 
                     ref={videoRef} 
                     controls 
@@ -548,11 +572,11 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                 </div>
               </div>
             ) : currentLesson.content.thumbnailUrl ? (
-              <div className="relative aspect-video bg-muted rounded-lg overflow-hidden flex items-center justify-center">
+              <div className="relative aspect-video bg-muted rounded-xl overflow-hidden flex items-center justify-center shadow-xl">
                 <img src={currentLesson.content.thumbnailUrl} alt={currentLesson.title} className="max-w-full max-h-full object-contain" />
               </div>
             ) : (
-              <div className="relative aspect-video bg-muted rounded-lg overflow-hidden flex items-center justify-center">
+              <div className="relative aspect-video bg-muted rounded-xl overflow-hidden flex items-center justify-center shadow-xl">
                 <div className="text-center p-8">
                   <PlayCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground text-lg font-medium">No video content available</p>
@@ -560,15 +584,15 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                 </div>
               </div>
             )}
-            <Card>
+            <Card className="bg-card border border-border backdrop-blur-sm shadow-lg">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <PlayCircle className="w-5 h-5 text-green-500" />
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <PlayCircle className="w-6 h-6 text-green-500" />
                   Lesson Overview
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground mb-4">{currentLesson.content.description}</p>
+                <p className="text-muted-foreground leading-relaxed">{currentLesson.content.description}</p>
               </CardContent>
             </Card>
           </div>
@@ -576,15 +600,15 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       case 'text':
         return (
           <div className="space-y-6">
-            <Card>
+            <Card className="bg-card border border-border backdrop-blur-sm shadow-lg">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-blue-500" />
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <FileText className="w-6 h-6 text-blue-500" />
                   {currentLesson.content.title}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: currentLesson.content.text }} />
+                <div className="prose prose-sm max-w-none dark:prose-invert leading-relaxed" dangerouslySetInnerHTML={{ __html: currentLesson.content.text }} />
               </CardContent>
             </Card>
           </div>
@@ -592,46 +616,46 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       case 'assignment':
         return (
           <div className="space-y-6">
-            <Card>
+            <Card className="bg-card border border-border backdrop-blur-sm shadow-lg">
               <CardHeader>
-                <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-2">
-                  <CardTitle className="flex items-center gap-2">
-                    <ClipboardList className="w-5 h-5 text-indigo-500" />
+                <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
+                  <CardTitle className="flex items-center gap-3 text-xl">
+                    <ClipboardList className="w-6 h-6 text-indigo-500" />
                     Assignment Details
                   </CardTitle>
                   {currentLesson.due_date && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted px-3 py-1.5 rounded-full">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground bg-gradient-to-r from-orange-50 to-orange-100/50 dark:from-orange-900/10 dark:to-orange-800/10 px-4 py-2 rounded-xl border border-orange-200/50 dark:border-orange-700/50">
                       <CalendarClock className="w-4 h-4" />
-                      <span>Due: {format(new Date(currentLesson.due_date), 'PPP')}</span>
+                      <span className="font-medium">Due: {format(new Date(currentLesson.due_date), 'PPP')}</span>
                     </div>
                   )}
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: mainContentHtml }} />
+                <div className="prose prose-sm max-w-none dark:prose-invert leading-relaxed" dangerouslySetInnerHTML={{ __html: mainContentHtml }} />
               </CardContent>
             </Card>
 
             {attachments.length > 0 && (
-              <Card>
+              <Card className="bg-card border border-border backdrop-blur-sm shadow-lg">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Paperclip className="w-5 h-5 text-gray-500" />
+                  <CardTitle className="flex items-center gap-3 text-xl">
+                    <Paperclip className="w-6 h-6 text-gray-500" />
                     Attached Files
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-4">
                   {attachments.map((att, index) => (
-                    <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 border rounded-lg">
+                    <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 border rounded-xl bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 border-gray-200/50 dark:border-gray-600/50">
                       <div className="flex items-center gap-3">
                         <FileText className="w-6 h-6 text-muted-foreground" />
                         <span className="font-medium">{att.name}</span>
                       </div>
                       <div className="flex items-center gap-2 self-end sm:self-center">
                         <a href={att.url} target="_blank" rel="noopener noreferrer">
-                          <Button variant="outline">View</Button>
+                          <Button variant="outline" className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800">View</Button>
                         </a>
-                        <Button onClick={() => handleDownload(att.url, att.name)} disabled={isDownloading}>
+                        <Button onClick={() => handleDownload(att.url, att.name)} disabled={isDownloading} className="h-9 px-4 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
                           {isDownloading ? 'Downloading...' : 'Download'}
                         </Button>
                       </div>
@@ -815,18 +839,18 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       <div className={`lg:hidden fixed inset-0 z-50 ${isSidebarOpen ? 'block' : 'hidden'}`}>
         <div className="absolute inset-0 bg-black/50" onClick={() => setIsSidebarOpen(false)} />
         <div className="relative w-80 h-full bg-background border-r border-border overflow-hidden">
-          <div className="p-6 border-b border-border bg-card/50">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-foreground truncate text-lg">{course.title}</h2>
+          <div className="p-6 border-b border-border bg-gradient-to-br from-card to-primary/5 backdrop-blur-sm">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="font-bold text-foreground truncate text-xl">{course.title}</h2>
               <Button variant="ghost" size="sm" onClick={() => setIsSidebarOpen(false)} className="hover:bg-accent"><X className="w-4 h-4" /></Button>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-foreground">Course Progress</span>
-                <span className="text-sm font-semibold text-green-600">{course.totalProgress}%</span>
+                <span className="text-sm font-semibold text-foreground">Course Progress</span>
+                <span className="text-lg font-bold text-green-600">{course.totalProgress}%</span>
               </div>
               <Progress value={course.totalProgress} className="h-3 bg-muted" />
-              <p className="text-xs text-muted-foreground">Keep up the great work!</p>
+              <p className="text-xs text-muted-foreground font-medium">Keep up the great work!</p>
             </div>
           </div>
           <ScrollArea className="flex-1 p-2">
@@ -880,17 +904,17 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       <div className="flex min-h-screen">
         {/* Desktop Sidebar */}
         <div className={`hidden lg:block ${isSidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 border-r border-border bg-background overflow-hidden`}>
-          <div className="p-6 border-b border-border bg-card/50">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-foreground truncate text-lg">{course.title}</h2>
+          <div className="p-6 border-b border-border bg-gradient-to-br from-card to-primary/5 backdrop-blur-sm">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="font-bold text-foreground truncate text-xl">{course.title}</h2>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-foreground">Course Progress</span>
-                <span className="text-sm font-semibold text-green-600">{course.totalProgress}%</span>
+                <span className="text-sm font-semibold text-foreground">Course Progress</span>
+                <span className="text-lg font-bold text-green-600">{course.totalProgress}%</span>
               </div>
               <Progress value={course.totalProgress} className="h-3 bg-muted" />
-              <p className="text-xs text-muted-foreground">Keep up the great work!</p>
+              <p className="text-xs text-muted-foreground font-medium">Keep up the great work!</p>
             </div>
           </div>
           <ScrollArea className="flex-1 p-2">
@@ -941,41 +965,67 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         
         {/* Content Body (Shared) */}
         <div className="flex-1 flex flex-col w-full">
-          {/* Header */}
-          <div className="border-b border-border bg-background p-4 lg:p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Button variant="ghost" size="sm" onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="hover:bg-accent"><Menu className="w-4 h-4" /></Button>
-                <div>
-                  <h1 className="font-semibold text-foreground text-base lg:text-lg">{currentLesson?.title}</h1>
-                  <p className="text-sm text-muted-foreground">{currentModule?.title}</p>
+          {/* Premium Header */}
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5"></div>
+            <div className="relative border-b border-border bg-background p-6 lg:p-8">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+                    className="h-10 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
+                    <Menu className="w-4 h-4" />
+                  </Button>
+                  <div>
+                    <h1 className="font-bold text-foreground text-xl lg:text-2xl leading-tight">{currentLesson?.title}</h1>
+                    <p className="text-muted-foreground mt-1">{currentModule?.title}</p>
+                  </div>
                 </div>
-              </div>
-              <div className="hidden lg:flex items-center gap-3">
-                <Button variant="outline" size="sm" onClick={() => navigate(`/dashboard/courses/${actualCourseId}`)} className="hover:bg-accent"><ChevronLeft className="w-4 h-4 mr-2" />Back to Course</Button>
+                <div className="hidden lg:flex items-center gap-3">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => navigate(`/dashboard/courses/${actualCourseId}`)} 
+                    className="h-10 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
+                    <ChevronLeft className="w-4 h-4 mr-2" />Back to Course
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
           
-          {/* Lesson Content */}
-          <div className="flex-1 p-4 lg:p-6">
-            <div className="max-w-4xl mx-auto">{renderLessonContent()}</div>
+          {/* Enhanced Lesson Content */}
+          <div className="flex-1 p-6 lg:p-8">
+            <div className="max-w-5xl mx-auto space-y-8">{renderLessonContent()}</div>
           </div>
           
-          {/* Footer / Navigation */}
-          <div className="bg-background p-4 lg:p-6 sticky bottom-0 lg:static border-t lg:border-t-0">
-            <div className="flex items-center justify-between max-w-4xl mx-auto">
-              <div className="flex items-center gap-2">
+          {/* Enhanced Footer / Navigation */}
+          <div className="bg-background p-6 lg:p-8 sticky bottom-0 lg:static border-t lg:border-t-0">
+            <div className="flex items-center justify-between max-w-5xl mx-auto">
+              <div className="flex items-center gap-3">
                 {prevLesson && (
-                  <Button variant="outline" onClick={() => handleNavigation(prevLesson)} className="hover:bg-accent" size="sm" >
-                    <ChevronLeft className="w-4 h-4 mr-1" /><span className="hidden sm:inline">Previous</span>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => handleNavigation(prevLesson)} 
+                    className="h-10 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800" 
+                    size="sm"
+                  >
+                    <ChevronLeft className="w-4 h-4 mr-2" /><span className="hidden sm:inline">Previous</span>
                   </Button>
                 )}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 {nextLesson && (
-                  <Button className="bg-green-600 hover:bg-green-700 text-white shadow-sm" onClick={() => handleNavigation(nextLesson)} size="sm">
-                    <span className="hidden sm:inline">Next</span><ChevronRight className="w-4 h-4 ml-1" />
+                  <Button 
+                    className="h-10 px-6 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5" 
+                    onClick={() => handleNavigation(nextLesson)} 
+                    size="sm"
+                  >
+                    <span className="hidden sm:inline">Next</span><ChevronRight className="w-4 h-4 ml-2" />
                   </Button>
                 )}
               </div>

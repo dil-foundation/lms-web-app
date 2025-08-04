@@ -3,14 +3,12 @@ import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Logo } from './header/Logo';
 import { ThemeToggle } from './header/ThemeToggle';
-import { Navigation } from './header/Navigation';
 import { AuthButton } from './header/AuthButton';
 import { MobileMenu } from './header/MobileMenu';
-import { LayoutSwitcher } from './header/LayoutSwitcher';
 
 export const Header = memo(() => {
   const location = useLocation();
-  const { user, loading, signOut } = useAuth();
+  const { user, loading } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   
   // Hide mobile menu on dashboard pages since DashboardSidebar handles mobile navigation
@@ -39,11 +37,7 @@ export const Header = memo(() => {
 
           {/* Desktop Navigation - Right Aligned */}
           <div className="hidden md:flex items-center space-x-6">
-            <LayoutSwitcher />
             <ThemeToggle />
-            
-            <Navigation user={user} />
-
             <AuthButton />
           </div>
 

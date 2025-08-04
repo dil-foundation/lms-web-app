@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend } from 'recharts';
-import { Users, GraduationCap, BookOpen, TrendingUp, Clock, Star, Award } from 'lucide-react';
+import { Users, GraduationCap, BookOpen, TrendingUp, Clock, Star, Award, BarChart3 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -358,25 +358,41 @@ export const ReportsOverview = () => {
   }
 
   return (
-    <div className="space-y-6 p-2 sm:p-0">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Reports & Analytics</h1>
-          <p className="text-muted-foreground text-sm sm:text-base">Monitor platform performance and user engagement</p>
+    <div className="space-y-8">
+      {/* Premium Header Section */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
+        <div className="relative p-8 rounded-3xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                <BarChart3 className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
+                  Reports & Analytics
+                </h1>
+                <p className="text-lg text-muted-foreground font-light">
+                  Monitor platform performance and user engagement
+                </p>
+              </div>
+            </div>
+            
+            <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Select time range" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7days">Last 7 days</SelectItem>
+                <SelectItem value="30days">Last 30 days</SelectItem>
+                <SelectItem value="3months">Last 3 months</SelectItem>
+                <SelectItem value="6months">Last 6 months</SelectItem>
+                <SelectItem value="1year">Last year</SelectItem>
+                <SelectItem value="alltime">All time</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <Select value={timeRange} onValueChange={setTimeRange}>
-          <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder="Select time range" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="7days">Last 7 days</SelectItem>
-            <SelectItem value="30days">Last 30 days</SelectItem>
-            <SelectItem value="3months">Last 3 months</SelectItem>
-            <SelectItem value="6months">Last 6 months</SelectItem>
-            <SelectItem value="1year">Last year</SelectItem>
-            <SelectItem value="alltime">All time</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
       {/* Summary Cards */}
@@ -409,7 +425,7 @@ export const ReportsOverview = () => {
 
         {/* Filter Loading Overlay */}
         {filterLoading && (
-          <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
+                      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
             <ContentLoader message="Loading reports..." />
           </div>
         )}

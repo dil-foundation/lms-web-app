@@ -1012,7 +1012,7 @@ export default function MessagesPage() {
   };
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-[80vh] bg-background">
       {/* Always show the main layout structure */}
       <>
         {/* Chat List Sidebar */}
