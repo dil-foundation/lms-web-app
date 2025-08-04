@@ -33,7 +33,8 @@ import {
   Filter,
   Search,
   BookOpen,
-  GraduationCap
+  GraduationCap,
+  Paperclip
 } from 'lucide-react';
 import { useState, useEffect, memo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -85,93 +86,196 @@ const AssignmentDetailModal = memo(({
   if (!assignment) return null;
 
   return (
-    <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col p-0">
-      <DialogHeader className="p-6 pb-4 border-b">
-        <DialogTitle>{assignment.title}</DialogTitle>
-        <DialogDescription className="sr-only">
-          Details for assignment: {assignment.title}
-        </DialogDescription>
-      </DialogHeader>
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-6 space-y-4">
-          <div>
-            <Label className="text-sm font-medium">Course</Label>
-            <p className="text-sm text-muted-foreground">{assignment.courseTitle}</p>
-          </div>
-          
-          <div>
-            <Label className="text-sm font-medium">Description</Label>
-            <div className="text-sm text-muted-foreground mt-1 prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: assignment.description }}/>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label className="text-sm font-medium">Due Date</Label>
-              <p className="text-sm text-muted-foreground">{formatDate(assignment.dueDate)}</p>
-            </div>
-            <div>
-              <Label className="text-sm font-medium">Status</Label>
-              <div className="flex items-center space-x-2 mt-1">
-                <Badge variant={getStatusColor(assignment.status)} className="capitalize">
-                  {getStatusIcon(assignment.status)}
-                  <span className="ml-1">{assignment.status}</span>
-                </Badge>
-                {isOverdue(assignment.dueDate, assignment.status) && (
-                  <Badge variant="destructive">Overdue</Badge>
-                )}
+    <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 bg-card border border-border backdrop-blur-sm">
+      {/* Premium Header */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5"></div>
+        <div className="relative p-6 border-b border-border">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                <ClipboardList className="w-6 h-6 text-primary" />
               </div>
-            </div>
-          </div>
-          
-          {assignment.status === 'graded' && (
-            <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800 space-y-3">
-              <h3 className="font-medium flex items-center gap-2"><GraduationCap className="h-5 w-5 text-green-600" /> Grade & Feedback</h3>
               <div>
-                <Label className="text-sm font-medium">Grade</Label>
-                <p className="text-2xl font-bold mt-1">{assignment.score != null ? `${assignment.score}%` : 'Not Graded'}</p>
+                <DialogTitle className="text-2xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
+                  {assignment.title}
+                </DialogTitle>
+                <DialogDescription className="text-lg text-muted-foreground mt-2 leading-relaxed">
+                  Assignment Details
+                </DialogDescription>
               </div>
-              {assignment.feedback && (
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-8 space-y-8">
+          
+          {/* Course Information */}
+          <Card className="bg-card border border-border backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <BookOpen className="w-6 h-6 text-primary" />
+                Course Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
                 <div>
-                  <Label className="text-sm font-medium">Feedback from your teacher</Label>
-                  <p className="text-sm text-muted-foreground mt-1">{assignment.feedback}</p>
+                  <Label className="text-sm font-medium text-foreground">Course</Label>
+                  <p className="text-lg font-semibold text-foreground mt-1">{assignment.courseTitle}</p>
                 </div>
-              )}
-            </div>
-          )}
-          
-          {assignment.submittedAt && (
-            <div>
-              <Label className="text-sm font-medium">Submitted</Label>
-              <p className="text-sm text-muted-foreground">{formatDate(assignment.submittedAt)}</p>
-            </div>
-          )}
-          
-          {assignment.attachments && assignment.attachments.length > 0 && (
-            <div>
-              <Label className="text-sm font-medium">Attachments</Label>
-              <div className="space-y-2 mt-1">
-                {assignment.attachments.map((attachment, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 border rounded">
-                    <span className="text-sm">{attachment.name}</span>
-                    <div className="flex items-center gap-1">
-                      <a href={attachment.url} target="_blank" rel="noopener noreferrer">
-                        <Button variant="ghost" size="icon">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </a>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDownload(attachment.url, attachment.name)}
-                        disabled={isDownloading === attachment.name}
-                      >
-                        {isDownloading === attachment.name ? <Clock className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                      </Button>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-foreground">Due Date</Label>
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                      <Calendar className="w-4 h-4 text-primary" />
+                      <span className="font-medium">{formatDate(assignment.dueDate)}</span>
                     </div>
                   </div>
-                ))}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-foreground">Status</Label>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={getStatusColor(assignment.status)} className="capitalize px-3 py-1">
+                        {getStatusIcon(assignment.status)}
+                        <span className="ml-1">{assignment.status}</span>
+                      </Badge>
+                      {isOverdue(assignment.dueDate, assignment.status) && (
+                        <Badge variant="destructive" className="px-3 py-1">Overdue</Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+            </CardContent>
+          </Card>
+
+          {/* Assignment Description */}
+          <Card className="bg-card border border-border backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <FileText className="w-6 h-6 text-primary" />
+                Assignment Description
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground prose-a:text-primary" dangerouslySetInnerHTML={{ __html: assignment.description }}/>
+            </CardContent>
+          </Card>
+
+          {/* Grade & Feedback Section */}
+          {assignment.status === 'graded' && (
+            <Card className="bg-card border border-border backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <GraduationCap className="w-6 h-6 text-primary" />
+                  Grade & Feedback
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <div className="p-6 rounded-lg bg-gradient-to-r from-green-50 to-green-100/50 dark:from-green-900/10 dark:to-green-800/10 border border-green-200/50 dark:border-green-700/50">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-sm font-medium text-foreground">Grade</Label>
+                        <p className="text-3xl font-bold text-green-600 dark:text-green-400 mt-1">
+                          {assignment.score != null ? `${assignment.score}%` : 'Not Graded'}
+                        </p>
+                      </div>
+                      <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900 dark:to-green-800 rounded-full flex items-center justify-center">
+                        <GraduationCap className="w-8 h-8 text-green-600 dark:text-green-400" />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {assignment.feedback && (
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium text-foreground">Feedback from your teacher</Label>
+                      <div className="p-4 rounded-lg bg-gradient-to-r from-blue-50 to-blue-100/50 dark:from-blue-900/10 dark:to-blue-800/10 border border-blue-200/50 dark:border-blue-700/50">
+                        <p className="text-sm text-muted-foreground leading-relaxed">{assignment.feedback}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Submission Information */}
+          {assignment.submittedAt && (
+            <Card className="bg-card border border-border backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <CheckCircle className="w-6 h-6 text-primary" />
+                  Submission Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                  <Calendar className="w-4 h-4 text-primary" />
+                  <span className="font-medium">Submitted on {formatDate(assignment.submittedAt)}</span>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Attachments */}
+          {assignment.attachments && assignment.attachments.length > 0 && (
+            <Card className="bg-card border border-border backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <Paperclip className="w-6 h-6 text-primary" />
+                  Assignment Attachments
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {assignment.attachments.map((attachment, index) => (
+                    <div key={index} className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 border border-gray-200/50 dark:border-gray-600/50 hover:shadow-md transition-all duration-200">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <FileText className="w-5 h-5 text-primary" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <span className="font-medium text-foreground truncate block" title={attachment.name}>
+                            {attachment.name}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
+                          className="hover:bg-primary/10 hover:border-primary/30 whitespace-nowrap"
+                        >
+                          <a href={attachment.url} target="_blank" rel="noopener noreferrer">
+                            <Eye className="h-4 w-4 mr-2" />
+                            View
+                          </a>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDownload(attachment.url, attachment.name)}
+                          disabled={isDownloading === attachment.name}
+                          className="hover:bg-primary/10 hover:border-primary/30 whitespace-nowrap"
+                        >
+                          {isDownloading === attachment.name ? (
+                            <Clock className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <Download className="h-4 w-4 mr-2" />
+                          )}
+                          {isDownloading === attachment.name ? 'Downloading...' : 'Download'}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>
@@ -765,11 +869,24 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Assignments</h1>
-        <p className="text-muted-foreground">
-          View and submit your course assignments.
-        </p>
+      {/* Premium Header Section */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5"></div>
+        <div className="relative">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+              <ClipboardList className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
+                Assignments
+              </h1>
+              <p className="text-lg text-muted-foreground mt-2">
+                View and submit your course assignments.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Filters and Search */}
@@ -807,51 +924,55 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
 
       {/* Assignment Statistics */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">Total Assignments</p>
-                <p className="text-2xl font-bold">{assignments.length}</p>
-              </div>
-              <ClipboardList className="h-8 w-8 text-muted-foreground" />
-            </div>
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Assignments</CardTitle>
+            <ClipboardList className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{assignments.length}</div>
+            <p className="text-xs text-muted-foreground">
+              {assignments.length === 1 ? 'Assignment available' : 'Assignments available'}
+            </p>
           </CardContent>
         </Card>
         
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">Pending</p>
-                <p className="text-2xl font-bold">{assignments.filter(a => a.status === 'pending').length}</p>
-              </div>
-              <AlertCircle className="h-8 w-8 text-orange-500" />
-            </div>
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pending</CardTitle>
+            <AlertCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{assignments.filter(a => a.status === 'pending').length}</div>
+            <p className="text-xs text-muted-foreground">
+              Awaiting submission
+            </p>
           </CardContent>
         </Card>
         
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">Submitted</p>
-                <p className="text-2xl font-bold">{assignments.filter(a => a.status === 'submitted').length}</p>
-              </div>
-              <Clock className="h-8 w-8 text-blue-500" />
-            </div>
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Submitted</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{assignments.filter(a => a.status === 'submitted').length}</div>
+            <p className="text-xs text-muted-foreground">
+              Awaiting grading
+            </p>
           </CardContent>
         </Card>
         
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">Graded</p>
-                <p className="text-2xl font-bold">{assignments.filter(a => a.status === 'graded').length}</p>
-              </div>
-              <CheckCircle className="h-8 w-8 text-green-500" />
-            </div>
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Graded</CardTitle>
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{assignments.filter(a => a.status === 'graded').length}</div>
+            <p className="text-xs text-muted-foreground">
+              Completed assignments
+            </p>
           </CardContent>
         </Card>
       </div>

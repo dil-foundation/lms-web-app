@@ -542,37 +542,53 @@ export default function StudentsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Students</h1>
-          <p className="text-muted-foreground">Manage your students and track their progress</p>
+      {/* Premium Header Section */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
+        <div className="relative p-8 rounded-3xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                <Users className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
+                  Students
+                </h1>
+                <p className="text-lg text-muted-foreground mt-2 leading-relaxed">
+                  Manage your students and track their progress
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button 
+                onClick={() => {
+                  setEnrollModalOpen(true);
+                  fetchEnrollmentData();
+                }}
+                className="h-9 px-4 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+              >
+                <UserPlus className="h-4 w-4" />
+                Enroll Student
+              </Button>
+            </div>
+          </div>
         </div>
-        <Dialog open={enrollModalOpen} onOpenChange={setEnrollModalOpen}>
-          <DialogTrigger asChild>
-            <Button 
-              onClick={() => {
-                setEnrollModalOpen(true);
-                fetchEnrollmentData();
-              }}
-              className="flex items-center gap-2"
-            >
-              <UserPlus className="h-4 w-4" />
-              Enroll Student
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <UserPlus className="h-5 w-5 text-green-600" />
-                Enroll Student in Course
-              </DialogTitle>
-              <p className="text-sm text-muted-foreground">
-                Select a student and course to create a new enrollment. Only courses the student is not already enrolled in will be shown.
-              </p>
-            </DialogHeader>
+      </div>
+
+      <Dialog open={enrollModalOpen} onOpenChange={setEnrollModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5 text-green-600" />
+              Enroll Student in Course
+            </DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              Select a student and course to create a new enrollment. Only courses the student is not already enrolled in will be shown.
+            </p>
+          </DialogHeader>
             
-            <div className="space-y-6 py-4">
+          <div className="space-y-6 py-4">
               {/* Select Student */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Select Student</label>
@@ -665,23 +681,24 @@ export default function StudentsPage() {
 
             {/* Modal Actions */}
             <div className="flex justify-end space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setEnrollModalOpen(false);
-                  setSelectedStudentForEnroll('');
-                  setSelectedCourseForEnroll('');
-                  setStudentSearchTerm('');
-                }}
-                disabled={enrollmentLoading}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleEnrollStudent}
-                disabled={!selectedStudentForEnroll || !selectedCourseForEnroll || enrollmentLoading}
-                className="flex items-center gap-2"
-              >
+                              <Button
+                  variant="outline"
+                  onClick={() => {
+                    setEnrollModalOpen(false);
+                    setSelectedStudentForEnroll('');
+                    setSelectedCourseForEnroll('');
+                    setStudentSearchTerm('');
+                  }}
+                  disabled={enrollmentLoading}
+                  className="hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  Cancel
+                </Button>
+                              <Button
+                  onClick={handleEnrollStudent}
+                  disabled={!selectedStudentForEnroll || !selectedCourseForEnroll || enrollmentLoading}
+                  className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
                 {enrollmentLoading ? (
                   <>
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -697,90 +714,85 @@ export default function StudentsPage() {
             </div>
           </DialogContent>
         </Dialog>
-      </div>
 
-      {/* Students Summary Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <Skeleton className="h-8 w-16" />
-            ) : (
-              <div className="text-2xl font-bold">{studentData.totalCount}</div>
-            )}
-            <p className="text-xs text-muted-foreground">
-              Across all courses
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Students</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <Skeleton className="h-8 w-16" />
-            ) : (
-              <div className="text-2xl font-bold">{studentData.activeCount}</div>
-            )}
-            <p className="text-xs text-muted-foreground">
-              {studentData.totalCount > 0 ? Math.round((studentData.activeCount / studentData.totalCount) * 100) : 0}% of total
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Progress</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <Skeleton className="h-8 w-16" />
-            ) : (
-              <div className="text-2xl font-bold">{studentData.averageProgress}%</div>
-            )}
-            <p className="text-xs text-muted-foreground">
-              Course completion
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Unverified</CardTitle>
-            <AlertCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <Skeleton className="h-8 w-16" />
-            ) : (
-              <div className="text-2xl font-bold">{studentData.unverifiedCount}</div>
-            )}
-            <p className="text-xs text-muted-foreground">
-              Students who have not verified their email
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+             {/* Students Summary Metrics */}
+       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+         <Card className="relative overflow-hidden transition-all duration-200 hover:shadow-lg bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+             <CardTitle className="text-sm font-medium text-muted-foreground">Total Students</CardTitle>
+             <Users className="h-4 w-4 text-blue-500" />
+           </CardHeader>
+           <CardContent>
+             <div className="space-y-1">
+               {loading ? (
+                 <Skeleton className="h-8 w-16" />
+               ) : (
+                 <div className="text-2xl font-bold">{studentData.totalCount}</div>
+               )}
+             </div>
+           </CardContent>
+         </Card>
+         <Card className="relative overflow-hidden transition-all duration-200 hover:shadow-lg bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+             <CardTitle className="text-sm font-medium text-muted-foreground">Active Students</CardTitle>
+             <Activity className="h-4 w-4 text-green-500" />
+           </CardHeader>
+           <CardContent>
+             <div className="space-y-1">
+               {loading ? (
+                 <Skeleton className="h-8 w-16" />
+               ) : (
+                 <div className="text-2xl font-bold">{studentData.activeCount}</div>
+               )}
+             </div>
+           </CardContent>
+         </Card>
+         <Card className="relative overflow-hidden transition-all duration-200 hover:shadow-lg bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+             <CardTitle className="text-sm font-medium text-muted-foreground">Avg Progress</CardTitle>
+             <Target className="h-4 w-4 text-purple-500" />
+           </CardHeader>
+           <CardContent>
+             <div className="space-y-1">
+               {loading ? (
+                 <Skeleton className="h-8 w-16" />
+               ) : (
+                 <div className="text-2xl font-bold">{studentData.averageProgress}%</div>
+               )}
+             </div>
+           </CardContent>
+         </Card>
+         <Card className="relative overflow-hidden transition-all duration-200 hover:shadow-lg bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+             <CardTitle className="text-sm font-medium text-muted-foreground">Unverified</CardTitle>
+             <AlertCircle className="h-4 w-4 text-orange-500" />
+           </CardHeader>
+           <CardContent>
+             <div className="space-y-1">
+               {loading ? (
+                 <Skeleton className="h-8 w-16" />
+               ) : (
+                 <div className="text-2xl font-bold">{studentData.unverifiedCount}</div>
+               )}
+             </div>
+           </CardContent>
+         </Card>
+       </div>
 
       {/* Error Display */}
       {error && (
-        <Card className="border-red-200 bg-red-50">
+        <Card className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/20">
           <CardContent className="pt-6">
             <div className="flex items-center space-x-2">
               <AlertCircle className="h-5 w-5 text-red-500" />
-              <div>
-                <p className="text-sm font-medium text-red-800">Error loading student data</p>
-                <p className="text-sm text-red-600">{error}</p>
+                             <div>
+                 <p className="text-sm font-medium text-red-800 dark:text-red-400">Error loading student data</p>
+                 <p className="text-sm text-red-600 dark:text-red-300">{error}</p>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={fetchStudentDataAndCount}
-                  className="mt-2"
+                  className="mt-2 hover:bg-gray-100 dark:hover:bg-gray-800"
                   disabled={loading}
                 >
                   Try Again
@@ -792,26 +804,26 @@ export default function StudentsPage() {
       )}
 
       {/* Search and Filter Controls */}
-      <Card>
+      <Card className="bg-card border border-border">
         <CardHeader>
-          <CardTitle>Student Management</CardTitle>
+          <CardTitle className="text-xl font-semibold">Student Management</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search students by name or email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+                             <Input
+                 placeholder="Search students by name or email..."
+                 value={searchTerm}
+                 onChange={(e) => setSearchTerm(e.target.value)}
+                 className="pl-10 h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5"
+               />
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
-              <Select value={selectedCourse} onValueChange={setSelectedCourse}>
-                <SelectTrigger className="w-full sm:w-48">
-                  <SelectValue placeholder="Filter by course" />
-                </SelectTrigger>
+                             <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+                 <SelectTrigger className="w-full sm:w-48 h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5">
+                   <SelectValue placeholder="Filter by course" />
+                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Courses</SelectItem>
                   {filterableCourses.map(course => (
@@ -819,10 +831,10 @@ export default function StudentsPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger className="w-full sm:w-32">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
+                             <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                 <SelectTrigger className="w-full sm:w-32 h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5">
+                   <SelectValue placeholder="Status" />
+                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="active">Active</SelectItem>
@@ -834,7 +846,7 @@ export default function StudentsPage() {
           </div>
 
           {/* Students Table */}
-          <div className="rounded-md border">
+          <div className="rounded-md border border-border">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -858,7 +870,7 @@ export default function StudentsPage() {
                       <TableCell className="font-medium">
                         <div className="flex items-center space-x-3">
                           <Avatar className="h-8 w-8">
-                            <AvatarFallback className="text-xs">
+                            <AvatarFallback className="text-xs bg-primary/10 text-primary">
                               {student.avatar}
                             </AvatarFallback>
                           </Avatar>
@@ -884,7 +896,7 @@ export default function StudentsPage() {
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
+                            <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-800">
                               <span className="sr-only">Open menu</span>
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
@@ -976,9 +988,9 @@ export default function StudentsPage() {
               <p className="text-muted-foreground mb-4">
                 You don't have any students enrolled in your courses yet.
               </p>
-              <Button variant="outline" onClick={fetchStudentDataAndCount} disabled={loading}>
-                Refresh Data
-              </Button>
+                              <Button variant="outline" onClick={fetchStudentDataAndCount} disabled={loading} className="hover:bg-gray-100 dark:hover:bg-gray-800">
+                  Refresh Data
+                </Button>
             </div>
           )}
           

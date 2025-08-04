@@ -209,7 +209,7 @@ const TeacherStageCard = ({ stage }) => {
 
         <div className="space-y-2">
           <Button 
-            className="w-full bg-green-500 hover:bg-green-600" 
+            className="w-full bg-green-500 hover:bg-green-600 text-white" 
             onClick={handleViewStage}
             size="sm"
           >
@@ -301,7 +301,7 @@ export const AITeacherPractice: React.FC = () => {
           <h1 className="text-3xl font-bold tracking-tight">Practice Activities</h1>
           <p className="text-muted-foreground">Preview and customize practice stages for your students</p>
         </div>
-        <Button className="bg-green-500 hover:bg-green-600">
+        <Button className="bg-green-500 hover:bg-green-600 text-white">
           <Plus className="mr-2 h-4 w-4" />
           Create Assignment
         </Button>

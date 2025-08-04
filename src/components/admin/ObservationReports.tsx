@@ -654,23 +654,44 @@ export const ObservationReports = () => {
 
   return (
     <div className="space-y-8 mx-auto p-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Field Audit & Compliance Assessment</h1>
-          <p className="text-muted-foreground mt-1">
-            Capture systematic observations to drive data-informed curriculum improvements and performance tracking
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setViewMode('secureLinks')}>
-            <Link className="w-4 h-4 mr-2" />
-            Manage Secure Links
-          </Button>
-          <Button variant="outline" onClick={() => setViewMode('pastReports')}>
-            <Eye className="w-4 h-4 mr-2" />
-            View Past Reports
-          </Button>
+      {/* Premium Header Section */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
+        <div className="relative p-8 rounded-3xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 flex-1 max-w-2xl">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                <ClipboardList className="w-6 h-6 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
+                  Field Audit & Compliance Assessment
+                </h1>
+                <p className="text-lg text-muted-foreground font-light pr-8">
+                  Capture systematic observations to drive data-informed curriculum improvements and performance tracking
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2 flex-shrink-0 ml-8">
+              <Button 
+                variant="outline" 
+                onClick={() => setViewMode('secureLinks')}
+                className="h-10 px-6 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                <Link className="w-4 h-4 mr-2" />
+                Manage Secure Links
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setViewMode('pastReports')}
+                className="h-10 px-6 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                View Past Reports
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 

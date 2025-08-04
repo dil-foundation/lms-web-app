@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Save, Eye, Upload, Plus, GripVertical, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Upload, Plus, GripVertical, X, ChevronDown, ChevronUp, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import { FileUpload } from '@/components/ui/FileUpload';
 import { RichTextEditor } from '@/components/ui/RichTextEditor';
@@ -490,7 +490,7 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, d
             value={lesson.type}
             onValueChange={handleTypeChangeRequest}
           >
-            <SelectTrigger className="w-[120px]">
+                                    <SelectTrigger className="w-[120px] h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -1602,35 +1602,50 @@ const CourseBuilder = () => {
 
   return (
     <div className="min-h-screen bg-background w-full">
-      {/* Header */}
-      <div className="border-b bg-card">
-        <div className="flex items-center justify-between p-4 w-full">
+      {/* Premium Header Section */}
+      <div className="relative border-b bg-card">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5"></div>
+        <div className="relative flex items-center justify-between p-6 w-full">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard/courses')}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/dashboard/courses')}
+                                      className="h-10 w-10 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5"
+            >
               <ArrowLeft className="w-4 h-4" />
             </Button>
-            <div>
-              <h1 className="text-xl font-semibold text-card-foreground">
-                {courseData.title || 'New Course'}
-              </h1>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge variant={
-                  courseData.status === 'Published' ? 'default' :
-                  courseData.status === 'Under Review' ? 'outline' :
-                  courseData.status === 'Rejected' ? 'destructive' :
-                  'secondary'
-                }>
-                  {courseData.status || 'Draft'}
-                </Badge>
-                <span className="text-sm text-muted-foreground">
-                  Last saved: 2 minutes ago
-                </span>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                <BookOpen className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
+                  {courseData.title || 'New Course'}
+                </h1>
+                <div className="flex items-center gap-3 mt-2">
+                  <Badge variant={
+                    courseData.status === 'Published' ? 'default' :
+                    courseData.status === 'Under Review' ? 'outline' :
+                    courseData.status === 'Rejected' ? 'destructive' :
+                    'secondary'
+                  } className="text-xs">
+                    {courseData.status || 'Draft'}
+                  </Badge>
+                  <span className="text-sm text-muted-foreground">
+                    Last saved: 2 minutes ago
+                  </span>
+                </div>
               </div>
             </div>
           </div>
-          
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => setIsPreviewOpen(true)}>
+
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setIsPreviewOpen(true)}
+                                      className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5"
+            >
               <Eye className="w-4 h-4 mr-2" />
               Preview
             </Button>
@@ -1640,17 +1655,29 @@ const CourseBuilder = () => {
               <>
                 {(courseData.status === 'Draft' || courseData.status === 'Rejected') && (
                   <>
-                    <Button onClick={handleSaveDraftClick} disabled={isSaving}>
+                    <Button 
+                      onClick={handleSaveDraftClick} 
+                      disabled={isSaving}
+                      className="h-9 px-4 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                    >
                       <Save className="w-4 h-4 mr-2" />
                       {saveAction === 'draft' ? 'Saving...' : (courseData.id ? 'Update Draft' : 'Save Draft')}
                     </Button>
-                    <Button onClick={handleSubmitForReview} className="bg-blue-600 hover:bg-blue-700" disabled={isSaving || !isFormValid}>
+                    <Button 
+                      onClick={handleSubmitForReview} 
+                      className="h-9 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5" 
+                      disabled={isSaving || !isFormValid}
+                    >
                       {saveAction === 'review' ? 'Submitting...' : 'Submit for Review'}
                     </Button>
                   </>
                 )}
                 {courseData.status === 'Published' && (
-                   <Button onClick={handleSaveDraftClick} disabled={isSaving}>
+                   <Button 
+                     onClick={handleSaveDraftClick} 
+                     disabled={isSaving}
+                     className="h-9 px-4 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                   >
                       <Save className="w-4 h-4 mr-2" />
                       {saveAction === 'draft' ? 'Creating...' : 'Create New Draft'}
                     </Button>
@@ -1662,34 +1689,59 @@ const CourseBuilder = () => {
             {currentUserRole === 'admin' && (
               <>
                 {(courseData.status === 'Draft' || courseData.status === 'Rejected') && (
-                   <Button onClick={handleSaveDraftClick} disabled={isSaving}>
+                   <Button 
+                     onClick={handleSaveDraftClick} 
+                     disabled={isSaving}
+                     className="h-9 px-4 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                   >
                     <Save className="w-4 h-4 mr-2" />
                     {saveAction === 'draft' ? 'Saving...' : (courseData.id ? 'Update Draft' : 'Save Draft')}
                   </Button>
                 )}
                 {courseData.status === 'Published' ? (
                   <>
-                    <Button onClick={handleSaveDraftClick} disabled={isSaving}>
+                    <Button 
+                      onClick={handleSaveDraftClick} 
+                      disabled={isSaving}
+                      className="h-9 px-4 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                    >
                        <Save className="w-4 h-4 mr-2" />
                        {saveAction === 'draft' ? 'Creating...' : 'Create New Draft'}
                      </Button>
-                    <Button onClick={handleUnpublishClick} className="bg-yellow-600 hover:bg-yellow-700" disabled={isSaving}>
+                    <Button 
+                      onClick={handleUnpublishClick} 
+                      className="h-9 px-4 rounded-xl bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5" 
+                      disabled={isSaving}
+                    >
                       {saveAction === 'unpublish' ? 'Unpublishing...' : 'Unpublish'}
                     </Button>
                   </>
                 ) : (
                   (courseData.status === 'Draft' || courseData.status === 'Rejected') && (
-                    <Button onClick={handlePublishClick} className="bg-green-600 hover:bg-green-700" disabled={isSaving || !isFormValid}>
+                    <Button 
+                      onClick={handlePublishClick} 
+                      className="h-9 px-4 rounded-xl bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5" 
+                      disabled={isSaving || !isFormValid}
+                    >
                       {saveAction === 'publish' ? 'Publishing...' : 'Publish'}
                     </Button>
                   )
                 )}
                 {courseData.status === 'Under Review' && (
                   <>
-                    <Button onClick={() => setIsRejectionDialogOpen(true)} variant="destructive" disabled={isSaving}>
+                    <Button 
+                      onClick={() => setIsRejectionDialogOpen(true)} 
+                      variant="destructive" 
+                      disabled={isSaving}
+                      className="h-9 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                    >
                         {saveAction === 'reject' ? 'Rejecting...' : 'Reject'}
                     </Button>
-                    <Button onClick={handleApproveSubmission} className="bg-green-600 hover:bg-green-700" disabled={isSaving}>
+                    <Button 
+                      onClick={handleApproveSubmission} 
+                      className="h-9 px-4 rounded-xl bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5" 
+                      disabled={isSaving}
+                    >
                       {saveAction === 'approve' ? 'Approving...' : 'Approve & Publish'}
                     </Button>
                   </>
@@ -1698,7 +1750,12 @@ const CourseBuilder = () => {
             )}
             
             {canDelete && (
-                <Button variant="destructive" onClick={() => setIsDeleteDialogOpen(true)} disabled={isSaving}>
+                <Button 
+                  variant="destructive" 
+                  onClick={() => setIsDeleteDialogOpen(true)} 
+                  disabled={isSaving}
+                  className="h-9 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                >
                     Delete
                 </Button>
             )}
@@ -1722,21 +1779,37 @@ const CourseBuilder = () => {
           </div>
         )}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
-          <div className="border-b">
-            <TabsList className="w-full justify-start rounded-none h-12 bg-transparent p-0">
-              <TabsTrigger value="details" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
-                Course Details
-              </TabsTrigger>
-              <TabsTrigger value="curriculum" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
-                Curriculum
-              </TabsTrigger>
-              <TabsTrigger value="landing" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
-                Landing Page
-              </TabsTrigger>
-              <TabsTrigger value="access" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
-                Access
-              </TabsTrigger>
-            </TabsList>
+          {/* Premium Tabs Section */}
+          <div className="relative border-b bg-card">
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/3 via-transparent to-primary/3"></div>
+            <div className="relative">
+              <TabsList className="w-full justify-start rounded-none h-14 bg-transparent p-0 border-none">
+                <TabsTrigger
+                  value="details"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/10 data-[state=active]:to-primary/5 px-6 h-14 text-sm font-medium transition-all duration-300 hover:bg-primary/5 hover:border-primary/50 data-[state=active]:text-primary data-[state=active]:font-semibold"
+                >
+                  Course Details
+                </TabsTrigger>
+                <TabsTrigger
+                  value="curriculum"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/10 data-[state=active]:to-primary/5 px-6 h-14 text-sm font-medium transition-all duration-300 hover:bg-primary/5 hover:border-primary/50 data-[state=active]:text-primary data-[state=active]:font-semibold"
+                >
+                  Curriculum
+                </TabsTrigger>
+                <TabsTrigger
+                  value="landing"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/10 data-[state=active]:to-primary/5 px-6 h-14 text-sm font-medium transition-all duration-300 hover:bg-primary/5 hover:border-primary/50 data-[state=active]:text-primary data-[state=active]:font-semibold"
+                >
+                  Landing Page
+                </TabsTrigger>
+                <TabsTrigger
+                  value="access"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/10 data-[state=active]:to-primary/5 px-6 h-14 text-sm font-medium transition-all duration-300 hover:bg-primary/5 hover:border-primary/50 data-[state=active]:text-primary data-[state=active]:font-semibold"
+                >
+                  Access
+                </TabsTrigger>
+              </TabsList>
+            </div>
           </div>
 
           <div className="p-6">
@@ -1793,7 +1866,7 @@ const CourseBuilder = () => {
                           handleBlur('category');
                         }}
                       >
-                        <SelectTrigger className={cn(validationErrors.category && touchedFields.category && "border-red-500 focus:ring-red-500")}>
+                        <SelectTrigger className={cn("h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5", validationErrors.category && touchedFields.category && "border-red-500 focus:ring-red-500")}>
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
@@ -1816,7 +1889,7 @@ const CourseBuilder = () => {
                           handleBlur('language');
                         }}
                       >
-                        <SelectTrigger className={cn(validationErrors.language && touchedFields.language && "border-red-500 focus:ring-red-500")}>
+                        <SelectTrigger className={cn("h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5", validationErrors.language && touchedFields.language && "border-red-500 focus:ring-red-500")}>
                           <SelectValue placeholder="Select language" />
                         </SelectTrigger>
                         <SelectContent>
@@ -1839,7 +1912,7 @@ const CourseBuilder = () => {
                           handleBlur('level');
                         }}
                       >
-                        <SelectTrigger className={cn(validationErrors.level && touchedFields.level && "border-red-500 focus:ring-red-500")}>
+                        <SelectTrigger className={cn("h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5", validationErrors.level && touchedFields.level && "border-red-500 focus:ring-red-500")}>
                           <SelectValue placeholder="Select level" />
                         </SelectTrigger>
                         <SelectContent>
@@ -1926,7 +1999,7 @@ const CourseBuilder = () => {
                       {courseData.sections.map((section, sectionIndex) => (
                         <SortableItem key={section.id} id={section.id} type="section">
                           {(dragHandleProps) => (
-                            <Card className={`bg-muted/50 ${activeId === section.id ? 'opacity-50' : ''}`}>
+                            <Card className={`bg-card border border-border ${activeId === section.id ? 'opacity-50' : ''}`}>
                               <CardHeader className="flex flex-row items-start justify-between p-4 gap-4">
                                 <div className="flex items-start gap-2 flex-1">
                                   <div {...dragHandleProps} className="cursor-move pt-2.5">
@@ -2007,7 +2080,7 @@ const CourseBuilder = () => {
                     <DragOverlay>
                       {activeId ? (
                         activeId.startsWith('section-') ?
-                        <Card className="bg-muted/50">
+                        <Card className="bg-card border border-border">
                           <CardHeader>{courseData.sections.find(s => s.id === activeId)?.title}</CardHeader>
                         </Card> :
                         <LessonItem
