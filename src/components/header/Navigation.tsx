@@ -1,45 +1,46 @@
 
-import { memo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { User } from '@supabase/supabase-js';
-import { Button } from '@/components/ui/button';
-import { Settings } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
 
-interface NavigationProps {
-  user: User | null;
-  isMobile?: boolean;
-  onLinkClick?: () => void;
-}
+const navigation = [
+  { name: 'Home', href: '/' },
+  { name: 'About', href: '/about' },
+  { name: 'Features', href: '/features' },
+  { name: 'Contact', href: '/contact' },
+];
 
-export const Navigation = memo(({ user, isMobile = false, onLinkClick }: NavigationProps) => {
+export const Navigation = () => {
   const location = useLocation();
-  const isHomePage = location.pathname === '/';
-  const showBackToDashboard = isHomePage && localStorage.getItem('cameFromDashboard') === 'true';
+  const { user, loading } = useAuth();
 
-  const linkClass = isMobile
-    ? "block px-3 py-2 text-foreground hover:text-primary transition-colors"
-    : "text-foreground hover:text-primary transition-all duration-300 relative group";
-
-  const underlineSpan = !isMobile && (
-    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
-  );
-
-  if (!user) {
+  // Don't render anything while loading or if user is authenticated
+  if (loading || user) {
     return null;
   }
 
   return (
-    <nav className="flex items-center gap-2">
-      <Link to="/dashboard" className="text-sm font-medium text-muted-foreground hover:text-primary px-3 py-2 rounded-md transition-colors">
-        Dashboard
-      </Link>
-      <Link to="/dashboard/profile-settings" aria-label="Profile Settings">
-        <Button variant="ghost" size="icon">
-          <Settings className="h-5 w-5" />
-        </Button>
-      </Link>
+    <nav className="hidden md:flex items-center space-x-1">
+      {navigation.map((item) => {
+        const isActive = location.pathname === item.href;
+        return (
+          <Link
+            key={item.name}
+            to={item.href}
+            className={cn(
+              "relative px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 group",
+              isActive
+                ? "bg-primary/10 text-primary border border-primary/20 shadow-sm"
+                : "text-gray-700 dark:text-gray-300 hover:text-primary hover:bg-primary/5 border border-transparent hover:border-primary/20 hover:shadow-sm"
+            )}
+          >
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <span className="relative z-10 transition-all duration-300 group-hover:scale-105">
+              {item.name}
+            </span>
+          </Link>
+        );
+      })}
     </nav>
   );
-});
-
-Navigation.displayName = 'Navigation';
+};

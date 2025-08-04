@@ -375,158 +375,172 @@ export const UsersManagement = () => {
   };
 
   return (
-    <div className="space-y-6 w-full">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Users Management</h1>
-          <p className="text-muted-foreground">Manage all users in the system</p>
+    <div className="space-y-8 w-full">
+      {/* Premium Header Section */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
+        <div className="relative p-8 rounded-3xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                <Users className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                  Users Management
+                </h1>
+                <p className="text-lg text-muted-foreground font-light">
+                  Manage all users in the system
+                </p>
+              </div>
+            </div>
+            
+            <Dialog open={isCreateModalOpen} onOpenChange={(isOpen) => {
+              setIsCreateModalOpen(isOpen);
+              if (!isOpen) {
+                setNewUser(initialNewUserState);
+                setValidationErrors(initialValidationErrors);
+              }
+            }}>
+              <DialogTrigger asChild>
+                <Button className="h-10 px-6 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create User
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Create New User</DialogTitle>
+                  <DialogDescription>
+                    Invite a new user to the system. They will receive a magic link to get started.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="firstName">First Name</Label>
+                      <Input 
+                        id="firstName" 
+                        placeholder="Enter first name" 
+                        value={newUser.firstName}
+                        onChange={(e) => {
+                          setNewUser(prev => ({ ...prev, firstName: e.target.value }));
+                          handleFieldValidation('firstName', e.target.value);
+                        }}
+                        className={validationErrors.firstName ? 'border-destructive' : ''}
+                      />
+                      {validationErrors.firstName && <p className="text-xs text-destructive">{validationErrors.firstName}</p>}
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="lastName">Last Name</Label>
+                      <Input 
+                        id="lastName" 
+                        placeholder="Enter last name" 
+                        value={newUser.lastName}
+                        onChange={(e) => {
+                          setNewUser(prev => ({ ...prev, lastName: e.target.value }));
+                          handleFieldValidation('lastName', e.target.value);
+                        }}
+                        className={validationErrors.lastName ? 'border-destructive' : ''}
+                      />
+                      {validationErrors.lastName && <p className="text-xs text-destructive">{validationErrors.lastName}</p>}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input 
+                      id="email" 
+                      type="email" 
+                      placeholder="Enter email address"
+                      value={newUser.email}
+                      onChange={(e) => {
+                        setNewUser(prev => ({ ...prev, email: e.target.value }));
+                        handleFieldValidation('email', e.target.value);
+                      }}
+                      className={validationErrors.email ? 'border-destructive' : ''}
+                    />
+                    {validationErrors.email && <p className="text-xs text-destructive">{validationErrors.email}</p>}
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="role">Role</Label>
+                    <Select
+                      value={newUser.role}
+                      onValueChange={(value: 'student' | 'teacher' | 'admin') => setNewUser(prev => ({ ...prev, role: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="student">Student</SelectItem>
+                        <SelectItem value="teacher">Teacher</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {newUser.role === 'student' && (
+                    <div className="grid gap-2">
+                      <Label htmlFor="grade">Grade</Label>
+                      <Select
+                        value={newUser.grade}
+                        onValueChange={(value) => {
+                          setNewUser(prev => ({ ...prev, grade: value }));
+                          handleFieldValidation('grade', value);
+                        }}
+                      >
+                        <SelectTrigger className={validationErrors.grade ? 'border-destructive' : ''}>
+                          <SelectValue placeholder="Select a grade" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">1st Grade</SelectItem>
+                          <SelectItem value="2">2nd Grade</SelectItem>
+                          <SelectItem value="3">3rd Grade</SelectItem>
+                          <SelectItem value="4">4th Grade</SelectItem>
+                          <SelectItem value="5">5th Grade</SelectItem>
+                          <SelectItem value="6">6th Grade</SelectItem>
+                          <SelectItem value="7">7th Grade</SelectItem>
+                          <SelectItem value="8">8th Grade</SelectItem>
+                          <SelectItem value="9">9th Grade</SelectItem>
+                          <SelectItem value="10">10th Grade</SelectItem>
+                          <SelectItem value="11">11th Grade</SelectItem>
+                          <SelectItem value="12">12th Grade</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {validationErrors.grade && <p className="text-xs text-destructive">{validationErrors.grade}</p>}
+                    </div>
+                  )}
+
+                  {newUser.role === 'teacher' && (
+                    <div className="grid gap-2">
+                      <Label htmlFor="teacherId">Teacher ID</Label>
+                      <Input 
+                        id="teacherId" 
+                        placeholder="Enter Teacher ID" 
+                        value={newUser.teacherId}
+                        onChange={(e) => {
+                          setNewUser(prev => ({ ...prev, teacherId: e.target.value }));
+                          handleFieldValidation('teacherId', e.target.value);
+                        }}
+                        className={validationErrors.teacherId ? 'border-destructive' : ''}
+                      />
+                      {validationErrors.teacherId && <p className="text-xs text-destructive">{validationErrors.teacherId}</p>}
+                    </div>
+                  )}
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleCreateUser} disabled={isCreatingUser}>
+                    {isCreatingUser ? "Sending Invite..." : "Send Invite"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
-        
-        <Dialog open={isCreateModalOpen} onOpenChange={(isOpen) => {
-          setIsCreateModalOpen(isOpen);
-          if (!isOpen) {
-            setNewUser(initialNewUserState);
-            setValidationErrors(initialValidationErrors);
-          }
-        }}>
-          <DialogTrigger asChild>
-            <Button className="w-full sm:w-auto">
-              <Plus className="mr-2 h-4 w-4" />
-              Create User
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Create New User</DialogTitle>
-              <DialogDescription>
-                Invite a new user to the system. They will receive a magic link to get started.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="firstName">First Name</Label>
-                  <Input 
-                    id="firstName" 
-                    placeholder="Enter first name" 
-                    value={newUser.firstName}
-                    onChange={(e) => {
-                      setNewUser(prev => ({ ...prev, firstName: e.target.value }));
-                      handleFieldValidation('firstName', e.target.value);
-                    }}
-                    className={validationErrors.firstName ? 'border-destructive' : ''}
-                  />
-                  {validationErrors.firstName && <p className="text-xs text-destructive">{validationErrors.firstName}</p>}
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <Input 
-                    id="lastName" 
-                    placeholder="Enter last name" 
-                    value={newUser.lastName}
-                    onChange={(e) => {
-                      setNewUser(prev => ({ ...prev, lastName: e.target.value }));
-                      handleFieldValidation('lastName', e.target.value);
-                    }}
-                    className={validationErrors.lastName ? 'border-destructive' : ''}
-                  />
-                  {validationErrors.lastName && <p className="text-xs text-destructive">{validationErrors.lastName}</p>}
-                </div>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input 
-                  id="email" 
-                  type="email" 
-                  placeholder="Enter email address"
-                  value={newUser.email}
-                  onChange={(e) => {
-                    setNewUser(prev => ({ ...prev, email: e.target.value }));
-                    handleFieldValidation('email', e.target.value);
-                  }}
-                  className={validationErrors.email ? 'border-destructive' : ''}
-                />
-                {validationErrors.email && <p className="text-xs text-destructive">{validationErrors.email}</p>}
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="role">Role</Label>
-                <Select
-                  value={newUser.role}
-                  onValueChange={(value: 'student' | 'teacher' | 'admin') => setNewUser(prev => ({ ...prev, role: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="student">Student</SelectItem>
-                    <SelectItem value="teacher">Teacher</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {newUser.role === 'student' && (
-                <div className="grid gap-2">
-                  <Label htmlFor="grade">Grade</Label>
-                  <Select
-                    value={newUser.grade}
-                    onValueChange={(value) => {
-                      setNewUser(prev => ({ ...prev, grade: value }));
-                      handleFieldValidation('grade', value);
-                    }}
-                  >
-                    <SelectTrigger className={validationErrors.grade ? 'border-destructive' : ''}>
-                      <SelectValue placeholder="Select a grade" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1st Grade</SelectItem>
-                      <SelectItem value="2">2nd Grade</SelectItem>
-                      <SelectItem value="3">3rd Grade</SelectItem>
-                      <SelectItem value="4">4th Grade</SelectItem>
-                      <SelectItem value="5">5th Grade</SelectItem>
-                      <SelectItem value="6">6th Grade</SelectItem>
-                      <SelectItem value="7">7th Grade</SelectItem>
-                      <SelectItem value="8">8th Grade</SelectItem>
-                      <SelectItem value="9">9th Grade</SelectItem>
-                      <SelectItem value="10">10th Grade</SelectItem>
-                      <SelectItem value="11">11th Grade</SelectItem>
-                      <SelectItem value="12">12th Grade</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {validationErrors.grade && <p className="text-xs text-destructive">{validationErrors.grade}</p>}
-                </div>
-              )}
-
-              {newUser.role === 'teacher' && (
-                <div className="grid gap-2">
-                  <Label htmlFor="teacherId">Teacher ID</Label>
-                  <Input 
-                    id="teacherId" 
-                    placeholder="Enter Teacher ID" 
-                    value={newUser.teacherId}
-                    onChange={(e) => {
-                      setNewUser(prev => ({ ...prev, teacherId: e.target.value }));
-                      handleFieldValidation('teacherId', e.target.value);
-                    }}
-                    className={validationErrors.teacherId ? 'border-destructive' : ''}
-                  />
-                  {validationErrors.teacherId && <p className="text-xs text-destructive">{validationErrors.teacherId}</p>}
-                </div>
-              )}
-            </div>
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleCreateUser} disabled={isCreatingUser}>
-                {isCreatingUser ? "Sending Invite..." : "Send Invite"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
 
       {/* Metrics Cards */}
@@ -600,12 +614,12 @@ export const UsersManagement = () => {
                 placeholder="Search by name or email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
+                className="pl-9 h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5"
               />
             </div>
             
             <Select value={roleFilter} onValueChange={setRoleFilter}>
-              <SelectTrigger className="w-full sm:w-[150px]">
+              <SelectTrigger className="w-full sm:w-[150px] h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5">
                 <SelectValue placeholder="Role" />
               </SelectTrigger>
               <SelectContent>

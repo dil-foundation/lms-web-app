@@ -748,6 +748,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
             size="sm"
             onClick={() => setCurrentPage(1)}
             disabled={currentPage === 1}
+            className="hover:bg-gray-100 dark:hover:bg-gray-800"
           >
             <ChevronsLeft className="h-4 w-4" />
           </Button>
@@ -756,6 +757,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
             size="sm"
             onClick={() => setCurrentPage(currentPage - 1)}
             disabled={currentPage === 1}
+            className="hover:bg-gray-100 dark:hover:bg-gray-800"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -792,6 +794,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
             size="sm"
             onClick={() => setCurrentPage(currentPage + 1)}
             disabled={currentPage === totalPages}
+            className="hover:bg-gray-100 dark:hover:bg-gray-800"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -800,6 +803,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
             size="sm"
             onClick={() => setCurrentPage(totalPages)}
             disabled={currentPage === totalPages}
+            className="hover:bg-gray-100 dark:hover:bg-gray-800"
           >
             <ChevronsRight className="h-4 w-4" />
           </Button>
@@ -818,877 +822,488 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         </div>
       ) : (
         <>
-      {/* Header Section */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-center space-x-4">
-          <Avatar className="h-12 w-12">
-            <AvatarFallback className="bg-primary text-primary-foreground font-bold">
-            {getInitials(userProfile?.first_name, userProfile?.last_name)}
-          </AvatarFallback>
-        </Avatar>
-        <div>
-            <h1 className="text-3xl font-bold">Teacher Dashboard</h1>
-            <p className="text-muted-foreground">Welcome back, {userProfile?.first_name || 'Teacher'}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="Time range" />
-            </SelectTrigger>
-            <SelectContent>
-                  <SelectItem value="alltime">All Time</SelectItem>
-                  <SelectItem value="7days">Last 7 days</SelectItem>
-                  <SelectItem value="30days">Last 30 days</SelectItem>
-              <SelectItem value="3months">Last 3 months</SelectItem>
-                  <SelectItem value="6months">Last 6 months</SelectItem>
-                  <SelectItem value="1year">Last 1 year</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Drawer>
-            <DrawerTrigger asChild>
-              <Button variant="outline">
-                <Filter className="h-4 w-4 mr-2" />
-                Filters
-              </Button>
-            </DrawerTrigger>
-            <DrawerContent>
-              <div className="mx-auto w-full max-w-4xl">
-                <DrawerHeader>
-                  <DrawerTitle>Filter Dashboard Data</DrawerTitle>
-                  <DrawerDescription>Apply filters to refine the data shown on the dashboard.</DrawerDescription>
-                </DrawerHeader>
-                <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {/* Age Group / Grade Level */}
-                  <div className="space-y-2">
-                    <Label htmlFor="age-group">Age Group / Grade Level</Label>
-                    <Select>
-                      <SelectTrigger id="age-group">
-                        <SelectValue placeholder="Select age group" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="primary">Primary (Grades 1-5)</SelectItem>
-                        <SelectItem value="middle">Middle (Grades 6-8)</SelectItem>
-                        <SelectItem value="high">High School (Grades 9-12)</SelectItem>
-                        <SelectItem value="university">University</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Location */}
-                  <div className="space-y-2">
-                    <Label htmlFor="location">Location</Label>
-                    <Select>
-                      <SelectTrigger id="location">
-                        <SelectValue placeholder="Select location type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="province">Province</SelectItem>
-                        <SelectItem value="city">City</SelectItem>
-                        <SelectItem value="rural">Rural</SelectItem>
-                        <SelectItem value="urban">Urban</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Language Proficiency */}
-                  <div className="space-y-2">
-                    <Label htmlFor="language-proficiency">Language Proficiency</Label>
-                    <Select>
-                      <SelectTrigger id="language-proficiency">
-                        <SelectValue placeholder="Select proficiency" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="beginner">Beginner</SelectItem>
-                        <SelectItem value="intermediate">Intermediate</SelectItem>
-                        <SelectItem value="advanced">Advanced</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* School Type */}
-                  <div className="space-y-2">
-                    <Label htmlFor="school-type">School Type</Label>
-                    <Select>
-                      <SelectTrigger id="school-type">
-                        <SelectValue placeholder="Select school type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="private">Private</SelectItem>
-                        <SelectItem value="public">Public</SelectItem>
-                        <SelectItem value="madarsa">Madarsa</SelectItem>
-                        <SelectItem value="homeschool">Homeschool</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Device Type */}
-                  <div className="space-y-2">
-                    <Label htmlFor="device-type">Device Type</Label>
-                    <Select>
-                      <SelectTrigger id="device-type">
-                        <SelectValue placeholder="Select device type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="desktop">Desktop</SelectItem>
-                        <SelectItem value="mobile">Mobile</SelectItem>
-                        <SelectItem value="tablet">Tablet</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Internet Accessibility */}
-                  <div className="space-y-2">
-                    <Label htmlFor="internet-accessibility">Internet Accessibility</Label>
-                    <Select>
-                      <SelectTrigger id="internet-accessibility">
-                        <SelectValue placeholder="Select accessibility" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="limited">Limited Connectivity</SelectItem>
-                        <SelectItem value="offline">Offline Usage</SelectItem>
-                        <SelectItem value="online">Stable Connection</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Engagement Metrics */}
-                  <div className="space-y-2">
-                    <Label htmlFor="engagement-metrics">Engagement Metrics</Label>
-                    <Select>
-                      <SelectTrigger id="engagement-metrics">
-                        <SelectValue placeholder="Select metric" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active-users">Active Users</SelectItem>
-                        <SelectItem value="session-time">Session Time</SelectItem>
-                        <SelectItem value="drop-off">Drop-off Points</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Content Usage Type */}
-                  <div className="space-y-2">
-                    <Label htmlFor="content-usage">Content Usage Type</Label>
-                    <Select>
-                      <SelectTrigger id="content-usage">
-                        <SelectValue placeholder="Select content type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="listening">Listening Modules</SelectItem>
-                        <SelectItem value="grammar">Grammar Exercises</SelectItem>
-                        <SelectItem value="speaking">Speaking Practice</SelectItem>
-                        <SelectItem value="reading">Reading Comprehension</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  {/* Feedback Trends */}
-                  <div className="space-y-2">
-                    <Label htmlFor="feedback-trends">Feedback Trends</Label>
-                    <Select>
-                      <SelectTrigger id="feedback-trends">
-                        <SelectValue placeholder="Select feedback trend" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="by-region">By Region</SelectItem>
-                        <SelectItem value="by-persona">By Persona</SelectItem>
-                        <SelectItem value="by-module">By Module</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+        {/* Premium Header Section */}
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
+          <div className="relative p-8 rounded-3xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                  <GraduationCap className="w-6 h-6 text-primary" />
                 </div>
-                <DrawerFooter>
-                  <div className="flex justify-end gap-2">
-                    <DrawerClose asChild>
-                      <Button variant="outline">Cancel</Button>
-                    </DrawerClose>
-                    <Button>Apply Filters</Button>
-                  </div>
-                </DrawerFooter>
-              </div>
-            </DrawerContent>
-          </Drawer>
-        </div>
-      </div>
-
-      {/* Key Metrics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        <MetricCard
-          title="Total Students" 
-          value={stats?.totalStudents ?? 0}
-          icon={Users}
-          color="text-blue-500"
-        />
-        <MetricCard
-              title="Published Courses"
-              value={stats?.publishedCourses ?? 0}
-          icon={BookOpen}
-          color="text-green-500"
-        />
-        <MetricCard
-          title="Engagement Rate"
-          value={`${stats?.avgEngagement ?? 0}%`}
-          icon={Activity}
-          color="text-purple-500"
-        />
-        <MetricCard
-          title="Avg Completion"
-          value={`${stats?.avgCompletion ?? 0}%`}
-          icon={Target}
-          color="text-orange-500"
-        />
-        <MetricCard
-          title="Active Students"
-          value={stats?.activeStudents ?? 0}
-          icon={GraduationCap}
-          color="text-cyan-500"
-        />
-      </div>
-
-      {/* Charts and Analytics */}
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
-          <TabsTrigger value="students">Students</TabsTrigger>
-          <TabsTrigger value="feedback">Reports</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
-                  Student Engagement Trends
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px]">
-                  <ChartContainer config={chartConfig} className="w-full h-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={studentEngagementData}>
-                        <defs>
-                          <linearGradient id="colorEngagement" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
-                            <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="week" />
-                        <YAxis />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Area 
-                          type="monotone" 
-                          dataKey="activeStudents" 
-                          stroke="#3B82F6" 
-                          fillOpacity={1} 
-                          fill="url(#colorEngagement)"
-                          name="Active Students"
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="completionRate" 
-                          stroke="#10B981" 
-                          strokeWidth={2}
-                          name="Completion Rate %"
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <PieChartIcon className="h-5 w-5" />
-                  Student Progress Distribution
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px]">
-                  <ChartContainer config={chartConfig} className="w-full h-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={studentProgressData}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={({ name, percent }) => `${name.split(' ')[0]} ${(percent * 100).toFixed(0)}%`}
-                          outerRadius={100}
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
-                          {studentProgressData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <ChartTooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                </div>
-              </CardContent>
-            </Card>
-                     </div>
-         </TabsContent>
-
-        <TabsContent value="performance" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Course Performance Overview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[400px]">
-                <ChartContainer config={chartConfig} className="w-full h-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={coursePerformanceData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis 
-                        dataKey="course" 
-                        angle={-45}
-                        textAnchor="end"
-                        height={80}
-                        interval={0}
-                      />
-                      <YAxis />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="enrolled" fill="#3B82F6" name="Enrolled" />
-                      <Bar dataKey="completed" fill="#10B981" name="Completed" />
-                      <Bar dataKey="inProgress" fill="#F59E0B" name="In Progress" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="students" className="space-y-6">
-          {/* Students Summary Metrics */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats?.totalStudents ?? 0}</div>
-                <p className="text-xs text-muted-foreground">
-                  Across all courses
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Students</CardTitle>
-                <Activity className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats?.activeStudents ?? 0}</div>
-                <p className="text-xs text-muted-foreground">
-                  {stats?.totalStudents && stats?.activeStudents ? Math.round((stats.activeStudents / stats.totalStudents) * 100) : 0}% of total
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Avg Progress</CardTitle>
-                <Target className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {stats?.avgCompletion ?? 0}%
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Course completion
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">At Risk</CardTitle>
-                <Clock className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{studentStatusCounts?.behind_students ?? 0}</div>
-                <p className="text-xs text-muted-foreground">
-                  Students behind schedule
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Search and Filter Controls */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Student Management</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search students by name or email..."
-                      value={searchTerm}
-                      onChange={(e) => {
-                        setSearchTerm(e.target.value);
-                        setCurrentPage(1); // Reset to first page when searching
-                      }}
-                      className="pl-10"
-                    />
-                  </div>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Select 
-                    value={selectedCourse} 
-                    onValueChange={(value) => {
-                      setSelectedCourse(value);
-                      setCurrentPage(1); // Reset to first page when filtering
-                    }}
-                  >
-                    <SelectTrigger className="w-full sm:w-48">
-                      <SelectValue placeholder="Filter by course" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Courses</SelectItem>
-                      <SelectItem value="Sample Course">Sample Course</SelectItem>
-                      <SelectItem value="Test course 1">Test course 1</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select 
-                    value={selectedStatus} 
-                    onValueChange={(value) => {
-                      setSelectedStatus(value);
-                      setCurrentPage(1); // Reset to first page when filtering
-                    }}
-                  >
-                    <SelectTrigger className="w-full sm:w-32">
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="Not Started">Not Started</SelectItem>
-                      <SelectItem value="Active">Active</SelectItem>
-                      <SelectItem value="Excellent">Excellent</SelectItem>
-                      <SelectItem value="Behind">Behind</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="w-full sm:w-auto">
-                        <SortAsc className="h-4 w-4 mr-2" />
-                        Sort
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => { 
-                        setSortBy('name'); 
-                        setSortOrder('asc'); 
-                        setCurrentPage(1); // Reset to first page when sorting
-                      }}>
-                        Name A-Z
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => { 
-                        setSortBy('name'); 
-                        setSortOrder('desc'); 
-                        setCurrentPage(1); // Reset to first page when sorting
-                      }}>
-                        Name Z-A
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => { 
-                        setSortBy('progress'); 
-                        setSortOrder('desc'); 
-                        setCurrentPage(1); // Reset to first page when sorting
-                      }}>
-                        Progress High-Low
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => { 
-                        setSortBy('progress'); 
-                        setSortOrder('asc'); 
-                        setCurrentPage(1); // Reset to first page when sorting
-                      }}>
-                        Progress Low-High
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => { 
-                        setSortBy('enrolled_date'); 
-                        setSortOrder('desc'); 
-                        setCurrentPage(1); // Reset to first page when sorting
-                      }}>
-                        Recently Enrolled
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => { 
-                        setSortBy('enrolled_date'); 
-                        setSortOrder('asc'); 
-                        setCurrentPage(1); // Reset to first page when sorting
-                      }}>
-                        Oldest Enrolled
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                <div>
+                  <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
+                    Teacher Dashboard
+                  </h1>
+                  <p className="text-lg text-muted-foreground mt-2 leading-relaxed">
+                    Welcome back, {userProfile?.first_name || 'Teacher'}
+                  </p>
                 </div>
               </div>
+              <div className="flex items-center gap-3">
+                <Select value={timeRange} onValueChange={setTimeRange}>
+                  <SelectTrigger className="w-40 h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5">
+                    <SelectValue placeholder="Time range" />
+                  </SelectTrigger>
+                  <SelectContent>
+                        <SelectItem value="alltime">All Time</SelectItem>
+                        <SelectItem value="7days">Last 7 days</SelectItem>
+                        <SelectItem value="30days">Last 30 days</SelectItem>
+                    <SelectItem value="3months">Last 3 months</SelectItem>
+                        <SelectItem value="6months">Last 6 months</SelectItem>
+                        <SelectItem value="1year">Last 1 year</SelectItem>
+                  </SelectContent>
+                </Select>
 
-              {/* Students Table */}
-              <div className="rounded-md border">
-                {studentsLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <ContentLoader message="Loading students..." />
-                  </div>
-                ) : studentsData.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    {searchTerm || selectedCourse !== 'all' || selectedStatus !== 'all' ? (
-                      <>
-                        <h3 className="text-lg font-semibold text-muted-foreground mb-2">
-                          No students found
-                        </h3>
-                        <p className="text-sm text-muted-foreground mb-4">
-                          {searchTerm && `No students match "${searchTerm}"`}
-                          {selectedCourse !== 'all' && `No students in "${selectedCourse}"`}
-                          {selectedStatus !== 'all' && `No students with "${selectedStatus}" status`}
-                        </p>
-                        <Button 
-                          variant="outline" 
-                          onClick={() => {
-                            setSearchTerm('');
-                            setSelectedCourse('all');
-                            setSelectedStatus('all');
-                            setCurrentPage(1);
-                          }}
-                        >
-                          Clear filters
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <h3 className="text-lg font-semibold text-muted-foreground mb-2">
-                          No students enrolled
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          Students will appear here once they enroll in your courses.
-                        </p>
-                      </>
-                    )}
-                  </div>
-                ) : (
-                  <>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Student</TableHead>
-                          <TableHead>Course</TableHead>
-                          <TableHead>Progress</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Last Active</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {studentsData.map((student) => (
-                          <TableRow key={student.id}>
-                            <TableCell className="font-medium">
-                              <div className="flex items-center space-x-3">
-                                <Avatar className="h-8 w-8">
-                                  <AvatarFallback className="text-xs">
-                                    {student.avatar}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <div className="font-medium">{student.name}</div>
-                                  <div className="text-sm text-muted-foreground">{student.email}</div>
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="text-sm">
-                                <div className="font-medium">{student.course}</div>
-                                <div className="text-muted-foreground">
-                                  Enrolled: {new Date(student.enrolledDate).toLocaleDateString()}
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="space-y-1">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-sm font-medium">{student.progress}%</span>
-                                </div>
-                                <div className="w-full bg-muted rounded-full h-2">
-                                  <div 
-                                    className="bg-primary h-2 rounded-full transition-all duration-300"
-                                    style={{ width: `${student.progress}%` }}
-                                  />
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                  {student.assignments}
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge
-                                variant={
-                                  student.status === 'Active' ? 'default' :
-                                  student.status === 'Excellent' ? 'secondary' :
-                                  student.status === 'Behind' ? 'destructive' :
-                                  'outline'
-                                }
-                              >
-                                {student.status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <span className="text-sm text-muted-foreground">
-                                {student.lastActive}
-                              </span>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                    
-                    {/* Pagination */}
-                    <Pagination />
-                  </>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="feedback" className="space-y-6">
-          {/* Course Completion Trends */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Course Completion Trends
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Track completion rates across all courses over time
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[400px]">
-                <ChartContainer config={chartConfig} className="w-full h-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={courseCompletionTrends}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      {(() => {
-                        // Extract all course names from the data (excluding 'month' key)
-                        const courseNames = courseCompletionTrends.length > 0 
-                          ? Object.keys(courseCompletionTrends[0]).filter(key => key !== 'month')
-                          : [];
-                        
-                        // Color palette for course lines
-                        const colors = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444', '#06B6D4', '#84CC16', '#F97316'];
-                        
-                        return courseNames.map((courseName, index) => (
-                          <Line 
-                            key={courseName}
-                            type="monotone" 
-                            dataKey={courseName} 
-                            stroke={colors[index % colors.length]} 
-                            strokeWidth={2} 
-                            name={courseName}
-                          />
-                        ));
-                      })()}
-                      <Legend />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Quiz Performance */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="h-5 w-5" />
-                  Quiz Performance Analysis
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[350px]">
-                  <ChartContainer config={chartConfig} className="w-full h-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={quizScoresData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis 
-                          dataKey="quiz" 
-                          angle={-45}
-                          textAnchor="end"
-                          height={80}
-                          interval={0}
-                        />
-                        <YAxis />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Bar dataKey="avgScore" fill="#3B82F6" name="Average Score" />
-                        <Bar dataKey="passRate" fill="#10B981" name="Pass Rate %" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Quiz Statistics */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Quiz Statistics Summary</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  {quizScoresData.map((quiz, index) => (
-                    <div key={index} className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium">{quiz.quiz}</span>
-                        <span className="text-sm text-muted-foreground">{quiz.attempts} attempts</span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <div className="text-2xl font-bold text-blue-600">{quiz.avgScore}%</div>
-                          <div className="text-xs text-muted-foreground">Average Score</div>
+                <Drawer>
+                  <DrawerTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    >
+                      <Filter className="h-4 w-4 mr-2" />
+                      Filters
+                    </Button>
+                  </DrawerTrigger>
+                  <DrawerContent>
+                    <div className="mx-auto w-full max-w-4xl">
+                      <DrawerHeader>
+                        <DrawerTitle>Filter Dashboard Data</DrawerTitle>
+                        <DrawerDescription>Apply filters to refine the data shown on the dashboard.</DrawerDescription>
+                      </DrawerHeader>
+                      <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {/* Age Group / Grade Level */}
+                        <div className="space-y-2">
+                          <Label htmlFor="age-group">Age Group / Grade Level</Label>
+                          <Select>
+                            <SelectTrigger id="age-group">
+                              <SelectValue placeholder="Select age group" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="primary">Primary (Grades 1-5)</SelectItem>
+                              <SelectItem value="middle">Middle (Grades 6-8)</SelectItem>
+                              <SelectItem value="high">High School (Grades 9-12)</SelectItem>
+                              <SelectItem value="university">University</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
-                        <div>
-                          <div className="text-2xl font-bold text-green-600">{quiz.passRate}%</div>
-                          <div className="text-xs text-muted-foreground">Pass Rate</div>
+
+                        {/* Location */}
+                        <div className="space-y-2">
+                          <Label htmlFor="location">Location</Label>
+                          <Select>
+                            <SelectTrigger id="location">
+                              <SelectValue placeholder="Select location type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="province">Province</SelectItem>
+                              <SelectItem value="city">City</SelectItem>
+                              <SelectItem value="rural">Rural</SelectItem>
+                              <SelectItem value="urban">Urban</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Language Proficiency */}
+                        <div className="space-y-2">
+                          <Label htmlFor="language-proficiency">Language Proficiency</Label>
+                          <Select>
+                            <SelectTrigger id="language-proficiency">
+                              <SelectValue placeholder="Select proficiency" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="beginner">Beginner</SelectItem>
+                              <SelectItem value="intermediate">Intermediate</SelectItem>
+                              <SelectItem value="advanced">Advanced</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* School Type */}
+                        <div className="space-y-2">
+                          <Label htmlFor="school-type">School Type</Label>
+                          <Select>
+                            <SelectTrigger id="school-type">
+                              <SelectValue placeholder="Select school type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="private">Private</SelectItem>
+                              <SelectItem value="public">Public</SelectItem>
+                              <SelectItem value="madarsa">Madarsa</SelectItem>
+                              <SelectItem value="homeschool">Homeschool</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Course Level */}
+                        <div className="space-y-2">
+                          <Label htmlFor="course-level">Course Level</Label>
+                          <Select>
+                            <SelectTrigger id="course-level">
+                              <SelectValue placeholder="Select course level" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="beginner">Beginner</SelectItem>
+                              <SelectItem value="intermediate">Intermediate</SelectItem>
+                              <SelectItem value="advanced">Advanced</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Subject */}
+                        <div className="space-y-2">
+                          <Label htmlFor="subject">Subject</Label>
+                          <Select>
+                            <SelectTrigger id="subject">
+                              <SelectValue placeholder="Select subject" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="english">English</SelectItem>
+                              <SelectItem value="math">Mathematics</SelectItem>
+                              <SelectItem value="science">Science</SelectItem>
+                              <SelectItem value="social-studies">Social Studies</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
-                      <Progress value={quiz.passRate} className="h-2" />
+                      <DrawerFooter>
+                        <Button className="w-full">Apply Filters</Button>
+                        <DrawerClose asChild>
+                          <Button variant="outline" className="w-full">Clear All</Button>
+                        </DrawerClose>
+                      </DrawerFooter>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                  </DrawerContent>
+                </Drawer>
+              </div>
+            </div>
           </div>
+        </div>
 
-          {/* Student Engagement Trends */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-5 w-5" />
-                Student Engagement Over Time
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Weekly engagement metrics across different activity types
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[400px]">
-                <ChartContainer config={chartConfig} className="w-full h-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={engagementTrendsData}>
-                      <defs>
-                        <linearGradient id="colorDiscussions" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
-                          <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.1}/>
-                        </linearGradient>
-                        <linearGradient id="colorAssignments" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
-                          <stop offset="95%" stopColor="#10B981" stopOpacity={0.1}/>
-                        </linearGradient>
-                        <linearGradient id="colorQuizzes" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.8}/>
-                          <stop offset="95%" stopColor="#F59E0B" stopOpacity={0.1}/>
-                        </linearGradient>
-                        <linearGradient id="colorVideos" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.8}/>
-                          <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0.1}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="week" />
-                      <YAxis />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Area 
-                        type="monotone" 
-                        dataKey="discussions" 
-                        stackId="1"
-                        stroke="#3B82F6" 
-                        fill="url(#colorDiscussions)"
-                        name="Discussions"
-                      />
-                      <Area 
-                        type="monotone" 
-                        dataKey="assignments" 
-                        stackId="1"
-                        stroke="#10B981" 
-                        fill="url(#colorAssignments)"
-                        name="Assignments"
-                      />
-                      <Area 
-                        type="monotone" 
-                        dataKey="quizzes" 
-                        stackId="1"
-                        stroke="#F59E0B" 
-                        fill="url(#colorQuizzes)"
-                        name="Quizzes"
-                      />
-                      <Area 
-                        type="monotone" 
-                        dataKey="videos" 
-                        stackId="1"
-                        stroke="#8B5CF6" 
-                        fill="url(#colorVideos)"
-                        name="Videos"
-                      />
-                      <Legend />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Metric Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <MetricCard
+            title="Total Students"
+            value={stats?.totalStudents || 0}
+            icon={Users}
+            color="#3B82F6"
+          />
+          <MetricCard
+            title="Published Courses"
+            value={stats?.publishedCourses || 0}
+            icon={BookOpen}
+            color="#10B981"
+          />
+          <MetricCard
+            title="Active Courses"
+            value={stats?.activeCourses || 0}
+            icon={Activity}
+            color="#F59E0B"
+          />
+          <MetricCard
+            title="Avg Engagement"
+            value={`${stats?.avgEngagement || 0}%`}
+            icon={TrendingUp}
+            color="#8B5CF6"
+          />
+        </div>
 
-          {/* Performance Comparison */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
-                Course Performance Comparison
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Compare key metrics across your courses
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[400px]">
-                <ChartContainer config={chartConfig} className="w-full h-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={coursePerformanceData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis 
-                        dataKey="course" 
-                        angle={-45}
-                        textAnchor="end"
-                        height={80}
-                        interval={0}
-                      />
-                      <YAxis />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="enrolled" fill="#3B82F6" name="Enrolled" />
-                      <Bar dataKey="completed" fill="#10B981" name="Completed" />
-                      <Bar dataKey="inProgress" fill="#F59E0B" name="In Progress" />
-                      <Legend />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Tabs Section */}
+        <div className="relative">
+          <div className="relative">
+            <Tabs defaultValue="overview" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="performance">Performance</TabsTrigger>
+                <TabsTrigger value="students">Students</TabsTrigger>
+                <TabsTrigger value="feedback">Reports</TabsTrigger>
+              </TabsList>
 
+              <TabsContent value="overview" className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5" />
+                        Student Engagement Trends
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-[300px]">
+                        <ChartContainer config={chartConfig} className="w-full h-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={studentEngagementData}>
+                              <defs>
+                                <linearGradient id="colorEngagement" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
+                                  <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                                </linearGradient>
+                              </defs>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="week" />
+                              <YAxis />
+                              <ChartTooltip content={<ChartTooltipContent />} />
+                              <Area 
+                                type="monotone" 
+                                dataKey="activeStudents" 
+                                stroke="#3B82F6" 
+                                fillOpacity={1} 
+                                fill="url(#colorEngagement)"
+                                name="Active Students"
+                              />
+                              <Line 
+                                type="monotone" 
+                                dataKey="completionRate" 
+                                stroke="#10B981" 
+                                strokeWidth={2}
+                                name="Completion Rate %"
+                              />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </ChartContainer>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-        </TabsContent>
-      </Tabs>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <PieChartIcon className="h-5 w-5" />
+                        Student Progress Distribution
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-[300px]">
+                        <ChartContainer config={chartConfig} className="w-full h-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={studentProgressData}
+                                cx="50%"
+                                cy="50%"
+                                labelLine={false}
+                                label={({ name, percent }) => `${name.split(' ')[0]} ${(percent * 100).toFixed(0)}%`}
+                                outerRadius={100}
+                                fill="#8884d8"
+                                dataKey="value"
+                              >
+                                {studentProgressData.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={entry.color} />
+                                ))}
+                              </Pie>
+                              <ChartTooltip />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </ChartContainer>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="performance" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Course Performance Overview</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-[400px]">
+                      <ChartContainer config={chartConfig} className="w-full h-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={coursePerformanceData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis 
+                              dataKey="course" 
+                              angle={-45}
+                              textAnchor="end"
+                              height={80}
+                              interval={0}
+                            />
+                            <YAxis />
+                            <ChartTooltip content={<ChartTooltipContent />} />
+                            <Bar dataKey="enrolled" fill="#3B82F6" name="Enrolled" />
+                            <Bar dataKey="completed" fill="#10B981" name="Completed" />
+                            <Bar dataKey="inProgress" fill="#F59E0B" name="In Progress" />
+                            <Legend />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </ChartContainer>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="students" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <span>Student Management</span>
+                      <div className="flex items-center gap-2">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                          <Input 
+                            placeholder="Search students..." 
+                            className="w-64 pl-10 h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5" 
+                          />
+                        </div>
+                                        <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  <Search className="h-4 w-4" />
+                </Button>
+                      </div>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {studentsData.map((student, index) => (
+                        <div key={student.id || index} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10">
+                              <AvatarFallback>
+                                {getInitials(student.first_name, student.last_name)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">{student.first_name} {student.last_name}</p>
+                              <p className="text-sm text-muted-foreground">{student.email}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={student.status === 'active' ? 'default' : 'secondary'}>
+                              {student.status}
+                            </Badge>
+                            <Button variant="outline" size="sm" className="hover:bg-gray-100 dark:hover:bg-gray-800">
+                              View Details
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="feedback" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5" />
+                      Engagement Trends
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      Track student engagement across different content types
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-[400px]">
+                      <ChartContainer config={chartConfig} className="w-full h-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={engagementTrendsData}>
+                            <defs>
+                              <linearGradient id="colorDiscussions" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
+                                <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.1}/>
+                              </linearGradient>
+                              <linearGradient id="colorAssignments" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
+                                <stop offset="95%" stopColor="#10B981" stopOpacity={0.1}/>
+                              </linearGradient>
+                              <linearGradient id="colorQuizzes" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.8}/>
+                                <stop offset="95%" stopColor="#F59E0B" stopOpacity={0.1}/>
+                              </linearGradient>
+                              <linearGradient id="colorVideos" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.8}/>
+                                <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0.1}/>
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="week" />
+                            <YAxis />
+                            <ChartTooltip content={<ChartTooltipContent />} />
+                            <Area 
+                              type="monotone" 
+                              dataKey="discussions" 
+                              stackId="1"
+                              stroke="#3B82F6" 
+                              fill="url(#colorDiscussions)"
+                              name="Discussions"
+                            />
+                            <Area 
+                              type="monotone" 
+                              dataKey="assignments" 
+                              stackId="1"
+                              stroke="#10B981" 
+                              fill="url(#colorAssignments)"
+                              name="Assignments"
+                            />
+                            <Area 
+                              type="monotone" 
+                              dataKey="quizzes" 
+                              stackId="1"
+                              stroke="#F59E0B" 
+                              fill="url(#colorQuizzes)"
+                              name="Quizzes"
+                            />
+                            <Area 
+                              type="monotone" 
+                              dataKey="videos" 
+                              stackId="1"
+                              stroke="#8B5CF6" 
+                              fill="url(#colorVideos)"
+                              name="Videos"
+                            />
+                            <Legend />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </ChartContainer>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Performance Comparison */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5" />
+                      Course Performance Comparison
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      Compare key metrics across your courses
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-[400px]">
+                      <ChartContainer config={chartConfig} className="w-full h-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={coursePerformanceData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis 
+                              dataKey="course" 
+                              angle={-45}
+                              textAnchor="end"
+                              height={80}
+                              interval={0}
+                            />
+                            <YAxis />
+                            <ChartTooltip content={<ChartTooltipContent />} />
+                            <Bar dataKey="enrolled" fill="#3B82F6" name="Enrolled" />
+                            <Bar dataKey="completed" fill="#10B981" name="Completed" />
+                            <Bar dataKey="inProgress" fill="#F59E0B" name="In Progress" />
+                            <Legend />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </ChartContainer>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
         </>
       )}
     </div>

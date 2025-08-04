@@ -302,41 +302,65 @@ export const GradeAssignments = () => {
   const totalPages = Math.ceil(filteredAssignments.length / itemsPerPage);
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Assessments</h1>
-          <p className="text-muted-foreground">
-            Grade quizzes and assignments for your courses
-          </p>
+    <div className="space-y-6 mx-auto p-4">
+      {/* Premium Header Section */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
+        <div className="relative p-8 rounded-3xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                <CheckSquare className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
+                  Assessments
+                </h1>
+                <p className="text-lg text-muted-foreground mt-2 leading-relaxed">
+                  Grade quizzes and assignments for your courses
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {statCards.map((card) => (
-          <Card key={card.title} className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
-              <card.icon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{card.value}</div>
-            </CardContent>
-          </Card>
-        ))}
+      {/* Assessments Summary Metrics */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {statCards.map((card, index) => {
+          const colors = ['text-blue-500', 'text-green-500', 'text-purple-500', 'text-orange-500'];
+          const color = colors[index % colors.length];
+          
+          return (
+            <Card key={card.title} className="relative overflow-hidden transition-all duration-200 hover:shadow-lg bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">{card.title}</CardTitle>
+                <card.icon className={`h-4 w-4 ${color}`} />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-1">
+                  <div className="text-2xl font-bold">{card.value}</div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
-      <Card>
+      <Card className="bg-card border border-border">
         <CardHeader>
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <CardTitle className="text-xl font-semibold">Assessment Management</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
             <div className="relative flex-1 md:grow-0">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder="Search assignment or quiz..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[320px]"
+                className="w-full rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 pl-10 h-9 md:w-[200px] lg:w-[320px]"
               />
             </div>
             <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -344,7 +368,7 @@ export const GradeAssignments = () => {
                 setSelectedCourse(value);
                 setCurrentPage(1);
               }}>
-                <SelectTrigger className="w-full sm:w-auto">
+                <SelectTrigger className="w-full sm:w-auto h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5">
                   <SelectValue placeholder="All Courses" />
                 </SelectTrigger>
                 <SelectContent>
@@ -358,7 +382,7 @@ export const GradeAssignments = () => {
               </Select>
             </div>
           </div>
-        </CardHeader>
+        </CardContent>
         <CardContent>
           {loading ? (
             <ContentLoader message="Loading assessments..." />

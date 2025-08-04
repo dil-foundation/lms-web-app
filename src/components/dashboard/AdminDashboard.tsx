@@ -153,6 +153,11 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
     const fetchDashboardData = async () => {
       setLoading(true);
       try {
+        console.log('AdminDashboard: Starting to fetch data...');
+        console.log('AdminDashboard: Environment variables:', {
+          url: import.meta.env.VITE_SUPABASE_URL,
+          key: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Set' : 'Not set'
+        });
         const { startDate, endDate } = getDateRange(timeRange);
         
         // Fetch basic stats for the selected time range
@@ -191,6 +196,17 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
             ? supabase.from('discussions').select('*', { count: 'exact', head: true })
             : supabase.from('discussions').select('*', { count: 'exact', head: true }).gte('created_at', startDate.toISOString()),
         ]);
+
+        console.log('AdminDashboard: Query results:', {
+          totalUsers, usersError,
+          totalTeachers, teachersError,
+          totalStudents, studentsError,
+          totalAdmins, adminsError,
+          totalCourses, coursesError,
+          activeCourses, activeCoursesError,
+          completedAssignments, assignmentsError,
+          activeDiscussions, discussionsError
+        });
 
         if (usersError) throw usersError;
         if (teachersError) throw teachersError;
@@ -736,225 +752,79 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
     icon: any; 
     color: string; 
   }) => (
-    <Card className="relative overflow-hidden transition-all duration-200 hover:shadow-lg bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+          <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-        <Icon className={`h-4 w-4 ${color}`} />
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <Icon className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
-        <div className="space-y-1">
-            <div className="text-2xl font-bold">{typeof value === 'number' ? value.toLocaleString() : value}</div>
-        </div>
+        <div className="text-2xl font-bold">{typeof value === 'number' ? value.toLocaleString() : value}</div>
+        <p className="text-xs text-muted-foreground">
+          {title === 'Total Users' && 'Registered users'}
+          {title === 'Published Courses' && 'Active courses'}
+          {title === 'Engagement Rate' && 'Average engagement'}
+          {title === 'Course Completion' && 'Completion rate'}
+          {title === 'New Users' && 'This month'}
+          {title === 'Total Logins' && 'Platform logins'}
+        </p>
       </CardContent>
     </Card>
   );
 
   return (
-    <div className="space-y-6 p-2 sm:p-0">
+    <div className="space-y-8">
       {loading ? (
         <div className="min-h-screen flex items-center justify-center">
           <ContentLoader message="Loading dashboard..." />
         </div>
       ) : (
         <>
-      {/* Header Section */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-center space-x-4">
-          <Avatar className="h-12 w-12">
-            <AvatarFallback className="bg-primary text-primary-foreground font-bold">
-              {getInitials(userProfile?.first_name, userProfile?.last_name)}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-            <p className="text-muted-foreground">Welcome back, {userProfile?.first_name || 'Administrator'}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="Time range" />
-            </SelectTrigger>
-            <SelectContent>
-                  <SelectItem value="alltime">All Time</SelectItem>
-              <SelectItem value="7days">Last 7 days</SelectItem>
-              <SelectItem value="30days">Last 30 days</SelectItem>
-              <SelectItem value="3months">Last 3 months</SelectItem>
-              <SelectItem value="6months">Last 6 months</SelectItem>
-              <SelectItem value="1year">Last year</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Drawer>
-            <DrawerTrigger asChild>
-              <Button variant="outline">
-                <Filter className="h-4 w-4 mr-2" />
-                Filters
-              </Button>
-            </DrawerTrigger>
-            <DrawerContent>
-              <div className="mx-auto w-full max-w-4xl">
-                <DrawerHeader>
-                  <DrawerTitle>Filter Dashboard Data</DrawerTitle>
-                  <DrawerDescription>Apply filters to refine the data shown on the dashboard.</DrawerDescription>
-                </DrawerHeader>
-                <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {/* Age Group / Grade Level */}
-                  <div className="space-y-2">
-                    <Label htmlFor="age-group">Age Group / Grade Level</Label>
-                    <Select>
-                      <SelectTrigger id="age-group">
-                        <SelectValue placeholder="Select age group" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="primary">Primary (Grades 1-5)</SelectItem>
-                        <SelectItem value="middle">Middle (Grades 6-8)</SelectItem>
-                        <SelectItem value="high">High School (Grades 9-12)</SelectItem>
-                        <SelectItem value="university">University</SelectItem>
-                      </SelectContent>
-                    </Select>
+          {/* Premium Header Section */}
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
+            <div className="relative p-8 rounded-3xl">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                    <Shield className="w-6 h-6 text-primary" />
                   </div>
-
-                  {/* Location */}
-                  <div className="space-y-2">
-                    <Label htmlFor="location">Location</Label>
-                    <Select>
-                      <SelectTrigger id="location">
-                        <SelectValue placeholder="Select location type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="province">Province</SelectItem>
-                        <SelectItem value="city">City</SelectItem>
-                        <SelectItem value="rural">Rural</SelectItem>
-                        <SelectItem value="urban">Urban</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Language Proficiency */}
-                  <div className="space-y-2">
-                    <Label htmlFor="language-proficiency">Language Proficiency</Label>
-                    <Select>
-                      <SelectTrigger id="language-proficiency">
-                        <SelectValue placeholder="Select proficiency" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="beginner">Beginner</SelectItem>
-                        <SelectItem value="intermediate">Intermediate</SelectItem>
-                        <SelectItem value="advanced">Advanced</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* School Type */}
-                  <div className="space-y-2">
-                    <Label htmlFor="school-type">School Type</Label>
-                    <Select>
-                      <SelectTrigger id="school-type">
-                        <SelectValue placeholder="Select school type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="private">Private</SelectItem>
-                        <SelectItem value="public">Public</SelectItem>
-                        <SelectItem value="madarsa">Madarsa</SelectItem>
-                        <SelectItem value="homeschool">Homeschool</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Device Type */}
-                  <div className="space-y-2">
-                    <Label htmlFor="device-type">Device Type</Label>
-                    <Select>
-                      <SelectTrigger id="device-type">
-                        <SelectValue placeholder="Select device type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="desktop">Desktop</SelectItem>
-                        <SelectItem value="mobile">Mobile</SelectItem>
-                        <SelectItem value="tablet">Tablet</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Internet Accessibility */}
-                  <div className="space-y-2">
-                    <Label htmlFor="internet-accessibility">Internet Accessibility</Label>
-                    <Select>
-                      <SelectTrigger id="internet-accessibility">
-                        <SelectValue placeholder="Select accessibility" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="limited">Limited Connectivity</SelectItem>
-                        <SelectItem value="offline">Offline Usage</SelectItem>
-                        <SelectItem value="online">Stable Connection</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Engagement Metrics */}
-                  <div className="space-y-2">
-                    <Label htmlFor="engagement-metrics">Engagement Metrics</Label>
-                    <Select>
-                      <SelectTrigger id="engagement-metrics">
-                        <SelectValue placeholder="Select metric" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active-users">Active Users</SelectItem>
-                        <SelectItem value="session-time">Session Time</SelectItem>
-                        <SelectItem value="drop-off">Drop-off Points</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Content Usage Type */}
-                  <div className="space-y-2">
-                    <Label htmlFor="content-usage">Content Usage Type</Label>
-                    <Select>
-                      <SelectTrigger id="content-usage">
-                        <SelectValue placeholder="Select content type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="listening">Listening Modules</SelectItem>
-                        <SelectItem value="grammar">Grammar Exercises</SelectItem>
-                        <SelectItem value="speaking">Speaking Practice</SelectItem>
-                        <SelectItem value="reading">Reading Comprehension</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  {/* Feedback Trends */}
-                  <div className="space-y-2">
-                    <Label htmlFor="feedback-trends">Feedback Trends</Label>
-                    <Select>
-                      <SelectTrigger id="feedback-trends">
-                        <SelectValue placeholder="Select feedback trend" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="by-region">By Region</SelectItem>
-                        <SelectItem value="by-persona">By Persona</SelectItem>
-                        <SelectItem value="by-module">By Module</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div>
+                    <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                      Admin Dashboard
+                    </h1>
+                    <p className="text-lg text-muted-foreground font-light">
+                      Welcome back, {userProfile?.first_name || 'Administrator'}
+                    </p>
                   </div>
                 </div>
-                <DrawerFooter>
-                  <div className="flex justify-end gap-2">
-                    <DrawerClose asChild>
-                      <Button variant="outline">Cancel</Button>
-                    </DrawerClose>
-                    <Button>Apply Filters</Button>
-                  </div>
-                </DrawerFooter>
+                
+                {/* Filter Controls - Matching Reports Page Style */}
+                <div className="flex items-center gap-3">
+                  <Select value={timeRange} onValueChange={setTimeRange}>
+                    <SelectTrigger className="w-full sm:w-48">
+                      <SelectValue placeholder="Select time range" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="7days">Last 7 days</SelectItem>
+                      <SelectItem value="30days">Last 30 days</SelectItem>
+                      <SelectItem value="3months">Last 3 months</SelectItem>
+                      <SelectItem value="6months">Last 6 months</SelectItem>
+                      <SelectItem value="1year">Last year</SelectItem>
+                      <SelectItem value="alltime">All time</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <Button variant="outline">
+                    <Filter className="h-4 w-4 mr-2" />
+                    Filters
+                  </Button>
+                </div>
               </div>
-            </DrawerContent>
-          </Drawer>
+            </div>
+          </div>
 
-        </div>
-      </div>
-
-      {/* Key Metrics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {/* Stats Grid - Clean Design */}
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <MetricCard
           title="Total Users"
           value={stats?.totalUsers ?? 0}

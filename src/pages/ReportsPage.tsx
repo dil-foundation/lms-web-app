@@ -445,12 +445,26 @@ export default function ReportsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Teaching Dashboard</h1>
-          <p className="text-muted-foreground">Overview of your courses and student progress</p>
+    <div className="space-y-8">
+      {/* Premium Header Section */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
+        <div className="relative p-8 rounded-3xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                <BarChart3 className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
+                  Reports & Analytics
+                </h1>
+                <p className="text-lg text-muted-foreground font-light">
+                  Monitor platform performance and user engagement
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -480,76 +494,76 @@ export default function ReportsPage() {
 
       {reportsData && (
         <>
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-              <div className="text-2xl font-bold">{reportsData.overallMetrics.totalStudents}</div>
-            <p className="text-xs text-muted-foreground">
+          {/* Key Metrics - Clean Design */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{reportsData.overallMetrics.totalStudents}</div>
+                <p className="text-xs text-muted-foreground">
                   Across {reportsData.overallMetrics.coursesPublished} courses
-            </p>
-          </CardContent>
-        </Card>
+                </p>
+              </CardContent>
+            </Card>
 
             <Card className="bg-gradient-to-br from-card to-blue-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Students</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-              <div className="text-2xl font-bold">{reportsData.overallMetrics.activeStudents}</div>
-            <p className="text-xs text-muted-foreground">
-              {reportsData.overallMetrics.totalStudents > 0 
-                ? Math.round((reportsData.overallMetrics.activeStudents / reportsData.overallMetrics.totalStudents) * 100)
-                    : 0}% engagement rate
-            </p>
-          </CardContent>
-        </Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Active Students</CardTitle>
+                <Activity className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{reportsData.overallMetrics.activeStudents}</div>
+                <p className="text-xs text-muted-foreground">
+                  {reportsData.overallMetrics.totalStudents > 0 
+                    ? Math.round((reportsData.overallMetrics.activeStudents / reportsData.overallMetrics.totalStudents) * 100)
+                        : 0}% engagement rate
+                </p>
+              </CardContent>
+            </Card>
 
             <Card className="bg-gradient-to-br from-card to-orange-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Completion</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-              <div className="text-2xl font-bold">{reportsData.overallMetrics.averageCompletion}%</div>
-            <p className="text-xs text-muted-foreground">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Avg Completion</CardTitle>
+                <Target className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{reportsData.overallMetrics.averageCompletion}%</div>
+                <p className="text-xs text-muted-foreground">
                   Course completion rate
-            </p>
-          </CardContent>
-        </Card>
+                </p>
+              </CardContent>
+            </Card>
 
             <Card className="bg-gradient-to-br from-card to-purple-500/5 dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Score</CardTitle>
-            <Award className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-              <div className="text-2xl font-bold">{reportsData.overallMetrics.averageScore}%</div>
-            <p className="text-xs text-muted-foreground">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Avg Score</CardTitle>
+                <Award className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{reportsData.overallMetrics.averageScore}%</div>
+                <p className="text-xs text-muted-foreground">
                   Assignment performance
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+                </p>
+              </CardContent>
+            </Card>
+          </div>
 
-      {/* Key Insights */}
+          {/* Key Insights */}
           {reportsData.keyInsights.length > 0 && (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Key Insights
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Important trends and recommendations for your courses
-          </p>
-        </CardHeader>
-        <CardContent>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  Key Insights
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Important trends and recommendations for your courses
+                </p>
+              </CardHeader>
+              <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {reportsData.keyInsights.map((insight, index) => (
                     <div key={index} className="flex items-start gap-3 p-4 rounded-lg border bg-card/50">
@@ -567,9 +581,9 @@ export default function ReportsPage() {
                             {insight.action}
                           </Button>
                         )}
-                  </div>
-                </div>
-              ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
@@ -586,19 +600,19 @@ export default function ReportsPage() {
 
             {/* Overview Tab */}
             <TabsContent value="overview" className="space-y-4">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Course Performance Overview */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5" />
-              Course Performance
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Course Performance Overview */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <BookOpen className="h-5 w-5" />
+                      Course Performance
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
                     {reportsData.coursePerformance.length > 0 ? (
-              <div className="space-y-4">
-                {reportsData.coursePerformance.map((course, index) => (
+                      <div className="space-y-4">
+                        {reportsData.coursePerformance.map((course, index) => (
                           <div key={index} className="space-y-3 p-3 rounded-lg border">
                             <div className="flex justify-between items-start">
                               <div>

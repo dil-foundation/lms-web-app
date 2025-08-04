@@ -8,6 +8,7 @@ type Profile = {
   last_name: string | null;
   email: string | null;
   role: UserRole;
+  avatar_url?: string | null;
   [key: string]: any;
 };
 
@@ -44,7 +45,7 @@ export const UserProfileSection = ({ profile }: UserProfileSectionProps) => {
   return (
     <div className="flex items-center space-x-3 p-4">
       <Avatar className="h-10 w-10">
-        <AvatarImage src="" alt={displayName} />
+        <AvatarImage src={profile.avatar_url || undefined} alt={displayName} />
         <AvatarFallback className="bg-primary text-primary-foreground">
           {getInitials()}
         </AvatarFallback>

@@ -27,7 +27,11 @@ import {
   FileText,
   HelpCircle,
   TrendingUp,
-  Target
+  Target,
+  Calendar,
+  BarChart3,
+  GraduationCap,
+  Sparkles
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { ContentLoader } from '@/components/ContentLoader';
@@ -365,8 +369,32 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-8 h-screen">
-        <ContentLoader message="Loading Course..." />
+      <div className="space-y-8 mx-auto p-4">
+        {/* Premium Header Section */}
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
+          <div className="relative p-8 rounded-3xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                  <BookOpen className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
+                    Course Overview
+                  </h1>
+                  <p className="text-lg text-muted-foreground mt-2 leading-relaxed">
+                    Explore course content and learning objectives
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="py-12">
+          <ContentLoader message="Loading Course..." />
+        </div>
       </div>
     );
   }
@@ -393,64 +421,68 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
 
   return (
     <div className="min-h-full bg-background">
-      {/* Header */}
+      {/* Premium Header */}
       {!isPreviewMode && (
-        <div className="border-b border-border bg-card">
-          <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 py-4">
-            <Button 
-              variant="ghost" 
-              onClick={() => navigate('/dashboard/courses')}
-              className="mb-4"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Courses
-            </Button>
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5"></div>
+          <div className="relative border-b border-border bg-card">
+            <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 py-6">
+              <Button 
+                variant="ghost" 
+                onClick={() => navigate('/dashboard/courses')}
+                className="mb-4 h-10 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Courses
+              </Button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20">
-        <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 py-12">
-          <div className="space-y-8">
-            {/* Course Info */}
-            <div className="text-center space-y-6">
+      {/* Enhanced Hero Section */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20"></div>
+        <div className="relative w-full max-w-none px-4 sm:px-6 lg:px-8 py-16">
+          <div className="space-y-12">
+            {/* Premium Course Info */}
+            <div className="text-center space-y-8">
               <div>
                 {course.category && (
-                  <Badge className="bg-blue-600 hover:bg-blue-700 text-white mb-4">
+                  <Badge className="bg-primary hover:bg-primary/90 text-primary-foreground mb-6 px-4 py-2 text-sm font-medium">
                     {course.category}
                   </Badge>
                 )}
-                <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6 leading-tight">
                   {course.title}
                 </h1>
-                <p className="text-lg text-muted-foreground mb-6 max-w-3xl mx-auto">
+                <p className="text-xl text-muted-foreground mb-8 max-w-4xl mx-auto leading-relaxed">
                   {course.subtitle}
                 </p>
               </div>
 
-              {/* Course Stats */}
-              <div className="flex flex-wrap items-center justify-center gap-6 text-sm">
-                <div className="flex items-center gap-1">
-                  <Users className="w-4 h-4 text-blue-500" />
-                  <span>{course.stats.students.toLocaleString()} students</span>
+              {/* Enhanced Course Stats */}
+              <div className="flex flex-wrap items-center justify-center gap-8 text-sm">
+                <div className="flex items-center gap-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-border">
+                  <Users className="w-5 h-5 text-primary" />
+                  <span className="font-medium">{course.stats.students.toLocaleString()} students</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Clock className="w-4 h-4 text-green-500" />
-                  <span>{course.stats.duration}</span>
+                <div className="flex items-center gap-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-border">
+                  <Clock className="w-5 h-5 text-primary" />
+                  <span className="font-medium">{course.stats.duration}</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <BookOpen className="w-4 h-4 text-purple-500" />
-                  <span>{course.stats.lessons} lessons</span>
+                <div className="flex items-center gap-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-border">
+                  <BookOpen className="w-5 h-5 text-primary" />
+                  <span className="font-medium">{course.stats.lessons} lessons</span>
                 </div>
               </div>
             </div>
 
-            {/* Full-width Video Player */}
+            {/* Premium Video Player */}
             <div className="mx-auto w-[90%]">
-              <Card>
+              <Card className="bg-card border border-border backdrop-blur-sm shadow-xl">
                 <CardContent className="p-0">
-                  {/* Video/Image Preview - Reduced Width */}
+                  {/* Enhanced Video/Image Preview */}
                   <div className="relative aspect-video bg-gray-100 rounded-t-lg overflow-hidden min-h-[360px] md:min-h-[450px]">
                     {course.hasValidVideo && course.videoUrl ? (
                       // Valid video available
@@ -468,11 +500,11 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                             alt={course.title}
                             className="w-full h-full object-cover"
                           />
-                          <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                             <Button 
                               onClick={handlePreview}
                               size="lg"
-                              className="bg-white/90 hover:bg-white text-black px-8 py-4 text-lg"
+                              className="bg-white/95 hover:bg-white text-black px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
                             >
                               <Play className="w-6 h-6 mr-3" />
                               Preview Course
@@ -499,13 +531,13 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                     )}
                   </div>
 
-                  {/* Progress and CTA */}
-                  <div className="p-6 space-y-4">
+                  {/* Enhanced Progress and CTA */}
+                  <div className="p-8 space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      {/* Progress Section */}
-                      <div className="space-y-3">
+                      {/* Enhanced Progress Section */}
+                      <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-foreground">Course Progress</span>
+                          <span className="text-lg font-semibold text-foreground">Course Progress</span>
                           <span className="text-sm text-muted-foreground">
                             {course.progress.completed}/{course.progress.total} lessons
                           </span>
@@ -513,20 +545,20 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                         
                         <Progress 
                           value={course.progress.percentage} 
-                          className="h-2 bg-gray-200"
+                          className="h-3 bg-gray-200"
                         />
                         
                         <div className="flex justify-between text-sm text-muted-foreground">
-                          <span>{course.progress.percentage}% Complete</span>
+                          <span className="font-medium">{course.progress.percentage}% Complete</span>
                           <span>Last accessed: {course.progress.lastAccessed}</span>
                         </div>
                       </div>
 
-                      {/* CTA Section */}
-                      <div className="space-y-3">
+                      {/* Enhanced CTA Section */}
+                      <div className="space-y-4">
                         <Button 
                           onClick={handleStartLearning}
-                          className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-lg font-semibold"
+                          className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
                           size="lg"
                         >
                           {course.progress.percentage > 0 ? 'Continue Learning' : 'Start Learning'}
@@ -539,8 +571,6 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                         )}
                       </div>
                     </div>
-
-
                   </div>
                 </CardContent>
               </Card>
@@ -549,48 +579,51 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
         </div>
       </div>
 
-      {/* Course Content */}
-      <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          <div className="lg:col-span-3 space-y-8 order-2 lg:order-1">
-            {/* What You'll Learn & Course Features */}
-            <Card>
+      {/* Enhanced Course Content */}
+      <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 py-16">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
+          <div className="lg:col-span-3 space-y-12 order-2 lg:order-1">
+            {/* Enhanced What You'll Learn & Course Features */}
+            <Card className="bg-card border border-border backdrop-blur-sm">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="w-5 h-5 text-green-500" />
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <Award className="w-6 h-6 text-primary" />
                   What you'll learn & course features
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {course.whatYouLearn.map((item, index) => (
-                    <div key={`learn-${index}`} className="flex items-start gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span className="text-sm">{item}</span>
+                    <div key={`learn-${index}`} className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                      <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                      <span className="text-sm font-medium">{item}</span>
                     </div>
                   ))}
                   {course.features.map((feature, index) => (
-                    <div key={`feature-${index}`} className="flex items-start gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span className="text-sm">{feature}</span>
+                    <div key={`feature-${index}`} className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                      <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                      <span className="text-sm font-medium">{feature}</span>
                     </div>
                   ))}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Requirements - only show if there are requirements */}
+            {/* Enhanced Requirements */}
             {course.requirements && course.requirements.length > 0 && (
-              <Card>
+              <Card className="bg-card border border-border backdrop-blur-sm">
                 <CardHeader>
-                  <CardTitle>Requirements</CardTitle>
+                  <CardTitle className="flex items-center gap-3 text-xl">
+                    <Target className="w-6 h-6 text-primary" />
+                    Requirements
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {course.requirements.map((req, index) => (
-                      <div key={index} className="flex items-start gap-2">
-                        <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
-                        <span className="text-sm">{req}</span>
+                      <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                        <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
+                        <span className="text-sm font-medium">{req}</span>
                       </div>
                     ))}
                   </div>
@@ -598,11 +631,11 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
               </Card>
             )}
 
-            {/* Course Curriculum */}
-            <Card>
+            {/* Enhanced Course Curriculum */}
+            <Card className="bg-card border border-border backdrop-blur-sm">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BookOpen className="w-5 h-5 text-blue-500" />
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <BookOpen className="w-6 h-6 text-primary" />
                   Course Curriculum
                 </CardTitle>
               </CardHeader>
@@ -611,19 +644,19 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                   {course.curriculum.map((module, index) => (
                     <AccordionItem key={module.id} value={module.id}>
                       <AccordionTrigger className="hover:no-underline">
-                        <div className="flex items-center gap-3 w-full">
-                          <div className="flex items-center justify-center w-8 h-8 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 rounded-full text-sm font-semibold">
+                        <div className="flex items-center gap-4 w-full">
+                          <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/20 text-primary rounded-xl text-sm font-bold">
                             {index + 1}
                           </div>
                           <div className="flex-1 text-left">
-                            <h4 className="font-semibold text-foreground">{module.title}</h4>
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                              <div className="flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
+                            <h4 className="font-semibold text-foreground text-lg">{module.title}</h4>
+                            <div className="flex items-center gap-6 text-sm text-muted-foreground mt-2">
+                              <div className="flex items-center gap-2">
+                                <Clock className="w-4 h-4" />
                                 <span>{module.duration}</span>
                               </div>
-                              <div className="flex items-center gap-1">
-                                <BookOpen className="w-3 h-3" />
+                              <div className="flex items-center gap-2">
+                                <BookOpen className="w-4 h-4" />
                                 <span>{module.lessons} lessons</span>
                               </div>
                             </div>
@@ -631,26 +664,20 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                         </div>
                       </AccordionTrigger>
                       <AccordionContent>
-                        <div className="space-y-4 pt-4">
+                        <div className="space-y-6 pt-6">
                           {module.overview && (
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-sm text-muted-foreground leading-relaxed">
                               {module.overview}
                             </p>
                           )}
                           
-                          <div className="space-y-2">
-                            <h5 className="text-sm font-medium text-foreground">Topics covered:</h5>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          <div className="space-y-3">
+                            <h5 className="text-sm font-semibold text-foreground">Topics covered:</h5>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               {module.topics.map((topic, topicIndex) => (
-                                <div key={topicIndex} className="flex items-center gap-2 text-sm">
-                                  {topicIndex < 2 ? (
-                                    <PlayCircle className="w-4 h-4 text-green-500" />
-                                  ) : topicIndex < 3 ? (
-                                    <FileText className="w-4 h-4 text-blue-500" />
-                                  ) : (
-                                    <HelpCircle className="w-4 h-4 text-purple-500" />
-                                  )}
-                                  <span>{topic}</span>
+                                <div key={topicIndex} className="flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 border border-gray-200/50 dark:border-gray-600/50">
+                                  <PlayCircle className="w-4 h-4 text-primary" />
+                                  <span className="text-sm font-medium">{topic}</span>
                                 </div>
                               ))}
                             </div>
@@ -663,33 +690,36 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
               </CardContent>
             </Card>
 
-            {/* Instructor */}
-            <Card>
+            {/* Enhanced Instructor */}
+            <Card className="bg-card border border-border backdrop-blur-sm">
               <CardHeader>
-                <CardTitle>Teacher</CardTitle>
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <GraduationCap className="w-6 h-6 text-primary" />
+                  Teacher
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-start gap-4">
-                  <Avatar className="h-16 w-16">
-                    <AvatarFallback className="bg-primary text-primary-foreground text-xl font-bold">
+                <div className="flex items-start gap-6">
+                  <Avatar className="h-20 w-20">
+                    <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-2xl font-bold">
                       {course.instructor.avatar}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
-                    <h4 className="text-lg font-semibold text-foreground">
+                    <h4 className="text-xl font-semibold text-foreground mb-2">
                       {course.instructor.name}
                     </h4>
-                    <p className="text-muted-foreground mb-3">
+                    <p className="text-muted-foreground mb-4 leading-relaxed">
                       {course.instructor.title}
                     </p>
                     <div className="flex flex-wrap gap-6 text-sm">
-                      <div className="flex items-center gap-1">
-                        <Users className="w-4 h-4 text-blue-500" />
-                        <span>{course.instructor.students.toLocaleString()} Students</span>
+                      <div className="flex items-center gap-2 bg-gradient-to-r from-primary/5 to-primary/10 px-4 py-2 rounded-lg border border-primary/20">
+                        <Users className="w-4 h-4 text-primary" />
+                        <span className="font-medium">{course.instructor.students.toLocaleString()} Students</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <BookOpen className="w-4 h-4 text-purple-500" />
-                        <span>{course.instructor.courses} Courses</span>
+                      <div className="flex items-center gap-2 bg-gradient-to-r from-primary/5 to-primary/10 px-4 py-2 rounded-lg border border-primary/20">
+                        <BookOpen className="w-4 h-4 text-primary" />
+                        <span className="font-medium">{course.instructor.courses} Courses</span>
                       </div>
                     </div>
                   </div>
@@ -698,28 +728,31 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
             </Card>
           </div>
 
-          {/* Course Details Sidebar */}
+          {/* Enhanced Course Details Sidebar */}
           <div className="lg:col-span-1 order-1 lg:order-2">
-            <Card>
+            <Card className="bg-card border border-border backdrop-blur-sm sticky top-8">
               <CardHeader>
-                <CardTitle>Course Details</CardTitle>
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <BarChart3 className="w-6 h-6 text-primary" />
+                  Course Details
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Level</p>
+                  <div className="p-4 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                    <p className="text-sm text-muted-foreground mb-1">Level</p>
                     <p className="font-semibold">{course.stats.level}</p>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Duration</p>
+                  <div className="p-4 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                    <p className="text-sm text-muted-foreground mb-1">Duration</p>
                     <p className="font-semibold">{course.stats.duration}</p>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Lessons</p>
+                  <div className="p-4 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                    <p className="text-sm text-muted-foreground mb-1">Lessons</p>
                     <p className="font-semibold">{course.stats.lessons}</p>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Language</p>
+                  <div className="p-4 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                    <p className="text-sm text-muted-foreground mb-1">Language</p>
                     <p className="font-semibold flex items-center gap-1">
                       <Globe className="w-4 h-4" />
                       {course.stats.language}
@@ -729,8 +762,8 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
 
                 <Separator />
 
-                <div>
-                  <p className="text-sm text-muted-foreground">Last updated</p>
+                <div className="p-4 rounded-lg bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 border border-gray-200/50 dark:border-gray-600/50">
+                  <p className="text-sm text-muted-foreground mb-1">Last updated</p>
                   <p className="font-semibold">{course.stats.lastUpdated}</p>
                 </div>
               </CardContent>
