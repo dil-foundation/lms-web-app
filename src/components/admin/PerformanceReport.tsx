@@ -95,38 +95,99 @@ const ScoreCard = ({ title, score, maxScore = 5, trend, subtitle }: {
   const percentage = (score / maxScore) * 100;
   const getTrendIcon = () => {
     switch (trend) {
-      case 'up': return <TrendingUp className="w-4 h-4 text-green-600" />;
-      case 'down': return <TrendingDown className="w-4 h-4 text-red-600" />;
-      default: return <Activity className="w-4 h-4 text-gray-600" />;
+      case 'up': return <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400" />;
+      case 'down': return <TrendingDown className="w-4 h-4 text-red-600 dark:text-red-400" />;
+      default: return <Activity className="w-4 h-4 text-gray-600 dark:text-gray-400" />;
     }
   };
 
   const getScoreColor = () => {
-    if (percentage >= 80) return "text-green-600";
-    if (percentage >= 60) return "text-yellow-600";
-    return "text-red-600";
+    if (percentage >= 80) return "text-green-600 dark:text-green-400";
+    if (percentage >= 60) return "text-yellow-600 dark:text-yellow-400";
+    return "text-red-600 dark:text-red-400";
+  };
+
+  const getPerformanceLevel = () => {
+    if (percentage >= 80) return "Exceeds Standards";
+    if (percentage >= 60) return "Meets Standards";
+    return "Below Standards";
+  };
+
+  const getPerformanceColor = () => {
+    if (percentage >= 80) return "from-green-500 to-green-600 dark:from-green-400 dark:to-green-500";
+    if (percentage >= 60) return "from-yellow-500 to-yellow-600 dark:from-yellow-400 dark:to-yellow-500";
+    return "from-red-500 to-red-600 dark:from-red-400 dark:to-red-500";
   };
 
   return (
-    <Card className="bg-gradient-to-br from-card to-green-500/5">
+    <Card className="bg-gradient-to-br from-card to-primary/5 dark:bg-card hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 border border-border/50">
       <CardContent className="p-6">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="font-medium text-sm text-muted-foreground">{title}</h3>
-          {trend && getTrendIcon()}
+        {/* Header with proper spacing */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-primary/15 to-primary/25 rounded-lg flex items-center justify-center flex-shrink-0">
+              <BarChart3 className="w-4 h-4 text-primary" />
         </div>
-        <div className="flex items-baseline space-x-2 mb-2">
-          <span className={`text-2xl font-bold ${getScoreColor()}`}>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-bold text-lg text-foreground truncate">{title}</h3>
+              {subtitle && (
+                <p className="text-sm text-muted-foreground font-medium truncate">{subtitle}</p>
+              )}
+            </div>
+          </div>
+          {trend && (
+            <div className="w-8 h-8 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
+              {getTrendIcon()}
+            </div>
+          )}
+        </div>
+
+        {/* McKinsey-style Performance Indicator */}
+        <div className="space-y-4">
+          {/* Score Display */}
+          <div className="text-center">
+            <div className="flex items-baseline justify-center gap-2 mb-2">
+              <span className={`text-4xl font-bold ${getScoreColor()}`}>
             {score.toFixed(1)}
           </span>
-          <span className="text-sm text-muted-foreground">/{maxScore}</span>
+              <span className="text-lg text-muted-foreground font-medium">/{maxScore}</span>
         </div>
-        {subtitle && (
-          <p className="text-xs text-muted-foreground mb-3">{subtitle}</p>
-        )}
-        <Progress value={percentage} className="h-2" />
-        <div className="flex justify-between text-xs text-muted-foreground mt-1">
-          <span>Poor</span>
-          <span>Excellent</span>
+            <div className="text-sm font-medium text-muted-foreground">
+              {getPerformanceLevel()}
+            </div>
+          </div>
+
+          {/* McKinsey-style Performance Ring */}
+          <div className="flex justify-center">
+            <div className="relative w-20 h-20">
+              {/* Background Ring */}
+              <div className="absolute inset-0 rounded-full border-4 border-gray-200 dark:border-gray-700"></div>
+              {/* Performance Ring */}
+              <div 
+                className="absolute inset-0 rounded-full border-4 border-transparent"
+                style={{
+                  background: `conic-gradient(from 0deg, ${percentage >= 80 ? (document.documentElement.classList.contains('dark') ? '#4ade80' : '#10b981') : percentage >= 60 ? (document.documentElement.classList.contains('dark') ? '#fbbf24' : '#f59e0b') : (document.documentElement.classList.contains('dark') ? '#f87171' : '#ef4444')} 0deg, ${percentage >= 80 ? (document.documentElement.classList.contains('dark') ? '#4ade80' : '#10b981') : percentage >= 60 ? (document.documentElement.classList.contains('dark') ? '#fbbf24' : '#f59e0b') : (document.documentElement.classList.contains('dark') ? '#f87171' : '#ef4444')} ${(percentage / 100) * 360}deg, transparent ${(percentage / 100) * 360}deg)`,
+                  mask: 'radial-gradient(circle at center, transparent 55%, black 56%)'
+                }}
+              ></div>
+              {/* Center Content */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center">
+                  <div className={`text-lg font-bold ${getScoreColor()}`}>
+                    {percentage.toFixed(0)}%
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Performance Status */}
+          <div className="text-center">
+            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r ${getPerformanceColor()} text-white text-xs font-medium`}>
+              <div className="w-2 h-2 bg-white rounded-full"></div>
+              {getPerformanceLevel()}
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -143,110 +204,131 @@ const ExecutiveSummary = ({ data }: { data: any }) => {
   const improvements = data.improvements || [];
 
   return (
-  <Card className="mb-6">
-    <CardHeader>
-      <div className="flex items-center gap-3">
-        <BarChart3 className="w-6 h-6 text-green-600" />
+    <div className="space-y-8">
+      {/* McKinsey-style Header Section */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 dark:from-primary/10 dark:via-primary/20 dark:to-primary/10"></div>
+        <div className="relative p-8 border border-border/30 rounded-3xl bg-gradient-to-br from-background/80 to-background/40 backdrop-blur-sm">
+          <div className="flex items-start justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center shadow-lg">
+                <BarChart3 className="w-8 h-8 text-primary" />
+              </div>
         <div>
-          <CardTitle className="text-xl">Executive Summary</CardTitle>
-          <CardDescription>Overall performance assessment and key insights</CardDescription>
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-foreground via-foreground to-foreground/80 bg-clip-text text-transparent">
+                  Executive Summary
+                </h2>
+                <p className="text-lg text-muted-foreground font-light mt-1">
+                  Strategic performance assessment and key insights
+                </p>
         </div>
       </div>
-    </CardHeader>
-    <CardContent>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center gap-4 p-4 bg-green-50 dark:bg-green-900/10 rounded-lg border border-green-200 dark:border-green-800">
-            <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-full">
-              <Award className="w-8 h-8 text-green-600" />
+            <div className="text-right">
+              <div className="text-sm text-muted-foreground font-medium">Observation Score</div>
+              <div className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+                {overallScore.toFixed(1)}
             </div>
-            <div>
-                <h3 className="text-lg font-semibold">
-                  {overallScore >= 4.0 ? 'Strong Performance' : overallScore >= 3.0 ? 'Good Performance' : 'Developing Performance'}
-                </h3>
-              <p className="text-muted-foreground">
-                  Overall teaching effectiveness shows a score of{' '}
-                  <span className="font-semibold text-green-600">{overallScore.toFixed(1)}/5.0</span>
-                  {previousScore && (
-                    <>
-                      , representing a {improvementPercent}% 
-                      {parseFloat(improvementPercent) >= 0 ? 'increase' : 'change'} from the previous observation.
-                    </>
-                  )}
-              </p>
+              <div className="text-sm text-muted-foreground">out of 5.0</div>
             </div>
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-800">
-              <div className="flex items-center gap-2 mb-2">
-                <ThumbsUp className="w-5 h-5 text-blue-600" />
-                <span className="font-medium">Key Strengths</span>
+          {/* Performance Status Bar */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">Performance Level</span>
+              <span className="text-sm font-bold text-primary dark:text-primary/90">
+                {overallScore >= 4.0 ? 'Exceeds Standards' : overallScore >= 3.0 ? 'Meets Standards' : 'Below Standards'}
+              </span>
               </div>
-              <ul className="space-y-1 text-sm text-muted-foreground">
-                {strengths.length > 0 ? (
-                  strengths.slice(0, 3).map((strength: string, index: number) => (
-                    <li key={index}>• {strength.length > 40 ? strength.substring(0, 40) + '...' : strength}</li>
-                  ))
-                ) : (
-                  <li>• No specific strengths noted</li>
-                )}
-              </ul>
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+              <div 
+                className="bg-gradient-to-r from-primary to-primary/80 dark:from-primary/90 dark:to-primary/70 h-3 rounded-full transition-all duration-500"
+                style={{ width: `${(overallScore / 5) * 100}%` }}
+              ></div>
+            </div>
             </div>
             
-            <div className="p-4 bg-orange-50 dark:bg-orange-900/10 rounded-lg border border-orange-200 dark:border-orange-800">
-              <div className="flex items-center gap-2 mb-2">
-                <Target className="w-5 h-5 text-orange-600" />
-                <span className="font-medium">Growth Areas</span>
+          {/* Key Metrics Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="text-center p-4 bg-gradient-to-r from-green-50/50 to-green-100/30 dark:from-green-900/20 dark:to-green-900/10 rounded-2xl border border-green-200/50 dark:border-green-800/30">
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400 mb-1">{overallScore.toFixed(1)}</div>
+              <div className="text-sm text-green-700 dark:text-green-300 font-medium">Current Score</div>
               </div>
-              <ul className="space-y-1 text-sm text-muted-foreground">
-                {improvements.length > 0 ? (
-                  improvements.slice(0, 3).map((improvement: string, index: number) => (
-                    <li key={index}>• {improvement.length > 40 ? improvement.substring(0, 40) + '...' : improvement}</li>
-                  ))
-                ) : (
-                  <li>• No specific improvements noted</li>
-                )}
-              </ul>
+            {previousScore && (
+              <div className="text-center p-4 bg-gradient-to-r from-blue-50/50 to-blue-100/30 dark:from-blue-900/20 dark:to-blue-900/10 rounded-2xl border border-blue-200/50 dark:border-blue-800/30">
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-1">
+                  {parseFloat(improvementPercent) >= 0 ? '+' : ''}{improvementPercent}%
+                </div>
+                <div className="text-sm text-blue-700 dark:text-blue-300 font-medium">Improvement</div>
+              </div>
+            )}
+            <div className="text-center p-4 bg-gradient-to-r from-purple-50/50 to-purple-100/30 dark:from-purple-900/20 dark:to-purple-900/10 rounded-2xl border border-purple-200/50 dark:border-purple-800/30">
+              <div className="text-2xl font-bold text-purple-600 dark:text-purple-400 mb-1">{strengths.length}</div>
+              <div className="text-sm text-purple-700 dark:text-purple-300 font-medium">Key Strengths</div>
+            </div>
             </div>
           </div>
         </div>
         
+      {/* Strategic Insights Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Strengths Analysis */}
+        <div className="bg-gradient-to-br from-card to-primary/5 dark:bg-card border border-border/50 rounded-3xl p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 bg-gradient-to-br from-green-500/20 to-green-600/30 rounded-2xl flex items-center justify-center">
+              <ThumbsUp className="w-6 h-6 text-green-600" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-foreground">Strategic Strengths</h3>
+              <p className="text-sm text-muted-foreground">Key areas of excellence</p>
+            </div>
+          </div>
         <div className="space-y-4">
-          <div className="text-center p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-900/10 rounded-lg border border-green-200 dark:border-green-800">
-            <div className="text-4xl font-bold text-green-600 mb-2">{overallScore.toFixed(1)}</div>
-            <div className="text-sm font-medium text-green-700 dark:text-green-300">Overall Score</div>
-            <div className="flex justify-center mt-2">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star
-                  key={star}
-                  className={`w-4 h-4 ${
-                    star <= Math.round(overallScore)
-                      ? 'text-yellow-400 fill-current'
-                      : 'text-gray-300'
-                  }`}
-                />
-              ))}
+            {strengths.length > 0 ? (
+              strengths.slice(0, 3).map((strength: string, index: number) => (
+                <div key={index} className="flex items-start gap-3 p-3 bg-gradient-to-r from-green-50/30 to-green-100/20 dark:from-green-900/10 dark:to-green-900/5 rounded-xl">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                  <span className="text-sm text-green-700 dark:text-green-300">{strength.length > 50 ? strength.substring(0, 50) + '...' : strength}</span>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Target className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No specific strengths noted</p>
+              </div>
+            )}
             </div>
           </div>
           
-          {previousScore && (
-          <div className="p-4 bg-gray-50 dark:bg-gray-900/20 rounded-lg border">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
-                  {parseFloat(improvementPercent) >= 0 ? '+' : ''}{improvementPercent}%
+        {/* Growth Areas Analysis */}
+        <div className="bg-gradient-to-br from-card to-primary/5 dark:bg-card border border-border/50 rounded-3xl p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 bg-gradient-to-br from-orange-500/20 to-orange-600/30 rounded-2xl flex items-center justify-center">
+              <Target className="w-6 h-6 text-orange-600" />
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  {parseFloat(improvementPercent) >= 0 ? 'Improvement' : 'Change'}
+            <div>
+              <h3 className="text-xl font-bold text-foreground">Development Areas</h3>
+              <p className="text-sm text-muted-foreground">Opportunities for growth</p>
                 </div>
-                <div className="text-xs text-muted-foreground mt-1">vs. Previous Observation</div>
               </div>
+          <div className="space-y-4">
+            {improvements.length > 0 ? (
+              improvements.slice(0, 3).map((improvement: string, index: number) => (
+                <div key={index} className="flex items-start gap-3 p-3 bg-gradient-to-r from-orange-50/30 to-orange-100/20 dark:from-orange-900/10 dark:to-orange-900/5 rounded-xl">
+                  <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
+                  <span className="text-sm text-orange-700 dark:text-orange-300">{improvement.length > 50 ? improvement.substring(0, 50) + '...' : improvement}</span>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Target className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No specific improvements noted</p>
             </div>
           )}
         </div>
       </div>
-    </CardContent>
-  </Card>
+      </div>
+    </div>
 );
 };
 
@@ -259,44 +341,65 @@ const ObservationDetails = ({ data }: { data: any }) => {
   const project = data.project || {};
 
   return (
-  <Card className="mb-6">
-    <CardHeader>
-      <CardTitle className="flex items-center gap-2">
-        <Calendar className="w-5 h-5" />
+    <div className="space-y-8">
+      {/* McKinsey-style Header Section */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 dark:from-primary/10 dark:via-primary/20 dark:to-primary/10"></div>
+        <div className="relative p-8 border border-border/30 rounded-3xl bg-gradient-to-br from-background/80 to-background/40 backdrop-blur-sm">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center shadow-lg">
+              <Calendar className="w-8 h-8 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-foreground via-foreground to-foreground/80 bg-clip-text text-transparent">
         Observation Details
-      </CardTitle>
-    </CardHeader>
-    <CardContent>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <User className="w-4 h-4" />
-            Observer
+              </h2>
+              <p className="text-lg text-muted-foreground font-light mt-1">
+                Comprehensive observation information and context
+              </p>
+            </div>
           </div>
-            <div className="font-medium">{observer.name || 'N/A'}</div>
-            <div className="text-sm text-muted-foreground capitalize">
+        </div>
+      </div>
+
+      {/* Details Grid */}
+      <div className="bg-gradient-to-br from-card to-primary/5 dark:bg-card border border-border/50 rounded-3xl p-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-6 h-6 bg-gradient-to-br from-blue-500/10 to-blue-600/20 rounded-lg flex items-center justify-center">
+                <User className="w-3 h-3 text-blue-600" />
+          </div>
+              <span className="text-sm font-bold text-muted-foreground">Observer</span>
+            </div>
+            <div className="font-bold text-foreground">{observer.name || 'N/A'}</div>
+            <div className="text-sm text-muted-foreground capitalize font-medium">
               {observer.role ? observer.role.replace('-', ' ') : 'N/A'}
             </div>
         </div>
         
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <MapPin className="w-4 h-4" />
-            Location
+          <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-6 h-6 bg-gradient-to-br from-green-500/10 to-green-600/20 rounded-lg flex items-center justify-center">
+                <MapPin className="w-3 h-3 text-green-600" />
           </div>
-            <div className="font-medium">{school.name || observer.school || 'N/A'}</div>
-            <div className="text-sm text-muted-foreground">
+              <span className="text-sm font-bold text-muted-foreground">Location</span>
+            </div>
+            <div className="font-bold text-foreground">{school.name || observer.school || 'N/A'}</div>
+            <div className="text-sm text-muted-foreground font-medium">
               Teacher: {teacher.name || observer.teacher || 'N/A'}
             </div>
         </div>
         
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Calendar className="w-4 h-4" />
-            Date & Duration
+          <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-6 h-6 bg-gradient-to-br from-orange-500/10 to-orange-600/20 rounded-lg flex items-center justify-center">
+                <Calendar className="w-3 h-3 text-orange-600" />
           </div>
-            <div className="font-medium">{lesson.date || observer.date || 'N/A'}</div>
-            <div className="text-sm text-muted-foreground">
+              <span className="text-sm font-bold text-muted-foreground">Date & Duration</span>
+            </div>
+            <div className="font-bold text-foreground">{lesson.date || observer.date || 'N/A'}</div>
+            <div className="text-sm text-muted-foreground font-medium">
               {lesson.startTime && lesson.endTime 
                 ? `${lesson.startTime} - ${lesson.endTime}`
                 : observer.duration || 'N/A'
@@ -304,19 +407,21 @@ const ObservationDetails = ({ data }: { data: any }) => {
             </div>
         </div>
         
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <BookOpen className="w-4 h-4" />
-            Lesson Code
+          <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-6 h-6 bg-gradient-to-br from-purple-500/10 to-purple-600/20 rounded-lg flex items-center justify-center">
+                <BookOpen className="w-3 h-3 text-purple-600" />
           </div>
-            <div className="font-medium">{lesson.code || observer.lesson || 'N/A'}</div>
-            <Badge variant="outline" className="mt-1">
+              <span className="text-sm font-bold text-muted-foreground">Lesson Code</span>
+            </div>
+            <div className="font-bold text-foreground">{lesson.code || observer.lesson || 'N/A'}</div>
+            <Badge variant="outline" className="mt-2 bg-gradient-to-r from-primary/10 to-primary/20 border-primary/30 text-primary font-semibold">
               {project.name || 'N/A'}
             </Badge>
           </div>
       </div>
-    </CardContent>
-  </Card>
+      </div>
+    </div>
 );
 };
 
@@ -325,13 +430,29 @@ const PerformanceMetrics = ({ data }: { data: any }) => {
   const categories = data.categories || {};
 
   return (
-  <div className="space-y-6">
-    <h2 className="text-xl font-semibold flex items-center gap-2">
-      <PieChart className="w-5 h-5" />
+    <div className="space-y-8">
+      {/* McKinsey-style Header Section */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 dark:from-primary/10 dark:via-primary/20 dark:to-primary/10"></div>
+        <div className="relative p-8 border border-border/30 rounded-3xl bg-gradient-to-br from-background/80 to-background/40 backdrop-blur-sm">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center shadow-lg">
+              <PieChart className="w-8 h-8 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-foreground via-foreground to-foreground/80 bg-clip-text text-transparent">
       Performance Metrics
     </h2>
-    
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+              <p className="text-lg text-muted-foreground font-light mt-1">
+                Strategic breakdown of teaching effectiveness across key competency areas
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Metrics Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
         {Object.entries(categories).map(([key, category]: [string, any]) => (
         <ScoreCard
           key={key}
@@ -344,9 +465,11 @@ const PerformanceMetrics = ({ data }: { data: any }) => {
     </div>
       
       {Object.keys(categories).length === 0 && (
-        <div className="text-center py-8 text-muted-foreground">
-          <PieChart className="w-12 h-12 mx-auto mb-4 opacity-50" />
-          <p>No performance metrics available</p>
+        <div className="text-center py-12 text-muted-foreground">
+          <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl flex items-center justify-center mx-auto mb-6">
+            <PieChart className="w-8 h-8 text-primary opacity-50" />
+          </div>
+          <p className="text-lg font-medium">No performance metrics available</p>
         </div>
       )}
   </div>
@@ -1017,21 +1140,41 @@ export const PerformanceReport: React.FC<PerformanceReportProps> = ({ observatio
   }
 
   return (
-    <div className="space-y-6 mx-auto p-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Performance Assessment Report</h1>
-          <p className="text-muted-foreground mt-1">
-            Comprehensive analysis and strategic recommendations
+    <div className="space-y-8 mx-auto p-4">
+      {/* Premium Header Section */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 dark:from-primary/10 dark:via-transparent dark:to-primary/10 rounded-3xl"></div>
+        <div className="relative p-8 rounded-3xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 flex-1 max-w-2xl">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 dark:from-primary/20 dark:to-primary/30 rounded-2xl flex items-center justify-center">
+                <BarChart3 className="w-6 h-6 text-primary dark:text-primary/90" />
+              </div>
+              <div className="flex-1">
+                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 dark:from-primary/90 dark:via-primary dark:to-primary/70 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
+                  Performance Assessment Report
+                </h1>
+                <p className="text-lg text-muted-foreground font-light pr-8">
+                  Comprehensive analysis and strategic recommendations for educational excellence
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={onBack}>
+            </div>
+            
+            <div className="flex items-center gap-2 flex-shrink-0 ml-8">
+              <Button 
+                variant="outline" 
+                onClick={onBack}
+                className="h-10 px-6 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Form
           </Button>
-          <Button variant="outline" onClick={exportToPDF} disabled={isExporting}>
+              <Button 
+                variant="outline" 
+                onClick={exportToPDF} 
+                disabled={isExporting}
+                className="h-10 px-6 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
             {isExporting ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -1044,6 +1187,8 @@ export const PerformanceReport: React.FC<PerformanceReportProps> = ({ observatio
               </>
             )}
           </Button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1054,15 +1199,37 @@ export const PerformanceReport: React.FC<PerformanceReportProps> = ({ observatio
       <ObservationDetails data={reportData} />
 
       {/* Tabbed Content */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className={`grid w-full ${reportData.showTealObservations ? 'grid-cols-4' : 'grid-cols-3'}`}>
-          <TabsTrigger value="overview">Performance Overview</TabsTrigger>
-          <TabsTrigger value="detailed">Detailed Analysis</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+        <div className="bg-gradient-to-r from-background to-background/95 backdrop-blur-sm border border-border/50 rounded-2xl p-2">
+          <TabsList className={`grid w-full h-12 ${reportData.showTealObservations ? 'grid-cols-4' : 'grid-cols-3'} bg-transparent`}>
+            <TabsTrigger 
+              value="overview" 
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/90 data-[state=active]:text-white rounded-xl transition-all duration-300 hover:bg-muted/50 dark:hover:bg-muted/30"
+            >
+              Performance Overview
+            </TabsTrigger>
+            <TabsTrigger 
+              value="detailed" 
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/90 data-[state=active]:text-white rounded-xl transition-all duration-300 hover:bg-muted/50 dark:hover:bg-muted/30"
+            >
+              Detailed Analysis
+            </TabsTrigger>
           {reportData.showTealObservations && (
-          <TabsTrigger value="teal">TEAL Assessment</TabsTrigger>
-          )}
-          <TabsTrigger value="action">Action Plan</TabsTrigger>
+              <TabsTrigger 
+                value="teal" 
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/90 data-[state=active]:text-white rounded-xl transition-all duration-300 hover:bg-muted/50 dark:hover:bg-muted/30"
+              >
+                TEAL Assessment
+              </TabsTrigger>
+            )}
+            <TabsTrigger 
+              value="action" 
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/90 data-[state=active]:text-white rounded-xl transition-all duration-300 hover:bg-muted/50 dark:hover:bg-muted/30"
+            >
+              Action Plan
+            </TabsTrigger>
         </TabsList>
+        </div>
 
         <TabsContent value="overview" className="space-y-6">
           <PerformanceMetrics data={reportData} />

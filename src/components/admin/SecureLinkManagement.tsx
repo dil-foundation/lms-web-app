@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, Link2, Eye, Copy, Trash2, Shield, RefreshCw, BarChart3, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, Link2, Eye, Copy, Trash2, Shield, RefreshCw, BarChart3, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -90,84 +90,115 @@ const GenerateLinkModal = ({ onGenerate, isGenerating }: { onGenerate: (link: Se
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button className="bg-green-600 hover:bg-green-700 text-white">
+        <Button className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5">
           <Plus className="w-4 h-4 mr-2" />
           Generate Secure Link
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Generate Secure Observer Link</DialogTitle>
+      <DialogContent className="sm:max-w-md bg-gradient-to-br from-background to-background/95 backdrop-blur-sm border border-border/50 shadow-2xl">
+        <DialogHeader className="pb-4">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-green-500/10 to-green-600/20 rounded-xl flex items-center justify-center">
+              <Shield className="w-4 h-4 text-green-600" />
+            </div>
+            <DialogTitle className="text-xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">
+              Generate Secure Link
+            </DialogTitle>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Create a secure, time-limited link for external observers
+          </p>
         </DialogHeader>
         
         {!generatedLink ? (
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Observer Role</label>
+              <label className="text-sm font-semibold text-foreground">Observer Role</label>
               <Select value={role} onValueChange={setRole}>
-                <SelectTrigger>
+                <SelectTrigger className="h-10 rounded-lg border-2 border-input bg-background hover:bg-accent/50 focus:ring-2 focus:ring-green-500/20 focus:border-green-500/40 transition-all duration-300">
                   <SelectValue placeholder="Select observer role" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="principal">Principal</SelectItem>
-                  <SelectItem value="ece">ECE Observer</SelectItem>
-                  <SelectItem value="school-officer">School Officer</SelectItem>
-                  <SelectItem value="project-manager">Project Manager</SelectItem>
+                <SelectContent className="bg-background/95 backdrop-blur-sm border border-border/50">
+                  <SelectItem value="principal" className="hover:bg-accent/50">Principal</SelectItem>
+                  <SelectItem value="ece" className="hover:bg-accent/50">ECE Observer</SelectItem>
+                  <SelectItem value="school-officer" className="hover:bg-accent/50">School Officer</SelectItem>
+                  <SelectItem value="project-manager" className="hover:bg-accent/50">Project Manager</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium">Expiry Duration</label>
+              <label className="text-sm font-semibold text-foreground">Expiry Duration</label>
               <Select value={expiry} onValueChange={setExpiry}>
-                <SelectTrigger>
+                <SelectTrigger className="h-10 rounded-lg border-2 border-input bg-background hover:bg-accent/50 focus:ring-2 focus:ring-green-500/20 focus:border-green-500/40 transition-all duration-300">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">1 Day</SelectItem>
-                  <SelectItem value="3">3 Days</SelectItem>
-                  <SelectItem value="7">7 Days</SelectItem>
-                  <SelectItem value="14">14 Days</SelectItem>
-                  <SelectItem value="30">30 Days</SelectItem>
+                <SelectContent className="bg-background/95 backdrop-blur-sm border border-border/50">
+                  <SelectItem value="1" className="hover:bg-accent/50">1 Day</SelectItem>
+                  <SelectItem value="3" className="hover:bg-accent/50">3 Days</SelectItem>
+                  <SelectItem value="7" className="hover:bg-accent/50">7 Days</SelectItem>
+                  <SelectItem value="14" className="hover:bg-accent/50">14 Days</SelectItem>
+                  <SelectItem value="30" className="hover:bg-accent/50">30 Days</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
-            <Button onClick={handleGenerate} disabled={isGenerating} className="w-full">
-              {isGenerating ? 'Generating...' : 'Generate Link'}
+            <Button 
+              onClick={handleGenerate} 
+              disabled={isGenerating} 
+              className="w-full h-10 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                'Generate Link'
+              )}
             </Button>
           </div>
         ) : (
           <div className="space-y-4">
-            <Alert>
-              <Shield className="h-4 w-4" />
-              <AlertDescription>
+            <Alert className="bg-gradient-to-r from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-800/20 border border-green-200 dark:border-green-800/50 rounded-lg">
+              <Shield className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-800 dark:text-green-200 font-medium">
                 Secure link generated successfully! Share this link with the {generatedLink.role.toLowerCase()}.
               </AlertDescription>
             </Alert>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium">Generated Link</label>
-              <div className="flex items-center space-x-2">
-                <code className="flex-1 p-2 bg-gray-100 dark:bg-gray-800 rounded text-xs break-all">
+              <label className="text-sm font-semibold text-foreground">Generated Link</label>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 p-3 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg text-sm break-all border border-gray-200 dark:border-gray-700 font-mono">
                   {generatedLink.fullUrl}
                 </code>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => copyToClipboard(generatedLink.fullUrl)}
+                  className="h-8 w-8 p-0 rounded-lg border-2 hover:border-green-500/40 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-300"
                 >
-                  <Copy className="w-4 h-4" />
+                  <Copy className="w-3 h-3" />
                 </Button>
               </div>
             </div>
             
-            <div className="text-sm text-muted-foreground">
-              <p><strong>Role:</strong> {generatedLink.role}</p>
-              <p><strong>Expires:</strong> {generatedLink.expiry.toLocaleDateString()}</p>
+            <div className="grid grid-cols-2 gap-3 p-3 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-1">Role</p>
+                <p className="text-sm font-semibold text-foreground">{generatedLink.role}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-1">Expires</p>
+                <p className="text-sm font-semibold text-foreground">{generatedLink.expiry.toLocaleDateString()}</p>
+              </div>
             </div>
             
-            <Button onClick={() => handleOpenChange(false)} className="w-full">
+            <Button 
+              onClick={() => handleOpenChange(false)} 
+              className="w-full h-10 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5"
+            >
               Done
             </Button>
           </div>
@@ -195,11 +226,11 @@ const LinkCard = ({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
-      case 'expired': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
-      case 'used': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
-      case 'deactivated': return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
+      case 'active': return 'bg-gradient-to-r from-green-100 to-green-200 text-green-800 dark:from-green-900/30 dark:to-green-800/30 dark:text-green-400 border border-green-200 dark:border-green-800/50';
+      case 'expired': return 'bg-gradient-to-r from-red-100 to-red-200 text-red-800 dark:from-red-900/30 dark:to-red-800/30 dark:text-red-400 border border-red-200 dark:border-red-800/50';
+      case 'used': return 'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 dark:from-blue-900/30 dark:to-blue-800/30 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50';
+      case 'deactivated': return 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 dark:from-gray-900/30 dark:to-gray-800/30 dark:text-gray-400 border border-gray-200 dark:border-gray-800/50';
+      default: return 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 dark:from-gray-900/30 dark:to-gray-800/30 dark:text-gray-400 border border-gray-200 dark:border-gray-800/50';
     }
   };
 
@@ -207,98 +238,76 @@ const LinkCard = ({
   const displayStatus = isExpired && link.status === 'active' ? 'expired' : link.status;
 
   return (
-    <Card className="transition-all duration-200 hover:shadow-md">
+    <Card className="bg-gradient-to-br from-card to-primary/5 dark:bg-card hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 border border-border/50">
       <CardContent className="p-6">
-        <div className="flex items-start justify-between gap-6">
+        <div className="flex items-center justify-between gap-4">
           {/* Left section - Main info */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex items-center gap-2">
-                <Shield className="w-5 h-5 text-green-600" />
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  {link.role}
-                </h3>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-green-500/10 to-green-600/20 rounded-xl flex items-center justify-center">
+                <Shield className="w-4 h-4 text-green-600" />
               </div>
-              <Badge className={`${getStatusColor(displayStatus)} font-medium px-3 py-1`}>
+              <h3 className="text-lg font-bold text-foreground">
+                {link.role}
+              </h3>
+              <Badge className={`${getStatusColor(displayStatus)} font-semibold px-3 py-1 rounded-full text-xs`}>
                 {displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1)}
               </Badge>
             </div>
             
             {/* Token and URL info */}
-            <div className="space-y-3 mb-4">
-              <div className="flex items-center gap-2">
-                <code className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-sm font-mono text-gray-700 dark:text-gray-300">
+            <div className="flex items-center gap-3 mb-3">
+              <code className="px-3 py-2 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg text-sm font-mono text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
                   {link.token.substring(0, 12)}...
                 </code>
                 {displayStatus === 'active' && (
                   <Button
                     size="sm"
-                    variant="ghost"
+                  variant="outline"
                     onClick={() => copyToClipboard(link.fullUrl)}
-                    className="h-6 px-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-800"
+                  className="h-8 px-3 rounded-lg border-2 hover:border-green-500/40 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-300"
                   >
                     <Copy className="w-3 h-3 mr-1" />
-                    Copy URL
+                  Copy
                   </Button>
                 )}
-              </div>
             </div>
 
-            {/* Date and usage info grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-              <div>
-                <p className="text-gray-500 dark:text-gray-400 font-medium mb-1">Created</p>
-                <p className="text-gray-900 dark:text-white">
-                  {link.created.toLocaleDateString()}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {link.created.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </p>
+            {/* Date and usage info - compact */}
+            <div className="flex items-center gap-6 text-sm">
+              <div className="flex items-center gap-1">
+                <span className="text-muted-foreground">Created:</span>
+                <span className="font-medium">{link.created.toLocaleDateString()}</span>
               </div>
               
-              <div>
-                <p className="text-gray-500 dark:text-gray-400 font-medium mb-1">Expires</p>
-                <p className={`${isExpired ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'}`}>
+              <div className="flex items-center gap-1">
+                <span className="text-muted-foreground">Expires:</span>
+                <span className={`font-medium ${isExpired ? 'text-red-600 dark:text-red-400' : 'text-foreground'}`}>
                   {link.expiry.toLocaleDateString()}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {link.expiry.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </p>
+                </span>
               </div>
 
               {link.usedBy && (
-                <div>
-                  <p className="text-gray-500 dark:text-gray-400 font-medium mb-1">Used By</p>
-                  <p className="text-gray-900 dark:text-white truncate" title={link.usedBy}>
+                <div className="flex items-center gap-1">
+                  <span className="text-muted-foreground">Used by:</span>
+                  <span className="font-medium truncate max-w-24" title={link.usedBy}>
                     {link.usedBy}
-                  </p>
-                </div>
-              )}
-
-              {link.usedAt && (
-                <div>
-                  <p className="text-gray-500 dark:text-gray-400 font-medium mb-1">Used At</p>
-                  <p className="text-gray-900 dark:text-white">
-                    {link.usedAt.toLocaleDateString()}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {link.usedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </p>
+                  </span>
                 </div>
               )}
             </div>
           </div>
           
           {/* Right section - Actions */}
-          <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
             <Button
               size="sm"
               variant="outline"
               onClick={() => window.open(link.fullUrl, '_blank')}
               disabled={displayStatus !== 'active'}
-              className="w-24"
+              className="h-8 px-3 rounded-lg border-2 hover:border-primary/40 hover:bg-primary/5 transition-all duration-300"
             >
-              <Eye className="w-4 h-4 mr-2" />
+              <Eye className="w-3 h-3 mr-1" />
               View
             </Button>
             
@@ -307,7 +316,7 @@ const LinkCard = ({
                 size="sm"
                 variant="outline"
                 onClick={onDeactivate}
-                className="w-24"
+                className="h-8 px-3 rounded-lg border-2 hover:border-orange-500/40 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all duration-300"
               >
                 Deactivate
               </Button>
@@ -315,18 +324,15 @@ const LinkCard = ({
             
             <Button
               size="sm"
-              variant="destructive"
+              variant="outline"
               onClick={onDelete}
               disabled={isDeleting}
-              className="w-24"
+              className="h-8 px-3 rounded-lg border-2 border-red-200 hover:border-red-300 hover:bg-red-50 text-red-600 hover:text-red-700 transition-all duration-300 dark:border-red-800 dark:hover:border-red-700 dark:hover:bg-red-900/20 dark:text-red-400"
             >
               {isDeleting ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-3 h-3 animate-spin" />
               ) : (
-                <>
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete
-                </>
+                <Trash2 className="w-3 h-3" />
               )}
             </Button>
           </div>
@@ -427,6 +433,16 @@ export const SecureLinkManagement = ({ onBack }: SecureLinkManagementProps) => {
     expiredLinks: 0,
   });
   const [statsLoading, setStatsLoading] = useState(true);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [linksPerPage] = useState(10);
+  
+  // Calculate pagination
+  const totalPages = Math.ceil(links.length / linksPerPage);
+  const startIndex = (currentPage - 1) * linksPerPage;
+  const endIndex = startIndex + linksPerPage;
+  const currentLinks = links.slice(startIndex, endIndex);
 
   // Load statistics
   useEffect(() => {
@@ -454,6 +470,11 @@ export const SecureLinkManagement = ({ onBack }: SecureLinkManagementProps) => {
       disablePolling();
     };
   }, [enablePolling, disablePolling]);
+
+  // Reset to first page when links change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [links.length]);
 
   const handleGenerateLink = async (newLink: SecureLink) => {
     try {
@@ -525,34 +546,55 @@ export const SecureLinkManagement = ({ onBack }: SecureLinkManagementProps) => {
   }
 
   return (
-    <div className="space-y-6 mx-auto p-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Secure Link Management</h1>
-          <p className="text-muted-foreground mt-1">
-            Generate and manage secure observation form links for external observers
+    <div className="space-y-8 mx-auto p-4">
+      {/* Premium Header Section */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
+        <div className="relative p-8 rounded-3xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 flex-1 max-w-2xl">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                <Shield className="w-6 h-6 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
+                  Secure Link Management
+                </h1>
+                <p className="text-lg text-muted-foreground font-light pr-8">
+                  Generate and manage secure observation form links for external observers with enterprise-grade security
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handleRefresh}>
+            </div>
+            
+            <div className="flex items-center gap-2 flex-shrink-0 ml-8">
+              <Button 
+                variant="outline" 
+                onClick={handleRefresh}
+                className="h-10 px-6 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
-          <Button variant="outline" onClick={onBack}>
+              <Button 
+                variant="outline" 
+                onClick={onBack}
+                className="h-10 px-6 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Statistics */}
+      {/* Statistics Cards Section */}
       {statsLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {Array.from({ length: 5 }).map((_, i) => (
-            <Card key={i}>
-              <CardContent className="p-4">
-                <div className="h-16 bg-gray-200 dark:bg-gray-700 animate-pulse rounded" />
+            <Card key={i} className="bg-gradient-to-br from-card to-primary/5 dark:bg-card">
+              <CardContent className="p-6">
+                <div className="h-20 bg-gray-200 dark:bg-gray-700 animate-pulse rounded-lg" />
               </CardContent>
             </Card>
           ))}
@@ -561,9 +603,17 @@ export const SecureLinkManagement = ({ onBack }: SecureLinkManagementProps) => {
         <StatisticsCards statistics={statistics} />
       )}
 
-      {/* Actions */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Active Links</h2>
+      {/* Actions Section */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+            <Link2 className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Active Links</h2>
+            <p className="text-sm text-muted-foreground">Manage your secure observation links</p>
+          </div>
+        </div>
         <GenerateLinkModal 
           onGenerate={handleGenerateLink} 
           isGenerating={false}
@@ -578,14 +628,16 @@ export const SecureLinkManagement = ({ onBack }: SecureLinkManagementProps) => {
       )}
 
       {/* Links List */}
-      <div className="space-y-4">
+      <div className="space-y-6">
         {links.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <Shield className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">No secure links created yet</h3>
-              <p className="text-muted-foreground mb-4">
-                Generate your first secure link to allow external observers to submit reports.
+          <Card className="bg-gradient-to-br from-card to-primary/5 dark:bg-card border-2 border-dashed border-primary/20">
+            <CardContent className="p-12 text-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                <Shield className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold mb-3">No secure links created yet</h3>
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                Generate your first secure link to allow external observers to submit reports with enterprise-grade security.
               </p>
               <GenerateLinkModal 
                 onGenerate={handleGenerateLink} 
@@ -594,7 +646,9 @@ export const SecureLinkManagement = ({ onBack }: SecureLinkManagementProps) => {
             </CardContent>
           </Card>
         ) : (
-          links.map((link) => (
+          <>
+            <div className="space-y-4">
+              {currentLinks.map((link) => (
             <LinkCard
               key={link.id}
               link={link}
@@ -602,7 +656,87 @@ export const SecureLinkManagement = ({ onBack }: SecureLinkManagementProps) => {
               onDeactivate={() => handleDeactivateLink(link.id)}
               isDeleting={deletingId === link.id}
             />
-          ))
+              ))}
+            </div>
+            
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between pt-4">
+                <div className="text-sm text-muted-foreground">
+                  Showing {startIndex + 1}-{Math.min(endIndex, links.length)} of {links.length} links
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    className="h-8 px-3 rounded-lg"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="h-8 px-3 rounded-lg"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className="h-8 w-8 rounded-lg"
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="h-8 px-3 rounded-lg"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    className="h-8 px-3 rounded-lg"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
