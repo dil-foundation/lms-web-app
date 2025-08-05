@@ -82,9 +82,54 @@ export interface SendMessageRequest {
 // API Base URL - update this to match your FastAPI backend
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-// Helper function to get auth headers
-const getAuthHeaders = () => {
-  const token = supabase.auth.getSession().then(session => session.data.session?.access_token);
+// Helper function to get a valid access token
+const getValidToken = async (): Promise<string> => {
+  try {
+    // Get current session
+    const { data: { session }, error } = await supabase.auth.getSession();
+    
+    if (error) {
+      console.error('Error getting session:', error);
+      throw new Error('Failed to get session');
+    }
+    
+    if (!session) {
+      throw new Error('No active session');
+    }
+    
+    // Check if token is expired or will expire soon (within 5 minutes)
+    const tokenExpiry = new Date(session.expires_at! * 1000);
+    const now = new Date();
+    const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
+    
+    if (tokenExpiry <= fiveMinutesFromNow) {
+      console.log('Token expired or expiring soon, refreshing...');
+      
+      // Refresh the token
+      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+      
+      if (refreshError) {
+        console.error('Error refreshing token:', refreshError);
+        throw new Error('Failed to refresh token');
+      }
+      
+      if (!refreshData.session) {
+        throw new Error('No session after refresh');
+      }
+      
+      return refreshData.session.access_token;
+    }
+    
+    return session.access_token;
+  } catch (error) {
+    console.error('Error getting valid token:', error);
+    throw error;
+  }
+};
+
+// Helper function to get auth headers with valid token
+const getAuthHeaders = async () => {
+  const token = await getValidToken();
   return {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${token}`,
@@ -99,40 +144,46 @@ class WebSocketManager {
   private reconnectDelay = 1000;
   private eventHandlers: Map<string, Function[]> = new Map();
 
-  connect(token: string) {
+  async connect() {
     if (this.ws?.readyState === WebSocket.OPEN) {
       return;
     }
 
-    this.ws = new WebSocket(`${API_BASE_URL.replace('http', 'ws')}/api/ws/${token}`);
+    try {
+      const token = await getValidToken();
+      this.ws = new WebSocket(`${API_BASE_URL.replace('http', 'ws')}/api/ws/${token}`);
 
-    this.ws.onopen = () => {
-      this.reconnectAttempts = 0;
-    };
+      this.ws.onopen = () => {
+        this.reconnectAttempts = 0;
+      };
 
-    this.ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        this.handleMessage(data);
-      } catch (error) {
-        console.error('Error parsing WebSocket message:', error);
-      }
-    };
+      this.ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          this.handleMessage(data);
+        } catch (error) {
+          console.error('Error parsing WebSocket message:', error);
+        }
+      };
 
-    this.ws.onclose = () => {
-      this.attemptReconnect(token);
-    };
+      this.ws.onclose = () => {
+        this.attemptReconnect();
+      };
 
-    this.ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
+      this.ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
+    } catch (error) {
+      console.error('Error connecting to WebSocket:', error);
+      throw error;
+    }
   }
 
-  private attemptReconnect(token: string) {
+  private attemptReconnect() {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
       setTimeout(() => {
-        this.connect(token);
+        this.connect();
       }, this.reconnectDelay * this.reconnectAttempts);
     }
   }
@@ -624,7 +675,7 @@ export const searchTeachersForStudentMessaging = async (studentId: string, searc
 
 // New API functions for conversations and messages
 export const createConversation = async (data: CreateConversationRequest): Promise<Conversation> => {
-  const token = (await supabase.auth.getSession()).data.session?.access_token;
+  const token = await getValidToken();
   
   const response = await fetch(`${API_BASE_URL}/api/conversations`, {
     method: 'POST',
@@ -644,7 +695,7 @@ export const createConversation = async (data: CreateConversationRequest): Promi
 };
 
 export const getConversations = async (page: number = 1, limit: number = 50, searchQuery?: string): Promise<{ conversations: Conversation[], hasMore: boolean, total: number }> => {
-  const token = (await supabase.auth.getSession()).data.session?.access_token;
+  const token = await getValidToken();
   
   // Add timeout to prevent hanging requests
   const controller = new AbortController();
@@ -699,7 +750,7 @@ export const getConversations = async (page: number = 1, limit: number = 50, sea
 
 
 export const getConversation = async (conversationId: string): Promise<Conversation> => {
-  const token = (await supabase.auth.getSession()).data.session?.access_token;
+  const token = await getValidToken();
   
   const response = await fetch(`${API_BASE_URL}/api/conversations/${conversationId}`, {
     headers: {
@@ -716,7 +767,7 @@ export const getConversation = async (conversationId: string): Promise<Conversat
 };
 
 export const updateConversation = async (conversationId: string, data: Partial<Conversation>): Promise<Conversation> => {
-  const token = (await supabase.auth.getSession()).data.session?.access_token;
+  const token = await getValidToken();
   
   const response = await fetch(`${API_BASE_URL}/api/conversations/${conversationId}`, {
     method: 'PUT',
@@ -736,7 +787,7 @@ export const updateConversation = async (conversationId: string, data: Partial<C
 };
 
 export const deleteConversation = async (conversationId: string): Promise<void> => {
-  const token = (await supabase.auth.getSession()).data.session?.access_token;
+  const token = await getValidToken();
   
   const response = await fetch(`${API_BASE_URL}/api/conversations/${conversationId}`, {
     method: 'DELETE',
@@ -752,7 +803,7 @@ export const deleteConversation = async (conversationId: string): Promise<void> 
 };
 
 export const sendMessage = async (conversationId: string, data: SendMessageRequest): Promise<Message> => {
-  const token = (await supabase.auth.getSession()).data.session?.access_token;
+  const token = await getValidToken();
   
   const response = await fetch(`${API_BASE_URL}/api/conversations/${conversationId}/messages`, {
     method: 'POST',
@@ -772,7 +823,7 @@ export const sendMessage = async (conversationId: string, data: SendMessageReque
 };
 
 export const getMessages = async (conversationId: string, page: number = 1, limit: number = 50): Promise<{ messages: Message[], hasMore: boolean, total: number }> => {
-  const token = (await supabase.auth.getSession()).data.session?.access_token;
+  const token = await getValidToken();
   
   const response = await fetch(`${API_BASE_URL}/api/conversations/${conversationId}/messages?page=${page}&limit=${limit}`, {
     headers: {
@@ -789,7 +840,7 @@ export const getMessages = async (conversationId: string, page: number = 1, limi
 };
 
 export const editMessage = async (messageId: string, content: string): Promise<Message> => {
-  const token = (await supabase.auth.getSession()).data.session?.access_token;
+  const token = await getValidToken();
   
   const response = await fetch(`${API_BASE_URL}/api/messages/${messageId}`, {
     method: 'PUT',
@@ -809,7 +860,7 @@ export const editMessage = async (messageId: string, content: string): Promise<M
 };
 
 export const deleteMessage = async (messageId: string): Promise<void> => {
-  const token = (await supabase.auth.getSession()).data.session?.access_token;
+  const token = await getValidToken();
   
   const response = await fetch(`${API_BASE_URL}/api/messages/${messageId}`, {
     method: 'DELETE',
@@ -825,7 +876,7 @@ export const deleteMessage = async (messageId: string): Promise<void> => {
 };
 
 export const markMessageAsDelivered = async (messageId: string): Promise<void> => {
-  const token = (await supabase.auth.getSession()).data.session?.access_token;
+  const token = await getValidToken();
   
   const response = await fetch(`${API_BASE_URL}/api/messages/${messageId}/delivered`, {
     method: 'POST',
@@ -841,7 +892,7 @@ export const markMessageAsDelivered = async (messageId: string): Promise<void> =
 };
 
 export const markMessageAsRead = async (messageId: string): Promise<void> => {
-  const token = (await supabase.auth.getSession()).data.session?.access_token;
+  const token = await getValidToken();
   
   const response = await fetch(`${API_BASE_URL}/api/messages/${messageId}/read`, {
     method: 'POST',
@@ -859,7 +910,7 @@ export const markMessageAsRead = async (messageId: string): Promise<void> => {
 export const getUserStatus = async (userIds: string[]): Promise<Record<string, { status: string, last_seen_at: string, is_typing: boolean }>> => {
   try {
     // Try backend API first
-    const token = (await supabase.auth.getSession()).data.session?.access_token;
+    const token = await getValidToken();
     
     const queryParams = userIds.map(id => `user_ids=${id}`).join('&');
     const response = await fetch(`${API_BASE_URL}/api/users/status?${queryParams}`, {
@@ -941,7 +992,7 @@ export const getUserStatus = async (userIds: string[]): Promise<Record<string, {
 export const updateUserStatus = async (data: { status?: string, is_typing?: boolean, typing_in_conversation?: string }): Promise<void> => {
   try {
     // Try backend API first
-    const token = (await supabase.auth.getSession()).data.session?.access_token;
+    const token = await getValidToken();
     
     const response = await fetch(`${API_BASE_URL}/api/users/status`, {
       method: 'PUT',
@@ -1004,7 +1055,7 @@ export const updateUserStatus = async (data: { status?: string, is_typing?: bool
 export const markConversationAsRead = async (conversationId: string): Promise<void> => {
   try {
     // Try backend API first
-    const token = (await supabase.auth.getSession()).data.session?.access_token;
+    const token = await getValidToken();
     
     const response = await fetch(`${API_BASE_URL}/api/conversations/${conversationId}/read`, {
       method: 'POST',
@@ -1066,11 +1117,10 @@ export const markConversationAsRead = async (conversationId: string): Promise<vo
 
 // Initialize WebSocket connection
 export const initializeWebSocket = async () => {
-  const session = await supabase.auth.getSession();
-  const token = session.data.session?.access_token;
-  
-  if (token) {
-    wsManager.connect(token);
+  try {
+    await wsManager.connect();
+  } catch (error) {
+    console.error('Error initializing WebSocket:', error);
   }
 };
 
