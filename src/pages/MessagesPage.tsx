@@ -53,6 +53,8 @@ import {
   wsManager,
   initializeWebSocket,
   disconnectWebSocket,
+  startTokenRefreshInterval,
+  stopTokenRefreshInterval,
   getUsersForAdminMessaging,
   getStudentsForTeacherMessaging,
   getTeachersForStudentMessaging,
@@ -567,6 +569,9 @@ export default function MessagesPage() {
   // Initialize WebSocket connection and status management
   useEffect(() => {
     if (user?.id) {
+      // Start proactive token refresh
+      startTokenRefreshInterval();
+      
       initializeWebSocket();
       
       // Update user status to online immediately when connecting
@@ -585,6 +590,9 @@ export default function MessagesPage() {
 
       return () => {
         clearInterval(statusRefreshInterval);
+        
+        // Stop proactive token refresh
+        stopTokenRefreshInterval();
         
         // Update user status to offline when disconnecting
         updateUserStatus({ status: 'offline' }).catch(error => {
