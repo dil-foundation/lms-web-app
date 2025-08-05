@@ -69,7 +69,10 @@ import {
   updateUserStatus,
   markConversationAsRead,
   markMessageAsDelivered,
-  markMessageAsRead
+  markMessageAsRead,
+  testBackendTokenValidation,
+  forceTokenRefresh,
+  clearSessionAndReauth, // Added for debugging
 } from '@/services/messagingService';
 import { UserRole } from '@/config/roleNavigation';
 
@@ -572,6 +575,16 @@ export default function MessagesPage() {
       // Start proactive token refresh
       startTokenRefreshInterval();
       
+      // Force refresh token to fix old session issues
+      forceTokenRefresh().then(result => {
+        console.log('Force token refresh result:', result);
+      });
+      
+      // Test backend token validation to debug 401 errors
+      testBackendTokenValidation().then(result => {
+        console.log('Backend token validation test result:', result);
+      });
+      
       initializeWebSocket();
       
       // Update user status to online immediately when connecting
@@ -1029,13 +1042,27 @@ export default function MessagesPage() {
           <div className="p-4 border-b border-border">
             <div className="flex items-center justify-between mb-4">
               <h1 className="text-xl font-semibold">Messages</h1>
-              <Button
-                size="sm"
-                onClick={() => setShowNewChatDialog(true)}
-                className="h-8 w-8 p-0"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={async () => {
+                    console.log('Testing token refresh...');
+                    const result = await forceTokenRefresh();
+                    console.log('Token refresh result:', result);
+                  }}
+                  className="h-8 text-xs"
+                >
+                  Debug Token
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => setShowNewChatDialog(true)}
+                  className="h-8 w-8 p-0"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
             
             {/* Search */}

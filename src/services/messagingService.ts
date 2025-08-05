@@ -185,6 +185,24 @@ const getValidToken = async (): Promise<string> => {
       return refreshData.session.access_token;
     }
     
+    // For debugging: always try to refresh if the token is older than 30 minutes
+    const tokenAge = now.getTime() - tokenExpiry.getTime() + (session.expires_at! * 1000);
+    const thirtyMinutesInMs = 30 * 60 * 1000;
+    
+    if (tokenAge > thirtyMinutesInMs) {
+      console.log('Token is older than 30 minutes, attempting refresh for debugging...');
+      try {
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (!refreshError && refreshData.session) {
+          console.log('Token refreshed due to age');
+          return refreshData.session.access_token;
+        }
+      } catch (refreshError) {
+        console.log('Age-based refresh failed, using existing token');
+      }
+    }
+    
     console.log('Using existing valid token');
     return session.access_token;
   } catch (error) {
@@ -795,6 +813,7 @@ export const getConversations = async (page: number = 1, limit: number = 50, sea
   try {
     const token = await getValidToken();
     console.log('Making API request with token length:', token.length);
+    console.log('Token being sent:', token.substring(0, 50) + '...');
     
     // Add timeout to prevent hanging requests
     const controller = new AbortController();
@@ -1339,6 +1358,59 @@ export const testBackendTokenValidation = async () => {
     return { success: false };
   } catch (error) {
     console.error('Error testing backend token validation:', error);
+    return { success: false, error: error };
+  }
+};
+
+// Force token refresh function for debugging
+export const forceTokenRefresh = async () => {
+  try {
+    console.log('Force refreshing token...');
+    const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+    
+    if (refreshError) {
+      console.error('Error during force refresh:', refreshError);
+      return { success: false, error: refreshError };
+    }
+    
+    if (!refreshData.session) {
+      console.error('No session after force refresh');
+      return { success: false, error: 'No session after refresh' };
+    }
+    
+    console.log('Token force refreshed successfully');
+    console.log('New token length:', refreshData.session.access_token.length);
+    
+    // Test the new token immediately
+    const testResult = await testBackendTokenValidation();
+    return { success: true, testResult };
+  } catch (error) {
+    console.error('Error in force token refresh:', error);
+    return { success: false, error: error };
+  }
+};
+
+// Clear session and force re-authentication
+export const clearSessionAndReauth = async () => {
+  try {
+    console.log('Clearing session and forcing re-authentication...');
+    
+    // Sign out to clear the session
+    const { error: signOutError } = await supabase.auth.signOut();
+    
+    if (signOutError) {
+      console.error('Error signing out:', signOutError);
+      return { success: false, error: signOutError };
+    }
+    
+    console.log('Session cleared successfully');
+    
+    // Redirect to login page or reload the page
+    window.location.reload();
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Error clearing session:', error);
     return { success: false, error: error };
   }
 }; 
