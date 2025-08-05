@@ -110,13 +110,64 @@ const getValidToken = async (): Promise<string> => {
       access_token_length: session.access_token?.length
     });
     
+    // Decode and inspect the JWT token (without verification)
+    if (session.access_token) {
+      try {
+        const tokenParts = session.access_token.split('.');
+        if (tokenParts.length === 3) {
+          const header = JSON.parse(atob(tokenParts[0]));
+          const payload = JSON.parse(atob(tokenParts[1]));
+          console.log('JWT Token Analysis:', {
+            header: header,
+            payload: {
+              iss: payload.iss,
+              aud: payload.aud,
+              exp: payload.exp,
+              sub: payload.sub,
+              email: payload.email,
+              phone: payload.phone,
+              app_metadata: payload.app_metadata,
+              user_metadata: payload.user_metadata,
+              role: payload.role,
+              aal: payload.aal,
+              amr: payload.amr,
+              session_id: payload.session_id,
+              iat: payload.iat
+            }
+          });
+          
+          // Check if token is actually expired by comparing with current time
+          const currentTime = Math.floor(Date.now() / 1000);
+          if (payload.exp && payload.exp < currentTime) {
+            console.log('Token is actually expired, forcing refresh...');
+            // Force refresh the session
+            const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+            
+            if (refreshError) {
+              console.error('Error refreshing expired token:', refreshError);
+              throw new Error('Failed to refresh expired token');
+            }
+            
+            if (!refreshData.session) {
+              throw new Error('No session after refresh');
+            }
+            
+            console.log('Expired token refreshed successfully');
+            return refreshData.session.access_token;
+          }
+        }
+      } catch (decodeError) {
+        console.error('Error decoding JWT token:', decodeError);
+      }
+    }
+    
     // Check if token is expired or will expire soon (within 5 minutes)
     const tokenExpiry = new Date(session.expires_at! * 1000);
     const now = new Date();
     const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
     
     if (tokenExpiry <= fiveMinutesFromNow) {
-      console.log('Token expired or expiring soon, refreshing...');
+      console.log('Token expiring soon, refreshing...');
       
       // Refresh the token
       const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
@@ -157,7 +208,10 @@ const getValidToken = async (): Promise<string> => {
       return freshSession.access_token;
     } catch (fallbackError) {
       console.error('Fallback session failed:', fallbackError);
-      throw error; // Throw the original error
+      
+      // If both the main session and fallback failed, the user might need to re-authenticate
+      console.error('All token refresh attempts failed. User may need to re-authenticate.');
+      throw new Error('Authentication required - please log in again');
     }
   }
 };
@@ -1186,4 +1240,105 @@ export const initializeWebSocket = async () => {
 // Disconnect WebSocket
 export const disconnectWebSocket = () => {
   wsManager.disconnect();
+};
+
+// Proactive token refresh mechanism
+let tokenRefreshInterval: NodeJS.Timeout | null = null;
+
+export const startTokenRefreshInterval = () => {
+  // Clear any existing interval
+  if (tokenRefreshInterval) {
+    clearInterval(tokenRefreshInterval);
+  }
+  
+  // Refresh token every 45 minutes (before the 1-hour expiry)
+  tokenRefreshInterval = setInterval(async () => {
+    try {
+      console.log('Proactive token refresh...');
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error('Error during proactive refresh:', error);
+        return;
+      }
+      
+      if (!session) {
+        console.log('No session found during proactive refresh');
+        return;
+      }
+      
+      // Check if token will expire in the next 15 minutes
+      const tokenExpiry = new Date(session.expires_at! * 1000);
+      const now = new Date();
+      const fifteenMinutesFromNow = new Date(now.getTime() + 15 * 60 * 1000);
+      
+      if (tokenExpiry <= fifteenMinutesFromNow) {
+        console.log('Proactively refreshing token...');
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (refreshError) {
+          console.error('Error during proactive refresh:', refreshError);
+        } else if (refreshData.session) {
+          console.log('Token proactively refreshed successfully');
+        }
+      } else {
+        console.log('Token is still valid, no proactive refresh needed');
+      }
+    } catch (error) {
+      console.error('Error in proactive token refresh:', error);
+    }
+  }, 45 * 60 * 1000); // 45 minutes
+};
+
+export const stopTokenRefreshInterval = () => {
+  if (tokenRefreshInterval) {
+    clearInterval(tokenRefreshInterval);
+    tokenRefreshInterval = null;
+  }
+};
+
+// Test function to help debug backend token validation
+export const testBackendTokenValidation = async () => {
+  try {
+    const token = await getValidToken();
+    console.log('Testing backend token validation...');
+    
+    // Test with different header formats
+    const testHeaders = [
+      { 'Authorization': `Bearer ${token}` },
+      { 'Authorization': `bearer ${token}` },
+      { 'Authorization': token },
+      { 'X-Auth-Token': token },
+      { 'X-API-Key': token }
+    ];
+    
+    for (let i = 0; i < testHeaders.length; i++) {
+      const headers = testHeaders[i];
+      console.log(`Testing header format ${i + 1}:`, Object.keys(headers)[0]);
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/conversations?page=1&limit=1`, {
+          headers: headers,
+        });
+        
+        console.log(`Format ${i + 1} response:`, response.status, response.statusText);
+        
+        if (response.ok) {
+          console.log(`✅ SUCCESS with format ${i + 1}:`, Object.keys(headers)[0]);
+          return { success: true, format: Object.keys(headers)[0], headers: headers };
+        } else {
+          const errorText = await response.text();
+          console.log(`❌ Format ${i + 1} failed:`, errorText);
+        }
+      } catch (error) {
+        console.log(`❌ Format ${i + 1} error:`, error);
+      }
+    }
+    
+    console.log('❌ All header formats failed');
+    return { success: false };
+  } catch (error) {
+    console.error('Error testing backend token validation:', error);
+    return { success: false, error: error };
+  }
 }; 
