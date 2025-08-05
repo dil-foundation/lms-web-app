@@ -47,6 +47,11 @@ export default function MockInterviewPractice() {
   const currentScenario = scenarios.find(s => s.id === selectedScenario) || scenarios[0];
   const currentQuestion = currentScenario?.questions?.[currentQuestionIndex];
 
+  // Scroll to top function
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // Fetch mock interview questions on component mount
   useEffect(() => {
     const fetchMockInterviewData = async () => {
@@ -341,15 +346,25 @@ export default function MockInterviewPractice() {
     }
   }, []);
 
-  const handleStartInterview = useCallback(async () => {
+  const handleStartInterview = useCallback(async (scenarioId?: string) => {
+    // If a specific scenario is provided, set it first
+    if (scenarioId) {
+      setSelectedScenario(scenarioId);
+    }
+    
     setHasStarted(true);
     setCurrentQuestionIndex(0);
     
+    // Get the scenario to use (either the provided one or current one)
+    const scenarioToUse = scenarioId 
+      ? scenarios.find(s => s.id === scenarioId) 
+      : currentScenario;
+    
     // Fetch details for the first question
-    if (currentScenario?.questions?.[0]?.id) {
-      await fetchQuestionDetail(currentScenario.questions[0].id);
+    if (scenarioToUse?.questions?.[0]?.id) {
+      await fetchQuestionDetail(scenarioToUse.questions[0].id);
     }
-  }, [currentScenario, fetchQuestionDetail]);
+  }, [scenarios, currentScenario, fetchQuestionDetail]);
 
   const handleNextQuestion = useCallback(async () => {
     if (currentScenario && currentQuestionIndex < currentScenario.questions.length - 1) {
@@ -358,6 +373,7 @@ export default function MockInterviewPractice() {
       
       const nextIndex = currentQuestionIndex + 1;
       setCurrentQuestionIndex(nextIndex);
+      scrollToTop();
       
       // Fetch details for the next question
       const nextQuestion = currentScenario.questions[nextIndex];
@@ -374,6 +390,7 @@ export default function MockInterviewPractice() {
       
       const prevIndex = currentQuestionIndex - 1;
       setCurrentQuestionIndex(prevIndex);
+      scrollToTop();
       
       // Fetch details for the previous question
       if (currentScenario?.questions?.[prevIndex]?.id) {
@@ -613,12 +630,8 @@ export default function MockInterviewPractice() {
             {scenarios.map((scenario) => (
               <Card 
                 key={scenario.id}
-                className={`cursor-pointer transition-all ${
-                  selectedScenario === scenario.id 
-                    ? 'ring-2 ring-green-500 bg-green-50 dark:bg-green-900/20' 
-                    : 'hover:shadow-md'
-                }`}
-                onClick={() => setSelectedScenario(scenario.id)}
+                className="cursor-pointer transition-all hover:shadow-lg hover:ring-2 hover:ring-green-500 hover:bg-green-50 dark:hover:bg-green-900/20"
+                onClick={() => handleStartInterview(scenario.id)}
               >
                 <CardContent className="p-6">
                   <div className="flex items-start space-x-4">
@@ -628,31 +641,24 @@ export default function MockInterviewPractice() {
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold mb-2">{scenario.title}</h3>
                       <p className="text-muted-foreground text-sm">{scenario.description}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {scenario.questions.length} questions
-                      </p>
+                      <div className="flex items-center justify-between mt-3">
+                        <p className="text-xs text-muted-foreground">
+                          {scenario.questions.length} questions
+                        </p>
+                        <span className="text-xs text-green-600 dark:text-green-400 font-medium px-2 py-1 bg-green-100 dark:bg-green-900/30 rounded-full">
+                          Click to Start
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             ))}
 
-            <div className="text-center pt-6">
-              <Button
-                onClick={handleStartInterview}
-                disabled={isLoading || scenarios.length === 0}
-                className="bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white px-8 py-3 rounded-full text-lg font-medium"
-                size="lg"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                    Loading...
-                  </>
-                ) : (
-                  'Start Interview'
-                )}
-              </Button>
+            <div className="text-center pt-4">
+              <p className="text-muted-foreground text-sm">
+                Select a scenario to begin your mock interview session
+              </p>
             </div>
           </div>
         </div>
@@ -931,25 +937,27 @@ export default function MockInterviewPractice() {
               )}
             </div>
 
-            {/* Navigation Buttons */}
-            <div className="flex space-x-3">
-              <Button
-                onClick={handlePrevQuestion}
-                variant="outline"
-                disabled={currentQuestionIndex === 0}
-                className="px-6 py-2.5 rounded-xl border-2 font-medium transition-all duration-200 hover:shadow-md disabled:opacity-50"
-              >
-                Previous
-              </Button>
-              <Button
-                onClick={handleNextQuestion}
-                variant="outline"
-                disabled={!currentScenario || currentQuestionIndex === currentScenario.questions.length - 1}
-                className="px-6 py-2.5 rounded-xl border-2 font-medium transition-all duration-200 hover:shadow-md disabled:opacity-50"
-              >
-                Next Question
-              </Button>
-            </div>
+            {/* Navigation Buttons - Only show if there are multiple questions */}
+            {currentScenario && currentScenario.questions.length > 1 && (
+              <div className="flex space-x-3">
+                <Button
+                  onClick={handlePrevQuestion}
+                  variant="outline"
+                  disabled={currentQuestionIndex === 0}
+                  className="px-6 py-2.5 rounded-xl border-2 font-medium transition-all duration-200 hover:shadow-md disabled:opacity-50 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+                >
+                  Previous
+                </Button>
+                <Button
+                  onClick={handleNextQuestion}
+                  variant="outline"
+                  disabled={currentQuestionIndex === currentScenario.questions.length - 1}
+                  className="px-6 py-2.5 rounded-xl border-2 font-medium transition-all duration-200 hover:shadow-md disabled:opacity-50 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+                >
+                  Next Question
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Feedback Section */}

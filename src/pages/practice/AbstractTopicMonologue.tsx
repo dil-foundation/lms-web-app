@@ -35,6 +35,11 @@ export default function AbstractTopicMonologue() {
 
   const currentTopic = topics[currentTopicIndex];
 
+  // Scroll to top function
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // Stop audio when topic changes
   useEffect(() => {
     stopAudio();
@@ -166,7 +171,7 @@ export default function AbstractTopicMonologue() {
         // Fetch topics and current topic position simultaneously
         const [fetchedTopics, currentTopicResponse] = await Promise.all([
           AbstractTopicsService.getAll(),
-          user ? AbstractTopicsService.getCurrentTopic(user.id) : Promise.resolve({ success: false })
+          user ? AbstractTopicsService.getCurrentTopic(user.id) : Promise.resolve({ success: false } as CurrentTopicResponse)
         ]);
         
         setTopics(fetchedTopics);
@@ -718,10 +723,11 @@ export default function AbstractTopicMonologue() {
                 onClick={() => {
                   stopAudio();
                   setCurrentTopicIndex(Math.max(0, currentTopicIndex - 1));
+                  scrollToTop();
                 }}
                 disabled={currentTopicIndex === 0}
                 variant="outline"
-                className="px-6 py-2"
+                className="px-6 py-2 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-100"
               >
                 Previous
               </Button>
@@ -729,10 +735,11 @@ export default function AbstractTopicMonologue() {
                 onClick={() => {
                   stopAudio();
                   setCurrentTopicIndex(Math.min(topics.length - 1, currentTopicIndex + 1));
+                  scrollToTop();
                 }}
                 disabled={currentTopicIndex === topics.length - 1}
                 variant="outline"
-                className="px-6 py-2"
+                className="px-6 py-2 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-100"
               >
                 Next
               </Button>

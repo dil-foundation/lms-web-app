@@ -19,7 +19,6 @@ import {
   BookOpen, 
   Award, 
   CheckCircle,
-  Globe,
   Smartphone,
   Download,
   ArrowLeft,
@@ -730,42 +729,65 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
 
           {/* Enhanced Course Details Sidebar */}
           <div className="lg:col-span-1 order-1 lg:order-2">
-            <Card className="bg-card border border-border backdrop-blur-sm sticky top-8">
+            <Card className={`bg-card border border-border backdrop-blur-sm ${!isPreviewMode ? 'sticky top-8' : ''}`}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-3 text-xl">
                   <BarChart3 className="w-6 h-6 text-primary" />
                   Course Details
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
-                    <p className="text-sm text-muted-foreground mb-1">Level</p>
-                    <p className="font-semibold">{course.stats.level}</p>
+              <CardContent className="space-y-4">
+                {isPreviewMode ? (
+                  // Single column layout for modal preview
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center p-3 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                      <span className="text-sm text-muted-foreground">Level</span>
+                      <span className="font-semibold text-sm">{course.stats.level}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                      <span className="text-sm text-muted-foreground">Duration</span>
+                      <span className="font-semibold text-sm">{course.stats.duration}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                      <span className="text-sm text-muted-foreground">Lessons</span>
+                      <span className="font-semibold text-sm">{course.stats.lessons}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                      <span className="text-sm text-muted-foreground">Language</span>
+                      <span className="font-semibold text-sm">{course.stats.language}</span>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between items-center p-3 rounded-lg bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 border border-gray-200/50 dark:border-gray-600/50">
+                      <span className="text-sm text-muted-foreground">Last updated</span>
+                      <span className="font-semibold text-sm">{course.stats.lastUpdated}</span>
+                    </div>
                   </div>
-                  <div className="p-4 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
-                    <p className="text-sm text-muted-foreground mb-1">Duration</p>
-                    <p className="font-semibold">{course.stats.duration}</p>
+                ) : (
+                  // Single column layout for full page view
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center p-4 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                      <span className="text-sm text-muted-foreground">Level</span>
+                      <span className="font-semibold">{course.stats.level}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-4 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                      <span className="text-sm text-muted-foreground">Duration</span>
+                      <span className="font-semibold">{course.stats.duration}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-4 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                      <span className="text-sm text-muted-foreground">Lessons</span>
+                      <span className="font-semibold">{course.stats.lessons}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-4 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                      <span className="text-sm text-muted-foreground">Language</span>
+                      <span className="font-semibold">{course.stats.language}</span>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between items-center p-4 rounded-lg bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 border border-gray-200/50 dark:border-gray-600/50">
+                      <span className="text-sm text-muted-foreground">Last updated</span>
+                      <span className="font-semibold">{course.stats.lastUpdated}</span>
+                    </div>
                   </div>
-                  <div className="p-4 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
-                    <p className="text-sm text-muted-foreground mb-1">Lessons</p>
-                    <p className="font-semibold">{course.stats.lessons}</p>
-                  </div>
-                  <div className="p-4 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
-                    <p className="text-sm text-muted-foreground mb-1">Language</p>
-                    <p className="font-semibold flex items-center gap-1">
-                      <Globe className="w-4 h-4" />
-                      {course.stats.language}
-                    </p>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="p-4 rounded-lg bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 border border-gray-200/50 dark:border-gray-600/50">
-                  <p className="text-sm text-muted-foreground mb-1">Last updated</p>
-                  <p className="font-semibold">{course.stats.lastUpdated}</p>
-                </div>
+                )}
               </CardContent>
             </Card>
           </div>

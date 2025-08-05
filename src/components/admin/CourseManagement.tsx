@@ -114,7 +114,11 @@ const CourseCard = ({ course, onDelete }: { course: Course, onDelete: (course: C
         </div>
       </CardContent>
       <CardFooter className="p-4 pt-0">
-        <Button className="w-full hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => navigate(`/dashboard/courses/builder/${course.id}`)}>
+        <Button 
+          variant="secondary" 
+          className="w-full" 
+          onClick={() => navigate(`/dashboard/courses/builder/${course.id}`)}
+        >
           Edit Course
         </Button>
       </CardFooter>

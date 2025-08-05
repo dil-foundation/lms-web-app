@@ -854,11 +854,26 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
   if (loading) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Assignments</h1>
-          <p className="text-muted-foreground">
-            View and submit your course assignments.
-          </p>
+        {/* Header Section */}
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
+          <div className="relative p-8 rounded-3xl">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                  <ClipboardList className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                    Assignments
+                  </h1>
+                  <p className="text-lg text-muted-foreground font-light">
+                    View and submit your course assignments.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         <div className="py-12">
           <ContentLoader message="Loading your assignments..." />
@@ -869,21 +884,23 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
 
   return (
     <div className="space-y-6">
-      {/* Premium Header Section */}
+      {/* Header Section */}
       <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5"></div>
-        <div className="relative">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
-              <ClipboardList className="w-6 h-6 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
-                Assignments
-              </h1>
-              <p className="text-lg text-muted-foreground mt-2">
-                View and submit your course assignments.
-              </p>
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
+        <div className="relative p-8 rounded-3xl">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                <ClipboardList className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                  Assignments
+                </h1>
+                <p className="text-lg text-muted-foreground font-light">
+                  View and submit your course assignments.
+                </p>
+              </div>
             </div>
           </div>
         </div>
