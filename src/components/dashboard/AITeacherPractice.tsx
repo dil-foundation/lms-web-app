@@ -295,16 +295,34 @@ const TeacherStageCard = ({ stage }) => {
 export const AITeacherPractice: React.FC = () => {
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Practice Activities</h1>
-          <p className="text-muted-foreground">Preview and customize practice stages for your students</p>
+      {/* Header Section */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
+        <div className="relative p-8 rounded-3xl">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                <PlayCircle className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                  Practice Activities
+                </h1>
+                <p className="text-lg text-muted-foreground font-light">
+                  Preview and customize practice stages for your students
+                </p>
+              </div>
+            </div>
+            
+            {/* Action Controls */}
+            <div className="flex items-center gap-3">
+              <Button className="bg-green-500 hover:bg-green-600 text-white">
+                <Plus className="mr-2 h-4 w-4" />
+                Create Assignment
+              </Button>
+            </div>
+          </div>
         </div>
-        <Button className="bg-green-500 hover:bg-green-600 text-white">
-          <Plus className="mr-2 h-4 w-4" />
-          Create Assignment
-        </Button>
       </div>
 
       {/* Practice Stages Grid */}

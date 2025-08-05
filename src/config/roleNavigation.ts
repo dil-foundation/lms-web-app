@@ -188,27 +188,9 @@ export const getAICategorizedNavigation = (role: UserRole): NavigationCategory[]
     case 'teacher':
       return [
         {
-          title: 'TEACHING TOOLS',
+          title: 'MAIN',
           items: [
             { title: 'Overview', path: '/dashboard', icon: Bot },
-            { title: 'Teaching Assistant', path: '/dashboard/ai-assistant', icon: GraduationCap },
-            { title: 'Content Generator', path: '/dashboard/ai-content', icon: FileText },
-            { title: 'Lesson Planner', path: '/dashboard/ai-planner', icon: BookOpen },
-          ]
-        },
-        {
-          title: 'STUDENT MANAGEMENT',
-          items: [
-            { title: 'Smart Grading', path: '/dashboard/ai-grading', icon: Award },
-            { title: 'Student Insights', path: '/dashboard/ai-insights', icon: Users },
-            { title: 'AI Feedback', path: '/dashboard/ai-feedback', icon: MessageSquare },
-          ]
-        },
-        {
-          title: 'ANALYTICS',
-          items: [
-            { title: 'Performance Analytics', path: '/dashboard/ai-performance', icon: BarChart3 },
-            { title: 'Progress Tracking', path: '/dashboard/ai-progress', icon: TrendingUp },
           ]
         },
         {
@@ -216,6 +198,7 @@ export const getAICategorizedNavigation = (role: UserRole): NavigationCategory[]
           items: [
             { title: 'Learn', path: '/dashboard/ai-learn', icon: Target },
             { title: 'Practice', path: '/dashboard/ai-practice', icon: Brain },
+            { title: 'Progress', path: '/dashboard/ai-progress', icon: TrendingUp },
           ]
         }
       ];
@@ -226,23 +209,6 @@ export const getAICategorizedNavigation = (role: UserRole): NavigationCategory[]
           title: 'SYSTEM MANAGEMENT',
           items: [
             { title: 'Overview', path: '/dashboard', icon: Bot },
-            { title: 'AI Management', path: '/dashboard/ai-management', icon: Settings },
-            { title: 'Model Configuration', path: '/dashboard/ai-models', icon: Cog },
-            { title: 'AI Training', path: '/dashboard/ai-training', icon: BookOpen },
-          ]
-        },
-        {
-          title: 'ANALYTICS & MONITORING',
-          items: [
-            { title: 'Platform Analytics', path: '/dashboard/ai-platform-analytics', icon: BarChart3 },
-            { title: 'AI Performance', path: '/dashboard/ai-performance-admin', icon: TrendingUp },
-            { title: 'Usage Reports', path: '/dashboard/ai-usage', icon: FileText },
-          ]
-        },
-        {
-          title: 'SAFETY & COMPLIANCE',
-          items: [
-            { title: 'Safety & Ethics', path: '/dashboard/ai-safety', icon: Shield },
           ]
         },
         {
@@ -250,7 +216,7 @@ export const getAICategorizedNavigation = (role: UserRole): NavigationCategory[]
           items: [
             { title: 'Learn', path: '/dashboard/ai-learn', icon: Target },
             { title: 'Practice', path: '/dashboard/ai-practice', icon: Brain },
-            { title: 'Progress', path: '/dashboard/ai-progress', icon: TrendingUp },
+            { title: 'Reports & Analytics', path: '/dashboard/ai-reports', icon: BarChart3 },
           ]
         }
       ];

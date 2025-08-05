@@ -23,19 +23,15 @@ const AITeacherDashboard = lazy(() => import('@/components/dashboard/AITeacherDa
 const AIAdminDashboard = lazy(() => import('@/components/dashboard/AIAdminDashboard').then(module => ({ default: module.AIAdminDashboard })));
 const AIAdminPractice = lazy(() => import('@/components/dashboard/AIAdminPractice').then(module => ({ default: module.AIAdminPractice })));
 const AITeacherPractice = lazy(() => import('@/components/dashboard/AITeacherPractice').then(module => ({ default: module.AITeacherPractice })));
+const AITeacherProgress = lazy(() => import('@/components/dashboard/AITeacherProgress').then(module => ({ default: module.AITeacherProgress })));
 const AIStudentProgress = lazy(() => import('@/components/dashboard/AIStudentProgress').then(module => ({ default: module.AIStudentProgress })));
 const AIStudentPractice = lazy(() => import('@/components/dashboard/AIStudentPractice').then(module => ({ default: module.AIStudentPractice })));
 const ComingSoon = lazy(() => import('@/components/ComingSoon').then(module => ({ default: module.ComingSoon })));
 const RolePlaceholder = lazy(() => import('@/components/dashboard/RolePlaceholder').then(module => ({ default: module.RolePlaceholder })));
 const UsersManagement = lazy(() => import('@/components/admin/UsersManagement').then(module => ({ default: module.UsersManagement })));
 const CourseManagement = lazy(() => import('@/components/admin/CourseManagement'));
-const AIManagement = lazy(() => import('@/components/admin/AIManagement').then(module => ({ default: module.AIManagement })));
-const ModelConfiguration = lazy(() => import('@/components/admin/ModelConfiguration').then(module => ({ default: module.ModelConfiguration })));
-const AITraining = lazy(() => import('@/components/admin/AITraining').then(module => ({ default: module.AITraining })));
-const PlatformAnalytics = lazy(() => import('@/components/admin/PlatformAnalytics').then(module => ({ default: module.PlatformAnalytics })));
-const UsageReports = lazy(() => import('@/components/admin/UsageReports').then(module => ({ default: module.UsageReports })));
-const AIPerformance = lazy(() => import('@/components/admin/AIPerformance').then(module => ({ default: module.AIPerformance })));
-const SafetyEthics = lazy(() => import('@/components/admin/SafetyEthics').then(module => ({ default: module.SafetyEthics })));
+const ReportsAnalytics = lazy(() => import('@/components/admin/ReportsAnalytics').then(module => ({ default: module.ReportsAnalytics })));
+
 const StageZero = lazy(() => import('@/pages/practice/StageZero').then(module => ({ default: module.StageZero })));
 const LessonDetail = lazy(() => import('@/pages/practice/LessonDetail').then(module => ({ default: module.LessonDetail })));
 const StageOne = lazy(() => import('@/pages/practice/StageOne').then(module => ({ default: module.StageOne })));
@@ -217,16 +213,9 @@ const Dashboard = () => {
                     <>
                       {isAIMode ? (
                         <>
-                          <Route path="/ai-assistant" element={<RolePlaceholder title="AI Teaching Assistant" description="Get AI-powered help with lesson planning and teaching" icon={GraduationCap} />} />
-                          <Route path="/ai-content" element={<RolePlaceholder title="Content Generator" description="Generate educational content using AI" icon={FileText} />} />
-                          <Route path="/ai-grading" element={<RolePlaceholder title="Smart Grading" description="AI-powered grading and feedback system" icon={Award} />} />
-                          <Route path="/ai-insights" element={<RolePlaceholder title="Student Insights" description="AI-driven insights about student performance" icon={Users} />} />
-                          <Route path="/ai-performance" element={<RolePlaceholder title="Performance Analytics" description="AI-powered analytics on teaching effectiveness" icon={BarChart3} />} />
-                          <Route path="/ai-planner" element={<RolePlaceholder title="Lesson Planner" description="AI-assisted lesson planning and curriculum design" icon={BookOpen} />} />
-                          <Route path="/ai-feedback" element={<RolePlaceholder title="AI Feedback" description="Get AI-powered feedback on your teaching methods" icon={MessageSquare} />} />
                           <Route path="/ai-learn" element={<AIStudentLearn />} />
                           <Route path="/ai-practice" element={<AITeacherPractice />} />
-                          <Route path="/ai-progress" element={<RolePlaceholder title="AI Progress" description="🚧 Work in Progress - Progress tracking features coming soon!" icon={TrendingUp} />} />
+                          <Route path="/ai-progress" element={<AITeacherProgress />} />
                           {/* Practice Stage Routes for Teacher Viewing */}
                           <Route path="/practice/stage-0" element={<StageZero />} />
                           <Route path="/practice/stage-0/lesson/:lessonId" element={<LessonDetail />} />
@@ -275,16 +264,10 @@ const Dashboard = () => {
                     <>
                       {isAIMode ? (
                         <>
-                          <Route path="/ai-management" element={<AIManagement />} />
-                          <Route path="/ai-platform-analytics" element={<PlatformAnalytics />} />
-                          <Route path="/ai-performance-admin" element={<AIPerformance />} />
-                          <Route path="/ai-usage" element={<UsageReports />} />
-                          <Route path="/ai-models" element={<ModelConfiguration />} />
-                          <Route path="/ai-safety" element={<SafetyEthics />} />
-                          <Route path="/ai-training" element={<AITraining />} />
+
                           <Route path="/ai-learn" element={<AIStudentLearn />} />
                           <Route path="/ai-practice" element={<AIAdminPractice />} />
-                          <Route path="/ai-progress" element={<RolePlaceholder title="AI Progress" description="🚧 Work in Progress - Progress tracking features coming soon!" icon={TrendingUp} />} />
+                          <Route path="/ai-reports" element={<ReportsAnalytics />} />
                           {/* Practice Stage Routes for Admin Viewing */}
                           <Route path="/practice/stage-0" element={<StageZero />} />
                           <Route path="/practice/stage-0/lesson/:lessonId" element={<LessonDetail />} />

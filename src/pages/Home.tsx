@@ -13,33 +13,6 @@ const Home = () => {
       
       <Header />
       
-<<<<<<< HEAD
-      {/* Hero Section */}
-      <section className="pt-20 sm:pt-32 md:pt-48 pb-12 sm:pb-16 md:pb-20 px-4">
-        <div className="container mx-auto text-center">
-          <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 sm:mb-6 animate-fade-in-up">
-            Master English with{' '}
-            <span className="text-primary">AI-Powered Learning</span>
-          </h1>
-          <p className="text-lg sm:text-xl text-muted-foreground mb-8 sm:mb-12 max-w-4xl mx-auto leading-relaxed animate-fade-in-delayed px-2">
-            Your personalized English tutor powered by artificial intelligence. Learn 
-            at your own pace with interactive lessons, real-time feedback, and 
-            cultural context.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center animate-fade-in-delayed stagger-2 px-4">
-            <Link to="/auth" className="w-full sm:w-auto">
-              <Button size="lg" className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 rounded-full hover-scale transition-all duration-300">
-                Start Learning
-                <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
-              </Button>
-            </Link>
-            <Button variant="outline" size="lg" className="w-full sm:w-auto border-primary text-primary hover:bg-primary/10 text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 rounded-full hover-scale transition-all duration-300">
-              Watch Demo
-            </Button>
-          </div>
-        </div>
-      </section>
-=======
              {/* Hero Section - Premium Redesign */}
        <section className="relative pt-24 sm:pt-32 md:pt-40 pb-16 sm:pb-20 md:pb-24 px-4 sm:px-6 lg:px-8">
          <div className="container mx-auto text-center max-w-7xl">
@@ -69,7 +42,6 @@ const Home = () => {
            </div>
          </div>
        </section>
->>>>>>> b75bacc799b0c3c2786df6591550bc0fedfb7682
 
       {/* Features Section - Premium Redesign */}
       <section className="py-20 sm:py-24 md:py-32 px-4 sm:px-6 lg:px-8 relative">

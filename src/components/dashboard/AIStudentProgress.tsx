@@ -320,19 +320,29 @@ export const AIStudentProgress: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Learning Progress
-          </h1>
-          <p className="text-muted-foreground">
-            Track your journey through language learning stages and achievements.
-          </p>
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
+        <div className="relative p-8 rounded-3xl">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                <BarChart3 className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                  Learning Progress
+                </h1>
+                <p className="text-lg text-muted-foreground font-light">
+                  Track your journey through language learning stages and achievements.
+                </p>
+              </div>
+            </div>
+            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+              <Sparkles className="h-3 w-3 mr-1" />
+              Stage {currentStage.number}
+            </Badge>
+          </div>
         </div>
-        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-          <Sparkles className="h-3 w-3 mr-1" />
-          Stage {currentStage.number}
-        </Badge>
       </div>
 
       {/* Current Stage Stats Grid */}

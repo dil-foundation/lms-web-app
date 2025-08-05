@@ -1,31 +1,21 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Bot, 
   Brain, 
-  Zap, 
   Target, 
   Sparkles, 
-  MessageCircle,
   TrendingUp,
   BookOpen,
   Users,
   Clock,
-  CheckCircle,
-  Star,
   PlayCircle,
-  FileText,
-  BarChart3,
-  Settings,
-  Shield,
-  AlertTriangle,
-  Activity,
-  Database,
-  Server,
-  Cpu,
-  HardDrive
+  Calendar,
+  GraduationCap,
+  Award,
+  Shield
 } from 'lucide-react';
 
 interface AIAdminDashboardProps {
@@ -38,302 +28,192 @@ interface AIAdminDashboardProps {
 }
 
 export const AIAdminDashboard = ({ userProfile }: AIAdminDashboardProps) => {
-  // Mock AI data for demonstration
-  const mockAIData = {
-    totalAIUsers: 1247,
-    aiSystemUptime: 99.8,
-    dailyInteractions: 8943,
-    modelsDeployed: 12,
-    avgResponseTime: 1.2,
-    totalCost: 2847.50,
-    safetyScore: 96,
-    userSatisfaction: 4.7
+  // Mock data for the new overview metrics
+  const overviewData = {
+    totalUsers: 1247,
+    students: 985,
+    teachers: 247,
+    admins: 15,
+    activeUsersToday: 89,
+    learnFeatureUsage: {
+      today: 156,
+      thisWeek: 892
+    },
+    mostAccessedLessons: [
+      { title: "Basic Conversation Starters", stage: "Stage 1", accessCount: 234, icon: "💬" },
+      { title: "Daily Routine Vocabulary", stage: "Stage 2", accessCount: 189, icon: "🕐" },
+      { title: "Workplace Communication", stage: "Stage 4", accessCount: 167, icon: "💼" },
+      { title: "Academic Presentations", stage: "Stage 5", accessCount: 143, icon: "🎓" },
+      { title: "Quick Response Practice", stage: "Stage 3", accessCount: 128, icon: "⚡" }
+    ]
   };
-
-  const mockAIModels = [
-    { name: "GPT-4o Mini", type: "Language Model", status: "Active", usage: 87, performance: "Excellent" },
-    { name: "Claude 3.5 Sonnet", type: "Language Model", status: "Active", usage: 92, performance: "Excellent" },
-    { name: "Vision AI", type: "Image Analysis", status: "Active", usage: 45, performance: "Good" },
-    { name: "Speech-to-Text", type: "Audio Processing", status: "Maintenance", usage: 0, performance: "N/A" },
-  ];
-
-  const mockAIAlerts = [
-    { id: 1, type: "warning", message: "High API usage detected", timestamp: "2 min ago", severity: "Medium" },
-    { id: 2, type: "info", message: "New AI model deployed successfully", timestamp: "1 hour ago", severity: "Low" },
-    { id: 3, type: "error", message: "Safety filter triggered 3 times", timestamp: "3 hours ago", severity: "High" },
-  ];
-
-  const mockUsageStats = [
-    { category: "Content Generation", usage: 89, trend: "up" },
-    { category: "Student Support", usage: 76, trend: "up" },
-    { category: "Grading & Assessment", usage: 82, trend: "stable" },
-    { category: "Analytics & Insights", usage: 67, trend: "up" },
-  ];
-
-  const mockSystemHealth = [
-    { component: "AI API Gateway", status: "healthy", uptime: 99.9 },
-    { component: "Model Servers", status: "healthy", uptime: 99.8 },
-    { component: "Data Pipeline", status: "warning", uptime: 97.2 },
-    { component: "Safety Systems", status: "healthy", uptime: 100 },
-  ];
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
-          <Bot className="h-8 w-8 text-primary" />
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              AI Platform Control Center
-            </h1>
-            <p className="text-muted-foreground">
-              Welcome, {userProfile.first_name}! Monitor and manage your AI infrastructure.
-            </p>
+      {/* Header Section */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
+        <div className="relative p-8 rounded-3xl">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                <Shield className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                  Admin dashboard
+                </h1>
+                <p className="text-lg text-muted-foreground font-light">
+                  Welcome back, {userProfile?.first_name || 'Administrator'}
+                </p>
+              </div>
+            </div>
+            
+            {/* Filter Controls */}
+            <div className="flex items-center gap-3">
+              <Select defaultValue="alltime">
+                <SelectTrigger className="w-full sm:w-48">
+                  <SelectValue placeholder="Select time range" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="yesterday">Yesterday</SelectItem>
+                  <SelectItem value="7days">Last 7 days</SelectItem>
+                  <SelectItem value="30days">Last 30 days</SelectItem>
+                  <SelectItem value="3months">Last 3 months</SelectItem>
+                  <SelectItem value="6months">Last 6 months</SelectItem>
+                  <SelectItem value="1year">Last year</SelectItem>
+                  <SelectItem value="alltime">All time</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
-        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-          <Sparkles className="h-3 w-3 mr-1" />
-          AI Mode Active
-        </Badge>
       </div>
 
-      {/* AI Stats Grid */}
+      {/* User Count Metrics */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="relative overflow-hidden bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active AI Users</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockAIData.totalAIUsers.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{overviewData.totalUsers.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              +12% from last month
+              Registered users
             </p>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">System Uptime</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Students</CardTitle>
+            <GraduationCap className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockAIData.aiSystemUptime}%</div>
+            <div className="text-2xl font-bold">{overviewData.students.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              Last 30 days
+              {Math.round((overviewData.students / overviewData.totalUsers) * 100)}% of total users
             </p>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Daily Interactions</CardTitle>
-            <MessageCircle className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Teachers</CardTitle>
+            <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockAIData.dailyInteractions.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{overviewData.teachers.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              Today
+              {Math.round((overviewData.teachers / overviewData.totalUsers) * 100)}% of total users
             </p>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Safety Score</CardTitle>
-            <Shield className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Active Today</CardTitle>
+            <PlayCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockAIData.safetyScore}/100</div>
+            <div className="text-2xl font-bold">{overviewData.activeUsersToday}</div>
             <p className="text-xs text-muted-foreground">
-              AI Safety Rating
+              Practice lessons engagement
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* AI Models Status */}
+      {/* Learn Feature Usage Summary */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Brain className="h-5 w-5" />
-            AI Models Status
+            Learn Feature Usage Summary
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Today's Access</span>
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-lg font-bold">{overviewData.learnFeatureUsage.today}</span>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Users who accessed Learn feature today
+              </p>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">This Week</span>
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                  <span className="text-lg font-bold">{overviewData.learnFeatureUsage.thisWeek.toLocaleString()}</span>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Total weekly Learn feature engagement
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Most Accessed Content */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Award className="h-5 w-5" />
+            Most Accessed Practice Lessons
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {mockAIModels.map((model, index) => (
-              <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+            {overviewData.mostAccessedLessons.map((lesson, index) => (
+              <div key={index} className="flex items-center justify-between p-3 rounded-lg border hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Server className="h-4 w-4 text-primary" />
+                  <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-lg">
+                    {lesson.icon}
                   </div>
                   <div>
-                    <h3 className="font-medium">{model.name}</h3>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Badge variant="outline" className="text-xs">{model.type}</Badge>
-                      <span>{model.usage}% usage</span>
-                      <span>•</span>
-                      <span>{model.performance}</span>
-                    </div>
+                    <h3 className="font-medium text-sm">{lesson.title}</h3>
+                    <p className="text-xs text-muted-foreground">{lesson.stage}</p>
                   </div>
                 </div>
-                <Badge 
-                  variant={model.status === 'Active' ? 'default' : model.status === 'Maintenance' ? 'secondary' : 'outline'}
-                  className="text-xs"
-                >
-                  {model.status}
-                </Badge>
+                <div className="text-right">
+                  <div className="text-sm font-bold">{lesson.accessCount}</div>
+                  <p className="text-xs text-muted-foreground">accesses</p>
+                </div>
               </div>
             ))}
           </div>
         </CardContent>
       </Card>
-
-      {/* System Health */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="h-5 w-5" />
-            System Health Monitor
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {mockSystemHealth.map((system, index) => (
-              <div key={index} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{system.component}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">{system.uptime}%</span>
-                    <Badge 
-                      variant={system.status === 'healthy' ? 'default' : 'secondary'}
-                      className="text-xs"
-                    >
-                      {system.status}
-                    </Badge>
-                  </div>
-                </div>
-                <Progress value={system.uptime} className="h-2" />
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* AI Alerts */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5" />
-            AI System Alerts
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {mockAIAlerts.map((alert) => (
-              <div key={alert.id} className="p-4 border rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    {alert.type === 'error' && <AlertTriangle className="h-4 w-4 text-red-500" />}
-                    {alert.type === 'warning' && <AlertTriangle className="h-4 w-4 text-yellow-500" />}
-                    {alert.type === 'info' && <CheckCircle className="h-4 w-4 text-blue-500" />}
-                    <span className="text-sm font-medium">{alert.message}</span>
-                  </div>
-                  <Badge 
-                    variant={alert.severity === 'High' ? 'destructive' : alert.severity === 'Medium' ? 'secondary' : 'outline'}
-                    className="text-xs"
-                  >
-                    {alert.severity}
-                  </Badge>
-                </div>
-                <p className="text-sm text-muted-foreground">{alert.timestamp}</p>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Usage Statistics */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            AI Usage Statistics
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {mockUsageStats.map((stat, index) => (
-              <div key={index} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{stat.category}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">{stat.usage}%</span>
-                    {stat.trend === 'up' && <TrendingUp className="h-4 w-4 text-green-500" />}
-                    {stat.trend === 'stable' && <div className="h-4 w-4 bg-yellow-500 rounded-full" />}
-                  </div>
-                </div>
-                <Progress value={stat.usage} className="h-2" />
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Card className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Settings className="h-5 w-5 text-blue-500" />
-              AI Configuration
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              Configure AI models, parameters, and system settings.
-            </p>
-            <Button className="w-full">
-              Open Settings
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Shield className="h-5 w-5 text-orange-500" />
-              Safety & Ethics
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              Monitor AI safety measures and ethical compliance.
-            </p>
-            <Button className="w-full" variant="outline">
-              Review Safety
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-purple-500" />
-              Analytics Dashboard
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              View detailed AI usage analytics and performance metrics.
-            </p>
-            <Button className="w-full" variant="outline">
-              View Analytics
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }; 
