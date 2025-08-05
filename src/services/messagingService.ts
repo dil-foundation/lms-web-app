@@ -82,6 +82,12 @@ export interface SendMessageRequest {
 // API Base URL - update this to match your FastAPI backend
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+// Debug API configuration
+console.log('API Configuration:', {
+  VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
+  API_BASE_URL: API_BASE_URL
+});
+
 // Helper function to get a valid access token
 const getValidToken = async (): Promise<string> => {
   try {
@@ -94,8 +100,15 @@ const getValidToken = async (): Promise<string> => {
     }
     
     if (!session) {
+      console.error('No active session found');
       throw new Error('No active session');
     }
+    
+    console.log('Session found:', {
+      user_id: session.user?.id,
+      expires_at: session.expires_at,
+      access_token_length: session.access_token?.length
+    });
     
     // Check if token is expired or will expire soon (within 5 minutes)
     const tokenExpiry = new Date(session.expires_at! * 1000);
@@ -117,13 +130,35 @@ const getValidToken = async (): Promise<string> => {
         throw new Error('No session after refresh');
       }
       
+      console.log('Token refreshed successfully');
       return refreshData.session.access_token;
     }
     
+    console.log('Using existing valid token');
     return session.access_token;
   } catch (error) {
     console.error('Error getting valid token:', error);
-    throw error;
+    
+    // Try to get a fresh session as fallback
+    try {
+      console.log('Attempting to get fresh session as fallback...');
+      const { data: { session: freshSession }, error: freshError } = await supabase.auth.getSession();
+      
+      if (freshError) {
+        console.error('Fresh session error:', freshError);
+        throw new Error('Failed to get fresh session');
+      }
+      
+      if (!freshSession) {
+        throw new Error('No fresh session available');
+      }
+      
+      console.log('Using fresh session token');
+      return freshSession.access_token;
+    } catch (fallbackError) {
+      console.error('Fallback session failed:', fallbackError);
+      throw error; // Throw the original error
+    }
   }
 };
 
@@ -151,22 +186,30 @@ class WebSocketManager {
 
     try {
       const token = await getValidToken();
-      this.ws = new WebSocket(`${API_BASE_URL.replace('http', 'ws')}/api/ws/${token}`);
+      console.log('Connecting WebSocket with token length:', token.length);
+      
+      const wsUrl = `${API_BASE_URL.replace('http', 'ws')}/api/ws/${token}`;
+      console.log('WebSocket URL:', wsUrl);
+      
+      this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
+        console.log('WebSocket connected successfully');
         this.reconnectAttempts = 0;
       };
 
       this.ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
+          console.log('WebSocket message received:', data);
           this.handleMessage(data);
         } catch (error) {
           console.error('Error parsing WebSocket message:', error);
         }
       };
 
-      this.ws.onclose = () => {
+      this.ws.onclose = (event) => {
+        console.log('WebSocket closed:', event.code, event.reason);
         this.attemptReconnect();
       };
 
@@ -695,13 +738,14 @@ export const createConversation = async (data: CreateConversationRequest): Promi
 };
 
 export const getConversations = async (page: number = 1, limit: number = 50, searchQuery?: string): Promise<{ conversations: Conversation[], hasMore: boolean, total: number }> => {
-  const token = await getValidToken();
-  
-  // Add timeout to prevent hanging requests
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-  
   try {
+    const token = await getValidToken();
+    console.log('Making API request with token length:', token.length);
+    
+    // Add timeout to prevent hanging requests
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
     // Build query parameters
     const params = new URLSearchParams();
     params.append('page', page.toString());
@@ -710,7 +754,10 @@ export const getConversations = async (page: number = 1, limit: number = 50, sea
       params.append('q', searchQuery.trim());
     }
     
-    const response = await fetch(`${API_BASE_URL}/api/conversations?${params.toString()}`, {
+    const url = `${API_BASE_URL}/api/conversations?${params.toString()}`;
+    console.log('Making request to:', url);
+    
+    const response = await fetch(url, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -720,11 +767,23 @@ export const getConversations = async (page: number = 1, limit: number = 50, sea
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Failed to fetch conversations');
+      console.error('API response not ok:', response.status, response.statusText);
+      const errorText = await response.text();
+      console.error('Error response body:', errorText);
+      
+      let errorDetail = 'Failed to fetch conversations';
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorDetail = errorJson.detail || errorJson.message || errorDetail;
+      } catch (parseError) {
+        errorDetail = errorText || errorDetail;
+      }
+      
+      throw new Error(errorDetail);
     }
 
     const data = await response.json();
+    console.log('API response received:', data);
     
     // Handle both array response and object response formats
     if (Array.isArray(data)) {
@@ -739,7 +798,7 @@ export const getConversations = async (page: number = 1, limit: number = 50, sea
       return data;
     }
   } catch (error) {
-    clearTimeout(timeoutId);
+    console.error('Error in getConversations:', error);
     if (error instanceof Error && error.name === 'AbortError') {
       throw new Error('Request timeout - conversations took too long to load');
     }
