@@ -82,11 +82,7 @@ export interface SendMessageRequest {
 // API Base URL - update this to match your FastAPI backend
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-// Debug API configuration
-console.log('API Configuration:', {
-  VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
-  API_BASE_URL: API_BASE_URL
-});
+
 
 // Helper function to get a valid access token
 const getValidToken = async (): Promise<string> => {
@@ -104,12 +100,6 @@ const getValidToken = async (): Promise<string> => {
       throw new Error('No active session');
     }
     
-    console.log('Session found:', {
-      user_id: session.user?.id,
-      expires_at: session.expires_at,
-      access_token_length: session.access_token?.length
-    });
-    
     // Decode and inspect the JWT token (without verification)
     if (session.access_token) {
       try {
@@ -117,29 +107,10 @@ const getValidToken = async (): Promise<string> => {
         if (tokenParts.length === 3) {
           const header = JSON.parse(atob(tokenParts[0]));
           const payload = JSON.parse(atob(tokenParts[1]));
-          console.log('JWT Token Analysis:', {
-            header: header,
-            payload: {
-              iss: payload.iss,
-              aud: payload.aud,
-              exp: payload.exp,
-              sub: payload.sub,
-              email: payload.email,
-              phone: payload.phone,
-              app_metadata: payload.app_metadata,
-              user_metadata: payload.user_metadata,
-              role: payload.role,
-              aal: payload.aal,
-              amr: payload.amr,
-              session_id: payload.session_id,
-              iat: payload.iat
-            }
-          });
           
           // Check if token is actually expired by comparing with current time
           const currentTime = Math.floor(Date.now() / 1000);
           if (payload.exp && payload.exp < currentTime) {
-            console.log('Token is actually expired, forcing refresh...');
             // Force refresh the session
             const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
             
@@ -152,7 +123,6 @@ const getValidToken = async (): Promise<string> => {
               throw new Error('No session after refresh');
             }
             
-            console.log('Expired token refreshed successfully');
             return refreshData.session.access_token;
           }
         }
@@ -167,8 +137,6 @@ const getValidToken = async (): Promise<string> => {
     const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
     
     if (tokenExpiry <= fiveMinutesFromNow) {
-      console.log('Token expiring soon, refreshing...');
-      
       // Refresh the token
       const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
       
@@ -181,36 +149,15 @@ const getValidToken = async (): Promise<string> => {
         throw new Error('No session after refresh');
       }
       
-      console.log('Token refreshed successfully');
       return refreshData.session.access_token;
     }
     
-    // For debugging: always try to refresh if the token is older than 30 minutes
-    const tokenAge = now.getTime() - tokenExpiry.getTime() + (session.expires_at! * 1000);
-    const thirtyMinutesInMs = 30 * 60 * 1000;
-    
-    if (tokenAge > thirtyMinutesInMs) {
-      console.log('Token is older than 30 minutes, attempting refresh for debugging...');
-      try {
-        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-        
-        if (!refreshError && refreshData.session) {
-          console.log('Token refreshed due to age');
-          return refreshData.session.access_token;
-        }
-      } catch (refreshError) {
-        console.log('Age-based refresh failed, using existing token');
-      }
-    }
-    
-    console.log('Using existing valid token');
     return session.access_token;
   } catch (error) {
     console.error('Error getting valid token:', error);
     
     // Try to get a fresh session as fallback
     try {
-      console.log('Attempting to get fresh session as fallback...');
       const { data: { session: freshSession }, error: freshError } = await supabase.auth.getSession();
       
       if (freshError) {
@@ -222,13 +169,11 @@ const getValidToken = async (): Promise<string> => {
         throw new Error('No fresh session available');
       }
       
-      console.log('Using fresh session token');
       return freshSession.access_token;
     } catch (fallbackError) {
       console.error('Fallback session failed:', fallbackError);
       
       // If both the main session and fallback failed, the user might need to re-authenticate
-      console.error('All token refresh attempts failed. User may need to re-authenticate.');
       throw new Error('Authentication required - please log in again');
     }
   }
@@ -258,22 +203,18 @@ class WebSocketManager {
 
     try {
       const token = await getValidToken();
-      console.log('Connecting WebSocket with token length:', token.length);
       
       const wsUrl = `${API_BASE_URL.replace('http', 'ws')}/api/ws/${token}`;
-      console.log('WebSocket URL:', wsUrl);
       
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
-        console.log('WebSocket connected successfully');
         this.reconnectAttempts = 0;
       };
 
       this.ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          console.log('WebSocket message received:', data);
           this.handleMessage(data);
         } catch (error) {
           console.error('Error parsing WebSocket message:', error);
@@ -281,7 +222,6 @@ class WebSocketManager {
       };
 
       this.ws.onclose = (event) => {
-        console.log('WebSocket closed:', event.code, event.reason);
         this.attemptReconnect();
       };
 
@@ -812,8 +752,6 @@ export const createConversation = async (data: CreateConversationRequest): Promi
 export const getConversations = async (page: number = 1, limit: number = 50, searchQuery?: string): Promise<{ conversations: Conversation[], hasMore: boolean, total: number }> => {
   try {
     const token = await getValidToken();
-    console.log('Making API request with token length:', token.length);
-    console.log('Token being sent:', token.substring(0, 50) + '...');
     
     // Add timeout to prevent hanging requests
     const controller = new AbortController();
@@ -828,7 +766,6 @@ export const getConversations = async (page: number = 1, limit: number = 50, sea
     }
     
     const url = `${API_BASE_URL}/api/conversations?${params.toString()}`;
-    console.log('Making request to:', url);
     
     const response = await fetch(url, {
       headers: {
@@ -840,9 +777,7 @@ export const getConversations = async (page: number = 1, limit: number = 50, sea
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      console.error('API response not ok:', response.status, response.statusText);
       const errorText = await response.text();
-      console.error('Error response body:', errorText);
       
       let errorDetail = 'Failed to fetch conversations';
       try {
@@ -856,7 +791,6 @@ export const getConversations = async (page: number = 1, limit: number = 50, sea
     }
 
     const data = await response.json();
-    console.log('API response received:', data);
     
     // Handle both array response and object response formats
     if (Array.isArray(data)) {
@@ -1273,7 +1207,6 @@ export const startTokenRefreshInterval = () => {
   // Refresh token every 45 minutes (before the 1-hour expiry)
   tokenRefreshInterval = setInterval(async () => {
     try {
-      console.log('Proactive token refresh...');
       const { data: { session }, error } = await supabase.auth.getSession();
       
       if (error) {
@@ -1282,7 +1215,6 @@ export const startTokenRefreshInterval = () => {
       }
       
       if (!session) {
-        console.log('No session found during proactive refresh');
         return;
       }
       
@@ -1292,16 +1224,11 @@ export const startTokenRefreshInterval = () => {
       const fifteenMinutesFromNow = new Date(now.getTime() + 15 * 60 * 1000);
       
       if (tokenExpiry <= fifteenMinutesFromNow) {
-        console.log('Proactively refreshing token...');
         const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
         
         if (refreshError) {
           console.error('Error during proactive refresh:', refreshError);
-        } else if (refreshData.session) {
-          console.log('Token proactively refreshed successfully');
         }
-      } else {
-        console.log('Token is still valid, no proactive refresh needed');
       }
     } catch (error) {
       console.error('Error in proactive token refresh:', error);
@@ -1316,101 +1243,4 @@ export const stopTokenRefreshInterval = () => {
   }
 };
 
-// Test function to help debug backend token validation
-export const testBackendTokenValidation = async () => {
-  try {
-    const token = await getValidToken();
-    console.log('Testing backend token validation...');
-    
-    // Test with different header formats
-    const testHeaders = [
-      { 'Authorization': `Bearer ${token}` },
-      { 'Authorization': `bearer ${token}` },
-      { 'Authorization': token },
-      { 'X-Auth-Token': token },
-      { 'X-API-Key': token }
-    ];
-    
-    for (let i = 0; i < testHeaders.length; i++) {
-      const headers = testHeaders[i];
-      console.log(`Testing header format ${i + 1}:`, Object.keys(headers)[0]);
-      
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/conversations?page=1&limit=1`, {
-          headers: headers,
-        });
-        
-        console.log(`Format ${i + 1} response:`, response.status, response.statusText);
-        
-        if (response.ok) {
-          console.log(`✅ SUCCESS with format ${i + 1}:`, Object.keys(headers)[0]);
-          return { success: true, format: Object.keys(headers)[0], headers: headers };
-        } else {
-          const errorText = await response.text();
-          console.log(`❌ Format ${i + 1} failed:`, errorText);
-        }
-      } catch (error) {
-        console.log(`❌ Format ${i + 1} error:`, error);
-      }
-    }
-    
-    console.log('❌ All header formats failed');
-    return { success: false };
-  } catch (error) {
-    console.error('Error testing backend token validation:', error);
-    return { success: false, error: error };
-  }
-};
-
-// Force token refresh function for debugging
-export const forceTokenRefresh = async () => {
-  try {
-    console.log('Force refreshing token...');
-    const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-    
-    if (refreshError) {
-      console.error('Error during force refresh:', refreshError);
-      return { success: false, error: refreshError };
-    }
-    
-    if (!refreshData.session) {
-      console.error('No session after force refresh');
-      return { success: false, error: 'No session after refresh' };
-    }
-    
-    console.log('Token force refreshed successfully');
-    console.log('New token length:', refreshData.session.access_token.length);
-    
-    // Test the new token immediately
-    const testResult = await testBackendTokenValidation();
-    return { success: true, testResult };
-  } catch (error) {
-    console.error('Error in force token refresh:', error);
-    return { success: false, error: error };
-  }
-};
-
-// Clear session and force re-authentication
-export const clearSessionAndReauth = async () => {
-  try {
-    console.log('Clearing session and forcing re-authentication...');
-    
-    // Sign out to clear the session
-    const { error: signOutError } = await supabase.auth.signOut();
-    
-    if (signOutError) {
-      console.error('Error signing out:', signOutError);
-      return { success: false, error: signOutError };
-    }
-    
-    console.log('Session cleared successfully');
-    
-    // Redirect to login page or reload the page
-    window.location.reload();
-    
-    return { success: true };
-  } catch (error) {
-    console.error('Error clearing session:', error);
-    return { success: false, error: error };
-  }
-}; 
+ 
