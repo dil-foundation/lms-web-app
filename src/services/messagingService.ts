@@ -82,9 +82,106 @@ export interface SendMessageRequest {
 // API Base URL - update this to match your FastAPI backend
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-// Helper function to get auth headers
-const getAuthHeaders = () => {
-  const token = supabase.auth.getSession().then(session => session.data.session?.access_token);
+
+
+// Helper function to get a valid access token
+const getValidToken = async (): Promise<string> => {
+  try {
+    // Get current session
+    const { data: { session }, error } = await supabase.auth.getSession();
+    
+    if (error) {
+      console.error('Error getting session:', error);
+      throw new Error('Failed to get session');
+    }
+    
+    if (!session) {
+      console.error('No active session found');
+      throw new Error('No active session');
+    }
+    
+    // Decode and inspect the JWT token (without verification)
+    if (session.access_token) {
+      try {
+        const tokenParts = session.access_token.split('.');
+        if (tokenParts.length === 3) {
+          const header = JSON.parse(atob(tokenParts[0]));
+          const payload = JSON.parse(atob(tokenParts[1]));
+          
+          // Check if token is actually expired by comparing with current time
+          const currentTime = Math.floor(Date.now() / 1000);
+          if (payload.exp && payload.exp < currentTime) {
+            // Force refresh the session
+            const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+            
+            if (refreshError) {
+              console.error('Error refreshing expired token:', refreshError);
+              throw new Error('Failed to refresh expired token');
+            }
+            
+            if (!refreshData.session) {
+              throw new Error('No session after refresh');
+            }
+            
+            return refreshData.session.access_token;
+          }
+        }
+      } catch (decodeError) {
+        console.error('Error decoding JWT token:', decodeError);
+      }
+    }
+    
+    // Check if token is expired or will expire soon (within 5 minutes)
+    const tokenExpiry = new Date(session.expires_at! * 1000);
+    const now = new Date();
+    const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
+    
+    if (tokenExpiry <= fiveMinutesFromNow) {
+      // Refresh the token
+      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+      
+      if (refreshError) {
+        console.error('Error refreshing token:', refreshError);
+        throw new Error('Failed to refresh token');
+      }
+      
+      if (!refreshData.session) {
+        throw new Error('No session after refresh');
+      }
+      
+      return refreshData.session.access_token;
+    }
+    
+    return session.access_token;
+  } catch (error) {
+    console.error('Error getting valid token:', error);
+    
+    // Try to get a fresh session as fallback
+    try {
+      const { data: { session: freshSession }, error: freshError } = await supabase.auth.getSession();
+      
+      if (freshError) {
+        console.error('Fresh session error:', freshError);
+        throw new Error('Failed to get fresh session');
+      }
+      
+      if (!freshSession) {
+        throw new Error('No fresh session available');
+      }
+      
+      return freshSession.access_token;
+    } catch (fallbackError) {
+      console.error('Fallback session failed:', fallbackError);
+      
+      // If both the main session and fallback failed, the user might need to re-authenticate
+      throw new Error('Authentication required - please log in again');
+    }
+  }
+};
+
+// Helper function to get auth headers with valid token
+const getAuthHeaders = async () => {
+  const token = await getValidToken();
   return {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${token}`,
@@ -99,40 +196,49 @@ class WebSocketManager {
   private reconnectDelay = 1000;
   private eventHandlers: Map<string, Function[]> = new Map();
 
-  connect(token: string) {
+  async connect() {
     if (this.ws?.readyState === WebSocket.OPEN) {
       return;
     }
 
-    this.ws = new WebSocket(`${API_BASE_URL.replace('http', 'ws')}/api/ws/${token}`);
+    try {
+      const token = await getValidToken();
+      
+      const wsUrl = `${API_BASE_URL.replace('http', 'ws')}/api/ws/${token}`;
+      
+      this.ws = new WebSocket(wsUrl);
 
-    this.ws.onopen = () => {
-      this.reconnectAttempts = 0;
-    };
+      this.ws.onopen = () => {
+        this.reconnectAttempts = 0;
+      };
 
-    this.ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        this.handleMessage(data);
-      } catch (error) {
-        console.error('Error parsing WebSocket message:', error);
-      }
-    };
+      this.ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          this.handleMessage(data);
+        } catch (error) {
+          console.error('Error parsing WebSocket message:', error);
+        }
+      };
 
-    this.ws.onclose = () => {
-      this.attemptReconnect(token);
-    };
+      this.ws.onclose = (event) => {
+        this.attemptReconnect();
+      };
 
-    this.ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
+      this.ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
+    } catch (error) {
+      console.error('Error connecting to WebSocket:', error);
+      throw error;
+    }
   }
 
-  private attemptReconnect(token: string) {
+  private attemptReconnect() {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
       setTimeout(() => {
-        this.connect(token);
+        this.connect();
       }, this.reconnectDelay * this.reconnectAttempts);
     }
   }
@@ -624,7 +730,7 @@ export const searchTeachersForStudentMessaging = async (studentId: string, searc
 
 // New API functions for conversations and messages
 export const createConversation = async (data: CreateConversationRequest): Promise<Conversation> => {
-  const token = (await supabase.auth.getSession()).data.session?.access_token;
+  const token = await getValidToken();
   
   const response = await fetch(`${API_BASE_URL}/api/conversations`, {
     method: 'POST',
@@ -644,13 +750,13 @@ export const createConversation = async (data: CreateConversationRequest): Promi
 };
 
 export const getConversations = async (page: number = 1, limit: number = 50, searchQuery?: string): Promise<{ conversations: Conversation[], hasMore: boolean, total: number }> => {
-  const token = (await supabase.auth.getSession()).data.session?.access_token;
-  
-  // Add timeout to prevent hanging requests
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-  
   try {
+    const token = await getValidToken();
+    
+    // Add timeout to prevent hanging requests
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
     // Build query parameters
     const params = new URLSearchParams();
     params.append('page', page.toString());
@@ -659,7 +765,9 @@ export const getConversations = async (page: number = 1, limit: number = 50, sea
       params.append('q', searchQuery.trim());
     }
     
-    const response = await fetch(`${API_BASE_URL}/api/conversations?${params.toString()}`, {
+    const url = `${API_BASE_URL}/api/conversations?${params.toString()}`;
+    
+    const response = await fetch(url, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -669,8 +777,17 @@ export const getConversations = async (page: number = 1, limit: number = 50, sea
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Failed to fetch conversations');
+      const errorText = await response.text();
+      
+      let errorDetail = 'Failed to fetch conversations';
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorDetail = errorJson.detail || errorJson.message || errorDetail;
+      } catch (parseError) {
+        errorDetail = errorText || errorDetail;
+      }
+      
+      throw new Error(errorDetail);
     }
 
     const data = await response.json();
@@ -688,7 +805,7 @@ export const getConversations = async (page: number = 1, limit: number = 50, sea
       return data;
     }
   } catch (error) {
-    clearTimeout(timeoutId);
+    console.error('Error in getConversations:', error);
     if (error instanceof Error && error.name === 'AbortError') {
       throw new Error('Request timeout - conversations took too long to load');
     }
@@ -699,7 +816,7 @@ export const getConversations = async (page: number = 1, limit: number = 50, sea
 
 
 export const getConversation = async (conversationId: string): Promise<Conversation> => {
-  const token = (await supabase.auth.getSession()).data.session?.access_token;
+  const token = await getValidToken();
   
   const response = await fetch(`${API_BASE_URL}/api/conversations/${conversationId}`, {
     headers: {
@@ -716,7 +833,7 @@ export const getConversation = async (conversationId: string): Promise<Conversat
 };
 
 export const updateConversation = async (conversationId: string, data: Partial<Conversation>): Promise<Conversation> => {
-  const token = (await supabase.auth.getSession()).data.session?.access_token;
+  const token = await getValidToken();
   
   const response = await fetch(`${API_BASE_URL}/api/conversations/${conversationId}`, {
     method: 'PUT',
@@ -736,7 +853,7 @@ export const updateConversation = async (conversationId: string, data: Partial<C
 };
 
 export const deleteConversation = async (conversationId: string): Promise<void> => {
-  const token = (await supabase.auth.getSession()).data.session?.access_token;
+  const token = await getValidToken();
   
   const response = await fetch(`${API_BASE_URL}/api/conversations/${conversationId}`, {
     method: 'DELETE',
@@ -752,7 +869,7 @@ export const deleteConversation = async (conversationId: string): Promise<void> 
 };
 
 export const sendMessage = async (conversationId: string, data: SendMessageRequest): Promise<Message> => {
-  const token = (await supabase.auth.getSession()).data.session?.access_token;
+  const token = await getValidToken();
   
   const response = await fetch(`${API_BASE_URL}/api/conversations/${conversationId}/messages`, {
     method: 'POST',
@@ -772,7 +889,7 @@ export const sendMessage = async (conversationId: string, data: SendMessageReque
 };
 
 export const getMessages = async (conversationId: string, page: number = 1, limit: number = 50): Promise<{ messages: Message[], hasMore: boolean, total: number }> => {
-  const token = (await supabase.auth.getSession()).data.session?.access_token;
+  const token = await getValidToken();
   
   const response = await fetch(`${API_BASE_URL}/api/conversations/${conversationId}/messages?page=${page}&limit=${limit}`, {
     headers: {
@@ -789,7 +906,7 @@ export const getMessages = async (conversationId: string, page: number = 1, limi
 };
 
 export const editMessage = async (messageId: string, content: string): Promise<Message> => {
-  const token = (await supabase.auth.getSession()).data.session?.access_token;
+  const token = await getValidToken();
   
   const response = await fetch(`${API_BASE_URL}/api/messages/${messageId}`, {
     method: 'PUT',
@@ -809,7 +926,7 @@ export const editMessage = async (messageId: string, content: string): Promise<M
 };
 
 export const deleteMessage = async (messageId: string): Promise<void> => {
-  const token = (await supabase.auth.getSession()).data.session?.access_token;
+  const token = await getValidToken();
   
   const response = await fetch(`${API_BASE_URL}/api/messages/${messageId}`, {
     method: 'DELETE',
@@ -825,7 +942,7 @@ export const deleteMessage = async (messageId: string): Promise<void> => {
 };
 
 export const markMessageAsDelivered = async (messageId: string): Promise<void> => {
-  const token = (await supabase.auth.getSession()).data.session?.access_token;
+  const token = await getValidToken();
   
   const response = await fetch(`${API_BASE_URL}/api/messages/${messageId}/delivered`, {
     method: 'POST',
@@ -841,7 +958,7 @@ export const markMessageAsDelivered = async (messageId: string): Promise<void> =
 };
 
 export const markMessageAsRead = async (messageId: string): Promise<void> => {
-  const token = (await supabase.auth.getSession()).data.session?.access_token;
+  const token = await getValidToken();
   
   const response = await fetch(`${API_BASE_URL}/api/messages/${messageId}/read`, {
     method: 'POST',
@@ -859,7 +976,7 @@ export const markMessageAsRead = async (messageId: string): Promise<void> => {
 export const getUserStatus = async (userIds: string[]): Promise<Record<string, { status: string, last_seen_at: string, is_typing: boolean }>> => {
   try {
     // Try backend API first
-    const token = (await supabase.auth.getSession()).data.session?.access_token;
+    const token = await getValidToken();
     
     const queryParams = userIds.map(id => `user_ids=${id}`).join('&');
     const response = await fetch(`${API_BASE_URL}/api/users/status?${queryParams}`, {
@@ -941,7 +1058,7 @@ export const getUserStatus = async (userIds: string[]): Promise<Record<string, {
 export const updateUserStatus = async (data: { status?: string, is_typing?: boolean, typing_in_conversation?: string }): Promise<void> => {
   try {
     // Try backend API first
-    const token = (await supabase.auth.getSession()).data.session?.access_token;
+    const token = await getValidToken();
     
     const response = await fetch(`${API_BASE_URL}/api/users/status`, {
       method: 'PUT',
@@ -1004,7 +1121,7 @@ export const updateUserStatus = async (data: { status?: string, is_typing?: bool
 export const markConversationAsRead = async (conversationId: string): Promise<void> => {
   try {
     // Try backend API first
-    const token = (await supabase.auth.getSession()).data.session?.access_token;
+    const token = await getValidToken();
     
     const response = await fetch(`${API_BASE_URL}/api/conversations/${conversationId}/read`, {
       method: 'POST',
@@ -1066,15 +1183,64 @@ export const markConversationAsRead = async (conversationId: string): Promise<vo
 
 // Initialize WebSocket connection
 export const initializeWebSocket = async () => {
-  const session = await supabase.auth.getSession();
-  const token = session.data.session?.access_token;
-  
-  if (token) {
-    wsManager.connect(token);
+  try {
+    await wsManager.connect();
+  } catch (error) {
+    console.error('Error initializing WebSocket:', error);
   }
 };
 
 // Disconnect WebSocket
 export const disconnectWebSocket = () => {
   wsManager.disconnect();
-}; 
+};
+
+// Proactive token refresh mechanism
+let tokenRefreshInterval: NodeJS.Timeout | null = null;
+
+export const startTokenRefreshInterval = () => {
+  // Clear any existing interval
+  if (tokenRefreshInterval) {
+    clearInterval(tokenRefreshInterval);
+  }
+  
+  // Refresh token every 45 minutes (before the 1-hour expiry)
+  tokenRefreshInterval = setInterval(async () => {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error('Error during proactive refresh:', error);
+        return;
+      }
+      
+      if (!session) {
+        return;
+      }
+      
+      // Check if token will expire in the next 15 minutes
+      const tokenExpiry = new Date(session.expires_at! * 1000);
+      const now = new Date();
+      const fifteenMinutesFromNow = new Date(now.getTime() + 15 * 60 * 1000);
+      
+      if (tokenExpiry <= fifteenMinutesFromNow) {
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (refreshError) {
+          console.error('Error during proactive refresh:', refreshError);
+        }
+      }
+    } catch (error) {
+      console.error('Error in proactive token refresh:', error);
+    }
+  }, 45 * 60 * 1000); // 45 minutes
+};
+
+export const stopTokenRefreshInterval = () => {
+  if (tokenRefreshInterval) {
+    clearInterval(tokenRefreshInterval);
+    tokenRefreshInterval = null;
+  }
+};
+
+ 

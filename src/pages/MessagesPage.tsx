@@ -53,6 +53,8 @@ import {
   wsManager,
   initializeWebSocket,
   disconnectWebSocket,
+  startTokenRefreshInterval,
+  stopTokenRefreshInterval,
   getUsersForAdminMessaging,
   getStudentsForTeacherMessaging,
   getTeachersForStudentMessaging,
@@ -67,7 +69,7 @@ import {
   updateUserStatus,
   markConversationAsRead,
   markMessageAsDelivered,
-  markMessageAsRead
+  markMessageAsRead,
 } from '@/services/messagingService';
 import { UserRole } from '@/config/roleNavigation';
 
@@ -240,9 +242,10 @@ export default function MessagesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [dialogJustOpened, setDialogJustOpened] = useState(false);
-  const [conversationsLoading, setConversationsLoading] = useState(true);
+  const [conversationsLoading, setConversationsLoading] = useState(false);
   const [conversationsLoaded, setConversationsLoaded] = useState(false);
   const [messagesLoading, setMessagesLoading] = useState(false);
+  const [loadingMoreMessages, setLoadingMoreMessages] = useState(false);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [messagesPage, setMessagesPage] = useState(1);
   const [hasMoreMessages, setHasMoreMessages] = useState(true);
@@ -253,10 +256,12 @@ export default function MessagesPage() {
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [loadingMessagesForChat, setLoadingMessagesForChat] = useState<string | null>(null);
   const initialLoadCompleteRef = useRef(false);
-  const autoSelectionCompleteRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const conversationsContainerRef = useRef<any>(null);
+  const justLoadedMessagesRef = useRef(false);
+  const componentMountedRef = useRef(false);
+  const loadingOlderMessagesRef = useRef(false);
 
 
 
@@ -435,10 +440,17 @@ export default function MessagesPage() {
     };
   }, [conversationsSearchQuery]);
 
-  // Load conversations on component mount
+    // Consolidated conversation loading effect
   useEffect(() => {
-    // Prevent multiple simultaneous loads
-    if (initialLoadCompleteRef.current) {
+
+    
+    // Prevent duplicate requests by checking if we're already loading
+    if (conversationsLoading) {
+      return;
+    }
+    
+    // Only prevent duplicate initial loads if we have conversations already loaded
+    if (!conversationsSearchQuery.trim() && initialLoadCompleteRef.current && chats.length > 0) {
       return;
     }
     
@@ -447,16 +459,12 @@ export default function MessagesPage() {
         return;
       }
       
-      // Double-check to prevent race conditions
-      if (initialLoadCompleteRef.current) {
-        return;
-      }
       setConversationsLoading(true);
-      setConversationsLoaded(false); // Reset loaded state
+      setConversationsLoaded(false);
       
       try {
         // Use getConversations with optional search query
-        const result = await getConversations(1, 10, conversationsSearchQuery); // Limit to 10 for testing
+        const result = await getConversations(1, 10, conversationsSearchQuery);
         
         const convertedChats = result.conversations.map(conv => 
           convertAPIConversationToChat(conv, user.id)
@@ -465,7 +473,7 @@ export default function MessagesPage() {
         // Set default offline status - will be updated with actual status from API
         const chatsWithDefaultStatus = convertedChats.map(chat => ({
           ...chat,
-          isOnline: false // Default to offline, will be updated with actual status
+          isOnline: false
         }));
         
         setChats(chatsWithDefaultStatus);
@@ -476,7 +484,10 @@ export default function MessagesPage() {
         if (chatsWithDefaultStatus.length === 0) {
           setSelectedChat(null);
           setCurrentConversationId(null);
-          return; // Exit early since there are no conversations to process
+          setConversationsLoaded(true);
+          setInitialLoadComplete(true);
+          initialLoadCompleteRef.current = true;
+          return;
         }
 
         // Fetch user status for all participants
@@ -500,171 +511,69 @@ export default function MessagesPage() {
             });
             
             setChats(updatedChats);
-            
-            // Note: Auto-selection is handled in the consolidated logic below
-      } catch (statusError) {
-        console.error('Error fetching user status:', statusError);
-        // Keep default online status if API fails
-        // Don't auto-select here - it will be handled below
-      }
-    } else {
-      // No participants to fetch status for
-    }
-    
-    // Auto-select first conversation if not already selected (consolidated logic)
-    if (!selectedChat && chatsWithDefaultStatus.length > 0 && !autoSelectionCompleteRef.current) {
-      const firstChat = chatsWithDefaultStatus[0];
-      autoSelectionCompleteRef.current = true;
-      setSelectedChat(firstChat);
-      setCurrentConversationId(firstChat.id);
-      
-      // Join WebSocket room for the first conversation
-      wsManager.joinConversation(firstChat.id);
-      
-      // Load messages for the first conversation
-      loadMessagesForChat(firstChat);
-    }
-    
-    // Mark as loaded only after we've successfully processed the data
-    setConversationsLoaded(true);
-    setInitialLoadComplete(true);
-    initialLoadCompleteRef.current = true;
+          } catch (statusError) {
+            console.error('Error fetching user status:', statusError);
+            // Keep default online status if API fails
+          }
+        }
+        
+        // Mark as loaded only after we've successfully processed the data
+        setConversationsLoaded(true);
+        setInitialLoadComplete(true);
+        initialLoadCompleteRef.current = true;
       } catch (error) {
         console.error('Error loading conversations:', error);
         // Don't set conversationsLoaded to true on error
         // Keep loading state active so user can retry
       } finally {
         setConversationsLoading(false);
+        setConversationsSearchLoading(false);
       }
     };
 
-    loadConversations();
-  }, [user?.id]); // Removed initialLoadComplete from dependencies to prevent re-runs
-
-  // Debounced search effect for conversations
-  useEffect(() => {
-    // Don't run search effect on initial load
-    if (!initialLoadCompleteRef.current) {
-      return;
-    }
-    
-    // Set search loading state immediately when query changes
-    setConversationsSearchLoading(true);
-    
-    const timer = setTimeout(() => {
-      // Reset to page 1 when search changes
-      setConversationsPage(1);
-      setHasMoreConversations(true);
-      setConversationsSearchLoading(false);
-      
-      // Trigger conversation loading with debounced search query
-      if (user?.id) {
-        const loadConversations = async () => {
-          setConversationsLoading(true);
-          setConversationsLoaded(false);
-          
-          try {
-            const result = await getConversations(1, 10, conversationsSearchQuery);
-            
-            const convertedChats = result.conversations.map(conv => 
-              convertAPIConversationToChat(conv, user.id)
-            );
-            
-            const chatsWithDefaultStatus = convertedChats.map(chat => ({
-              ...chat,
-              isOnline: false
-            }));
-            
-            setChats(chatsWithDefaultStatus);
-            setHasMoreConversations(result.hasMore);
-            setConversationsPage(1);
-
-            // Clear selected chat if no conversations found
-            if (chatsWithDefaultStatus.length === 0) {
-              setSelectedChat(null);
-              setCurrentConversationId(null);
-              return;
-            }
-
-            // Fetch user status for all participants
-            const participantIds = convertedChats
-              .map(chat => chat.userId)
-              .filter(id => id && id !== user.id);
-
-            if (participantIds.length > 0) {
-              try {
-                const userStatuses = await getUserStatus(participantIds);
-                
-                const updatedChats = chatsWithDefaultStatus.map(chat => {
-                  if (chat.userId && userStatuses[chat.userId]) {
-                    const isOnline = userStatuses[chat.userId].status === 'online';
-                    return {
-                      ...chat,
-                      isOnline: isOnline
-                    };
-                  }
-                  return chat;
-                });
-                
-                setChats(updatedChats);
-                
-                // Auto-select the first conversation if no conversation is currently selected
-                if (!selectedChat && updatedChats.length > 0) {
-                  const firstChat = updatedChats[0];
-                  setSelectedChat(firstChat);
-                  setCurrentConversationId(firstChat.id);
-                  wsManager.joinConversation(firstChat.id);
-                  loadMessagesForChat(firstChat);
-                }
-              } catch (statusError) {
-                console.error('Error fetching user status:', statusError);
-                
-                if (!selectedChat && chatsWithDefaultStatus.length > 0) {
-                  const firstChat = chatsWithDefaultStatus[0];
-                  setSelectedChat(firstChat);
-                  setCurrentConversationId(firstChat.id);
-                  wsManager.joinConversation(firstChat.id);
-                  loadMessagesForChat(firstChat);
-                }
-              }
-            } else {
-              if (!selectedChat && chatsWithDefaultStatus.length > 0) {
-                const firstChat = chatsWithDefaultStatus[0];
-                setSelectedChat(firstChat);
-                setCurrentConversationId(firstChat.id);
-                wsManager.joinConversation(firstChat.id);
-                loadMessagesForChat(firstChat);
-              }
-            }
-            
-            setConversationsLoaded(true);
-          } catch (error) {
-            console.error('Error loading conversations:', error);
-          } finally {
-            setConversationsLoading(false);
-          }
-        };
-        
+    // Debounced loading for search queries
+    if (conversationsSearchQuery.trim()) {
+      setConversationsSearchLoading(true);
+      const timer = setTimeout(() => {
         loadConversations();
-      }
-    }, 800); // Increased delay to reduce API calls
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [conversationsSearchQuery, user?.id]);
+      }, 800);
+      
+      return () => {
+        clearTimeout(timer);
+      };
+    } else {
+      // Immediate loading for initial load or when search is cleared
+      loadConversations();
+    }
+  }, [user?.id, conversationsSearchQuery]);
 
 
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    scrollToBottom();
+    // Only auto-scroll if we have messages and we're not in the middle of loading more messages
+    // Also check if we're loading older messages (pagination) to prevent auto-scroll
+    if (selectedChat?.messages.length > 0 && !messagesLoading && !loadingMoreMessages && !loadingOlderMessagesRef.current) {
+      scrollToBottom();
+    }
     // Message read marking temporarily disabled
-  }, [selectedChat?.messages]);
+  }, [selectedChat?.messages, messagesLoading, loadingMoreMessages]);
+
+  // Set component as mounted after initial render
+  useEffect(() => {
+    componentMountedRef.current = true;
+  }, []);
+
+
 
   // Initialize WebSocket connection and status management
   useEffect(() => {
     if (user?.id) {
+      // Start proactive token refresh
+      startTokenRefreshInterval();
+      
+
+      
       initializeWebSocket();
       
       // Update user status to online immediately when connecting
@@ -683,6 +592,9 @@ export default function MessagesPage() {
 
       return () => {
         clearInterval(statusRefreshInterval);
+        
+        // Stop proactive token refresh
+        stopTokenRefreshInterval();
         
         // Update user status to offline when disconnecting
         updateUserStatus({ status: 'offline' }).catch(error => {
@@ -706,12 +618,7 @@ export default function MessagesPage() {
         if (!existingChat) {
           setChats(prevChats => [newChat, ...prevChats]);
           
-          // If no conversation is currently selected, auto-select this new one
-          if (!selectedChat) {
-            setSelectedChat(newChat);
-            setCurrentConversationId(newChat.id);
-            wsManager.joinConversation(newChat.id);
-          }
+          // Auto-selection removed - user must manually select a conversation
         }
       }
     };
@@ -937,12 +844,15 @@ export default function MessagesPage() {
 
   // Load more messages function
   const loadMoreMessages = async () => {
-    if (!selectedChat || !hasMoreMessages || messagesLoading) return;
+    if (!selectedChat || !hasMoreMessages || messagesLoading || loadingMoreMessages) {
+      return;
+    }
 
-    setMessagesLoading(true);
+    setLoadingMoreMessages(true);
+    loadingOlderMessagesRef.current = true;
     try {
       const nextPage = messagesPage + 1;
-      const result = await getMessages(selectedChat.id, nextPage, 50);
+      const result = await getMessages(selectedChat.id, nextPage, 20);
       
       if (result.messages.length > 0) {
         const convertedMessages = result.messages.map(msg => 
@@ -966,14 +876,27 @@ export default function MessagesPage() {
     } catch (error) {
       console.error('Error loading more messages:', error);
     } finally {
-      setMessagesLoading(false);
+      setLoadingMoreMessages(false);
+      // Set flag to prevent immediate scroll-triggered loading
+      justLoadedMessagesRef.current = true;
+      setTimeout(() => {
+        justLoadedMessagesRef.current = false;
+      }, 500); // Prevent scroll loading for 500ms after loading more messages
+      
+      // Reset the loading older messages flag after a short delay
+      setTimeout(() => {
+        loadingOlderMessagesRef.current = false;
+      }, 100); // Small delay to ensure state updates are complete
     }
   };
 
   // Handle scroll to load more messages
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop } = e.currentTarget;
-    if (scrollTop === 0 && hasMoreMessages && !messagesLoading) {
+    // Check if we're near the top (within 100px) to account for padding and other UI elements
+    // Also check if we just loaded messages to prevent immediate loading
+    // And ensure component is fully mounted
+    if (scrollTop <= 100 && hasMoreMessages && !messagesLoading && !loadingMoreMessages && !justLoadedMessagesRef.current && componentMountedRef.current) {
       loadMoreMessages();
     }
   };
@@ -995,7 +918,7 @@ export default function MessagesPage() {
     setSelectedChat(chat);
     setCurrentConversationId(chat.id);
     setMessagesPage(1);
-    setHasMoreMessages(true);
+    setHasMoreMessages(true); // Will be updated by loadMessagesForChat if needed
 
     // Join WebSocket room for this conversation
     wsManager.joinConversation(chat.id);
@@ -1030,7 +953,7 @@ export default function MessagesPage() {
     }
   };
 
-  // Helper function to load messages for a chat
+    // Helper function to load messages for a chat
   const loadMessagesForChat = async (chat: Chat) => {
     if (chat.messages.length > 0) {
       return; // Already loaded
@@ -1043,8 +966,9 @@ export default function MessagesPage() {
     
     setLoadingMessagesForChat(chat.id);
     setMessagesLoading(true);
+    loadingOlderMessagesRef.current = false; // Initial load should allow auto-scroll
     try {
-      const result = await getMessages(chat.id, 1, 50);
+      const result = await getMessages(chat.id, 1, 20);
       
       const convertedMessages = result.messages.map(msg => 
         convertAPIMessageToChatMessage(msg, user?.id || '')
@@ -1060,6 +984,13 @@ export default function MessagesPage() {
         prevChats.map(c => c.id === chat.id ? updatedChat : c)
       );
       setHasMoreMessages(result.hasMore);
+      setMessagesPage(1); // Reset to page 1 for this chat
+      
+      // Set flag to prevent immediate scroll-triggered loading
+      justLoadedMessagesRef.current = true;
+      setTimeout(() => {
+        justLoadedMessagesRef.current = false;
+      }, 1000); // Prevent scroll loading for 1 second after initial load
     } catch (error) {
       console.error('Error loading messages:', error);
     } finally {
@@ -1284,13 +1215,13 @@ export default function MessagesPage() {
               </div>
 
               {/* Messages */}
-              {messagesLoading && messagesPage === 1 ? (
+              {messagesLoading ? (
                 <div className="flex-1 flex items-center justify-center">
                   <ContentLoader message="Loading messages..." />
                 </div>
               ) : (
-                <ScrollArea 
-                  className="flex-1 p-4 min-h-0" 
+                <div 
+                  className="flex-1 p-4 min-h-0 overflow-y-auto" 
                   ref={messagesContainerRef}
                   onScroll={handleScroll}
                 >
@@ -1301,9 +1232,20 @@ export default function MessagesPage() {
                       </div>
                     ) : (
                       <>
-                        {messagesLoading && (
+                        {loadingMoreMessages && (
                           <div className="flex items-center justify-center py-4">
                             <ContentLoader message="Loading more messages..." />
+                          </div>
+                        )}
+                        {hasMoreMessages && !messagesLoading && !loadingMoreMessages && (
+                          <div className="flex items-center justify-center py-4">
+                            <Button 
+                              variant="outline" 
+                              onClick={loadMoreMessages}
+                              className="text-sm"
+                            >
+                              Load More Messages
+                            </Button>
                           </div>
                         )}
                         {selectedChat.messages.map((message) => (
@@ -1342,7 +1284,7 @@ export default function MessagesPage() {
                       </>
                     )}
                   </div>
-                </ScrollArea>
+                </div>
               )}
 
               {/* Message Input */}
