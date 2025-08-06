@@ -367,6 +367,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     const { data: newSubmission, error } = await supabase.from('quiz_submissions').insert({
         user_id: user.id,
         lesson_content_id: currentContentItem.id,
+        lesson_id: currentLesson.id,
         course_id: course.id,
         answers: userAnswers,
         results: results,

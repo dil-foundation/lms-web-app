@@ -317,7 +317,7 @@ const Dashboard = () => {
     <SidebarProvider>
       <div className="bg-background flex flex-col w-full h-screen">
         <DashboardHeader onToggle={resetToDashboard} />
-        <div className="flex flex-1 w-full overflow-hidden">
+        <div className="flex flex-1 w-full">
             <DashboardSidebar userRole={currentRole} userProfile={displayProfile}>
                 <DashboardContent />
             </DashboardSidebar>
