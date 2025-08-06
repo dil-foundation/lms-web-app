@@ -25,6 +25,7 @@ export interface CriticalThinkingTopicDetail extends CriticalThinkingTopic {
 
 export interface CriticalThinkingAudioResponse {
   audio_url: string;
+  audio_base64?: string;
   audio_duration?: number;
   transcript?: string;
   topic_id: string;
@@ -106,7 +107,7 @@ export interface CriticalThinkingEvaluationResponse {
 const API_ENDPOINTS = {
   CRITICAL_THINKING_TOPICS: '/api/critical-thinking-topics',
   CRITICAL_THINKING_TOPIC_DETAIL: (topicId: string) => `/api/critical-thinking-topics/${topicId}`,
-  CRITICAL_THINKING_TOPIC_AUDIO: (topicId: string) => `/api/critical-thinking-topics/${topicId}`,
+  CRITICAL_THINKING_TOPIC_AUDIO: (topicId: string) => `/api/critical-thinking/${topicId}`,
   EVALUATE_CRITICAL_THINKING: '/api/evaluate-critical-thinking',
 } as const;
 
@@ -335,9 +336,37 @@ const fetchCriticalThinkingTopicAudio = async (topicId: string): Promise<Critica
       }
     }
 
+    // Handle base64 audio data if present
+    let audioUrl = audioData.audio_url || audioData.url || '';
+    
+    if (!audioUrl && audioData.audio_base64) {
+      // Convert base64 to blob URL
+      try {
+        // Determine the MIME type - default to webm if not specified
+        const mimeType = audioData.audio_type || 'audio/webm';
+        
+        // Convert base64 to binary
+        const binaryString = atob(audioData.audio_base64);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        
+        // Create blob and URL
+        const audioBlob = new Blob([bytes], { type: mimeType });
+        audioUrl = URL.createObjectURL(audioBlob);
+        
+        console.log('✅ Converted base64 audio to blob URL:', audioUrl);
+      } catch (error) {
+        console.error('❌ Error converting base64 to blob URL:', error);
+        throw new Error('Failed to process base64 audio data');
+      }
+    }
+
     // Normalize audio response to our expected format
     const normalizedAudio: CriticalThinkingAudioResponse = {
-      audio_url: audioData.audio_url || audioData.url || '',
+      audio_url: audioUrl,
+      audio_base64: audioData.audio_base64,
       audio_duration: audioData.audio_duration || audioData.duration,
       transcript: audioData.transcript || audioData.text,
       topic_id: audioData.topic_id || topicId,
@@ -345,7 +374,7 @@ const fetchCriticalThinkingTopicAudio = async (topicId: string): Promise<Critica
     };
 
     if (!normalizedAudio.audio_url) {
-      throw new Error('No audio URL provided in response');
+      throw new Error('No audio URL or base64 data provided in response');
     }
 
     console.log('✅ Normalized critical thinking topic audio:', normalizedAudio);
@@ -400,38 +429,8 @@ const evaluateCriticalThinking = async (evaluationData: CriticalThinkingEvaluati
 
     console.log('📥 Raw critical thinking evaluation response:', result);
 
-    // Handle different possible response formats
-    let evaluation = result;
-    if (result && typeof result === 'object') {
-      if (result.data && typeof result.data === 'object') {
-        evaluation = result.data;
-      } else if (result.evaluation && typeof result.evaluation === 'object') {
-        evaluation = result.evaluation;
-      }
-    }
-
-    // Normalize evaluation response to our expected format
-    const normalizedEvaluation: CriticalThinkingEvaluationResponse = {
-      evaluation: {
-        critical_analysis_score: evaluation.evaluation?.critical_analysis_score || evaluation.critical_analysis_score || 0,
-        argumentation_score: evaluation.evaluation?.argumentation_score || evaluation.argumentation_score || 0,
-        clarity_score: evaluation.evaluation?.clarity_score || evaluation.clarity_score || 0,
-        depth_score: evaluation.evaluation?.depth_score || evaluation.depth_score || 0,
-        overall_score: evaluation.evaluation?.overall_score || evaluation.overall_score || 0,
-      },
-      feedback: {
-        strengths: evaluation.feedback?.strengths || evaluation.strengths || [],
-        areas_for_improvement: evaluation.feedback?.areas_for_improvement || evaluation.areas_for_improvement || [],
-        specific_suggestions: evaluation.feedback?.specific_suggestions || evaluation.specific_suggestions || [],
-        critical_analysis_feedback: evaluation.feedback?.critical_analysis_feedback || evaluation.critical_analysis_feedback || '',
-        argumentation_feedback: evaluation.feedback?.argumentation_feedback || evaluation.argumentation_feedback || '',
-      },
-      next_steps: evaluation.next_steps,
-      message: evaluation.message,
-    };
-
-    console.log('✅ Normalized critical thinking evaluation:', normalizedEvaluation);
-    return normalizedEvaluation;
+    console.log('✅ Returning critical thinking evaluation:', result);
+    return result as CriticalThinkingEvaluationResponse;
 
   } catch (error) {
     console.error('❌ Error evaluating critical thinking:', error);

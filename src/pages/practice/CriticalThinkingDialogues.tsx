@@ -47,20 +47,17 @@ export default function CriticalThinkingDialogues() {
   
   // Audio hooks
   const { 
-    isPlaying, 
-    currentTime, 
-    duration, 
-    play, 
-    pause, 
-    stop: stopAudio 
+    state: audioState, 
+    playAudio, 
+    pauseAudio, 
+    stopAudio 
   } = useAudioPlayer();
   
   const { 
     isRecording, 
     startRecording, 
     stopRecording, 
-    audioBlob, 
-    isProcessing 
+    audioBlob
   } = useAudioRecorder();
 
   // Load topics on component mount
@@ -131,32 +128,41 @@ export default function CriticalThinkingDialogues() {
     }
   };
 
-  const loadTopicAudio = async (topicId: string) => {
+
+
+  const handlePlayAudio = async () => {
+    if (!currentTopic) return;
+
+    // If audio is currently playing, pause it
+    if (audioState.isPlaying) {
+      pauseAudio();
+      return;
+    }
+
+    // If we already have audio URL, play it
+    if (audioUrl) {
+      await playAudio(audioUrl);
+      return;
+    }
+
+    // Otherwise, fetch and play audio
     setIsLoadingAudio(true);
     try {
-      const audioResponse = await fetchCriticalThinkingTopicAudio(topicId);
+      const audioResponse = await fetchCriticalThinkingTopicAudio(currentTopic.topic_id);
       if (audioResponse.audio_url) {
         setAudioUrl(audioResponse.audio_url);
-        console.log('✅ Audio URL loaded:', audioResponse.audio_url);
+        await playAudio(audioResponse.audio_url);
+        console.log('✅ Audio fetched and playing:', audioResponse.audio_url);
       }
     } catch (error) {
-      console.error('Error loading topic audio:', error);
+      console.error('Error loading and playing audio:', error);
       toast({
-        title: "Audio Loading Error",
-        description: "Failed to load topic audio. You can still continue with the discussion.",
+        title: "Audio Error",
+        description: "Failed to load and play audio. Please try again.",
         variant: "destructive",
       });
     } finally {
       setIsLoadingAudio(false);
-    }
-  };
-
-  const handlePlayAudio = () => {
-    if (audioUrl) {
-      play(audioUrl);
-    } else if (currentTopic) {
-      // Load audio if not already loaded
-      loadTopicAudio(currentTopic.topic_id);
     }
   };
 
@@ -198,62 +204,58 @@ export default function CriticalThinkingDialogues() {
         recordingDuration: recordingStartTime ? Date.now() - recordingStartTime.getTime() : 0
       });
 
-      // Convert audio blob to base64
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64Audio = reader.result as string;
-        
-        // Check if we have valid base64 data
-        if (!base64Audio || !base64Audio.includes(',')) {
-          throw new Error('Invalid audio data format');
-        }
-        
-        const audioData = base64Audio.split(',')[1]; // Remove data URL prefix
-        
-        console.log('📤 Sending audio data:', {
-          base64Length: audioData.length,
-          mimeType: base64Audio.split(',')[0],
-          audioDataPreview: audioData.substring(0, 100) + '...'
-        });
-
-        // Calculate time spent on this recording
-        const recordingEndTime = new Date();
-        const timeSpentSeconds = Math.floor((recordingEndTime.getTime() - recordingStartTime.getTime()) / 1000);
-
-        // Generate filename based on timestamp and topic - use proper audio extension
-        const audioFormat = audioBlob.type.includes('webm') ? 'webm' : 
-                           audioBlob.type.includes('mp4') ? 'mp4' : 
-                           audioBlob.type.includes('wav') ? 'wav' : 'webm';
-        const filename = `critical_thinking_${currentTopic.topic_id}_${Date.now()}.${audioFormat}`;
-
-        console.log('📊 Evaluation request payload:', {
-          topic_id: parseInt(currentTopic.topic_id) || 0,
-          filename: filename,
-          user_id: user.id,
-          time_spent_seconds: timeSpentSeconds,
-          urdu_used: false,
-          audio_size: audioData.length
-        });
-
-        // Evaluate the response using the correct API format
-        const evaluationResponse = await evaluateCriticalThinking({
-          audio_base64: audioData,
-          topic_id: parseInt(currentTopic.topic_id) || 0,
-          filename: filename,
-          user_id: user.id,
-          time_spent_seconds: timeSpentSeconds,
-          urdu_used: false, // You might want to detect this or make it configurable
-        });
-
-        setEvaluation(evaluationResponse);
-        setShowFeedback(true);
-      };
+      // Convert audio blob to base64 using Promise-based approach
+      const base64Audio = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error('Failed to read audio file'));
+        reader.readAsDataURL(audioBlob);
+      });
       
-      reader.onerror = () => {
-        throw new Error('Failed to read audio file');
-      };
+      // Check if we have valid base64 data
+      if (!base64Audio || !base64Audio.includes(',')) {
+        throw new Error('Invalid audio data format');
+      }
       
-      reader.readAsDataURL(audioBlob);
+      const audioData = base64Audio.split(',')[1]; // Remove data URL prefix
+      
+      console.log('📤 Sending audio data:', {
+        base64Length: audioData.length,
+        mimeType: base64Audio.split(',')[0],
+        audioDataPreview: audioData.substring(0, 100) + '...'
+      });
+
+      // Calculate time spent on this recording
+      const recordingEndTime = new Date();
+      const timeSpentSeconds = Math.floor((recordingEndTime.getTime() - recordingStartTime.getTime()) / 1000);
+
+      // Generate filename based on timestamp and topic - use proper audio extension
+      const audioFormat = audioBlob.type.includes('webm') ? 'webm' : 
+                         audioBlob.type.includes('mp4') ? 'mp4' : 
+                         audioBlob.type.includes('wav') ? 'wav' : 'webm';
+      const filename = `critical_thinking_${currentTopic.topic_id}_${Date.now()}.${audioFormat}`;
+
+      console.log('📊 Evaluation request payload:', {
+        topic_id: parseInt(currentTopic.topic_id) || 0,
+        filename: filename,
+        user_id: user.id,
+        time_spent_seconds: timeSpentSeconds,
+        urdu_used: false,
+        audio_size: audioData.length
+      });
+
+      // Evaluate the response using the correct API format
+      const evaluationResponse = await evaluateCriticalThinking({
+        audio_base64: audioData,
+        topic_id: parseInt(currentTopic.topic_id) || 0,
+        filename: filename,
+        user_id: user.id,
+        time_spent_seconds: timeSpentSeconds,
+        urdu_used: false, // You might want to detect this or make it configurable
+      });
+
+      setEvaluation(evaluationResponse);
+      setShowFeedback(true);
     } catch (error) {
       console.error('Error evaluating response:', error);
       toast({
@@ -383,11 +385,6 @@ export default function CriticalThinkingDialogues() {
                           {topic.topic_description}
                         </p>
                         <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                          <span className="px-2 py-1 bg-muted rounded">
-                            {topic.difficulty_level}
-                          </span>
-                          <span>{topic.estimated_duration} min</span>
-                          <span>•</span>
                           <span>{topic.category}</span>
                         </div>
                       </div>
@@ -443,47 +440,25 @@ export default function CriticalThinkingDialogues() {
                 )}
                 
                 <div className="flex items-center justify-center space-x-4 text-xs text-muted-foreground mb-3">
-                  <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 rounded">
-                    {currentTopic.difficulty_level}
-                  </span>
-                  <span>{currentTopic.estimated_duration} min</span>
-                  <span>•</span>
                   <span>{currentTopic.category}</span>
                 </div>
                 
                 {/* Audio Play Button */}
                 <div className="flex justify-center">
-                  {isLoadingAudio ? (
-                    <Button
-                      disabled
-                      variant="outline"
-                      size="sm"
-                      className="text-blue-600 dark:text-blue-400"
-                    >
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Loading Audio...
-                    </Button>
-                  ) : isPlaying ? (
-                    <Button
-                      onClick={pause}
-                      variant="outline"
-                      size="sm"
-                      className="text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                    >
-                      <Pause className="h-4 w-4 mr-2" />
-                      Pause Audio
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={handlePlayAudio}
-                      variant="outline"
-                      size="sm"
-                      className="text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                    >
-                      <Play className="h-4 w-4 mr-2" />
-                      {audioUrl ? 'Play Audio' : 'Load & Play Audio'}
-                    </Button>
-                  )}
+                  <button
+                    onClick={handlePlayAudio}
+                    disabled={isLoadingAudio}
+                    className="w-12 h-12 bg-green-500 hover:bg-green-600 disabled:bg-green-300 rounded-full flex items-center justify-center shadow-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2"
+                    title={isLoadingAudio ? "Loading audio..." : audioState.isPlaying ? "Pause audio" : "Play audio"}
+                  >
+                    {isLoadingAudio ? (
+                      <Loader2 className="h-5 w-5 text-white animate-spin" />
+                    ) : audioState.isPlaying ? (
+                      <Pause className="h-5 w-5 text-white ml-0" />
+                    ) : (
+                      <Play className="h-5 w-5 text-white ml-0.5" />
+                    )}
+                  </button>
                 </div>
               </div>
             </CardContent>
@@ -540,8 +515,8 @@ export default function CriticalThinkingDialogues() {
           <div className="mb-6">
             <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
               <CardContent className="p-6">
-                <div className="flex items-center justify-center space-x-3">
-                  <Loader2 className="h-6 w-6 animate-spin text-blue-600 dark:text-blue-400" />
+                <div className="flex flex-col items-center justify-center space-y-3">
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-600 dark:text-blue-400" />
                   <div className="text-center">
                     <h3 className="text-lg font-semibold text-blue-600 dark:text-blue-400 mb-1">
                       Evaluating Your Response
@@ -561,105 +536,55 @@ export default function CriticalThinkingDialogues() {
           <div className="mb-6">
             <h3 className="text-lg font-semibold mb-4">Your Performance</h3>
             
-            {/* Score Overview */}
-            <Card className="mb-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20">
-              <CardContent className="p-4">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-center mb-4">
-                  <div>
-                    <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+            <div className="space-y-4">
+              {/* Overall Score */}
+              <Card className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20">
+                <CardContent className="p-4">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-orange-600 dark:text-orange-400 mb-2">
                       {evaluation?.evaluation?.evaluation?.overall_score || 0}%
                     </div>
-                    <div className="text-xs text-muted-foreground">Overall Score</div>
+                    <div className="text-sm text-muted-foreground">Overall Score</div>
                   </div>
-                  <div>
-                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                      {evaluation?.evaluation?.evaluation?.critical_thinking_score || 0}%
-                    </div>
-                    <div className="text-xs text-muted-foreground">Critical Thinking</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                      {evaluation?.evaluation?.evaluation?.argument_structure_score || 0}%
-                    </div>
-                    <div className="text-xs text-muted-foreground">Argument Structure</div>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-center">
-                  <div>
-                    <div className="text-lg font-bold text-purple-600 dark:text-purple-400">
-                      {evaluation?.evaluation?.evaluation?.vocabulary_range_score || 0}%
-                    </div>
-                    <div className="text-xs text-muted-foreground">Vocabulary Range</div>
-                  </div>
-                  <div>
-                    <div className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
-                      {evaluation?.evaluation?.evaluation?.fluency_grammar_score || 0}%
-                    </div>
-                    <div className="text-xs text-muted-foreground">Fluency & Grammar</div>
-                  </div>
-                  <div>
-                    <div className="text-lg font-bold text-teal-600 dark:text-teal-400">
-                      {evaluation?.evaluation?.evaluation?.discourse_markers_score || 0}%
-                    </div>
-                    <div className="text-xs text-muted-foreground">Discourse Markers</div>
-                  </div>
-                </div>
-                
-                {/* Keywords Performance */}
-                <div className="mt-4 pt-4 border-t border-muted">
-                  <div className="text-center">
-                    <div className="text-sm font-medium text-muted-foreground mb-2">Keyword Usage</div>
-                    <div className="text-lg font-bold text-cyan-600 dark:text-cyan-400">
-                      {evaluation?.evaluation?.evaluation?.matched_keywords_count || 0} / {evaluation?.evaluation?.evaluation?.total_keywords || 0}
-                    </div>
-                    <div className="text-xs text-muted-foreground">Keywords Used</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            <div className="space-y-4">
-              {/* User Response */}
-              {evaluation?.user_text && (
-                <Card className="bg-slate-50 dark:bg-slate-900/20 border-slate-200 dark:border-slate-800">
-                  <CardContent className="p-4">
-                    <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 bg-slate-100 dark:bg-slate-900/30 rounded-lg flex items-center justify-center mt-1">
-                        <User className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-medium text-slate-600 dark:text-slate-400 mb-1">Your Response</h4>
-                        <p className="text-slate-700 dark:text-slate-300 text-sm italic">
-                          "{evaluation?.user_text}"
-                        </p>
-                      </div>
+              {/* Keywords Used */}
+              <Card className="bg-cyan-50 dark:bg-cyan-900/20 border-cyan-200 dark:border-cyan-800">
+                <CardContent className="p-4">
+                  <div className="flex items-start space-x-3">
+                    <div className="w-8 h-8 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg flex items-center justify-center mt-1">
+                      <Bot className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
                     </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Encouragement */}
-              {evaluation?.evaluation?.evaluation?.encouragement && (
-                <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-                  <CardContent className="p-4">
-                    <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mt-1">
-                        <Bot className="h-4 w-4 text-green-600 dark:text-green-400" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-medium text-green-600 dark:text-green-400 mb-1">Encouragement</h4>
-                        <p className="text-green-700 dark:text-green-300 text-sm">
-                          {evaluation?.evaluation?.evaluation?.encouragement}
-                        </p>
-                      </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-cyan-600 dark:text-cyan-400 mb-2">
+                        Keywords Used ({evaluation?.evaluation?.evaluation?.matched_keywords_count || 0} / {evaluation?.evaluation?.evaluation?.total_keywords || 0})
+                      </h4>
+                      {evaluation?.evaluation?.evaluation?.keyword_matches && 
+                       Array.isArray(evaluation.evaluation.evaluation.keyword_matches) && 
+                       evaluation.evaluation.evaluation.keyword_matches.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {evaluation.evaluation.evaluation.keyword_matches.map((keyword, index) => (
+                            <span 
+                              key={index}
+                              className="px-2 py-1 bg-cyan-200 dark:bg-cyan-800 text-cyan-800 dark:text-cyan-200 text-xs rounded-full"
+                            >
+                              {keyword}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-cyan-700 dark:text-cyan-300 text-sm">No keywords used</p>
+                      )}
                     </div>
-                  </CardContent>
-                </Card>
-              )}
+                  </div>
+                </CardContent>
+              </Card>
 
               {/* Suggested Improvements */}
-              {evaluation?.evaluation?.evaluation?.suggested_improvements && evaluation.evaluation.evaluation.suggested_improvements.length > 0 && (
+              {evaluation?.evaluation?.evaluation?.suggested_improvements && 
+               Array.isArray(evaluation.evaluation.evaluation.suggested_improvements) && 
+               evaluation.evaluation.evaluation.suggested_improvements.length > 0 && (
                 <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
                   <CardContent className="p-4">
                     <div className="flex items-start space-x-3">
@@ -675,70 +600,6 @@ export default function CriticalThinkingDialogues() {
                             </li>
                           ))}
                         </ul>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Next Steps */}
-              {evaluation?.evaluation?.evaluation?.next_steps && (
-                <Card className="bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800">
-                  <CardContent className="p-4">
-                    <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mt-1">
-                        <Bot className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-medium text-purple-600 dark:text-purple-400 mb-1">Next Steps</h4>
-                        <p className="text-purple-700 dark:text-purple-300 text-sm">
-                          {evaluation?.evaluation?.evaluation?.next_steps}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Detailed Feedback Sections */}
-              {evaluation?.evaluation?.evaluation?.detailed_feedback?.critical_thinking_feedback && (
-                <Card className="bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800">
-                  <CardContent className="p-4">
-                    <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center mt-1">
-                        <Bot className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-medium text-orange-600 dark:text-orange-400 mb-1">Critical Thinking Analysis</h4>
-                        <p className="text-orange-700 dark:text-orange-300 text-sm">
-                          {evaluation?.evaluation?.evaluation?.detailed_feedback?.critical_thinking_feedback}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Keywords Used */}
-              {evaluation?.evaluation?.evaluation?.keyword_matches && evaluation.evaluation.evaluation.keyword_matches.length > 0 && (
-                <Card className="bg-cyan-50 dark:bg-cyan-900/20 border-cyan-200 dark:border-cyan-800">
-                  <CardContent className="p-4">
-                    <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg flex items-center justify-center mt-1">
-                        <Bot className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-medium text-cyan-600 dark:text-cyan-400 mb-2">Keywords You Used</h4>
-                        <div className="flex flex-wrap gap-1">
-                          {evaluation.evaluation.evaluation.keyword_matches.map((keyword, index) => (
-                            <span 
-                              key={index}
-                              className="px-2 py-1 bg-cyan-200 dark:bg-cyan-800 text-cyan-800 dark:text-cyan-200 text-xs rounded-full"
-                            >
-                              {keyword}
-                            </span>
-                          ))}
-                        </div>
                       </div>
                     </div>
                   </CardContent>
@@ -761,7 +622,7 @@ export default function CriticalThinkingDialogues() {
                 <Mic className="h-5 w-5 mr-2" />
                 Speak Now
               </Button>
-            ) : !isRecording && !isProcessing && !isEvaluating ? (
+            ) : !isRecording && !isEvaluating ? (
               <Button
                 onClick={handleStartRecording}
                 className="bg-green-500 hover:bg-green-600 text-white px-8 py-3 rounded-full text-lg font-medium"
@@ -779,15 +640,6 @@ export default function CriticalThinkingDialogues() {
               >
                 <Mic className="h-5 w-5 mr-2" />
                 Stop Recording
-              </Button>
-            ) : isProcessing ? (
-              <Button
-                disabled
-                className="bg-gray-500 text-white px-8 py-3 rounded-full text-lg font-medium"
-                size="lg"
-              >
-                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                Processing...
               </Button>
             ) : null}
           </div>
