@@ -83,6 +83,16 @@ export const API_ENDPOINTS = {
   NEWS_SUMMARY_ITEM_DETAIL: (newsId: string) => `/api/news-summary-items/${newsId}`,
   NEWS_SUMMARY_AUDIO: (newsId: string) => `/api/news-summary/${newsId}`,
   EVALUATE_NEWS_SUMMARY: '/api/evaluate-news-summary',
+  // Critical Thinking endpoints (Stage 5)
+  CRITICAL_THINKING_TOPICS: '/api/critical-thinking-topics',
+  CRITICAL_THINKING_TOPIC_DETAIL: (topicId: string) => `/api/critical-thinking-topics/${topicId}`,
+  CRITICAL_THINKING_TOPIC_AUDIO: (topicId: string) => `/api/critical-thinking-topics/${topicId}`,
+  EVALUATE_CRITICAL_THINKING: '/api/evaluate-critical-thinking',
+  // Academic Presentation endpoints (Stage 5)
+  ACADEMIC_PRESENTATION_TOPICS: '/api/academic-presentation-topics',
+  ACADEMIC_PRESENTATION_TOPIC_DETAIL: (topicId: string) => `/api/academic-presentation-topics/${topicId}`,
+  ACADEMIC_PRESENTATION_AUDIO: (topicId: string) => `/api/academic-presentation/${topicId}`,
+  EVALUATE_ACADEMIC_PRESENTATION: '/api/evaluate-academic-presentation',
 } as const;
 
 // Health check function
