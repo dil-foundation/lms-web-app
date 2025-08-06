@@ -6,6 +6,16 @@ export interface AcademicPresentationTopic {
   topic_urdu?: string;
   difficulty_level?: string;
   category?: string;
+  expected_keywords?: string[];
+}
+
+export interface AcademicPresentationAudioResponse {
+  audio_url?: string;
+  audio_base64?: string;
+  audio_duration?: number;
+  transcript?: string;
+  topic_id: number;
+  message?: string;
 }
 
 export interface AcademicPresentationEvaluation {
@@ -143,20 +153,50 @@ class AcademicPresentationService {
   }
 
   // Get audio for a specific topic
-  async getTopicAudio(topicId: number): Promise<Blob> {
+  async getTopicAudio(topicId: number): Promise<AcademicPresentationAudioResponse> {
     try {
-      const response = await fetch(`${this.baseUrl}${API_ENDPOINTS.ACADEMIC_PRESENTATION_AUDIO(topicId.toString())}`, {
+      const response = await fetch(`${this.baseUrl}/api/academic-presentation/${topicId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ topic_id: topicId }),
       });
 
       if (!response.ok) {
         throw new Error(`Failed to get audio: ${response.statusText}`);
       }
 
-      return await response.blob();
+      const data = await response.json();
+      
+      // Handle base64 audio data if present
+      let audioUrl = data.audio_url || '';
+      
+      if (!audioUrl && data.audio_base64) {
+        // Convert base64 to blob URL
+        try {
+          const mimeType = data.audio_type || 'audio/webm';
+          const binaryString = atob(data.audio_base64);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          const audioBlob = new Blob([bytes], { type: mimeType });
+          audioUrl = URL.createObjectURL(audioBlob);
+        } catch (error) {
+          console.error('Error converting base64 to blob URL:', error);
+          throw new Error('Failed to process base64 audio data');
+        }
+      }
+
+      return {
+        audio_url: audioUrl,
+        audio_base64: data.audio_base64,
+        audio_duration: data.audio_duration,
+        transcript: data.transcript,
+        topic_id: topicId,
+        message: data.message,
+      };
     } catch (error) {
       console.error(`Error getting audio for topic ${topicId}:`, error);
       throw error;

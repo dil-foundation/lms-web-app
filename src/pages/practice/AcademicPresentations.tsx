@@ -1,22 +1,20 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Mic, GraduationCap, CheckCircle, Loader2, Volume2 } from 'lucide-react';
+import { ArrowLeft, Mic, GraduationCap, Loader2, Play, Pause } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
+import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { toast } from 'sonner';
 import { 
   academicPresentationService, 
   AcademicPresentationTopic,
+  AcademicPresentationAudioResponse,
   EvaluationResponse 
 } from '@/services/academicPresentationService';
 
-interface SpeechStructureItem {
-  id: string;
-  title: string;
-  completed: boolean;
-}
+
 
 export default function AcademicPresentations() {
   const navigate = useNavigate();
@@ -32,14 +30,19 @@ export default function AcademicPresentations() {
   const [evaluation, setEvaluation] = useState<EvaluationResponse | null>(null);
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   
-  const [speechStructure] = useState<SpeechStructureItem[]>([
-    { id: 'introduction', title: 'Introduction', completed: false },
-    { id: 'key-points', title: 'Key Points & Evidence', completed: false },
-    { id: 'conclusion', title: 'Conclusion & Q&A', completed: false }
-  ]);
 
-  // Audio recording hook
+
+  // Audio hooks
+  const { 
+    state: audioState, 
+    playAudio, 
+    pauseAudio, 
+    stopAudio 
+  } = useAudioPlayer();
+  
   const {
     isRecording,
     startRecording,
@@ -141,11 +144,45 @@ export default function AcademicPresentations() {
     }
   };
 
+  const handlePlayAudio = async () => {
+    if (!selectedTopic) return;
+
+    // If audio is currently playing, pause it
+    if (audioState.isPlaying) {
+      pauseAudio();
+      return;
+    }
+
+    // If we already have audio URL, play it
+    if (audioUrl) {
+      await playAudio(audioUrl);
+      return;
+    }
+
+    // Otherwise, fetch and play audio
+    setIsLoadingAudio(true);
+    try {
+      const audioResponse = await academicPresentationService.getTopicAudio(selectedTopic.id);
+      if (audioResponse.audio_url) {
+        setAudioUrl(audioResponse.audio_url);
+        await playAudio(audioResponse.audio_url);
+        console.log('✅ Audio fetched and playing:', audioResponse.audio_url);
+      }
+    } catch (error) {
+      console.error('Error loading and playing audio:', error);
+      toast.error('Failed to load and play audio. Please try again.');
+    } finally {
+      setIsLoadingAudio(false);
+    }
+  };
+
   const resetPresentation = () => {
     setHasStarted(false);
     setEvaluation(null);
     setStartTime(null);
     setSelectedTopic(null); // Allow user to choose a different topic
+    setAudioUrl(null);
+    stopAudio();
   };
 
   if (loading) {
@@ -167,7 +204,20 @@ export default function AcademicPresentations() {
           <Button
             variant="outline"
             size="icon"
-            onClick={() => navigate('/dashboard/practice/stage-5')}
+            onClick={() => {
+              if (selectedTopic) {
+                // If viewing a topic, go back to topic selection
+                setSelectedTopic(null);
+                setHasStarted(false);
+                setEvaluation(null);
+                setStartTime(null);
+                setAudioUrl(null);
+                stopAudio();
+              } else {
+                // If on topic selection, go back to Stage 5
+                navigate('/dashboard/practice/stage-5');
+              }
+            }}
             className="shrink-0"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -211,11 +261,6 @@ export default function AcademicPresentations() {
                             <h4 className="text-lg font-semibold text-green-800 dark:text-green-200 mb-2">
                               {topic.topic}
                             </h4>
-                            {topic.topic_urdu && (
-                              <p className="text-green-700 dark:text-green-300 text-sm">
-                                {topic.topic_urdu}
-                              </p>
-                            )}
                             {topic.difficulty_level && (
                               <div className="mt-2">
                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200">
@@ -254,11 +299,42 @@ export default function AcademicPresentations() {
                   <h3 className="text-xl font-semibold text-green-800 dark:text-green-200 mb-2">
                     {selectedTopic.topic}
                   </h3>
-                  {selectedTopic.topic_urdu && (
-                    <p className="text-green-700 dark:text-green-300 text-sm mt-2">
-                      {selectedTopic.topic_urdu}
-                    </p>
+                  
+                  {/* Expected Keywords */}
+                  {selectedTopic.expected_keywords && selectedTopic.expected_keywords.length > 0 && (
+                    <div className="mt-4 mb-4">
+                      <h4 className="text-sm font-medium text-green-700 dark:text-green-300 mb-2">Expected Keywords:</h4>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {selectedTopic.expected_keywords.map((keyword, index) => (
+                          <span 
+                            key={index}
+                            className="px-2 py-1 bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200 text-xs rounded-full"
+                          >
+                            {keyword}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   )}
+                  
+                  {/* Audio Play Button */}
+                  <div className="mt-4 mb-4 flex justify-center">
+                    <button
+                      onClick={handlePlayAudio}
+                      disabled={isLoadingAudio}
+                      className="w-12 h-12 bg-green-500 hover:bg-green-600 disabled:bg-green-300 rounded-full flex items-center justify-center shadow-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2"
+                      title={isLoadingAudio ? "Loading audio..." : audioState.isPlaying ? "Pause audio" : "Play audio"}
+                    >
+                      {isLoadingAudio ? (
+                        <Loader2 className="h-5 w-5 text-white animate-spin" />
+                      ) : audioState.isPlaying ? (
+                        <Pause className="h-5 w-5 text-white ml-0" />
+                      ) : (
+                        <Play className="h-5 w-5 text-white ml-0.5" />
+                      )}
+                    </button>
+                  </div>
+                  
                   <div className="mt-4">
                     <Button
                       variant="outline"
@@ -274,38 +350,7 @@ export default function AcademicPresentations() {
             </Card>
           )}
 
-          {/* Speech Structure - Only show when topic is selected */}
-          {selectedTopic && (
-            <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-              <CardContent className="p-6">
-                <h3 className="text-lg font-semibold text-green-800 dark:text-green-200 mb-4">
-                  Speech Structure
-                </h3>
-                <div className="space-y-3">
-                  {speechStructure.map((item) => (
-                    <div key={item.id} className="flex items-center space-x-3">
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                        item.completed 
-                          ? 'bg-green-500' 
-                          : 'bg-muted border-2 border-muted-foreground/20'
-                      }`}>
-                        {item.completed && (
-                          <CheckCircle className="h-4 w-4 text-white" />
-                        )}
-                      </div>
-                      <span className={`text-sm ${
-                        item.completed 
-                          ? 'text-green-700 dark:text-green-300' 
-                          : 'text-muted-foreground'
-                      }`}>
-                        {item.title}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+
 
           {/* Presentation Guidelines - Only show when topic is selected and not started */}
           {selectedTopic && !hasStarted && (
@@ -381,39 +426,7 @@ export default function AcademicPresentations() {
                 </CardContent>
               </Card>
 
-              {/* Minimal Score Breakdown */}
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4">
-                <Card className="bg-muted/50">
-                  <CardContent className="p-3 text-center">
-                    <div className="text-lg font-bold">{evaluation.evaluation.evaluation.argument_structure_score}</div>
-                    <div className="text-xs text-muted-foreground">Structure</div>
-                  </CardContent>
-                </Card>
-                <Card className="bg-muted/50">
-                  <CardContent className="p-3 text-center">
-                    <div className="text-lg font-bold">{evaluation.evaluation.evaluation.evidence_usage_score}</div>
-                    <div className="text-xs text-muted-foreground">Evidence</div>
-                  </CardContent>
-                </Card>
-                <Card className="bg-muted/50">
-                  <CardContent className="p-3 text-center">
-                    <div className="text-lg font-bold">{evaluation.evaluation.evaluation.academic_tone_score}</div>
-                    <div className="text-xs text-muted-foreground">Tone</div>
-                  </CardContent>
-                </Card>
-                <Card className="bg-muted/50">
-                  <CardContent className="p-3 text-center">
-                    <div className="text-lg font-bold">{evaluation.evaluation.evaluation.fluency_pacing_score}</div>
-                    <div className="text-xs text-muted-foreground">Fluency</div>
-                  </CardContent>
-                </Card>
-                <Card className="bg-muted/50">
-                  <CardContent className="p-3 text-center">
-                    <div className="text-lg font-bold">{evaluation.evaluation.evaluation.vocabulary_range_score}</div>
-                    <div className="text-xs text-muted-foreground">Vocabulary</div>
-                  </CardContent>
-                </Card>
-              </div>
+
 
               {/* Next Steps */}
               {evaluation.evaluation.evaluation.next_steps && (
@@ -441,30 +454,30 @@ export default function AcademicPresentations() {
             </div>
           )}
 
-          {/* Action Button */}
-          <div className="text-center">
-            {!hasStarted && !evaluation ? (
-              <Button
-                onClick={handleStartPresenting}
-                disabled={!selectedTopic || loading}
-                className="bg-green-500 hover:bg-green-600 text-white px-8 py-3 rounded-full text-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                size="lg"
-              >
-                <Mic className="h-5 w-5 mr-2" />
-                Start Presenting
-              </Button>
-            ) : isRecording ? (
-              <Button
-                onClick={handleStopPresenting}
-                className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-full text-lg font-medium"
-                size="lg"
-              >
-                <Mic className="h-5 w-5 mr-2" />
-                Stop Presenting
-              </Button>
-            ) : evaluation ? (
-              <div className="space-y-3">
-                <div className="flex justify-center space-x-4">
+          {/* Action Button - Only show when topic is selected */}
+          {selectedTopic && (
+            <div className="text-center">
+              {!hasStarted && !evaluation ? (
+                <Button
+                  onClick={handleStartPresenting}
+                  disabled={loading}
+                  className="bg-green-500 hover:bg-green-600 text-white px-8 py-3 rounded-full text-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  size="lg"
+                >
+                  <Mic className="h-5 w-5 mr-2" />
+                  Start Presenting
+                </Button>
+              ) : isRecording ? (
+                <Button
+                  onClick={handleStopPresenting}
+                  className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-full text-lg font-medium"
+                  size="lg"
+                >
+                  <Mic className="h-5 w-5 mr-2" />
+                  Stop Presenting
+                </Button>
+              ) : evaluation ? (
+                <div className="text-center">
                   <Button
                     onClick={resetPresentation}
                     variant="outline"
@@ -472,16 +485,10 @@ export default function AcademicPresentations() {
                   >
                     Try Again
                   </Button>
-                  <Button
-                    onClick={() => navigate('/dashboard/practice/stage-5')}
-                    className="bg-green-500 hover:bg-green-600 text-white px-6 py-2"
-                  >
-                    Back to Stage 5
-                  </Button>
                 </div>
-              </div>
-            ) : null}
-          </div>
+              ) : null}
+            </div>
+          )}
         </div>
       </div>
     </div>
