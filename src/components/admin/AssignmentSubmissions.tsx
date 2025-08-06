@@ -1,46 +1,20 @@
 import { useState, useEffect, useCallback } from 'react';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  ArrowLeft,
-  CheckCircle2,
-  Clock,
-  FileText,
-  Search,
-  Users,
-  ChevronRight,
-  Download,
-  Eye,
-} from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Clock, FileText, Search, Users, ChevronRight, Download, Eye } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { ContentLoader } from '@/components/ContentLoader';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
+// Types
 type SubmissionStatus = 'graded' | 'submitted' | 'not submitted';
 
 interface Student {
@@ -57,7 +31,6 @@ interface Submission {
   feedback?: string | null;
   submitted_at?: string;
   content?: string;
-  // For quizzes
   answers?: any;
   results?: any;
 }
@@ -66,8 +39,8 @@ interface AssignmentDetails {
   title: string;
   course: string;
   type: 'quiz' | 'assignment';
-  status: string;
-  content?: any; // To store quiz questions
+  course_id: string;
+  lesson_id: string;
 }
 
 type StatCardData = {
@@ -76,15 +49,15 @@ type StatCardData = {
   icon: React.ElementType;
 };
 
+// Main Component
 export const AssignmentSubmissions = () => {
-  const { id: assignmentId } = useParams();
+  const { user } = useAuth();
+  const { id: assignmentId } = useParams<{ id: string }>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
   const [assignmentDetails, setAssignmentDetails] = useState<AssignmentDetails | null>(null);
-  const [submissions, setSubmissions] = useState<Submission[]>([]);
-  const [studentsNotSubmitted, setStudentsNotSubmitted] = useState<Student[]>([]);
-  const [statCards, setStatCards] = useState<StatCardData[]>([]);
+  const [allSubmissions, setAllSubmissions] = useState<Submission[]>([]);
 
   const [isGradingOpen, setIsGradingOpen] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
@@ -94,121 +67,43 @@ export const AssignmentSubmissions = () => {
   const [signedFileUrl, setSignedFileUrl] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
-  const filteredSubmissions = submissions.filter(s => 
-    s.student.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const filteredNotSubmitted = studentsNotSubmitted.filter(s => 
-    s.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  
+  // Data Fetching
   const fetchSubmissionData = useCallback(async () => {
     if (!assignmentId) return;
     setLoading(true);
     setError(null);
 
     try {
-      const { data: lesson, error: lessonError } = await supabase
-        .from('course_lessons')
-        .select('title, type, content, section_id')
-        .eq('id', assignmentId)
+      const { data, error: rpcError } = await supabase
+        .rpc('get_assessment_submissions', { assessment_id: assignmentId })
         .single();
 
-      if (lessonError) throw lessonError;
-      if (!lesson) throw new Error("Assignment or Quiz not found.");
+      if (rpcError) throw rpcError;
+      if (!data) throw new Error("Assessment not found.");
 
-      const { data: section, error: sectionError } = await supabase
-        .from('course_sections')
-        .select('course_id, courses(title)')
-        .eq('id', lesson.section_id)
-        .single();
-
-      if (sectionError) throw sectionError;
-      if (!section) throw new Error("Course section not found.");
+      setAssignmentDetails({
+        title: data.title,
+        course: data.course_title,
+        type: data.content_type as 'quiz' | 'assignment',
+        course_id: data.course_id,
+        lesson_id: data.lesson_id
+      });
       
-      const courseId = section.course_id;
-
-      const details: AssignmentDetails = {
-        title: lesson.title,
-        type: lesson.type as 'quiz' | 'assignment',
-        course: section.courses?.title || 'Unknown Course',
-        status: 'active',
-        content: lesson.type === 'quiz' && typeof lesson.content === 'string' 
-          ? JSON.parse(lesson.content) 
-          : null,
-      };
-      setAssignmentDetails(details);
-
-      const { data: courseMembers, error: membersError } = await supabase
-        .from('course_members')
-        .select('profiles(id, first_name, last_name)')
-        .eq('course_id', courseId)
-        .eq('role', 'student');
-      
-      if (membersError) throw membersError;
-
-      const allStudents: Student[] = courseMembers
-        .map((m: any) => m.profiles)
-        .filter(Boolean)
-        .map((p: any) => ({
-          id: p.id,
-          name: `${p.first_name || ''} ${p.last_name || ''}`.trim(),
-        }));
-
-      let fetchedSubmissions: Submission[] = [];
-      if (details.type === 'assignment') {
-        const { data, error } = await supabase
-          .from('assignment_submissions')
-          .select('*, profiles(id, first_name, last_name)')
-          .eq('assignment_id', assignmentId);
-        if (error) throw error;
-        fetchedSubmissions = data.map((s: any) => ({
-          id: s.id,
-          student: { id: s.profiles.id, name: `${s.profiles.first_name || ''} ${s.profiles.last_name || ''}`.trim() },
-          status: s.status,
-          score: s.grade,
-          feedback: s.feedback,
-          submitted_at: s.submitted_at,
-          content: s.content,
-        }));
-      } else { // 'quiz'
-        const { data, error } = await supabase
-          .from('quiz_submissions')
-          .select('*, profiles(id, first_name, last_name)')
-          .eq('lesson_id', assignmentId);
-        if (error) throw error;
-        fetchedSubmissions = data.map((s: any) => ({
-          id: s.id,
-          student: { id: s.profiles.id, name: `${s.profiles.first_name || ''} ${s.profiles.last_name || ''}`.trim() },
-          status: 'graded',
-          score: s.score,
-          submitted_at: s.submitted_at,
-          answers: s.answers,
-          results: s.results,
-        }));
-      }
-      
-      setSubmissions(fetchedSubmissions);
-
-      const submittedStudentIds = new Set(fetchedSubmissions.map(s => s.student.id));
-      const notSubmitted = allStudents.filter(s => !submittedStudentIds.has(s.id));
-      setStudentsNotSubmitted(notSubmitted);
-
-      const totalStudents = allStudents.length;
-      const submittedCount = fetchedSubmissions.length;
-      const gradedCount = fetchedSubmissions.filter(s => s.status === 'graded').length;
-      const pendingGrading = details.type === 'assignment' ? submittedCount - gradedCount : 0;
-      
-      const gradedSubmissions = fetchedSubmissions.filter(s => s.status === 'graded' && s.score !== null);
-      const totalScore = gradedSubmissions.reduce((acc, s) => acc + (s.score || 0), 0);
-      const avgScore = gradedSubmissions.length > 0 ? totalScore / gradedSubmissions.length : 0;
-
-      setStatCards([
-        { title: 'Total Students', value: totalStudents.toString(), icon: Users },
-        { title: 'Submitted', value: submittedCount.toString(), icon: FileText },
-        { title: 'Pending Grading', value: pendingGrading.toString(), icon: Clock },
-        { title: 'Average Score', value: `${avgScore.toFixed(1)}%`, icon: CheckCircle2 },
-      ]);
+      const processedSubmissions = (data.submissions || []).map((item: any) => {
+          if (item.submission) {
+              return {
+                  ...item.submission,
+                  student: item.student,
+                  status: item.submission.status || 'submitted',
+              }
+          }
+          return {
+              id: item.student.id,
+              student: item.student,
+              status: 'not submitted' as SubmissionStatus,
+          }
+      });
+      setAllSubmissions(processedSubmissions);
 
     } catch(err: any) {
       setError(err.message);
@@ -221,6 +116,7 @@ export const AssignmentSubmissions = () => {
     fetchSubmissionData();
   }, [fetchSubmissionData]);
 
+  // Event Handlers
   const handleOpenGrader = async (submission: Submission) => {
     setSelectedSubmission(submission);
     setGrade(submission.score?.toString() || '');
@@ -242,11 +138,6 @@ export const AssignmentSubmissions = () => {
     setIsGradingOpen(true);
   };
 
-  const cleanFileName = (fileName: string): string => {
-    // Removes a timestamp-like prefix (e.g., 13 digits and a hyphen)
-    return fileName.replace(/^\d{13}-/, '');
-  };
-
   const handleDownload = async (url: string, fileName: string) => {
     if (!url) return;
     setIsDownloading(true);
@@ -263,7 +154,6 @@ export const AssignmentSubmissions = () => {
       URL.revokeObjectURL(link.href);
     } catch (err: any) {
       toast.error(err.message);
-      console.error(err);
     } finally {
       setIsDownloading(false);
     }
@@ -272,7 +162,7 @@ export const AssignmentSubmissions = () => {
   const handleSaveGrade = async () => {
     if (!selectedSubmission || !assignmentDetails || assignmentDetails.type !== 'assignment') return;
 
-    const { error } = await supabase
+    const { error: updateError } = await supabase
       .from('assignment_submissions')
       .update({
         grade: parseFloat(grade),
@@ -281,15 +171,63 @@ export const AssignmentSubmissions = () => {
       })
       .eq('id', selectedSubmission.id);
 
-    if (error) {
-      alert(error.message); // Replace with a toast notification
-    } else {
-      // Refresh data to show updated status
-      fetchSubmissionData();
-      setIsGradingOpen(false);
+    if (updateError) {
+      toast.error(updateError.message);
+      return;
     }
+
+    const { error: rpcError } = await supabase.rpc('mark_assignment_complete', {
+        p_student_id: selectedSubmission.student.id,
+        p_course_id: assignmentDetails.course_id,
+        p_lesson_id: assignmentDetails.lesson_id,
+        p_content_item_id: assignmentId,
+        p_teacher_id: user?.id
+    });
+
+    if (rpcError) {
+        toast.error("Failed to mark assignment as complete for the student.", { description: rpcError.message });
+    } else {
+        toast.success('Grade saved and assignment marked as complete!');
+    }
+    
+    fetchSubmissionData();
+    setIsGradingOpen(false);
   };
 
+  // Utility Functions
+  const cleanFileName = (fileName: string): string => {
+    return fileName.replace(/^\d{13}-/, '');
+  };
+
+  // Derived State
+  const submissionsWithStatus = allSubmissions.filter(s => s.status !== 'not submitted');
+  const studentsNotSubmitted = allSubmissions.filter(s => s.status === 'not submitted');
+
+  const filteredSubmissions = submissionsWithStatus.filter(s => 
+    s.student.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredNotSubmitted = studentsNotSubmitted.filter(s => 
+    s.student.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
+  const totalStudents = allSubmissions.length;
+  const submittedCount = submissionsWithStatus.length;
+  const gradedCount = submissionsWithStatus.filter(s => s.status === 'graded').length;
+  const pendingGrading = assignmentDetails?.type === 'assignment' ? submittedCount - gradedCount : 0;
+  
+  const gradedSubmissions = submissionsWithStatus.filter(s => s.status === 'graded' && s.score != null);
+  const totalScore = gradedSubmissions.reduce((acc, s) => acc + (s.score || 0), 0);
+  const avgScore = gradedSubmissions.length > 0 ? totalScore / gradedSubmissions.length : 0;
+
+  const statCards: StatCardData[] = [
+    { title: 'Total Students', value: totalStudents.toString(), icon: Users },
+    { title: 'Submitted', value: submittedCount.toString(), icon: FileText },
+    { title: 'Pending Grading', value: pendingGrading.toString(), icon: Clock },
+    { title: 'Average Score', value: `${avgScore.toFixed(1)}%`, icon: CheckCircle2 },
+  ];
+
+  // Render Logic
   if (loading) return <ContentLoader message="Loading submissions..." />;
   if (error) return <div className="p-8 text-center text-red-500">Error: {error}</div>;
   if (!assignmentDetails) return <div className="p-8 text-center">Assignment not found.</div>;
@@ -313,7 +251,7 @@ export const AssignmentSubmissions = () => {
             <p className="text-muted-foreground">
               Grade submissions and provide feedback • {assignmentDetails.course}
             </p>
-            <Badge>{assignmentDetails.status}</Badge>
+            <Badge>{assignmentDetails.type}</Badge>
           </div>
         </div>
       </div>
@@ -349,7 +287,6 @@ export const AssignmentSubmissions = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            {/* Actual Submissions Section */}
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <FileText className="h-5 w-5 text-primary" />
@@ -358,7 +295,7 @@ export const AssignmentSubmissions = () => {
                 </h2>
               </div>
               <p className="text-sm text-muted-foreground">
-                Review and grade student submissions for this assignment
+                Review and grade student submissions for this {assignmentDetails.type}
               </p>
               <div className="space-y-4">
                 {filteredSubmissions.map((sub) => (
@@ -408,7 +345,6 @@ export const AssignmentSubmissions = () => {
               </div>
             </div>
 
-            {/* Students Who Haven't Submitted Section */}
             {filteredNotSubmitted.length > 0 && (
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
@@ -418,21 +354,21 @@ export const AssignmentSubmissions = () => {
                   </h2>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Students who have not yet submitted their work for this assignment
+                  Students who have not yet submitted their work
                 </p>
                 <div className="space-y-4">
-                  {filteredNotSubmitted.map((student) => (
-                    <Card key={student.id} className="opacity-75">
+                  {filteredNotSubmitted.map((item) => (
+                    <Card key={item.student.id} className="opacity-75">
                       <CardContent className="p-4 flex items-center justify-between">
                         <div className="flex items-center gap-4">
                           <Avatar className="h-10 w-10">
                             <AvatarImage
-                              src={student.avatar_url || `https://api.dicebear.com/6.x/initials/svg?seed=${student.name}`}
+                              src={item.student.avatar_url || `https://api.dicebear.com/6.x/initials/svg?seed=${item.student.name}`}
                             />
-                            <AvatarFallback>{student.name.substring(0, 2)}</AvatarFallback>
+                            <AvatarFallback>{item.student.name.substring(0, 2)}</AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-semibold">{student.name}</p>
+                            <p className="font-semibold">{item.student.name}</p>
                             <p className="text-sm text-muted-foreground">
                               No submission yet
                             </p>
@@ -442,9 +378,6 @@ export const AssignmentSubmissions = () => {
                           <Badge variant="destructive" className="capitalize">
                             Not Submitted
                           </Badge>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            Waiting for submission
-                          </p>
                         </div>
                       </CardContent>
                     </Card>
@@ -555,35 +488,7 @@ export const AssignmentSubmissions = () => {
               </DialogDescription>
             </DialogHeader>
             <div className="py-4 space-y-6 max-h-[60vh] overflow-y-auto pr-6">
-              {assignmentDetails?.content?.questions?.map((q: any, index: number) => (
-                <div key={q.id} className="space-y-3">
-                  <p className="font-semibold">{index + 1}. {q.text}</p>
-                  <div className="space-y-2">
-                    {q.options.map((opt: any) => {
-                      const isSelected = selectedSubmission?.answers[q.id] === opt.id;
-                      const isCorrect = q.correctOptionId === opt.id;
-                      
-                      let variant: "default" | "secondary" | "destructive" | "outline" = "outline";
-                      if (isCorrect) variant = "secondary";
-                      if (isSelected && !isCorrect) variant = "destructive";
-                      if (isSelected && isCorrect) variant = "default";
-                      
-                      return (
-                        <div key={opt.id} className="flex items-center gap-2 p-2 rounded-md border"
-                          style={{
-                            borderColor: isCorrect ? 'var(--color-green-500)' : isSelected ? 'var(--color-red-500)' : undefined,
-                            backgroundColor: isCorrect ? 'var(--color-green-50)' : isSelected ? 'var(--color-red-50)' : undefined,
-                          }}
-                        >
-                           <span>{opt.text}</span>
-                           {isSelected && <Badge variant={isCorrect ? "default" : "destructive"}>Student's Answer</Badge>}
-                           {isCorrect && !isSelected && <Badge variant="secondary">Correct Answer</Badge>}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
+                {/* This part needs to be adapted for the new quiz data structure */}
             </div>
             <DialogFooter>
               <Button onClick={() => setIsGradingOpen(false)}>Close</Button>
@@ -593,4 +498,4 @@ export const AssignmentSubmissions = () => {
       </Dialog>
     </div>
   );
-}; 
+};

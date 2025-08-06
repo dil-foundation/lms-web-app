@@ -5,13 +5,12 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useAILMS } from '@/contexts/AILMSContext';
-import { BookOpen, Users, ClipboardList, TrendingUp, BarChart3, Settings, GraduationCap, Award, Shield, MessageSquare, Link, Eye, FileText, MessageCircle } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 import { type UserRole } from '@/config/roleNavigation';
 import { ContentLoader } from '@/components/ContentLoader';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
-import { Logo } from '@/components/header/Logo';
-const AIStudentLearn = lazy(() => import('@/components/dashboard/AIStudentLearn').then(module => ({ default: module.AIStudentLearn })));
 
+const AIStudentLearn = lazy(() => import('@/components/dashboard/AIStudentLearn').then(module => ({ default: module.AIStudentLearn })));
 const StudentDashboard = lazy(() => import('@/components/dashboard/StudentDashboard').then(module => ({ default: module.StudentDashboard })));
 const StudentCourses = lazy(() => import('@/components/dashboard/StudentCourses').then(module => ({ default: module.StudentCourses })));
 const StudentProgress = lazy(() => import('@/components/dashboard/StudentProgress').then(module => ({ default: module.StudentProgress })));
@@ -26,7 +25,6 @@ const AITeacherPractice = lazy(() => import('@/components/dashboard/AITeacherPra
 const AITeacherProgress = lazy(() => import('@/components/dashboard/AITeacherProgress').then(module => ({ default: module.AITeacherProgress })));
 const AIStudentProgress = lazy(() => import('@/components/dashboard/AIStudentProgress').then(module => ({ default: module.AIStudentProgress })));
 const AIStudentPractice = lazy(() => import('@/components/dashboard/AIStudentPractice').then(module => ({ default: module.AIStudentPractice })));
-const ComingSoon = lazy(() => import('@/components/ComingSoon').then(module => ({ default: module.ComingSoon })));
 const RolePlaceholder = lazy(() => import('@/components/dashboard/RolePlaceholder').then(module => ({ default: module.RolePlaceholder })));
 const UsersManagement = lazy(() => import('@/components/admin/UsersManagement').then(module => ({ default: module.UsersManagement })));
 const CourseManagement = lazy(() => import('@/components/admin/CourseManagement'));
@@ -75,14 +73,6 @@ const DiscussionViewPage = lazy(() => import('./DiscussionViewPage').then(module
 const MessagesPage = lazy(() => import('./MessagesPage'));
 const ProfileSettings = lazy(() => import('./ProfileSettings'));
 
-type Profile = {
-  first_name: string | null;
-  last_name: string | null;
-  email: string | null;
-  role: UserRole;
-  [key: string]: any;
-};
-
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading, error: profileError } = useUserProfile();
@@ -112,7 +102,11 @@ const Dashboard = () => {
 
   const DashboardContent = () => {
     if (isLoading) {
-      return <ContentLoader message={authLoading ? 'Authenticating...' : 'Loading user profile...'} />;
+      return (
+        <div className="flex items-center justify-center h-full">
+            <ContentLoader message={authLoading ? 'Authenticating...' : 'Loading user profile...'} />
+        </div>
+      );
     }
 
     if (profileError) {
@@ -156,8 +150,8 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="space-y-4 p-4 sm:p-6 lg:p-8 pt-0">
-      <Suspense fallback={<ContentLoader />}>
+    <div className="p-0 sm:p-0 lg:p-0 h-full">
+      <Suspense fallback={<div className="flex items-center justify-center h-full"><ContentLoader /></div>}>
         <Routes>
           <Route path="/" element={<DashboardOverview />} />
           <Route path="/profile-settings" element={<ProfileSettings />} />
@@ -216,7 +210,6 @@ const Dashboard = () => {
                           <Route path="/ai-learn" element={<AIStudentLearn />} />
                           <Route path="/ai-practice" element={<AITeacherPractice />} />
                           <Route path="/ai-progress" element={<AITeacherProgress />} />
-                          {/* Practice Stage Routes for Teacher Viewing */}
                           <Route path="/practice/stage-0" element={<StageZero />} />
                           <Route path="/practice/stage-0/lesson/:lessonId" element={<LessonDetail />} />
                           <Route path="/practice/stage-1" element={<StageOne />} />
@@ -268,7 +261,6 @@ const Dashboard = () => {
                           <Route path="/ai-learn" element={<AIStudentLearn />} />
                           <Route path="/ai-practice" element={<AIAdminPractice />} />
                           <Route path="/ai-reports" element={<ReportsAnalytics />} />
-                          {/* Practice Stage Routes for Admin Viewing */}
                           <Route path="/practice/stage-0" element={<StageZero />} />
                           <Route path="/practice/stage-0/lesson/:lessonId" element={<LessonDetail />} />
                           <Route path="/practice/stage-1" element={<StageOne />} />
@@ -323,9 +315,9 @@ const Dashboard = () => {
 
   return (
     <SidebarProvider>
-      <div className="bg-background flex flex-col w-full">
+      <div className="bg-background flex flex-col w-full h-screen">
         <DashboardHeader onToggle={resetToDashboard} />
-        <div className="flex flex-1 w-full ">
+        <div className="flex flex-1 w-full overflow-hidden">
             <DashboardSidebar userRole={currentRole} userProfile={displayProfile}>
                 <DashboardContent />
             </DashboardSidebar>

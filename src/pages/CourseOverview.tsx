@@ -106,50 +106,61 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
   };
 
   const mapDataToCourse = (data: any, instructorExtraData?: any, progressData: any[] = []) => {
-    const totalLessons = data.sections?.reduce((acc: number, section: any) => acc + (section.lessons?.length || 0), 0) || 0;
+    const allLessons = data.sections?.flatMap((s: any) => s.lessons) || [];
+    const totalLessons = allLessons.length;
 
-    const completedLessonsCount = progressData.filter(p => p.completed_at).length;
-    const progressPercentage = totalLessons > 0 ? Math.round((completedLessonsCount / totalLessons) * 100) : 0;
+    const allContentItems = allLessons.flatMap((l: any) => l.contentItems || []);
+    const totalContentItems = allContentItems.length;
+
+    const completedContentItemIds = new Set(progressData.filter(p => p.completed_at).map(p => p.lesson_content_id));
     
+    let completedLessonsCount = 0;
+    const completedLessonIds = new Set();
+    if (allLessons.length > 0) {
+      allLessons.forEach((lesson: any) => {
+        const lessonContentItems = lesson.contentItems || [];
+        if (lessonContentItems.length > 0 && lessonContentItems.every((ci: any) => completedContentItemIds.has(ci.id))) {
+          completedLessonsCount++;
+          completedLessonIds.add(lesson.id);
+        }
+      });
+    }
+
+    const progressPercentage = totalContentItems > 0
+      ? Math.round((completedContentItemIds.size / totalContentItems) * 100)
+      : 0;
+
     const lastAccessedProgress = [...progressData].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())[0];
     const lastAccessedDate = lastAccessedProgress ? new Date(lastAccessedProgress.updated_at).toLocaleDateString() : "Never";
 
-    const allLessons = data.sections?.flatMap((s: any) => s.lessons) || [];
     let nextLessonTitle: string;
+    if (totalLessons === 0) {
+      nextLessonTitle = "No lessons yet";
+    } else if (completedLessonsCount === totalLessons) {
+      nextLessonTitle = "Course Complete!";
+    } else {
+      const firstUncompletedLesson = allLessons.find((l: any) => !completedLessonIds.has(l.id));
+      nextLessonTitle = firstUncompletedLesson?.title || allLessons[0]?.title || "First Lesson";
+    }
 
     const teacherProfile = data.members?.find((m: any) => m.role === 'teacher')?.profile;
-    const previewTeacher = data.teachers?.[0]; // Teachers from CourseBuilder state
+    const previewTeacher = data.teachers?.[0];
 
     let teacherName: string;
     let teacherEmail: string;
 
     if (previewTeacher && previewTeacher.name) {
-      // Use data from preview mode if available and valid
       teacherName = previewTeacher.name;
       teacherEmail = previewTeacher.email || 'Not available';
     } else if (teacherProfile) {
-      // Use data from fetched live course
       teacherName = `${teacherProfile.first_name || ''} ${teacherProfile.last_name || ''}`.trim() || 'Teacher TBD';
       teacherEmail = teacherProfile.email || 'Not available';
     } else {
-      // Fallback
       teacherName = 'Teacher TBD';
       teacherEmail = 'Not available';
     }
 
     const getInitials = (name: string) => (name.split(' ').map(n => n[0]).join('').toUpperCase() || 'T');
-
-    if (totalLessons === 0) {
-      nextLessonTitle = "No lessons yet";
-    } else {
-      const completedLessonIds = new Set(progressData.filter(p => p.completed_at).map(p => p.lesson_id));
-      if (completedLessonsCount === totalLessons && totalLessons > 0) {
-        nextLessonTitle = "Course Complete!";
-      } else {
-        const firstUncompletedLesson = allLessons.find((l: any) => !completedLessonIds.has(l.id));
-        nextLessonTitle = firstUncompletedLesson?.title || allLessons[0]?.title || "First Lesson";
-      }
-    }
 
     return {
       id: data.id || 'preview',
@@ -215,7 +226,8 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
             sections:course_sections (
               *,
               lessons:course_lessons (
-                *
+                *,
+                contentItems:course_lesson_content(id)
               )
             ),
             members:course_members (
@@ -292,20 +304,21 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
           
           let userProgress: any[] = [];
           if (user && !isPreviewMode) {
-              const lessonIds = data.sections?.flatMap((s: any) => s.lessons?.map((l: any) => l.id)).filter(Boolean) || [];
-              if (lessonIds.length > 0) {
-                  const { data: progressData, error: progressError } = await supabase
-                      .from('user_course_progress')
-                      .select('*')
-                      .eq('user_id', user.id)
-                      .in('lesson_id', lessonIds);
-                  if (progressError) {
-                      console.error("Failed to fetch user progress:", progressError.message);
-                      toast.warning("Could not load your course progress.");
-                  } else {
-                      userProgress = progressData || [];
-                  }
+            const contentItemIds = data.sections?.flatMap((s: any) => s.lessons?.flatMap((l: any) => l.contentItems?.map((ci: any) => ci.id))).filter(Boolean) || [];
+            if (contentItemIds.length > 0) {
+              const { data: progressData, error: progressError } = await supabase
+                .from('user_content_item_progress')
+                .select('*')
+                .eq('user_id', user.id)
+                .in('lesson_content_id', contentItemIds);
+
+              if (progressError) {
+                console.error("Failed to fetch user progress:", progressError.message);
+                toast.warning("Could not load your course progress.");
+              } else {
+                userProgress = progressData || [];
               }
+            }
           }
 
           if (data.image_url) {

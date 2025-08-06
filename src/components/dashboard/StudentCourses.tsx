@@ -37,65 +37,42 @@ export const StudentCourses = ({ userProfile }: StudentCoursesProps) => {
     const fetchCourses = async () => {
       setLoading(true);
       
-      const { data, error } = await supabase.rpc('get_student_courses');
+      const { data, error } = await supabase.rpc('get_student_courses_with_progress', { student_id: userProfile.id });
 
       if (error) {
-        console.error("Error fetching student courses:", error);
+        console.error("Error fetching student courses with progress:", error);
         toast.error("Failed to load your courses.", {
           description: "Please try reloading the page.",
         });
+        setCourses([]);
       } else if (data) {
-        const coursesWithDetails = await Promise.all(data.map(async (course) => {
+        const coursesWithSignedUrls = await Promise.all(data.map(async (course: any) => {
           let imageUrl = '/placeholder.svg';
           if (course.image_url) {
-            const { data: signedUrlData, error } = await supabase.storage
+            const { data: signedUrlData } = await supabase.storage
               .from('dil-lms')
-              .createSignedUrl(course.image_url, 60);
-
-            if (error) {
-              console.error(`Failed to get signed URL for course image: ${course.image_url}`, error);
-            } else {
+              .createSignedUrl(course.image_url, 3600);
+            if (signedUrlData) {
               imageUrl = signedUrlData.signedUrl;
             }
           }
-
-          let progress = 0;
-          const { data: sections, error: sectionsError } = await supabase
-            .from('course_sections')
-            .select('lessons:course_lessons(id)')
-            .eq('course_id', course.id);
-
-          if (sectionsError) {
-            console.error(`Error fetching lessons for course ${course.id}:`, sectionsError);
-          } else {
-            const lessonIds = sections.flatMap(s => s.lessons.map(l => l.id));
-            const totalLessons = lessonIds.length;
-
-            if (totalLessons > 0) {
-              const { count: completedCount, error: progressError } = await supabase
-                .from('user_course_progress')
-                .select('*', { count: 'exact', head: true })
-                .eq('user_id', userProfile.id)
-                .in('lesson_id', lessonIds)
-                .not('completed_at', 'is', null);
-
-              if (progressError) {
-                console.error(`Error fetching progress for course ${course.id}:`, progressError);
-              } else if (completedCount) {
-                progress = Math.round((completedCount / totalLessons) * 100);
-              }
-            }
-          }
-          
-          return { ...course, image_url: imageUrl, progress };
+          return { 
+            id: course.course_id,
+            title: course.title,
+            subtitle: course.subtitle,
+            image_url: imageUrl,
+            progress: course.progress_percentage,
+          };
         }));
-        setCourses(coursesWithDetails);
+        setCourses(coursesWithSignedUrls);
       }
       setLoading(false);
     };
 
-    fetchCourses();
-  }, []);
+    if (userProfile.id) {
+      fetchCourses();
+    }
+  }, [userProfile.id]);
 
   // Calculate course statistics
   const totalCourses = courses.length;
