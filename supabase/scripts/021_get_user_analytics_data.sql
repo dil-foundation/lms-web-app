@@ -1,5 +1,3 @@
-DROP FUNCTION IF EXISTS public.get_user_analytics_data(TEXT);
-
 CREATE OR REPLACE FUNCTION public.get_user_analytics_data(time_range TEXT)
 RETURNS TABLE(
     period_label TEXT,
@@ -8,6 +6,7 @@ RETURNS TABLE(
     churn_rate INTEGER
 )
 LANGUAGE plpgsql
+SECURITY DEFINER
 AS $$
 DECLARE
   start_date TIMESTAMP;
@@ -40,18 +39,27 @@ BEGIN
 
   RETURN QUERY
   WITH periods AS (
-    SELECT 
-      generate_series(
-        date_trunc(
-          CASE WHEN interval_type = 'quarter' THEN 'month' ELSE interval_type END,
-          start_date
-        ),
-        date_trunc(
-          CASE WHEN interval_type = 'quarter' THEN 'month' ELSE interval_type END,
-          end_date
-        ),
-        (CASE WHEN interval_type = 'quarter' THEN '3 months' ELSE '1 ' || interval_type END)::interval
-      ) as period
+    SELECT generate_series(
+      date_trunc(interval_type, start_date),
+      date_trunc(interval_type, end_date),
+      (CASE WHEN interval_type = 'quarter' THEN '3 months' ELSE '1 ' || interval_type END)::interval
+    ) as period
+  ),
+  active_users_by_period AS (
+    SELECT
+      date_trunc(interval_type, ucp.updated_at) as period,
+      COUNT(DISTINCT ucp.user_id) as value
+    FROM public.user_content_item_progress ucp
+    WHERE ucp.updated_at BETWEEN start_date AND end_date
+    GROUP BY 1
+  ),
+  new_signups_by_period AS (
+    SELECT
+      date_trunc(interval_type, prof.created_at) as period,
+      COUNT(prof.id) as value
+    FROM public.profiles prof
+    WHERE prof.created_at BETWEEN start_date AND end_date
+    GROUP BY 1
   )
   SELECT
     TO_CHAR(p.period, 
@@ -61,10 +69,12 @@ BEGIN
         WHEN interval_type = 'quarter' THEN 'YYYY "Q"Q'
       END
     ) AS period_label,
-    (SELECT COUNT(DISTINCT ucp.user_id) FROM public.user_content_item_progress ucp WHERE ucp.updated_at >= p.period AND ucp.updated_at < p.period + (CASE WHEN interval_type = 'quarter' THEN '3 months' ELSE '1 ' || interval_type END)::interval)::INTEGER AS active_users,
-    (SELECT COUNT(prof.id) FROM public.profiles prof WHERE prof.created_at >= p.period AND prof.created_at < p.period + (CASE WHEN interval_type = 'quarter' THEN '3 months' ELSE '1 ' || interval_type END)::interval)::INTEGER AS new_signups,
-    0 AS churn_rate -- Churn rate calculation removed for simplicity for now
+    COALESCE(au.value, 0)::INTEGER AS active_users,
+    COALESCE(ns.value, 0)::INTEGER AS new_signups,
+    0 AS churn_rate -- Churn rate calculation can be added here later
   FROM periods p
+  LEFT JOIN active_users_by_period au ON p.period = au.period
+  LEFT JOIN new_signups_by_period ns ON p.period = ns.period
   ORDER BY p.period;
 END;
 $$;

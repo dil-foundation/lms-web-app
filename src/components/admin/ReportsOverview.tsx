@@ -310,7 +310,7 @@ export const ReportsOverview = () => {
   // Generate summary cards from stats
   const summaryCards = [
     {
-      title: 'Total Active Users',
+      title: 'Total Users',
       value: stats?.total_users?.toLocaleString() || '0',
       change: stats?.active_users_percentage ? `+${stats.active_users_percentage}%` : '+0%',
       icon: Users,
@@ -405,9 +405,7 @@ export const ReportsOverview = () => {
             </CardHeader>
             <CardContent>
               <div className="text-xl sm:text-2xl font-bold">{card.value}</div>
-              <p className="text-xs text-muted-foreground">
-                <span className="text-green-600">{card.change}</span> from last period
-              </p>
+
             </CardContent>
           </Card>
         ))}
@@ -448,7 +446,7 @@ export const ReportsOverview = () => {
                     >
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis 
-                          dataKey="month_label" 
+                          dataKey="period_label" 
                           tick={{ fontSize: 10 }}
                           interval={0}
                           angle={-45}

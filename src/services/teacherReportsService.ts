@@ -97,14 +97,16 @@ export class TeacherReportsService {
       // 1. Get teacher's courses
       const { data: teacherCourses, error: coursesError } = await supabase
         .from('course_members')
-        .select('course_id, courses(id, title, description)')
+        .select('course_id, courses(id, title, description, status)')
         .eq('user_id', this.teacherId)
         .eq('role', 'teacher');
 
       if (coursesError) throw coursesError;
 
-      const courseIds = (teacherCourses || []).map(tc => tc.course_id);
-      const courseDetails = (teacherCourses || []).map(tc => tc.courses).filter(Boolean);
+      const publishedCourses = (teacherCourses || []).filter(tc => tc.courses?.status === 'Published');
+
+      const courseIds = (publishedCourses || []).map(tc => tc.course_id);
+      const courseDetails = (publishedCourses || []).map(tc => tc.courses).filter(Boolean);
 
       if (courseIds.length === 0) {
         return this.getEmptyReportsData();
@@ -178,7 +180,7 @@ export class TeacherReportsService {
 
       // Process the data
       const reportsData = this.processReportsData(
-        teacherCourses || [],
+        publishedCourses || [],
         enrollments || [],
         studentProfiles || [],
         courseDetails || [],
@@ -288,7 +290,7 @@ export class TeacherReportsService {
     const activeStudentIds = new Set(courseProgress.filter(p => new Date(p.updated_at) > thirtyDaysAgo).map(p => p.user_id));
     const activeStudents = activeStudentIds.size;
 
-    const totalCompletedItems = courseProgress.filter(p => p.status === 'completed').length;
+    const totalCompletedItems = courseProgress.filter(p => p.status && p.status.toLowerCase() === 'completed').length;
     const totalEnrollmentItems = enrollments.length * (allContentItems.length / teacherCourses.length || 1); // rough estimate
     const averageCompletion = totalEnrollmentItems > 0 ? Math.round((totalCompletedItems / totalEnrollmentItems) * 100) : 0;
     
@@ -324,7 +326,7 @@ private calculateCoursePerformance(teacherCourses: any[], enrollments: any[], co
         });
 
         const totalCourseItems = courseContent.length;
-        const completedItems = courseProgress.filter(p => p.course_id === courseId && p.status === 'completed').length;
+        const completedItems = courseProgress.filter(p => p.course_id === courseId && p.status && p.status.toLowerCase() === 'completed').length;
         const completionRate = totalCourseItems > 0 ? Math.round((completedItems / (totalCourseItems * courseStudentIds.length)) * 100) : 0;
 
         const gradedSubmissions = courseSubmissions.filter(s => s.grade !== null);
@@ -369,7 +371,7 @@ private calculateStudentProgress(enrollments: any[], studentProfiles: any[], cou
         const totalCourseItems = courseContent.length;
         
         const studentProgressEntries = courseProgress.filter(p => p.user_id === studentId && p.course_id === courseId);
-        const completedItems = studentProgressEntries.filter(p => p.status === 'completed').length;
+        const completedItems = studentProgressEntries.filter(p => p.status && p.status.toLowerCase() === 'completed').length;
         const completionRate = totalCourseItems > 0 ? Math.round((completedItems / totalCourseItems) * 100) : 0;
         
         const gradedSubmissions = studentSubmissions.filter(s => s.grade !== null);

@@ -198,8 +198,8 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
 
         // 4. Fetch teacher-specific stats using the new engagement metrics function
         const { data: engagementMetrics, error: engagementError } = await supabase.rpc('get_teacher_engagement_metrics', {
-          teacher_id: userProfile.id,
-          time_range: timeRange
+          p_teacher_id: userProfile.id,
+          p_time_range: timeRange
         });
 
         if (engagementError) throw engagementError;
@@ -304,15 +304,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       if (error) throw error;
 
       if (!data || data.length === 0 || (data.length === 1 && data[0].period_label === 'No Activity')) {
-
-        // Create minimal fallback data to show chart structure
-        const fallbackData = [
-          { week: 'Week 1', activeStudents: 0, completionRate: 0, timeSpent: 0 },
-          { week: 'Week 2', activeStudents: 0, completionRate: 0, timeSpent: 0 },
-          { week: 'Week 3', activeStudents: 0, completionRate: 0, timeSpent: 0 },
-          { week: 'Week 4', activeStudents: 0, completionRate: 0, timeSpent: 0 }
-        ];
-        setStudentEngagementData(fallbackData);
+        setStudentEngagementData([]);
         return;
       }
 
@@ -328,14 +320,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       setStudentEngagementData(engagementData);
     } catch (error) {
       console.error("Failed to fetch student engagement data:", error);
-      // Create minimal fallback data on error
-      const fallbackData = [
-        { week: 'Week 1', activeStudents: 0, completionRate: 0, timeSpent: 0 },
-        { week: 'Week 2', activeStudents: 0, completionRate: 0, timeSpent: 0 },
-        { week: 'Week 3', activeStudents: 0, completionRate: 0, timeSpent: 0 },
-        { week: 'Week 4', activeStudents: 0, completionRate: 0, timeSpent: 0 }
-      ];
-      setStudentEngagementData(fallbackData);
+      setStudentEngagementData([]);
     }
   };
 
@@ -377,51 +362,27 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
 
   const fetchStudentProgressData = async (courseIds: string[]) => {
     try {
-
-      
-      // Use the dynamic SQL function
       const { data, error } = await supabase.rpc('get_student_progress_distribution', {
-        teacher_id: userProfile.id
+        p_teacher_id: userProfile.id
       });
-
-
 
       if (error) throw error;
 
       if (!data || data.length === 0) {
-
-        // Create fallback data to show chart structure
-        const fallbackData = [
-          { name: 'Not Started', value: 0, color: '#6B7280' },
-          { name: 'Needs Help (<70%)', value: 0, color: '#EF4444' },
-          { name: 'Average (70-79%)', value: 0, color: '#F59E0B' },
-          { name: 'Good (80-89%)', value: 0, color: '#3B82F6' },
-          { name: 'Excellent (90-100%)', value: 0, color: '#10B981' }
-        ];
-        setStudentProgressData(fallbackData);
+        setStudentProgressData([]);
         return;
       }
 
-      // Transform the data to match the expected format
       const progressDistribution = data.map((item: any) => ({
         name: item.category_name,
         value: item.student_count,
         color: item.color_code
       }));
 
-
       setStudentProgressData(progressDistribution);
     } catch (error) {
       console.error("Failed to fetch student progress data:", error);
-      // Create fallback data on error
-      const fallbackData = [
-        { name: 'Not Started', value: 0, color: '#6B7280' },
-        { name: 'Needs Help (<70%)', value: 0, color: '#EF4444' },
-        { name: 'Average (70-79%)', value: 0, color: '#F59E0B' },
-        { name: 'Good (80-89%)', value: 0, color: '#3B82F6' },
-        { name: 'Excellent (90-100%)', value: 0, color: '#10B981' }
-      ];
-      setStudentProgressData(fallbackData);
+      setStudentProgressData([]);
     }
   };
 
@@ -508,8 +469,8 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       
       // Use the dynamic SQL function
       const { data, error } = await supabase.rpc('get_engagement_trends_data', {
-        teacher_id: userProfile.id,
-        time_range: range
+        p_teacher_id: userProfile.id,
+        p_time_range: range
       });
 
       console.log('🔍 [DEBUG] get_engagement_trends_data response:', { data, error });
@@ -525,10 +486,8 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       // Transform the data to match the expected format
       const trendsData = data.map((item: any) => ({
         week: item.week_label,
-        discussions: item.discussions_count,
         assignments: item.assignments_count,
         quizzes: item.quizzes_count,
-        videos: item.videos_count
       }));
 
       console.log('🔍 [DEBUG] Transformed engagement trends data:', trendsData);
@@ -824,37 +783,43 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                     </CardHeader>
                     <CardContent>
                       <div className="h-[300px]">
-                        <ChartContainer config={chartConfig} className="w-full h-full">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={studentEngagementData}>
-                              <defs>
-                                <linearGradient id="colorEngagement" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
-                                  <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
-                                </linearGradient>
-                              </defs>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="week" />
-                              <YAxis />
-                              <ChartTooltip content={<ChartTooltipContent />} />
-                              <Area 
-                                type="monotone" 
-                                dataKey="activeStudents" 
-                                stroke="#3B82F6" 
-                                fillOpacity={1} 
-                                fill="url(#colorEngagement)"
-                                name="Active Students"
-                              />
-                              <Line 
-                                type="monotone" 
-                                dataKey="completionRate" 
-                                stroke="#10B981" 
-                                strokeWidth={2}
-                                name="Completion Rate %"
-                              />
-                            </AreaChart>
-                          </ResponsiveContainer>
-                        </ChartContainer>
+                        {studentEngagementData.length > 0 ? (
+                          <ChartContainer config={chartConfig} className="w-full h-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <AreaChart data={studentEngagementData}>
+                                <defs>
+                                  <linearGradient id="colorEngagement" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
+                                    <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                                  </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="week" />
+                                <YAxis />
+                                <ChartTooltip content={<ChartTooltipContent />} />
+                                <Area 
+                                  type="monotone" 
+                                  dataKey="activeStudents" 
+                                  stroke="#3B82F6" 
+                                  fillOpacity={1} 
+                                  fill="url(#colorEngagement)"
+                                  name="Active Students"
+                                />
+                                <Line 
+                                  type="monotone" 
+                                  dataKey="completionRate" 
+                                  stroke="#10B981" 
+                                  strokeWidth={2}
+                                  name="Completion Rate %"
+                                />
+                              </AreaChart>
+                            </ResponsiveContainer>
+                          </ChartContainer>
+                        ) : (
+                          <div className="flex items-center justify-center h-full">
+                            <p className="text-muted-foreground">No data to display for this period.</p>
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -868,27 +833,33 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                     </CardHeader>
                     <CardContent>
                       <div className="h-[300px]">
-                        <ChartContainer config={chartConfig} className="w-full h-full">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie
-                                data={studentProgressData}
-                                cx="50%"
-                                cy="50%"
-                                labelLine={false}
-                                label={({ name, percent }) => `${name.split(' ')[0]} ${(percent * 100).toFixed(0)}%`}
-                                outerRadius={100}
-                                fill="#8884d8"
-                                dataKey="value"
-                              >
-                                {studentProgressData.map((entry, index) => (
-                                  <Cell key={`cell-${index}`} fill={entry.color} />
-                                ))}
-                              </Pie>
-                              <ChartTooltip />
-                            </PieChart>
-                          </ResponsiveContainer>
-                        </ChartContainer>
+                        {studentProgressData.length > 0 ? (
+                          <ChartContainer config={chartConfig} className="w-full h-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <Pie
+                                  data={studentProgressData}
+                                  cx="50%"
+                                  cy="50%"
+                                  labelLine={false}
+                                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                                  outerRadius={100}
+                                  fill="#8884d8"
+                                  dataKey="value"
+                                >
+                                  {studentProgressData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                  ))}
+                                </Pie>
+                                <ChartTooltip />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          </ChartContainer>
+                        ) : (
+                          <div className="flex items-center justify-center h-full">
+                            <p className="text-muted-foreground">No data to display.</p>
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -944,10 +915,6 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                         <ResponsiveContainer width="100%" height="100%">
                           <AreaChart data={engagementTrendsData}>
                             <defs>
-                              <linearGradient id="colorDiscussions" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
-                                <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.1}/>
-                              </linearGradient>
                               <linearGradient id="colorAssignments" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
                                 <stop offset="95%" stopColor="#10B981" stopOpacity={0.1}/>
@@ -956,23 +923,11 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                                 <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.8}/>
                                 <stop offset="95%" stopColor="#F59E0B" stopOpacity={0.1}/>
                               </linearGradient>
-                              <linearGradient id="colorVideos" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.8}/>
-                                <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0.1}/>
-                              </linearGradient>
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="week" />
                             <YAxis />
                             <ChartTooltip content={<ChartTooltipContent />} />
-                            <Area 
-                              type="monotone" 
-                              dataKey="discussions" 
-                              stackId="1"
-                              stroke="#3B82F6" 
-                              fill="url(#colorDiscussions)"
-                              name="Discussions"
-                            />
                             <Area 
                               type="monotone" 
                               dataKey="assignments" 
@@ -989,14 +944,6 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                               fill="url(#colorQuizzes)"
                               name="Quizzes"
                             />
-                            <Area 
-                              type="monotone" 
-                              dataKey="videos" 
-                              stackId="1"
-                              stroke="#8B5CF6" 
-                              fill="url(#colorVideos)"
-                              name="Videos"
-                            />
                             <Legend />
                           </AreaChart>
                         </ResponsiveContainer>
@@ -1005,42 +952,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                   </CardContent>
                 </Card>
 
-                {/* Performance Comparison */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <BarChart3 className="h-5 w-5" />
-                      Course Performance Comparison
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      Compare key metrics across your courses
-                    </p>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-[400px]">
-                      <ChartContainer config={chartConfig} className="w-full h-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={coursePerformanceData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis 
-                              dataKey="course" 
-                              angle={-45}
-                              textAnchor="end"
-                              height={80}
-                              interval={0}
-                            />
-                            <YAxis />
-                            <ChartTooltip content={<ChartTooltipContent />} />
-                            <Bar dataKey="enrolled" fill="#3B82F6" name="Enrolled" />
-                            <Bar dataKey="completed" fill="#10B981" name="Completed" />
-                            <Bar dataKey="inProgress" fill="#F59E0B" name="In Progress" />
-                            <Legend />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </ChartContainer>
-                    </div>
-                  </CardContent>
-                </Card>
+
               </TabsContent>
             </Tabs>
           </div>

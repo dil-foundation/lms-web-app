@@ -87,143 +87,9 @@ export default function ReportsPage() {
     setError(null);
     
     try {
-      // Get teacher's courses
-      const { data: teacherCourses, error: coursesError } = await supabase
-        .from('course_members')
-        .select('course_id')
-        .eq('user_id', user.id)
-        .eq('role', 'teacher');
-
-      if (coursesError) throw coursesError;
-
-      const courseIds = teacherCourses.map(c => c.course_id);
-
-      if (courseIds.length === 0) {
-        setReportsData({
-          overallMetrics: {
-            totalStudents: 0,
-            activeStudents: 0,
-            averageCompletion: 0,
-            averageScore: 0,
-            coursesPublished: 0,
-            totalAssignments: 0,
-            totalEnrollments: 0,
-            averageEngagement: 0
-          },
-          coursePerformance: [],
-          studentProgress: [],
-          assignmentPerformance: [],
-          monthlyTrends: [],
-          studentStatusDistribution: [],
-          keyInsights: []
-        });
-        setLoading(false);
-        return;
-      }
-
-      // Get course sections for teacher's courses
-      const { data: sections, error: sectionsError } = await supabase
-        .from('course_sections')
-        .select('id, course_id')
-        .in('course_id', courseIds);
-
-      if (sectionsError) throw sectionsError;
-
-      const sectionIds = sections.map(s => s.id);
-
-      // Get lessons for teacher's courses
-      const { data: lessons, error: lessonsError } = await supabase
-        .from('course_lessons')
-        .select('id')
-        .in('section_id', sectionIds);
-
-      if (lessonsError) throw lessonsError;
-      const lessonIds = lessons?.map(l => l.id) ?? [];
-
-      // Get assignment content item IDs
-      const { data: assignmentContents, error: assignmentContentsError } = await supabase
-        .from('course_lesson_content')
-        .select('id')
-        .in('lesson_id', lessonIds)
-        .eq('content_type', 'assignment');
-      
-      if (assignmentContentsError) throw assignmentContentsError;
-
-      const assignmentContentIds = assignmentContents?.map(ac => ac.id) ?? [];
-
-      // Fetch metrics using the same approach as TeacherDashboard
-      const [
-        { count: totalStudents, error: studentsError },
-        { count: publishedCourses, error: publishedCoursesError },
-        { count: totalCourses, error: totalCoursesError },
-        { count: pendingAssignments, error: pendingAssignmentsError },
-        { count: totalAssignments, error: totalAssignmentsError },
-      ] = await Promise.all([
-        // Total students enrolled in teacher's courses
-        supabase.from('course_members')
-          .select('*', { count: 'exact', head: true })
-          .in('course_id', courseIds)
-          .eq('role', 'student'),
-        
-        // Published courses by this teacher
-        supabase.from('courses')
-          .select('*', { count: 'exact', head: true })
-          .in('id', courseIds)
-          .eq('status', 'Published'),
-        
-        // Total courses by this teacher
-        supabase.from('courses')
-          .select('*', { count: 'exact', head: true })
-          .in('id', courseIds),
-        
-        // Pending assignments for teacher's courses
-        supabase.from('assignment_submissions')
-          .select('*', { count: 'exact', head: true })
-          .in('assignment_id', assignmentContentIds)
-          .eq('status', 'pending'),
-        
-        // Total assignments for teacher's courses
-        supabase.from('assignment_submissions')
-          .select('*', { count: 'exact', head: true })
-          .in('assignment_id', assignmentContentIds),
-      ]);
-
-      if (studentsError) throw studentsError;
-      if (publishedCoursesError) throw publishedCoursesError;
-      if (totalCoursesError) throw totalCoursesError;
-      if (pendingAssignmentsError) throw pendingAssignmentsError;
-      if (totalAssignmentsError) throw totalAssignmentsError;
-
-      // Calculate derived metrics using the same logic as TeacherDashboard
-      const avgCompletion = totalAssignments > 0 ? Math.round((totalAssignments - pendingAssignments) / totalAssignments * 100) : 0;
-      const activeStudents = Math.floor((totalStudents ?? 0) * 0.85); // Estimate 85% active
-      const avgEngagement = totalStudents > 0 ? Math.round((activeStudents / totalStudents) * 100) : 0;
-
-      // Get chart data from TeacherReportsService
       const reportsService = new TeacherReportsService(user.id);
-      const chartData = await reportsService.fetchTeacherReports();
-
-      // Create reports data structure with correct metrics but keep chart data
-      const reportsData = {
-        overallMetrics: {
-          totalStudents: totalStudents ?? 0,
-          activeStudents,
-          averageCompletion: avgCompletion,
-          averageScore: chartData.overallMetrics.averageScore, // Keep from service for accuracy
-          coursesPublished: publishedCourses ?? 0,
-          totalAssignments: totalAssignments ?? 0,
-          totalEnrollments: totalStudents ?? 0,
-          averageEngagement: avgEngagement
-        },
-        coursePerformance: chartData.coursePerformance,
-        studentProgress: chartData.studentProgress,
-        assignmentPerformance: chartData.assignmentPerformance,
-        monthlyTrends: chartData.monthlyTrends,
-        studentStatusDistribution: chartData.studentStatusDistribution,
-        keyInsights: chartData.keyInsights
-      };
-
-      setReportsData(reportsData);
+      const data = await reportsService.fetchTeacherReports();
+      setReportsData(data);
     } catch (err: any) {
       console.error('Error fetching reports data:', err);
       const errorMessage = err.message || 'Failed to fetch reports data';
@@ -258,9 +124,10 @@ export default function ReportsPage() {
       // Get teacher's course IDs
       const { data: teacherCourses, error: coursesError } = await supabase
         .from('course_members')
-        .select('course_id')
+        .select('course_id, courses!inner(status)')
         .eq('user_id', user.id)
-        .eq('role', 'teacher');
+        .eq('role', 'teacher')
+        .eq('courses.status', 'Published');
 
       if (coursesError) throw coursesError;
 
@@ -274,7 +141,7 @@ export default function ReportsPage() {
 
       // Use the enhanced SQL function with pagination, search, and filtering
       const { data, error } = await supabase.rpc('get_students_data', {
-        teacher_id: user.id,
+        p_teacher_id: user.id,
         search_term: searchTerm,
         course_filter: courseFilter === 'all' ? '' : courseFilter,
         status_filter: statusFilter === 'all' ? '' : statusFilter,
@@ -303,7 +170,7 @@ export default function ReportsPage() {
         progress: student.progress_percentage,
         status: student.status,
         lastActive: student.last_active,
-        assignments: student.assignments_completed,
+
       }));
 
       setStudentsData(transformedStudents);
@@ -561,43 +428,7 @@ export default function ReportsPage() {
             </Card>
           </div>
 
-          {/* Key Insights */}
-          {reportsData.keyInsights.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
-                  Key Insights
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Important trends and recommendations for your courses
-                </p>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {reportsData.keyInsights.map((insight, index) => (
-                    <div key={index} className="flex items-start gap-3 p-4 rounded-lg border bg-card/50">
-                      <div className={`p-2 rounded-full ${insight.color.replace('text-', 'bg-')} bg-opacity-10`}>
-                        {insight.icon === 'TrendingUp' && <TrendingUp className="h-4 w-4" />}
-                        {insight.icon === 'AlertCircle' && <AlertCircle className="h-4 w-4" />}
-                        {insight.icon === 'CheckCircle' && <CheckCircle className="h-4 w-4" />}
-                        {insight.icon === 'Award' && <Award className="h-4 w-4" />}
-                      </div>
-                      <div className="flex-1 space-y-1">
-                        <h4 className="font-medium text-sm">{insight.title}</h4>
-                        <p className="text-xs text-muted-foreground">{insight.description}</p>
-                        {insight.action && (
-                          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs">
-                            {insight.action}
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+
 
           {/* Main Content Tabs */}
           <Tabs defaultValue="overview" className="space-y-4">
@@ -610,124 +441,67 @@ export default function ReportsPage() {
 
             {/* Overview Tab */}
             <TabsContent value="overview" className="space-y-4">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Course Performance Overview */}
+              <div className="grid grid-cols-1 gap-6">
+                {/* Student Status Distribution */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <BookOpen className="h-5 w-5" />
-                      Course Performance
+                      <Users className="h-5 w-5" />
+                      Student Status Overview
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {reportsData.coursePerformance.length > 0 ? (
-                      <div className="space-y-4">
-                        {reportsData.coursePerformance.map((course, index) => (
-                          <div key={index} className="space-y-3 p-3 rounded-lg border">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <h4 className="font-medium">{course.courseTitle}</h4>
-                                <p className="text-sm text-muted-foreground">{course.courseDescription}</p>
-                              </div>
-                              <Badge variant={course.completionRate >= 80 ? 'default' : 'secondary'}>
-                                {course.completionRate}% complete
-                      </Badge>
-                    </div>
-                            <div className="w-full bg-muted rounded-full h-2">
-                              <div 
-                                className="bg-primary h-2 rounded-full transition-all duration-300"
-                                style={{ width: `${course.completionRate}%` }}
-                              />
-                            </div>
-                            <div className="grid grid-cols-3 gap-4 text-sm">
-                              <div>
-                                <p className="text-muted-foreground">Students</p>
-                                <p className="font-medium">{course.totalStudents}</p>
-                              </div>
-                              <div>
-                                <p className="text-muted-foreground">Active</p>
-                                <p className="font-medium">{course.activeStudents}</p>
-                              </div>
-                              <div>
-                                <p className="text-muted-foreground">Avg Score</p>
-                                <p className="font-medium">{course.averageScore}%</p>
-                              </div>
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              Last activity: {formatDate(course.lastActivity)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No courses found. Create and publish courses to see performance data.</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Student Status Distribution */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Student Status Overview
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
                     {reportsData.studentStatusDistribution.length > 0 ? (
-              <div>
-                <div className="h-[200px] mb-4">
-                  <ChartContainer config={chartConfig} className="w-full h-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
+                      <div>
+                        <div className="h-[200px] mb-4">
+                          <ChartContainer config={chartConfig} className="w-full h-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <Pie
                                   data={reportsData.studentStatusDistribution}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={60}
-                          outerRadius={80}
-                          paddingAngle={2}
+                                  cx="50%"
+                                  cy="50%"
+                                  innerRadius={60}
+                                  outerRadius={80}
+                                  paddingAngle={2}
                                   dataKey="count"
-                        >
+                                >
                                   {reportsData.studentStatusDistribution.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                </div>
-                <div className="space-y-2">
+                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                  ))}
+                                </Pie>
+                                <ChartTooltip content={<ChartTooltipContent />} />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          </ChartContainer>
+                        </div>
+                        <div className="space-y-2">
                           {reportsData.studentStatusDistribution.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: item.color }}
-                        />
+                            <div key={index} className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div 
+                                  className="w-3 h-3 rounded-full" 
+                                  style={{ backgroundColor: item.color }}
+                                />
                                 <span className="text-sm">{item.status}</span>
                               </div>
                               <div className="text-right">
                                 <span className="text-sm font-medium">{item.count}</span>
                                 <span className="text-xs text-muted-foreground ml-1">({item.percentage}%)</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>No student data available. Enroll students to see their status distribution.</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No student data available. Enroll students to see their status distribution.</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Monthly Trends */}
       <Card>
@@ -986,9 +760,7 @@ export default function ReportsPage() {
                                         style={{ width: `${student.progress}%` }}
                                       />
                                     </div>
-                                    <div className="text-xs text-muted-foreground">
-                                      {student.assignments}
-                                    </div>
+                                    
                                   </div>
                                 </TableCell>
                                 <TableCell>
