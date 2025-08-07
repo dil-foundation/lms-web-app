@@ -2,13 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Play, Mic, AlertCircle, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, Play, Pause, Mic, AlertCircle, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ContentLoader } from '@/components/ContentLoader';
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
 import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
 import { useAuth } from '@/hooks/useAuth';
 import { initializeUserProgress, getCurrentTopicProgress, updateCurrentProgress } from '@/utils/progressTracker';
+import { getAuthHeadersWithAccept, getAuthHeaders } from '@/utils/authUtils';
 
 // Types
 interface Phrase {
@@ -37,10 +38,7 @@ const fetchPhrases = async (): Promise<Phrase[]> => {
 
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.PHRASES}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       signal: controller.signal,
     });
 
@@ -157,6 +155,7 @@ export const RepeatAfterMe: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [feedback, setFeedback] = useState<EvaluationFeedback | null>(null);
   const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
@@ -175,10 +174,7 @@ export const RepeatAfterMe: React.FC = () => {
     try {
       const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.REPEAT_AFTER_ME_AUDIO(phraseId)}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
+        headers: getAuthHeadersWithAccept(),
       });
 
       if (!response.ok) {
@@ -253,9 +249,12 @@ export const RepeatAfterMe: React.FC = () => {
       audio.onended = null;
       audio.onloadstart = null;
       audio.onloadeddata = null;
+      audio.onplay = null;
+      audio.onpause = null;
       
       audioRef.current = null;
     }
+    setIsPlayingAudio(false);
   };
 
   // Play audio from URL
@@ -288,11 +287,19 @@ export const RepeatAfterMe: React.FC = () => {
       audio.oncanplaythrough = () => {
         audio.play()
           .then(() => {
-            // Audio started playing successfully
+            setIsPlayingAudio(true);
           })
           .catch((playError) => {
             handleError('Failed to start audio playback');
           });
+      };
+      
+      audio.onplay = () => {
+        setIsPlayingAudio(true);
+      };
+      
+      audio.onpause = () => {
+        setIsPlayingAudio(false);
       };
       
       audio.onerror = () => {
@@ -300,6 +307,7 @@ export const RepeatAfterMe: React.FC = () => {
       };
       
       audio.onended = () => {
+        setIsPlayingAudio(false);
         handleSuccess();
       };
       
@@ -436,10 +444,7 @@ export const RepeatAfterMe: React.FC = () => {
     try {
       const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.EVALUATE_AUDIO}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           audio_base64: audioBase64,
           phrase_id: currentPhrase.id,
@@ -567,6 +572,13 @@ export const RepeatAfterMe: React.FC = () => {
   const handlePlayAudio = async () => {
     if (!currentPhrase) return;
 
+    // If audio is currently playing, stop it
+    if (isPlayingAudio && audioRef.current) {
+      audioRef.current.pause();
+      cleanupCurrentAudio();
+      return;
+    }
+
     setIsLoadingAudio(true);
     
     try {
@@ -581,6 +593,7 @@ export const RepeatAfterMe: React.FC = () => {
     } catch (error: any) {
       // Silent fail for better user experience - could show a toast notification instead
       console.error('Audio playback failed:', error.message);
+      setIsPlayingAudio(false);
     } finally {
       setIsLoadingAudio(false);
     }
@@ -830,17 +843,21 @@ export const RepeatAfterMe: React.FC = () => {
               <Button
                 onClick={handlePlayAudio}
                 disabled={isLoadingAudio}
-                className={`w-16 h-16 rounded-full text-white shadow-lg ${
+                className={`w-16 h-16 rounded-full shadow-lg transition-all duration-200 ${
                   isLoadingAudio 
-                    ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed' 
-                    : 'bg-green-500 hover:bg-green-600'
+                    ? 'bg-gray-600 cursor-not-allowed text-white border-2 border-gray-500' 
+                    : isPlayingAudio
+                    ? 'bg-green-500 hover:bg-green-600 text-white'
+                    : 'bg-green-500 hover:bg-green-600 text-white hover:scale-105'
                 }`}
                 size="icon"
               >
                 {isLoadingAudio ? (
-                  <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                ) : isPlayingAudio ? (
+                  <Pause className="w-8 h-8" />
                 ) : (
-                <Play className="w-8 h-8" />
+                  <Play className="w-8 h-8" />
                 )}
               </Button>
             </div>
@@ -930,6 +947,7 @@ export const RepeatAfterMe: React.FC = () => {
               }}
               disabled={currentPhraseIndex === 0}
               variant="outline"
+              className="hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
             >
               Previous
             </Button>
@@ -942,6 +960,7 @@ export const RepeatAfterMe: React.FC = () => {
               }}
               disabled={currentPhraseIndex === phrases.length - 1}
               variant="outline"
+              className="hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
             >
               Next
             </Button>

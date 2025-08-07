@@ -223,6 +223,20 @@ export const AIStudentProgress: React.FC = () => {
     };
   };
 
+  // Helper function to get auth token from localStorage
+  const getAuthToken = () => {
+    try {
+      const authData = localStorage.getItem('sb-yfaiauooxwvekdimfeuu-auth-token');
+      if (authData) {
+        const parsed = JSON.parse(authData);
+        return parsed.access_token;
+      }
+    } catch (error) {
+      console.error('Error getting auth token:', error);
+    }
+    return null;
+  };
+
   const fetchProgressData = async () => {
     if (!user?.id) {
       setError('User ID not available');
@@ -234,10 +248,16 @@ export const AIStudentProgress: React.FC = () => {
       setLoading(true);
       setError(null);
 
+      const authToken = getAuthToken();
+      if (!authToken) {
+        throw new Error('Authentication token not found. Please log in again.');
+      }
+
       const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.COMPREHENSIVE_PROGRESS}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
         },
         body: JSON.stringify({
           user_id: user.id

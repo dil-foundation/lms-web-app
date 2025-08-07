@@ -1,5 +1,5 @@
 
-import { Home, BookOpen, FileQuestion, TrendingUp, Users, Settings, BarChart3, GraduationCap, ClipboardList, Award, UserCheck, Database, Shield, MessageSquare, Link, Eye, MessageCircle, Bot, Brain, Zap, Target, Sparkles, BookCheck, FileText, Cog } from 'lucide-react';
+import { Home, BookOpen, FileQuestion, TrendingUp, Users, Settings, BarChart3, GraduationCap, ClipboardList, Award, UserCheck, Database, Shield, MessageSquare, Link, Eye, MessageCircle, Bot, Brain, Zap, Target, Sparkles, BookCheck, FileText, Cog, Settings2, ShieldCheck } from 'lucide-react';
 
 export type UserRole = 'student' | 'teacher' | 'admin';
 
@@ -209,6 +209,8 @@ export const getAICategorizedNavigation = (role: UserRole): NavigationCategory[]
           title: 'SYSTEM MANAGEMENT',
           items: [
             { title: 'Overview', path: '/dashboard', icon: Bot },
+            { title: 'AI Tutor Settings', path: '/dashboard/ai-tutor-settings', icon: Settings2 },
+            { title: 'AI Safety & Ethics', path: '/dashboard/ai-safety-ethics', icon: ShieldCheck },
           ]
         },
         {

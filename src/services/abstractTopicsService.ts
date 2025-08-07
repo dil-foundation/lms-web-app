@@ -1,4 +1,5 @@
 import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
+import { getAuthHeadersWithAccept } from '@/utils/authUtils';
 
 export interface AbstractTopic {
   id: string;
@@ -58,10 +59,7 @@ const fetchAbstractTopics = async (): Promise<AbstractTopic[]> => {
 
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.ABSTRACT_TOPICS}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       signal: controller.signal,
     });
 
@@ -129,10 +127,7 @@ const fetchAbstractTopicById = async (topicId: string): Promise<AbstractTopic> =
 
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.ABSTRACT_TOPIC_DETAIL(topicId)}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       signal: controller.signal,
     });
 
@@ -197,10 +192,7 @@ const fetchAbstractTopicAudio = async (topicId: string): Promise<string> => {
 
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.ABSTRACT_TOPIC_AUDIO(topicId)}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       body: JSON.stringify({
         topic_id: topicId
       }),
@@ -268,10 +260,7 @@ const evaluateAbstractTopic = async (evaluationData: AbstractTopicEvaluationRequ
 
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.EVALUATE_ABSTRACT_TOPIC}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       body: JSON.stringify(evaluationData),
       signal: controller.signal,
     });
@@ -356,10 +345,7 @@ const fetchUserCurrentTopic = async (userId: string): Promise<CurrentTopicRespon
 
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.ABSTRACT_TOPIC_CURRENT(userId)}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       signal: controller.signal,
     });
 

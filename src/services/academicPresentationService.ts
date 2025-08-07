@@ -1,4 +1,5 @@
 import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
+import { getAuthHeaders } from '@/utils/authUtils';
 
 export interface AcademicPresentationTopic {
   id: number;
@@ -103,9 +104,7 @@ class AcademicPresentationService {
     try {
       const response = await fetch(`${this.baseUrl}${API_ENDPOINTS.ACADEMIC_PRESENTATION_TOPICS}`, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -136,9 +135,7 @@ class AcademicPresentationService {
     try {
       const response = await fetch(`${this.baseUrl}${API_ENDPOINTS.ACADEMIC_PRESENTATION_TOPIC_DETAIL(topicId.toString())}`, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -157,9 +154,7 @@ class AcademicPresentationService {
     try {
       const response = await fetch(`${this.baseUrl}/api/academic-presentation/${topicId}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ topic_id: topicId }),
       });
 
@@ -208,9 +203,7 @@ class AcademicPresentationService {
     try {
       const response = await fetch(`${this.baseUrl}${API_ENDPOINTS.EVALUATE_ACADEMIC_PRESENTATION}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify(evaluation),
       });
 

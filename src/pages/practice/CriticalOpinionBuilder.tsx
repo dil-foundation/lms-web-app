@@ -1,121 +1,258 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
+
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
-import { ArrowLeft, Mic, Lightbulb, FileText, Brain, CheckCircle, Target } from 'lucide-react';
+import { ArrowLeft, Mic, Lightbulb, FileText, Brain, Target, Loader2, Play, Pause } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { 
+  criticalOpinionService, 
+  CriticalOpinionTopic,
+  CriticalOpinionEvaluation
+} from '@/services/criticalOpinionService';
 
-interface OpinionTopic {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  complexity: 'Advanced' | 'Expert';
-}
 
-interface ArgumentStructure {
-  id: string;
-  title: string;
-  completed: boolean;
-  content?: string;
-}
 
 export default function CriticalOpinionBuilder() {
   const navigate = useNavigate();
-  const [selectedTopic, setSelectedTopic] = useState<string>('ai-ethics');
+  const { user } = useAuth();
+  
+  // State management
+  const [topics, setTopics] = useState<CriticalOpinionTopic[]>([]);
+  const [selectedTopic, setSelectedTopic] = useState<CriticalOpinionTopic | null>(null);
+  const [loading, setLoading] = useState(true);
   const [hasStarted, setHasStarted] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
 
-  const topics: OpinionTopic[] = [
-    {
-      id: 'ai-ethics',
-      title: 'Artificial Intelligence and Ethical Boundaries',
-      description: 'Should there be strict regulations on AI development and deployment?',
-      category: 'Technology & Ethics',
-      complexity: 'Expert'
-    },
-    {
-      id: 'climate-policy',
-      title: 'Climate Change and Economic Policy',
-      description: 'Is economic growth compatible with environmental sustainability?',
-      category: 'Environment & Economics',
-      complexity: 'Expert'
-    },
-    {
-      id: 'digital-privacy',
-      title: 'Digital Privacy vs. Social Benefits',
-      description: 'Should personal data be used for societal benefits even without explicit consent?',
-      category: 'Privacy & Society',
-      complexity: 'Advanced'
-    },
-    {
-      id: 'education-future',
-      title: 'The Future of Traditional Education',
-      description: 'Are traditional educational institutions becoming obsolete in the digital age?',
-      category: 'Education & Society',
-      complexity: 'Advanced'
-    }
-  ];
+  // Audio playback states
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
 
-  const currentTopic = topics.find(t => t.id === selectedTopic) || topics[0];
+  // Recording and evaluation states
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
+  const [isEvaluating, setIsEvaluating] = useState(false);
+  const [evaluationResult, setEvaluationResult] = useState<CriticalOpinionEvaluation | null>(null);
+  const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
 
-  const [argumentStructure, setArgumentStructure] = useState<ArgumentStructure[]>([
-    { id: 'position', title: 'Clear Position Statement', completed: false },
-    { id: 'evidence', title: 'Supporting Evidence & Examples', completed: false },
-    { id: 'counterarguments', title: 'Address Counterarguments', completed: false },
-    { id: 'conclusion', title: 'Logical Conclusion', completed: false }
-  ]);
 
-  const [opinionText, setOpinionText] = useState('');
-  const [hasStartedWriting, setHasStartedWriting] = useState(false);
+  // Load topics on component mount
+  useEffect(() => {
+    const loadTopics = async () => {
+      try {
+        setLoading(true);
+        const fetchedTopics = await criticalOpinionService.getAllTopics();
+        setTopics(fetchedTopics);
+        
+        // Set first topic as default if available
+        if (fetchedTopics.length > 0) {
+          setSelectedTopic(fetchedTopics[0]);
+        }
+      } catch (error) {
+        console.error('Error loading topics:', error);
+        toast.error('Failed to load critical opinion topics');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleTopicChange = (topicId: string) => {
-    setSelectedTopic(topicId);
-    setHasStarted(false);
-    setShowFeedback(false);
-    setCurrentStep(0);
-    setOpinionText('');
-    setHasStartedWriting(false);
-  };
+    loadTopics();
+  }, []);
 
-  const handleStartBuilding = () => {
+
+
+  const handleTopicClick = (topic: CriticalOpinionTopic) => {
+    setSelectedTopic(topic);
     setHasStarted(true);
+    setShowFeedback(false);
   };
 
-  const handleOpinionChange = (value: string) => {
-    setOpinionText(value);
-    if (!hasStartedWriting && value.length > 0) {
-      setHasStartedWriting(true);
+  // Audio playback functions
+  const cleanupCurrentAudio = () => {
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.removeEventListener('play', () => setIsPlayingAudio(true));
+      currentAudio.removeEventListener('pause', () => setIsPlayingAudio(false));
+      currentAudio.removeEventListener('ended', () => setIsPlayingAudio(false));
+      setCurrentAudio(null);
     }
   };
 
-  const handleStartRecording = () => {
-    setIsRecording(true);
-    setShowFeedback(true);
+  const handlePlayAudio = async () => {
+    if (!selectedTopic) return;
+
+    try {
+      setIsLoadingAudio(true);
+      cleanupCurrentAudio();
+
+      const audioUrl = await criticalOpinionService.getTopicAudio(selectedTopic.id);
+      const audio = new Audio(audioUrl);
+      
+      audio.addEventListener('play', () => setIsPlayingAudio(true));
+      audio.addEventListener('pause', () => setIsPlayingAudio(false));
+      audio.addEventListener('ended', () => setIsPlayingAudio(false));
+      
+      setCurrentAudio(audio);
+      await audio.play();
+    } catch (error) {
+      console.error('Error playing audio:', error);
+      toast.error('Failed to play audio');
+    } finally {
+      setIsLoadingAudio(false);
+    }
+  };
+
+
+
+  const handleStartRecording = async () => {
+    try {
+      console.log('🎙️ Starting recording...');
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      
+      const chunks: Blob[] = [];
+      
+      recorder.ondataavailable = (event) => {
+        console.log('📊 Data available:', event.data.size, 'bytes');
+        if (event.data.size > 0) {
+          chunks.push(event.data);
+        }
+      };
+      
+      recorder.onstart = () => {
+        console.log('🎙️ Recording started');
+        setRecordingStartTime(Date.now());
+      };
+      
+      recorder.onerror = (event) => {
+        console.error('❌ Recording error:', event);
+        toast.error('Recording failed');
+      };
+      
+      recorder.onstop = () => {
+        console.log('⏹️ Recording stopped');
+        setRecordedChunks(chunks);
+        handleEvaluateRecording(chunks);
+      };
+      
+      setMediaRecorder(recorder);
+      recorder.start(1000); // Collect data every second
+      setIsRecording(true);
+    } catch (error) {
+      console.error('❌ Error starting recording:', error);
+      toast.error('Failed to start recording');
+    }
   };
 
   const handleStopRecording = () => {
+    console.log('🛑 Stop recording requested');
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+      mediaRecorder.stream.getTracks().forEach(track => track.stop());
+    }
     setIsRecording(false);
+  };
+
+  const handleEvaluateRecording = async (chunks: Blob[]) => {
+    if (!selectedTopic || !user?.id || chunks.length === 0) {
+      console.error('❌ Missing data for evaluation:', { selectedTopic, userId: user?.id, chunks: chunks.length });
+      return;
+    }
+
+    try {
+      console.log('🔄 Starting evaluation...');
+      setIsEvaluating(true);
+      
+      // Create audio blob
+      const audioBlob = new Blob(chunks, { type: 'audio/webm' });
+      console.log('📊 Audio blob size:', audioBlob.size, 'bytes');
+      
+      if (audioBlob.size === 0) {
+        console.error('❌ Empty audio blob');
+        toast.error('No audio recorded');
+        return;
+      }
+      
+      // Convert to base64
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          const result = reader.result as string;
+          const base64 = result.split(',')[1];
+          resolve(base64);
+        };
+        reader.onerror = reject;
+      });
+      
+      reader.readAsDataURL(audioBlob);
+      const audioBase64 = await base64Promise;
+      
+      // Calculate time spent
+      const timeSpent = recordingStartTime ? Math.floor((Date.now() - recordingStartTime) / 1000) : 30;
+      
+      console.log('📤 Sending evaluation request...', {
+        topicId: selectedTopic.id,
+        userId: user.id,
+        timeSpent,
+        audioSize: audioBase64.length
+      });
+      
+      // Call evaluation API
+      const result = await criticalOpinionService.evaluateCriticalOpinion(
+        audioBase64,
+        selectedTopic.id,
+        `critical_opinion_${selectedTopic.id}_${Date.now()}.webm`,
+        user.id,
+        timeSpent,
+        false
+      );
+      
+      console.log('✅ Evaluation result:', result);
+      setEvaluationResult(result);
+      setShowFeedback(true);
+      
+    } catch (error) {
+      console.error('❌ Error evaluating recording:', error);
+      toast.error('Failed to evaluate recording');
+    } finally {
+      setIsEvaluating(false);
+    }
   };
 
   const resetBuilder = () => {
     setHasStarted(false);
     setIsRecording(false);
     setShowFeedback(false);
-    setCurrentStep(0);
-    setOpinionText('');
-    setHasStartedWriting(false);
+    setEvaluationResult(null);
+    setIsEvaluating(false);
+    setRecordedChunks([]);
+    setRecordingStartTime(null);
+    cleanupCurrentAudio();
+    
+    // Stop any ongoing recording
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+      mediaRecorder.stream.getTracks().forEach(track => track.stop());
+    }
+    setMediaRecorder(null);
   };
 
-  const getWordCount = (text: string) => {
-    return text.trim().split(/\s+/).filter(word => word.length > 0).length;
-  };
 
-  const wordCount = getWordCount(opinionText);
-  const minWords = 200;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background p-4 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading critical opinion topics...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!hasStarted) {
     return (
@@ -150,57 +287,60 @@ export default function CriticalOpinionBuilder() {
           <div className="space-y-6">
             <div className="text-center">
               <h2 className="text-2xl font-bold mb-2">Choose Your Opinion Topic</h2>
-              <p className="text-muted-foreground">Select a complex topic to develop a well-reasoned opinion</p>
+              <p className="text-muted-foreground">Click on a topic to start building your opinion immediately</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {topics.map((topic) => (
-                <Card 
-                  key={topic.id}
-                  className={`cursor-pointer transition-all ${
-                    selectedTopic === topic.id 
-                      ? 'ring-2 ring-green-500 bg-green-50 dark:bg-green-900/20' 
-                      : 'hover:shadow-md'
-                  }`}
-                  onClick={() => handleTopicChange(topic.id)}
-                >
-                  <CardContent className="p-6">
-                    <div className="space-y-3">
-                      <div className="flex items-start justify-between">
-                        <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                          <Lightbulb className="h-6 w-6 text-green-600 dark:text-green-400" />
+            {topics.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {topics.map((topic) => (
+                  <Card 
+                    key={topic.id}
+                    className="cursor-pointer transition-all hover:shadow-md hover:ring-2 hover:ring-green-500"
+                    onClick={() => handleTopicClick(topic)}
+                  >
+                    <CardContent className="p-6">
+                      <div className="space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                            <Lightbulb className="h-6 w-6 text-green-600 dark:text-green-400" />
+                          </div>
+                          {(topic.complexity || topic.difficulty_level) && (
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                              (topic.complexity === 'Advanced' || topic.difficulty_level === 'Advanced')
+                                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' 
+                                : (topic.complexity === 'Intermediate' || topic.difficulty_level === 'Intermediate')
+                                ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+                                : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                            }`}>
+                              {topic.complexity || topic.difficulty_level}
+                            </span>
+                          )}
                         </div>
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${
-                          topic.complexity === 'Expert' 
-                            ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' 
-                            : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
-                        }`}>
-                          {topic.complexity}
-                        </span>
+                        <div>
+                          <h3 className="font-semibold mb-1">{topic.title}</h3>
+                          <p className="text-sm text-muted-foreground mb-2">{topic.description}</p>
+                          <span className="text-xs text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded">
+                            {topic.category}
+                          </span>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-semibold mb-1">{topic.title}</h3>
-                        <p className="text-sm text-muted-foreground mb-2">{topic.description}</p>
-                        <span className="text-xs text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded">
-                          {topic.category}
-                        </span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card className="bg-muted/50">
+                <CardContent className="p-8 text-center">
+                  <Lightbulb className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h4 className="text-lg font-semibold text-muted-foreground mb-2">No Topics Available</h4>
+                  <p className="text-muted-foreground text-sm">
+                    Please check back later or contact support if this issue persists.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
 
-            <div className="text-center">
-              <Button
-                onClick={handleStartBuilding}
-                className="bg-green-500 hover:bg-green-600 text-white px-8 py-3 rounded-full text-lg font-medium"
-                size="lg"
-              >
-                <Lightbulb className="h-5 w-5 mr-2" />
-                Start Building Opinion
-              </Button>
-            </div>
+
 
             {/* Building Guidelines */}
             <Card className="bg-muted/50">
@@ -253,7 +393,7 @@ export default function CriticalOpinionBuilder() {
           <Button
             variant="outline"
             size="icon"
-            onClick={() => navigate('/dashboard/practice/stage-6')}
+            onClick={resetBuilder}
             className="shrink-0"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -269,193 +409,168 @@ export default function CriticalOpinionBuilder() {
         </div>
 
         {/* Current Topic */}
-        <Card className="mb-6 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-          <CardContent className="p-4">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h3 className="font-semibold text-green-800 dark:text-green-200 mb-1">{currentTopic.title}</h3>
-                <p className="text-sm text-green-700 dark:text-green-300 mb-2">{currentTopic.description}</p>
-                <span className="text-xs text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded">
-                  {currentTopic.category}
-                </span>
-              </div>
-              <span className={`px-2 py-1 rounded text-xs font-medium ${
-                currentTopic.complexity === 'Expert' 
-                  ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' 
-                  : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
-              }`}>
-                {currentTopic.complexity}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Argument Structure */}
-        <Card className="mb-6 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold text-green-800 dark:text-green-200 mb-4">
-              Argument Structure
-            </h3>
-            <div className="space-y-3">
-              {argumentStructure.map((item, index) => (
-                <div key={item.id} className="flex items-center space-x-3">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                    item.completed 
-                      ? 'bg-green-500' 
-                      : index === currentStep 
-                      ? 'bg-green-200 dark:bg-green-800 border-2 border-green-500' 
-                      : 'bg-muted border-2 border-muted-foreground/20'
-                  }`}>
-                    {item.completed && (
-                      <CheckCircle className="h-4 w-4 text-white" />
-                    )}
-                    {!item.completed && index === currentStep && (
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    )}
-                  </div>
-                  <span className={`text-sm ${
-                    item.completed 
-                      ? 'text-green-700 dark:text-green-300' 
-                      : index === currentStep 
-                      ? 'text-green-600 dark:text-green-400 font-medium' 
-                      : 'text-muted-foreground'
-                  }`}>
-                    {item.title}
+        {selectedTopic && (
+          <Card className="mb-6 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-green-800 dark:text-green-200 mb-1">{selectedTopic.title}</h3>
+                  <p className="text-sm text-green-700 dark:text-green-300 mb-2">{selectedTopic.description}</p>
+                  <span className="text-xs text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded">
+                    {selectedTopic.category}
                   </span>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Opinion Writing Area */}
-        <Card className="mb-6 border-dashed border-2 border-muted-foreground/20">
-          <CardContent className="p-6">
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold mb-2">Develop Your Opinion</h3>
-              <p className="text-sm text-muted-foreground">
-                Write a comprehensive opinion piece addressing the topic. Include your position, supporting evidence, and logical reasoning.
-              </p>
-            </div>
-            
-            <Textarea
-              placeholder="Start developing your opinion on this complex topic..."
-              value={opinionText}
-              onChange={(e) => handleOpinionChange(e.target.value)}
-              className="min-h-[300px] bg-transparent border-none text-foreground placeholder-muted-foreground resize-none focus:outline-none focus:ring-0"
-              style={{ fontSize: '16px' }}
-            />
-            
-            <div className="flex justify-between items-center mt-4 pt-4 border-t border-muted-foreground/20">
-              <span className="text-sm text-muted-foreground">
-                {wordCount}/{minWords} words minimum
-              </span>
-              <div className="flex items-center space-x-2">
-                <div className={`w-3 h-3 rounded-full ${wordCount >= minWords ? 'bg-green-500' : 'bg-orange-500'}`}></div>
-                <span className={`text-sm ${wordCount >= minWords ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'}`}>
-                  {wordCount >= minWords ? 'Ready to present' : 'Keep writing'}
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Writing Tips */}
-        {hasStartedWriting && (
-          <Card className="mb-6 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold text-green-800 dark:text-green-200 mb-4">Writing Tips</h3>
-              <div className="space-y-3">
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                  <p className="text-green-700 dark:text-green-300 text-sm">
-                    Use transition words to connect your ideas smoothly
-                  </p>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                  <p className="text-green-700 dark:text-green-300 text-sm">
-                    Include specific examples to support your arguments
-                  </p>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                  <p className="text-green-700 dark:text-green-300 text-sm">
-                    Acknowledge opposing viewpoints to strengthen your position
-                  </p>
+                <div className="flex items-center space-x-3">
+                  {/* Audio Play Button */}
+                  <Button
+                    onClick={handlePlayAudio}
+                    disabled={isLoadingAudio}
+                    className={`w-12 h-12 rounded-full shadow-lg transition-all duration-200 ${
+                      isLoadingAudio
+                        ? 'bg-gray-600 cursor-not-allowed text-white border-2 border-gray-500'
+                        : isPlayingAudio
+                        ? 'bg-green-500 hover:bg-green-600 text-white'
+                        : 'bg-green-500 hover:bg-green-600 text-white hover:scale-105'
+                    }`}
+                    size="icon"
+                  >
+                    {isLoadingAudio ? (
+                      <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                    ) : isPlayingAudio ? (
+                      <Pause className="w-5 h-5" />
+                    ) : (
+                      <Play className="w-5 h-5" />
+                    )}
+                  </Button>
+                  
+                  {/* Difficulty Badge */}
+                  {(selectedTopic.complexity || selectedTopic.difficulty_level) && (
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                      (selectedTopic.complexity === 'Advanced' || selectedTopic.difficulty_level === 'Advanced')
+                        ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' 
+                        : (selectedTopic.complexity === 'Intermediate' || selectedTopic.difficulty_level === 'Intermediate')
+                        ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+                        : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                    }`}>
+                      {selectedTopic.complexity || selectedTopic.difficulty_level}
+                    </span>
+                  )}
                 </div>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Feedback Section */}
-        {showFeedback && (
+
+
+
+
+
+
+        {/* Evaluation Loading State */}
+        {isEvaluating && (
+          <Card className="mb-6 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-center space-x-3">
+                <Loader2 className="h-6 w-6 animate-spin text-blue-600 dark:text-blue-400" />
+                <span className="text-blue-700 dark:text-blue-300 font-medium">
+                  Evaluating your critical opinion...
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Evaluation Results */}
+        {evaluationResult && (
           <div className="mb-6">
             <h3 className="text-lg font-semibold mb-4">Opinion Analysis</h3>
             <div className="space-y-4">
+              {/* Overall Score */}
               <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
                 <CardContent className="p-4">
-                  <div className="flex items-start space-x-3">
-                    <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mt-1">
-                      <Target className="h-4 w-4 text-green-600 dark:text-green-400" />
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-medium text-green-600 dark:text-green-400 mb-1">Argument Clarity</h4>
-                      <p className="text-green-700 dark:text-green-300 text-sm">
-                        Your position is clearly stated and well-supported with logical reasoning.
-                      </p>
-                    </div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium text-green-600 dark:text-green-400">Overall Score</h4>
+                    <span className="text-2xl font-bold text-green-700 dark:text-green-300">
+                      {evaluationResult.overall_score}/100
+                    </span>
                   </div>
+                  {evaluationResult.feedback && (
+                    <p className="text-green-700 dark:text-green-300 text-sm">
+                      {evaluationResult.feedback}
+                    </p>
+                  )}
                 </CardContent>
               </Card>
 
-              <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-                <CardContent className="p-4">
-                  <div className="flex items-start space-x-3">
-                    <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mt-1">
-                      <Brain className="h-4 w-4 text-green-600 dark:text-green-400" />
+              {/* Strengths */}
+              {evaluationResult.strengths && evaluationResult.strengths.length > 0 && (
+                <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+                  <CardContent className="p-4">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mt-1">
+                        <Target className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium text-green-600 dark:text-green-400 mb-2">Strengths</h4>
+                        <div className="space-y-1">
+                          {evaluationResult.strengths.map((strength, index) => (
+                            <p key={index} className="text-green-700 dark:text-green-300 text-sm">
+                              • {strength}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <h4 className="font-medium text-green-600 dark:text-green-400 mb-1">Critical Thinking</h4>
-                      <p className="text-green-700 dark:text-green-300 text-sm">
-                        Excellent analysis of multiple perspectives and consideration of counterarguments.
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              )}
 
-              <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-                <CardContent className="p-4">
-                  <div className="flex items-start space-x-3">
-                    <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mt-1">
-                      <FileText className="h-4 w-4 text-green-600 dark:text-green-400" />
+              {/* Areas for Improvement */}
+              {evaluationResult.areas_for_improvement && evaluationResult.areas_for_improvement.length > 0 && (
+                <Card className="bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800">
+                  <CardContent className="p-4">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center mt-1">
+                        <Brain className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium text-orange-600 dark:text-orange-400 mb-2">Areas for Improvement</h4>
+                        <div className="space-y-1">
+                          {evaluationResult.areas_for_improvement.map((area, index) => (
+                            <p key={index} className="text-orange-700 dark:text-orange-300 text-sm">
+                              • {area}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <h4 className="font-medium text-green-600 dark:text-green-400 mb-1">Language Sophistication</h4>
-                      <p className="text-green-700 dark:text-green-300 text-sm">
-                        Advanced vocabulary and complex sentence structures demonstrate C2-level proficiency.
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
         )}
 
         {/* Action Button */}
         <div className="text-center">
-          {!isRecording ? (
+          {isEvaluating ? (
+            <Button
+              disabled
+              className="bg-gray-500 cursor-not-allowed text-white px-8 py-3 rounded-full text-lg font-medium"
+              size="lg"
+            >
+              <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+              Evaluating...
+            </Button>
+          ) : !isRecording ? (
             <Button
               onClick={handleStartRecording}
               className="bg-green-500 hover:bg-green-600 text-white px-8 py-3 rounded-full text-lg font-medium"
               size="lg"
-              disabled={wordCount < minWords}
             >
               <Mic className="h-5 w-5 mr-2" />
-              Present Your Opinion
+              Start Recording Your Opinion
             </Button>
           ) : (
             <Button
@@ -475,7 +590,7 @@ export default function CriticalOpinionBuilder() {
                 variant="outline"
                 className="px-6 py-2"
               >
-                New Topic
+                Choose Different Topic
               </Button>
               <Button
                 onClick={() => navigate('/dashboard/practice/stage-6')}

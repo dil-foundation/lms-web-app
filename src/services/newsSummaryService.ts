@@ -1,4 +1,5 @@
 import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
+import { getAuthHeadersWithAccept } from '@/utils/authUtils';
 
 export interface NewsSummaryItem {
   id: string;
@@ -56,10 +57,7 @@ const fetchNewsSummaryItems = async (): Promise<NewsSummaryItem[]> => {
 
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.NEWS_SUMMARY_ITEMS}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       signal: controller.signal,
     });
 
@@ -148,10 +146,7 @@ const fetchNewsSummaryItemById = async (newsId: string): Promise<NewsSummaryItem
 
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.NEWS_SUMMARY_ITEM_DETAIL(newsId)}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       signal: controller.signal,
     });
 
@@ -223,10 +218,7 @@ const fetchNewsSummaryAudio = async (newsId: string): Promise<string> => {
 
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.NEWS_SUMMARY_AUDIO(newsId)}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       body: JSON.stringify({
         news_id: newsId
       }),
@@ -308,10 +300,7 @@ const evaluateNewsSummary = async (request: NewsSummaryEvaluationRequest): Promi
 
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.EVALUATE_NEWS_SUMMARY}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       body: JSON.stringify(request),
       signal: controller.signal,
     });

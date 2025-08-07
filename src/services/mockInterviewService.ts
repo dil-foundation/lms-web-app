@@ -1,4 +1,5 @@
 import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
+import { getAuthHeadersWithAccept } from '@/utils/authUtils';
 
 export interface MockInterviewQuestion {
   id: string;
@@ -64,10 +65,7 @@ const fetchMockInterviewQuestions = async (): Promise<MockInterviewQuestion[]> =
 
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.MOCK_INTERVIEW_QUESTIONS}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       signal: controller.signal,
     });
 
@@ -150,10 +148,7 @@ const fetchMockInterviewQuestionById = async (questionId: string): Promise<MockI
 
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.MOCK_INTERVIEW_QUESTION_DETAIL(questionId)}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       signal: controller.signal,
     });
 
@@ -225,10 +220,7 @@ const fetchMockInterviewQuestionAudio = async (questionId: string): Promise<stri
 
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.MOCK_INTERVIEW_QUESTION_AUDIO(questionId)}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       signal: controller.signal,
     });
 
@@ -350,10 +342,7 @@ const evaluateMockInterview = async (request: MockInterviewEvaluationRequest): P
 
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.EVALUATE_MOCK_INTERVIEW}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       body: JSON.stringify(request),
       signal: controller.signal,
     });
