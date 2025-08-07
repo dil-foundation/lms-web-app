@@ -92,63 +92,74 @@ const ReportCard = ({
   }[report.observerRole] || 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="bg-gradient-to-br from-card to-primary/5 dark:bg-card hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 border border-border/50">
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <div className="flex items-start gap-3 mb-4">
-              <Avatar className="w-10 h-10">
-                <AvatarFallback className="bg-green-100 text-green-700 font-semibold">
+            <div className="flex items-start gap-4 mb-4">
+              <Avatar className="w-12 h-12 ring-2 ring-primary/10">
+                <AvatarFallback className="bg-gradient-to-br from-primary/10 to-primary/20 text-primary font-semibold text-lg">
                   {report.observerName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                 </AvatarFallback>
               </Avatar>
               
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <h3 className="font-semibold text-lg">{report.observerName}</h3>
-                  <Badge className={cn("text-xs font-medium", roleColor)}>
+                <div className="flex items-center gap-3 mb-3">
+                  <h3 className="font-bold text-lg text-foreground">{report.observerName}</h3>
+                  <Badge className={cn("text-xs font-semibold px-3 py-1 rounded-full", roleColor)}>
                     {report.observerRole.replace('-', ' ').toUpperCase()}
                   </Badge>
-                  <Badge className={cn("text-xs font-medium", statusColor)}>
+                  <Badge className={cn("text-xs font-semibold px-3 py-1 rounded-full", statusColor)}>
                     {report.status.toUpperCase()}
                   </Badge>
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Building className="w-4 h-4" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <Building className="w-4 h-4 text-primary" />
                     <span><strong>School:</strong> {report.schoolName}</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <User className="w-4 h-4" />
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-primary" />
                     <span><strong>Teacher:</strong> {report.teacherName}</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Calendar className="w-4 h-4" />
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-primary" />
                     <span><strong>Date:</strong> {new Date(report.observationDate).toLocaleDateString()}</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-4 h-4" />
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-primary" />
                     <span>{report.startTime} - {report.endTime}</span>
                   </div>
                 </div>
                 
-                <div className="mt-3 flex flex-wrap gap-4 text-sm text-muted-foreground">
+                <div className="mt-4 flex flex-wrap gap-4 text-sm text-muted-foreground">
                   <span><strong>Lesson:</strong> {report.lessonCode}</span>
                   <span><strong>Project:</strong> {report.projectName}</span>
                   {report.overallScore && (
-                    <span><strong>Score:</strong> {report.overallScore}%</span>
+                    <span className="font-semibold text-primary"><strong>Score:</strong> {report.overallScore}%</span>
                   )}
                 </div>
               </div>
             </div>
           </div>
           
-          <div className="flex items-center gap-1 ml-4">
-            <Button variant="ghost" size="sm" onClick={onView}>
+          <div className="flex items-center gap-2 ml-4">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onView}
+              className="h-9 w-9 p-0 rounded-xl border-2 hover:border-primary/40 hover:bg-primary/5 transition-all duration-300"
+            >
               <Eye className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={onDownload} disabled={isDownloading}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onDownload} 
+              disabled={isDownloading}
+              className="h-9 w-9 p-0 rounded-xl border-2 hover:border-primary/40 hover:bg-primary/5 transition-all duration-300"
+            >
               {isDownloading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
@@ -156,11 +167,11 @@ const ReportCard = ({
               )}
             </Button>
             <Button 
-              variant="ghost" 
+              variant="outline" 
               size="sm" 
               onClick={onDelete}
               disabled={isDeleting}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+              className="h-9 w-9 p-0 rounded-xl border-2 border-red-200 hover:border-red-300 hover:bg-red-50 text-red-600 hover:text-red-700 transition-all duration-300 dark:border-red-800 dark:hover:border-red-700 dark:hover:bg-red-900/20 dark:text-red-400"
             >
               {isDeleting ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -504,19 +515,38 @@ export const PastReportsView = ({ onBack, onViewReport }: PastReportsViewProps) 
   };
 
   return (
-    <div className="space-y-6 mx-auto p-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Past Observation Reports</h1>
-          <p className="text-muted-foreground mt-1">
-            Review and analyze previously submitted observation reports
-          </p>
+    <div className="space-y-8 mx-auto p-4">
+      {/* Premium Header Section */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
+        <div className="relative p-8 rounded-3xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 flex-1 max-w-2xl">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                <FileText className="w-6 h-6 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
+                  Past Observation Reports
+                </h1>
+                <p className="text-lg text-muted-foreground font-light pr-8">
+                  Review and analyze previously submitted observation reports with comprehensive analytics
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2 flex-shrink-0 ml-8">
+              <Button 
+                variant="outline" 
+                onClick={onBack}
+                className="h-10 px-6 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Reporting
+              </Button>
+            </div>
+          </div>
         </div>
-        <Button variant="outline" onClick={onBack}>
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Reporting
-        </Button>
       </div>
 
       {/* Loading State */}
@@ -535,8 +565,8 @@ export const PastReportsView = ({ onBack, onViewReport }: PastReportsViewProps) 
       {/* Only show content when not loading */}
       {!isLoading && (
         <>
-          {/* Statistics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Statistics Cards Section */}
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Reports</CardTitle>
@@ -598,83 +628,88 @@ export const PastReportsView = ({ onBack, onViewReport }: PastReportsViewProps) 
             </Card>
           </div>
 
-          {/* Filters and Search */}
-          <Card>
+          {/* Filters and Search Section */}
+          <Card className="bg-gradient-to-br from-card to-primary/5 dark:bg-card">
             <CardContent className="p-6">
-              <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+              <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
                 <div className="flex flex-col sm:flex-row gap-4 flex-1">
                   <div className="relative flex-1 max-w-sm">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <Input
-                      placeholder="Search reports..."
+                      placeholder="Search reports by observer, school, or teacher..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10"
+                      className="pl-10 h-11 rounded-xl border-2 focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all duration-300"
                     />
                   </div>
                   
                   <Select value={roleFilter} onValueChange={setRoleFilter}>
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="w-[180px] h-11 rounded-xl border-2 focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all duration-300">
                       <SelectValue placeholder="Filter by role" />
                     </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Roles</SelectItem>
+                    <SelectContent>
+                      <SelectItem value="all">All Roles</SelectItem>
                       {uniqueRoles.map(role => (
                         <SelectItem key={role} value={role}>
                           {role.replace('-', ' ').toUpperCase()}
                         </SelectItem>
                       ))}
-              </SelectContent>
-            </Select>
+                    </SelectContent>
+                  </Select>
 
                   <Select value={schoolFilter} onValueChange={setSchoolFilter}>
-                    <SelectTrigger className="w-[200px]">
+                    <SelectTrigger className="w-[200px] h-11 rounded-xl border-2 focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all duration-300">
                       <SelectValue placeholder="Filter by school" />
                     </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Schools</SelectItem>
+                    <SelectContent>
+                      <SelectItem value="all">All Schools</SelectItem>
                       {uniqueSchools.map(school => (
                         <SelectItem key={school} value={school}>
                           {school}
                         </SelectItem>
                       ))}
-              </SelectContent>
-            </Select>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-[160px]">
+                  <SelectTrigger className="w-[160px] h-11 rounded-xl border-2 focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all duration-300">
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="recent">Most Recent</SelectItem>
+                  <SelectContent>
+                    <SelectItem value="recent">Most Recent</SelectItem>
                     <SelectItem value="oldest">Oldest First</SelectItem>
                     <SelectItem value="school">School Name</SelectItem>
                     <SelectItem value="observer">Observer Name</SelectItem>
                     <SelectItem value="score-high">Highest Score</SelectItem>
                     <SelectItem value="score-low">Lowest Score</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Reports List */}
           {filteredAndSortedReports.length === 0 ? (
-      <Card>
-              <CardContent className="text-center py-12">
-                <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+            <Card className="bg-gradient-to-br from-card to-primary/5 dark:bg-card border-2 border-dashed border-primary/20">
+              <CardContent className="text-center py-16">
+                <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                  <FileText className="w-8 h-8 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold mb-3">
                   {reports.length === 0 ? 'No Reports Found' : 'No Matching Reports'}
                 </h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                   {reports.length === 0 
-                    ? 'You haven\'t submitted any observation reports yet.' 
-                    : 'Try adjusting your search criteria or filters.'
+                    ? 'You haven\'t submitted any observation reports yet. Start by creating your first report.' 
+                    : 'Try adjusting your search criteria or filters to find the reports you\'re looking for.'
                   }
                 </p>
                 {reports.length === 0 && (
-                  <Button onClick={onBack} className="bg-green-600 hover:bg-green-700">
+                  <Button 
+                    onClick={onBack} 
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground h-11 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5"
+                  >
                     <Plus className="w-4 h-4 mr-2" />
                     Create Your First Report
                   </Button>
