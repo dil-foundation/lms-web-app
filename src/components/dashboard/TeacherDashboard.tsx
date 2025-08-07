@@ -81,7 +81,6 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
   const [studentEngagementData, setStudentEngagementData] = useState<any[]>([]);
   const [coursePerformanceData, setCoursePerformanceData] = useState<any[]>([]);
   const [studentProgressData, setStudentProgressData] = useState<any[]>([]);
-  const [studentsData, setStudentsData] = useState<any[]>([]);
 
   // Reports tab state
   const [courseCompletionTrends, setCourseCompletionTrends] = useState<any[]>([]);
@@ -96,17 +95,6 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     excellent_students: number;
     not_started_students: number;
   } | null>(null);
-
-  // Students tab state
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCourse, setSelectedCourse] = useState('all');
-  const [selectedStatus, setSelectedStatus] = useState('all');
-  const [sortBy, setSortBy] = useState('enrolled_date');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [totalStudents, setTotalStudents] = useState(0);
-  const [studentsLoading, setStudentsLoading] = useState(false);
 
   // Helper function to get date range based on timeRange
   const getDateRange = (range: string) => {
@@ -141,30 +129,21 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     return { startDate, endDate: now };
   };
 
-  // Add useEffect to track chart data state changes
-  useEffect(() => {
-    console.log('🔍 [DEBUG] Chart data state updated:', {
-      studentEngagementData: studentEngagementData.length,
-      coursePerformanceData: coursePerformanceData.length,
-      studentProgressData: studentProgressData.length,
-      courseCompletionTrends: courseCompletionTrends.length,
-      engagementTrendsData: engagementTrendsData.length
-    });
-  }, [studentEngagementData, coursePerformanceData, studentProgressData, courseCompletionTrends, engagementTrendsData]);
+
 
   useEffect(() => {
     const fetchTeacherData = async () => {
       if (!userProfile?.id) {
-        console.log('🔍 [DEBUG] No userProfile.id, skipping data fetch');
+
         setLoading(false);
         return;
       }
       
-      console.log('🔍 [DEBUG] Starting fetchTeacherData for teacher:', userProfile.id);
+
       setLoading(true);
       try {
         const { startDate, endDate } = getDateRange(timeRange);
-        console.log('🔍 [DEBUG] Date range:', { timeRange, startDate, endDate });
+
 
         // 1. Find all courses this teacher is a part of
         const { data: teacherCourses, error: teacherCoursesError } = await supabase
@@ -176,10 +155,10 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         if (teacherCoursesError) throw teacherCoursesError;
 
         const courseIds = teacherCourses.map(c => c.course_id);
-        console.log('🔍 [DEBUG] Teacher course IDs:', courseIds);
+
 
         if (courseIds.length === 0) {
-          console.log('🔍 [DEBUG] No courses found for teacher, setting empty stats');
+
           setStats({
             totalStudents: 0,
             publishedCourses: 0,
@@ -204,19 +183,18 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         if (sectionsError) throw sectionsError;
 
         const sectionIds = sections.map(s => s.id);
-        console.log('🔍 [DEBUG] Section IDs:', sectionIds);
+
 
         // 3. Get assignment lesson IDs
         const { data: assignmentLessons, error: lessonsError } = await supabase
           .from('course_lessons')
           .select('id')
-          .in('section_id', sectionIds)
-          .eq('type', 'assignment');
+          .in('section_id', sectionIds);
 
         if (lessonsError) throw lessonsError;
 
         const assignmentLessonIds = assignmentLessons.map(l => l.id);
-        console.log('🔍 [DEBUG] Assignment lesson IDs:', assignmentLessonIds);
+
 
         // 4. Fetch teacher-specific stats using the new engagement metrics function
         const { data: engagementMetrics, error: engagementError } = await supabase.rpc('get_teacher_engagement_metrics', {
@@ -226,18 +204,9 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
 
         if (engagementError) throw engagementError;
 
-        console.log('🔍 [DEBUG] Engagement metrics from SQL:', engagementMetrics);
 
-        // Debug: Check what data exists for this teacher
-        const { data: debugData, error: debugError } = await supabase.rpc('debug_teacher_data', {
-          teacher_id: userProfile.id
-        });
-        
-        if (!debugError) {
-          console.log('🔍 [DEBUG] Teacher data debug info:', debugData);
-        } else {
-          console.log('🔍 [DEBUG] Debug function error:', debugError);
-        }
+
+
 
         // Also fetch course counts for the dashboard
         const [
@@ -270,7 +239,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         if (coursesError) throw coursesError;
         if (totalCoursesError) throw totalCoursesError;
 
-        console.log('🔍 [DEBUG] Course counts:', { publishedCourses, totalCourses });
+
 
         // Use real engagement metrics from SQL function
         const realStats = engagementMetrics?.[0] || {
@@ -295,18 +264,15 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
           activeStudents: realStats.active_students,
         };
 
-        console.log('🔍 [DEBUG] Calculated stats:', baseStats);
+
         setStats(baseStats);
 
-        // Fetch chart data
-        console.log('🔍 [DEBUG] Fetching chart data...');
+
         await fetchStudentEngagementData(courseIds, timeRange);
         await fetchCoursePerformanceData(courseIds);
         await fetchStudentProgressData(courseIds);
-        await fetchStudentsData(courseIds);
         
-        // Fetch reports data
-        console.log('🔍 [DEBUG] Fetching reports data...');
+
         await fetchCourseCompletionTrends(courseIds, timeRange);
         await fetchQuizScoresData(courseIds);
         await fetchEngagementTrendsData(courseIds, timeRange);
@@ -323,30 +289,9 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     fetchTeacherData();
   }, [userProfile, timeRange]);
 
-  // Separate useEffect for students data with filters and pagination
-  useEffect(() => {
-    if (userProfile?.id) {
-      // Get course IDs for the teacher
-      const getCourseIds = async () => {
-        const { data: teacherCourses } = await supabase
-          .from('course_members')
-          .select('course_id')
-          .eq('user_id', userProfile.id)
-          .eq('role', 'teacher');
-        
-        if (teacherCourses) {
-          const courseIds = teacherCourses.map(c => c.course_id);
-          await fetchStudentsData(courseIds);
-        }
-      };
-      
-      getCourseIds();
-    }
-  }, [userProfile?.id, searchTerm, selectedCourse, selectedStatus, sortBy, sortOrder, currentPage, pageSize]);
-
   const fetchStudentEngagementData = async (courseIds: string[], range: string) => {
     try {
-      console.log('🔍 [DEBUG] fetchStudentEngagementData called with:', { courseIds, range, teacherId: userProfile.id });
+
       
       // Use the dynamic SQL function
       const { data, error } = await supabase.rpc('get_student_engagement_trends', {
@@ -354,12 +299,12 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         time_range: range
       });
 
-      console.log('🔍 [DEBUG] get_student_engagement_trends response:', { data, error });
+
 
       if (error) throw error;
 
-      if (!data || data.length === 0) {
-        console.log('🔍 [DEBUG] No engagement data found, using minimal fallback');
+      if (!data || data.length === 0 || (data.length === 1 && data[0].period_label === 'No Activity')) {
+
         // Create minimal fallback data to show chart structure
         const fallbackData = [
           { week: 'Week 1', activeStudents: 0, completionRate: 0, timeSpent: 0 },
@@ -379,7 +324,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         timeSpent: item.time_spent
       }));
 
-      console.log('🔍 [DEBUG] Transformed engagement data:', engagementData);
+
       setStudentEngagementData(engagementData);
     } catch (error) {
       console.error("Failed to fetch student engagement data:", error);
@@ -396,19 +341,19 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
 
   const fetchCoursePerformanceData = async (courseIds: string[]) => {
     try {
-      console.log('🔍 [DEBUG] fetchCoursePerformanceData called with:', { courseIds, teacherId: userProfile.id });
+
       
       // Use the dynamic SQL function
       const { data, error } = await supabase.rpc('get_course_performance_data', {
         teacher_id: userProfile.id
       });
 
-      console.log('🔍 [DEBUG] get_course_performance_data response:', { data, error });
+
 
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        console.log('🔍 [DEBUG] No course performance data found, setting empty array');
+
         setCoursePerformanceData([]);
         return;
       }
@@ -422,7 +367,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         avgRating: item.avg_rating
       }));
 
-      console.log('🔍 [DEBUG] Transformed course performance data:', coursePerformance);
+
       setCoursePerformanceData(coursePerformance);
     } catch (error) {
       console.error("Failed to fetch course performance data:", error);
@@ -432,19 +377,19 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
 
   const fetchStudentProgressData = async (courseIds: string[]) => {
     try {
-      console.log('🔍 [DEBUG] fetchStudentProgressData called with:', { courseIds, teacherId: userProfile.id });
+
       
       // Use the dynamic SQL function
       const { data, error } = await supabase.rpc('get_student_progress_distribution', {
         teacher_id: userProfile.id
       });
 
-      console.log('🔍 [DEBUG] get_student_progress_distribution response:', { data, error });
+
 
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        console.log('🔍 [DEBUG] No student progress data found, using fallback');
+
         // Create fallback data to show chart structure
         const fallbackData = [
           { name: 'Not Started', value: 0, color: '#6B7280' },
@@ -464,7 +409,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         color: item.color_code
       }));
 
-      console.log('🔍 [DEBUG] Transformed student progress data:', progressDistribution);
+
       setStudentProgressData(progressDistribution);
     } catch (error) {
       console.error("Failed to fetch student progress data:", error);
@@ -480,76 +425,9 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     }
   };
 
-  const fetchStudentsData = async (courseIds: string[]) => {
-    try {
-      setStudentsLoading(true);
-      
-      // Use the enhanced SQL function with pagination, search, and filtering
-      const { data, error } = await supabase.rpc('get_students_data', {
-        teacher_id: userProfile.id,
-        search_term: searchTerm,
-        course_filter: selectedCourse === 'all' ? '' : selectedCourse,
-        status_filter: selectedStatus === 'all' ? '' : selectedStatus,
-        sort_by: sortBy,
-        sort_order: sortOrder,
-        page_number: currentPage,
-        page_size: pageSize
-      });
-
-      if (error) throw error;
-
-      if (!data || data.length === 0) {
-        // If no students found, show empty state
-        setStudentsData([]);
-        setTotalStudents(0);
-        return;
-      }
-
-      // Transform the data to match the expected format
-      const transformedStudents = data.map((student: any) => ({
-        id: student.student_id,
-        name: student.student_name,
-        email: student.student_email,
-        avatar: student.student_avatar,
-        enrolledDate: student.enrolled_date,
-        course: student.course_title,
-        progress: student.progress_percentage,
-        status: student.status,
-        lastActive: student.last_active,
-        assignments: student.assignments_completed,
-      }));
-
-      setStudentsData(transformedStudents);
-      // Set total count from the first row (all rows have the same total_count)
-      if (data.length > 0) {
-        setTotalStudents(data[0].total_count);
-      }
-    } catch (error) {
-      console.error("Failed to fetch students data:", error);
-      // Show meaningful error state
-      setStudentsData([
-        {
-          id: 1,
-          name: 'Data Unavailable',
-          email: 'error',
-          avatar: 'DU',
-          enrolledDate: new Date().toISOString().split('T')[0],
-          course: 'Error',
-          progress: 0,
-          status: 'Error',
-          lastActive: 'Error',
-          assignments: '0/0',
-        }
-      ]);
-      setTotalStudents(0);
-    } finally {
-      setStudentsLoading(false);
-    }
-  };
-
   const fetchCourseCompletionTrends = async (courseIds: string[], range: string) => {
     try {
-      console.log('🔍 [DEBUG] fetchCourseCompletionTrends called with:', { courseIds, range, teacherId: userProfile.id });
+
       
       // Use the dynamic SQL function
       const { data, error } = await supabase.rpc('get_course_completion_trends', {
@@ -557,12 +435,12 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         time_range: range
       });
 
-      console.log('🔍 [DEBUG] get_course_completion_trends response:', { data, error });
+
 
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        console.log('🔍 [DEBUG] No course completion trends data found, setting empty array');
+
         setCourseCompletionTrends([]);
         return;
       }
@@ -573,7 +451,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         ...item.course_data
       }));
 
-      console.log('🔍 [DEBUG] Transformed course completion trends data:', trendsData);
+
       setCourseCompletionTrends(trendsData);
     } catch (error) {
       console.error("Failed to fetch course completion trends:", error);
@@ -583,19 +461,19 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
 
   const fetchQuizScoresData = async (courseIds: string[]) => {
     try {
-      console.log('🔍 [DEBUG] fetchQuizScoresData called with:', { courseIds, teacherId: userProfile.id });
+
       
       // Use the dynamic SQL function
       const { data, error } = await supabase.rpc('get_quiz_performance_data', {
         teacher_id: userProfile.id
       });
 
-      console.log('🔍 [DEBUG] get_quiz_performance_data response:', { data, error });
+
 
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        console.log('🔍 [DEBUG] No quiz scores data found, using fallback');
+
         // Create fallback data to show chart structure
         const fallbackData = [
           { quiz: 'No Quizzes Available', avgScore: 0, attempts: 0, passRate: 0 }
@@ -612,7 +490,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         passRate: item.pass_rate
       }));
 
-      console.log('🔍 [DEBUG] Transformed quiz scores data:', quizData);
+
       setQuizScoresData(quizData);
     } catch (error) {
       console.error("Failed to fetch quiz scores data:", error);
@@ -626,7 +504,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
 
   const fetchEngagementTrendsData = async (courseIds: string[], range: string) => {
     try {
-      console.log('🔍 [DEBUG] fetchEngagementTrendsData called with:', { courseIds, range, teacherId: userProfile.id });
+
       
       // Use the dynamic SQL function
       const { data, error } = await supabase.rpc('get_engagement_trends_data', {
@@ -728,89 +606,6 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       </CardContent>
     </Card>
   );
-
-  // Pagination component
-  const Pagination = () => {
-    const totalPages = Math.ceil(totalStudents / pageSize);
-    const startItem = (currentPage - 1) * pageSize + 1;
-    const endItem = Math.min(currentPage * pageSize, totalStudents);
-
-    if (totalPages <= 1) return null;
-
-    return (
-      <div className="flex items-center justify-between px-2 py-4">
-        <div className="flex-1 text-sm text-muted-foreground">
-          Showing {startItem} to {endItem} of {totalStudents} results
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage(1)}
-            disabled={currentPage === 1}
-            className="hover:bg-gray-100 dark:hover:bg-gray-800"
-          >
-            <ChevronsLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="hover:bg-gray-100 dark:hover:bg-gray-800"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          
-          <div className="flex items-center space-x-1">
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              let pageNum;
-              if (totalPages <= 5) {
-                pageNum = i + 1;
-              } else if (currentPage <= 3) {
-                pageNum = i + 1;
-              } else if (currentPage >= totalPages - 2) {
-                pageNum = totalPages - 4 + i;
-              } else {
-                pageNum = currentPage - 2 + i;
-              }
-              
-              return (
-                <Button
-                  key={pageNum}
-                  variant={currentPage === pageNum ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setCurrentPage(pageNum)}
-                  className="w-8 h-8"
-                >
-                  {pageNum}
-                </Button>
-              );
-            })}
-          </div>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="hover:bg-gray-100 dark:hover:bg-gray-800"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage(totalPages)}
-            disabled={currentPage === totalPages}
-            className="hover:bg-gray-100 dark:hover:bg-gray-800"
-          >
-            <ChevronsRight className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-    );
-  };
 
 
 
@@ -1012,10 +807,9 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         <div className="relative">
           <div className="relative">
             <Tabs defaultValue="overview" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+              <TabsList className="grid w-full grid-cols-2 md:grid-cols-3">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="performance">Performance</TabsTrigger>
-                <TabsTrigger value="students">Students</TabsTrigger>
                 <TabsTrigger value="feedback">Reports</TabsTrigger>
               </TabsList>
 
@@ -1128,59 +922,6 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                           </BarChart>
                         </ResponsiveContainer>
                       </ChartContainer>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="students" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <span>Student Management</span>
-                      <div className="flex items-center gap-2">
-                        <div className="relative">
-                          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                          <Input 
-                            placeholder="Search students..." 
-                            className="w-64 pl-10 h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5" 
-                          />
-                        </div>
-                                        <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800"
-                >
-                  <Search className="h-4 w-4" />
-                </Button>
-                      </div>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {studentsData.map((student, index) => (
-                        <div key={student.id || index} className="flex items-center justify-between p-4 border rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-10 w-10">
-                              <AvatarFallback>
-                                {getInitials(student.first_name, student.last_name)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium">{student.first_name} {student.last_name}</p>
-                              <p className="text-sm text-muted-foreground">{student.email}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant={student.status === 'active' ? 'default' : 'secondary'}>
-                              {student.status}
-                            </Badge>
-                            <Button variant="outline" size="sm" className="hover:bg-gray-100 dark:hover:bg-gray-800">
-                              View Details
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
                     </div>
                   </CardContent>
                 </Card>

@@ -68,6 +68,7 @@ interface Assignment {
   submissionContent?: string;
   submissionType?: 'text' | 'file' | 'link';
   score?: number;
+  lesson_content_id: string;
 }
 
 interface StudentAssignmentsProps {
@@ -87,7 +88,6 @@ const AssignmentDetailModal = memo(({
 
   return (
     <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 bg-card border border-border backdrop-blur-sm">
-      {/* Premium Header */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5"></div>
         <div className="relative p-6 border-b border-border">
@@ -112,7 +112,6 @@ const AssignmentDetailModal = memo(({
       <div className="flex-1 overflow-y-auto">
         <div className="p-8 space-y-8">
           
-          {/* Course Information */}
           <Card className="bg-card border border-border backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-3 text-xl">
@@ -152,7 +151,6 @@ const AssignmentDetailModal = memo(({
             </CardContent>
           </Card>
 
-          {/* Assignment Description */}
           <Card className="bg-card border border-border backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-3 text-xl">
@@ -165,7 +163,6 @@ const AssignmentDetailModal = memo(({
             </CardContent>
           </Card>
 
-          {/* Grade & Feedback Section */}
           {assignment.status === 'graded' && (
             <Card className="bg-card border border-border backdrop-blur-sm">
               <CardHeader>
@@ -203,7 +200,6 @@ const AssignmentDetailModal = memo(({
             </Card>
           )}
 
-          {/* Submission Information */}
           {assignment.submittedAt && (
             <Card className="bg-card border border-border backdrop-blur-sm">
               <CardHeader>
@@ -221,7 +217,6 @@ const AssignmentDetailModal = memo(({
             </Card>
           )}
 
-          {/* Attachments */}
           {assignment.attachments && assignment.attachments.length > 0 && (
             <Card className="bg-card border border-border backdrop-blur-sm">
               <CardHeader>
@@ -306,7 +301,7 @@ const AssignmentSubmissionModal = memo(({
   setSubmissionLink: (value: string) => void,
   submissionFile: File | null,
   setSubmissionFile: (file: File | null) => void,
-  handleSubmission: (assignmentId: string) => void,
+  handleSubmission: (lessonContentId: string) => void,
   isDownloading: string | null,
   handleDownload: (url: string, name: string) => void,
   activeTab: string,
@@ -417,7 +412,7 @@ const AssignmentSubmissionModal = memo(({
                   />
                 </div>
                 <Button 
-                  onClick={() => handleSubmission(assignment.id)}
+                  onClick={() => handleSubmission(assignment.lesson_content_id)}
                   disabled={!submissionText.trim()}
                   className="w-full"
                 >
@@ -469,7 +464,7 @@ const AssignmentSubmissionModal = memo(({
                   </div>
                 </div>
                 <Button 
-                  onClick={() => handleSubmission(assignment.id)}
+                  onClick={() => handleSubmission(assignment.lesson_content_id)}
                   disabled={!submissionFile && !existingFileName}
                   className="w-full"
                 >
@@ -493,7 +488,7 @@ const AssignmentSubmissionModal = memo(({
                   </p>
                 </div>
                 <Button 
-                  onClick={() => handleSubmission(assignment.id)}
+                  onClick={() => handleSubmission(assignment.lesson_content_id)}
                   disabled={!submissionLink.trim()}
                   className="w-full"
                 >
@@ -522,7 +517,6 @@ const AssignmentSubmissionModal = memo(({
   );
 });
 
-// Helper functions need to be available to the modals, so we define them here.
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'pending': return 'destructive';
@@ -620,7 +614,6 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
               url: link.href,
               name: link.textContent || 'download',
             });
-            // If the link is the only content in a paragraph, remove the paragraph. Otherwise just the link.
             if (link.parentElement?.tagName === 'P' && link.parentElement.textContent?.trim() === link.textContent?.trim()) {
               link.parentElement.remove();
             } else {
@@ -658,6 +651,7 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
           submissionContent: item.submission_content,
           submissionType: item.submission_type,
           score: item.grade,
+          lesson_content_id: item.id
         };
       });
 
@@ -683,7 +677,7 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
     return matchesFilter && matchesSearch;
   });
 
-  const handleSubmission = async (assignmentId: string) => {
+  const handleSubmission = async (lessonContentId: string) => {
     if (!user || !selectedAssignment) return;
 
     let submission_type = activeSubmissionTab;
@@ -694,7 +688,7 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
     } else if (submission_type === 'link') {
         content = submissionLink;
     } else if (submission_type === 'file' && submissionFile) {
-        const filePath = `submission-files/${user.id}/${assignmentId}/${Date.now()}-${submissionFile.name}`;
+        const filePath = `submission-files/${user.id}/${lessonContentId}/${Date.now()}-${submissionFile.name}`;
         const { error: uploadError } = await supabase.storage
             .from('dil-lms')
             .upload(filePath, submissionFile, { upsert: true });
@@ -714,7 +708,7 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
     }
 
     const submissionData = {
-        assignment_id: assignmentId,
+        assignment_id: lessonContentId,
         user_id: user.id,
         submission_type: submission_type,
         content: content,
@@ -732,7 +726,7 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
     } else {
         toast.success("Assignment submitted successfully!");
         setIsSubmissionModalOpen(false);
-        fetchAssignments(); // Re-fetch assignments to show updated status
+        fetchAssignments();
     }
   };
 
@@ -854,7 +848,6 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
   if (loading) {
     return (
       <div className="space-y-6">
-        {/* Header Section */}
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
           <div className="relative p-8 rounded-3xl">
@@ -884,7 +877,6 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
 
   return (
     <div className="space-y-6">
-      {/* Header Section */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
         <div className="relative p-8 rounded-3xl">
@@ -906,7 +898,6 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
         </div>
       </div>
 
-      {/* Filters and Search */}
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
         <div className="flex items-center space-x-4">
           <div className="relative">
@@ -939,7 +930,6 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
         </div>
       </div>
 
-      {/* Assignment Statistics */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -1042,4 +1032,4 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
       </Dialog>
     </div>
   );
-}; 
+};

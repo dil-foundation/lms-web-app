@@ -94,161 +94,87 @@ export class TeacherReportsService {
 
   async fetchTeacherReports(): Promise<TeacherReportsData> {
     try {
-      // Get teacher's courses
+      // 1. Get teacher's courses
       const { data: teacherCourses, error: coursesError } = await supabase
         .from('course_members')
-        .select(`
-          course_id,
-          courses (
-            id,
-            title,
-            description,
-            created_at,
-            updated_at
-          )
-        `)
+        .select('course_id, courses(id, title, description)')
         .eq('user_id', this.teacherId)
         .eq('role', 'teacher');
 
       if (coursesError) throw coursesError;
 
       const courseIds = (teacherCourses || []).map(tc => tc.course_id);
+      const courseDetails = (teacherCourses || []).map(tc => tc.courses).filter(Boolean);
 
       if (courseIds.length === 0) {
         return this.getEmptyReportsData();
       }
 
-      // Get all student enrollments for teacher's courses
+      // 2. Get student enrollments for these courses
       const { data: enrollments, error: enrollmentsError } = await supabase
         .from('course_members')
-        .select(`
-          user_id,
-          course_id,
-          created_at
-        `)
+        .select('user_id, course_id, created_at')
         .in('course_id', courseIds)
         .eq('role', 'student');
-
       if (enrollmentsError) throw enrollmentsError;
-
-      // Get student profiles separately
       const studentIds = [...new Set((enrollments || []).map(e => e.user_id))];
+
+      // 3. Get student profiles
       const { data: studentProfiles, error: profilesError } = await supabase
         .from('profiles')
-        .select(`
-          id,
-          first_name,
-          last_name,
-          email
-        `)
+        .select('id, first_name, last_name, email')
         .in('id', studentIds);
-
       if (profilesError) throw profilesError;
 
-      // Get course details separately
-      const { data: courseDetails, error: courseDetailsError } = await supabase
-        .from('courses')
-        .select(`
-          id,
-          title,
-          description
-        `)
-        .in('id', courseIds);
+      // 4. Get all course content, lessons, and sections for progress calculation
+      const { data: sections, error: sectionsError } = await supabase
+          .from('course_sections')
+          .select('id, course_id')
+          .in('course_id', courseIds);
+      if (sectionsError) throw sectionsError;
+      const sectionIds = sections.map(s => s.id);
 
-      if (courseDetailsError) throw courseDetailsError;
+      const { data: lessons, error: lessonsError } = await supabase
+        .from('course_lessons')
+        .select('id, section_id, due_date')
+        .in('section_id', sectionIds);
+      if (lessonsError) throw lessonsError;
+      const lessonIds = lessons.map(l => l.id);
 
-      // Get assignments from course_lessons where type = 'assignment'
-      let assignments: any[] = [];
-      let submissions: any[] = [];
+      const { data: allContentItems, error: contentError } = await supabase
+        .from('course_lesson_content')
+        .select('id, lesson_id, title, content_type')
+        .in('lesson_id', lessonIds);
+      if (contentError) throw contentError;
       
-      try {
-        const { data: assignmentsData, error: assignmentsError } = await supabase
-          .from('course_lessons')
-          .select(`
-            id,
-            title,
-            content,
-            type,
-            due_date,
-            created_at,
-            section_id,
-            course_sections!course_lessons_section_id_fkey (
-              course_id
-            )
-          `)
-          .eq('type', 'assignment')
-          .in('section_id', (await supabase
-            .from('course_sections')
-            .select('id')
-            .in('course_id', courseIds)
-          ).data?.map(s => s.id) || []);
+      const assignments = allContentItems
+        .filter(item => item.content_type === 'assignment')
+        .map(item => {
+            const lesson = lessons.find(l => l.id === item.lesson_id);
+            const section = sections.find(s => s.id === lesson?.section_id);
+            return {
+                id: item.id,
+                title: item.title,
+                course_id: section?.course_id,
+                due_date: lesson?.due_date,
+            };
+        });
 
-        if (assignmentsError) {
-          console.warn('Error fetching assignments from course_lessons:', assignmentsError);
-        } else {
-          assignments = (assignmentsData || []).map(lesson => ({
-            id: lesson.id,
-            title: lesson.title,
-            description: lesson.content || '',
-            course_id: lesson.course_sections?.course_id,
-            due_date: lesson.due_date,
-            created_at: lesson.created_at
-          }));
-        }
+      // 5. Get all submissions for these assignments
+      const assignmentIds = assignments.map(a => a.id);
+      const { data: submissions, error: submissionsError } = await supabase
+        .from('assignment_submissions')
+        .select('id, assignment_id, user_id, submitted_at, grade, status')
+        .in('assignment_id', assignmentIds);
+      if (submissionsError) throw submissionsError;
 
-        // Get assignment submissions
-        if (assignments.length > 0) {
-          const { data: submissionsData, error: submissionsError } = await supabase
-            .from('assignment_submissions')
-            .select(`
-              id,
-              assignment_id,
-              user_id,
-              submitted_at,
-              grade,
-              feedback,
-              status
-            `)
-            .in('assignment_id', assignments.map(a => a.id));
-
-          if (submissionsError) {
-            console.warn('Error fetching assignment submissions:', submissionsError);
-          } else {
-            submissions = (submissionsData || []).map(sub => ({
-              id: sub.id,
-              assignment_id: sub.assignment_id,
-              student_id: sub.user_id,
-              submitted_at: sub.submitted_at,
-              score: sub.grade,
-              feedback: sub.feedback,
-              status: sub.status
-            }));
-          }
-        }
-      } catch (error) {
-        console.warn('Error fetching assignments data:', error);
-        // Continue without assignments data
-      }
-
-      // Get course progress data from user_course_progress
+      // 6. Get all progress items for these students in these courses
       const { data: courseProgress, error: progressError } = await supabase
-        .from('user_course_progress')
-        .select(`
-          id,
-          user_id,
-          course_id,
-          lesson_id,
-          completed_at,
-          created_at,
-          updated_at,
-          progress_seconds
-        `)
+        .from('user_content_item_progress')
+        .select('user_id, course_id, lesson_content_id, status, updated_at, completed_at')
+        .in('user_id', studentIds)
         .in('course_id', courseIds);
-
-      if (progressError) {
-        console.warn('Error fetching course progress:', progressError);
-        // Continue without progress data
-      }
+      if (progressError) throw progressError;
 
       // Process the data
       const reportsData = this.processReportsData(
@@ -258,7 +184,10 @@ export class TeacherReportsService {
         courseDetails || [],
         assignments || [],
         submissions || [],
-        courseProgress || []
+        courseProgress || [],
+        allContentItems || [],
+        lessons || [],
+        sections || []
       );
 
       return reportsData;
@@ -276,15 +205,21 @@ export class TeacherReportsService {
     courseDetails: any[],
     assignments: any[],
     submissions: any[],
-    courseProgress: any[]
+    courseProgress: any[],
+    allContentItems: any[],
+    lessons: any[],
+    sections: any[]
   ): TeacherReportsData {
+
+
     // Calculate overall metrics
     const overallMetrics = this.calculateOverallMetrics(
       teacherCourses,
       enrollments,
       assignments,
       submissions,
-      courseProgress
+      courseProgress,
+      allContentItems
     );
 
     // Calculate course performance
@@ -294,7 +229,10 @@ export class TeacherReportsService {
       courseDetails,
       assignments,
       submissions,
-      courseProgress
+      courseProgress,
+      allContentItems,
+      lessons,
+      sections
     );
 
     // Calculate student progress
@@ -304,7 +242,10 @@ export class TeacherReportsService {
       courseDetails,
       assignments,
       submissions,
-      courseProgress
+      courseProgress,
+      allContentItems,
+      lessons,
+      sections
     );
 
     // Calculate assignment performance
@@ -315,7 +256,7 @@ export class TeacherReportsService {
     );
 
     // Calculate monthly trends
-    const monthlyTrends = this.calculateMonthlyTrends(enrollments, courseProgress);
+    const monthlyTrends = this.calculateMonthlyTrends(enrollments, courseProgress, submissions);
 
     // Calculate student status distribution
     const studentStatusDistribution = this.calculateStudentStatusDistribution(studentProgress);
@@ -338,206 +279,129 @@ export class TeacherReportsService {
     };
   }
 
-  private calculateOverallMetrics(
-    teacherCourses: any[],
-    enrollments: any[],
-    assignments: any[],
-    submissions: any[],
-    courseProgress: any[]
-  ): TeacherOverallMetrics {
-    const uniqueStudents = new Set(enrollments.map(e => e.user_id));
-    const totalStudents = uniqueStudents.size;
+  private calculateOverallMetrics(teacherCourses: any[], enrollments: any[], assignments: any[], submissions: any[], courseProgress: any[], allContentItems: any[]): TeacherOverallMetrics {
+    const studentIds = [...new Set(enrollments.map(e => e.user_id))];
+    const totalStudents = studentIds.length;
 
-    // Calculate active students (students with recent activity)
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const activeStudentIds = new Set(courseProgress.filter(p => new Date(p.updated_at) > thirtyDaysAgo).map(p => p.user_id));
+    const activeStudents = activeStudentIds.size;
+
+    const totalCompletedItems = courseProgress.filter(p => p.status === 'completed').length;
+    const totalEnrollmentItems = enrollments.length * (allContentItems.length / teacherCourses.length || 1); // rough estimate
+    const averageCompletion = totalEnrollmentItems > 0 ? Math.round((totalCompletedItems / totalEnrollmentItems) * 100) : 0;
     
-    const activeStudents = courseProgress.filter(
-      cp => new Date(cp.updated_at) > thirtyDaysAgo
-    ).length;
-
-    // Calculate average completion (based on completed lessons)
-    const avgCompletion = courseProgress.length > 0
-      ? (courseProgress.filter(cp => cp.completed_at).length / courseProgress.length) * 100
-      : 0;
-
-    // Calculate average score
-    const avgScore = submissions.length > 0
-      ? submissions.reduce((sum, s) => sum + (s.score || 0), 0) / submissions.length
-      : 0;
-
-    // Calculate average engagement (based on submission frequency or course progress)
-    let avgEngagement = 0;
-    if (totalStudents > 0) {
-      if (submissions.length > 0) {
-        avgEngagement = submissions.length / totalStudents;
-      } else {
-        // Fallback: use course progress as engagement indicator
-        avgEngagement = courseProgress.length / totalStudents;
-      }
-    }
+    const gradedSubmissions = submissions.filter(s => s.grade !== null);
+    const averageScore = gradedSubmissions.length > 0 ? Math.round(gradedSubmissions.reduce((sum, s) => sum + s.grade, 0) / gradedSubmissions.length) : 0;
+    
+    const averageEngagement = totalStudents > 0 ? Math.round((activeStudents / totalStudents) * 100) : 0;
 
     return {
       totalStudents,
       activeStudents,
-      averageCompletion: Math.round(avgCompletion),
-      averageScore: Math.round(avgScore),
+      averageCompletion,
+      averageScore,
       coursesPublished: teacherCourses.length,
       totalAssignments: assignments.length,
       totalEnrollments: enrollments.length,
-      averageEngagement: Math.round(avgEngagement * 100)
+      averageEngagement,
     };
-  }
+}
 
-  private calculateCoursePerformance(
-    teacherCourses: any[],
-    enrollments: any[],
-    courseDetails: any[],
-    assignments: any[],
-    submissions: any[],
-    courseProgress: any[]
-  ): CoursePerformanceData[] {
-    return teacherCourses.map(tc => {
-      const courseId = tc.course_id;
-      const course = courseDetails.find(c => c.id === courseId) || { title: 'Unknown Course', description: '' };
-      
-      // Get students for this course
-      const courseEnrollments = enrollments.filter(e => e.course_id === courseId);
-      const courseStudents = new Set(courseEnrollments.map(e => e.user_id));
-      
-      // Get assignments for this course
-      const courseAssignments = assignments.filter(a => a.course_id === courseId);
-      
-      // Get submissions for this course
-      const courseSubmissions = submissions.filter(s => 
-        courseAssignments.some(a => a.id === s.assignment_id)
-      );
-      
-      // Get progress for this course
-      const courseProgressData = courseProgress.filter(cp => cp.course_id === courseId);
-      
-      // Calculate completion rate (based on completed lessons)
-      const completionRate = courseProgressData.length > 0
-        ? (courseProgressData.filter(cp => cp.completed_at).length / courseProgressData.length) * 100
-        : 0;
-      
-      // Calculate average score
-      const avgScore = courseSubmissions.length > 0
-        ? courseSubmissions.reduce((sum, s) => sum + (s.score || 0), 0) / courseSubmissions.length
-        : 0;
-      
-      // Calculate active students (with recent activity)
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      
-      const activeStudents = courseProgressData.filter(
-        cp => new Date(cp.updated_at) > thirtyDaysAgo
-      ).length;
-      
-      // Get last activity
-      const lastActivity = courseProgressData.length > 0
-        ? new Date(Math.max(...courseProgressData.map(cp => new Date(cp.updated_at).getTime()))).toISOString()
-        : new Date().toISOString();
 
-      return {
-        courseId,
-        courseTitle: course.title,
-        courseDescription: course.description,
-        totalStudents: courseStudents.size,
-        activeStudents,
-        completionRate: Math.round(completionRate),
-        averageScore: Math.round(avgScore),
-        totalAssignments: courseAssignments.length,
-        completedAssignments: courseSubmissions.length,
-        lastActivity
-      };
+private calculateCoursePerformance(teacherCourses: any[], enrollments: any[], courseDetails: any[], assignments: any[], submissions: any[], courseProgress: any[], allContentItems: any[], lessons: any[], sections: any[]): CoursePerformanceData[] {
+    return courseDetails.map(course => {
+        const courseId = course.id;
+        const courseEnrollments = enrollments.filter(e => e.course_id === courseId);
+        const courseStudentIds = courseEnrollments.map(e => e.user_id);
+        const courseAssignments = assignments.filter(a => a.course_id === courseId);
+        const courseSubmissions = submissions.filter(s => courseAssignments.some(a => a.id === s.assignment_id));
+        
+        const courseContent = allContentItems.filter(item => {
+            const lesson = lessons.find(l => l.id === item.lesson_id);
+            return lesson && sections.find(s => s.id === lesson.section_id)?.course_id === courseId;
+        });
+
+        const totalCourseItems = courseContent.length;
+        const completedItems = courseProgress.filter(p => p.course_id === courseId && p.status === 'completed').length;
+        const completionRate = totalCourseItems > 0 ? Math.round((completedItems / (totalCourseItems * courseStudentIds.length)) * 100) : 0;
+
+        const gradedSubmissions = courseSubmissions.filter(s => s.grade !== null);
+        const averageScore = gradedSubmissions.length > 0 ? Math.round(gradedSubmissions.reduce((sum, s) => sum + s.grade, 0) / gradedSubmissions.length) : 0;
+        
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const activeStudents = new Set(courseProgress.filter(p => p.course_id === courseId && new Date(p.updated_at) > thirtyDaysAgo).map(p => p.user_id)).size;
+        
+        const lastActivity = courseProgress.length > 0 ? new Date(Math.max(...courseProgress.filter(p=>p.course_id === courseId).map(p => new Date(p.updated_at).getTime()))).toISOString() : new Date().toISOString();
+
+        return {
+            courseId,
+            courseTitle: course.title,
+            courseDescription: course.description,
+            totalStudents: courseStudentIds.length,
+            activeStudents,
+            completionRate,
+            averageScore,
+            totalAssignments: courseAssignments.length,
+            completedAssignments: courseSubmissions.length,
+            lastActivity,
+        };
     });
-  }
+}
 
-  private calculateStudentProgress(
-    enrollments: any[],
-    studentProfiles: any[],
-    courseDetails: any[],
-    assignments: any[],
-    submissions: any[],
-    courseProgress: any[]
-  ): StudentProgressData[] {
+
+private calculateStudentProgress(enrollments: any[], studentProfiles: any[], courseDetails: any[], assignments: any[], submissions: any[], courseProgress: any[], allContentItems: any[], lessons: any[], sections: any[]): StudentProgressData[] {
     return enrollments.map(enrollment => {
-      const studentId = enrollment.user_id;
-      const courseId = enrollment.course_id;
-      
-      // Get student profile
-      const studentProfile = studentProfiles.find(p => p.id === studentId);
-      const studentName = studentProfile 
-        ? `${studentProfile.first_name || ''} ${studentProfile.last_name || ''}`.trim() || 'Unknown Student'
-        : 'Unknown Student';
-      const studentEmail = studentProfile?.email || '';
-      
-      // Get course details
-      const course = courseDetails.find(c => c.id === courseId) || { title: 'Unknown Course' };
-      
-      // Get student's submissions for this course
-      const courseAssignments = assignments.filter(a => a.course_id === courseId);
-      const studentSubmissions = submissions.filter(s => 
-        s.student_id === studentId && 
-        courseAssignments.some(a => a.id === s.assignment_id)
-      );
-      
-      // Get student's progress for this course
-      const studentProgressEntries = courseProgress.filter(cp => 
-        cp.user_id === studentId && cp.course_id === courseId
-      );
-      
-      // Calculate completion rate (based on completed lessons)
-      const completionRate = studentProgressEntries.length > 0
-        ? (studentProgressEntries.filter(cp => cp.completed_at).length / studentProgressEntries.length) * 100
-        : 0;
-      
-      // Calculate average score (use 0 if no submissions)
-      const avgScore = studentSubmissions.length > 0
-        ? studentSubmissions.reduce((sum, s) => sum + (s.score || 0), 0) / studentSubmissions.length
-        : 0;
-      
-      // Determine status
-      let status: 'active' | 'inactive' | 'completed' | 'at-risk' = 'inactive';
-      if (completionRate >= 100) {
-        status = 'completed';
-      } else if (completionRate >= 70) {
-        status = 'active';
-      } else if (completionRate >= 30) {
-        status = 'at-risk';
-      }
-      
-      // Check if student is active (recent activity)
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      
-      if (studentProgressEntries.length > 0) {
-        const lastActivity = new Date(Math.max(...studentProgressEntries.map(cp => new Date(cp.updated_at).getTime())));
-        if (lastActivity < thirtyDaysAgo) {
-          status = 'inactive';
+        const studentId = enrollment.user_id;
+        const courseId = enrollment.course_id;
+        const studentProfile = studentProfiles.find(p => p.id === studentId) || {};
+        const course = courseDetails.find(c => c.id === courseId) || {};
+        
+        const courseAssignments = assignments.filter(a => a.course_id === courseId);
+        const studentSubmissions = submissions.filter(s => s.user_id === studentId && courseAssignments.some(a => a.id === s.assignment_id));
+
+        const courseContent = allContentItems.filter(item => {
+            const lesson = lessons.find(l => l.id === item.lesson_id);
+            return lesson && sections.find(s => s.id === lesson.section_id)?.course_id === courseId;
+        });
+        const totalCourseItems = courseContent.length;
+        
+        const studentProgressEntries = courseProgress.filter(p => p.user_id === studentId && p.course_id === courseId);
+        const completedItems = studentProgressEntries.filter(p => p.status === 'completed').length;
+        const completionRate = totalCourseItems > 0 ? Math.round((completedItems / totalCourseItems) * 100) : 0;
+        
+        const gradedSubmissions = studentSubmissions.filter(s => s.grade !== null);
+        const averageScore = gradedSubmissions.length > 0 ? Math.round(gradedSubmissions.reduce((sum, s) => sum + s.grade, 0) / gradedSubmissions.length) : 0;
+        
+        const lastActivity = studentProgressEntries.length > 0 ? new Date(Math.max(...studentProgressEntries.map(p => new Date(p.updated_at).getTime()))).toISOString() : enrollment.created_at;
+
+        let status: 'active' | 'inactive' | 'completed' | 'at-risk' = 'inactive';
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        if (new Date(lastActivity) > thirtyDaysAgo) {
+            status = completionRate > 70 ? 'active' : 'at-risk';
         }
-      }
+        if(completionRate >= 100) status = 'completed';
 
-      return {
-        studentId,
-        studentName,
-        studentEmail,
-        courseId,
-        courseTitle: course.title,
-        enrollmentDate: enrollment.created_at,
-        lastActivity: studentProgressEntries.length > 0 
-          ? new Date(Math.max(...studentProgressEntries.map(cp => new Date(cp.updated_at).getTime()))).toISOString()
-          : enrollment.created_at,
-        completionRate: Math.round(completionRate),
-        averageScore: Math.round(avgScore),
-        assignmentsCompleted: studentSubmissions.length,
-        totalAssignments: courseAssignments.length,
-        status
-      };
+        return {
+            studentId,
+            studentName: `${studentProfile.first_name || ''} ${studentProfile.last_name || ''}`.trim(),
+            studentEmail: studentProfile.email,
+            courseId,
+            courseTitle: course.title,
+            enrollmentDate: enrollment.created_at,
+            lastActivity,
+            completionRate,
+            averageScore,
+            assignmentsCompleted: studentSubmissions.length,
+            totalAssignments: courseAssignments.length,
+            status,
+        };
     });
-  }
-
+}
+  // ... (rest of the file is the same)
   private calculateAssignmentPerformance(
     assignments: any[],
     submissions: any[],
@@ -551,7 +415,7 @@ export class TeacherReportsService {
       
       // Calculate completion rate
       const completionRate = assignmentSubmissions.length > 0
-        ? (assignmentSubmissions.filter(s => s.status === 'submitted').length / assignmentSubmissions.length) * 100
+        ? (assignmentSubmissions.filter(s => s.status === 'graded' || s.status === 'submitted').length / assignmentSubmissions.length) * 100
         : 0;
       
       // Calculate average score
@@ -564,13 +428,13 @@ export class TeacherReportsService {
       const dueDate = new Date(assignment.due_date);
       let status: 'upcoming' | 'active' | 'overdue' | 'completed' = 'active';
       
-      if (dueDate < now) {
+      if (dueDate < now && completionRate < 100) {
         status = 'overdue';
       } else if (dueDate.getTime() - now.getTime() > 7 * 24 * 60 * 60 * 1000) {
         status = 'upcoming';
       }
       
-      if (completionRate >= 90) {
+      if (completionRate >= 100) {
         status = 'completed';
       }
 
@@ -589,7 +453,8 @@ export class TeacherReportsService {
 
   private calculateMonthlyTrends(
     enrollments: any[],
-    courseProgress: any[]
+    courseProgress: any[],
+    submissions: any[]
   ): MonthlyTrendData[] {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const currentYear = new Date().getFullYear();
@@ -611,18 +476,16 @@ export class TeacherReportsService {
         return completionDate >= monthStart && completionDate <= monthEnd;
       }).length;
       
-      // Calculate average score for this month (based on completed lessons)
-      const monthProgress = courseProgress.filter(cp => {
-        const lastAccessed = new Date(cp.updated_at);
-        return lastAccessed >= monthStart && lastAccessed <= monthEnd;
+      const monthSubmissions = submissions.filter(s => {
+          const submittedAt = new Date(s.submitted_at);
+          return submittedAt >= monthStart && submittedAt <= monthEnd;
       });
-      
-      const avgScore = monthProgress.length > 0
-        ? (monthProgress.filter(cp => cp.completed_at).length / monthProgress.length) * 100
-        : 0;
+
+      const gradedMonthSubmissions = monthSubmissions.filter(s => s.grade !== null);
+      const avgScore = gradedMonthSubmissions.length > 0 ? Math.round(gradedMonthSubmissions.reduce((sum, s) => sum + s.grade, 0) / gradedMonthSubmissions.length) : 0;
       
       // Count active students in this month
-      const activeStudents = monthProgress.length;
+      const activeStudents = new Set(courseProgress.filter(p=> new Date(p.updated_at) >= monthStart && new Date(p.updated_at) <= monthEnd).map(p => p.user_id)).size;
       
       return {
         month,
@@ -760,4 +623,4 @@ export class TeacherReportsService {
       keyInsights: []
     };
   }
-} 
+}

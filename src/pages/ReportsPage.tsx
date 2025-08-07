@@ -45,6 +45,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
 import { ContentLoader } from '@/components/ContentLoader';
+import { cn } from '@/lib/utils';
 
 const chartConfig = {
   completion: {
@@ -130,16 +131,25 @@ export default function ReportsPage() {
 
       const sectionIds = sections.map(s => s.id);
 
-      // Get assignment lesson IDs
-      const { data: assignmentLessons, error: lessonsError } = await supabase
+      // Get lessons for teacher's courses
+      const { data: lessons, error: lessonsError } = await supabase
         .from('course_lessons')
         .select('id')
-        .in('section_id', sectionIds)
-        .eq('type', 'assignment');
+        .in('section_id', sectionIds);
 
       if (lessonsError) throw lessonsError;
+      const lessonIds = lessons?.map(l => l.id) ?? [];
 
-      const assignmentLessonIds = assignmentLessons.map(l => l.id);
+      // Get assignment content item IDs
+      const { data: assignmentContents, error: assignmentContentsError } = await supabase
+        .from('course_lesson_content')
+        .select('id')
+        .in('lesson_id', lessonIds)
+        .eq('content_type', 'assignment');
+      
+      if (assignmentContentsError) throw assignmentContentsError;
+
+      const assignmentContentIds = assignmentContents?.map(ac => ac.id) ?? [];
 
       // Fetch metrics using the same approach as TeacherDashboard
       const [
@@ -169,13 +179,13 @@ export default function ReportsPage() {
         // Pending assignments for teacher's courses
         supabase.from('assignment_submissions')
           .select('*', { count: 'exact', head: true })
-          .in('assignment_id', assignmentLessonIds)
+          .in('assignment_id', assignmentContentIds)
           .eq('status', 'pending'),
         
         // Total assignments for teacher's courses
         supabase.from('assignment_submissions')
           .select('*', { count: 'exact', head: true })
-          .in('assignment_id', assignmentLessonIds),
+          .in('assignment_id', assignmentContentIds),
       ]);
 
       if (studentsError) throw studentsError;
@@ -827,8 +837,8 @@ export default function ReportsPage() {
                         <SelectContent>
                           <SelectItem value="all">All Status</SelectItem>
                           <SelectItem value="Not Started">Not Started</SelectItem>
-                          <SelectItem value="Active">Active</SelectItem>
-                          <SelectItem value="Excellent">Excellent</SelectItem>
+                          <SelectItem value="In Progress">In Progress</SelectItem>
+                          <SelectItem value="Completed">Completed</SelectItem>
                           <SelectItem value="Behind">Behind</SelectItem>
                         </SelectContent>
                       </Select>
@@ -983,14 +993,15 @@ export default function ReportsPage() {
                                 </TableCell>
                                 <TableCell>
                                   <Badge
-                                    variant={
-                                      student.status === 'Active' ? 'default' :
-                                      student.status === 'Excellent' ? 'secondary' :
-                                      student.status === 'Behind' ? 'destructive' :
-                                      'outline'
-                                    }
+                                    className={cn(
+                                      "capitalize",
+                                      student.status.replace('_', ' ') === 'Completed' && 'bg-blue-100 text-blue-800',
+                                      student.status.replace('_', ' ') === 'In Progress' && 'bg-green-100 text-green-800',
+                                      student.status.replace('_', ' ') === 'Not Started' && 'bg-gray-100 text-gray-800',
+                                      student.status.replace('_', ' ') === 'Behind' && 'bg-red-100 text-red-800'
+                                    )}
                                   >
-                                    {student.status}
+                                    {student.status.replace('_', ' ').replace(/\b\w/g, char => char.toUpperCase())}
                                   </Badge>
                                 </TableCell>
                                 <TableCell>

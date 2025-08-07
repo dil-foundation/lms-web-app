@@ -4,11 +4,9 @@ import { useAuth } from '@/hooks/useAuth';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -35,6 +33,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
+import { useDebounce } from '@/hooks/useDebounce';
 
 type Assignment = {
   id: string;
@@ -42,10 +41,10 @@ type Assignment = {
   course: string;
   course_id: string;
   type: string;
-  due_date: string;
+  due_date: string | null;
   submissions: number;
   graded: number;
-  avg_score: string;
+  avg_score: number;
   status: string;
   overdue: boolean;
 };
@@ -55,48 +54,52 @@ type Course = {
   title: string;
 };
 
-type StatCard = {
+type StatCardProps = {
   title: string;
   value: string;
   icon: React.ElementType;
+  color: string;
 };
 
-const initialStatCards: StatCard[] = [
-  {
-    title: 'Total Assessments',
-    value: '0',
-    icon: CheckSquare,
-  },
-  {
-    title: 'Active',
-    value: '0',
-    icon: BookOpen,
-  },
-  {
-    title: 'Pending Grading',
-    value: '0',
-    icon: Clock,
-  },
-  {
-    title: 'Avg. Score',
-    value: '0.0%',
-    icon: TrendingUp,
-  },
-];
+const StatCard = ({ title, value, icon: Icon, color }: StatCardProps) => (
+  <Card className="relative overflow-hidden transition-all duration-200 hover:shadow-lg bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
+      <Icon className={`h-4 w-4 ${color}`} />
+    </CardHeader>
+    <CardContent>
+      <div className="space-y-1">
+        <div className="text-2xl font-bold">{value}</div>
+      </div>
+    </CardContent>
+  </Card>
+);
 
 export const GradeAssignments = () => {
   const { user } = useAuth();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [filteredAssignments, setFilteredAssignments] = useState<Assignment[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourse, setSelectedCourse] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-  const [statCards, setStatCards] = useState<StatCard[]>(initialStatCards);
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+
+  const fetchCourses = useCallback(async () => {
+    if(!user) return;
+    const { data, error } = await supabase
+      .from('courses')
+      .select('id, title')
+      .in('id', (await supabase.from('course_members').select('course_id').eq('user_id', user.id).eq('role', 'teacher')).data?.map(c => c.course_id) || [])
+      
+    if(error) {
+        console.error("Error fetching courses for teacher", error);
+    } else {
+        setCourses(data || []);
+    }
+  }, [user]);
 
   const fetchAssignments = useCallback(async () => {
     if (!user) return;
@@ -105,246 +108,102 @@ export const GradeAssignments = () => {
     setError(null);
 
     try {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-
-      const role = profile?.role;
-      let courseIds: number[] = [];
-
-      if (role === 'teacher') {
-        const { data: teacherCourses, error: teacherCoursesError } = await supabase
-          .from('course_members')
-          .select('course_id')
-          .eq('user_id', user.id);
-
-        if (teacherCoursesError) throw teacherCoursesError;
-        courseIds = teacherCourses.map((c) => c.course_id);
-      } else if (role === 'admin') {
-        const { data: allCourses, error: allCoursesError } = await supabase
-          .from('courses')
-          .select('id');
-
-        if (allCoursesError) throw allCoursesError;
-        courseIds = allCourses.map((c) => c.id);
-      }
-
-      if (courseIds.length === 0) {
-        setAssignments([]);
-        setLoading(false);
-        return;
-      }
-
-      const { data: coursesData, error: coursesError } = await supabase
-        .from('courses')
-        .select('id, title')
-        .in('id', courseIds);
-
-      if (coursesError) throw coursesError;
-
-      setCourses(coursesData);
-      const courseMap = new Map(coursesData.map((c) => [c.id, c.title]));
-
-      const { data: sectionsData, error: sectionsError } = await supabase
-        .from('course_sections')
-        .select('id, course_id')
-        .in('course_id', courseIds);
-
-      if (sectionsError) throw sectionsError;
-
-      const sectionIds = sectionsData.map((s) => s.id);
-      const sectionToCourseMap = new Map(sectionsData.map((s) => [s.id, s.course_id]));
-
-      if (sectionIds.length === 0) {
-        setAssignments([]);
-        setLoading(false);
-        return;
-      }
-
-      let lessonsQuery = supabase
-        .from('course_lessons')
-        .select('id, title, due_date, section_id, type')
-        .in('section_id', sectionIds)
-        .in('type', ['quiz', 'assignment']);
-
-      if (debouncedSearchTerm) {
-        lessonsQuery = lessonsQuery.ilike('title', `%${debouncedSearchTerm}%`);
-      }
-
-      const { data: assignmentsData, error: assignmentsError } = await lessonsQuery;
-
-      if (assignmentsError) throw assignmentsError;
-
-      const assignmentsWithStats = await Promise.all(
-        (assignmentsData || []).map(async (a: any) => {
-          const courseId = sectionToCourseMap.get(a.section_id);
-          const baseDetails = {
-            id: a.id,
-            title: a.title,
-            type: a.type,
-            course: courseMap.get(courseId) || 'Unknown Course',
-            course_id: courseId,
-            due_date: a.due_date ? new Date(a.due_date).toLocaleDateString() : 'N/A',
-            overdue: a.due_date ? new Date(a.due_date) < new Date() : false,
-            status: 'active', // Placeholder
-          };
-
-          if (a.type === 'quiz') {
-            const { data: submissions, error: submissionsError } = await supabase
-              .from('quiz_submissions')
-              .select('score')
-              .eq('lesson_id', a.id);
-
-            if (submissionsError) {
-              console.error(`Error fetching submissions for quiz ${a.id}:`, submissionsError);
-              return { ...baseDetails, submissions: 0, graded: 0, avg_score: '0.0%' };
-            }
-
-            const avgScore =
-              submissions.length > 0
-                ? submissions.reduce((acc, s) => acc + s.score, 0) / submissions.length
-                : 0;
-
-            return {
-              ...baseDetails,
-              submissions: submissions.length,
-              graded: submissions.length, // Quizzes are auto-graded
-              avg_score: `${avgScore.toFixed(1)}%`,
-            };
-          } else if (a.type === 'assignment') {
-            const { data: submissions, error: submissionsError } = await supabase
-              .from('assignment_submissions')
-              .select('status, grade')
-              .eq('assignment_id', a.id);
-
-            if (submissionsError) {
-              console.error(`Error fetching submissions for assignment ${a.id}:`, submissionsError);
-              return { ...baseDetails, submissions: 0, graded: 0, avg_score: '0.0%' };
-            }
-
-            const gradedSubmissions = submissions.filter((s) => s.status === 'graded' && s.grade !== null);
-            const avgScore =
-              gradedSubmissions.length > 0
-                ? gradedSubmissions.reduce((acc, s) => acc + s.grade!, 0) / gradedSubmissions.length
-                : 0;
-            
-            return {
-              ...baseDetails,
-              submissions: submissions.length,
-              graded: gradedSubmissions.length,
-              avg_score: `${avgScore.toFixed(1)}%`,
-            };
-          }
-
-          // Fallback for any other type
-          return { ...baseDetails, submissions: 0, graded: 0, avg_score: '0.0%' };
-        })
-      );
-
-      setAssignments(assignmentsWithStats);
-
-      const totalAssignments = assignmentsWithStats.length;
-      const activeAssignments = assignmentsWithStats.filter(a => a.status === 'active').length;
-      const pendingGrading = assignmentsWithStats.reduce((acc, a) => acc + (a.submissions - a.graded), 0);
-      const overallAvgScore = assignmentsWithStats.length > 0
-        ? assignmentsWithStats.reduce((acc, a) => acc + parseFloat(a.avg_score), 0) / totalAssignments
-        : 0;
+      const { data, error: rpcError } = await supabase.rpc('get_teacher_assessments_data', {
+        teacher_id: user.id,
+        search_query: debouncedSearchTerm,
+        course_filter_id: selectedCourse === 'all' ? null : selectedCourse,
+      });
       
-      setStatCards([
-        { title: 'Total Assessments', value: totalAssignments.toString(), icon: CheckSquare },
-        { title: 'Active', value: activeAssignments.toString(), icon: BookOpen },
-        { title: 'Pending Grading', value: pendingGrading.toString(), icon: Clock },
-        { title: 'Avg. Score', value: `${overallAvgScore.toFixed(1)}%`, icon: TrendingUp },
-      ]);
+      if (rpcError) {
+        throw rpcError;
+      }
+      
+      const formattedAssignments = (data || []).map((a: any) => ({
+        ...a,
+        due_date: a.due_date ? new Date(a.due_date).toLocaleDateString() : 'N/A',
+        overdue: a.due_date ? new Date(a.due_date) < new Date() : false,
+        status: 'active', // This could be enhanced if the function provides it
+        avg_score: Number(a.avg_score)
+      }));
 
+      setAssignments(formattedAssignments);
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, [user, debouncedSearchTerm]);
+  }, [user, debouncedSearchTerm, selectedCourse]);
+
+  useEffect(() => {
+    fetchCourses();
+  }, [fetchCourses]);
 
   useEffect(() => {
     fetchAssignments();
   }, [fetchAssignments]);
-
+  
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
       setCurrentPage(1);
-    }, 300);
+  }, [debouncedSearchTerm, selectedCourse])
 
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [searchTerm]);
 
-  useEffect(() => {
-    if (selectedCourse === 'all') {
-      setFilteredAssignments(assignments);
-    } else {
-      setFilteredAssignments(
-        assignments.filter((assignment) => assignment.course === selectedCourse)
-      );
-    }
-  }, [selectedCourse, assignments]);
-
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
-
-  const paginatedAssignments = filteredAssignments.slice(
+  const paginatedAssignments = assignments.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-  const totalPages = Math.ceil(filteredAssignments.length / itemsPerPage);
+  const totalPages = Math.ceil(assignments.length / itemsPerPage);
+  
+  const statCardsData = [
+      { 
+        title: 'Total Assessments',
+        value: assignments.length.toString(), 
+        icon: CheckSquare, 
+        color: 'text-blue-500' 
+      },
+      { 
+        title: 'Pending Grading', 
+        value: assignments.reduce((acc, a) => acc + (a.submissions - a.graded), 0).toString(), 
+        icon: Clock, 
+        color: 'text-purple-500' 
+      },
+      { 
+        title: 'Total Submissions', 
+        value: assignments.reduce((acc, a) => acc + a.submissions, 0).toString(), 
+        icon: BookOpen, 
+        color: 'text-green-500' 
+      },
+      { 
+        title: 'Avg. Score', 
+        value: `${(assignments.reduce((acc, a) => acc + a.avg_score, 0) / (assignments.length || 1)).toFixed(1)}%`, 
+        icon: TrendingUp, 
+        color: 'text-orange-500' 
+      },
+  ];
+
+  if (error) {
+    return <div className="p-8 text-center text-red-500">Error: {error}</div>;
+  }
 
   return (
     <div className="space-y-6 mx-auto p-4">
-      {/* Premium Header Section */}
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-8 rounded-3xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
-                <CheckSquare className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
-                  Assessments
-                </h1>
-                <p className="text-lg text-muted-foreground mt-2 leading-relaxed">
-                  Grade quizzes and assignments for your courses
-                </p>
-              </div>
-            </div>
+      <div className="relative p-8 rounded-3xl bg-gradient-to-r from-primary/5 via-transparent to-primary/5">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+            <CheckSquare className="w-6 h-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+              Assessments
+            </h1>
+            <p className="text-lg text-muted-foreground mt-2 leading-relaxed">
+              Grade quizzes and assignments for your courses
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Assessments Summary Metrics */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {statCards.map((card, index) => {
-          const colors = ['text-blue-500', 'text-green-500', 'text-purple-500', 'text-orange-500'];
-          const color = colors[index % colors.length];
-          
-          return (
-            <Card key={card.title} className="relative overflow-hidden transition-all duration-200 hover:shadow-lg bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{card.title}</CardTitle>
-                <card.icon className={`h-4 w-4 ${color}`} />
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-1">
-                  <div className="text-2xl font-bold">{card.value}</div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+        {statCardsData.map((card) => <StatCard key={card.title} {...card} />)}
       </div>
 
       <Card className="bg-card border border-border">
@@ -354,27 +213,24 @@ export const GradeAssignments = () => {
         <CardContent>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
             <div className="relative flex-1 md:grow-0">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder="Search assignment or quiz..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 pl-10 h-9 md:w-[200px] lg:w-[320px]"
+                className="w-full rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 pl-10 h-10 md:w-[250px] lg:w-[350px]"
               />
             </div>
             <div className="flex flex-col sm:flex-row items-center gap-4">
-              <Select value={selectedCourse} onValueChange={(value) => {
-                setSelectedCourse(value);
-                setCurrentPage(1);
-              }}>
-                <SelectTrigger className="w-full sm:w-auto h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5">
+              <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+                <SelectTrigger className="w-full sm:w-[200px] h-10 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5">
                   <SelectValue placeholder="All Courses" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Courses</SelectItem>
                   {courses.map((course) => (
-                    <SelectItem key={course.id} value={course.title}>
+                    <SelectItem key={course.id} value={course.id}>
                       {course.title}
                     </SelectItem>
                   ))}
@@ -391,7 +247,7 @@ export const GradeAssignments = () => {
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <FileText className="h-5 w-5 text-primary" />
-                  <h2 className="text-lg font-semibold">Assessments ({filteredAssignments.length})</h2>
+                  <h2 className="text-lg font-semibold">Assessments ({assignments.length})</h2>
                 </div>
                 <div className="space-y-4">
                   {paginatedAssignments.length > 0 ? (
@@ -419,7 +275,7 @@ export const GradeAssignments = () => {
                                 <p>{assignment.graded} graded</p>
                               </div>
                               <div className="text-sm text-center">
-                                  <p className="font-semibold text-base">{assignment.avg_score}</p>
+                                  <p className="font-semibold text-base">{assignment.avg_score.toFixed(1)}%</p>
                                   <p className="text-muted-foreground">Average</p>
                               </div>
                               <div className="flex items-center gap-2 justify-self-end">
@@ -435,7 +291,7 @@ export const GradeAssignments = () => {
                   )}
                 </div>
               </div>
-              {totalPages > 0 && (
+              {totalPages > 1 && (
                 <Pagination className="mt-6">
                   <PaginationContent>
                     <PaginationItem>
