@@ -1,5 +1,3 @@
-DROP FUNCTION IF EXISTS public.get_engagement_metrics_data(TEXT);
-
 CREATE OR REPLACE FUNCTION public.get_engagement_metrics_data(time_range TEXT)
 RETURNS TABLE(
     period_label TEXT,
@@ -10,6 +8,7 @@ RETURNS TABLE(
     discussions_created INTEGER
 )
 LANGUAGE plpgsql
+SECURITY DEFINER
 AS $$
 DECLARE
   start_date TIMESTAMP;
@@ -42,18 +41,51 @@ BEGIN
 
   RETURN QUERY
   WITH periods AS (
-    SELECT 
-      generate_series(
-        date_trunc(
-          CASE WHEN interval_type = 'quarter' THEN 'month' ELSE interval_type END,
-          start_date
-        ),
-        date_trunc(
-          CASE WHEN interval_type = 'quarter' THEN 'month' ELSE interval_type END,
-          end_date
-        ),
-        (CASE WHEN interval_type = 'quarter' THEN '3 months' ELSE '1 ' || interval_type END)::interval
-      ) as period
+    SELECT generate_series(
+      date_trunc(interval_type, start_date),
+      date_trunc(interval_type, end_date),
+      (CASE WHEN interval_type = 'quarter' THEN '3 months' ELSE '1 ' || interval_type END)::interval
+    ) as period
+  ),
+  active_users_by_period AS (
+    SELECT
+      date_trunc(interval_type, ucp.updated_at) as period,
+      COUNT(DISTINCT ucp.user_id) as value
+    FROM public.user_content_item_progress ucp
+    WHERE ucp.updated_at BETWEEN start_date AND end_date
+    GROUP BY 1
+  ),
+  assignments_by_period AS (
+    SELECT
+      date_trunc(interval_type, asub.submitted_at) as period,
+      COUNT(asub.id) as value
+    FROM public.assignment_submissions asub
+    WHERE asub.submitted_at BETWEEN start_date AND end_date
+    GROUP BY 1
+  ),
+  quizzes_by_period AS (
+    SELECT
+      date_trunc(interval_type, qsub.submitted_at) as period,
+      COUNT(qsub.id) as value
+    FROM public.quiz_submissions qsub
+    WHERE qsub.submitted_at BETWEEN start_date AND end_date
+    GROUP BY 1
+  ),
+  lessons_by_period AS (
+    SELECT
+      date_trunc(interval_type, ucp.completed_at) as period,
+      COUNT(ucp.id) as value
+    FROM public.user_content_item_progress ucp
+    WHERE ucp.completed_at BETWEEN start_date AND end_date
+    GROUP BY 1
+  ),
+  discussions_by_period AS (
+    SELECT
+      date_trunc(interval_type, d.created_at) as period,
+      COUNT(d.id) as value
+    FROM public.discussions d
+    WHERE d.created_at BETWEEN start_date AND end_date
+    GROUP BY 1
   )
   SELECT
     TO_CHAR(p.period, 
@@ -63,12 +95,17 @@ BEGIN
         WHEN interval_type = 'quarter' THEN 'YYYY "Q"Q'
       END
     ) AS period_label,
-    (SELECT COUNT(DISTINCT ucp.user_id) FROM public.user_content_item_progress ucp WHERE ucp.updated_at >= p.period AND ucp.updated_at < p.period + (CASE WHEN interval_type = 'quarter' THEN '3 months' ELSE '1 ' || interval_type END)::interval)::INTEGER AS active_users,
-    (SELECT COUNT(asub.id) FROM public.assignment_submissions asub WHERE asub.submitted_at >= p.period AND asub.submitted_at < p.period + (CASE WHEN interval_type = 'quarter' THEN '3 months' ELSE '1 ' || interval_type END)::interval)::INTEGER AS assignments_submitted,
-    (SELECT COUNT(qsub.id) FROM public.quiz_submissions qsub WHERE qsub.submitted_at >= p.period AND qsub.submitted_at < p.period + (CASE WHEN interval_type = 'quarter' THEN '3 months' ELSE '1 ' || interval_type END)::interval)::INTEGER AS quiz_submissions,
-    (SELECT COUNT(ucp.id) FROM public.user_content_item_progress ucp WHERE ucp.completed_at >= p.period AND ucp.completed_at < p.period + (CASE WHEN interval_type = 'quarter' THEN '3 months' ELSE '1 ' || interval_type END)::interval)::INTEGER AS lessons_completed,
-    (SELECT COUNT(d.id) FROM public.discussions d WHERE d.created_at >= p.period AND d.created_at < p.period + (CASE WHEN interval_type = 'quarter' THEN '3 months' ELSE '1 ' || interval_type END)::interval)::INTEGER AS discussions_created
+    COALESCE(au.value, 0)::INTEGER AS active_users,
+    COALESCE(ap.value, 0)::INTEGER AS assignments_submitted,
+    COALESCE(qp.value, 0)::INTEGER AS quiz_submissions,
+    COALESCE(lp.value, 0)::INTEGER AS lessons_completed,
+    COALESCE(dp.value, 0)::INTEGER AS discussions_created
   FROM periods p
+  LEFT JOIN active_users_by_period au ON p.period = au.period
+  LEFT JOIN assignments_by_period ap ON p.period = ap.period
+  LEFT JOIN quizzes_by_period qp ON p.period = qp.period
+  LEFT JOIN lessons_by_period lp ON p.period = lp.period
+  LEFT JOIN discussions_by_period dp ON p.period = dp.period
   ORDER BY p.period;
 END;
 $$;
