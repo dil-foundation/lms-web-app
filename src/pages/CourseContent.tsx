@@ -674,7 +674,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                           <p className="text-muted-foreground text-sm mt-1">{currentLesson?.title}</p>
                       </div>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => navigate(`/dashboard/courses`)}><ChevronLeft className="w-4 h-4 mr-2" />Back to Courses</Button>
+                  <Button variant="outline" size="sm" onClick={() => navigate(`/dashboard/courses/${actualCourseId}`)}><ChevronLeft className="w-4 h-4 mr-2" />Back to Course</Button>
               </div>
           </div>
           <ScrollArea className="flex-1">
