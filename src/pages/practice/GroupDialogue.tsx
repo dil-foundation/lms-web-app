@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useAuth } from '@/hooks/useAuth';
+import { getAuthHeadersWithAccept, getAuthHeaders } from '@/utils/authUtils';
 
 interface Message {
   type: 'ai' | 'user' | 'system';
@@ -55,10 +56,7 @@ const fetchGroupDialogueScenarios = async (): Promise<Scenario[]> => {
 
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.GROUP_DIALOGUE_SCENARIOS}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       signal: controller.signal,
     });
 
@@ -138,10 +136,7 @@ const fetchGroupDialogueScenarioById = async (scenarioId: string): Promise<Scena
 
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.GROUP_DIALOGUE_SCENARIO_DETAIL(scenarioId)}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       signal: controller.signal,
     });
 
@@ -194,10 +189,7 @@ const fetchGroupDialogueScenarioAudio = async (scenarioId: string): Promise<stri
   try {
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.GROUP_DIALOGUE_SCENARIO_AUDIO(scenarioId)}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
     });
 
     if (!response.ok) {
@@ -269,10 +261,7 @@ const evaluateGroupDialogueAudio = async (audioBase64: string, scenarioId: strin
     
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.EVALUATE_GROUP_DIALOGUE}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       body: JSON.stringify(payload),
       signal: controller.signal,
     });

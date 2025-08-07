@@ -9,6 +9,7 @@ import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
 import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
 import { useAuth } from '@/hooks/useAuth';
 import { initializeUserProgress, getCurrentTopicProgress, updateCurrentProgress } from '@/utils/progressTracker';
+import { getAuthHeadersWithAccept, getAuthHeaders } from '@/utils/authUtils';
 
 // Types
 interface DailyRoutinePhrase {
@@ -41,10 +42,7 @@ const fetchDailyRoutinePhrases = async (): Promise<DailyRoutinePhrase[]> => {
 
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.DAILY_ROUTINE_PHRASES}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       signal: controller.signal,
     });
 
@@ -200,10 +198,7 @@ export default function DailyRoutine() {
     try {
       const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.DAILY_ROUTINE_AUDIO(phraseId)}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
+        headers: getAuthHeadersWithAccept(),
       });
 
       if (!response.ok) {
@@ -402,10 +397,7 @@ export default function DailyRoutine() {
     try {
       const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.EVALUATE_DAILY_ROUTINE}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           audio_base64: audioBase64,
           phrase_id: Number(currentPhrase.id),
@@ -863,14 +855,14 @@ export default function DailyRoutine() {
             <Button
               onClick={handlePrevious}
               variant="outline"
-              className="flex-1"
+              className="flex-1 hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
             >
               Previous
             </Button>
             <Button
               onClick={handleNext}
               variant="outline"
-              className="flex-1"
+              className="flex-1 hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
             >
               Next
             </Button>

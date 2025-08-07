@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { initializeUserProgress, getCurrentTopicProgress, updateCurrentProgress } from '@/utils/progressTracker';
+import { getAuthHeadersWithAccept, getAuthHeaders } from '@/utils/authUtils';
 
 interface Message {
   type: 'ai' | 'user';
@@ -103,10 +104,7 @@ const fetchRoleplayScenarios = async (userId?: string): Promise<Scenario[]> => {
     const params = userId ? `?user_id=${userId}` : '';
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.ROLEPLAY_SCENARIOS}${params}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       signal: controller.signal,
     });
 
@@ -252,10 +250,7 @@ const fetchSingleScenario = async (scenarioId: string, userId?: string): Promise
     const params = userId ? `?user_id=${userId}` : '';
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.ROLEPLAY_SCENARIO_DETAIL(scenarioId)}${params}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       signal: controller.signal,
     });
 
@@ -355,10 +350,7 @@ const startRoleplayConversation = async (scenarioId: string, userId: string): Pr
 
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.ROLEPLAY_START}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       body: JSON.stringify({
         scenario_id: scenarioId,
         user_id: userId
@@ -421,10 +413,7 @@ const respondRoleplayConversation = async (
 
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.ROLEPLAY_RESPOND}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       body: JSON.stringify(requestBody),
       signal: controller.signal,
     });
@@ -487,10 +476,7 @@ const evaluateRoleplaySession = async (
 
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.ROLEPLAY_EVALUATE}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       body: JSON.stringify({
         session_id: sessionId,
         user_id: userId,
@@ -1752,7 +1738,7 @@ export default function RoleplaySimulation() {
                   <Button 
                     variant="outline" 
                     onClick={() => setEvaluationResult(null)}
-                    className="flex-1"
+                    className="flex-1 hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
                   >
                     Close
                   </Button>

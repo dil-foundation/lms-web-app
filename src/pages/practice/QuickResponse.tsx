@@ -9,6 +9,7 @@ import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
 import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
 import { useAuth } from '@/hooks/useAuth';
 import { initializeUserProgress, getCurrentTopicProgress, updateCurrentProgress } from '@/utils/progressTracker';
+import { getAuthHeadersWithAccept, getAuthHeaders } from '@/utils/authUtils';
 
 // Types
 interface Prompt {
@@ -41,10 +42,7 @@ const fetchPrompts = async (): Promise<Prompt[]> => {
 
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.PROMPTS}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       signal: controller.signal,
     });
 
@@ -168,10 +166,7 @@ export const QuickResponse: React.FC = () => {
     try {
       const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.QUICK_RESPONSE_AUDIO(promptId)}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
+        headers: getAuthHeadersWithAccept(),
       });
 
       if (!response.ok) {
@@ -370,10 +365,7 @@ export const QuickResponse: React.FC = () => {
     try {
       const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.EVALUATE_QUICK_RESPONSE}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           audio_base64: audioBase64,
           prompt_id: Number(currentPrompt.id),
@@ -805,14 +797,14 @@ export const QuickResponse: React.FC = () => {
             <Button
               onClick={handlePrevious}
               variant="outline"
-              className="flex-1"
+              className="flex-1 hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
             >
               Previous
             </Button>
             <Button
               onClick={handleNext}
               variant="outline"
-              className="flex-1"
+              className="flex-1 hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
             >
               Next
             </Button>
