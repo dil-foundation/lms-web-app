@@ -65,6 +65,8 @@ const AssignmentSubmissions = lazy(() => import('@/components/admin/AssignmentSu
 const StudentSubmissionDetail = lazy(() => import('@/components/admin/StudentSubmissionDetail').then(module => ({ default: module.StudentSubmissionDetail })));
 const AdminSettings = lazy(() => import('@/components/admin/AdminSettings').then(module => ({ default: module.AdminSettings })));
 const AdminSecurity = lazy(() => import('@/components/admin/AdminSecurity').then(module => ({ default: module.AdminSecurity })));
+const AITutorSettings = lazy(() => import('@/components/admin/AITutorSettings').then(module => ({ default: module.AITutorSettings })));
+const AISafetyEthicsSettings = lazy(() => import('@/components/admin/AISafetyEthicsSettings').then(module => ({ default: module.AISafetyEthicsSettings })));
 const CourseBuilder = lazy(() => import('./CourseBuilder'));
 const CourseOverview = lazy(() => import('./CourseOverview').then(module => ({ default: module.CourseOverview })));
 const CourseContent = lazy(() => import('./CourseContent').then(module => ({ default: module.CourseContent })));
@@ -268,6 +270,8 @@ const Dashboard = () => {
                           <Route path="/ai-learn" element={<AIStudentLearn />} />
                           <Route path="/ai-practice" element={<AIAdminPractice />} />
                           <Route path="/ai-reports" element={<ReportsAnalytics />} />
+                          <Route path="/ai-tutor-settings" element={<AITutorSettings userProfile={finalProfile} />} />
+                          <Route path="/ai-safety-ethics" element={<AISafetyEthicsSettings userProfile={finalProfile} />} />
                           {/* Practice Stage Routes for Admin Viewing */}
                           <Route path="/practice/stage-0" element={<StageZero />} />
                           <Route path="/practice/stage-0/lesson/:lessonId" element={<LessonDetail />} />

@@ -1,4 +1,5 @@
 import { BASE_API_URL } from '@/config/api';
+import { getAuthHeadersWithAccept } from '@/utils/authUtils';
 
 // Types and Interfaces
 export interface CriticalThinkingTopic {
@@ -121,10 +122,7 @@ const fetchCriticalThinkingTopics = async (): Promise<CriticalThinkingTopic[]> =
 
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.CRITICAL_THINKING_TOPICS}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       signal: controller.signal,
     });
 
@@ -216,10 +214,7 @@ const fetchCriticalThinkingTopic = async (topicId: string): Promise<CriticalThin
 
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.CRITICAL_THINKING_TOPIC_DETAIL(topicId)}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       signal: controller.signal,
     });
 
@@ -300,10 +295,7 @@ const fetchCriticalThinkingTopicAudio = async (topicId: string): Promise<Critica
 
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.CRITICAL_THINKING_TOPIC_AUDIO(topicId)}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       body: JSON.stringify({ topic_id: parseInt(topicId) || 0 }),
       signal: controller.signal,
     });
@@ -403,10 +395,7 @@ const evaluateCriticalThinking = async (evaluationData: CriticalThinkingEvaluati
 
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.EVALUATE_CRITICAL_THINKING}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       body: JSON.stringify(evaluationData),
       signal: controller.signal,
     });

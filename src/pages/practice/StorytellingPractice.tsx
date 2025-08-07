@@ -5,6 +5,7 @@ import { ArrowLeft, BookOpen, Mic, Lightbulb, Play, Pause, Loader2, CheckCircle,
 import { useNavigate } from 'react-router-dom';
 import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
 import { useAuth } from '@/hooks/useAuth';
+import { getAuthHeadersWithAccept, getAuthHeaders } from '@/utils/authUtils';
 
 // TypeScript interfaces
 interface StorytellingPrompt {
@@ -43,10 +44,7 @@ const fetchStorytellingPrompts = async (): Promise<StorytellingPrompt[]> => {
 
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.STORYTELLING_PROMPTS}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       signal: controller.signal,
     });
 
@@ -130,10 +128,7 @@ const fetchStorytellingPromptById = async (promptId: string): Promise<Storytelli
 
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.STORYTELLING_PROMPT_DETAIL(promptId)}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       signal: controller.signal,
     });
 
@@ -182,10 +177,7 @@ const fetchStorytellingAudio = async (promptId: string): Promise<string> => {
   try {
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.STORYTELLING_PROMPT_AUDIO(promptId)}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
     });
 
     if (!response.ok) {
@@ -564,10 +556,7 @@ export default function StorytellingPractice() {
     try {
       const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.EVALUATE_STORYTELLING}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           audio_base64: audioBase64,
           prompt_id: parseInt(currentStoryPrompt.id),

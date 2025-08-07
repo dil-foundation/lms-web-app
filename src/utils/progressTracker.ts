@@ -1,4 +1,5 @@
 import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
+import { getAuthHeadersWithAccept } from '@/utils/authUtils';
 
 // Track initialization status to prevent multiple calls
 let isProgressInitialized = false;
@@ -58,10 +59,7 @@ const performInitialization = async (userId: string): Promise<ProgressInitializa
 
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.INITIALIZE_PROGRESS}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       body: JSON.stringify({
         user_id: userId
       }),
@@ -170,10 +168,7 @@ export const getCurrentTopicProgress = async (userId: string, stageId: number, e
 
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.GET_CURRENT_TOPIC}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       body: JSON.stringify({
         user_id: userId,
         stage_id: stageId,
@@ -258,10 +253,7 @@ export const updateCurrentProgress = async (
 
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.GET_CURRENT_TOPIC}`, {
       method: 'POST', // Use POST to update progress
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       body: JSON.stringify({
         user_id: userId,
         stage_id: stageId,

@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useAuth } from '@/hooks/useAuth';
+import { getAuthHeadersWithAccept, getAuthHeaders } from '@/utils/authUtils';
 
 interface Message {
   type: 'ai' | 'user' | 'system';
@@ -79,10 +80,7 @@ const fetchProblemSolvingScenarios = async (): Promise<Scenario[]> => {
 
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.PROBLEM_SOLVING_SCENARIOS}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       signal: controller.signal,
     });
 
@@ -163,10 +161,7 @@ const fetchProblemSolvingScenarioById = async (scenarioId: string): Promise<Scen
 
     const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.PROBLEM_SOLVING_SCENARIO_DETAIL(scenarioId)}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers: getAuthHeadersWithAccept(),
       signal: controller.signal,
     });
 
@@ -510,9 +505,7 @@ export default function ProblemSolvingSimulations() {
 
       const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.EVALUATE_PROBLEM_SOLVING}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify(requestData),
       });
 
