@@ -721,6 +721,7 @@ const CourseBuilder = () => {
   const [isCreateDraftConfirmOpen, setIsCreateDraftConfirmOpen] = useState(false);
   const [isRejectionDialogOpen, setIsRejectionDialogOpen] = useState(false);
   const [rejectionFeedback, setRejectionFeedback] = useState("");
+  const [persistentFeedback, setPersistentFeedback] = useState<string | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const preDragLessonStatesRef = useRef<Record<string, boolean>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -786,7 +787,7 @@ const CourseBuilder = () => {
   }, [courseData]);
 
   useEffect(() => {
-    const initializeCourseBuilder = async () => {
+        const initializeCourseBuilder = async () => {
       setIsLoadingPage(true);
       try {
         const [usersRes, catRes, langRes, levelRes] = await Promise.all([
@@ -894,7 +895,11 @@ const CourseBuilder = () => {
             return;
           }
           
-          if (data) {
+                    if (data) {
+            console.log('[CourseBuilder] Fetched Course Data:', data);
+            if (data.review_feedback) {
+              setPersistentFeedback(data.review_feedback);
+            }
             let displayImageUrl: string | undefined = undefined;
             if (data.image_url) {
               setImageDbPath(data.image_url);
@@ -1332,10 +1337,11 @@ const CourseBuilder = () => {
         throw new Error("Failed to save the course before submitting for review.");
       }
       
-      // Now that we're sure we have a saved course, call the RPC.
+            // Now that we're sure we have a saved course, call the RPC.
       const { error } = await supabase.rpc('submit_for_review', { course_id_in: savedId });
       if (error) throw error;
       
+      console.log('[CourseBuilder] Submitting for review. Clearing persistent feedback.');
       toast.success("Course submitted for review successfully!");
       // Update the local state to reflect the new status and ID if it was a new course
       setCourseData(prev => ({ ...prev, id: savedId, status: 'Under Review' }));
@@ -1351,9 +1357,11 @@ const CourseBuilder = () => {
     if (!courseData.id) return;
     setSaveAction('approve');
     try {
-      const { error } = await supabase.rpc('approve_submission', { course_id_in: courseData.id });
+            const { error } = await supabase.rpc('approve_submission', { course_id_in: courseData.id });
       if (error) throw error;
       
+      console.log('[CourseBuilder] Approving submission. Clearing persistent feedback.');
+      setPersistentFeedback(null);
       toast.success("Course approved and published successfully!");
       navigate('/dashboard/courses');
     } catch (error: any) {
@@ -1377,6 +1385,8 @@ const CourseBuilder = () => {
       });
       if (error) throw error;
       
+      console.log('[CourseBuilder] Rejecting submission. Setting persistent feedback:', rejectionFeedback);
+            setPersistentFeedback(rejectionFeedback);
       toast.success("Submission rejected.");
       setCourseData(prev => ({ ...prev, status: 'Rejected', review_feedback: rejectionFeedback }));
       setIsRejectionDialogOpen(false);
@@ -1725,6 +1735,8 @@ const CourseBuilder = () => {
     );
   }
 
+  console.log('[CourseBuilder] Rendering Feedback Alert. Role:', currentUserRole, 'Feedback:', persistentFeedback);
+
   return (
     <div className="min-h-screen bg-background w-full">
       {/* Premium Header Section */}
@@ -1895,16 +1907,28 @@ const CourseBuilder = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1">
-        {courseData.status === 'Rejected' && courseData.review_feedback && (
+            <div className="flex-1">
+        {persistentFeedback && (currentUserRole === 'admin' || (currentUserRole === 'teacher' && courseData.status !== 'Under Review')) && (
           <div className="p-6 pt-6 pb-0">
             <Alert variant="destructive">
               <Terminal className="h-4 w-4" />
-              <AlertTitle>Submission Rejected</AlertTitle>
+              <AlertTitle>
+                {currentUserRole === 'admin' ? 'Requested Changes' : 'Submission Rejected'}
+              </AlertTitle>
               <AlertDescription>
-                <p className="font-semibold">An admin provided the following feedback:</p>
-                <p className="mt-2 p-2 bg-background rounded-md">{courseData.review_feedback}</p>
-                <p className="mt-2 text-sm text-muted-foreground">Please address the feedback and resubmit the course for review.</p>
+                {currentUserRole === 'admin' ? (
+                  <>
+                    <p className="font-semibold">You have requested the following changes from the teacher:</p>
+                    <p className="mt-2 p-2 bg-background rounded-md">{persistentFeedback}</p>
+                    <p className="mt-2 text-sm text-muted-foreground">The teacher must address this feedback and resubmit the course for it to be approved.</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-semibold">An admin provided the following feedback:</p>
+                    <p className="mt-2 p-2 bg-background rounded-md">{persistentFeedback}</p>
+                    <p className="mt-2 text-sm text-muted-foreground">Please address the feedback and resubmit the course for review.</p>
+                  </>
+                )}
               </AlertDescription>
             </Alert>
           </div>
