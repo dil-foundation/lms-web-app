@@ -334,18 +334,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
       setUserGrowthData(userGrowthData);
     } catch (error) {
       console.error("Failed to fetch user growth data:", error);
-      // Fallback to sample data if query fails
-      const { startDate, endDate } = getDateRange(range);
-      const periods = range === 'alltime' ? 12 : range === '7days' ? 7 : range === '30days' ? 4 : range === '3months' ? 3 : range === '6months' ? 6 : 12;
-      const sampleData: UserGrowthData[] = Array.from({ length: periods }, (_, index) => ({
-        month: range === 'alltime' ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][index] : `Period ${index + 1}`,
-        users: Math.max(1, index * 2),
-        teachers: Math.max(1, Math.floor(index * 0.3)),
-        students: Math.max(1, Math.floor(index * 1.5)),
-        admins: Math.max(1, Math.floor(index * 0.2)),
-        active: Math.max(1, Math.floor(index * 1.8)),
-      }));
-      setUserGrowthData(sampleData);
+      setUserGrowthData([]);
     }
   };
 
@@ -386,13 +375,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
       setPlatformStatsData(nonZeroStats);
     } catch (error) {
       console.error("Failed to fetch platform stats data:", error);
-      // Fallback to sample data
-      setPlatformStatsData([
-        { name: 'Active Courses', value: 5, color: '#3B82F6' },
-        { name: 'Draft Courses', value: 2, color: '#F59E0B' },
-        { name: 'Archived Courses', value: 1, color: '#6B7280' },
-        { name: 'Completed Courses', value: 3, color: '#10B981' },
-      ]);
+      setPlatformStatsData([]);
     }
   };
 
@@ -409,12 +392,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
       if (coursesError) throw coursesError;
 
       if (!courses || courses.length === 0) {
-        // If no courses, show sample data
-        setCourseAnalyticsData([
-          { course: 'Sample Course 1', enrolled: 25, completed: 18, progress: 72, rating: 4.5 },
-          { course: 'Sample Course 2', enrolled: 18, completed: 12, progress: 67, rating: 4.3 },
-          { course: 'Sample Course 3', enrolled: 15, completed: 10, progress: 67, rating: 4.7 },
-        ]);
+        setCourseAnalyticsData([]);
         return;
       }
 
@@ -460,155 +438,28 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
         setCourseAnalyticsData(courseAnalytics);
     } catch (error) {
       console.error("Failed to fetch course analytics data:", error);
-      // Fallback to sample data
-      setCourseAnalyticsData([
-        { course: 'Sample Course 1', enrolled: 25, completed: 18, progress: 72, rating: 4.5 },
-        { course: 'Sample Course 2', enrolled: 18, completed: 12, progress: 67, rating: 4.3 },
-        { course: 'Sample Course 3', enrolled: 15, completed: 10, progress: 67, rating: 4.7 },
-      ]);
+      setCourseAnalyticsData([]);
     }
   };
 
   const fetchEngagementData = async (range: string) => {
     try {
-      const { startDate, endDate } = getDateRange(range);
+      const { data, error } = await supabase.rpc('get_admin_engagement_trends_data', { p_time_range: range });
+
+      if (error) throw error;
       
-      // Get all user progress data in a single query
-      const { data: allProgress, error: progressError } = await supabase
-        .from('user_content_item_progress')
-        .select('updated_at, course_id')
-        .order('updated_at', { ascending: true });
-
-      if (progressError) throw progressError;
-
-      // Get all discussions in a single query
-      const { data: allDiscussions, error: discussionsError } = await supabase
-        .from('discussions')
-        .select('created_at')
-        .order('created_at', { ascending: true });
-
-      if (discussionsError) throw discussionsError;
-
-      // Generate appropriate time periods based on range
-      let periods: { label: string; start: Date; end: Date }[] = [];
-      
-      switch (range) {
-        case 'alltime':
-          // Show historical data for all time (last 12 months for better visualization)
-          for (let i = 11; i >= 0; i--) {
-            const date = new Date();
-            date.setMonth(date.getMonth() - i);
-            const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
-            const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-            periods.push({
-              label: date.toLocaleDateString('en-US', { month: 'short' }),
-              start: startOfMonth,
-              end: endOfMonth
-            });
-          }
-          break;
-        case '7days':
-          // Show last 7 days
-          for (let i = 6; i >= 0; i--) {
-            const date = new Date();
-            date.setDate(date.getDate() - i);
-            const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-            const endOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
-            periods.push({
-              label: date.toLocaleDateString('en-US', { weekday: 'short' }),
-              start: startOfDay,
-              end: endOfDay
-            });
-          }
-          break;
-        case '30days':
-          // Show last 4 weeks
-          for (let i = 3; i >= 0; i--) {
-            const date = new Date();
-            date.setDate(date.getDate() - (i * 7));
-            const startOfWeek = new Date(date.getFullYear(), date.getMonth(), date.getDate() - date.getDay());
-            const endOfWeek = new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000);
-            periods.push({
-              label: `Week ${4 - i}`,
-              start: startOfWeek,
-              end: endOfWeek
-            });
-          }
-          break;
-        case '3months':
-        case '6months':
-        case '1year':
-          // Show months
-          const monthCount = range === '3months' ? 3 : range === '6months' ? 6 : 12;
-          for (let i = monthCount - 1; i >= 0; i--) {
-            const date = new Date();
-            date.setMonth(date.getMonth() - i);
-            const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
-            const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-            periods.push({
-              label: date.toLocaleDateString('en-US', { month: 'short' }),
-              start: startOfMonth,
-              end: endOfMonth
-            });
-          }
-          break;
-        default:
-          // Default to 7 days
-          for (let i = 6; i >= 0; i--) {
-            const date = new Date();
-            date.setDate(date.getDate() - i);
-            const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-            const endOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
-            periods.push({
-              label: date.toLocaleDateString('en-US', { weekday: 'short' }),
-              start: startOfDay,
-              end: endOfDay
-            });
-          }
-      }
-
-      const engagementData: EngagementData[] = [];
-
-      for (const period of periods) {
-        // Calculate active users from the fetched data
-        const activeUsers = allProgress?.filter(progress => {
-          const progressDate = new Date(progress.updated_at);
-          return progressDate >= period.start && progressDate < period.end;
-        }).length ?? 0;
-
-        const coursesAccessed = new Set(allProgress?.filter(progress => {
-            const progressDate = new Date(progress.updated_at);
-            return progressDate >= period.start && progressDate < period.end;
-        }).map(p => p.course_id)).size;
-
-
-        // Calculate discussions from the fetched data
-        const discussions = allDiscussions?.filter(discussion => {
-          const discussionDate = new Date(discussion.created_at);
-          return discussionDate >= period.start && discussionDate < period.end;
-        }).length ?? 0;
-
-        engagementData.push({
-          day: period.label,
-          activeUsers,
-          courses: coursesAccessed,
-          discussions,
-        });
-      }
-
-        setEngagementData(engagementData);
-    } catch (error) {
-      console.error("Failed to fetch engagement data:", error);
-      // Fallback to sample data
-      const { startDate, endDate } = getDateRange(range);
-      const periods = range === 'alltime' ? 12 : range === '7days' ? 7 : range === '30days' ? 4 : range === '3months' ? 3 : range === '6months' ? 6 : 12;
-      const sampleData: EngagementData[] = Array.from({ length: periods }, (_, index) => ({
-        day: range === 'alltime' ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][index] : `Period ${index + 1}`,
-        activeUsers: Math.max(1, Math.floor(Math.random() * 20) + 5),
-        courses: Math.max(1, Math.floor(Math.random() * 10) + 2),
-        discussions: Math.max(0, Math.floor(Math.random() * 5)),
+      const formattedData = data.map((item: any) => ({
+        day: item.period_label,
+        activeUsers: item.active_users,
+        courses: item.courses_accessed,
+        discussions: item.discussions,
       }));
-      setEngagementData(sampleData);
+
+      setEngagementData(formattedData);
+    } catch (error: any) {
+      console.error("Failed to fetch engagement data:", error);
+      toast.error("Failed to load engagement data.", { description: error.message });
+      setEngagementData([]);
     }
   };
 
@@ -645,6 +496,8 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
       </CardContent>
     </Card>
   );
+
+  const isEngagementDataEmpty = engagementData.length === 0 || engagementData.every(d => d.activeUsers === 0 && d.courses === 0 && d.discussions === 0);
 
   return (
     <div className="space-y-8">
@@ -758,37 +611,43 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
               </CardHeader>
               <CardContent>
                 <div className="h-[300px]">
-                  <ChartContainer config={chartConfig} className="w-full h-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={userGrowthData}>
-                        <defs>
-                          <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
-                            <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="month" />
-                        <YAxis />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Area 
-                          type="monotone" 
-                          dataKey="users" 
-                          stroke="#3B82F6" 
-                          fillOpacity={1} 
-                          fill="url(#colorUsers)"
-                          name="Total Users"
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="active" 
-                          stroke="#10B981" 
-                          strokeWidth={2}
-                          name="Active Users"
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
+                  {userGrowthData.length > 0 ? (
+                    <ChartContainer config={chartConfig} className="w-full h-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={userGrowthData}>
+                          <defs>
+                            <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="month" />
+                          <YAxis />
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <Area 
+                            type="monotone" 
+                            dataKey="users" 
+                            stroke="#3B82F6" 
+                            fillOpacity={1} 
+                            fill="url(#colorUsers)"
+                            name="Total Users"
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="active" 
+                            stroke="#10B981" 
+                            strokeWidth={2}
+                            name="Active Users"
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </ChartContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <p className="text-muted-foreground">No data to display for this period.</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -802,27 +661,33 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
               </CardHeader>
               <CardContent>
                 <div className="h-[300px]">
-                  <ChartContainer config={chartConfig} className="w-full h-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={platformStatsData}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                          outerRadius={100}
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
-                          {platformStatsData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <ChartTooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
+                  {platformStatsData.length > 0 ? (
+                    <ChartContainer config={chartConfig} className="w-full h-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={platformStatsData}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                            outerRadius={100}
+                            fill="#8884d8"
+                            dataKey="value"
+                          >
+                            {platformStatsData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <ChartTooltip />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </ChartContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <p className="text-muted-foreground">No data to display.</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -837,6 +702,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
               </CardHeader>
               <CardContent>
                 <div className="h-[300px]">
+                  {userGrowthData.length > 0 ? (
                   <ChartContainer config={chartConfig} className="w-full h-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={userGrowthData}>
@@ -850,6 +716,11 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                       </BarChart>
                     </ResponsiveContainer>
                   </ChartContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <p className="text-muted-foreground">No data to display for this period.</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -921,24 +792,30 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
             </CardHeader>
             <CardContent>
               <div className="h-[400px]">
-                <ChartContainer config={chartConfig} className="w-full h-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={courseAnalyticsData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis 
-                        dataKey="course" 
-                        angle={-45}
-                        textAnchor="end"
-                        height={80}
-                        interval={0}
-                      />
-                      <YAxis />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="enrolled" fill="#3B82F6" name="Enrolled" />
-                      <Bar dataKey="completed" fill="#10B981" name="Completed" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
+                {courseAnalyticsData.length > 0 ? (
+                  <ChartContainer config={chartConfig} className="w-full h-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={courseAnalyticsData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis 
+                          dataKey="course" 
+                          angle={-45}
+                          textAnchor="end"
+                          height={80}
+                          interval={0}
+                        />
+                        <YAxis />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Bar dataKey="enrolled" fill="#3B82F6" name="Enrolled" />
+                        <Bar dataKey="completed" fill="#10B981" name="Completed" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <p className="text-muted-foreground">No course data to display.</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -951,19 +828,25 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
             </CardHeader>
             <CardContent>
               <div className="h-[400px]">
-                <ChartContainer config={chartConfig} className="w-full h-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={engagementData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="day" />
-                      <YAxis />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Line type="monotone" dataKey="activeUsers" stroke="#3B82F6" strokeWidth={2} name="Active Users" />
-                      <Line type="monotone" dataKey="courses" stroke="#10B981" strokeWidth={2} name="Courses Accessed" />
-                      <Line type="monotone" dataKey="discussions" stroke="#F59E0B" strokeWidth={2} name="Discussions" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
+                {isEngagementDataEmpty ? (
+                  <div className="flex items-center justify-center h-full">
+                    <p className="text-muted-foreground">No engagement data to display for this period.</p>
+                  </div>
+                ) : (
+                  <ChartContainer config={chartConfig} className="w-full h-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={engagementData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="day" />
+                        <YAxis />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Line type="monotone" dataKey="activeUsers" stroke="#3B82F6" strokeWidth={2} name="Active Users" />
+                        <Line type="monotone" dataKey="courses" stroke="#10B981" strokeWidth={2} name="Courses Accessed" />
+                        <Line type="monotone" dataKey="discussions" stroke="#F59E0B" strokeWidth={2} name="Discussions" />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                )}
               </div>
             </CardContent>
           </Card>
