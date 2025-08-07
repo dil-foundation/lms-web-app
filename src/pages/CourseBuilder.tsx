@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Save, Eye, Upload, Plus, GripVertical, X, ChevronDown, ChevronUp, BookOpen } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Upload, Plus, GripVertical, X, ChevronDown, ChevronUp, BookOpen, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { FileUpload } from '@/components/ui/FileUpload';
 import { RichTextEditor } from '@/components/ui/RichTextEditor';
@@ -74,25 +74,39 @@ interface CourseSection {
 }
 
 interface CourseLesson {
-  id:string;
+  id: string;
   title: string;
   overview?: string;
-  type: 'video' | 'attachment' | 'assignment' | 'quiz';
-  content?: string | File | QuizData;
-  duration?: number;
   due_date?: string;
   isCollapsed?: boolean;
+  contentItems: LessonContentItem[];
+}
+
+interface LessonContentItem {
+  id: string;
+  title: string;
+  content_type: 'video' | 'attachment' | 'assignment' | 'quiz';
+  content_path?: string; // For video, attachment, assignment HTML
+  quiz?: QuizData; // For quiz type
+}
+
+interface QuizData {
+  id: string;
+  questions: QuizQuestion[];
 }
 
 interface QuizQuestion {
   id: string;
-  text: string;
-  options: { id: string; text: string; }[];
-  correctOptionId: string;
+  question_text: string;
+  options: QuestionOption[];
+  position: number;
 }
 
-interface QuizData {
-  questions: QuizQuestion[];
+interface QuestionOption {
+  id: string;
+  option_text: string;
+  is_correct: boolean;
+  position: number;
 }
 
 interface CourseData {
@@ -181,12 +195,23 @@ interface LessonItemProps {
   courseId: string | undefined;
 }
 
-const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, dragHandleProps, onToggleCollapse, courseId }: LessonItemProps) => {
+// #region LessonContentItem Component
+interface LessonContentItemProps {
+  item: LessonContentItem;
+  lessonId: string;
+  sectionId: string;
+  onUpdate: (lessonId: string, itemId: string, updatedItem: Partial<LessonContentItem>) => void;
+  onRemove: (lessonId: string, itemId: string) => void;
+  isRemovable: boolean;
+  courseId: string | undefined;
+}
+
+const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, onRemove, isRemovable, courseId }: LessonContentItemProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [attachmentInfo, setAttachmentInfo] = useState<{ url: string; name: string } | null>(null);
   const [isConfirmingChange, setIsConfirmingChange] = useState(false);
-  const [pendingLessonType, setPendingLessonType] = useState<CourseLesson['type'] | null>(null);
+  const [pendingContentType, setPendingContentType] = useState<LessonContentItem['content_type'] | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -211,13 +236,13 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, d
       }
     };
 
-    if (typeof lesson.content === 'string' && lesson.content) {
-      if (lesson.type === 'video') {
+    if (item.content_path) {
+      if (item.content_type === 'video') {
         setAttachmentInfo(null);
-        getSignedUrl(lesson.content, 'video');
-      } else if (lesson.type === 'attachment') {
+        getSignedUrl(item.content_path, 'video');
+      } else if (item.content_type === 'attachment') {
         setVideoUrl(null);
-        getSignedUrl(lesson.content, 'attachment');
+        getSignedUrl(item.content_path, 'attachment');
       }
     } else {
       setVideoUrl(null);
@@ -225,33 +250,30 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, d
     }
 
     return () => { isMounted = false; };
-  }, [lesson.content, lesson.type]);
+  }, [item.content_path, item.content_type]);
 
   const handleConfirmTypeChange = () => {
-    if (pendingLessonType) {
-      onUpdate(sectionId, lesson.id, { type: pendingLessonType, content: undefined });
-      setPendingLessonType(null);
+    if (pendingContentType) {
+      onUpdate(lessonId, item.id, { content_type: pendingContentType, content_path: undefined, quiz: undefined });
+      setPendingContentType(null);
     }
   };
 
   const handleTypeChangeRequest = (newType: 'video' | 'attachment' | 'assignment' | 'quiz') => {
     let hasContent = false;
-    if (lesson.content) {
-      if (lesson.type === 'quiz') {
-        hasContent = (lesson.content as QuizData)?.questions?.length > 0;
-      } else if (lesson.type === 'assignment') {
-        const contentStr = lesson.content as string;
-        hasContent = contentStr && contentStr !== '<p><br></p>';
-      } else { // Video or Attachment
-        hasContent = !!lesson.content;
-      }
+    if (item.content_type === 'quiz') {
+      hasContent = (item.quiz?.questions?.length || 0) > 0;
+    } else if (item.content_type === 'assignment') {
+      hasContent = !!item.content_path && item.content_path !== '<p><br></p>';
+    } else { // Video or Attachment
+      hasContent = !!item.content_path;
     }
 
-    if (hasContent && newType !== lesson.type) {
-      setPendingLessonType(newType);
+    if (hasContent && newType !== item.content_type) {
+      setPendingContentType(newType);
       setIsConfirmingChange(true);
     } else {
-      onUpdate(sectionId, lesson.id, { type: newType, content: undefined });
+      onUpdate(lessonId, item.id, { content_type: newType, content_path: undefined, quiz: undefined });
     }
   };
 
@@ -259,16 +281,15 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, d
     if (!file) return;
 
     setIsUploading(true);
-    const filePath = `lesson-videos/${courseId || 'new'}/${lesson.id}/${crypto.randomUUID()}/${file.name}`;
+    const filePath = `lesson-videos/${courseId || 'new'}/${lessonId}/${item.id}/${crypto.randomUUID()}/${file.name}`;
 
     try {
       const { error } = await supabase.storage.from('dil-lms').upload(filePath, file);
       if (error) throw error;
-      onUpdate(sectionId, lesson.id, { content: filePath });
+      onUpdate(lessonId, item.id, { content_path: filePath });
       toast.success('Video uploaded successfully!');
     } catch (error: any) {
       toast.error('Video upload failed.', { description: error.message });
-      console.error(error);
     } finally {
       setIsUploading(false);
     }
@@ -278,32 +299,23 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, d
     if (!file) return;
 
     setIsUploading(true);
-    const filePath = `lesson-attachments/${courseId || 'new'}/${lesson.id}/${crypto.randomUUID()}/${file.name}`;
+    const filePath = `lesson-attachments/${courseId || 'new'}/${lessonId}/${item.id}/${crypto.randomUUID()}/${file.name}`;
 
     try {
       const { error } = await supabase.storage.from('dil-lms').upload(filePath, file);
       if (error) throw error;
-      onUpdate(sectionId, lesson.id, { content: filePath });
+      onUpdate(lessonId, item.id, { content_path: filePath });
       toast.success('Attachment uploaded successfully!');
     } catch (error: any) {
       toast.error('Attachment upload failed.', { description: error.message });
-      console.error(error);
     } finally {
       setIsUploading(false);
     }
   };
 
   const handleAssignmentImageUpload = useCallback(async (file: File) => {
-    if (!file) {
-      toast.error("No file selected.");
-      throw new Error("No file selected.");
-    }
-    const MAX_IMAGE_SIZE = 20 * 1024 * 1024; // 20MB
-    if (file.size > MAX_IMAGE_SIZE) {
-        toast.error(`Image size cannot exceed 20MB.`);
-        throw new Error("File too large");
-    }
-    const filePath = `assignment-assets/images/${courseId || 'new'}/${lesson.id}/${crypto.randomUUID()}/${file.name}`;
+    if (!file) throw new Error("No file selected.");
+    const filePath = `assignment-assets/images/${courseId || 'new'}/${lessonId}/${item.id}/${crypto.randomUUID()}/${file.name}`;
     try {
       const { error: uploadError } = await supabase.storage.from('dil-lms').upload(filePath, file);
       if (uploadError) throw uploadError;
@@ -314,19 +326,11 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, d
       toast.error('Image upload failed.', { description: error.message });
       throw error;
     }
-  }, [courseId, lesson.id]);
+  }, [courseId, lessonId, item.id]);
 
   const handleAssignmentFileUpload = useCallback(async (file: File) => {
-    if (!file) {
-      toast.error("No file selected.");
-      throw new Error("No file selected.");
-    }
-    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
-    if (file.size > MAX_FILE_SIZE) {
-        toast.error(`File size cannot exceed 50MB.`);
-        throw new Error("File too large");
-    }
-    const filePath = `assignment-assets/files/${courseId || 'new'}/${lesson.id}/${crypto.randomUUID()}/${file.name}`;
+    if (!file) throw new Error("No file selected.");
+    const filePath = `assignment-assets/files/${courseId || 'new'}/${lessonId}/${item.id}/${crypto.randomUUID()}/${file.name}`;
     try {
       const { error: uploadError } = await supabase.storage.from('dil-lms').upload(filePath, file);
       if (uploadError) throw uploadError;
@@ -337,27 +341,23 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, d
       toast.error('File upload failed.', { description: error.message });
       throw error;
     }
-  }, [courseId, lesson.id]);
-
-  const handleBlur = () => {
-    // Sync with parent state only when user is done editing
-    onUpdate(sectionId, lesson.id, { content: typeof lesson.content === 'string' ? lesson.content : '' });
-  };
+  }, [courseId, lessonId, item.id]);
   
-  const renderLessonContentEditor = () => {
-    switch (lesson.type) {
+  // All the state and handlers for video, attachment, quiz, etc. will go here.
+  // For now, it's a placeholder.
+    const renderContentEditor = () => {
+    switch (item.content_type) {
       case 'video':
         if (videoUrl) {
           return (
-            <div className="space-y-2">
+            <div className="space-y-2 mt-2">
               <video controls src={videoUrl} className="w-full rounded-lg" />
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={() => {
                   setVideoUrl(null);
-                  onUpdate(sectionId, lesson.id, { content: undefined });
-                  // We might want to delete the file from storage here as well
+                  onUpdate(lessonId, item.id, { content_path: undefined });
                 }}
               >
                 Remove Video
@@ -375,7 +375,7 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, d
       case 'attachment':
         if (attachmentInfo) {
           return (
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-background border mt-2">
               <div className="flex items-center gap-3">
                 <FileIcon className="h-6 w-6 text-muted-foreground" />
                 <a href={attachmentInfo.url} target="_blank" rel="noopener noreferrer" className="font-medium hover:underline">
@@ -387,7 +387,7 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, d
                 size="sm"
                 onClick={() => {
                   setAttachmentInfo(null);
-                  onUpdate(sectionId, lesson.id, { content: undefined });
+                  onUpdate(lessonId, item.id, { content_path: undefined });
                 }}
               >
                 Remove
@@ -412,8 +412,8 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, d
       case 'assignment':
         return (
           <RichTextEditor
-            value={typeof lesson.content === 'string' ? lesson.content : ''}
-            onChange={(content) => onUpdate(sectionId, lesson.id, { content })}
+            value={item.content_path || ''}
+            onChange={(content) => onUpdate(lessonId, item.id, { content_path: content })}
             placeholder="Write the assignment details here..."
             onImageUpload={handleAssignmentImageUpload}
             onFileUpload={handleAssignmentFileUpload}
@@ -422,8 +422,8 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, d
       case 'quiz':
         return (
           <QuizBuilder
-            quiz={typeof lesson.content === 'object' && lesson.content && 'questions' in lesson.content ? lesson.content as QuizData : { questions: [] }}
-            onQuizChange={(content) => onUpdate(sectionId, lesson.id, { content })}
+            quiz={item.quiz || { id: '', questions: [] }}
+            onQuizChange={(quiz) => onUpdate(lessonId, item.id, { quiz })}
           />
         );
       default:
@@ -432,74 +432,110 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, d
   };
 
   return (
-    <div className="p-4 rounded-lg bg-background border space-y-4">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start gap-2 flex-1">
-          <div {...dragHandleProps} className="cursor-move pt-2.5">
-            <GripVertical className="text-muted-foreground" />
-          </div>
-          <div className="flex-1 space-y-1">
+    <div className="p-3 rounded-lg bg-muted/50 border ml-8 space-y-3">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex-1">
             <Input
-              value={lesson.title}
-              onChange={(e) => onUpdate(sectionId, lesson.id, { title: e.target.value })}
-              placeholder="Lesson Title"
-              className="font-semibold"
+              value={item.title}
+              onChange={(e) => onUpdate(lessonId, item.id, { title: e.target.value })}
+              placeholder="Content Title (e.g., 'Introduction Video')"
+              className="font-medium"
             />
-            <Textarea
-              value={lesson.overview || ''}
-              onChange={(e) => onUpdate(sectionId, lesson.id, { overview: e.target.value })}
-              placeholder="Lesson overview (optional, e.g., 'Video - 5min')"
-              rows={1}
-              className="text-sm resize-none"
-            />
-             {(lesson.type === 'assignment' || lesson.type === 'quiz') && (
-              <div className="pt-1">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !lesson.due_date && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {lesson.due_date ? `Due: ${format(new Date(lesson.due_date), "PPP")}` : <span>Set Due Date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={lesson.due_date ? new Date(lesson.due_date) : undefined}
-                      onSelect={(date) => onUpdate(sectionId, lesson.id, { due_date: date?.toISOString() })}
-                      initialFocus
-                      defaultMonth={lesson.due_date ? new Date(lesson.due_date) : new Date()}
-                      classNames={{
-                        day_today: "text-foreground font-semibold"
-                      }}
-                      disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
+        </div>
+        <div className="flex items-center gap-2">
+            <Select
+                value={item.content_type}
+                onValueChange={handleTypeChangeRequest}
+            >
+                <SelectTrigger className="w-[120px] h-9 rounded-xl bg-background border border-input shadow-sm">
+                <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                <SelectItem value="video">Video</SelectItem>
+                <SelectItem value="attachment">Attachment</SelectItem>
+                <SelectItem value="assignment">Assignment</SelectItem>
+                <SelectItem value="quiz">Quiz</SelectItem>
+                </SelectContent>
+            </Select>
+            {isRemovable && (
+                <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onRemove(lessonId, item.id)}
+                >
+                <X className="w-4 h-4" />
+                </Button>
             )}
+        </div>
+      </div>
+      
+      <div>{renderContentEditor()}</div>
+
+      <AlertDialog open={isConfirmingChange} onOpenChange={setIsConfirmingChange}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to switch content type?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your current content will be lost. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingContentType(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmTypeChange}>Continue</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+});
+LessonContentItemComponent.displayName = "LessonContentItem";
+// #endregion
+
+interface LessonContainerProps {
+  lesson: CourseLesson;
+  sectionId: string;
+  onUpdate: (sectionId: string, lessonId: string, updatedLesson: Partial<CourseLesson>) => void;
+  onRemove: (sectionId: string, lessonId: string) => void;
+  isRemovable: boolean;
+  dragHandleProps: any;
+  onToggleCollapse: (sectionId: string, lessonId: string) => void;
+  courseId: string | undefined;
+  onAddContentItem: (lessonId: string) => void;
+  onUpdateContentItem: (lessonId: string, itemId: string, updatedItem: Partial<LessonContentItem>) => void;
+  onRemoveContentItem: (lessonId: string, itemId: string) => void;
+}
+
+const LessonContainer = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, dragHandleProps, onToggleCollapse, courseId, onAddContentItem, onUpdateContentItem, onRemoveContentItem }: LessonContainerProps) => {
+  return (
+    <>
+      <div className="p-4 rounded-lg bg-background border space-y-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-2 flex-1">
+            <div {...dragHandleProps} className="cursor-move pt-2.5">
+              <GripVertical className="text-muted-foreground" />
+            </div>
+            <div className="flex-1 space-y-1">
+              <Input
+                value={lesson.title}
+                onChange={(e) => onUpdate(sectionId, lesson.id, { title: e.target.value })}
+                placeholder="Lesson Title"
+                className="font-semibold"
+              />
+              <Textarea
+                value={lesson.overview || ''}
+                onChange={(e) => onUpdate(sectionId, lesson.id, { overview: e.target.value })}
+                placeholder="Lesson overview (optional)"
+                rows={1}
+                className="text-sm resize-none"
+              />
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2 ml-4">
-          <Select
-            value={lesson.type}
-            onValueChange={handleTypeChangeRequest}
-          >
-                                    <SelectTrigger className="w-[120px] h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="video">Video</SelectItem>
-              <SelectItem value="attachment">Attachment</SelectItem>
-              <SelectItem value="assignment">Assignment</SelectItem>
-              <SelectItem value="quiz">Quiz</SelectItem>
-            </SelectContent>
-          </Select>
+          <Button variant="outline" size="sm" onClick={() => onAddContentItem(lesson.id)} >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Content
+          </Button>
           {isRemovable && (
             <Button
               variant="ghost"
@@ -515,29 +551,25 @@ const LessonItem = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, d
         </div>
       </div>
       {!lesson.isCollapsed && (
-        <div>
-          {renderLessonContentEditor()}
+        <div className="space-y-3 pt-3">
+          {lesson.contentItems.map((item) => (
+            <LessonContentItemComponent
+              key={item.id}
+              item={item}
+              lessonId={lesson.id}
+              sectionId={sectionId}
+              onUpdate={onUpdateContentItem}
+              onRemove={onRemoveContentItem}
+              isRemovable={lesson.contentItems.length > 1}
+              courseId={courseId}
+            />
+          ))}
         </div>
       )}
-
-      <AlertDialog open={isConfirmingChange} onOpenChange={setIsConfirmingChange}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure you want to switch lesson type?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Your current lesson content will be lost. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setPendingLessonType(null)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmTypeChange}>Continue</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+    </>
   );
 });
-LessonItem.displayName = "LessonItem";
+LessonContainer.displayName = "LessonContainer";
 // #endregion
 
 // #region SortableItem Component
@@ -577,15 +609,15 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
   const addQuestion = () => {
     const newQuestion: QuizQuestion = {
       id: Date.now().toString(),
-      text: '',
-      options: [{ id: '1', text: '' }, { id: '2', text: '' }],
-      correctOptionId: '1'
+      question_text: '',
+      options: [],
+      position: (quiz.questions.length || 0) + 1
     };
     onQuizChange({ ...quiz, questions: [...quiz.questions, newQuestion] });
   };
 
   const updateQuestion = (qIndex: number, text: string) => {
-    const updatedQuestions = quiz.questions.map((q, i) => i === qIndex ? { ...q, text } : q);
+    const updatedQuestions = quiz.questions.map((q, i) => i === qIndex ? { ...q, question_text: text } : q);
     onQuizChange({ ...quiz, questions: updatedQuestions });
   };
   
@@ -595,7 +627,13 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
   };
   
   const addOption = (qIndex: number) => {
-    const newOption = { id: Date.now().toString(), text: '' };
+    const question = quiz.questions[qIndex];
+    const newOption: QuestionOption = { 
+      id: Date.now().toString(), 
+      option_text: '', 
+      is_correct: question.options.length === 0, // Default first option to correct
+      position: (question.options.length || 0) + 1
+    };
     const updatedQuestions = quiz.questions.map((q, i) => i === qIndex ? { ...q, options: [...q.options, newOption] } : q);
     onQuizChange({ ...quiz, questions: updatedQuestions });
   };
@@ -603,7 +641,7 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
   const updateOption = (qIndex: number, oIndex: number, text: string) => {
     const updatedQuestions = quiz.questions.map((q, i) => i === qIndex ? {
       ...q,
-      options: q.options.map((opt, j) => j === oIndex ? { ...opt, text } : opt)
+      options: q.options.map((opt, j) => j === oIndex ? { ...opt, option_text: text } : opt)
     } : q);
     onQuizChange({ ...quiz, questions: updatedQuestions });
   };
@@ -617,7 +655,10 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
   };
 
   const setCorrectOption = (qIndex: number, optionId: string) => {
-    const updatedQuestions = quiz.questions.map((q, i) => i === qIndex ? { ...q, correctOptionId: optionId } : q);
+    const updatedQuestions = quiz.questions.map((q, i) => i === qIndex ? { 
+      ...q, 
+      options: q.options.map(opt => ({...opt, is_correct: opt.id === optionId})) 
+    } : q);
     onQuizChange({ ...quiz, questions: updatedQuestions });
   };
   
@@ -628,7 +669,7 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
           <CardHeader>
             <div className="flex items-center gap-2">
               <Input
-                value={question.text}
+                value={question.question_text}
                 onChange={(e) => updateQuestion(qIndex, e.target.value)}
                 placeholder={`Question ${qIndex + 1}`}
               />
@@ -641,12 +682,12 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
             {question.options.map((option, oIndex) => (
               <div key={option.id} className="flex items-center gap-2">
                 <Input
-                  value={option.text}
+                  value={option.option_text}
                   onChange={(e) => updateOption(qIndex, oIndex, e.target.value)}
                   placeholder={`Option ${oIndex + 1}`}
                 />
                 <Button
-                  variant={question.correctOptionId === option.id ? 'default' : 'outline'}
+                  variant={option.is_correct ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setCorrectOption(qIndex, option.id)}
                 >
@@ -680,6 +721,7 @@ const CourseBuilder = () => {
   const [isCreateDraftConfirmOpen, setIsCreateDraftConfirmOpen] = useState(false);
   const [isRejectionDialogOpen, setIsRejectionDialogOpen] = useState(false);
   const [rejectionFeedback, setRejectionFeedback] = useState("");
+  const [persistentFeedback, setPersistentFeedback] = useState<string | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const preDragLessonStatesRef = useRef<Record<string, boolean>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -715,8 +757,17 @@ const CourseBuilder = () => {
           {
             id: `lesson-${Date.now() + 1}`,
             title: 'New Lesson',
-            type: 'video',
-            content: undefined,
+            overview: '',
+            isCollapsed: false,
+            contentItems: [
+              {
+                id: `content-${Date.now() + 2}`,
+                title: 'New Video',
+                content_type: 'video',
+                content_path: undefined,
+                quiz: undefined
+              }
+            ],
           },
         ],
       },
@@ -736,7 +787,7 @@ const CourseBuilder = () => {
   }, [courseData]);
 
   useEffect(() => {
-    const initializeCourseBuilder = async () => {
+        const initializeCourseBuilder = async () => {
       setIsLoadingPage(true);
       try {
         const [usersRes, catRes, langRes, levelRes] = await Promise.all([
@@ -818,7 +869,16 @@ const CourseBuilder = () => {
               published_course_id,
               sections:course_sections (
                 *,
-                lessons:course_lessons (*)
+                lessons:course_lessons (
+                  *,
+                  contentItems:course_lesson_content (
+                    *,
+                    quiz:quiz_questions(
+                      *,
+                      options:question_options(*)
+                    )
+                  )
+                )
               ),
               members:course_members (
                 role,
@@ -835,7 +895,11 @@ const CourseBuilder = () => {
             return;
           }
           
-          if (data) {
+                    if (data) {
+            console.log('[CourseBuilder] Fetched Course Data:', data);
+            if (data.review_feedback) {
+              setPersistentFeedback(data.review_feedback);
+            }
             let displayImageUrl: string | undefined = undefined;
             if (data.image_url) {
               setImageDbPath(data.image_url);
@@ -873,18 +937,28 @@ const CourseBuilder = () => {
                 ...s,
                 lessons: s.lessons
                   .sort((a: any, b: any) => a.position - b.position)
-                  .map((l: any) => {
-                    if (l.type === 'quiz' && typeof l.content === 'string') {
-                      try {
-                        return { ...l, content: JSON.parse(l.content) };
-                      } catch (e) {
-                        console.error(`Failed to parse quiz content for lesson ${l.id}:`, l.content, e);
-                        // If parsing fails, return a default structure to avoid crashing the UI
-                        return { ...l, content: { questions: [] } };
-                      }
-                    }
-                    return l;
-                  }),
+                  .map((l: any) => ({
+                    ...l,
+                    contentItems: l.contentItems
+                      .sort((a: any, b: any) => a.position - b.position)
+                      .map((ci: any) => {
+                        let quizData: QuizData | undefined = undefined;
+                        if (ci.content_type === 'quiz' && ci.quiz && ci.quiz.length > 0) {
+                          const quizQuestions = ci.quiz.map((q: any) => ({
+                            ...q,
+                            options: q.options.sort((a: any, b: any) => a.position - b.position)
+                          }));
+                          quizData = { id: ci.id, questions: quizQuestions };
+                        }
+                        return {
+                          id: ci.id,
+                          title: ci.title,
+                          content_type: ci.content_type,
+                          content_path: ci.content_path,
+                          quiz: quizData
+                        };
+                      })
+                  }))
               })),
               teachers: courseTeachers,
               students: courseStudents,
@@ -949,11 +1023,6 @@ const CourseBuilder = () => {
       throw new Error("User not logged in");
     }
 
-    if (!courseToSave.title.trim()) {
-      toast.error("Course title is required.");
-      throw new Error("Course title is required");
-    }
-
     const isUpdate = !!courseToSave.id;
 
     const courseDetails: any = {
@@ -975,23 +1044,12 @@ const CourseBuilder = () => {
     let courseError: any = null;
 
     if (isUpdate) {
-      // UPDATE existing course. author_id is immutable and not sent.
-      const { data, error } = await supabase
-        .from('courses')
-        .update(courseDetails)
-        .eq('id', courseToSave.id!)
-        .select('id')
-        .single();
+      const { data, error } = await supabase.from('courses').update(courseDetails).eq('id', courseToSave.id!).select('id').single();
       savedCourse = data;
       courseError = error;
     } else {
-      // INSERT new course. author_id is required for RLS policy.
       courseDetails.author_id = user.id;
-      const { data, error } = await supabase
-        .from('courses')
-        .insert(courseDetails)
-        .select('id')
-        .single();
+      const { data, error } = await supabase.from('courses').insert(courseDetails).select('id').single();
       savedCourse = data;
       courseError = error;
     }
@@ -1001,44 +1059,72 @@ const CourseBuilder = () => {
 
     const currentCourseId = savedCourse.id;
 
-    // First, manage the curriculum. The user's membership is still intact at this point,
-    // so RLS policies on sections and lessons that check for membership will pass.
+    // A. Delete existing curriculum for this course to handle reordering/deletions
     await supabase.from('course_sections').delete().eq('course_id', currentCourseId);
 
+    // B. Re-insert the full curriculum from the current state
     for (const [sectionIndex, section] of courseToSave.sections.entries()) {
       const { data: savedSection, error: sectionError } = await supabase
         .from('course_sections')
         .insert({ course_id: currentCourseId, title: section.title, overview: section.overview, position: sectionIndex })
-        .select('id')
-        .single();
+        .select('id').single();
       
       if (sectionError) throw sectionError;
       if (!savedSection) throw new Error("Failed to save a course section.");
 
       for (const [lessonIndex, lesson] of section.lessons.entries()) {
-        let contentToSave: string | undefined;
-        if (typeof lesson.content === 'string') {
-          contentToSave = lesson.content;
-        } else if (lesson.type === 'quiz' && typeof lesson.content === 'object' && lesson.content) {
-          contentToSave = JSON.stringify(lesson.content);
-        }
+        const { data: savedLesson, error: lessonError } = await supabase
+            .from('course_lessons')
+            .insert({ section_id: savedSection.id, title: lesson.title, overview: lesson.overview, position: lessonIndex, due_date: lesson.due_date })
+            .select('id').single();
         
-        await supabase.from('course_lessons').insert({
-          section_id: savedSection.id,
-          title: lesson.title,
-          type: lesson.type,
-          overview: lesson.overview,
-          content: contentToSave,
-          position: lessonIndex,
-          due_date: lesson.due_date
-        });
+        if (lessonError) throw lessonError;
+        if (!savedLesson) throw new Error("Failed to save a course lesson.");
+
+        for (const [contentIndex, item] of lesson.contentItems.entries()) {
+            const { data: savedContent, error: contentError } = await supabase
+                .from('course_lesson_content')
+                .insert({
+                    lesson_id: savedLesson.id,
+                    title: item.title,
+                    content_type: item.content_type,
+                    content_path: item.content_path,
+                    position: contentIndex,
+                })
+                .select('id').single();
+
+            if (contentError) throw contentError;
+            if (!savedContent) throw new Error("Failed to save a lesson content item.");
+
+            if (item.content_type === 'quiz' && item.quiz) {
+                for (const [qIndex, question] of item.quiz.questions.entries()) {
+                    const { data: savedQuestion, error: qError } = await supabase
+                        .from('quiz_questions')
+                        .insert({
+                            lesson_content_id: savedContent.id,
+                            question_text: question.question_text,
+                            position: qIndex,
+                        })
+                        .select('id').single();
+
+                    if (qError) throw qError;
+                    if (!savedQuestion) throw new Error("Failed to save a quiz question.");
+
+                    for (const [oIndex, option] of question.options.entries()) {
+                        await supabase.from('question_options').insert({
+                            question_id: savedQuestion.id,
+                            option_text: option.option_text,
+                            is_correct: option.is_correct,
+                            position: oIndex,
+                        });
+                    }
+                }
+            }
+        }
       }
     }
 
-    // Now that curriculum is saved, sync the members as the final step using
-    // a safe "UPSERT then DELETE" strategy to avoid RLS policy violations.
-
-    // Step 1: Prepare the final list of members from the UI state.
+    // Now sync the members
     const membersMap = new Map<string, { role: 'teacher' | 'student' }>();
     courseToSave.teachers.forEach(t => membersMap.set(t.id, { role: 'teacher' }));
     courseToSave.students.forEach(s => {
@@ -1053,32 +1139,20 @@ const CourseBuilder = () => {
       role: role as 'teacher' | 'student'
     }));
 
-    // Step 2: UPSERT the desired members. This adds new members and updates existing ones.
-    // The user's own membership is preserved throughout this, so RLS checks should pass.
     if (desiredMembers.length > 0) {
       const { error: upsertError } = await supabase
         .from('course_members')
-        .upsert(desiredMembers, {
-          onConflict: 'course_id,user_id' // This tells Supabase how to find duplicates
-        });
-
-      if (upsertError) {
-        throw new Error(`There was an issue updating course members: ${upsertError.message}`);
-      }
+        .upsert(desiredMembers, { onConflict: 'course_id,user_id' });
+      if (upsertError) throw new Error(`There was an issue updating course members: ${upsertError.message}`);
     }
 
-    // Step 3: DELETE members who are in the DB but no longer in the desired list.
     const { data: currentDbMembers, error: fetchError } = await supabase
       .from('course_members')
       .select('user_id')
       .eq('course_id', currentCourseId);
 
     if (fetchError) {
-      // If we can't fetch, we shouldn't proceed with deletes.
-      // The upsert already handled additions/updates, so it's safer to stop here.
-      toast.warning("Could not verify member list for cleanup. Some old members may remain.", {
-        description: fetchError.message
-      });
+      toast.warning("Could not verify member list for cleanup.", { description: fetchError.message });
     } else {
         const desiredMemberIds = new Set(desiredMembers.map(m => m.user_id));
         const membersToRemove = currentDbMembers
@@ -1093,21 +1167,15 @@ const CourseBuilder = () => {
             .in('user_id', membersToRemove);
           
           if (deleteError) {
-            // This delete is non-critical for the main save, so we'll toast a warning instead of throwing.
-            toast.warning("Failed to clean up old course members.", {
-              description: deleteError.message
-            });
+            toast.warning("Failed to clean up old course members.", { description: deleteError.message });
           }
         } else if (currentDbMembers.length > 0 && desiredMembers.length === 0) {
-            // Handle case where all members are removed.
             const { error: deleteAllError } = await supabase
                 .from('course_members')
                 .delete()
                 .eq('course_id', currentCourseId);
             if (deleteAllError) {
-                 toast.warning("Failed to remove all course members.", {
-                    description: deleteAllError.message
-                });
+                 toast.warning("Failed to remove all course members.", { description: deleteAllError.message });
             }
         }
     }
@@ -1269,10 +1337,11 @@ const CourseBuilder = () => {
         throw new Error("Failed to save the course before submitting for review.");
       }
       
-      // Now that we're sure we have a saved course, call the RPC.
+            // Now that we're sure we have a saved course, call the RPC.
       const { error } = await supabase.rpc('submit_for_review', { course_id_in: savedId });
       if (error) throw error;
       
+      console.log('[CourseBuilder] Submitting for review. Clearing persistent feedback.');
       toast.success("Course submitted for review successfully!");
       // Update the local state to reflect the new status and ID if it was a new course
       setCourseData(prev => ({ ...prev, id: savedId, status: 'Under Review' }));
@@ -1288,9 +1357,11 @@ const CourseBuilder = () => {
     if (!courseData.id) return;
     setSaveAction('approve');
     try {
-      const { error } = await supabase.rpc('approve_submission', { course_id_in: courseData.id });
+            const { error } = await supabase.rpc('approve_submission', { course_id_in: courseData.id });
       if (error) throw error;
       
+      console.log('[CourseBuilder] Approving submission. Clearing persistent feedback.');
+      setPersistentFeedback(null);
       toast.success("Course approved and published successfully!");
       navigate('/dashboard/courses');
     } catch (error: any) {
@@ -1314,6 +1385,8 @@ const CourseBuilder = () => {
       });
       if (error) throw error;
       
+      console.log('[CourseBuilder] Rejecting submission. Setting persistent feedback:', rejectionFeedback);
+            setPersistentFeedback(rejectionFeedback);
       toast.success("Submission rejected.");
       setCourseData(prev => ({ ...prev, status: 'Rejected', review_feedback: rejectionFeedback }));
       setIsRejectionDialogOpen(false);
@@ -1463,11 +1536,16 @@ const CourseBuilder = () => {
 
   // #region Section and Lesson Handlers
   const addSection = () => {
-    const newLesson = {
+    const newLesson: CourseLesson = {
       id: `lesson-${Date.now()}`,
       title: 'New Lesson',
-      type: 'video' as const,
-      content: undefined,
+      overview: '',
+      isCollapsed: false,
+      contentItems: [{
+        id: `content-${Date.now() + 1}`,
+        title: 'New Video',
+        content_type: 'video',
+      }]
     };
     const newSection: CourseSection = {
       id: `section-${Date.now() + 1}`,
@@ -1514,8 +1592,13 @@ const CourseBuilder = () => {
     const newLesson: CourseLesson = {
       id: Date.now().toString(),
       title: 'New Lesson',
-      type: 'video',
-      content: undefined
+      overview: '',
+      isCollapsed: false,
+      contentItems: [{
+        id: `content-${Date.now() + 1}`,
+        title: 'New Video',
+        content_type: 'video',
+      }]
     };
     setCourseData(prev => ({
       ...prev,
@@ -1558,6 +1641,58 @@ const CourseBuilder = () => {
       };
     });
   }, []);
+  const addContentItem = (lessonId: string) => {
+    const newContentItem: LessonContentItem = {
+      id: `content-${Date.now()}`,
+      title: 'New Content',
+      content_type: 'video',
+    };
+    setCourseData(prev => ({
+      ...prev,
+      sections: prev.sections.map(section => ({
+        ...section,
+        lessons: section.lessons.map(lesson =>
+          lesson.id === lessonId
+            ? { ...lesson, contentItems: [...lesson.contentItems, newContentItem] }
+            : lesson
+        ),
+      })),
+    }));
+  };
+
+  const updateContentItem = useCallback((lessonId: string, itemId: string, updatedItem: Partial<LessonContentItem>) => {
+    setCourseData(prev => ({
+      ...prev,
+      sections: prev.sections.map(section => ({
+        ...section,
+        lessons: section.lessons.map(lesson =>
+          lesson.id === lessonId
+            ? {
+                ...lesson,
+                contentItems: lesson.contentItems.map(item =>
+                  item.id === itemId ? { ...item, ...updatedItem } : item
+                ),
+              }
+            : lesson
+        ),
+      })),
+    }));
+  }, []);
+
+  const removeContentItem = useCallback((lessonId: string, itemId: string) => {
+    setCourseData(prev => ({
+      ...prev,
+      sections: prev.sections.map(section => ({
+        ...section,
+        lessons: section.lessons.map(lesson =>
+          lesson.id === lessonId
+            ? { ...lesson, contentItems: lesson.contentItems.filter(item => item.id !== itemId) }
+            : lesson
+        ),
+      })),
+    }));
+  }, []);
+
   // #endregion
 
   // #region Array Field Handlers (for Course Details)
@@ -1600,6 +1735,8 @@ const CourseBuilder = () => {
     );
   }
 
+  console.log('[CourseBuilder] Rendering Feedback Alert. Role:', currentUserRole, 'Feedback:', persistentFeedback);
+
   return (
     <div className="min-h-screen bg-background w-full">
       {/* Premium Header Section */}
@@ -1636,6 +1773,12 @@ const CourseBuilder = () => {
                     Last saved: 2 minutes ago
                   </span>
                 </div>
+                {currentUserRole === 'teacher' && courseData.status === 'Draft' && (
+                    <div className="flex items-center gap-2 mt-2 text-sm text-blue-600 bg-blue-50 border border-blue-200 rounded-lg p-2">
+                        <Info className="h-4 w-4" />
+                        <span>You must submit this course for admin review and approval before it can be published.</span>
+                    </div>
+                )}
               </div>
             </div>
           </div>
@@ -1764,16 +1907,28 @@ const CourseBuilder = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1">
-        {courseData.status === 'Rejected' && courseData.review_feedback && (
+            <div className="flex-1">
+        {persistentFeedback && (currentUserRole === 'admin' || (currentUserRole === 'teacher' && courseData.status !== 'Under Review')) && (
           <div className="p-6 pt-6 pb-0">
             <Alert variant="destructive">
               <Terminal className="h-4 w-4" />
-              <AlertTitle>Submission Rejected</AlertTitle>
+              <AlertTitle>
+                {currentUserRole === 'admin' ? 'Requested Changes' : 'Submission Rejected'}
+              </AlertTitle>
               <AlertDescription>
-                <p className="font-semibold">An admin provided the following feedback:</p>
-                <p className="mt-2 p-2 bg-background rounded-md">{courseData.review_feedback}</p>
-                <p className="mt-2 text-sm text-muted-foreground">Please address the feedback and resubmit the course for review.</p>
+                {currentUserRole === 'admin' ? (
+                  <>
+                    <p className="font-semibold">You have requested the following changes from the teacher:</p>
+                    <p className="mt-2 p-2 bg-background rounded-md">{persistentFeedback}</p>
+                    <p className="mt-2 text-sm text-muted-foreground">The teacher must address this feedback and resubmit the course for it to be approved.</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-semibold">An admin provided the following feedback:</p>
+                    <p className="mt-2 p-2 bg-background rounded-md">{persistentFeedback}</p>
+                    <p className="mt-2 text-sm text-muted-foreground">Please address the feedback and resubmit the course for review.</p>
+                  </>
+                )}
               </AlertDescription>
             </Alert>
           </div>
@@ -1826,9 +1981,9 @@ const CourseBuilder = () => {
                       onChange={(e) => setCourseData(prev => ({ ...prev, title: e.target.value }))}
                       onBlur={() => handleBlur('title')}
                       placeholder="Enter course title"
-                      className={cn(validationErrors.title && touchedFields.title && "border-red-500 focus-visible:ring-red-500")}
+                      className={cn(validationErrors.title && (touchedFields.title || courseData.id) && "border-red-500 focus-visible:ring-red-500")}
                     />
-                    {validationErrors.title && touchedFields.title && <p className="text-sm text-red-500 mt-1">{validationErrors.title}</p>}
+                    {validationErrors.title && (touchedFields.title || courseData.id) && <p className="text-sm text-red-500 mt-1">{validationErrors.title}</p>}
                   </div>
                   
                   <div>
@@ -1838,9 +1993,9 @@ const CourseBuilder = () => {
                       onChange={(e) => setCourseData(prev => ({ ...prev, subtitle: e.target.value }))}
                       onBlur={() => handleBlur('subtitle')}
                       placeholder="Enter course subtitle"
-                      className={cn(validationErrors.subtitle && touchedFields.subtitle && "border-red-500 focus-visible:ring-red-500")}
+                      className={cn(validationErrors.subtitle && (touchedFields.subtitle || courseData.id) && "border-red-500 focus-visible:ring-red-500")}
                     />
-                    {validationErrors.subtitle && touchedFields.subtitle && <p className="text-sm text-red-500 mt-1">{validationErrors.subtitle}</p>}
+                    {validationErrors.subtitle && (touchedFields.subtitle || courseData.id) && <p className="text-sm text-red-500 mt-1">{validationErrors.subtitle}</p>}
                   </div>
                   
                   <div>
@@ -1851,9 +2006,9 @@ const CourseBuilder = () => {
                       onBlur={() => handleBlur('description')}
                       placeholder="Describe your course"
                       rows={4}
-                      className={cn(validationErrors.description && touchedFields.description && "border-red-500 focus-visible:ring-red-500")}
+                      className={cn(validationErrors.description && (touchedFields.description || courseData.id) && "border-red-500 focus-visible:ring-red-500")}
                     />
-                    {validationErrors.description && touchedFields.description && <p className="text-sm text-red-500 mt-1">{validationErrors.description}</p>}
+                    {validationErrors.description && (touchedFields.description || courseData.id) && <p className="text-sm text-red-500 mt-1">{validationErrors.description}</p>}
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1866,7 +2021,7 @@ const CourseBuilder = () => {
                           handleBlur('category');
                         }}
                       >
-                        <SelectTrigger className={cn("h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5", validationErrors.category && touchedFields.category && "border-red-500 focus:ring-red-500")}>
+                        <SelectTrigger className={cn("h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5", validationErrors.category && (touchedFields.category || courseData.id) && "border-red-500 focus:ring-red-500")}>
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
@@ -1877,7 +2032,7 @@ const CourseBuilder = () => {
                           ))}
                         </SelectContent>
                       </Select>
-                      {validationErrors.category && touchedFields.category && <p className="text-sm text-red-500 mt-1">{validationErrors.category}</p>}
+                      {validationErrors.category && (touchedFields.category || courseData.id) && <p className="text-sm text-red-500 mt-1">{validationErrors.category}</p>}
                     </div>
                     
                     <div>
@@ -1889,7 +2044,7 @@ const CourseBuilder = () => {
                           handleBlur('language');
                         }}
                       >
-                        <SelectTrigger className={cn("h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5", validationErrors.language && touchedFields.language && "border-red-500 focus:ring-red-500")}>
+                        <SelectTrigger className={cn("h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5", validationErrors.language && (touchedFields.language || courseData.id) && "border-red-500 focus:ring-red-500")}>
                           <SelectValue placeholder="Select language" />
                         </SelectTrigger>
                         <SelectContent>
@@ -1900,7 +2055,7 @@ const CourseBuilder = () => {
                           ))}
                         </SelectContent>
                       </Select>
-                      {validationErrors.language && touchedFields.language && <p className="text-sm text-red-500 mt-1">{validationErrors.language}</p>}
+                      {validationErrors.language && (touchedFields.language || courseData.id) && <p className="text-sm text-red-500 mt-1">{validationErrors.language}</p>}
                     </div>
                     
                     <div>
@@ -1912,7 +2067,7 @@ const CourseBuilder = () => {
                           handleBlur('level');
                         }}
                       >
-                        <SelectTrigger className={cn("h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5", validationErrors.level && touchedFields.level && "border-red-500 focus:ring-red-500")}>
+                        <SelectTrigger className={cn("h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5", validationErrors.level && (touchedFields.level || courseData.id) && "border-red-500 focus:ring-red-500")}>
                           <SelectValue placeholder="Select level" />
                         </SelectTrigger>
                         <SelectContent>
@@ -1923,7 +2078,7 @@ const CourseBuilder = () => {
                           ))}
                         </SelectContent>
                       </Select>
-                      {validationErrors.level && touchedFields.level && <p className="text-sm text-red-500 mt-1">{validationErrors.level}</p>}
+                      {validationErrors.level && (touchedFields.level || courseData.id) && <p className="text-sm text-red-500 mt-1">{validationErrors.level}</p>}
                     </div>
                   </div>
 
@@ -2054,7 +2209,7 @@ const CourseBuilder = () => {
                                       <SortableItem key={lesson.id} id={lesson.id} type="lesson" sectionId={section.id}>
                                         {(lessonDragHandleProps) => (
                                           <div className={`${activeId === lesson.id ? 'opacity-25' : ''}`}>
-                                            <LessonItem
+                                            <LessonContainer
                                               key={lesson.id}
                                               lesson={lesson}
                                               sectionId={section.id}
@@ -2064,6 +2219,9 @@ const CourseBuilder = () => {
                                               dragHandleProps={lessonDragHandleProps}
                                               onToggleCollapse={toggleLessonCollapse}
                                               courseId={courseId}
+                                              onAddContentItem={addContentItem}
+                                              onUpdateContentItem={updateContentItem}
+                                              onRemoveContentItem={removeContentItem}
                                             />
                                           </div>
                                         )}
@@ -2083,11 +2241,11 @@ const CourseBuilder = () => {
                         <Card className="bg-card border border-border">
                           <CardHeader>{courseData.sections.find(s => s.id === activeId)?.title}</CardHeader>
                         </Card> :
-                        <LessonItem
+                                                <LessonContainer
                           lesson={
                             courseData.sections
                               .flatMap(s => s.lessons)
-                              .find(l => l.id === activeId) || { id: '', title: '', type: 'video' }
+                              .find(l => l.id === activeId) || { id: '', title: '', overview: '', contentItems: [] }
                           }
                           sectionId={
                             courseData.sections.find(s => s.lessons.some(l => l.id === activeId))?.id || ''
@@ -2098,6 +2256,9 @@ const CourseBuilder = () => {
                           dragHandleProps={{}}
                           onToggleCollapse={() => {}}
                           courseId={courseId}
+                          onAddContentItem={() => {}}
+                          onUpdateContentItem={() => {}}
+                          onRemoveContentItem={() => {}}
                         />
                       ) : null}
                     </DragOverlay>
@@ -2123,7 +2284,7 @@ const CourseBuilder = () => {
                       </div>
                     ))}
                     <Button variant="outline" size="sm" onClick={() => addArrayField('requirements')}>Add Requirement</Button>
-                    {validationErrors.requirements && touchedFields.requirements && <p className="text-sm text-red-500 mt-1">{validationErrors.requirements}</p>}
+                    {validationErrors.requirements && (touchedFields.requirements || courseData.id) && <p className="text-sm text-red-500 mt-1">{validationErrors.requirements}</p>}
                   </div>
                   
                   <div>
@@ -2137,7 +2298,7 @@ const CourseBuilder = () => {
                       </div>
                     ))}
                     <Button variant="outline" size="sm" onClick={() => addArrayField('learningOutcomes')}>Add Outcome</Button>
-                    {validationErrors.learningOutcomes && touchedFields.learningOutcomes && <p className="text-sm text-red-500 mt-1">{validationErrors.learningOutcomes}</p>}
+                    {validationErrors.learningOutcomes && (touchedFields.learningOutcomes || courseData.id) && <p className="text-sm text-red-500 mt-1">{validationErrors.learningOutcomes}</p>}
                   </div>
                 </CardContent>
               </Card>
@@ -2281,3 +2442,4 @@ const CourseBuilder = () => {
 };
 
 export default CourseBuilder;
+

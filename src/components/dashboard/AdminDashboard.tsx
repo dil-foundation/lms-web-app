@@ -86,7 +86,6 @@ interface CourseAnalyticsData {
 interface EngagementData {
   day: string;
   activeUsers: number;
-  timeSpent: number;
   courses: number;
   discussions: number;
 }
@@ -153,120 +152,39 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
     const fetchDashboardData = async () => {
       setLoading(true);
       try {
-        console.log('AdminDashboard: Starting to fetch data...');
-        console.log('AdminDashboard: Environment variables:', {
-          url: import.meta.env.VITE_SUPABASE_URL,
-          key: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Set' : 'Not set'
-        });
-        const { startDate, endDate } = getDateRange(timeRange);
-        
-        // Fetch basic stats for the selected time range
-        const [
-          { count: totalUsers, error: usersError },
-          { count: totalTeachers, error: teachersError },
-          { count: totalStudents, error: studentsError },
-          { count: totalAdmins, error: adminsError },
-          { count: totalCourses, error: coursesError },
-          { count: activeCourses, error: activeCoursesError },
-          { count: completedAssignments, error: assignmentsError },
-          { count: activeDiscussions, error: discussionsError },
-        ] = await Promise.all([
-          timeRange === 'alltime' 
-            ? supabase.from('profiles').select('*', { count: 'exact', head: true })
-            : supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', startDate.toISOString()),
-          timeRange === 'alltime'
-            ? supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'teacher')
-            : supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'teacher').gte('created_at', startDate.toISOString()),
-          timeRange === 'alltime'
-            ? supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student')
-            : supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student').gte('created_at', startDate.toISOString()),
-          timeRange === 'alltime'
-            ? supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'admin')
-            : supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'admin').gte('created_at', startDate.toISOString()),
-          timeRange === 'alltime'
-            ? supabase.from('courses').select('*', { count: 'exact', head: true })
-            : supabase.from('courses').select('*', { count: 'exact', head: true }).gte('created_at', startDate.toISOString()),
-          timeRange === 'alltime'
-            ? supabase.from('courses').select('*', { count: 'exact', head: true }).eq('status', 'Published')
-            : supabase.from('courses').select('*', { count: 'exact', head: true }).eq('status', 'Published').gte('created_at', startDate.toISOString()),
-          timeRange === 'alltime'
-            ? supabase.from('assignment_submissions').select('*', { count: 'exact', head: true }).eq('status', 'completed')
-            : supabase.from('assignment_submissions').select('*', { count: 'exact', head: true }).eq('status', 'completed').gte('submitted_at', startDate.toISOString()),
-          timeRange === 'alltime'
-            ? supabase.from('discussions').select('*', { count: 'exact', head: true })
-            : supabase.from('discussions').select('*', { count: 'exact', head: true }).gte('created_at', startDate.toISOString()),
-        ]);
+        const { data, error } = await supabase.rpc('get_admin_dashboard_stats', { time_range: timeRange });
 
-        console.log('AdminDashboard: Query results:', {
-          totalUsers, usersError,
-          totalTeachers, teachersError,
-          totalStudents, studentsError,
-          totalAdmins, adminsError,
-          totalCourses, coursesError,
-          activeCourses, activeCoursesError,
-          completedAssignments, assignmentsError,
-          activeDiscussions, discussionsError
-        });
+        if (error) throw error;
+        if (!data) throw new Error("No data returned from stats function.");
 
-        if (usersError) throw usersError;
-        if (teachersError) throw teachersError;
-        if (studentsError) throw studentsError;
-        if (adminsError) throw adminsError;
-        if (coursesError) throw coursesError;
-        if (activeCoursesError) throw activeCoursesError;
-        if (assignmentsError) throw assignmentsError;
-        if (discussionsError) throw discussionsError;
-
-        // Get new users in the selected period
-        const { count: newUsersInPeriod, error: newUsersError } = await supabase
-          .from('profiles')
-          .select('*', { count: 'exact', head: true })
-          .gte('created_at', startDate.toISOString());
-
-        if (newUsersError) throw newUsersError;
-
-        // Calculate engagement metrics
-        const courseCompletionRate = totalCourses > 0 ? Math.round((completedAssignments / totalCourses) * 100) : 0;
-        const avgEngagement = totalUsers > 0 ? Math.round((activeCourses / totalUsers) * 100) : 0;
-
-        // Calculate user activity percentages
-        const activeUsersPercentage = totalUsers > 0 ? Math.round((activeDiscussions / totalUsers) * 100) : 0;
-        const courseEngagementPercentage = totalUsers > 0 ? Math.round((activeCourses / totalUsers) * 100) : 0;
-        const discussionParticipationPercentage = totalUsers > 0 ? Math.round((activeDiscussions / totalUsers) * 100) : 0;
-        const assignmentCompletionPercentage = totalUsers > 0 ? Math.round((completedAssignments / totalUsers) * 100) : 0;
+        // The RPC returns a single object in an array
+        const statsData = data[0];
 
         const baseStats = {
-          totalUsers: totalUsers ?? 0,
-          totalTeachers: totalTeachers ?? 0,
-          totalStudents: totalStudents ?? 0,
-          totalAdmins: totalAdmins ?? 0,
-          totalCourses: totalCourses ?? 0,
-          activeCourses: activeCourses ?? 0,
-          completedAssignments: completedAssignments ?? 0,
-          activeDiscussions: activeDiscussions ?? 0,
-          avgEngagement,
-          newUsersThisMonth: newUsersInPeriod ?? 0,
-          courseCompletionRate,
-          totalLogins: totalUsers ?? 0, // Using total users as proxy for now
-          // User activity metrics
-          activeUsersPercentage,
-          courseEngagementPercentage,
-          discussionParticipationPercentage,
-          assignmentCompletionPercentage,
+          totalUsers: statsData.total_users,
+          totalTeachers: statsData.total_teachers,
+          totalStudents: statsData.total_students,
+          totalAdmins: statsData.total_admins,
+          totalCourses: statsData.total_courses,
+          activeCourses: statsData.active_courses,
+          completedAssignments: statsData.completed_assignments,
+          activeDiscussions: statsData.active_discussions,
+          avgEngagement: statsData.avg_engagement,
+          newUsersThisMonth: statsData.new_users_this_month,
+          courseCompletionRate: statsData.course_completion_rate,
+          totalLogins: statsData.total_logins,
+          activeUsersPercentage: statsData.active_users_percentage,
+          courseEngagementPercentage: statsData.course_engagement_percentage,
+          discussionParticipationPercentage: statsData.discussion_participation_percentage,
+          assignmentCompletionPercentage: statsData.assignment_completion_percentage,
         };
 
         setStats(baseStats);
 
-        // Fetch user growth data based on time range
+        // Fetch chart data (these can remain as they are or be moved to the backend too)
         await fetchUserGrowthData(timeRange);
-        
-        // Fetch platform distribution data
         await fetchPlatformStatsData();
-        
-        // Fetch course analytics data
         await fetchCourseAnalyticsData();
-        
-        // Fetch engagement data based on time range
         await fetchEngagementData(timeRange);
 
       } catch (error: any) {
@@ -294,7 +212,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
 
       // Get all user progress data in a single query
       const { data: allProgress, error: progressError } = await supabase
-        .from('user_course_progress')
+        .from('user_content_item_progress')
         .select('updated_at')
         .order('updated_at', { ascending: true });
 
@@ -413,21 +331,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
         });
       }
 
-      // If all values are 0, create some sample data to show the chart structure
-      const allZero = userGrowthData.every(data => data.users === 0);
-      if (allZero) {
-        const sampleData: UserGrowthData[] = periods.map((period, index) => ({
-          month: period.label,
-          users: Math.max(1, index * 2),
-          teachers: Math.max(1, Math.floor(index * 0.3)),
-          students: Math.max(1, Math.floor(index * 1.5)),
-          admins: Math.max(1, Math.floor(index * 0.2)),
-          active: Math.max(1, Math.floor(index * 1.8)),
-        }));
-        setUserGrowthData(sampleData);
-      } else {
-        setUserGrowthData(userGrowthData);
-      }
+      setUserGrowthData(userGrowthData);
     } catch (error) {
       console.error("Failed to fetch user growth data:", error);
       // Fallback to sample data if query fails
@@ -479,17 +383,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
       // Filter out zero values and ensure we have at least one non-zero value
       const nonZeroStats = platformStats.filter(stat => stat.value > 0);
       
-      if (nonZeroStats.length === 0) {
-        // If all values are 0, show sample data
-        setPlatformStatsData([
-          { name: 'Active Courses', value: 5, color: '#3B82F6' },
-          { name: 'Draft Courses', value: 2, color: '#F59E0B' },
-          { name: 'Archived Courses', value: 1, color: '#6B7280' },
-          { name: 'Completed Courses', value: 3, color: '#10B981' },
-        ]);
-      } else {
-        setPlatformStatsData(nonZeroStats);
-      }
+      setPlatformStatsData(nonZeroStats);
     } catch (error) {
       console.error("Failed to fetch platform stats data:", error);
       // Fallback to sample data
@@ -563,17 +457,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
         });
       }
 
-      // If all courses have 0 enrollment, add some sample data
-      const allZeroEnrollment = courseAnalytics.every(course => course.enrolled === 0);
-      if (allZeroEnrollment) {
-        setCourseAnalyticsData([
-          { course: 'Sample Course 1', enrolled: 25, completed: 18, progress: 72, rating: 4.5 },
-          { course: 'Sample Course 2', enrolled: 18, completed: 12, progress: 67, rating: 4.3 },
-          { course: 'Sample Course 3', enrolled: 15, completed: 10, progress: 67, rating: 4.7 },
-        ]);
-      } else {
         setCourseAnalyticsData(courseAnalytics);
-      }
     } catch (error) {
       console.error("Failed to fetch course analytics data:", error);
       // Fallback to sample data
@@ -591,8 +475,8 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
       
       // Get all user progress data in a single query
       const { data: allProgress, error: progressError } = await supabase
-        .from('user_course_progress')
-        .select('updated_at')
+        .from('user_content_item_progress')
+        .select('updated_at, course_id')
         .order('updated_at', { ascending: true });
 
       if (progressError) throw progressError;
@@ -692,6 +576,12 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
           return progressDate >= period.start && progressDate < period.end;
         }).length ?? 0;
 
+        const coursesAccessed = new Set(allProgress?.filter(progress => {
+            const progressDate = new Date(progress.updated_at);
+            return progressDate >= period.start && progressDate < period.end;
+        }).map(p => p.course_id)).size;
+
+
         // Calculate discussions from the fetched data
         const discussions = allDiscussions?.filter(discussion => {
           const discussionDate = new Date(discussion.created_at);
@@ -701,26 +591,12 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
         engagementData.push({
           day: period.label,
           activeUsers,
-          timeSpent: Math.round(activeUsers * 0.8), // Estimate time spent
-          courses: Math.round(activeUsers * 0.6), // Estimate courses accessed
+          courses: coursesAccessed,
           discussions,
         });
       }
 
-      // If all values are 0, create sample data
-      const allZero = engagementData.every(data => data.activeUsers === 0 && data.discussions === 0);
-      if (allZero) {
-        const sampleData: EngagementData[] = periods.map((period, index) => ({
-          day: period.label,
-          activeUsers: Math.max(1, Math.floor(Math.random() * 20) + 5),
-          timeSpent: Math.max(1, Math.floor(Math.random() * 15) + 3),
-          courses: Math.max(1, Math.floor(Math.random() * 10) + 2),
-          discussions: Math.max(0, Math.floor(Math.random() * 5)),
-        }));
-        setEngagementData(sampleData);
-      } else {
         setEngagementData(engagementData);
-      }
     } catch (error) {
       console.error("Failed to fetch engagement data:", error);
       // Fallback to sample data
@@ -729,7 +605,6 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
       const sampleData: EngagementData[] = Array.from({ length: periods }, (_, index) => ({
         day: range === 'alltime' ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][index] : `Period ${index + 1}`,
         activeUsers: Math.max(1, Math.floor(Math.random() * 20) + 5),
-        timeSpent: Math.max(1, Math.floor(Math.random() * 15) + 3),
         courses: Math.max(1, Math.floor(Math.random() * 10) + 2),
         discussions: Math.max(0, Math.floor(Math.random() * 5)),
       }));
@@ -1084,7 +959,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                       <YAxis />
                       <ChartTooltip content={<ChartTooltipContent />} />
                       <Line type="monotone" dataKey="activeUsers" stroke="#3B82F6" strokeWidth={2} name="Active Users" />
-                      <Line type="monotone" dataKey="timeSpent" stroke="#10B981" strokeWidth={2} name="Time Spent" />
+                      <Line type="monotone" dataKey="courses" stroke="#10B981" strokeWidth={2} name="Courses Accessed" />
                       <Line type="monotone" dataKey="discussions" stroke="#F59E0B" strokeWidth={2} name="Discussions" />
                     </LineChart>
                   </ResponsiveContainer>
