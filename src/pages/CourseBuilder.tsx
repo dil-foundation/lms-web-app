@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Save, Eye, Upload, Plus, GripVertical, X, ChevronDown, ChevronUp, BookOpen } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Upload, Plus, GripVertical, X, ChevronDown, ChevronUp, BookOpen, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { FileUpload } from '@/components/ui/FileUpload';
 import { RichTextEditor } from '@/components/ui/RichTextEditor';
@@ -1761,6 +1761,12 @@ const CourseBuilder = () => {
                     Last saved: 2 minutes ago
                   </span>
                 </div>
+                {currentUserRole === 'teacher' && courseData.status === 'Draft' && (
+                    <div className="flex items-center gap-2 mt-2 text-sm text-blue-600 bg-blue-50 border border-blue-200 rounded-lg p-2">
+                        <Info className="h-4 w-4" />
+                        <span>You must submit this course for admin review and approval before it can be published.</span>
+                    </div>
+                )}
               </div>
             </div>
           </div>
@@ -1951,9 +1957,9 @@ const CourseBuilder = () => {
                       onChange={(e) => setCourseData(prev => ({ ...prev, title: e.target.value }))}
                       onBlur={() => handleBlur('title')}
                       placeholder="Enter course title"
-                      className={cn(validationErrors.title && touchedFields.title && "border-red-500 focus-visible:ring-red-500")}
+                      className={cn(validationErrors.title && (touchedFields.title || courseData.id) && "border-red-500 focus-visible:ring-red-500")}
                     />
-                    {validationErrors.title && touchedFields.title && <p className="text-sm text-red-500 mt-1">{validationErrors.title}</p>}
+                    {validationErrors.title && (touchedFields.title || courseData.id) && <p className="text-sm text-red-500 mt-1">{validationErrors.title}</p>}
                   </div>
                   
                   <div>
@@ -1963,9 +1969,9 @@ const CourseBuilder = () => {
                       onChange={(e) => setCourseData(prev => ({ ...prev, subtitle: e.target.value }))}
                       onBlur={() => handleBlur('subtitle')}
                       placeholder="Enter course subtitle"
-                      className={cn(validationErrors.subtitle && touchedFields.subtitle && "border-red-500 focus-visible:ring-red-500")}
+                      className={cn(validationErrors.subtitle && (touchedFields.subtitle || courseData.id) && "border-red-500 focus-visible:ring-red-500")}
                     />
-                    {validationErrors.subtitle && touchedFields.subtitle && <p className="text-sm text-red-500 mt-1">{validationErrors.subtitle}</p>}
+                    {validationErrors.subtitle && (touchedFields.subtitle || courseData.id) && <p className="text-sm text-red-500 mt-1">{validationErrors.subtitle}</p>}
                   </div>
                   
                   <div>
@@ -1976,9 +1982,9 @@ const CourseBuilder = () => {
                       onBlur={() => handleBlur('description')}
                       placeholder="Describe your course"
                       rows={4}
-                      className={cn(validationErrors.description && touchedFields.description && "border-red-500 focus-visible:ring-red-500")}
+                      className={cn(validationErrors.description && (touchedFields.description || courseData.id) && "border-red-500 focus-visible:ring-red-500")}
                     />
-                    {validationErrors.description && touchedFields.description && <p className="text-sm text-red-500 mt-1">{validationErrors.description}</p>}
+                    {validationErrors.description && (touchedFields.description || courseData.id) && <p className="text-sm text-red-500 mt-1">{validationErrors.description}</p>}
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1991,7 +1997,7 @@ const CourseBuilder = () => {
                           handleBlur('category');
                         }}
                       >
-                        <SelectTrigger className={cn("h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5", validationErrors.category && touchedFields.category && "border-red-500 focus:ring-red-500")}>
+                        <SelectTrigger className={cn("h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5", validationErrors.category && (touchedFields.category || courseData.id) && "border-red-500 focus:ring-red-500")}>
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
@@ -2002,7 +2008,7 @@ const CourseBuilder = () => {
                           ))}
                         </SelectContent>
                       </Select>
-                      {validationErrors.category && touchedFields.category && <p className="text-sm text-red-500 mt-1">{validationErrors.category}</p>}
+                      {validationErrors.category && (touchedFields.category || courseData.id) && <p className="text-sm text-red-500 mt-1">{validationErrors.category}</p>}
                     </div>
                     
                     <div>
@@ -2014,7 +2020,7 @@ const CourseBuilder = () => {
                           handleBlur('language');
                         }}
                       >
-                        <SelectTrigger className={cn("h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5", validationErrors.language && touchedFields.language && "border-red-500 focus:ring-red-500")}>
+                        <SelectTrigger className={cn("h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5", validationErrors.language && (touchedFields.language || courseData.id) && "border-red-500 focus:ring-red-500")}>
                           <SelectValue placeholder="Select language" />
                         </SelectTrigger>
                         <SelectContent>
@@ -2025,7 +2031,7 @@ const CourseBuilder = () => {
                           ))}
                         </SelectContent>
                       </Select>
-                      {validationErrors.language && touchedFields.language && <p className="text-sm text-red-500 mt-1">{validationErrors.language}</p>}
+                      {validationErrors.language && (touchedFields.language || courseData.id) && <p className="text-sm text-red-500 mt-1">{validationErrors.language}</p>}
                     </div>
                     
                     <div>
@@ -2037,7 +2043,7 @@ const CourseBuilder = () => {
                           handleBlur('level');
                         }}
                       >
-                        <SelectTrigger className={cn("h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5", validationErrors.level && touchedFields.level && "border-red-500 focus:ring-red-500")}>
+                        <SelectTrigger className={cn("h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5", validationErrors.level && (touchedFields.level || courseData.id) && "border-red-500 focus:ring-red-500")}>
                           <SelectValue placeholder="Select level" />
                         </SelectTrigger>
                         <SelectContent>
@@ -2048,7 +2054,7 @@ const CourseBuilder = () => {
                           ))}
                         </SelectContent>
                       </Select>
-                      {validationErrors.level && touchedFields.level && <p className="text-sm text-red-500 mt-1">{validationErrors.level}</p>}
+                      {validationErrors.level && (touchedFields.level || courseData.id) && <p className="text-sm text-red-500 mt-1">{validationErrors.level}</p>}
                     </div>
                   </div>
 
@@ -2254,7 +2260,7 @@ const CourseBuilder = () => {
                       </div>
                     ))}
                     <Button variant="outline" size="sm" onClick={() => addArrayField('requirements')}>Add Requirement</Button>
-                    {validationErrors.requirements && touchedFields.requirements && <p className="text-sm text-red-500 mt-1">{validationErrors.requirements}</p>}
+                    {validationErrors.requirements && (touchedFields.requirements || courseData.id) && <p className="text-sm text-red-500 mt-1">{validationErrors.requirements}</p>}
                   </div>
                   
                   <div>
@@ -2268,7 +2274,7 @@ const CourseBuilder = () => {
                       </div>
                     ))}
                     <Button variant="outline" size="sm" onClick={() => addArrayField('learningOutcomes')}>Add Outcome</Button>
-                    {validationErrors.learningOutcomes && touchedFields.learningOutcomes && <p className="text-sm text-red-500 mt-1">{validationErrors.learningOutcomes}</p>}
+                    {validationErrors.learningOutcomes && (touchedFields.learningOutcomes || courseData.id) && <p className="text-sm text-red-500 mt-1">{validationErrors.learningOutcomes}</p>}
                   </div>
                 </CardContent>
               </Card>
