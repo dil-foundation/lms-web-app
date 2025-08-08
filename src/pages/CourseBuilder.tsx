@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Save, Eye, Upload, Plus, GripVertical, X, ChevronDown, ChevronUp, BookOpen, Info } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Upload, Plus, GripVertical, X, ChevronDown, ChevronUp, BookOpen, Info, UploadCloud } from 'lucide-react';
 import { toast } from 'sonner';
 import { FileUpload } from '@/components/ui/FileUpload';
 import { RichTextEditor } from '@/components/ui/RichTextEditor';
@@ -365,13 +365,29 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
             </div>
           );
         }
-        return <FileUpload 
-                  onUpload={handleVideoUpload} 
-                  label={isUploading ? "Uploading..." : "Upload Video (MP4, MOV)"}
-                  acceptedFileTypes={['video/mp4', 'video/quicktime']}
-                  disabled={isUploading}
-                  maxSize={500 * 1024 * 1024} // 500MB
-                />;
+        return (
+          <div className="w-full">
+            <div
+              className={`w-full text-center p-6 border-2 border-dashed rounded-lg transition-colors cursor-pointer hover:border-primary/50 border-border`}
+              onClick={() => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'video/mp4,video/quicktime';
+                input.onchange = (e) => {
+                  const file = (e.target as HTMLInputElement).files?.[0];
+                  if (file) handleVideoUpload(file);
+                };
+                input.click();
+              }}
+            >
+              <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                <UploadCloud className="h-8 w-8" />
+                <p className="text-sm">{isUploading ? "Uploading..." : "Upload Video (MP4, MOV)"}</p>
+                <p className="text-xs text-muted-foreground">Max file size: 500 MB</p>
+              </div>
+            </div>
+          </div>
+        );
       case 'attachment':
         if (attachmentInfo) {
           return (
@@ -395,20 +411,29 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
             </div>
           );
         }
-        return <FileUpload 
-                  onUpload={handleAttachmentUpload}
-                  label={isUploading ? "Uploading..." : "Upload Attachment (PDF, DOC, ZIP)"}
-                  acceptedFileTypes={[
-                    'application/pdf',
-                    'application/msword',
-                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                    'application/vnd.ms-excel',
-                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    'application/zip'
-                  ]}
-                  disabled={isUploading}
-                  maxSize={10 * 1024 * 1024} // 10MB
-                />;
+        return (
+          <div className="w-full">
+            <div
+              className={`w-full text-center p-6 border-2 border-dashed rounded-lg transition-colors cursor-pointer hover:border-primary/50 border-border`}
+              onClick={() => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.pdf,.doc,.docx,.xls,.xlsx,.zip';
+                input.onchange = (e) => {
+                  const file = (e.target as HTMLInputElement).files?.[0];
+                  if (file) handleAttachmentUpload(file);
+                };
+                input.click();
+              }}
+            >
+              <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                <UploadCloud className="h-8 w-8" />
+                <p className="text-sm">{isUploading ? "Uploading..." : "Upload Attachment (PDF, DOC, ZIP)"}</p>
+                <p className="text-xs text-muted-foreground">Max file size: 10 MB</p>
+              </div>
+            </div>
+          </div>
+        );
       case 'assignment':
         return (
           <RichTextEditor
@@ -431,45 +456,71 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
     }
   };
 
+  const getContentTypeIcon = (type: string) => {
+    switch (type) {
+      case 'video': return '🎥';
+      case 'assignment': return '📝';
+      case 'quiz': return '❓';
+      case 'attachment': return '📎';
+      default: return '📄';
+    }
+  };
+
+  const getContentTypeColor = (type: string) => {
+    switch (type) {
+      case 'video': return 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-300';
+      case 'assignment': return 'bg-orange-50 border-orange-200 text-orange-700 dark:bg-orange-950 dark:border-orange-800 dark:text-orange-300';
+      case 'quiz': return 'bg-purple-50 border-purple-200 text-purple-700 dark:bg-purple-950 dark:border-purple-800 dark:text-purple-300';
+      case 'attachment': return 'bg-green-50 border-green-200 text-green-700 dark:bg-green-950 dark:border-green-800 dark:text-green-300';
+      default: return 'bg-gray-50 border-gray-200 text-gray-700 dark:bg-gray-950 dark:border-gray-800 dark:text-gray-300';
+    }
+  };
+
   return (
-    <div className="p-3 rounded-lg bg-muted/50 border ml-8 space-y-3">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex-1">
-            <Input
-              value={item.title}
-              onChange={(e) => onUpdate(lessonId, item.id, { title: e.target.value })}
-              placeholder="Content Title (e.g., 'Introduction Video')"
-              className="font-medium"
-            />
+    <div className={`w-full p-5 rounded-xl border-2 transition-all duration-200 hover:shadow-md ${getContentTypeColor(item.content_type)}`}>
+      <div className="flex items-center justify-between gap-4 mb-4">
+        <div className="flex items-center gap-3 flex-1">
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/50 dark:bg-black/20">
+            <span className="text-lg">{getContentTypeIcon(item.content_type)}</span>
+          </div>
+          <Input
+            value={item.title}
+            onChange={(e) => onUpdate(lessonId, item.id, { title: e.target.value })}
+            placeholder={`${item.content_type.charAt(0).toUpperCase() + item.content_type.slice(1)} Title`}
+            className="font-medium bg-white/50 dark:bg-black/20 border-0 focus-visible:ring-1 focus-visible:ring-current/30"
+          />
         </div>
         <div className="flex items-center gap-2">
-            <Select
-                value={item.content_type}
-                onValueChange={handleTypeChangeRequest}
+          <Select
+            value={item.content_type}
+            onValueChange={handleTypeChangeRequest}
+          >
+            <SelectTrigger className="w-[130px] h-9 rounded-lg bg-white/50 dark:bg-black/20 border border-current/20 text-xs font-medium">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="video">🎥 Video</SelectItem>
+              <SelectItem value="attachment">📎 Attachment</SelectItem>
+              <SelectItem value="assignment">📝 Assignment</SelectItem>
+              <SelectItem value="quiz">❓ Quiz</SelectItem>
+            </SelectContent>
+          </Select>
+          {isRemovable && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onRemove(lessonId, item.id)}
+              className="h-8 w-8 text-current/60 hover:text-current hover:bg-white/30 dark:hover:bg-black/30"
             >
-                <SelectTrigger className="w-[120px] h-9 rounded-xl bg-background border border-input shadow-sm">
-                <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                <SelectItem value="video">Video</SelectItem>
-                <SelectItem value="attachment">Attachment</SelectItem>
-                <SelectItem value="assignment">Assignment</SelectItem>
-                <SelectItem value="quiz">Quiz</SelectItem>
-                </SelectContent>
-            </Select>
-            {isRemovable && (
-                <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onRemove(lessonId, item.id)}
-                >
-                <X className="w-4 h-4" />
-                </Button>
-            )}
+              <X className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       </div>
       
-      <div>{renderContentEditor()}</div>
+      <div className="w-full bg-white/30 dark:bg-black/20 rounded-lg p-4 border border-current/10">
+        {renderContentEditor()}
+      </div>
 
       <AlertDialog open={isConfirmingChange} onOpenChange={setIsConfirmingChange}>
         <AlertDialogContent>
@@ -500,72 +551,115 @@ interface LessonContainerProps {
   dragHandleProps: any;
   onToggleCollapse: (sectionId: string, lessonId: string) => void;
   courseId: string | undefined;
-  onAddContentItem: (lessonId: string) => void;
+  onAddContentItem: (lessonId: string, contentType?: 'video' | 'assignment' | 'quiz' | 'attachment') => void;
   onUpdateContentItem: (lessonId: string, itemId: string, updatedItem: Partial<LessonContentItem>) => void;
   onRemoveContentItem: (lessonId: string, itemId: string) => void;
 }
 
 const LessonContainer = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, dragHandleProps, onToggleCollapse, courseId, onAddContentItem, onUpdateContentItem, onRemoveContentItem }: LessonContainerProps) => {
+  const contentTypes = [
+    { type: 'video', label: 'Video', icon: '🎥' },
+    { type: 'assignment', label: 'Assignment', icon: '📝' },
+    { type: 'quiz', label: 'Quiz', icon: '❓' },
+    { type: 'attachment', label: 'Attachment', icon: '📎' }
+  ];
+
+  const addContentType = (contentType: string) => {
+    onAddContentItem(lesson.id, contentType as 'video' | 'assignment' | 'quiz' | 'attachment');
+  };
+
+  const getAvailableContentTypes = () => {
+    const existingTypes = lesson.contentItems.map(item => item.content_type);
+    return contentTypes.filter(ct => !existingTypes.includes(ct.type as any));
+  };
+
   return (
     <>
-      <div className="p-4 rounded-lg bg-background border space-y-4">
+      <div className="p-6 rounded-xl bg-background border border-border/50 shadow-sm space-y-6">
+        {/* Lesson Header */}
         <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-2 flex-1">
-            <div {...dragHandleProps} className="cursor-move pt-2.5">
-              <GripVertical className="text-muted-foreground" />
+          <div className="flex items-start gap-3 flex-1">
+            <div {...dragHandleProps} className="cursor-move pt-2.5 opacity-60 hover:opacity-100 transition-opacity">
+              <GripVertical className="text-muted-foreground w-5 h-5" />
             </div>
-            <div className="flex-1 space-y-1">
+            <div className="flex-1 space-y-3">
               <Input
                 value={lesson.title}
                 onChange={(e) => onUpdate(sectionId, lesson.id, { title: e.target.value })}
                 placeholder="Lesson Title"
-                className="font-semibold"
+                className="font-semibold text-lg border-0 bg-transparent px-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/60"
               />
               <Textarea
                 value={lesson.overview || ''}
                 onChange={(e) => onUpdate(sectionId, lesson.id, { overview: e.target.value })}
                 placeholder="Lesson overview (optional)"
-                rows={1}
-                className="text-sm resize-none"
+                rows={2}
+                className="text-sm resize-none border-0 bg-muted/30 rounded-lg px-3 py-2 focus-visible:ring-1 focus-visible:ring-primary/20"
               />
             </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2 ml-4">
-          <Button variant="outline" size="sm" onClick={() => onAddContentItem(lesson.id)} >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Content
-          </Button>
-          {isRemovable && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onRemove(sectionId, lesson.id)}
+          <div className="flex items-center gap-2">
+            {isRemovable && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onRemove(sectionId, lesson.id)}
+                className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            )}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => onToggleCollapse(sectionId, lesson.id)}
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
             >
-              <X className="w-4 h-4" />
+              {lesson.isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
             </Button>
-          )}
-          <Button variant="ghost" size="icon" onClick={() => onToggleCollapse(sectionId, lesson.id)}>
-            {lesson.isCollapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
-          </Button>
+          </div>
         </div>
+
+        {/* Content Management */}
+        {!lesson.isCollapsed && (
+          <div className="space-y-4 ml-8">
+            {/* Available Content Types to Add */}
+            {getAvailableContentTypes().length > 0 && (
+              <div className="flex flex-wrap gap-2 p-4 bg-muted/20 rounded-lg border border-dashed border-muted-foreground/30">
+                <span className="text-sm text-muted-foreground font-medium mr-2">Add back removed content:</span>
+                {getAvailableContentTypes().map((contentType) => (
+                  <Button
+                    key={contentType.type}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addContentType(contentType.type)}
+                    className="h-8 px-3 text-xs rounded-full border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 transition-all duration-200"
+                  >
+                    <span className="mr-1">{contentType.icon}</span>
+                    {contentType.label}
+                  </Button>
+                ))}
+              </div>
+            )}
+
+            {/* Existing Content Items */}
+            <div className="space-y-3">
+              {lesson.contentItems.map((item) => (
+                <LessonContentItemComponent
+                  key={item.id}
+                  item={item}
+                  lessonId={lesson.id}
+                  sectionId={sectionId}
+                  onUpdate={onUpdateContentItem}
+                  onRemove={onRemoveContentItem}
+                  isRemovable={true}
+                  courseId={courseId}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
-      {!lesson.isCollapsed && (
-        <div className="space-y-3 pt-3">
-          {lesson.contentItems.map((item) => (
-            <LessonContentItemComponent
-              key={item.id}
-              item={item}
-              lessonId={lesson.id}
-              sectionId={sectionId}
-              onUpdate={onUpdateContentItem}
-              onRemove={onRemoveContentItem}
-              isRemovable={lesson.contentItems.length > 1}
-              courseId={courseId}
-            />
-          ))}
-        </div>
-      )}
     </>
   );
 });
@@ -663,7 +757,7 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
   };
   
   return (
-    <div className="space-y-4">
+    <div className="w-full space-y-4">
       {quiz.questions.map((question, qIndex) => (
         <Card key={question.id}>
           <CardHeader>
@@ -673,7 +767,12 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
                 onChange={(e) => updateQuestion(qIndex, e.target.value)}
                 placeholder={`Question ${qIndex + 1}`}
               />
-              <Button variant="ghost" size="icon" onClick={() => removeQuestion(qIndex)}>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => removeQuestion(qIndex)}
+                className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
                 <X className="w-4 h-4" />
               </Button>
             </div>
@@ -693,18 +792,33 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
                 >
                   Correct
                 </Button>
-                <Button variant="ghost" size="icon" onClick={() => removeOption(qIndex, oIndex)}>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => removeOption(qIndex, oIndex)}
+                  className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                >
                   <X className="w-4 h-4" />
                 </Button>
               </div>
             ))}
-            <Button variant="outline" size="sm" onClick={() => addOption(qIndex)}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => addOption(qIndex)}
+              className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
               Add Option
             </Button>
           </CardContent>
         </Card>
       ))}
-      <Button onClick={addQuestion}>Add Question</Button>
+      <Button 
+        onClick={addQuestion}
+        className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+      >
+        Add Question
+      </Button>
     </div>
   );
 };
@@ -764,6 +878,27 @@ const CourseBuilder = () => {
                 id: `content-${Date.now() + 2}`,
                 title: 'New Video',
                 content_type: 'video',
+                content_path: undefined,
+                quiz: undefined
+              },
+              {
+                id: `content-${Date.now() + 3}`,
+                title: 'New Assignment',
+                content_type: 'assignment',
+                content_path: undefined,
+                quiz: undefined
+              },
+              {
+                id: `content-${Date.now() + 4}`,
+                title: 'New Quiz',
+                content_type: 'quiz',
+                content_path: undefined,
+                quiz: undefined
+              },
+              {
+                id: `content-${Date.now() + 5}`,
+                title: 'New Attachment',
+                content_type: 'attachment',
                 content_path: undefined,
                 quiz: undefined
               }
@@ -1536,16 +1671,34 @@ const CourseBuilder = () => {
 
   // #region Section and Lesson Handlers
   const addSection = () => {
+    const timestamp = Date.now();
     const newLesson: CourseLesson = {
-      id: `lesson-${Date.now()}`,
+      id: `lesson-${timestamp}`,
       title: 'New Lesson',
       overview: '',
       isCollapsed: false,
-      contentItems: [{
-        id: `content-${Date.now() + 1}`,
-        title: 'New Video',
-        content_type: 'video',
-      }]
+      contentItems: [
+        {
+          id: `content-${timestamp + 1}`,
+          title: 'New Video',
+          content_type: 'video',
+        },
+        {
+          id: `content-${timestamp + 2}`,
+          title: 'New Assignment',
+          content_type: 'assignment',
+        },
+        {
+          id: `content-${timestamp + 3}`,
+          title: 'New Quiz',
+          content_type: 'quiz',
+        },
+        {
+          id: `content-${timestamp + 4}`,
+          title: 'New Attachment',
+          content_type: 'attachment',
+        }
+      ]
     };
     const newSection: CourseSection = {
       id: `section-${Date.now() + 1}`,
@@ -1589,16 +1742,34 @@ const CourseBuilder = () => {
   };
 
   const addLesson = (sectionId: string) => {
+    const timestamp = Date.now();
     const newLesson: CourseLesson = {
-      id: Date.now().toString(),
+      id: timestamp.toString(),
       title: 'New Lesson',
       overview: '',
       isCollapsed: false,
-      contentItems: [{
-        id: `content-${Date.now() + 1}`,
-        title: 'New Video',
-        content_type: 'video',
-      }]
+      contentItems: [
+        {
+          id: `content-${timestamp + 1}`,
+          title: 'New Video',
+          content_type: 'video',
+        },
+        {
+          id: `content-${timestamp + 2}`,
+          title: 'New Assignment',
+          content_type: 'assignment',
+        },
+        {
+          id: `content-${timestamp + 3}`,
+          title: 'New Quiz',
+          content_type: 'quiz',
+        },
+        {
+          id: `content-${timestamp + 4}`,
+          title: 'New Attachment',
+          content_type: 'attachment',
+        }
+      ]
     };
     setCourseData(prev => ({
       ...prev,
@@ -1641,11 +1812,11 @@ const CourseBuilder = () => {
       };
     });
   }, []);
-  const addContentItem = (lessonId: string) => {
+  const addContentItem = (lessonId: string, contentType: 'video' | 'assignment' | 'quiz' | 'attachment' = 'video') => {
     const newContentItem: LessonContentItem = {
       id: `content-${Date.now()}`,
-      title: 'New Content',
-      content_type: 'video',
+      title: `New ${contentType.charAt(0).toUpperCase() + contentType.slice(1)}`,
+      content_type: contentType,
     };
     setCourseData(prev => ({
       ...prev,
@@ -2127,10 +2298,18 @@ const CourseBuilder = () => {
             </TabsContent>
 
             <TabsContent value="curriculum" className="space-y-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Course Curriculum</CardTitle>
-                  <Button onClick={addSection}>
+              <Card className="border-0 shadow-lg">
+                <CardHeader className="flex flex-row items-center justify-between bg-gradient-to-r from-primary/5 to-primary/10 rounded-t-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <BookOpen className="w-5 h-5 text-primary" />
+                    </div>
+                    <CardTitle className="text-xl">Course Curriculum</CardTitle>
+                  </div>
+                  <Button 
+                    onClick={addSection}
+                    className="h-10 px-6 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                  >
                     <Plus className="w-4 h-4 mr-2" />
                     Add Section
                   </Button>
@@ -2184,7 +2363,11 @@ const CourseBuilder = () => {
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <Button onClick={() => addLesson(section.id)} variant="outline">
+                                  <Button 
+                                    onClick={() => addLesson(section.id)} 
+                                    variant="outline"
+                                    className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                                  >
                                     <Plus className="w-4 h-4 mr-2" />
                                     Lesson
                                   </Button>
@@ -2197,7 +2380,12 @@ const CourseBuilder = () => {
                                       <X className="w-4 h-4" />
                                     </Button>
                                   )}
-                                  <Button variant="ghost" size="icon" onClick={() => toggleSectionCollapse(section.id)}>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    onClick={() => toggleSectionCollapse(section.id)}
+                                    className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                                  >
                                     {section.isCollapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
                                   </Button>
                                 </div>
@@ -2278,12 +2466,24 @@ const CourseBuilder = () => {
                     {courseData.requirements.map((req, index) => (
                       <div key={index} className="flex items-center gap-2 mb-2">
                         <Input value={req} onChange={(e) => updateArrayField('requirements', index, e.target.value)} onBlur={() => handleBlur('requirements')} />
-                        <Button variant="ghost" size="icon" onClick={() => removeArrayField('requirements', index)}>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => removeArrayField('requirements', index)}
+                          className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        >
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
                     ))}
-                    <Button variant="outline" size="sm" onClick={() => addArrayField('requirements')}>Add Requirement</Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => addArrayField('requirements')}
+                      className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      Add Requirement
+                    </Button>
                     {validationErrors.requirements && (touchedFields.requirements || courseData.id) && <p className="text-sm text-red-500 mt-1">{validationErrors.requirements}</p>}
                   </div>
                   
@@ -2292,12 +2492,24 @@ const CourseBuilder = () => {
                     {courseData.learningOutcomes.map((outcome, index) => (
                       <div key={index} className="flex items-center gap-2 mb-2">
                         <Input value={outcome} onChange={(e) => updateArrayField('learningOutcomes', index, e.target.value)} onBlur={() => handleBlur('learningOutcomes')} />
-                        <Button variant="ghost" size="icon" onClick={() => removeArrayField('learningOutcomes', index)}>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => removeArrayField('learningOutcomes', index)}
+                          className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        >
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
                     ))}
-                    <Button variant="outline" size="sm" onClick={() => addArrayField('learningOutcomes')}>Add Outcome</Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => addArrayField('learningOutcomes')}
+                      className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      Add Outcome
+                    </Button>
                     {validationErrors.learningOutcomes && (touchedFields.learningOutcomes || courseData.id) && <p className="text-sm text-red-500 mt-1">{validationErrors.learningOutcomes}</p>}
                   </div>
                 </CardContent>
@@ -2426,7 +2638,13 @@ const CourseBuilder = () => {
             />
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setIsRejectionDialogOpen(false)}>Cancel</Button>
+            <Button 
+              variant="ghost" 
+              onClick={() => setIsRejectionDialogOpen(false)}
+              className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
+              Cancel
+            </Button>
             <Button
               variant="destructive"
               onClick={handleRejectSubmission}

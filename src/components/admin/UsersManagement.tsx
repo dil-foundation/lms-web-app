@@ -530,7 +530,11 @@ export const UsersManagement = () => {
                   )}
                 </div>
                 <div className="flex justify-end space-x-2">
-                  <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsCreateModalOpen(false)}
+                    className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  >
                     Cancel
                   </Button>
                   <Button onClick={handleCreateUser} disabled={isCreatingUser}>
