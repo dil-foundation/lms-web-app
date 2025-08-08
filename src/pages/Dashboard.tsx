@@ -65,6 +65,9 @@ const AdminSettings = lazy(() => import('@/components/admin/AdminSettings').then
 const AdminSecurity = lazy(() => import('@/components/admin/AdminSecurity').then(module => ({ default: module.AdminSecurity })));
 const AITutorSettings = lazy(() => import('@/components/admin/AITutorSettings').then(module => ({ default: module.AITutorSettings })));
 const AISafetyEthicsSettings = lazy(() => import('@/components/admin/AISafetyEthicsSettings').then(module => ({ default: module.AISafetyEthicsSettings })));
+const IntegrationAPIs = lazy(() => import('@/components/admin/IntegrationAPIs').then(module => ({ default: module.IntegrationAPIs })));
+const Multitenancy = lazy(() => import('@/components/admin/Multitenancy').then(module => ({ default: module.Multitenancy })));
+const OfflineLearning = lazy(() => import('@/components/admin/OfflineLearning').then(module => ({ default: module.OfflineLearning })));
 const CourseBuilder = lazy(() => import('./CourseBuilder'));
 const CourseOverview = lazy(() => import('./CourseOverview').then(module => ({ default: module.CourseOverview })));
 const CourseContent = lazy(() => import('./CourseContent').then(module => ({ default: module.CourseContent })));
@@ -265,6 +268,9 @@ const Dashboard = () => {
                           <Route path="/ai-reports" element={<ReportsAnalytics />} />
                           <Route path="/ai-tutor-settings" element={<AITutorSettings userProfile={finalProfile} />} />
                           <Route path="/ai-safety-ethics" element={<AISafetyEthicsSettings userProfile={finalProfile} />} />
+                          <Route path="/integration-apis" element={<IntegrationAPIs userProfile={finalProfile} />} />
+                          <Route path="/multitenancy" element={<Multitenancy userProfile={finalProfile} />} />
+                          <Route path="/offline-learning" element={<OfflineLearning userProfile={finalProfile} />} />
                           {/* Practice Stage Routes for Admin Viewing */}
                           <Route path="/practice/stage-0" element={<StageZero />} />
                           <Route path="/practice/stage-0/lesson/:lessonId" element={<LessonDetail />} />
