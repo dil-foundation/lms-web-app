@@ -188,6 +188,18 @@ const getAuthHeaders = async () => {
   };
 };
 
+// Helper function to deduplicate users based on their ID
+const deduplicateUsers = (users: any[]): any[] => {
+  const seen = new Set();
+  return users.filter(user => {
+    if (seen.has(user.id)) {
+      return false;
+    }
+    seen.add(user.id);
+    return true;
+  });
+};
+
 // WebSocket connection management
 class WebSocketManager {
   private ws: WebSocket | null = null;
@@ -365,8 +377,10 @@ export const getUsersForAdminMessaging = async (page: number = 1, limit: number 
     throw error;
   }
 
+  const uniqueUsers = deduplicateUsers(users || []);
+
   return {
-    users: users || [],
+    users: uniqueUsers,
     hasMore: count ? from + limit < count : false,
     total: count || 0
   };
@@ -393,36 +407,50 @@ export const getStudentsForTeacherMessaging = async (teacherId: string, page: nu
     if (teacherCourses && teacherCourses.length > 0) {
       const courseIds = teacherCourses.map(tc => tc.course_id);
 
-      // Then get all students in those courses
-      const { data: courseMembers, error: courseError } = await supabase
+      // Get unique student IDs from those courses
+      const { data: studentIds, error: studentIdsError } = await supabase
         .from('course_members')
-        .select(`
-          profiles!inner(
-            id, first_name, last_name, email, role
-          )
-        `)
+        .select('user_id')
         .in('course_id', courseIds)
-        .eq('role', 'student')
-        .eq('profiles.role', 'student');
+        .eq('role', 'student');
 
-      if (courseError) throw courseError;
-      students.push(...(courseMembers?.map(cm => cm.profiles) || []));
+      if (studentIdsError) throw studentIdsError;
 
-      // Get all teachers in those courses (excluding the current teacher)
-      const { data: courseTeachers, error: teachersError } = await supabase
+      // Get unique student profiles
+      if (studentIds && studentIds.length > 0) {
+        const uniqueStudentIds = [...new Set(studentIds.map(s => s.user_id))];
+        const { data: courseStudents, error: courseError } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name, email, role')
+          .in('id', uniqueStudentIds)
+          .eq('role', 'student');
+
+        if (courseError) throw courseError;
+        students.push(...(courseStudents || []));
+      }
+
+      // Get unique teacher IDs from those courses (excluding current teacher)
+      const { data: teacherIds, error: teacherIdsError } = await supabase
         .from('course_members')
-        .select(`
-          profiles!inner(
-            id, first_name, last_name, email, role
-          )
-        `)
+        .select('user_id')
         .in('course_id', courseIds)
         .eq('role', 'teacher')
-        .eq('profiles.role', 'teacher')
         .neq('user_id', teacherId);
 
-      if (teachersError) throw teachersError;
-      teachers.push(...(courseTeachers?.map(cm => cm.profiles) || []));
+      if (teacherIdsError) throw teacherIdsError;
+
+      // Get unique teacher profiles
+      if (teacherIds && teacherIds.length > 0) {
+        const uniqueTeacherIds = [...new Set(teacherIds.map(t => t.user_id))];
+        const { data: courseTeachers, error: teachersError } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name, email, role')
+          .in('id', uniqueTeacherIds)
+          .eq('role', 'teacher');
+
+        if (teachersError) throw teachersError;
+        teachers.push(...(courseTeachers || []));
+      }
     }
 
     // Get all admins
@@ -443,18 +471,11 @@ export const getStudentsForTeacherMessaging = async (teacherId: string, page: nu
     if (allTeachersError) throw allTeachersError;
 
     // Combine all teachers (course teachers + all other teachers, removing duplicates)
-    const allTeacherIds = new Set();
     const allTeacherUsers = [...teachers, ...(allTeachers || [])];
-    const uniqueTeachers = allTeacherUsers.filter(teacher => {
-      if (allTeacherIds.has(teacher.id)) {
-        return false;
-      }
-      allTeacherIds.add(teacher.id);
-      return true;
-    });
+    const uniqueTeachers = deduplicateUsers(allTeacherUsers);
 
     // Combine and sort
-    const allUsers = [...students, ...uniqueTeachers, ...(admins || [])];
+    const allUsers = deduplicateUsers([...students, ...uniqueTeachers, ...(admins || [])]);
     const sortedUsers = allUsers.sort((a, b) => {
       const nameA = `${a.first_name || ''} ${a.last_name || ''}`.trim();
       const nameB = `${b.first_name || ''} ${b.last_name || ''}`.trim();
@@ -500,21 +521,28 @@ export const getTeachersForStudentMessaging = async (studentId: string, page: nu
 
     const courseIds = studentCourses.map(sc => sc.course_id);
 
-    // Then get all teachers in those courses
-    const { data: courseMembers, error: courseError } = await supabase
+    // Get unique teacher IDs from those courses
+    const { data: teacherIds, error: teacherIdsError } = await supabase
       .from('course_members')
-      .select(`
-        profiles!inner(
-          id, first_name, last_name, email, role
-        )
-      `)
+      .select('user_id')
       .in('course_id', courseIds)
-      .eq('role', 'teacher')
-      .eq('profiles.role', 'teacher');
+      .eq('role', 'teacher');
 
-    if (courseError) throw courseError;
+    if (teacherIdsError) throw teacherIdsError;
 
-    const teachers = courseMembers?.map(cm => cm.profiles) || [];
+    // Get unique teacher profiles
+    let teachers: any[] = [];
+    if (teacherIds && teacherIds.length > 0) {
+      const uniqueTeacherIds = [...new Set(teacherIds.map(t => t.user_id))];
+      const { data: courseTeachers, error: courseError } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, email, role')
+        .in('id', uniqueTeacherIds)
+        .eq('role', 'teacher');
+
+      if (courseError) throw courseError;
+      teachers = courseTeachers || [];
+    }
 
     // Apply client-side pagination
     const paginatedTeachers = teachers.slice(from, from + limit);
@@ -546,10 +574,12 @@ export const searchUsersForMessaging = async (searchTerm: string, page: number =
     throw error;
   }
 
+  const uniqueUsers = deduplicateUsers(users || []);
+
   return {
-    users: users || [],
-    hasMore: users ? users.length === limit : false,
-    total: users?.length || 0
+    users: uniqueUsers,
+    hasMore: uniqueUsers.length === limit,
+    total: uniqueUsers.length
   };
 };
 
@@ -574,36 +604,50 @@ export const searchStudentsForTeacherMessaging = async (teacherId: string, searc
     if (teacherCourses && teacherCourses.length > 0) {
       const courseIds = teacherCourses.map(tc => tc.course_id);
 
-      // Then get all students in those courses
-      const { data: courseMembers, error: courseError } = await supabase
+      // Get unique student IDs from those courses
+      const { data: studentIds, error: studentIdsError } = await supabase
         .from('course_members')
-        .select(`
-          profiles!inner(
-            id, first_name, last_name, email, role
-          )
-        `)
+        .select('user_id')
         .in('course_id', courseIds)
-        .eq('role', 'student')
-        .eq('profiles.role', 'student');
+        .eq('role', 'student');
 
-      if (courseError) throw courseError;
-      students.push(...(courseMembers?.map(cm => cm.profiles) || []));
+      if (studentIdsError) throw studentIdsError;
 
-      // Get all teachers in those courses (excluding the current teacher)
-      const { data: courseTeachers, error: teachersError } = await supabase
+      // Get unique student profiles
+      if (studentIds && studentIds.length > 0) {
+        const uniqueStudentIds = [...new Set(studentIds.map(s => s.user_id))];
+        const { data: courseStudents, error: courseError } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name, email, role')
+          .in('id', uniqueStudentIds)
+          .eq('role', 'student');
+
+        if (courseError) throw courseError;
+        students.push(...(courseStudents || []));
+      }
+
+      // Get unique teacher IDs from those courses (excluding current teacher)
+      const { data: teacherIds, error: teacherIdsError } = await supabase
         .from('course_members')
-        .select(`
-          profiles!inner(
-            id, first_name, last_name, email, role
-          )
-        `)
+        .select('user_id')
         .in('course_id', courseIds)
         .eq('role', 'teacher')
-        .eq('profiles.role', 'teacher')
         .neq('user_id', teacherId);
 
-      if (teachersError) throw teachersError;
-      teachers.push(...(courseTeachers?.map(cm => cm.profiles) || []));
+      if (teacherIdsError) throw teacherIdsError;
+
+      // Get unique teacher profiles
+      if (teacherIds && teacherIds.length > 0) {
+        const uniqueTeacherIds = [...new Set(teacherIds.map(t => t.user_id))];
+        const { data: courseTeachers, error: teachersError } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name, email, role')
+          .in('id', uniqueTeacherIds)
+          .eq('role', 'teacher');
+
+        if (teachersError) throw teachersError;
+        teachers.push(...(courseTeachers || []));
+      }
     }
 
     // Get all admins
@@ -624,18 +668,11 @@ export const searchStudentsForTeacherMessaging = async (teacherId: string, searc
     if (allTeachersError) throw allTeachersError;
 
     // Combine all teachers (course teachers + all other teachers, removing duplicates)
-    const allTeacherIds = new Set();
     const allTeacherUsers = [...teachers, ...(allTeachers || [])];
-    const uniqueTeachers = allTeacherUsers.filter(teacher => {
-      if (allTeacherIds.has(teacher.id)) {
-        return false;
-      }
-      allTeacherIds.add(teacher.id);
-      return true;
-    });
+    const uniqueTeachers = deduplicateUsers(allTeacherUsers);
 
     // Combine and filter by search term
-    const allUsers = [...students, ...uniqueTeachers, ...(admins || [])];
+    const allUsers = deduplicateUsers([...students, ...uniqueTeachers, ...(admins || [])]);
     const filteredUsers = allUsers.filter(user => {
       const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
       return fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -686,21 +723,28 @@ export const searchTeachersForStudentMessaging = async (studentId: string, searc
 
     const courseIds = studentCourses.map(sc => sc.course_id);
 
-    // Then get all teachers in those courses
-    const { data: courseMembers, error: courseError } = await supabase
+    // Get unique teacher IDs from those courses
+    const { data: teacherIds, error: teacherIdsError } = await supabase
       .from('course_members')
-      .select(`
-        profiles!inner(
-          id, first_name, last_name, email, role
-        )
-      `)
+      .select('user_id')
       .in('course_id', courseIds)
-      .eq('role', 'teacher')
-      .eq('profiles.role', 'teacher');
+      .eq('role', 'teacher');
 
-    if (courseError) throw courseError;
+    if (teacherIdsError) throw teacherIdsError;
 
-    const teachers = courseMembers?.map(cm => cm.profiles) || [];
+    // Get unique teacher profiles
+    let teachers: any[] = [];
+    if (teacherIds && teacherIds.length > 0) {
+      const uniqueTeacherIds = [...new Set(teacherIds.map(t => t.user_id))];
+      const { data: courseTeachers, error: courseError } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, email, role')
+        .in('id', uniqueTeacherIds)
+        .eq('role', 'teacher');
+
+      if (courseError) throw courseError;
+      teachers = courseTeachers || [];
+    }
 
     // Filter by search term
     const filteredTeachers = teachers.filter(teacher => {

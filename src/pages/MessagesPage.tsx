@@ -19,6 +19,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import {
   DropdownMenu,
@@ -41,6 +43,7 @@ import {
   Loader2,
   Check,
   CheckCheck,
+  AlertTriangle,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -65,6 +68,7 @@ import {
   getConversations,
   getMessages,
   sendMessage,
+  deleteConversation,
   getUserStatus,
   updateUserStatus,
   markConversationAsRead,
@@ -95,6 +99,7 @@ interface Chat {
   userId?: string;
   role?: UserRole;
   email?: string;
+  created_by?: string;
 }
 
 // Convert API Message to Chat Message
@@ -153,7 +158,8 @@ const convertAPIConversationToChat = (conversation: Conversation, currentUserId:
     isStarred: false,
     userId: otherParticipant?.user_id,
     role: participantRole,
-    email: participantEmail
+    email: participantEmail,
+    created_by: conversation.created_by
   };
 };
 
@@ -171,19 +177,21 @@ const getRoleIcon = (role: UserRole) => {
   }
 };
 
-// Helper function to get role color
-const getRoleColor = (role: UserRole) => {
-  switch (role) {
-    case 'admin':
-      return 'text-red-500';
-    case 'teacher':
-      return 'text-blue-500';
-    case 'student':
-      return 'text-green-500';
-    default:
-      return 'text-gray-500';
-  }
-};
+  // Helper function to get role color
+  const getRoleColor = (role: UserRole) => {
+    switch (role) {
+      case 'admin':
+        return 'text-red-500';
+      case 'teacher':
+        return 'text-blue-500';
+      case 'student':
+        return 'text-green-500';
+      default:
+        return 'text-gray-500';
+    }
+  };
+
+
 
 const getSelectedRoleColor = (role: UserRole) => {
   switch (role) {
@@ -255,6 +263,8 @@ export default function MessagesPage() {
   const [conversationsSearchLoading, setConversationsSearchLoading] = useState(false);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [loadingMessagesForChat, setLoadingMessagesForChat] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deletingConversation, setDeletingConversation] = useState<string | null>(null);
   const initialLoadCompleteRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -351,16 +361,21 @@ export default function MessagesPage() {
           return;
         }
         
-        // Filter out the current user
+        // Filter out the current user and ensure no duplicates
         const filteredUsers = result.users.filter(u => u.id !== user?.id);
         
+        // Additional deduplication to ensure no duplicate IDs
+        const uniqueUsers = filteredUsers.filter((user, index, self) => 
+          index === self.findIndex(u => u.id === user.id)
+        );
+        
         if (currentPage === 1) {
-          setAvailableUsers(filteredUsers);
+          setAvailableUsers(uniqueUsers);
         } else {
           setAvailableUsers(prev => {
             // Filter out duplicates based on user ID
             const existingIds = new Set(prev.map(user => user.id));
-            const uniqueNewUsers = filteredUsers.filter(user => !existingIds.has(user.id));
+            const uniqueNewUsers = uniqueUsers.filter(user => !existingIds.has(user.id));
             const newList = [...prev, ...uniqueNewUsers];
             return newList;
           });
@@ -665,6 +680,27 @@ export default function MessagesPage() {
       }
     };
 
+    // Handle conversation deletion
+    const handleConversationDeleted = (data: any) => {
+      if (data.conversation_id) {
+        // Remove the conversation from the chats list
+        setChats(prevChats => prevChats.filter(chat => chat.id !== data.conversation_id));
+        
+        // If the deleted conversation was selected, clear the selection
+        setSelectedChat(prevSelected => {
+          if (prevSelected?.id === data.conversation_id) {
+            return null;
+          }
+          return prevSelected;
+        });
+        
+        // Clear current conversation ID if it was the deleted one
+        if (currentConversationId === data.conversation_id) {
+          setCurrentConversationId(null);
+        }
+      }
+    };
+
     // Handle user status changes
     const handleUserStatusChange = (data: any) => {
       // Handle different data formats
@@ -714,6 +750,7 @@ export default function MessagesPage() {
     // Register event handlers
     wsManager.on('new_conversation', handleNewConversation);
     wsManager.on('new_message', handleNewMessage);
+    wsManager.on('conversation_deleted', handleConversationDeleted);
     wsManager.on('user_status_change', handleUserStatusChange);
     wsManager.on('message_delivered', handleMessageDelivered);
     wsManager.on('message_read', handleMessageRead);
@@ -721,11 +758,12 @@ export default function MessagesPage() {
     return () => {
       wsManager.off('new_conversation', handleNewConversation);
       wsManager.off('new_message', handleNewMessage);
+      wsManager.off('conversation_deleted', handleConversationDeleted);
       wsManager.off('user_status_change', handleUserStatusChange);
       wsManager.off('message_delivered', handleMessageDelivered);
       wsManager.off('message_read', handleMessageRead);
     };
-  }, [user?.id]);
+  }, [user?.id, currentConversationId]);
 
 
 
@@ -944,6 +982,42 @@ export default function MessagesPage() {
     if (chat.messages.length === 0) {
       await loadMessagesForChat(chat);
     }
+  };
+
+  const handleDeleteConversation = async (chatId: string) => {
+    if (!user?.id) return;
+    
+    setDeletingConversation(chatId);
+    try {
+      await deleteConversation(chatId);
+      
+      // Remove from local state immediately for better UX
+      setChats(prevChats => prevChats.filter(chat => chat.id !== chatId));
+      
+      // If the deleted conversation was selected, clear the selection
+      if (selectedChat?.id === chatId) {
+        setSelectedChat(null);
+        setCurrentConversationId(null);
+      }
+      
+      setShowDeleteDialog(false);
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+      // You might want to show a toast notification here
+    } finally {
+      setDeletingConversation(null);
+    }
+  };
+
+  // Helper function to check if user can delete conversation
+  const canDeleteConversation = (chat: Chat) => {
+    if (!user?.id || !profile?.role) return false;
+    
+    // Only admin can delete conversations
+    if (profile.role === 'admin') return true;
+    
+    // Students and teachers cannot delete conversations
+    return false;
   };
 
   const handleArchiveChat = (chatId: string) => {
@@ -1242,6 +1316,18 @@ export default function MessagesPage() {
                         </Badge>
                       </div>
                     </div>
+                    <div className="flex items-center gap-2">
+                      {canDeleteConversation(selectedChat) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowDeleteDialog(true)}
+                          className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950 border-red-200 hover:border-red-300"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1535,6 +1621,52 @@ export default function MessagesPage() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Conversation Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="bg-gradient-to-br from-background to-background/95 dark:from-background dark:to-background/90 border border-border/50">
+          <DialogHeader className="pb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-red-500/15 to-red-500/25 dark:from-red-500/20 dark:to-red-500/30 rounded-xl flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-red-500 dark:text-red-400" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-bold text-foreground">Delete Conversation</DialogTitle>
+                <DialogDescription className="text-sm text-muted-foreground mt-1">
+                  Are you sure you want to delete this conversation? This action cannot be undone.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowDeleteDialog(false)}
+              disabled={deletingConversation === selectedChat?.id}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={() => selectedChat && handleDeleteConversation(selectedChat.id)}
+              disabled={deletingConversation === selectedChat?.id}
+              className="bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
+            >
+              {deletingConversation === selectedChat?.id ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Conversation
+                </>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
