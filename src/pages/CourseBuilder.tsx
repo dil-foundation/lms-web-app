@@ -1958,7 +1958,7 @@ const CourseBuilder = () => {
             <Button
               variant="outline"
               onClick={() => setIsPreviewOpen(true)}
-                                      className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5"
+              className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800"
             >
               <Eye className="w-4 h-4 mr-2" />
               Preview
@@ -2611,7 +2611,7 @@ const CourseBuilder = () => {
       </AlertDialog>
 
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-        <DialogContent className="max-w-screen-lg h-[90vh] flex flex-col p-0">
+        <DialogContent className="max-w-[80vw] w-full h-[90vh] flex flex-col p-0">
           <DialogHeader className="p-6 pb-0">
             <DialogTitle>Course Preview</DialogTitle>
           </DialogHeader>

@@ -593,7 +593,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
 
       {/* Enhanced Course Content */}
       <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-12">
           <div className="lg:col-span-3 space-y-12 order-2 lg:order-1">
             {/* Enhanced What You'll Learn & Course Features */}
             <Card className="bg-card border border-border backdrop-blur-sm">
@@ -606,13 +606,13 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {course.whatYouLearn.map((item, index) => (
-                    <div key={`learn-${index}`} className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                    <div key={`learn-${index}`} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border">
                       <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                       <span className="text-sm font-medium">{item}</span>
                     </div>
                   ))}
                   {course.features.map((feature, index) => (
-                    <div key={`feature-${index}`} className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                    <div key={`feature-${index}`} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border">
                       <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                       <span className="text-sm font-medium">{feature}</span>
                     </div>
@@ -633,7 +633,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                 <CardContent>
                   <div className="space-y-3">
                     {course.requirements.map((req, index) => (
-                      <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                      <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border">
                         <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
                         <span className="text-sm font-medium">{req}</span>
                       </div>
@@ -687,7 +687,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                             <h5 className="text-sm font-semibold text-foreground">Topics covered:</h5>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               {module.topics.map((topic, topicIndex) => (
-                                <div key={topicIndex} className="flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 border border-gray-200/50 dark:border-gray-600/50">
+                                <div key={topicIndex} className="flex items-center gap-3 p-3 rounded-lg bg-muted/20 border border-border">
                                   <PlayCircle className="w-4 h-4 text-primary" />
                                   <span className="text-sm font-medium">{topic}</span>
                                 </div>
@@ -725,11 +725,11 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                       {course.instructor.title}
                     </p>
                     <div className="flex flex-wrap gap-6 text-sm">
-                      <div className="flex items-center gap-2 bg-gradient-to-r from-primary/5 to-primary/10 px-4 py-2 rounded-lg border border-primary/20">
+                      <div className="flex items-center gap-2 bg-muted/30 px-4 py-2 rounded-lg border border-border">
                         <Users className="w-4 h-4 text-primary" />
                         <span className="font-medium">{course.instructor.students.toLocaleString()} Students</span>
                       </div>
-                      <div className="flex items-center gap-2 bg-gradient-to-r from-primary/5 to-primary/10 px-4 py-2 rounded-lg border border-primary/20">
+                      <div className="flex items-center gap-2 bg-muted/30 px-4 py-2 rounded-lg border border-border">
                         <BookOpen className="w-4 h-4 text-primary" />
                         <span className="font-medium">{course.instructor.courses} Courses</span>
                       </div>
@@ -741,7 +741,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
           </div>
 
           {/* Enhanced Course Details Sidebar */}
-          <div className="lg:col-span-1 order-1 lg:order-2">
+          <div className="lg:col-span-2 order-1 lg:order-2">
             <Card className={`bg-card border border-border backdrop-blur-sm ${!isPreviewMode ? 'sticky top-8' : ''}`}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-3 text-xl">
@@ -751,53 +751,57 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
               </CardHeader>
               <CardContent className="space-y-4">
                 {isPreviewMode ? (
-                  // Single column layout for modal preview
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center p-3 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
-                      <span className="text-sm text-muted-foreground">Level</span>
-                      <span className="font-semibold text-sm">{course.stats.level}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
-                      <span className="text-sm text-muted-foreground">Duration</span>
-                      <span className="font-semibold text-sm">{course.stats.duration}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
-                      <span className="text-sm text-muted-foreground">Lessons</span>
-                      <span className="font-semibold text-sm">{course.stats.lessons}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
-                      <span className="text-sm text-muted-foreground">Language</span>
-                      <span className="font-semibold text-sm">{course.stats.language}</span>
+                  // 2x2 Grid layout for modal preview
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="flex flex-col items-center justify-center p-3 rounded-lg bg-muted/30 border border-border text-center min-h-[60px]">
+                        <span className="text-xs text-muted-foreground mb-1">Level</span>
+                        <span className="font-semibold text-sm truncate w-full">{course.stats.level}</span>
+                      </div>
+                      <div className="flex flex-col items-center justify-center p-3 rounded-lg bg-muted/30 border border-border text-center min-h-[60px]">
+                        <span className="text-xs text-muted-foreground mb-1">Duration</span>
+                        <span className="font-semibold text-sm truncate w-full">{course.stats.duration}</span>
+                      </div>
+                      <div className="flex flex-col items-center justify-center p-3 rounded-lg bg-muted/30 border border-border text-center min-h-[60px]">
+                        <span className="text-xs text-muted-foreground mb-1">Lessons</span>
+                        <span className="font-semibold text-sm truncate w-full">{course.stats.lessons}</span>
+                      </div>
+                      <div className="flex flex-col items-center justify-center p-3 rounded-lg bg-muted/30 border border-border text-center min-h-[60px]">
+                        <span className="text-xs text-muted-foreground mb-1">Language</span>
+                        <span className="font-semibold text-sm truncate w-full">{course.stats.language}</span>
+                      </div>
                     </div>
                     <Separator />
-                    <div className="flex justify-between items-center p-3 rounded-lg bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 border border-gray-200/50 dark:border-gray-600/50">
+                    <div className="flex justify-between items-center p-3 rounded-lg bg-muted/20 border border-border">
                       <span className="text-sm text-muted-foreground">Last updated</span>
-                      <span className="font-semibold text-sm">{course.stats.lastUpdated}</span>
+                      <span className="font-semibold text-sm truncate max-w-[60%]">{course.stats.lastUpdated}</span>
                     </div>
                   </div>
                 ) : (
-                  // Single column layout for full page view
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center p-4 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
-                      <span className="text-sm text-muted-foreground">Level</span>
-                      <span className="font-semibold">{course.stats.level}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-4 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
-                      <span className="text-sm text-muted-foreground">Duration</span>
-                      <span className="font-semibold">{course.stats.duration}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-4 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
-                      <span className="text-sm text-muted-foreground">Lessons</span>
-                      <span className="font-semibold">{course.stats.lessons}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-4 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
-                      <span className="text-sm text-muted-foreground">Language</span>
-                      <span className="font-semibold">{course.stats.language}</span>
+                  // 2x2 Grid layout for full page view
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex flex-col items-center justify-center p-4 rounded-lg bg-muted/30 border border-border text-center min-h-[70px]">
+                        <span className="text-sm text-muted-foreground mb-2">Level</span>
+                        <span className="font-semibold truncate w-full">{course.stats.level}</span>
+                      </div>
+                      <div className="flex flex-col items-center justify-center p-4 rounded-lg bg-muted/30 border border-border text-center min-h-[70px]">
+                        <span className="text-sm text-muted-foreground mb-2">Duration</span>
+                        <span className="font-semibold truncate w-full">{course.stats.duration}</span>
+                      </div>
+                      <div className="flex flex-col items-center justify-center p-4 rounded-lg bg-muted/30 border border-border text-center min-h-[70px]">
+                        <span className="text-sm text-muted-foreground mb-2">Lessons</span>
+                        <span className="font-semibold truncate w-full">{course.stats.lessons}</span>
+                      </div>
+                      <div className="flex flex-col items-center justify-center p-4 rounded-lg bg-muted/30 border border-border text-center min-h-[70px]">
+                        <span className="text-sm text-muted-foreground mb-2">Language</span>
+                        <span className="font-semibold truncate w-full">{course.stats.language}</span>
+                      </div>
                     </div>
                     <Separator />
-                    <div className="flex justify-between items-center p-4 rounded-lg bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 border border-gray-200/50 dark:border-gray-600/50">
+                    <div className="flex justify-between items-center p-4 rounded-lg bg-muted/20 border border-border">
                       <span className="text-sm text-muted-foreground">Last updated</span>
-                      <span className="font-semibold">{course.stats.lastUpdated}</span>
+                      <span className="font-semibold truncate max-w-[60%]">{course.stats.lastUpdated}</span>
                     </div>
                   </div>
                 )}
