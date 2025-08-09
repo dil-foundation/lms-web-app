@@ -58,7 +58,7 @@ const LessonCard = ({ lesson, index }) => {
           </div>
         </div>
         <Button 
-          className="w-full mt-auto"
+          className="w-full mt-auto transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20 hover:bg-primary hover:text-primary-foreground hover:border-primary"
           variant="outline"
         >
           Start <ChevronRight className="w-4 h-4 ml-2" />
@@ -73,10 +73,19 @@ export const StageZero: React.FC = () => {
     return (
         <div className="p-4 sm:p-6 lg:p-8">
             <div className="flex items-center gap-4 mb-8">
-                <Button variant="outline" size="icon" onClick={() => navigate('/dashboard/ai-practice')}>
+                <Button 
+                    variant="outline" 
+                    size="icon" 
+                    onClick={() => navigate('/dashboard/ai-practice')}
+                    className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
+                >
                     <ArrowLeft className="h-4 w-4" />
                 </Button>
-                <Button variant="outline" size="lg" className="text-lg cursor-default">
+                <Button 
+                    variant="outline" 
+                    size="lg" 
+                    className="text-lg cursor-default bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20 text-primary font-semibold hover:bg-gradient-to-r hover:from-primary/5 hover:to-primary/10 hover:border-primary/20 hover:text-primary pointer-events-none select-none"
+                >
                     <BookText className="mr-2 h-5 w-5" />
                     Beginner Lessons
                 </Button>

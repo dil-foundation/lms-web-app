@@ -107,15 +107,50 @@ export const IntegrationAPIs = ({ userProfile }: IntegrationAPIsProps) => {
   };
 
   const getActionButton = (status: string) => {
+    const baseHoverClasses = "transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md";
+    
     switch (status) {
       case 'connected':
-        return <Button variant="outline" size="sm">Disconnect</Button>;
+        return (
+          <Button 
+            variant="outline" 
+            size="sm"
+            className={`${baseHoverClasses} hover:bg-red-50 hover:border-red-200 hover:text-red-700 dark:hover:bg-red-900/20 dark:hover:border-red-800 dark:hover:text-red-400`}
+          >
+            Disconnect
+          </Button>
+        );
       case 'pending':
-        return <Button variant="outline" size="sm" disabled>Connecting...</Button>;
+        return (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            disabled
+            className="opacity-60 cursor-not-allowed"
+          >
+            Connecting...
+          </Button>
+        );
       case 'error':
-        return <Button variant="default" size="sm">Retry</Button>;
+        return (
+          <Button 
+            variant="default" 
+            size="sm"
+            className={`${baseHoverClasses} bg-yellow-500 hover:bg-yellow-600 text-white hover:shadow-yellow-200/50 dark:hover:shadow-yellow-900/50`}
+          >
+            Retry
+          </Button>
+        );
       default:
-        return <Button variant="default" size="sm">Connect</Button>;
+        return (
+          <Button 
+            variant="default" 
+            size="sm"
+            className={`${baseHoverClasses} bg-green-500 hover:bg-green-600 text-white hover:shadow-green-200/50 dark:hover:shadow-green-900/50`}
+          >
+            Connect
+          </Button>
+        );
     }
   };
 
@@ -152,7 +187,10 @@ export const IntegrationAPIs = ({ userProfile }: IntegrationAPIsProps) => {
                 className="pl-10"
               />
             </div>
-            <Button variant="outline">
+            <Button 
+              variant="outline"
+              className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
               Filter by Category
             </Button>
           </div>
@@ -204,7 +242,11 @@ export const IntegrationAPIs = ({ userProfile }: IntegrationAPIsProps) => {
 
               <div className="flex items-center justify-between pt-2">
                 {getActionButton(integration.status)}
-                <Button variant="ghost" size="sm">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 hover:text-primary hover:shadow-md"
+                >
                   Configure
                 </Button>
               </div>

@@ -150,17 +150,57 @@ export const OfflineLearning = ({ userProfile }: OfflineLearningProps) => {
   };
 
   const getActionButton = (course: Course) => {
+    const baseClasses = "transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md";
+    
     switch (course.downloadStatus) {
       case 'downloaded':
-        return <Button variant="outline" size="sm">Remove</Button>;
+        return (
+          <Button 
+            variant="outline" 
+            size="sm"
+            className={`${baseClasses} hover:bg-red-50 hover:border-red-200 hover:text-red-700 dark:hover:bg-red-900/20`}
+          >
+            Remove
+          </Button>
+        );
       case 'downloading':
-        return <Button variant="outline" size="sm" disabled>Downloading...</Button>;
+        return (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            disabled
+            className="opacity-60 cursor-not-allowed"
+          >
+            Downloading...
+          </Button>
+        );
       case 'error':
-        return <Button variant="default" size="sm">Retry</Button>;
+        return (
+          <Button 
+            variant="default" 
+            size="sm"
+            className={`${baseClasses} bg-yellow-500 hover:bg-yellow-600 text-white`}
+          >
+            Retry
+          </Button>
+        );
       default:
         return course.offlineEnabled ? 
-          <Button variant="default" size="sm">Download</Button> : 
-          <Button variant="outline" size="sm" disabled>Online Only</Button>;
+          <Button 
+            variant="default" 
+            size="sm"
+            className={`${baseClasses} bg-green-500 hover:bg-green-600 text-white`}
+          >
+            Download
+          </Button> : 
+          <Button 
+            variant="outline" 
+            size="sm" 
+            disabled
+            className="opacity-60 cursor-not-allowed"
+          >
+            Online Only
+          </Button>;
     }
   };
 
@@ -270,42 +310,62 @@ export const OfflineLearning = ({ userProfile }: OfflineLearningProps) => {
         <CardContent>
           <div className="space-y-4">
             {courses.map((course) => (
-              <div key={course.id} className="flex items-center justify-between p-4 rounded-lg border bg-card/50 hover:bg-card/80 transition-colors">
-                <div className="flex items-center gap-4 flex-1">
-                  <div className="flex-shrink-0">
-                    {getFormatIcon(course.format)}
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold truncate">{course.title}</h3>
-                      <Badge variant="secondary" className="text-xs">{course.category}</Badge>
+              <div key={course.id} className="group p-6 rounded-xl border border-border/50 bg-gradient-to-br from-card to-card/50 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300">
+                {/* Header Row */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                      {getFormatIcon(course.format)}
                     </div>
-                    <p className="text-sm text-muted-foreground truncate mb-2">{course.description}</p>
                     
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <span>Size: {course.fileSize}</span>
-                      {course.lastSynced && <span>Last synced: {course.lastSynced}</span>}
-                    </div>
-
-                    {course.downloadStatus === 'downloading' && course.downloadProgress && (
-                      <div className="mt-2">
-                        <Progress value={course.downloadProgress} className="h-1" />
-                        <p className="text-xs text-muted-foreground mt-1">{course.downloadProgress}% complete</p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold text-lg text-foreground truncate">{course.title}</h3>
+                        <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20">{course.category}</Badge>
                       </div>
-                    )}
+                      <p className="text-sm text-muted-foreground line-clamp-2">{course.description}</p>
+                    </div>
+                  </div>
+
+                  {/* Status Badges */}
+                  <div className="flex flex-col items-end gap-2 ml-4">
+                    {getStatusBadge(course.downloadStatus)}
+                    {course.syncStatus && getSyncBadge(course.syncStatus)}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4">
-                  <div className="flex flex-col items-end gap-2">
-                    {getStatusBadge(course.downloadStatus)}
-                    {getSyncBadge(course.syncStatus)}
+                {/* Progress Bar (if downloading) */}
+                {course.downloadStatus === 'downloading' && course.downloadProgress && (
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-foreground">Downloading...</span>
+                      <span className="text-sm text-muted-foreground">{course.downloadProgress}%</span>
+                    </div>
+                    <Progress value={course.downloadProgress} className="h-2" />
                   </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-2">
-                      <label htmlFor={`offline-${course.id}`} className="text-sm font-medium">
+                )}
+
+                {/* Footer Row */}
+                <div className="flex items-center justify-between pt-4 border-t border-border/50">
+                  {/* File Info */}
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <HardDrive className="w-4 h-4" />
+                      <span>{course.fileSize}</span>
+                    </div>
+                    {course.lastSynced && (
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-4 h-4" />
+                        <span>Last synced: {course.lastSynced}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-3">
+                    {/* Offline Toggle */}
+                    <div className="flex items-center gap-2 bg-muted/50 px-3 py-1.5 rounded-lg">
+                      <label htmlFor={`offline-${course.id}`} className="text-sm font-medium text-foreground cursor-pointer">
                         Offline
                       </label>
                       <Switch 
@@ -314,7 +374,11 @@ export const OfflineLearning = ({ userProfile }: OfflineLearningProps) => {
                         size="sm"
                       />
                     </div>
-                    {getActionButton(course)}
+                    
+                    {/* Action Button */}
+                    <div className="ml-2">
+                      {getActionButton(course)}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -341,7 +405,10 @@ export const OfflineLearning = ({ userProfile }: OfflineLearningProps) => {
             </div>
             <div className="flex items-center gap-4">
               <Switch defaultChecked />
-              <Button variant="outline">
+              <Button 
+                variant="outline"
+                className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
+              >
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Sync Now
               </Button>

@@ -33,6 +33,7 @@ export const ReportsAnalytics = () => {
     { stage: 'Stage 3', performance: 88, users: 143, avgScore: 8.8, status: 'good' },
     { stage: 'Stage 4', performance: 95, users: 98, avgScore: 9.5, status: 'excellent' },
     { stage: 'Stage 5', performance: 82, users: 67, avgScore: 8.2, status: 'good' },
+    { stage: 'Stage 6', performance: 75, users: 45, avgScore: 7.5, status: 'needs-attention' },
   ];
 
   // Mock data for Learn Feature Usage
@@ -240,28 +241,73 @@ export const ReportsAnalytics = () => {
           </CardHeader>
           <CardContent>
             <div className="h-[300px] mb-4">
+              <style>
+                {`
+                  .recharts-bar-rectangle {
+                    fill: #3B82F6 !important;
+                    opacity: 1 !important;
+                    transition: none !important;
+                  }
+                  .recharts-bar-rectangle:hover {
+                    fill: #3B82F6 !important;
+                    opacity: 1 !important;
+                    filter: none !important;
+                  }
+                  .recharts-active-bar .recharts-bar-rectangle {
+                    fill: #3B82F6 !important;
+                    opacity: 1 !important;
+                    filter: none !important;
+                  }
+                  .recharts-bar:hover .recharts-bar-rectangle {
+                    fill: #3B82F6 !important;
+                    opacity: 1 !important;
+                    filter: none !important;
+                  }
+                  .recharts-bar .recharts-bar-rectangle {
+                    pointer-events: none !important;
+                  }
+                  .recharts-bar {
+                    pointer-events: all !important;
+                  }
+                  .recharts-tooltip-wrapper {
+                    z-index: 1000 !important;
+                  }
+                  .recharts-default-tooltip {
+                    background-color: hsl(var(--background)) !important;
+                    border: 1px solid hsl(var(--border)) !important;
+                    border-radius: 8px !important;
+                    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+                  }
+                  .recharts-tooltip-label {
+                    color: hsl(var(--foreground)) !important;
+                    font-weight: 600 !important;
+                    margin-bottom: 4px !important;
+                  }
+                  .recharts-tooltip-item {
+                    color: hsl(var(--foreground)) !important;
+                  }
+                  .recharts-tooltip-item-name {
+                    color: hsl(var(--muted-foreground)) !important;
+                  }
+                  .recharts-tooltip-item-value {
+                    color: hsl(var(--foreground)) !important;
+                    font-weight: 600 !important;
+                  }
+                `}
+              </style>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={practiceStageData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="stage" />
                   <YAxis />
                   <Tooltip />
-                  <Bar dataKey="performance" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                  <Bar 
+                    dataKey="performance" 
+                    fill="#3B82F6" 
+                    radius={[4, 4, 0, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
-            </div>
-            <div className="space-y-2">
-              {practiceStageData.map((stage, index) => (
-                <div key={index} className="flex items-center justify-between text-sm">
-                  <span className="font-medium">{stage.stage}</span>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className={getPerformanceBadge(stage.status)}>
-                      {stage.performance}%
-                    </Badge>
-                    <span className="text-muted-foreground">{stage.users} users</span>
-                  </div>
-                </div>
-              ))}
             </div>
           </CardContent>
         </Card>

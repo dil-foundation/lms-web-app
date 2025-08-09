@@ -82,8 +82,13 @@ const AppUIWordsLesson = () => {
         <div className="w-full max-w-2xl mx-auto">
             {/* Header */}
             <div className="relative flex items-center justify-center mb-6 text-center">
-                 <Button variant="ghost" size="icon" className="absolute left-0" onClick={() => navigate(-1)}>
-                    <ArrowLeft className="h-6 w-6" />
+                 <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="absolute left-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary" 
+                    onClick={() => navigate(-1)}
+                >
+                    <ArrowLeft className="h-4 w-4" />
                 </Button>
                 <div>
                     <div className="inline-block p-3 bg-green-100 dark:bg-green-900/20 rounded-full mb-2">

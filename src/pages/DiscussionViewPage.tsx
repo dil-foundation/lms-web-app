@@ -324,7 +324,7 @@ export const DiscussionViewPage = () => {
                     <Button
                                 variant="outline"
                                 size="sm"
-                                className={`gap-1.5 ${discussion.is_liked_by_user ? 'text-primary border-primary' : ''}`}
+                                className={`gap-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${discussion.is_liked_by_user ? 'text-primary border-primary' : ''}`}
                                 onClick={() => toggleLikeMutation.mutate({ discussionId: discussion.id })}
                                 disabled={toggleLikeMutation.isPending}
                             >
@@ -418,7 +418,12 @@ export const DiscussionViewPage = () => {
                             className="min-h-[80px]"
                           />
                           <div className="flex justify-end gap-2">
-                            <Button variant="outline" size="sm" onClick={() => setEditingReplyId(null)}>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => setEditingReplyId(null)}
+                              className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                            >
                               Cancel
                             </Button>
                             <Button size="sm" onClick={handleUpdateReply} disabled={updateReplyMutation.isPending}>
@@ -435,7 +440,7 @@ export const DiscussionViewPage = () => {
                                                         <Button
                                     variant="ghost"
                                     size="sm"
-                                    className={`gap-1.5 px-2 ${reply.is_liked_by_user ? 'text-primary' : ''}`}
+                                    className={`gap-1.5 px-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${reply.is_liked_by_user ? 'text-primary' : ''}`}
                                     onClick={() => toggleLikeMutation.mutate({ replyId: reply.id })}
                                     disabled={toggleLikeMutation.isPending}
                                 >
@@ -476,7 +481,7 @@ export const DiscussionViewPage = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-600 hover:bg-red-700"
               onClick={() => deleteDiscussionMutation.mutate(discussion.id)}
@@ -496,7 +501,7 @@ export const DiscussionViewPage = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-600 hover:bg-red-700"
               onClick={() => deleteReplyMutation.mutate(replyToDelete.id)}

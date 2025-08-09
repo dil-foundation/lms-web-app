@@ -681,7 +681,7 @@ export const ListenAndReply: React.FC = () => {
     return (
       <div className="min-h-screen bg-background">
         <div className="relative flex items-center justify-center mb-6 p-4 sm:p-6 lg:p-8">
-          <Button variant="outline" size="icon" className="absolute left-4 sm:left-6 lg:left-8" onClick={() => navigate(-1)}>
+          <Button variant="outline" size="icon" className="absolute left-4 sm:left-6 lg:left-8 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="text-center">
@@ -705,7 +705,7 @@ export const ListenAndReply: React.FC = () => {
     return (
       <div className="min-h-screen bg-background">
         <div className="relative flex items-center justify-center mb-6 p-4 sm:p-6 lg:p-8">
-          <Button variant="outline" size="icon" className="absolute left-4 sm:left-6 lg:left-8" onClick={() => navigate(-1)}>
+          <Button variant="outline" size="icon" className="absolute left-4 sm:left-6 lg:left-8 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="text-center">
@@ -764,7 +764,7 @@ export const ListenAndReply: React.FC = () => {
       
       {/* Header */}
       <div className="relative flex items-center justify-center mb-6 p-4 sm:p-6 lg:p-8">
-        <Button variant="outline" size="icon" className="absolute left-4 sm:left-6 lg:left-8" onClick={() => navigate(-1)}>
+        <Button variant="outline" size="icon" className="absolute left-4 sm:left-6 lg:left-8 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="text-center">

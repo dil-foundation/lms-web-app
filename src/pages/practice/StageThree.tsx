@@ -42,7 +42,7 @@ export default function StageThree() {
             variant="outline"
             size="icon"
             onClick={() => navigate('/dashboard/ai-practice')}
-            className="shrink-0"
+            className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>

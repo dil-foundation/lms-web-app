@@ -802,10 +802,15 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
           </div>
           
           <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm" onClick={() => {
-              setSelectedAssignment(assignment);
-              setIsDetailModalOpen(true);
-            }}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                setSelectedAssignment(assignment);
+                setIsDetailModalOpen(true);
+              }}
+              className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
+            >
               <Eye className="h-4 w-4 mr-2" />
               View Details
             </Button>
@@ -814,6 +819,7 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
               <Button
                 size="sm"
                 onClick={() => handleOpenSubmissionModal(assignment)}
+                className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20"
               >
                 <Edit className="h-4 w-4 mr-2" />
                 {assignment.status === 'pending' ? 'Submit' : 'Edit Submission'}

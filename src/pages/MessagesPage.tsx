@@ -1097,8 +1097,36 @@ export default function MessagesPage() {
 
   return (
     <div className="flex h-[80vh] bg-background">
-      {/* Always show the main layout structure */}
-      <>
+      {/* Show single centered empty state when no conversations exist */}
+      {chats.length === 0 && !conversationsLoading && !conversationsSearchLoading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 dark:from-primary/20 dark:to-primary/30 rounded-3xl flex items-center justify-center mx-auto mb-6">
+              <MessageSquare className="w-8 h-8 text-primary dark:text-primary/90" />
+            </div>
+            <h3 className="text-xl font-bold text-foreground mb-3">
+              {conversationsSearchQuery.trim() ? 'No conversations found' : 'No conversations yet'}
+            </h3>
+            <p className="text-muted-foreground mb-6 max-w-sm">
+              {conversationsSearchQuery.trim() 
+                ? `No conversations match "${conversationsSearchQuery}"`
+                : 'Start messaging with other users by creating your first conversation.'
+              }
+            </p>
+            {!conversationsSearchQuery.trim() && (
+              <Button 
+                onClick={() => setShowNewChatDialog(true)}
+                className="bg-gradient-to-br from-primary to-primary/90 dark:from-primary/90 dark:to-primary/70 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create Conversation
+              </Button>
+            )}
+          </div>
+        </div>
+      ) : (
+        /* Show full layout with sidebar when conversations exist or loading */
+        <>
         {/* Chat List Sidebar */}
         <div className="w-80 border-r border-border flex flex-col">
           {/* Enhanced Header */}
@@ -1435,33 +1463,6 @@ export default function MessagesPage() {
                 </div>
               </div>
             </>
-          ) : chats.length === 0 ? (
-            /* No conversations available */
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 dark:from-primary/20 dark:to-primary/30 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                  <MessageSquare className="w-8 h-8 text-primary dark:text-primary/90" />
-                </div>
-                <h3 className="text-xl font-bold text-foreground mb-3">
-                  {conversationsSearchQuery.trim() ? 'No conversations found' : 'No conversations yet'}
-                </h3>
-                <p className="text-muted-foreground mb-6 max-w-sm">
-                  {conversationsSearchQuery.trim() 
-                    ? `No conversations match "${conversationsSearchQuery}"`
-                    : 'Start messaging with other users by creating your first conversation.'
-                  }
-                </p>
-                {!conversationsSearchQuery.trim() && (
-                  <Button 
-                    onClick={() => setShowNewChatDialog(true)}
-                    className="bg-gradient-to-br from-primary to-primary/90 dark:from-primary/90 dark:to-primary/70 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Conversation
-                  </Button>
-                )}
-              </div>
-            </div>
           ) : (
             /* No conversation selected but conversations exist */
             <div className="flex-1 flex items-center justify-center">
@@ -1478,8 +1479,9 @@ export default function MessagesPage() {
           )}
         </div>
       </>
+      )}
 
-      {/* Enhanced New Chat Dialog */}
+      {/* Enhanced New Chat Dialog - Always available */}
       <Dialog open={showNewChatDialog} onOpenChange={(open) => {
         setShowNewChatDialog(open);
         if (!open) {
@@ -1609,7 +1611,11 @@ export default function MessagesPage() {
               </SelectContent>
             </Select>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowNewChatDialog(false)}>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowNewChatDialog(false)}
+                className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
                 Cancel
               </Button>
               <Button 
@@ -1645,6 +1651,7 @@ export default function MessagesPage() {
               variant="outline" 
               onClick={() => setShowDeleteDialog(false)}
               disabled={deletingConversation === selectedChat?.id}
+              className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
               Cancel
             </Button>

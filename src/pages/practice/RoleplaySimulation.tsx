@@ -1266,7 +1266,7 @@ export default function RoleplaySimulation() {
         
         {/* Header */}
         <div className="relative flex items-center justify-center mb-6 p-4 sm:p-6 lg:p-8">
-          <Button variant="outline" size="icon" className="absolute left-4 sm:left-6 lg:left-8" onClick={() => {
+          <Button variant="outline" size="icon" className="absolute left-4 sm:left-6 lg:left-8 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary" onClick={() => {
             stopAudio();
             navigate(-1);
           }}>
@@ -1442,7 +1442,7 @@ export default function RoleplaySimulation() {
             variant="outline"
             size="icon"
             onClick={handleBackToScenarios}
-            className="shrink-0"
+            className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
