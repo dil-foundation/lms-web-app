@@ -1097,8 +1097,13 @@ export default function MessagesPage() {
 
   return (
     <div className="flex h-[80vh] bg-background">
-      {/* Show single centered empty state when no conversations exist */}
-      {chats.length === 0 && !conversationsLoading && !conversationsSearchLoading ? (
+      {/* Show loading state while waiting for initial API response */}
+      {!initialLoadComplete && conversationsLoading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <ContentLoader message="Loading conversations..." />
+        </div>
+      ) : chats.length === 0 && !conversationsSearchLoading ? (
+        /* Show single centered empty state when no conversations exist */
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 dark:from-primary/20 dark:to-primary/30 rounded-3xl flex items-center justify-center mx-auto mb-6">
@@ -1172,9 +1177,9 @@ export default function MessagesPage() {
           {/* Chat List */}
           <ScrollArea className="flex-1">
             <div className="p-2">
-              {(conversationsLoading && conversationsPage === 1) || (conversationsSearchLoading && conversationsSearchQuery.trim()) ? (
+              {(conversationsSearchLoading && conversationsSearchQuery.trim()) ? (
                 <div className="flex items-center justify-center py-8">
-                  <ContentLoader message={conversationsSearchQuery.trim() ? "Searching conversations..." : "Loading conversations..."} />
+                  <ContentLoader message="Searching conversations..." />
                 </div>
               ) : chats.length === 0 ? (
                 <div className="flex items-center justify-center py-12">
