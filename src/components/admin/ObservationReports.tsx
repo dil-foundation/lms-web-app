@@ -677,7 +677,7 @@ export const ObservationReports = () => {
               <Button 
                 variant="outline" 
                 onClick={() => setViewMode('secureLinks')}
-                className="h-10 px-6 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="h-10 px-6 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800"
               >
                 <Link className="w-4 h-4 mr-2" />
                 Manage Secure Links
@@ -685,7 +685,7 @@ export const ObservationReports = () => {
               <Button 
                 variant="outline" 
                 onClick={() => setViewMode('pastReports')}
-                className="h-10 px-6 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="h-10 px-6 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800"
               >
                 <Eye className="w-4 h-4 mr-2" />
                 View Past Reports
@@ -807,7 +807,7 @@ export const ObservationReports = () => {
           <div className="flex justify-end">
             <Button 
               size="lg" 
-              className="bg-green-600 hover:bg-green-700 text-white" 
+              className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5" 
               onClick={handleSubmitReport}
               disabled={isSubmitting}
             >

@@ -388,7 +388,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
           <div className="relative p-8 rounded-3xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
                   <BookOpen className="w-6 h-6 text-primary" />
                 </div>
                 <div>
@@ -437,12 +437,12 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
       {!isPreviewMode && (
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5"></div>
-          <div className="relative border-b border-border bg-card">
+          <div className="relative border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60">
             <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 py-6">
               <Button 
-                variant="ghost" 
+                variant="outline" 
                 onClick={() => navigate('/dashboard/courses')}
-                className="mb-4 h-10 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="mb-4 h-10 px-4 rounded-xl font-semibold hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300 hover:-translate-y-0.5 shadow-lg hover:shadow-xl"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Courses
@@ -461,11 +461,11 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
             <div className="text-center space-y-8">
               <div>
                 {course.category && (
-                  <Badge className="bg-primary hover:bg-primary/90 text-primary-foreground mb-6 px-4 py-2 text-sm font-medium">
+                  <Badge className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground mb-6 px-4 py-2 text-sm font-medium shadow-lg">
                     {course.category}
                   </Badge>
                 )}
-                <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6 leading-tight">
+                <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-6 leading-tight">
                   {course.title}
                 </h1>
                 <p className="text-xl text-muted-foreground mb-8 max-w-4xl mx-auto leading-relaxed">
@@ -475,24 +475,24 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
 
               {/* Enhanced Course Stats */}
               <div className="flex flex-wrap items-center justify-center gap-8 text-sm">
-                <div className="flex items-center gap-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-border">
+                <div className="flex items-center gap-2 bg-gradient-to-br from-white/80 to-gray-50/80 dark:from-gray-800/80 dark:to-gray-700/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
                   <Users className="w-5 h-5 text-primary" />
-                  <span className="font-medium">{course.stats.students.toLocaleString()} students</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{course.stats.students.toLocaleString()} students</span>
                 </div>
-                <div className="flex items-center gap-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-border">
+                <div className="flex items-center gap-2 bg-gradient-to-br from-white/80 to-gray-50/80 dark:from-gray-800/80 dark:to-gray-700/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
                   <Clock className="w-5 h-5 text-primary" />
-                  <span className="font-medium">{course.stats.duration}</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{course.stats.duration}</span>
                 </div>
-                <div className="flex items-center gap-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-border">
+                <div className="flex items-center gap-2 bg-gradient-to-br from-white/80 to-gray-50/80 dark:from-gray-800/80 dark:to-gray-700/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
                   <BookOpen className="w-5 h-5 text-primary" />
-                  <span className="font-medium">{course.stats.lessons} lessons</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{course.stats.lessons} lessons</span>
                 </div>
               </div>
             </div>
 
             {/* Premium Video Player */}
             <div className="mx-auto w-[90%]">
-              <Card className="bg-card border border-border backdrop-blur-sm shadow-xl">
+              <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm shadow-xl rounded-3xl overflow-hidden">
                 <CardContent className="p-0">
                   {/* Enhanced Video/Image Preview */}
                   <div className="relative aspect-video bg-gray-100 rounded-t-lg overflow-hidden min-h-[360px] md:min-h-[450px]">
@@ -516,7 +516,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                             <Button 
                               onClick={handlePreview}
                               size="lg"
-                              className="bg-white/95 hover:bg-white text-black px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                              className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white px-8 py-4 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
                             >
                               <Play className="w-6 h-6 mr-3" />
                               Preview Course
@@ -549,7 +549,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                       {/* Enhanced Progress Section */}
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                          <span className="text-lg font-semibold text-foreground">Course Progress</span>
+                          <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">Course Progress</span>
                           <span className="text-sm text-muted-foreground">
                             {course.progress.completed}/{course.progress.total} lessons
                           </span>
@@ -557,11 +557,11 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                         
                         <Progress 
                           value={course.progress.percentage} 
-                          className="h-3 bg-gray-200"
+                          className="h-3 bg-gray-200 dark:bg-gray-700"
                         />
                         
                         <div className="flex justify-between text-sm text-muted-foreground">
-                          <span className="font-medium">{course.progress.percentage}% Complete</span>
+                          <span className="font-medium text-primary">{course.progress.percentage}% Complete</span>
                           <span>Last accessed: {course.progress.lastAccessed}</span>
                         </div>
                       </div>
@@ -570,7 +570,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                       <div className="space-y-4">
                         <Button 
                           onClick={handleStartLearning}
-                          className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                          className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-4 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
                           size="lg"
                         >
                           {course.progress.percentage > 0 ? 'Continue Learning' : 'Start Learning'}
@@ -596,9 +596,9 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
           <div className="lg:col-span-3 space-y-12 order-2 lg:order-1">
             {/* Enhanced What You'll Learn & Course Features */}
-            <Card className="bg-card border border-border backdrop-blur-sm">
+            <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm rounded-3xl shadow-lg">
               <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-xl">
+                <CardTitle className="flex items-center gap-3 text-xl text-gray-900 dark:text-gray-100">
                   <Award className="w-6 h-6 text-primary" />
                   What you'll learn & course features
                 </CardTitle>
@@ -606,15 +606,15 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {course.whatYouLearn.map((item, index) => (
-                    <div key={`learn-${index}`} className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                    <div key={`learn-${index}`} className="flex items-start gap-3 p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/20 border border-primary/30 dark:border-primary/20 shadow-sm">
                       <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                      <span className="text-sm font-medium">{item}</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{item}</span>
                     </div>
                   ))}
                   {course.features.map((feature, index) => (
-                    <div key={`feature-${index}`} className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                    <div key={`feature-${index}`} className="flex items-start gap-3 p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/20 border border-primary/30 dark:border-primary/20 shadow-sm">
                       <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                      <span className="text-sm font-medium">{feature}</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{feature}</span>
                     </div>
                   ))}
                 </div>
@@ -623,9 +623,9 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
 
             {/* Enhanced Requirements */}
             {course.requirements && course.requirements.length > 0 && (
-              <Card className="bg-card border border-border backdrop-blur-sm">
+              <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm rounded-3xl shadow-lg">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-3 text-xl">
+                  <CardTitle className="flex items-center gap-3 text-xl text-gray-900 dark:text-gray-100">
                     <Target className="w-6 h-6 text-primary" />
                     Requirements
                   </CardTitle>
@@ -633,9 +633,9 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                 <CardContent>
                   <div className="space-y-3">
                     {course.requirements.map((req, index) => (
-                      <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                      <div key={index} className="flex items-start gap-3 p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/20 border border-primary/30 dark:border-primary/20 shadow-sm">
                         <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
-                        <span className="text-sm font-medium">{req}</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{req}</span>
                       </div>
                     ))}
                   </div>
@@ -644,9 +644,9 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
             )}
 
             {/* Enhanced Course Curriculum */}
-            <Card className="bg-card border border-border backdrop-blur-sm">
+            <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm rounded-3xl shadow-lg">
               <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-xl">
+                <CardTitle className="flex items-center gap-3 text-xl text-gray-900 dark:text-gray-100">
                   <BookOpen className="w-6 h-6 text-primary" />
                   Course Curriculum
                 </CardTitle>
@@ -657,11 +657,11 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                     <AccordionItem key={module.id} value={module.id}>
                       <AccordionTrigger className="hover:no-underline">
                         <div className="flex items-center gap-4 w-full">
-                          <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/20 text-primary rounded-xl text-sm font-bold">
+                          <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/20 text-primary rounded-xl text-sm font-bold shadow-lg">
                             {index + 1}
                           </div>
                           <div className="flex-1 text-left">
-                            <h4 className="font-semibold text-foreground text-lg">{module.title}</h4>
+                            <h4 className="font-semibold text-gray-900 dark:text-gray-100 text-lg">{module.title}</h4>
                             <div className="flex items-center gap-6 text-sm text-muted-foreground mt-2">
                               <div className="flex items-center gap-2">
                                 <Clock className="w-4 h-4" />
@@ -684,12 +684,12 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                           )}
                           
                           <div className="space-y-3">
-                            <h5 className="text-sm font-semibold text-foreground">Topics covered:</h5>
+                            <h5 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Topics covered:</h5>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               {module.topics.map((topic, topicIndex) => (
-                                <div key={topicIndex} className="flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 border border-gray-200/50 dark:border-gray-600/50">
+                                <div key={topicIndex} className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 border border-gray-200/50 dark:border-gray-600/50 shadow-sm">
                                   <PlayCircle className="w-4 h-4 text-primary" />
-                                  <span className="text-sm font-medium">{topic}</span>
+                                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{topic}</span>
                                 </div>
                               ))}
                             </div>
@@ -703,35 +703,35 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
             </Card>
 
             {/* Enhanced Instructor */}
-            <Card className="bg-card border border-border backdrop-blur-sm">
+            <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm rounded-3xl shadow-lg">
               <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-xl">
+                <CardTitle className="flex items-center gap-3 text-xl text-gray-900 dark:text-gray-100">
                   <GraduationCap className="w-6 h-6 text-primary" />
                   Teacher
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-start gap-6">
-                  <Avatar className="h-20 w-20">
+                  <Avatar className="h-20 w-20 shadow-lg">
                     <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-2xl font-bold">
                       {course.instructor.avatar}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
-                    <h4 className="text-xl font-semibold text-foreground mb-2">
+                    <h4 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
                       {course.instructor.name}
                     </h4>
                     <p className="text-muted-foreground mb-4 leading-relaxed">
                       {course.instructor.title}
                     </p>
                     <div className="flex flex-wrap gap-6 text-sm">
-                      <div className="flex items-center gap-2 bg-gradient-to-r from-primary/5 to-primary/10 px-4 py-2 rounded-lg border border-primary/20">
+                      <div className="flex items-center gap-2 bg-gradient-to-br from-primary/10 to-primary/20 px-4 py-2 rounded-xl border border-primary/30 dark:border-primary/20 shadow-sm">
                         <Users className="w-4 h-4 text-primary" />
-                        <span className="font-medium">{course.instructor.students.toLocaleString()} Students</span>
+                        <span className="font-medium text-gray-900 dark:text-gray-100">{course.instructor.students.toLocaleString()} Students</span>
                       </div>
-                      <div className="flex items-center gap-2 bg-gradient-to-r from-primary/5 to-primary/10 px-4 py-2 rounded-lg border border-primary/20">
+                      <div className="flex items-center gap-2 bg-gradient-to-br from-primary/10 to-primary/20 px-4 py-2 rounded-xl border border-primary/30 dark:border-primary/20 shadow-sm">
                         <BookOpen className="w-4 h-4 text-primary" />
-                        <span className="font-medium">{course.instructor.courses} Courses</span>
+                        <span className="font-medium text-gray-900 dark:text-gray-100">{course.instructor.courses} Courses</span>
                       </div>
                     </div>
                   </div>
@@ -742,9 +742,9 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
 
           {/* Enhanced Course Details Sidebar */}
           <div className="lg:col-span-1 order-1 lg:order-2">
-            <Card className={`bg-card border border-border backdrop-blur-sm ${!isPreviewMode ? 'sticky top-8' : ''}`}>
+            <Card className={`bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm rounded-3xl shadow-lg ${!isPreviewMode ? 'sticky top-8' : ''}`}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-xl">
+                <CardTitle className="flex items-center gap-3 text-xl text-gray-900 dark:text-gray-100">
                   <BarChart3 className="w-6 h-6 text-primary" />
                   Course Details
                 </CardTitle>
@@ -753,51 +753,51 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                 {isPreviewMode ? (
                   // Single column layout for modal preview
                   <div className="space-y-3">
-                    <div className="flex justify-between items-center p-3 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                    <div className="flex justify-between items-center p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/20 border border-primary/30 dark:border-primary/20 shadow-sm">
                       <span className="text-sm text-muted-foreground">Level</span>
-                      <span className="font-semibold text-sm">{course.stats.level}</span>
+                      <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">{course.stats.level}</span>
                     </div>
-                    <div className="flex justify-between items-center p-3 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                    <div className="flex justify-between items-center p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/20 border border-primary/30 dark:border-primary/20 shadow-sm">
                       <span className="text-sm text-muted-foreground">Duration</span>
-                      <span className="font-semibold text-sm">{course.stats.duration}</span>
+                      <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">{course.stats.duration}</span>
                     </div>
-                    <div className="flex justify-between items-center p-3 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                    <div className="flex justify-between items-center p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/20 border border-primary/30 dark:border-primary/20 shadow-sm">
                       <span className="text-sm text-muted-foreground">Lessons</span>
-                      <span className="font-semibold text-sm">{course.stats.lessons}</span>
+                      <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">{course.stats.lessons}</span>
                     </div>
-                    <div className="flex justify-between items-center p-3 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                    <div className="flex justify-between items-center p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/20 border border-primary/30 dark:border-primary/20 shadow-sm">
                       <span className="text-sm text-muted-foreground">Language</span>
-                      <span className="font-semibold text-sm">{course.stats.language}</span>
+                      <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">{course.stats.language}</span>
                     </div>
                     <Separator />
-                    <div className="flex justify-between items-center p-3 rounded-lg bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 border border-gray-200/50 dark:border-gray-600/50">
+                    <div className="flex justify-between items-center p-3 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 border border-gray-200/50 dark:border-gray-600/50 shadow-sm">
                       <span className="text-sm text-muted-foreground">Last updated</span>
-                      <span className="font-semibold text-sm">{course.stats.lastUpdated}</span>
+                      <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">{course.stats.lastUpdated}</span>
                     </div>
                   </div>
                 ) : (
                   // Single column layout for full page view
                   <div className="space-y-3">
-                    <div className="flex justify-between items-center p-4 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                    <div className="flex justify-between items-center p-4 rounded-xl bg-gradient-to-br from-primary/10 to-primary/20 border border-primary/30 dark:border-primary/20 shadow-sm">
                       <span className="text-sm text-muted-foreground">Level</span>
-                      <span className="font-semibold">{course.stats.level}</span>
+                      <span className="font-semibold text-gray-900 dark:text-gray-100">{course.stats.level}</span>
                     </div>
-                    <div className="flex justify-between items-center p-4 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                    <div className="flex justify-between items-center p-4 rounded-xl bg-gradient-to-br from-primary/10 to-primary/20 border border-primary/30 dark:border-primary/20 shadow-sm">
                       <span className="text-sm text-muted-foreground">Duration</span>
-                      <span className="font-semibold">{course.stats.duration}</span>
+                      <span className="font-semibold text-gray-900 dark:text-gray-100">{course.stats.duration}</span>
                     </div>
-                    <div className="flex justify-between items-center p-4 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                    <div className="flex justify-between items-center p-4 rounded-xl bg-gradient-to-br from-primary/10 to-primary/20 border border-primary/30 dark:border-primary/20 shadow-sm">
                       <span className="text-sm text-muted-foreground">Lessons</span>
-                      <span className="font-semibold">{course.stats.lessons}</span>
+                      <span className="font-semibold text-gray-900 dark:text-gray-100">{course.stats.lessons}</span>
                     </div>
-                    <div className="flex justify-between items-center p-4 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                    <div className="flex justify-between items-center p-4 rounded-xl bg-gradient-to-br from-primary/10 to-primary/20 border border-primary/30 dark:border-primary/20 shadow-sm">
                       <span className="text-sm text-muted-foreground">Language</span>
-                      <span className="font-semibold">{course.stats.language}</span>
+                      <span className="font-semibold text-gray-900 dark:text-gray-100">{course.stats.language}</span>
                     </div>
                     <Separator />
-                    <div className="flex justify-between items-center p-4 rounded-lg bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 border border-gray-200/50 dark:border-gray-600/50">
+                    <div className="flex justify-between items-center p-4 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 border border-gray-200/50 dark:border-gray-600/50 shadow-sm">
                       <span className="text-sm text-muted-foreground">Last updated</span>
-                      <span className="font-semibold">{course.stats.lastUpdated}</span>
+                      <span className="font-semibold text-gray-900 dark:text-gray-100">{course.stats.lastUpdated}</span>
                     </div>
                   </div>
                 )}

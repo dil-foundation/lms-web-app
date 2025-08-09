@@ -433,7 +433,7 @@ export const AITeacherProgress = () => {
 
   const getProgressColor = (percentage: number) => {
     if (percentage >= 80) return 'bg-green-500';
-    if (percentage >= 60) return 'bg-blue-500';
+    if (percentage >= 60) return 'bg-[#1582B4]';
     if (percentage >= 40) return 'bg-yellow-500';
     return 'bg-red-500';
   };
@@ -974,7 +974,7 @@ export const AITeacherProgress = () => {
                                                 <CheckCircle className="h-5 w-5 text-green-500" />
                                               )}
                                               {lesson.status === 'in_progress' && (
-                                                <Clock className="h-5 w-5 text-blue-500" />
+                                                <Clock className="h-5 w-5 text-[#1582B4]" />
                                               )}
                                               {lesson.status === 'not_started' && (
                                                 <div className="h-5 w-5 rounded-full border-2 border-muted-foreground" />
@@ -1117,13 +1117,13 @@ export const AITeacherProgress = () => {
                     
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-lg text-blue-600">Recommendations</CardTitle>
+                        <CardTitle className="text-lg text-[#1582B4]">Recommendations</CardTitle>
                       </CardHeader>
                       <CardContent>
                         <ul className="space-y-2">
                           {studentDetailData.insights.recommendations.map((recommendation, index) => (
                             <li key={index} className="flex items-center gap-2 text-sm">
-                              <Target className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                              <Target className="h-4 w-4 text-[#1582B4] flex-shrink-0" />
                               {recommendation}
                             </li>
                           ))}

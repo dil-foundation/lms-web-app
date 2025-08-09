@@ -944,7 +944,7 @@ export default function MockInterviewPractice() {
                   onClick={handlePrevQuestion}
                   variant="outline"
                   disabled={currentQuestionIndex === 0}
-                  className="px-6 py-2.5 rounded-xl border-2 font-medium transition-all duration-200 hover:shadow-md disabled:opacity-50 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+                  className="px-6 py-2.5 rounded-xl border-2 font-medium transition-all duration-200 hover:shadow-md disabled:opacity-50 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800 dark:hover:text-gray-100"
                 >
                   Previous
                 </Button>
@@ -952,7 +952,7 @@ export default function MockInterviewPractice() {
                   onClick={handleNextQuestion}
                   variant="outline"
                   disabled={currentQuestionIndex === currentScenario.questions.length - 1}
-                  className="px-6 py-2.5 rounded-xl border-2 font-medium transition-all duration-200 hover:shadow-md disabled:opacity-50 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+                  className="px-6 py-2.5 rounded-xl border-2 font-medium transition-all duration-200 hover:shadow-md disabled:opacity-50 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800 dark:hover:text-gray-100"
                 >
                   Next Question
                 </Button>

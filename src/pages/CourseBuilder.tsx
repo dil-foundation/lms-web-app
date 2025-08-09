@@ -1765,7 +1765,7 @@ const CourseBuilder = () => {
                     courseData.status === 'Published' ? 'default' :
                     courseData.status === 'Under Review' ? 'outline' :
                     courseData.status === 'Rejected' ? 'destructive' :
-                    'secondary'
+                    'blue'
                   } className="text-xs">
                     {courseData.status || 'Draft'}
                   </Badge>
@@ -1774,7 +1774,7 @@ const CourseBuilder = () => {
                   </span>
                 </div>
                 {currentUserRole === 'teacher' && courseData.status === 'Draft' && (
-                    <div className="flex items-center gap-2 mt-2 text-sm text-blue-600 bg-blue-50 border border-blue-200 rounded-lg p-2">
+                    <div className="flex items-center gap-2 mt-2 text-sm text-white bg-blue-50 border border-blue-200 rounded-lg p-2">
                         <Info className="h-4 w-4" />
                         <span>You must submit this course for admin review and approval before it can be published.</span>
                     </div>
@@ -1808,7 +1808,7 @@ const CourseBuilder = () => {
                     </Button>
                     <Button 
                       onClick={handleSubmitForReview} 
-                      className="h-9 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5" 
+                      className="h-9 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 text-white" 
                       disabled={isSaving || !isFormValid}
                     >
                       {saveAction === 'review' ? 'Submitting...' : 'Submit for Review'}

@@ -452,7 +452,7 @@ export default function DiscussionsPage() {
                           {discussion.title}
                         </h3>
                           {discussion.discussion_type && (
-                            <Badge variant="secondary" className="text-xs capitalize">
+                            <Badge variant="blue" className="text-xs capitalize">
                               {discussion.discussion_type}
                             </Badge>
                           )}

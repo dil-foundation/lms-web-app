@@ -63,7 +63,7 @@ export const AuthButton = () => {
             <Button
               variant="ghost"
               size="sm"
-              className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800 group"
+              className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800 group"
             >
               <Home className="h-4 w-4 mr-2 text-gray-600 dark:text-gray-400 group-hover:text-primary transition-colors duration-300" />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-primary transition-colors duration-300">
@@ -79,7 +79,7 @@ export const AuthButton = () => {
             variant="ghost"
             size="sm"
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800 group"
+            className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800 group"
           >
             <User className="h-4 w-4 mr-2 text-gray-600 dark:text-gray-400 group-hover:text-primary transition-colors duration-300" />
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-primary transition-colors duration-300 truncate max-w-[120px]">
@@ -164,7 +164,7 @@ export const AuthButton = () => {
       variant="ghost"
       size="sm"
       onClick={handleLoginClick}
-      className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800 group"
+      className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800 group"
     >
       <LogIn className="h-4 w-4 mr-2 text-gray-600 dark:text-gray-400 group-hover:text-primary transition-colors duration-300" />
       <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-primary transition-colors duration-300">

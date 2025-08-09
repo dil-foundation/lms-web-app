@@ -684,7 +684,7 @@ export default function ProblemSolvingSimulations() {
                               msg.type === 'user'
                                 ? 'bg-green-600 text-white'
                                 : msg.persona === 'System'
-                                ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200'
+                                ? 'bg-blue-100 dark:bg-blue-900/20 text-white dark:text-blue-200'
                                 : 'bg-gray-100 dark:bg-gray-800 text-foreground'
                             }`}
                           >

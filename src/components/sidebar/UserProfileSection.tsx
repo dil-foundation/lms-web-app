@@ -55,7 +55,7 @@ export const UserProfileSection = ({ profile }: UserProfileSectionProps) => {
           {displayName}
         </p>
         <div className="flex items-center space-x-2 mt-2">
-          <Badge variant="secondary" className="text-xs">
+          <Badge className="text-xs text-white" style={{ backgroundColor: '#1582B4' }}>
             {getRoleDisplayName(profile.role)}
           </Badge>
         </div>

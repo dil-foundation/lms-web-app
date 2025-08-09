@@ -15,24 +15,24 @@
     --card-foreground: 222 84% 4.9%;  /* #0b1320 */
     --popover: 0 0% 100%;             /* #ffffff */
     --popover-foreground: 222 84% 4.9%; /* #0b1320 */
-    --primary: 145 63% 45%;           /* #22c55e - Brand green */
+    --primary: 85 51% 51%;           /* #8DC63F - Updated to new green */
     --primary-foreground: 210 40% 98%; /* #f1f5f9 */
-    --secondary: 210 40% 96%;         /* #f1f5f9 */
+    --secondary: 210 100% 34%;         /* #0061AF - Updated to new blue */
     --secondary-foreground: 222 47% 11%; /* #1e293b */
     --muted: 210 40% 96%;             /* #f1f5f9 */
     --muted-foreground: 215 16% 40%;  /* #64748b */
-    --accent: 210 40% 96%;            /* #f1f5f9 */
-    --accent-foreground: 222 47% 11%; /* #1e293b */
+    --accent: 210 100% 34%;            /* #0061AF - Updated to new blue */
+    --accent-foreground: 0 0% 100%;    /* #ffffff - White text for light mode */
     --destructive: 0 84% 60%;         /* #ef4444 */
     --destructive-foreground: 210 40% 98%; /* #f1f5f9 */
     --border: 214 32% 91%;            /* #e5e7eb */
     --input: 214 32% 91%;             /* #e5e7eb */
-    --ring: 145 63% 45%;              /* #22c55e - Focus ring */
+    --ring: 85 51% 51%;              /* #8DC63F - Updated to new green */
     --radius: 0.75rem;
 
     /* Custom variables - Updated */
-    --primary-green: 145 63% 45%;     /* #22c55e */
-    --secondary-green: 142 69% 38%;   /* #16a34a */
+    --primary-green: 85 51% 51%;     /* #8DC63F */
+    --secondary-green: 85 51% 41%;   /* Darker variant */
     --text-main: 222 84% 4.9%;        /* #0b1320 */
     --text-muted: 215 16% 40%;        /* #64748b */
     --border-light: 214 32% 91%;      /* #e5e7eb */
@@ -46,19 +46,19 @@
     --card-foreground: 210 40% 98%;
     --popover: 220 20% 10%;
     --popover-foreground: 210 40% 98%;
-    --primary: 142 71% 45%;
+    --primary: 85 51% 61%;           /* #8DC63F - Lighter for dark mode */
     --primary-foreground: 0 0% 98%;
-    --secondary: 142 71% 45%;
+    --secondary: 210 100% 44%;        /* #0061AF - Lighter for dark mode */
     --secondary-foreground: 0 0% 98%;
     --muted: 220 17% 17%;
     --muted-foreground: 215 20% 65%;
-    --accent: 142 71% 45%;
+    --accent: 210 100% 44%;           /* #0061AF - Lighter for dark mode */
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
     --border: 217 19% 27%;
     --input: 217 19% 27%;
-    --ring: 142 71% 45%;
+    --ring: 85 51% 61%;              /* #8DC63F - Lighter for dark mode */
 
     /* Custom dark variables */
     --text-main: 210 40% 98%;
@@ -71,7 +71,7 @@
   * {
     @apply border-border;
   }
-
+  
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
@@ -151,7 +151,7 @@
 
   .hover-lift:hover {
     transform: translateY(-4px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 10px 25px rgba(141, 198, 63, 0.15);
   }
 
   .hover-scale {
@@ -331,7 +331,7 @@
   .btn-primary-gradient {
     @apply bg-gradient-to-r from-primary to-green-600 text-white;
     @apply hover:from-green-600 hover:to-primary;
-    @apply shadow-lg hover:shadow-xl hover:shadow-green-500/25;
+    @apply shadow-lg hover:shadow-xl hover:shadow-primary/25;
     @apply transform hover:-translate-y-0.5;
     @apply transition-all duration-300;
     @apply rounded-lg px-6 py-3 font-medium;
@@ -351,8 +351,7 @@
   .btn-outline-modern {
     @apply border border-input bg-background text-foreground;
     @apply hover:bg-accent hover:text-accent-foreground;
-    @apply hover:border-primary hover:text-primary;
-    @apply shadow-sm hover:shadow-md;
+    @apply shadow-sm hover:shadow-md hover:shadow-accent/20;
     @apply transition-all duration-300;
     @apply rounded-lg px-6 py-3 font-medium;
   }
@@ -361,7 +360,7 @@
   .btn-secondary-modern {
     @apply bg-secondary text-secondary-foreground;
     @apply hover:bg-secondary/80;
-    @apply shadow-sm hover:shadow-md;
+    @apply shadow-sm hover:shadow-md hover:shadow-secondary/25;
     @apply transition-all duration-300;
     @apply rounded-lg px-6 py-3 font-medium;
   }
@@ -430,6 +429,6 @@
   
   .tab-trigger-active {
     @apply bg-gradient-to-r from-primary to-green-600;
-    @apply text-white shadow-lg shadow-green-500/25;
+    @apply text-white shadow-lg shadow-primary/25;
   }
 }

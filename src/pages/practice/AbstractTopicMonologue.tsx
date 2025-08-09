@@ -555,7 +555,7 @@ export default function AbstractTopicMonologue() {
                         {currentTopic.vocabulary_focus.map((word, index) => (
                           <span 
                             key={index}
-                            className="px-2 py-1 bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 text-xs rounded-full"
+                            className="px-2 py-1 bg-blue-200 dark:bg-blue-800 text-white dark:text-blue-200 text-xs rounded-full"
                           >
                             {word}
                           </span>
@@ -727,7 +727,7 @@ export default function AbstractTopicMonologue() {
                 }}
                 disabled={currentTopicIndex === 0}
                 variant="outline"
-                className="px-6 py-2 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+                className="px-6 py-2 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800 dark:hover:text-gray-100"
               >
                 Previous
               </Button>
@@ -739,7 +739,7 @@ export default function AbstractTopicMonologue() {
                 }}
                 disabled={currentTopicIndex === topics.length - 1}
                 variant="outline"
-                className="px-6 py-2 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+                className="px-6 py-2 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800 dark:hover:text-gray-100"
               >
                 Next
               </Button>

@@ -36,7 +36,7 @@ const Home = () => {
                  <ArrowRight className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
                </Button>
              </Link>
-             <Button variant="outline" size="lg" className="w-full sm:w-auto border-2 border-primary/30 text-primary hover:bg-primary/5 hover:border-primary/50 font-semibold text-lg px-8 sm:px-10 py-4 sm:py-5 rounded-2xl transition-all duration-300 transform hover:-translate-y-1 shadow-sm hover:shadow-md">
+             <Button variant="outline" size="lg" className="w-full sm:w-auto border-2 text-white hover:bg-[#1582B4]/90 hover:border-[#1582B4]/50 font-semibold text-lg px-8 sm:px-10 py-4 sm:py-5 rounded-2xl transition-all duration-300 transform hover:-translate-y-1 shadow-sm hover:shadow-md" style={{ backgroundColor: '#1582B4', borderColor: '#1582B4' }}>
                Watch Demo
              </Button>
            </div>
@@ -247,18 +247,18 @@ const Home = () => {
       {/* CTA Section */}
       <section className="py-12 sm:py-16 md:py-20 px-4">
         <div className="container mx-auto text-center">
-          <div className="max-w-4xl mx-auto bg-gradient-to-br from-primary via-primary to-blue-600 rounded-3xl p-6 sm:p-8 md:p-12 hover-scale transition-all duration-500 animate-scale-in">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 text-black">
-              Start Your English Learning Journey Today
-            </h2>
-            <p className="text-lg sm:text-xl text-black mb-6 sm:mb-8 md:mb-10 max-w-3xl mx-auto px-2">
-              Join thousands of learners who have achieved fluency with AI Tutor
-            </p>
-            <Link to="/auth">
-              <Button size="lg" className="bg-blue-800 hover:bg-blue-900 text-white font-semibold text-base sm:text-lg px-6 sm:px-8 md:px-10 py-3 sm:py-4 md:py-6 rounded-xl hover-scale transition-all duration-300">
-                Get Started Free
+          <div className="max-w-4xl mx-auto bg-gradient-to-br from-primary via-primary to-[#1582B4] rounded-3xl p-6 sm:p-8 md:p-12 hover-scale transition-all duration-500 animate-scale-in">
+            <div className="text-center space-y-6">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6">
+                Ready to Transform Your English Skills?
+              </h2>
+              <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
+                Join thousands of learners who have already improved their English with our AI-powered platform.
+              </p>
+              <Button size="lg" className="bg-[#1582B4] hover:bg-[#1582B4]/90 text-white font-semibold text-base sm:text-lg px-6 sm:px-8 md:px-10 py-3 sm:py-4 md:py-6 rounded-xl hover-scale transition-all duration-300">
+                Get Started Today
               </Button>
-            </Link>
+            </div>
           </div>
         </div>
       </section>

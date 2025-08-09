@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Shield, Key, Clock, AlertTriangle, CheckCircle, XCircle, Eye, EyeOff, Activity } from 'lucide-react';
+import { Shield, Key, Clock, AlertTriangle, CheckCircle, XCircle, Eye, EyeOff, Activity, Download, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const AdminSecurity = () => {
@@ -76,9 +76,9 @@ export const AdminSecurity = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 px-4 py-2 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200/50 dark:border-green-700/50">
-                <Shield className="h-5 w-5 text-green-500" />
-                <span className="text-sm font-medium text-green-600 dark:text-green-400">Security Score: Strong</span>
+              <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 dark:bg-primary/20 rounded-xl border border-primary/20 dark:border-primary/30">
+                <Shield className="h-5 w-5 text-primary" />
+                <span className="text-sm font-medium text-primary dark:text-primary/90">Security Score: Strong</span>
               </div>
             </div>
           </div>
@@ -205,10 +205,10 @@ export const AdminSecurity = () => {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" className="hover:bg-gray-100 dark:hover:bg-gray-800">
+            <Button variant="outline" className="hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800">
               End All Other Sessions
             </Button>
-            <Button variant="outline" className="hover:bg-gray-100 dark:hover:bg-gray-800">
+            <Button variant="outline" className="hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800">
               Clear Session History
             </Button>
           </div>
@@ -258,7 +258,7 @@ export const AdminSecurity = () => {
             <p className="text-sm text-muted-foreground">
               Showing recent 5 login attempts
             </p>
-            <Button variant="outline" size="sm" className="hover:bg-gray-100 dark:hover:bg-gray-800">
+            <Button variant="outline" size="sm" className="hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800">
               View Full History
             </Button>
           </div>

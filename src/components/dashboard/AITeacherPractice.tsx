@@ -146,7 +146,7 @@ const TeacherStageCard = ({ stage }) => {
   const getDifficultyColor = (difficulty) => {
     const colors = {
       'Beginner': 'bg-green-100 text-green-700',
-      'Elementary': 'bg-blue-100 text-blue-700',
+      'Elementary': 'bg-[#1582B4]/20 text-[#1582B4]',
       'Intermediate': 'bg-yellow-100 text-yellow-700',
       'Upper Intermediate': 'bg-orange-100 text-orange-700',
       'Advanced': 'bg-red-100 text-red-700',

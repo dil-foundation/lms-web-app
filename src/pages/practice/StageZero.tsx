@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, BookText, GraduationCap, Volume2, Calendar, MessageSquare, Send, ChevronRight } from 'lucide-react';
+import { ArrowLeft, BookText, GraduationCap, Volume2, Calendar, MessageSquare, Send, ChevronRight, Target, Sparkles } from 'lucide-react';
 
 const lessons = [
   {
@@ -41,27 +41,32 @@ const LessonCard = ({ lesson, index }) => {
   const navigate = useNavigate();
   return (
     <Card 
-      className="overflow-hidden shadow-lg transition-transform duration-300 hover:scale-105 flex flex-col cursor-pointer bg-card"
+      className="group overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50 rounded-2xl cursor-pointer"
       onClick={() => navigate(`/dashboard/practice/stage-0/lesson/${index + 1}`)}
     >
-      <div className="bg-primary flex items-center justify-center p-8 h-40">
-        <h2 className="text-5xl font-bold text-primary-foreground">{lesson.bigTitle}</h2>
+      <div className="bg-gradient-to-br from-primary to-primary/90 flex items-center justify-center p-8 h-40 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent"></div>
+        <h2 className="text-5xl font-bold text-white relative z-10">{lesson.bigTitle}</h2>
+        <div className="absolute top-4 right-4 opacity-20">
+          <Sparkles className="w-8 h-8 text-white" />
+        </div>
       </div>
       <div className="p-6 flex flex-col flex-grow">
         <div className="flex items-center mb-4">
-          <div className="p-2 bg-primary/10 rounded-full mr-3">
-            <lesson.icon className="w-5 h-5 text-primary" />
+          <div className="p-3 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl mr-4 shadow-sm">
+            <lesson.icon className="w-6 h-6 text-primary" />
           </div>
           <div>
-            <h3 className="text-lg font-bold">{lesson.title}</h3>
-            <p className="text-sm text-muted-foreground">{lesson.description}</p>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{lesson.title}</h3>
+            <p className="text-sm text-muted-foreground mt-1">{lesson.description}</p>
           </div>
         </div>
         <Button 
-          className="w-full mt-auto"
+          className="w-full mt-auto bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 border-0"
           variant="outline"
         >
-          Start <ChevronRight className="w-4 h-4 ml-2" />
+          Start Lesson
+          <ChevronRight className="w-4 h-4 ml-2" />
         </Button>
       </div>
     </Card>
@@ -71,33 +76,61 @@ const LessonCard = ({ lesson, index }) => {
 export const StageZero: React.FC = () => {
     const navigate = useNavigate();
     return (
-        <div className="p-4 sm:p-6 lg:p-8">
-            <div className="flex items-center gap-4 mb-8">
-                <Button variant="outline" size="icon" onClick={() => navigate('/dashboard/ai-practice')}>
-                    <ArrowLeft className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="lg" className="text-lg cursor-default">
-                    <BookText className="mr-2 h-5 w-5" />
-                    Beginner Lessons
-                </Button>
+        <div className="min-h-screen bg-background">
+            {/* Premium Header Section */}
+            <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/3 to-[#1582B4]/5 rounded-3xl"></div>
+                <div className="relative p-8 md:p-10 rounded-3xl">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                        <div className="flex items-center gap-4">
+                            <Button 
+                                variant="outline" 
+                                size="icon" 
+                                onClick={() => navigate('/dashboard/ai-practice')}
+                                className="hover:bg-primary/10 hover:border-primary/30 transition-all duration-300"
+                            >
+                                <ArrowLeft className="h-4 w-4" />
+                            </Button>
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center shadow-lg">
+                                    <BookText className="w-6 h-6 text-primary" />
+                                </div>
+                                <div>
+                                    <h1 className="text-2xl font-bold text-primary">Stage 0 - Beginner</h1>
+                                    <p className="text-sm text-muted-foreground">Foundation English for Urdu Speakers</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {/* Stage Stats */}
+                        <div className="flex flex-wrap gap-4">
+                            <div className="flex items-center gap-2 px-4 py-2 bg-white/60 dark:bg-gray-800/60 rounded-xl border border-gray-200/50 dark:border-gray-700/50">
+                                <Target className="w-4 h-4 text-primary" />
+                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">5 Lessons</span>
+                            </div>
+                            <div className="flex items-center gap-2 px-4 py-2 bg-white/60 dark:bg-gray-800/60 rounded-xl border border-gray-200/50 dark:border-gray-700/50">
+                                <Sparkles className="w-4 h-4 text-[#1582B4]" />
+                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">AI Guided</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* Stage Description */}
+                    <div className="mt-6 text-center md:text-left">
+                        <p className="text-muted-foreground text-lg leading-relaxed max-w-2xl">
+                            The lessons are designed to introduce you to the basics of English, focusing on essential vocabulary and simple sentence structures.
+                        </p>
+                    </div>
+                </div>
             </div>
 
-            <Card className="mb-8 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-                <CardContent className="p-8 text-center flex flex-col items-center">
-                    <div className="p-4 bg-primary/20 rounded-full mb-4">
-                        <GraduationCap className="h-10 w-10 text-primary" />
-                    </div>
-                    <h2 className="text-2xl font-bold mb-2">Welcome to your first steps in English</h2>
-                    <p className="max-w-prose text-muted-foreground">
-                        The lessons are designed to introduce you to the basics of English, focusing on essential vocabulary and simple sentence structures.
-                    </p>
-                </CardContent>
-            </Card>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {lessons.map((lesson, index) => (
-                    <LessonCard key={index} lesson={lesson} index={index} />
-                ))}
+            {/* Lessons Grid */}
+            <div className="px-6 pb-8 mt-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {lessons.map((lesson, index) => (
+                        <LessonCard key={index} lesson={lesson} index={index} />
+                    ))}
+                </div>
             </div>
         </div>
     );

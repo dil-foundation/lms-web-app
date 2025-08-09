@@ -358,7 +358,7 @@ export const UsersManagement = () => {
     switch (role) {
       case 'admin': return 'destructive';
       case 'teacher': return 'default';
-      case 'student': return 'secondary';
+      case 'student': return 'blue';
       default: return 'outline';
     }
   };

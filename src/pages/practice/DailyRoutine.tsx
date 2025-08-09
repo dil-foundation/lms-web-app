@@ -690,14 +690,14 @@ export default function DailyRoutine() {
   return (
       <div className="min-h-screen bg-background">
         <div className="relative flex items-center justify-center mb-6 p-4 sm:p-6 lg:p-8">
-          <Button variant="outline" size="icon" className="absolute left-4 sm:left-6 lg:left-8" onClick={() => navigate(-1)}>
+          <Button variant="outline" size="icon" className="absolute left-4 sm:left-6 lg:left-8 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="text-center">
-            <div className="inline-block p-3 bg-primary/20 rounded-full mb-2">
+            <div className="inline-block p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl mb-3 shadow-lg">
               <Calendar className="h-8 w-8 text-primary" />
             </div>
-            <h1 className="text-3xl font-bold">Daily Routine</h1>
+            <h1 className="text-3xl font-bold text-primary">Daily Routine</h1>
             <p className="text-muted-foreground">Narrate Your Daily Activities</p>
           </div>
         </div>
@@ -727,9 +727,9 @@ export default function DailyRoutine() {
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
-          <Card className="w-full max-w-md">
+          <Card className="w-full max-w-md bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg">
             <CardContent className="p-8">
-              <Alert variant="destructive">
+              <Alert variant="destructive" className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription className="mb-4">
                   <strong>Failed to load daily routine questions:</strong><br />
@@ -739,7 +739,7 @@ export default function DailyRoutine() {
               
               <Button 
                 onClick={handleRetry}
-                className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white"
+                className="w-full mt-4 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Try Again
@@ -764,14 +764,14 @@ export default function DailyRoutine() {
       
       {/* Header */}
       <div className="relative flex items-center justify-center mb-6 p-4 sm:p-6 lg:p-8">
-        <Button variant="outline" size="icon" className="absolute left-4 sm:left-6 lg:left-8" onClick={() => navigate(-1)}>
+        <Button variant="outline" size="icon" className="absolute left-4 sm:left-6 lg:left-8 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="text-center">
-          <div className="inline-block p-3 bg-primary/20 rounded-full mb-2">
+          <div className="inline-block p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl mb-3 shadow-lg">
             <Calendar className="h-8 w-8 text-primary" />
           </div>
-          <h1 className="text-3xl font-bold">Daily Routine</h1>
+          <h1 className="text-3xl font-bold text-primary">Daily Routine</h1>
           <p className="text-muted-foreground">Narrate Your Daily Activities</p>
           <p className="text-sm text-muted-foreground mt-1">
             Topic: {currentPhraseIndex + 1} of {phrases.length}
@@ -781,10 +781,10 @@ export default function DailyRoutine() {
 
       {/* Main Content */}
       <div className="flex-1 px-4 pb-4">
-        <Card className="max-w-md mx-auto">
+        <Card className="max-w-md mx-auto bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300">
           <CardContent className="p-8 text-center">
             {/* Question */}
-            <h2 className="text-2xl font-bold mb-4">
+            <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">
               {safeDisplay(currentPhrase.question, 'No question available')}
             </h2>
             
@@ -797,15 +797,15 @@ export default function DailyRoutine() {
 
             {/* Example Response */}
             {currentPhrase.example_response && (
-              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-4">
-                <p className="text-sm font-medium text-green-700 dark:text-green-300 mb-2">
+              <div className="bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 border border-[#1582B4]/30 dark:border-[#1582B4]/20 rounded-xl p-4 mb-4 shadow-sm">
+                <p className="text-sm font-medium text-[#1582B4] dark:text-[#1582B4]/80 mb-2">
                   Example Response:
                 </p>
-                <p className="text-green-600 dark:text-green-400 font-medium mb-2">
+                <p className="text-[#1582B4] dark:text-[#1582B4]/90 font-medium mb-2">
                   {safeDisplay(currentPhrase.example_response)}
                 </p>
                 {currentPhrase.example_response_urdu && (
-                  <p className="text-green-600 dark:text-green-400 text-sm" style={{ fontFamily: 'Noto Nastaliq Urdu, Arial, sans-serif' }}>
+                  <p className="text-[#1582B4] dark:text-[#1582B4]/90 text-sm" style={{ fontFamily: 'Noto Nastaliq Urdu, Arial, sans-serif' }}>
                     {safeDisplay(currentPhrase.example_response_urdu)}
                   </p>
                 )}
@@ -814,11 +814,11 @@ export default function DailyRoutine() {
 
             {/* Expected Keywords */}
             {currentPhrase.expected_keywords && currentPhrase.expected_keywords.length > 0 && (
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6">
-                <p className="text-sm font-medium text-yellow-700 dark:text-yellow-300 mb-2">
+              <div className="bg-gradient-to-br from-primary/10 to-primary/20 border border-primary/30 dark:border-primary/20 rounded-xl p-4 mb-6 shadow-sm">
+                <p className="text-sm font-medium text-primary dark:text-primary/80 mb-2">
                   Expected Keywords:
                 </p>
-                <p className="text-yellow-600 dark:text-yellow-400 font-medium">
+                <p className="text-primary dark:text-primary/90 font-medium">
                   {currentPhrase.expected_keywords.map(keyword => safeDisplay(keyword)).join(', ')}
                 </p>
               </div>
@@ -828,10 +828,10 @@ export default function DailyRoutine() {
             <Button
               onClick={handlePlayAudio}
               disabled={isLoadingAudio}
-              className={`w-20 h-20 rounded-full text-white shadow-lg mb-6 ${
+              className={`w-20 h-20 rounded-full text-white shadow-lg mb-6 transition-all duration-300 ${
                 isLoadingAudio 
                   ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed' 
-                  : 'bg-green-500 hover:bg-green-600'
+                  : 'bg-primary hover:bg-primary/90 hover:scale-105 shadow-xl'
               }`}
               size="icon"
             >
@@ -855,14 +855,14 @@ export default function DailyRoutine() {
             <Button
               onClick={handlePrevious}
               variant="outline"
-              className="flex-1 hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
+              className="flex-1 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300"
             >
               Previous
             </Button>
             <Button
               onClick={handleNext}
               variant="outline"
-              className="flex-1 hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
+              className="flex-1 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300"
             >
               Next
             </Button>
@@ -871,19 +871,19 @@ export default function DailyRoutine() {
 
         {/* Feedback Display */}
         {feedback && (
-          <Card className="w-full max-w-md mt-6 mx-auto">
+          <Card className="w-full max-w-md mt-6 mx-auto bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300">
             <CardContent className="p-6">
               <div className="text-center">
                 {feedback.score !== undefined && (
                   <div className="flex items-center justify-center mb-4">
                     {feedback.score >= 80 ? (
-                      <CheckCircle className="w-8 h-8 text-green-500 mr-2" />
+                      <CheckCircle className="w-8 h-8 text-primary mr-2" />
                     ) : feedback.score >= 60 ? (
-                      <AlertCircle className="w-8 h-8 text-yellow-500 mr-2" />
+                      <AlertCircle className="w-8 h-8 text-[#1582B4] mr-2" />
                     ) : (
                       <XCircle className="w-8 h-8 text-red-500 mr-2" />
                     )}
-                    <span className="text-2xl font-bold">
+                    <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {Math.round(feedback.score)}%
                     </span>
                   </div>
@@ -897,7 +897,7 @@ export default function DailyRoutine() {
                 
                 {feedback.suggestions && feedback.suggestions.length > 0 && (
                   <div className="text-left">
-                    <h4 className="font-semibold mb-2">Suggestions:</h4>
+                    <h4 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">Suggestions:</h4>
                     <ul className="list-disc list-inside text-sm text-muted-foreground">
                       {feedback.suggestions.map((suggestion, index) => (
                         <li key={index}>{safeDisplay(suggestion)}</li>
@@ -917,12 +917,12 @@ export default function DailyRoutine() {
                 <Button
             onClick={handleStartRecording}
             disabled={isRecording || isEvaluating}
-            className={`w-full h-16 text-xl font-semibold rounded-xl shadow-lg transition-all duration-300 ${
+            className={`w-full h-16 text-xl font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ${
               isRecording 
                 ? 'bg-red-500 hover:bg-red-600' 
                 : isEvaluating
-                ? 'bg-yellow-500 hover:bg-yellow-600'
-                : 'bg-green-500 hover:bg-green-600'
+                ? 'bg-[#1582B4] hover:bg-[#1582B4]/90'
+                : 'bg-primary hover:bg-primary/90'
             } text-white`}
           >
             <Mic className="w-6 h-6 mr-3" />
@@ -933,7 +933,7 @@ export default function DailyRoutine() {
           {isRecording && (
                 <Button
               onClick={handleStopRecording}
-              className="w-full mt-4 bg-red-600 hover:bg-red-700 text-white"
+              className="w-full mt-4 bg-red-600 hover:bg-red-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
                 >
               Stop Recording
                 </Button>

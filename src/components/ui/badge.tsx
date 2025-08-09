@@ -21,7 +21,8 @@ const badgeVariants = cva(
         info:
           "border-transparent bg-blue-500 text-white hover:bg-blue-500/80 shadow-sm",
         gradient:
-          "border-transparent bg-gradient-to-r from-primary to-green-600 text-white hover:from-green-600 hover:to-primary shadow-sm"
+          "border-transparent bg-gradient-to-r from-primary to-green-600 text-white hover:from-green-600 hover:to-primary shadow-sm",
+        blue: "border-transparent bg-[#1582B4] text-white hover:bg-[#1582B4]/80 shadow-sm",
       },
     },
     defaultVariants: {

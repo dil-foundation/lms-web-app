@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Target, Mic, X, Volume2, Wifi, WifiOff } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Target, Mic, X, Volume2, Wifi, WifiOff, BookOpen, Sparkles, TrendingUp, Award, Users, Clock } from 'lucide-react';
 import { 
   connectEnglishOnlySocket, 
   disconnectEnglishOnlySocket, 
@@ -43,6 +44,14 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
   // Get user information
   const { user } = useAuth();
   const { profile } = useUserProfile();
+
+  // Mock learning analytics data
+  const learningAnalytics = {
+    totalSessions: 47,
+    avgSessionTime: 18,
+    improvementRate: 23,
+    currentStreak: 5
+  };
 
   // Get user's full name
   const getUserName = () => {
@@ -638,11 +647,11 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
   const getBlobState = () => {
     if (isListening) {
       return {
-        bgColor: 'bg-blue-500/20 border-blue-500/30 shadow-lg shadow-blue-500/20',
-        innerGlow: 'bg-gradient-to-br from-blue-500/30 to-blue-500/10',
-        pulseColor: 'border-blue-500/40',
-        pulseBorder: 'border-blue-500/30',
-        dotColor: 'bg-blue-500'
+        bgColor: 'bg-[#1582B4]/20 border-[#1582B4]/30 shadow-lg shadow-[#1582B4]/20',
+        innerGlow: 'bg-gradient-to-br from-[#1582B4]/30 to-[#1582B4]/10',
+        pulseColor: 'border-[#1582B4]/40',
+        pulseBorder: 'border-[#1582B4]/30',
+        dotColor: 'bg-[#1582B4]'
       };
     } else if (isGreetingAudioPlaying) {
       return {
@@ -686,60 +695,85 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
   // Greeting Screen (View 1)
   if (currentView === 'greeting') {
     return (
-      <div className="bg-background flex flex-col items-center justify-center p-4 space-y-8">
-        {/* Logo/Icon */}
+      <div className="space-y-8">
+        {/* Premium Header Section */}
         <div className="relative">
-          <div className="w-24 h-24 bg-primary rounded-full flex items-center justify-center shadow-lg">
-            <Target className="h-10 w-10 text-primary-foreground" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/3 to-[#1582B4]/5 rounded-3xl"></div>
+          <div className="relative p-8 md:p-10 rounded-3xl">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
+                  <BookOpen className="w-8 h-8 text-primary" />
+                </div>
+                <div>
+                  <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-primary leading-[1.2]">
+                    AI Learning Hub
+                  </h1>
+                  <p className="text-lg text-muted-foreground font-light mt-4 leading-relaxed">
+                    Master English through intelligent conversation and personalized guidance
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
+        </div>
+
+        {/* Welcome Content */}
+        <div className="flex flex-col items-center justify-center space-y-8">
+          {/* Enhanced Logo/Icon */}
+          <div className="relative">
+            <div className="w-24 h-24 bg-gradient-to-br from-primary/10 to-primary/20 rounded-full flex items-center justify-center shadow-lg border border-primary/20">
+              <Target className="h-10 w-10 text-primary" />
+            </div>
+            {isAudioPlaying && (
+              <div className="absolute -inset-2 border-2 border-primary rounded-full animate-ping opacity-75"></div>
+            )}
+          </div>
+
+          {/* Enhanced Welcome Text */}
+          <div className="text-center space-y-4 max-w-md">
+            <h2 className="text-3xl font-bold text-foreground">
+              Welcome to Your Learning Journey
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              Let's begin your English speaking adventure with AI-powered guidance
+            </p>
+          </div>
+
+          {/* Enhanced Greeting Message Card */}
+          <Card className="p-6 max-w-md w-full bg-gradient-to-br from-white/50 via-white/30 to-gray-50/30 dark:from-gray-900/50 dark:via-gray-900/30 dark:to-gray-800/30 rounded-2xl border border-border/50">
+            <div className="text-center space-y-3">
+              <p className="text-lg font-medium text-foreground" dir="rtl">
+                سیکھنے کے پلیٹ فارم میں خوش آمدید، آئیے انگریزی سیکھتے ہیں؟
+              </p>
+              <p className="text-base text-muted-foreground">
+                Welcome to the learning platform, shall we learn English?
+              </p>
+            </div>
+          </Card>
+
+          {/* Enhanced Audio Playing Indicator */}
           {isAudioPlaying && (
-            <div className="absolute -inset-2 border-2 border-primary rounded-full animate-ping opacity-75"></div>
+            <div className="flex items-center gap-3 text-primary bg-primary/10 px-4 py-2 rounded-full">
+              <Volume2 className="h-5 w-5 animate-pulse" />
+              <span className="text-sm font-medium">Playing greeting...</span>
+            </div>
           )}
-        </div>
 
-        {/* Welcome Text */}
-        <div className="text-center space-y-4 max-w-md">
-          <h1 className="text-3xl font-bold text-foreground">
-            Welcome to Your Learning Journey
-          </h1>
-          <p className="text-lg text-muted-foreground">
-            Let's begin your English speaking adventure
-          </p>
-        </div>
-
-        {/* Greeting Message Card */}
-        <Card className="p-6 max-w-md w-full bg-muted/30 border-0 rounded-2xl">
-          <div className="text-center space-y-3">
-            <p className="text-lg font-medium text-foreground" dir="rtl">
-              سیکھنے کے پلیٹ فارم میں خوش آمدید، آئیے انگریزی سیکھتے ہیں؟
-            </p>
-            <p className="text-base text-muted-foreground">
-              Welcome to the learning platform, shall we learn English?
-            </p>
+          {/* Enhanced Start Practicing Button */}
+          <div className={`transition-all duration-500 ${
+            showStartButton ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
+          }`}>
+            <Button
+              onClick={handleStartPracticing}
+              size="lg"
+              className="group bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:scale-105"
+            >
+              <Target className="h-5 w-5 mr-2 group-hover:animate-pulse" />
+              Continue to Learning
+              <span className="ml-2">→</span>
+            </Button>
           </div>
-        </Card>
-
-        {/* Audio Playing Indicator */}
-        {isAudioPlaying && (
-          <div className="flex items-center gap-3 text-primary">
-            <Volume2 className="h-5 w-5 animate-pulse" />
-            <span className="text-sm font-medium">Playing greeting...</span>
-          </div>
-        )}
-
-        {/* Start Practicing Button */}
-        <div className={`transition-all duration-500 ${
-          showStartButton ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
-        }`}>
-          <Button
-            onClick={handleStartPracticing}
-            size="lg"
-            className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-4 rounded-2xl text-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200"
-          >
-            <Target className="h-5 w-5 mr-2" />
-            Continue to Learning
-            <span className="ml-2">→</span>
-          </Button>
         </div>
       </div>
     );
@@ -747,33 +781,44 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
 
   // Practice Conversation Screen (View 2)
   return (
-    <div className=" bg-background flex flex-col items-center justify-center p-4 relative">
-      {/* Back Button */}
-      <button
-        onClick={handleBackToGreeting}
-        className="absolute top-8 left-8 w-12 h-12 bg-destructive/10 hover:bg-destructive/20 border-2 border-destructive/20 rounded-full flex items-center justify-center transition-all duration-200"
-      >
-        <X className="h-5 w-5 text-destructive" />
-      </button>
-
-      {/* Connection Status Indicator */}
-      <div className="absolute top-8 right-8 flex items-center gap-2 px-4 py-2 rounded-full bg-muted/30 border">
-        {connectionState === 'connected' ? (
-          <Wifi className="h-4 w-4 text-green-500" />
-        ) : connectionState === 'connecting' ? (
-          <Wifi className="h-4 w-4 text-yellow-500 animate-pulse" />
-        ) : (
-          <WifiOff className="h-4 w-4 text-red-500" />
-        )}
-        <span className="text-xs font-medium">
-          {connectionState === 'connected' ? 'Connected' : 
-           connectionState === 'connecting' ? 'Connecting...' : 
-           connectionState === 'error' ? 'Error' : 'Disconnected'}
-        </span>
+    <div className="space-y-8">
+      {/* Premium Header Section */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/3 to-[#1582B4]/5 rounded-3xl"></div>
+        <div className="relative p-6 md:p-8 rounded-3xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center shadow-lg">
+                <BookOpen className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-primary">AI Learning Hub</h2>
+                <p className="text-sm text-muted-foreground">Active Learning Session</p>
+              </div>
+            </div>
+            
+            {/* Enhanced Connection Status Indicator */}
+            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/60 dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50">
+              {connectionState === 'connected' ? (
+                <Wifi className="h-4 w-4 text-green-500" />
+              ) : connectionState === 'connecting' ? (
+                <Wifi className="h-4 w-4 text-yellow-500 animate-pulse" />
+              ) : (
+                <WifiOff className="h-4 w-4 text-red-500" />
+              )}
+              <span className="text-xs font-medium">
+                {connectionState === 'connected' ? 'Connected' : 
+                 connectionState === 'connecting' ? 'Connecting...' : 
+                 connectionState === 'error' ? 'Error' : 'Disconnected'}
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Main Conversation Blob */}
-      <div className="flex-1 flex items-center justify-center mt-10 pt-10">
+      {/* Main Conversation Interface */}
+      <div className="flex flex-col items-center justify-center space-y-8">
+        {/* Enhanced Main Conversation Blob */}
         <div className={`relative transition-all duration-300 ${
           isActiveState ? 'scale-110' : 'scale-100'
         }`}>
@@ -791,9 +836,9 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
             )}
           </div>
 
-          {/* Status indicator */}
+          {/* Enhanced Status indicator */}
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center space-y-2">
+            <div className="text-center space-y-3">
               <div className={`w-3 h-3 rounded-full mx-auto transition-all duration-300 ${
                 isActiveState ? `${blobState.dotColor} animate-pulse` : blobState.dotColor
               }`}></div>
@@ -803,29 +848,43 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
             </div>
           </div>
         </div>
+
+        {/* Enhanced Microphone Button */}
+        <div className="flex flex-col items-center space-y-4">
+          <button
+            onClick={handleMicToggle}
+            disabled={connectionState !== 'connected' || isGreetingAudioPlaying || isAIResponsePlaying || isProcessing}
+            className={`w-20 h-20 rounded-full shadow-lg transition-all duration-200 ${
+              (connectionState !== 'connected' || isGreetingAudioPlaying || isAIResponsePlaying || isProcessing)
+                ? 'bg-muted cursor-not-allowed opacity-50'
+                : isListening 
+                  ? 'bg-primary hover:bg-primary/90 scale-110' 
+                  : 'bg-primary hover:bg-primary/90'
+            }`}
+          >
+            <Mic className={`h-8 w-8 mx-auto ${
+              (connectionState !== 'connected' || isGreetingAudioPlaying || isAIResponsePlaying || isProcessing) 
+                ? 'text-muted-foreground' 
+                : 'text-primary-foreground'
+            }`} />
+          </button>
+          
+          <p className="text-xs text-muted-foreground text-center max-w-xs">
+            Tap the microphone to start speaking with your AI tutor
+          </p>
+        </div>
       </div>
 
-      {/* Microphone Button */}
-      <div className="pb-8 pt-10 mt-10">
+      {/* Enhanced Back Button */}
+      <div className="flex justify-center">
         <button
-          onClick={handleMicToggle}
-          disabled={connectionState !== 'connected' || isGreetingAudioPlaying || isAIResponsePlaying || isProcessing}
-          className={`w-20 h-20 rounded-full shadow-lg transition-all duration-200 ${
-            (connectionState !== 'connected' || isGreetingAudioPlaying || isAIResponsePlaying || isProcessing)
-              ? 'bg-muted cursor-not-allowed opacity-50'
-              : isListening 
-                ? 'bg-primary hover:bg-primary/90 scale-110' 
-                : 'bg-primary hover:bg-primary/90'
-          }`}
+          onClick={handleBackToGreeting}
+          className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
-          <Mic className={`h-8 w-8 mx-auto ${
-            (connectionState !== 'connected' || isGreetingAudioPlaying || isAIResponsePlaying || isProcessing) 
-              ? 'text-muted-foreground' 
-              : 'text-primary-foreground'
-          }`} />
+          <X className="h-4 w-4" />
+          End Session
         </button>
       </div>
-
     </div>
   );
 };

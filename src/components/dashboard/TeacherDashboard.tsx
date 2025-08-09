@@ -613,7 +613,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                   <DrawerTrigger asChild>
                     <Button
                       variant="outline"
-                      className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800"
                     >
                       <Filter className="h-4 w-4 mr-2" />
                       Filters

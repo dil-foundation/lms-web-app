@@ -338,15 +338,15 @@ export const AIStudentProgress: React.FC = () => {
   const { currentStage, learningPath, completionOverview, achievements, learningStats } = progressData;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-8">
+      {/* Premium Header Section */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
         <div className="relative p-8 rounded-3xl">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
-                <BarChart3 className="w-6 h-6 text-primary" />
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
+                <BarChart3 className="w-7 h-7 text-primary" />
               </div>
               <div>
                 <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
@@ -357,7 +357,7 @@ export const AIStudentProgress: React.FC = () => {
                 </p>
               </div>
             </div>
-            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+            <Badge variant="outline" className="bg-gradient-to-br from-primary/10 to-primary/20 border-primary/30 text-primary font-semibold">
               <Sparkles className="h-3 w-3 mr-1" />
               Stage {currentStage.number}
             </Badge>
@@ -365,54 +365,62 @@ export const AIStudentProgress: React.FC = () => {
         </div>
       </div>
 
-      {/* Current Stage Stats Grid */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="relative overflow-hidden bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+      {/* Current Stage Stats Grid - Enhanced with Apple Aesthetics */}
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Stage Progress</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-gray-900 dark:text-gray-100">Stage Progress</CardTitle>
+            <div className="w-8 h-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
+              <Target className="h-4 w-4 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{currentStage.stageProgress}%</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{currentStage.stageProgress}%</div>
             <p className="text-xs text-muted-foreground">
               Current stage completion
             </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Overall Progress</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-gray-900 dark:text-gray-100">Overall Progress</CardTitle>
+            <div className="w-8 h-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
+              <TrendingUp className="h-4 w-4 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{currentStage.overallProgress}%</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{currentStage.overallProgress}%</div>
             <p className="text-xs text-muted-foreground">
               Total learning progress
             </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Day Streak</CardTitle>
-            <Flame className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-gray-900 dark:text-gray-100">Day Streak</CardTitle>
+            <div className="w-8 h-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
+              <Flame className="h-4 w-4 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{currentStage.dayStreak}</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{currentStage.dayStreak}</div>
             <p className="text-xs text-muted-foreground">
               Days in a row
             </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Practice Time</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-gray-900 dark:text-gray-100">Practice Time</CardTitle>
+            <div className="w-8 h-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
+              <Clock className="h-4 w-4 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{currentStage.totalPracticeTime}</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{currentStage.totalPracticeTime}</div>
             <p className="text-xs text-muted-foreground">
               Total time spent
             </p>
@@ -447,60 +455,69 @@ export const AIStudentProgress: React.FC = () => {
       </Card>
 
       {/* Learning Path */}
-      <Card>
+      <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Map className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
+            <div className="w-8 h-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
+              <Map className="h-4 w-4 text-primary" />
+            </div>
             Learning Path
           </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Your journey through the language learning stages
+          </p>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {learningPath.map((stage, index) => (
               <div 
                 key={stage.id}
-                className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${
+                className={`p-6 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl transition-all duration-300 hover:shadow-lg ${
                   stage.isActive 
-                    ? 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800' 
+                    ? 'bg-gradient-to-br from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/20 border-primary/30' 
                     : stage.isUnlocked
-                    ? 'hover:bg-gray-50 dark:hover:bg-gray-800'
-                    : 'opacity-50 bg-gray-50 dark:bg-gray-900'
+                    ? 'hover:bg-gradient-to-br hover:from-primary/5 hover:to-primary/10 dark:hover:from-primary/10 dark:hover:to-primary/20 hover:border-primary/30'
+                    : 'opacity-50 bg-gray-50/50 dark:bg-gray-900/50'
                 }`}
               >
-                <div className="flex items-center gap-4">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
-                    stage.isActive 
-                      ? 'bg-green-500 text-white' 
-                      : stage.isCompleted
-                      ? 'bg-green-400 text-white'
-                      : stage.isUnlocked
-                      ? 'bg-primary/10 text-primary'
-                      : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-                  }`}>
-                    {stage.isCompleted ? <CheckCircle className="h-5 w-5" /> : 
-                     !stage.isUnlocked ? <Lock className="h-5 w-5" /> : 
-                     stage.id}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-semibold ${
+                      stage.isActive 
+                        ? 'bg-gradient-to-br from-primary to-primary/90 text-white shadow-lg' 
+                        : stage.isCompleted
+                        ? 'bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg'
+                        : stage.isUnlocked
+                        ? 'bg-gradient-to-br from-primary/10 to-primary/20 text-primary border border-primary/30'
+                        : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                    }`}>
+                      {stage.isCompleted ? <CheckCircle className="h-6 w-6" /> : 
+                        !stage.isUnlocked ? <Lock className="h-6 w-6" /> : 
+                        <span className="text-lg font-bold">{stage.id}</span>}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900 dark:text-gray-100">{stage.name}</h3>
+                      <p className="text-sm text-muted-foreground">{stage.description}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold">{stage.name}</h3>
-                    <p className="text-sm text-muted-foreground">{stage.description}</p>
+                  <div className="flex items-center gap-4">
+                    {stage.isActive && (
+                      <Badge variant="default" className="bg-gradient-to-r from-primary to-primary/90 text-white border-primary/30">
+                        Active
+                      </Badge>
+                    )}
+                    <div className="text-right min-w-[80px]">
+                      <div className="font-semibold text-gray-900 dark:text-gray-100">{stage.progress}%</div>
+                      <div className="w-20 mt-1">
+                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                          <div 
+                            className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${stage.progress}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  {stage.isActive && (
-                    <Badge variant="default" className="bg-green-500 text-white">
-                      Active
-                    </Badge>
-                  )}
-                                     <div className="text-right min-w-[80px]">
-                     <div className="font-semibold">{stage.progress}%</div>
-                     <div className="w-20 mt-1">
-                       <Progress 
-                         value={stage.progress} 
-                         className="h-2 bg-gray-200 dark:bg-gray-700 [&>div]:bg-green-500"
-                       />
-                     </div>
-                   </div>
                 </div>
               </div>
             ))}
@@ -510,105 +527,109 @@ export const AIStudentProgress: React.FC = () => {
 
       <div className="grid md:grid-cols-2 gap-6">
         {/* Completion Overview */}
-        <Card>
+        <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Trophy className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
+              <div className="w-8 h-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
+                <Trophy className="h-4 w-4 text-primary" />
+              </div>
               Completion Overview
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-                                      <div className="flex items-center gap-4">
-               <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
-                 <Target className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-               </div>
-               <div className="flex-1">
-                 <div className="flex items-center justify-between">
-                   <span className="font-medium">Stages Completed</span>
-                   <span className="text-2xl font-bold">{completionOverview.stagesCompleted}</span>
-                 </div>
-               </div>
-             </div>
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-xl flex items-center justify-center">
+                <Target className="h-6 w-6 text-[#1582B4]" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-gray-900 dark:text-gray-100">Stages Completed</span>
+                  <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{completionOverview.stagesCompleted}</span>
+                </div>
+              </div>
+            </div>
 
-             <div className="flex items-center gap-4">
-               <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
-                 <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
-               </div>
-               <div className="flex-1">
-                 <div className="flex items-center justify-between">
-                   <span className="font-medium">Exercises Completed</span>
-                   <span className="text-2xl font-bold">{completionOverview.exercisesCompleted}</span>
-                 </div>
-               </div>
-             </div>
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
+                <CheckCircle className="h-6 w-6 text-primary" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-gray-900 dark:text-gray-100">Exercises Completed</span>
+                  <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{completionOverview.exercisesCompleted}</span>
+                </div>
+              </div>
+            </div>
 
-             <div className="flex items-center gap-4">
-               <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center">
-                 <BookOpen className="h-6 w-6 text-orange-600 dark:text-orange-400" />
-               </div>
-               <div className="flex-1">
-                 <div className="flex items-center justify-between">
-                   <span className="font-medium">Topics Mastered</span>
-                   <span className="text-2xl font-bold">{completionOverview.topicsMastered}</span>
-                 </div>
-               </div>
-             </div>
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-xl flex items-center justify-center">
+                <BookOpen className="h-6 w-6 text-[#1582B4]" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-gray-900 dark:text-gray-100">Topics Mastered</span>
+                  <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{completionOverview.topicsMastered}</span>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         {/* Learning Statistics */}
-        <Card>
+        <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
+              <div className="w-8 h-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
+                <BarChart3 className="h-4 w-4 text-primary" />
+              </div>
               Learning Statistics
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
-                <Clock className="h-6 w-6 text-green-600 dark:text-green-400" />
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
+                <Clock className="h-6 w-6 text-primary" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium">Total Learning Time</span>
-                  <span className="text-2xl font-bold">{learningStats.totalLearningTime}</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">Total Learning Time</span>
+                  <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{learningStats.totalLearningTime}</span>
                 </div>
               </div>
             </div>
 
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center">
-                <Flame className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+              <div className="w-12 h-12 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-xl flex items-center justify-center">
+                <Flame className="h-6 w-6 text-[#1582B4]" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium">Current Streak</span>
-                  <span className="text-2xl font-bold">{learningStats.dayStreak}</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">Current Streak</span>
+                  <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{learningStats.dayStreak}</span>
                 </div>
               </div>
             </div>
 
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900 rounded-lg flex items-center justify-center">
-                <Trophy className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
+                <Trophy className="h-6 w-6 text-primary" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium">Best Streak</span>
-                  <span className="text-2xl font-bold">{learningStats.bestLearningStreak}</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">Best Streak</span>
+                  <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{learningStats.bestLearningStreak}</span>
                 </div>
               </div>
             </div>
 
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
-                <Timer className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              <div className="w-12 h-12 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-xl flex items-center justify-center">
+                <Timer className="h-6 w-6 text-[#1582B4]" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium">Avg. Session</span>
-                  <span className="text-2xl font-bold">{learningStats.avgLearningSession}</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">Avg. Session</span>
+                  <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{learningStats.avgLearningSession}</span>
                 </div>
               </div>
             </div>
@@ -617,43 +638,54 @@ export const AIStudentProgress: React.FC = () => {
       </div>
 
       {/* Achievements */}
-      <Card>
+      <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Award className="h-5 w-5" />
-            Recent Achievements
+          <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
+            <div className="w-8 h-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
+              <Award className="h-4 w-4 text-primary" />
+            </div>
+            Achievements
           </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Celebrate your learning milestones and accomplishments
+          </p>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {achievements.length > 0 ? achievements.map((achievement) => {
-              const IconComponent = getIconComponent(achievement.icon);
-              return (
-                <div key={achievement.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center">
-                      <IconComponent className="h-6 w-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold">{achievement.name}</h3>
-                      <p className="text-sm text-muted-foreground">{achievement.date}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="default" className="bg-green-100 text-green-800">
-                      Completed
-                    </Badge>
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                  </div>
-                </div>
-              );
-            }) : (
-              <div className="text-center py-8">
-                <Trophy className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-muted-foreground">No achievements yet. Keep learning to earn your first achievement!</p>
+          {achievements.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Award className="h-8 w-8 text-primary" />
               </div>
-            )}
-          </div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">No achievements yet</h3>
+              <p className="text-sm text-muted-foreground">
+                Keep learning and practicing to unlock achievements!
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {achievements.map((achievement) => {
+                const IconComponent = getIconComponent(achievement.icon);
+                return (
+                  <div
+                    key={achievement.id}
+                    className="p-4 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/20 hover:shadow-lg transition-all duration-300"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
+                        <IconComponent className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-gray-900 dark:text-gray-100">{achievement.name}</h4>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(achievement.date).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

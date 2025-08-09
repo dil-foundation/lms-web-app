@@ -557,7 +557,7 @@ export default function SensitiveScenarioRoleplay() {
                         {selectedScenario.expected_keywords.map((keyword, index) => (
                           <span 
                             key={index}
-                            className="px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm rounded-full border border-blue-200 dark:border-blue-800 font-medium"
+                            className="px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-white dark:text-blue-300 text-sm rounded-full border border-blue-200 dark:border-blue-800 font-medium"
                           >
                             {keyword}
                           </span>

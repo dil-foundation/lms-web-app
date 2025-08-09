@@ -938,7 +938,7 @@ export default function StorytellingPractice() {
                 {currentStoryPrompt.example_keywords.map((keyword, index) => (
                   <span 
                     key={index} 
-                    className="inline-flex items-center px-2.5 py-1 text-xs font-medium bg-blue-100 dark:bg-blue-800/50 text-blue-800 dark:text-blue-200 rounded-full border border-blue-200 dark:border-blue-700"
+                    className="inline-flex items-center px-2.5 py-1 text-xs font-medium bg-blue-100 dark:bg-blue-800/50 text-white dark:text-blue-200 rounded-full border border-blue-200 dark:border-blue-700"
                   >
                     {keyword}
                   </span>

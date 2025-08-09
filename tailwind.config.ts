@@ -63,9 +63,15 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				green: {
-					500: '#22C55E',
-					600: '#16a34a'
+				brand: {
+					green: {
+						500: '#8DC63F',
+						600: '#7ab32f'
+					},
+					blue: {
+						500: '#0061AF',
+						600: '#00509c'
+					}
 				}
 			},
 			borderRadius: {

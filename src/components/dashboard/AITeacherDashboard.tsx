@@ -277,15 +277,16 @@ export const AITeacherDashboard = ({ userProfile }: AITeacherDashboardProps) => 
             <Alert key={index} className={`
               ${flag.severity === 'error' ? 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/30' : ''}
               ${flag.severity === 'warning' ? 'border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950/30' : ''}
-              ${flag.severity === 'info' ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30' : ''}
+              ${flag.severity === 'info' ? 'border-[#1582B4]/20 bg-[#1582B4]/10 dark:border-[#1582B4]/30 dark:bg-[#1582B4]/20' : ''}
             `}>
               <div className="flex items-start gap-3">
-                <div className={`
-                  p-1 rounded-full
-                  ${flag.severity === 'error' ? 'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-400' : ''}
-                  ${flag.severity === 'warning' ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900 dark:text-yellow-400' : ''}
-                  ${flag.severity === 'info' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400' : ''}
-                `}>
+                <div className={`p-2 rounded-lg ${
+                  flag.severity === 'error' ? 'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-400' : ''
+                } ${
+                  flag.severity === 'warning' ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900 dark:text-yellow-400' : ''
+                } ${
+                  flag.severity === 'info' ? 'bg-[#1582B4]/20 text-[#1582B4] dark:bg-[#1582B4]/20 dark:text-[#1582B4]/90' : ''
+                }`}>
                   {flag.type === 'excessive_retries' && <Repeat className="h-4 w-4" />}
                   {flag.type === 'stuck_stage' && <AlertTriangle className="h-4 w-4" />}
                   {flag.type === 'no_progress' && <UserX className="h-4 w-4" />}
@@ -325,7 +326,7 @@ export const AITeacherDashboard = ({ userProfile }: AITeacherDashboardProps) => 
             <DialogTitle className="flex items-center gap-2">
               {selectedFlag?.type === 'excessive_retries' && <Repeat className="h-5 w-5 text-yellow-600" />}
               {selectedFlag?.type === 'stuck_stage' && <AlertTriangle className="h-5 w-5 text-red-600" />}
-              {selectedFlag?.type === 'no_progress' && <UserX className="h-5 w-5 text-blue-600" />}
+              {selectedFlag?.type === 'no_progress' && <UserX className="h-5 w-5 text-[#1582B4]" />}
               {selectedFlag?.title}
             </DialogTitle>
             <DialogDescription>

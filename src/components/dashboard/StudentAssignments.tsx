@@ -34,7 +34,12 @@ import {
   Search,
   BookOpen,
   GraduationCap,
-  Paperclip
+  Paperclip,
+  Sparkles,
+  ChevronDown,
+  ChevronUp,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { useState, useEffect, memo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -87,13 +92,13 @@ const AssignmentDetailModal = memo(({
   if (!assignment) return null;
 
   return (
-    <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 bg-card border border-border backdrop-blur-sm">
+    <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm">
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5"></div>
-        <div className="relative p-6 border-b border-border">
+        <div className="relative p-6 border-b border-gray-200/50 dark:border-gray-700/50">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
                 <ClipboardList className="w-6 h-6 text-primary" />
               </div>
               <div>
@@ -112,9 +117,9 @@ const AssignmentDetailModal = memo(({
       <div className="flex-1 overflow-y-auto">
         <div className="p-8 space-y-8">
           
-          <Card className="bg-card border border-border backdrop-blur-sm">
+          <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
             <CardHeader>
-              <CardTitle className="flex items-center gap-3 text-xl">
+              <CardTitle className="flex items-center gap-3 text-xl text-gray-900 dark:text-gray-100">
                 <BookOpen className="w-6 h-6 text-primary" />
                 Course Information
               </CardTitle>
@@ -122,20 +127,20 @@ const AssignmentDetailModal = memo(({
             <CardContent>
               <div className="space-y-4">
                 <div>
-                  <Label className="text-sm font-medium text-foreground">Course</Label>
-                  <p className="text-lg font-semibold text-foreground mt-1">{assignment.courseTitle}</p>
+                  <Label className="text-sm font-medium text-gray-900 dark:text-gray-100">Course</Label>
+                  <p className="text-lg font-semibold text-gray-900 dark:text-gray-100 mt-1">{assignment.courseTitle}</p>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium text-foreground">Due Date</Label>
-                    <div className="flex items-center gap-2 p-3 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                    <Label className="text-sm font-medium text-gray-900 dark:text-gray-100">Due Date</Label>
+                    <div className="flex items-center gap-2 p-3 rounded-2xl bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
                       <Calendar className="w-4 h-4 text-primary" />
-                      <span className="font-medium">{formatDate(assignment.dueDate)}</span>
+                      <span className="font-medium text-gray-900 dark:text-gray-100">{formatDate(assignment.dueDate)}</span>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium text-foreground">Status</Label>
+                    <Label className="text-sm font-medium text-gray-900 dark:text-gray-100">Status</Label>
                     <div className="flex items-center gap-2">
                       <Badge variant={getStatusColor(assignment.status)} className="capitalize px-3 py-1">
                         {getStatusIcon(assignment.status)}
@@ -151,46 +156,46 @@ const AssignmentDetailModal = memo(({
             </CardContent>
           </Card>
 
-          <Card className="bg-card border border-border backdrop-blur-sm">
+          <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
             <CardHeader>
-              <CardTitle className="flex items-center gap-3 text-xl">
+              <CardTitle className="flex items-center gap-3 text-xl text-gray-900 dark:text-gray-100">
                 <FileText className="w-6 h-6 text-primary" />
                 Assignment Description
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground prose-a:text-primary" dangerouslySetInnerHTML={{ __html: assignment.description }}/>
+              <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:text-gray-900 dark:prose-headings:text-gray-100 prose-p:text-muted-foreground prose-strong:text-gray-900 dark:prose-strong:text-gray-100 prose-a:text-primary" dangerouslySetInnerHTML={{ __html: assignment.description }}/>
             </CardContent>
           </Card>
 
           {assignment.status === 'graded' && (
-            <Card className="bg-card border border-border backdrop-blur-sm">
+            <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
               <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-xl">
+                <CardTitle className="flex items-center gap-3 text-xl text-gray-900 dark:text-gray-100">
                   <GraduationCap className="w-6 h-6 text-primary" />
                   Grade & Feedback
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  <div className="p-6 rounded-lg bg-gradient-to-r from-green-50 to-green-100/50 dark:from-green-900/10 dark:to-green-800/10 border border-green-200/50 dark:border-green-700/50">
+                  <div className="p-6 rounded-2xl">
                     <div className="flex items-center justify-between">
                       <div>
-                        <Label className="text-sm font-medium text-foreground">Grade</Label>
-                        <p className="text-3xl font-bold text-green-600 dark:text-green-400 mt-1">
+                        <Label className="text-sm font-medium text-gray-900 dark:text-gray-100">Grade</Label>
+                        <p className="text-3xl font-bold text-primary mt-1">
                           {assignment.score != null ? `${assignment.score}%` : 'Not Graded'}
                         </p>
                       </div>
-                      <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900 dark:to-green-800 rounded-full flex items-center justify-center">
-                        <GraduationCap className="w-8 h-8 text-green-600 dark:text-green-400" />
+                      <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-primary/30 rounded-full flex items-center justify-center shadow-lg">
+                        <GraduationCap className="w-8 h-8 text-primary" />
                       </div>
                     </div>
                   </div>
                   
                   {assignment.feedback && (
                     <div className="space-y-3">
-                      <Label className="text-sm font-medium text-foreground">Feedback from your teacher</Label>
-                      <div className="p-4 rounded-lg bg-gradient-to-r from-blue-50 to-blue-100/50 dark:from-blue-900/10 dark:to-blue-800/10 border border-blue-200/50 dark:border-blue-700/50">
+                      <Label className="text-sm font-medium text-gray-900 dark:text-gray-100">Feedback from your teacher</Label>
+                      <div className="p-4 rounded-2xl">
                         <p className="text-sm text-muted-foreground leading-relaxed">{assignment.feedback}</p>
                       </div>
                     </div>
@@ -201,26 +206,26 @@ const AssignmentDetailModal = memo(({
           )}
 
           {assignment.submittedAt && (
-            <Card className="bg-card border border-border backdrop-blur-sm">
+            <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
               <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-xl">
+                <CardTitle className="flex items-center gap-3 text-xl text-gray-900 dark:text-gray-100">
                   <CheckCircle className="w-6 h-6 text-primary" />
                   Submission Information
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center gap-2 p-3 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                <div className="flex items-center gap-2 p-3 rounded-2xl">
                   <Calendar className="w-4 h-4 text-primary" />
-                  <span className="font-medium">Submitted on {formatDate(assignment.submittedAt)}</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">Submitted on {formatDate(assignment.submittedAt)}</span>
                 </div>
               </CardContent>
             </Card>
           )}
 
           {assignment.attachments && assignment.attachments.length > 0 && (
-            <Card className="bg-card border border-border backdrop-blur-sm">
+            <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
               <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-xl">
+                <CardTitle className="flex items-center gap-3 text-xl text-gray-900 dark:text-gray-100">
                   <Paperclip className="w-6 h-6 text-primary" />
                   Assignment Attachments
                 </CardTitle>
@@ -228,13 +233,13 @@ const AssignmentDetailModal = memo(({
               <CardContent>
                 <div className="space-y-3">
                   {assignment.attachments.map((attachment, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 border border-gray-200/50 dark:border-gray-600/50 hover:shadow-md transition-all duration-200">
+                    <div key={index} className="flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 border border-gray-200/50 dark:border-gray-600/50 hover:shadow-md transition-all duration-200">
                       <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div className="w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <div className="w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
                           <FileText className="w-5 h-5 text-primary" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <span className="font-medium text-foreground truncate block" title={attachment.name}>
+                          <span className="font-medium text-gray-900 dark:text-gray-100 truncate block" title={attachment.name}>
                             {attachment.name}
                           </span>
                         </div>
@@ -244,7 +249,7 @@ const AssignmentDetailModal = memo(({
                           variant="outline"
                           size="sm"
                           asChild
-                          className="hover:bg-primary/10 hover:border-primary/30 whitespace-nowrap"
+                          className="hover:bg-primary/10 hover:border-primary/30 hover:text-gray-900 dark:hover:text-gray-100 whitespace-nowrap"
                         >
                           <a href={attachment.url} target="_blank" rel="noopener noreferrer">
                             <Eye className="h-4 w-4 mr-2" />
@@ -256,7 +261,7 @@ const AssignmentDetailModal = memo(({
                           size="sm"
                           onClick={() => handleDownload(attachment.url, attachment.name)}
                           disabled={isDownloading === attachment.name}
-                          className="hover:bg-primary/10 hover:border-primary/30 whitespace-nowrap"
+                          className="hover:bg-primary/10 hover:border-primary/30 hover:text-gray-900 dark:hover:text-gray-100 whitespace-nowrap"
                         >
                           {isDownloading === attachment.name ? (
                             <Clock className="h-4 w-4 mr-2 animate-spin" />
@@ -349,31 +354,31 @@ const AssignmentSubmissionModal = memo(({
 
   return (
     <>
-      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col p-0">
-        <DialogHeader className="p-6 pb-4 border-b">
-          <DialogTitle>Submit Assignment: {assignment.title}</DialogTitle>
+      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col p-0 bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm">
+        <DialogHeader className="p-6 pb-4 border-b border-gray-200/50 dark:border-gray-700/50">
+          <DialogTitle className="text-gray-900 dark:text-gray-100">Submit Assignment: {assignment.title}</DialogTitle>
           <DialogDescription className="sr-only">
             Submission form for assignment: {assignment.title}
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-y-auto">
           <div className="p-6 space-y-4">
-            <div className="p-4 bg-muted rounded-lg">
-              <h4 className="font-medium">Assignment Details</h4>
+            <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 border border-gray-200/50 dark:border-gray-600/50 rounded-2xl">
+              <h4 className="font-medium text-gray-900 dark:text-gray-100">Assignment Details</h4>
               <div className="text-sm text-muted-foreground mt-1 prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: assignment.description }}/>
-              <p className="text-sm mt-2">
+              <p className="text-sm mt-2 text-gray-900 dark:text-gray-100">
                 <strong>Due:</strong> {formatDate(assignment.dueDate)}
               </p>
               {assignment.attachments && assignment.attachments.length > 0 && (
                 <div className="mt-4">
-                  <Label className="text-sm font-medium">Attachments</Label>
+                  <Label className="text-sm font-medium text-gray-900 dark:text-gray-100">Attachments</Label>
                   <div className="space-y-2 mt-1">
                     {assignment.attachments.map((attachment, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 border rounded bg-background">
-                        <span className="text-sm">{attachment.name}</span>
+                      <div key={index} className="flex items-center justify-between p-2 border border-gray-200/50 dark:border-gray-600/50 rounded-xl bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-800/60 dark:to-gray-700/60">
+                        <span className="text-sm text-gray-900 dark:text-gray-100">{attachment.name}</span>
                         <div className="flex items-center gap-1">
                           <a href={attachment.url} target="_blank" rel="noopener noreferrer">
-                            <Button variant="ghost" size="icon">
+                            <Button variant="ghost" size="icon" className="hover:bg-primary/10">
                               <Eye className="h-4 w-4" />
                             </Button>
                           </a>
@@ -382,6 +387,7 @@ const AssignmentSubmissionModal = memo(({
                             size="icon"
                             onClick={() => handleDownload(attachment.url, attachment.name)}
                             disabled={isDownloading === attachment.name}
+                            className="hover:bg-primary/10"
                           >
                             {isDownloading === attachment.name ? <Clock className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                           </Button>
@@ -394,27 +400,27 @@ const AssignmentSubmissionModal = memo(({
             </div>
             
             <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="text">Text Submission</TabsTrigger>
-                <TabsTrigger value="file">File Upload</TabsTrigger>
-                <TabsTrigger value="link">Link Submission</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-3 bg-gradient-to-br from-gray-100 to-gray-200/50 dark:from-gray-800/50 dark:to-gray-700/50 border border-gray-200/50 dark:border-gray-600/50 rounded-2xl">
+                <TabsTrigger value="text" className="hover:bg-primary/10">Text Submission</TabsTrigger>
+                <TabsTrigger value="file" className="hover:bg-primary/10">File Upload</TabsTrigger>
+                <TabsTrigger value="link" className="hover:bg-primary/10">Link Submission</TabsTrigger>
               </TabsList>
               
               <TabsContent value="text" className="space-y-4">
                 <div>
-                  <Label htmlFor="submission-text">Your Submission</Label>
+                  <Label htmlFor="submission-text" className="text-gray-900 dark:text-gray-100">Your Submission</Label>
                   <Textarea
                     id="submission-text"
                     placeholder="Enter your assignment submission here..."
                     value={submissionText}
                     onChange={(e) => setSubmissionText(e.target.value)}
-                    className="mt-2 min-h-[200px]"
+                    className="mt-2 min-h-[200px] bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl"
                   />
                 </div>
                 <Button 
                   onClick={() => handleSubmission(assignment.lesson_content_id)}
                   disabled={!submissionText.trim()}
-                  className="w-full"
+                  className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl"
                 >
                   Submit Assignment
                 </Button>
@@ -422,22 +428,22 @@ const AssignmentSubmissionModal = memo(({
               
               <TabsContent value="file" className="space-y-4">
                 <div>
-                  <Label htmlFor="submission-file">Upload File</Label>
-                  <div className="mt-2 border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+                  <Label htmlFor="submission-file" className="text-gray-900 dark:text-gray-100">Upload File</Label>
+                  <div className="mt-2 border-2 border-dashed border-gray-300/50 dark:border-gray-600/50 rounded-2xl p-6 text-center bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50">
                     <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                     <div className="space-y-2">
-                      <p className="text-sm font-medium">Click to upload or drag and drop</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Click to upload or drag and drop</p>
                       <p className="text-xs text-muted-foreground">
                         PDF, DOC, DOCX, TXT files up to 10MB
                       </p>
                       {existingFileName && !submissionFile && existingFileUrl && (
-                        <div className="mt-4 p-2 border rounded bg-muted/50 text-left">
+                        <div className="mt-4 p-2 border border-gray-200/50 dark:border-gray-600/50 rounded-xl bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-800/60 dark:to-gray-700/60 text-left">
                           <p className="text-sm text-muted-foreground mb-1">Current submission:</p>
                           <div className="flex items-center justify-between">
                             <span className="text-sm font-medium text-green-600 truncate flex-1 pr-2">{existingFileName}</span>
                             <div className="flex items-center gap-1 flex-shrink-0">
                               <a href={existingFileUrl} target="_blank" rel="noopener noreferrer">
-                                <Button variant="ghost" size="icon">
+                                <Button variant="ghost" size="icon" className="hover:bg-primary/10">
                                   <Eye className="h-4 w-4" />
                                 </Button>
                               </a>
@@ -446,6 +452,7 @@ const AssignmentSubmissionModal = memo(({
                                 size="icon"
                                 onClick={() => handleDownload(existingFileUrl, existingFileName)}
                                 disabled={isDownloading === existingFileName}
+                                className="hover:bg-primary/10"
                               >
                                 {isDownloading === existingFileName ? <Clock className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                               </Button>
@@ -458,7 +465,7 @@ const AssignmentSubmissionModal = memo(({
                         type="file"
                         accept=".pdf,.doc,.docx,.txt"
                         onChange={(e) => setSubmissionFile(e.target.files?.[0] || null)}
-                        className="mt-4"
+                        className="mt-4 bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl"
                       />
                     </div>
                   </div>
@@ -466,7 +473,7 @@ const AssignmentSubmissionModal = memo(({
                 <Button 
                   onClick={() => handleSubmission(assignment.lesson_content_id)}
                   disabled={!submissionFile && !existingFileName}
-                  className="w-full"
+                  className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl"
                 >
                   Submit Assignment
                 </Button>
@@ -474,14 +481,14 @@ const AssignmentSubmissionModal = memo(({
               
               <TabsContent value="link" className="space-y-4">
                 <div>
-                  <Label htmlFor="submission-link">Submission Link</Label>
+                  <Label htmlFor="submission-link" className="text-gray-900 dark:text-gray-100">Submission Link</Label>
                   <Input
                     id="submission-link"
                     type="url"
                     placeholder="https://example.com/your-submission"
                     value={submissionLink}
                     onChange={(e) => setSubmissionLink(e.target.value)}
-                    className="mt-2"
+                    className="mt-2 bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     Provide a link to your submission (e.g., Google Drive, GitHub, etc.)
@@ -490,7 +497,7 @@ const AssignmentSubmissionModal = memo(({
                 <Button 
                   onClick={() => handleSubmission(assignment.lesson_content_id)}
                   disabled={!submissionLink.trim()}
-                  className="w-full"
+                  className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl"
                 >
                   Submit Assignment
                 </Button>
@@ -564,6 +571,10 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
   const [activeSubmissionTab, setActiveSubmissionTab] = useState('text');
   const [existingFileName, setExistingFileName] = useState<string | null>(null);
   const [existingFileUrl, setExistingFileUrl] = useState<string | null>(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [assignmentsPerPage] = useState(10);
 
   const handleDownload = async (url: string, name: string) => {
     setIsDownloading(name);
@@ -677,6 +688,22 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
     return matchesFilter && matchesSearch;
   });
 
+  // Pagination logic
+  const totalPages = Math.ceil(filteredAssignments.length / assignmentsPerPage);
+  const startIndex = (currentPage - 1) * assignmentsPerPage;
+  const endIndex = startIndex + assignmentsPerPage;
+  const currentAssignments = filteredAssignments.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterStatus, searchTerm]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleSubmission = async (lessonContentId: string) => {
     if (!user || !selectedAssignment) return;
 
@@ -767,83 +794,165 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
     setIsSubmissionModalOpen(true);
   };
 
-  const AssignmentCard = ({ assignment }: { assignment: Assignment }) => (
-    <Card className="hover:shadow-lg transition-shadow">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <CardTitle className="text-lg">{assignment.title}</CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">{assignment.courseTitle}</p>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Badge variant={getStatusColor(assignment.status)} className="capitalize">
-              {getStatusIcon(assignment.status)}
-              <span className="ml-1">{assignment.status}</span>
-            </Badge>
-            {isOverdue(assignment.dueDate, assignment.status) && (
-              <Badge variant="destructive">Overdue</Badge>
-            )}
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-sm text-muted-foreground line-clamp-2">
-          {assignment.overview || assignment.description.replace(/<[^>]*>?/gm, '')}
-        </p>
-        
-        <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-1">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span className={isOverdue(assignment.dueDate, assignment.status) ? 'text-red-600' : ''}>
-                Due: {formatDate(assignment.dueDate)}
-              </span>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm" onClick={() => {
-              setSelectedAssignment(assignment);
-              setIsDetailModalOpen(true);
-            }}>
-              <Eye className="h-4 w-4 mr-2" />
-              View Details
-            </Button>
-            
-            {(assignment.status === 'pending' || assignment.status === 'submitted') && (
-              <Button
-                size="sm"
-                onClick={() => handleOpenSubmissionModal(assignment)}
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                {assignment.status === 'pending' ? 'Submit' : 'Edit Submission'}
-              </Button>
-            )}
-          </div>
-        </div>
-        
-        {assignment.status === 'graded' && (
-          <div className="p-3 bg-muted rounded-lg space-y-2">
+  const AssignmentCard = ({ assignment }: { assignment: Assignment }) => {
+    const [isCollapsed, setIsCollapsed] = useState(true);
+
+    // Helper function to strip HTML tags and get plain text
+    const stripHtmlTags = (html: string) => {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = html;
+      return tmp.textContent || tmp.innerText || '';
+    };
+
+    return (
+      <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+        {isCollapsed ? (
+          // Slim collapsed state
+          <div className="p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <span className="text-sm font-medium">Grade: </span>
-                <span className="text-sm font-bold">{assignment.score != null ? `${assignment.score}%` : 'N/A'}</span>
+              <div className="flex-1 min-w-0">
+                <CardTitle className="text-lg text-gray-900 dark:text-gray-100 truncate">{assignment.title}</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1 truncate">{assignment.courseTitle}</p>
               </div>
-              <span className="text-sm text-muted-foreground">
-                Graded on {assignment.gradedAt && formatDate(assignment.gradedAt)}
-              </span>
+              <div className="flex items-center space-x-3 ml-4">
+                {/* Grade display for graded assignments */}
+                {assignment.status === 'graded' && (
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="default" className="bg-gradient-to-r from-green-500 to-green-600 text-white">
+                      {assignment.score != null ? `${assignment.score}%` : 'N/A'}
+                    </Badge>
+                  </div>
+                )}
+                
+                {/* Status badge */}
+                <Badge variant={getStatusColor(assignment.status)} className="capitalize">
+                  {getStatusIcon(assignment.status)}
+                  <span className="ml-1">{assignment.status}</span>
+                </Badge>
+                
+                {/* Overdue badge */}
+                {isOverdue(assignment.dueDate, assignment.status) && (
+                  <Badge variant="destructive">Overdue</Badge>
+                )}
+                
+                {/* View Details button */}
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    setSelectedAssignment(assignment);
+                    setIsDetailModalOpen(true);
+                  }} 
+                  className="hover:bg-primary/10 hover:border-primary/30 hover:text-gray-900 dark:hover:text-gray-100"
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  View Details
+                </Button>
+                
+                {/* Expand button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsCollapsed(false)}
+                  className="text-primary hover:text-primary/80"
+                >
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-            {assignment.feedback && (
-              <div>
-                <span className="text-sm font-medium">Feedback: </span>
-                <p className="text-sm text-muted-foreground inline">{assignment.feedback}</p>
-              </div>
-            )}
           </div>
+        ) : (
+          // Expanded state
+          <>
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <CardTitle className="text-lg text-gray-900 dark:text-gray-100">{assignment.title}</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">{assignment.courseTitle}</p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Badge variant={getStatusColor(assignment.status)} className="capitalize">
+                    {getStatusIcon(assignment.status)}
+                    <span className="ml-1">{assignment.status}</span>
+                  </Badge>
+                  {isOverdue(assignment.dueDate, assignment.status) && (
+                    <Badge variant="destructive">Overdue</Badge>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="text-sm text-muted-foreground">
+                <div dangerouslySetInnerHTML={{ __html: assignment.description }} />
+              </div>
+              
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-1">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className={isOverdue(assignment.dueDate, assignment.status) ? 'text-red-600' : ''}>
+                      Due: {formatDate(assignment.dueDate)}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Button variant="outline" size="sm" onClick={() => {
+                    setSelectedAssignment(assignment);
+                    setIsDetailModalOpen(true);
+                  }} className="hover:bg-primary/10 hover:border-primary/30 hover:text-gray-900 dark:hover:text-gray-100">
+                    <Eye className="h-4 w-4 mr-2" />
+                    View Details
+                  </Button>
+                  
+                  {(assignment.status === 'pending' || assignment.status === 'submitted') && (
+                    <Button
+                      size="sm"
+                      onClick={() => handleOpenSubmissionModal(assignment)}
+                      className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl"
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      {assignment.status === 'pending' ? 'Submit' : 'Edit Submission'}
+                    </Button>
+                  )}
+                  
+                  {/* Collapse button */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsCollapsed(true)}
+                    className="text-primary hover:text-primary/80"
+                  >
+                    <ChevronUp className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              
+              {assignment.status === 'graded' && (
+                <div className="p-3 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/10 dark:to-green-800/10 border border-green-200/50 dark:border-green-700/50 rounded-2xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Grade: </span>
+                      <span className="text-sm font-bold text-green-600 dark:text-green-400">{assignment.score != null ? `${assignment.score}%` : 'N/A'}</span>
+                    </div>
+                    <span className="text-sm text-muted-foreground">
+                      Graded on {assignment.gradedAt && formatDate(assignment.gradedAt)}
+                    </span>
+                  </div>
+                  {assignment.feedback && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Feedback: </span>
+                      <p className="text-sm text-muted-foreground inline">{assignment.feedback}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </>
         )}
-      </CardContent>
-    </Card>
-  );
+      </Card>
+    );
+  };
 
   if (loading) {
     return (
@@ -853,7 +962,7 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
           <div className="relative p-8 rounded-3xl">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
                   <ClipboardList className="w-6 h-6 text-primary" />
                 </div>
                 <div>
@@ -882,7 +991,7 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
         <div className="relative p-8 rounded-3xl">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
                 <ClipboardList className="w-6 h-6 text-primary" />
               </div>
               <div>
@@ -906,13 +1015,13 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
               placeholder="Search by assignment or course name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-96"
+              className="pl-10 w-96 bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg"
             />
           </div>
           <div className="flex items-center space-x-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
             <Select value={filterStatus} onValueChange={(value) => setFilterStatus(value as any)}>
-              <SelectTrigger className="w-32">
+              <SelectTrigger className="w-32 bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg">
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent>
@@ -985,24 +1094,50 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
       </div>
 
       {assignments.length === 0 ? (
-        <EmptyState
-          title="No assignments yet"
-          description="Your assignments will appear here once teachers create them"
-          icon={<ClipboardList className="h-8 w-8 text-muted-foreground" />}
-        />
+        <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
+          <CardContent className="p-8">
+            <EmptyState
+              title="No assignments yet"
+              description="Your assignments will appear here once teachers create them"
+              icon={<ClipboardList className="h-8 w-8 text-muted-foreground" />}
+            />
+          </CardContent>
+        </Card>
       ) : (
         <div className="space-y-4">
-          {filteredAssignments.length === 0 ? (
+          {currentAssignments.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground">No assignments match your current filters.</p>
             </div>
           ) : (
-            filteredAssignments.map((assignment) => (
+            currentAssignments.map((assignment) => (
               <AssignmentCard key={assignment.id} assignment={assignment} />
             ))
           )}
         </div>
       )}
+      
+      <div className="flex justify-center items-center space-x-2 mt-6">
+        <Button
+          variant="outline"
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="hover:bg-primary/10 hover:border-primary/30 hover:text-gray-900 dark:hover:text-gray-100"
+        >
+          Previous
+        </Button>
+        <span className="text-sm text-muted-foreground">
+          Page {currentPage} of {totalPages}
+        </span>
+        <Button
+          variant="outline"
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages || totalPages === 0}
+          className="hover:bg-primary/10 hover:border-primary/30 hover:text-gray-900 dark:hover:text-gray-100"
+        >
+          Next
+        </Button>
+      </div>
       
       <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
         <AssignmentDetailModal

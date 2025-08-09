@@ -331,7 +331,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
         });
       }
 
-      setUserGrowthData(userGrowthData);
+        setUserGrowthData(userGrowthData);
     } catch (error) {
       console.error("Failed to fetch user growth data:", error);
       setUserGrowthData([]);
@@ -372,7 +372,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
       // Filter out zero values and ensure we have at least one non-zero value
       const nonZeroStats = platformStats.filter(stat => stat.value > 0);
       
-      setPlatformStatsData(nonZeroStats);
+        setPlatformStatsData(nonZeroStats);
     } catch (error) {
       console.error("Failed to fetch platform stats data:", error);
       setPlatformStatsData([]);
@@ -513,16 +513,16 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
             <div className="relative p-8 rounded-3xl">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
-                    <Shield className="w-6 h-6 text-primary" />
-                  </div>
-                  <div>
-                    <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
-                      Admin Dashboard
-                    </h1>
-                    <p className="text-lg text-muted-foreground font-light">
-                      Welcome back, {userProfile?.first_name || 'Administrator'}
-                    </p>
+                <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                  <Shield className="w-6 h-6 text-primary" />
+                </div>
+          <div>
+                  <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                    Admin Dashboard
+                  </h1>
+                  <p className="text-lg text-muted-foreground font-light">
+                    Welcome back, {userProfile?.first_name || 'Administrator'}
+                  </p>
                   </div>
                 </div>
                 
@@ -546,10 +546,10 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                     <Filter className="h-4 w-4 mr-2" />
                     Filters
                   </Button>
-                </div>
-              </div>
-            </div>
           </div>
+        </div>
+                  </div>
+                  </div>
 
           {/* Stats Grid - Clean Design */}
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -557,7 +557,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
           title="Total Users"
           value={stats?.totalUsers ?? 0}
           icon={Users}
-          color="text-blue-500"
+          color="text-[#1582B4]"
         />
         <MetricCard
               title="Published Courses"
@@ -612,37 +612,37 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
               <CardContent>
                 <div className="h-[300px]">
                   {userGrowthData.length > 0 ? (
-                    <ChartContainer config={chartConfig} className="w-full h-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={userGrowthData}>
-                          <defs>
-                            <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
-                              <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="month" />
-                          <YAxis />
-                          <ChartTooltip content={<ChartTooltipContent />} />
-                          <Area 
-                            type="monotone" 
-                            dataKey="users" 
-                            stroke="#3B82F6" 
-                            fillOpacity={1} 
-                            fill="url(#colorUsers)"
-                            name="Total Users"
-                          />
-                          <Line 
-                            type="monotone" 
-                            dataKey="active" 
-                            stroke="#10B981" 
-                            strokeWidth={2}
-                            name="Active Users"
-                          />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    </ChartContainer>
+                  <ChartContainer config={chartConfig} className="w-full h-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={userGrowthData}>
+                        <defs>
+                          <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Area 
+                          type="monotone" 
+                          dataKey="users" 
+                          stroke="#3B82F6" 
+                          fillOpacity={1} 
+                          fill="url(#colorUsers)"
+                          name="Total Users"
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="active" 
+                          stroke="#10B981" 
+                          strokeWidth={2}
+                          name="Active Users"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
                   ) : (
                     <div className="flex items-center justify-center h-full">
                       <p className="text-muted-foreground">No data to display for this period.</p>
@@ -662,27 +662,27 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
               <CardContent>
                 <div className="h-[300px]">
                   {platformStatsData.length > 0 ? (
-                    <ChartContainer config={chartConfig} className="w-full h-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={platformStatsData}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                            outerRadius={100}
-                            fill="#8884d8"
-                            dataKey="value"
-                          >
-                            {platformStatsData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <ChartTooltip />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </ChartContainer>
+                  <ChartContainer config={chartConfig} className="w-full h-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={platformStatsData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          outerRadius={100}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {platformStatsData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <ChartTooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
                   ) : (
                     <div className="flex items-center justify-center h-full">
                       <p className="text-muted-foreground">No data to display.</p>
@@ -793,24 +793,24 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
             <CardContent>
               <div className="h-[400px]">
                 {courseAnalyticsData.length > 0 ? (
-                  <ChartContainer config={chartConfig} className="w-full h-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={courseAnalyticsData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis 
-                          dataKey="course" 
-                          angle={-45}
-                          textAnchor="end"
-                          height={80}
-                          interval={0}
-                        />
-                        <YAxis />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Bar dataKey="enrolled" fill="#3B82F6" name="Enrolled" />
-                        <Bar dataKey="completed" fill="#10B981" name="Completed" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
+                <ChartContainer config={chartConfig} className="w-full h-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={courseAnalyticsData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis 
+                        dataKey="course" 
+                        angle={-45}
+                        textAnchor="end"
+                        height={80}
+                        interval={0}
+                      />
+                      <YAxis />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Bar dataKey="enrolled" fill="#3B82F6" name="Enrolled" />
+                      <Bar dataKey="completed" fill="#10B981" name="Completed" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
                 ) : (
                   <div className="flex items-center justify-center h-full">
                     <p className="text-muted-foreground">No course data to display.</p>
@@ -833,19 +833,19 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                     <p className="text-muted-foreground">No engagement data to display for this period.</p>
                   </div>
                 ) : (
-                  <ChartContainer config={chartConfig} className="w-full h-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={engagementData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="day" />
-                        <YAxis />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Line type="monotone" dataKey="activeUsers" stroke="#3B82F6" strokeWidth={2} name="Active Users" />
+                <ChartContainer config={chartConfig} className="w-full h-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={engagementData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="day" />
+                      <YAxis />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Line type="monotone" dataKey="activeUsers" stroke="#3B82F6" strokeWidth={2} name="Active Users" />
                         <Line type="monotone" dataKey="courses" stroke="#10B981" strokeWidth={2} name="Courses Accessed" />
-                        <Line type="monotone" dataKey="discussions" stroke="#F59E0B" strokeWidth={2} name="Discussions" />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
+                      <Line type="monotone" dataKey="discussions" stroke="#F59E0B" strokeWidth={2} name="Discussions" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
                 )}
               </div>
             </CardContent>

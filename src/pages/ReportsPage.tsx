@@ -227,7 +227,7 @@ export default function ReportsPage() {
   const getStatusColor = (status: string) => {
     const colors = {
       'active': 'bg-green-100 text-green-800',
-      'completed': 'bg-blue-100 text-blue-800',
+      'completed': 'bg-blue-100 text-white',
       'at-risk': 'bg-orange-100 text-orange-800',
       'inactive': 'bg-red-100 text-red-800'
     };
@@ -767,7 +767,7 @@ export default function ReportsPage() {
                                   <Badge
                                     className={cn(
                                       "capitalize",
-                                      student.status.replace('_', ' ') === 'Completed' && 'bg-blue-100 text-blue-800',
+                                      student.status.replace('_', ' ') === 'Completed' && 'bg-blue-100 text-white',
                                       student.status.replace('_', ' ') === 'In Progress' && 'bg-green-100 text-green-800',
                                       student.status.replace('_', ' ') === 'Not Started' && 'bg-gray-100 text-gray-800',
                                       student.status.replace('_', ' ') === 'Behind' && 'bg-red-100 text-red-800'
@@ -816,9 +816,9 @@ export default function ReportsPage() {
                             </div>
                             
                             <div className="grid grid-cols-2 gap-4">
-                              <div className="text-center p-3 bg-blue-50 rounded-lg">
-                                <p className="text-2xl font-bold text-blue-600">{course.completionRate}%</p>
-                                <p className="text-xs text-blue-600">Completion</p>
+                              <div className="text-center p-3 bg-[#1582B4]/10 rounded-lg">
+                                <p className="text-2xl font-bold text-[#1582B4]">{course.completionRate}%</p>
+                                <p className="text-xs text-[#1582B4]">Completion</p>
                               </div>
                               <div className="text-center p-3 bg-green-50 rounded-lg">
                                 <p className="text-2xl font-bold text-green-600">{course.averageScore}%</p>

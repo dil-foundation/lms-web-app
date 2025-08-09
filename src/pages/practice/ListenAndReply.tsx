@@ -764,14 +764,14 @@ export const ListenAndReply: React.FC = () => {
       
       {/* Header */}
       <div className="relative flex items-center justify-center mb-6 p-4 sm:p-6 lg:p-8">
-        <Button variant="outline" size="icon" className="absolute left-4 sm:left-6 lg:left-8" onClick={() => navigate(-1)}>
+        <Button variant="outline" size="icon" className="absolute left-4 sm:left-6 lg:left-8 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="text-center">
-          <div className="inline-block p-3 bg-primary/20 rounded-full mb-2">
+          <div className="inline-block p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl mb-3 shadow-lg">
             <Ear className="h-8 w-8 text-primary" />
           </div>
-          <h1 className="text-3xl font-bold">Listen and Reply</h1>
+          <h1 className="text-3xl font-bold text-primary">Listen and Reply</h1>
           <p className="text-muted-foreground">Practice Conversation Skills</p>
           <p className="text-sm text-muted-foreground mt-1">
             Topic: {currentDialogueIndex + 1} of {dialogues.length}
@@ -781,10 +781,10 @@ export const ListenAndReply: React.FC = () => {
 
       {/* Main Content */}
       <div className="flex-1 px-4 pb-4">
-        <Card className="max-w-md mx-auto">
+        <Card className="max-w-md mx-auto bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300">
           <CardContent className="p-8 text-center">
             {/* Question */}
-            <h2 className="text-2xl font-bold mb-4">
+            <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">
               {safeDisplay(currentDialogue.question, 'No question available')}
             </h2>
             
@@ -797,11 +797,11 @@ export const ListenAndReply: React.FC = () => {
 
             {/* Expected Keywords */}
             {currentDialogue.expected_keywords && currentDialogue.expected_keywords.length > 0 && (
-              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-6">
-                <p className="text-sm font-medium text-green-700 dark:text-green-300 mb-2">
+              <div className="bg-gradient-to-br from-primary/10 to-primary/20 border border-primary/30 dark:border-primary/20 rounded-xl p-4 mb-6 shadow-sm">
+                <p className="text-sm font-medium text-primary dark:text-primary/80 mb-2">
                   Expected Keywords:
                 </p>
-                <p className="text-green-600 dark:text-green-400 font-medium">
+                <p className="text-primary dark:text-primary/90 font-medium">
                   {currentDialogue.expected_keywords.map(keyword => safeDisplay(keyword)).join(', ')}
                 </p>
               </div>
@@ -811,10 +811,10 @@ export const ListenAndReply: React.FC = () => {
             <Button
               onClick={handlePlayAudio}
               disabled={isLoadingAudio}
-              className={`w-20 h-20 rounded-full text-white shadow-lg mb-6 ${
+              className={`w-20 h-20 rounded-full text-white shadow-lg mb-6 transition-all duration-300 ${
                 isLoadingAudio 
                   ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed' 
-                  : 'bg-green-500 hover:bg-green-600'
+                  : 'bg-primary hover:bg-primary/90 hover:scale-105 shadow-xl'
               }`}
               size="icon"
             >

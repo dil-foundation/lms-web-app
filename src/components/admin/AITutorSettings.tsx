@@ -2,7 +2,30 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Bot, Settings2, Save } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
+import { 
+  Bot, 
+  Settings2, 
+  Save, 
+  Globe, 
+  MessageCircle, 
+  Brain, 
+  Shield, 
+  Zap, 
+  Target, 
+  Users, 
+  BookOpen, 
+  Sparkles, 
+  CheckCircle, 
+  AlertCircle,
+  TrendingUp,
+  Activity,
+  Clock,
+  Award
+} from 'lucide-react';
+import { useState } from 'react';
 
 interface AITutorSettingsProps {
   userProfile: {
@@ -14,159 +37,429 @@ interface AITutorSettingsProps {
 }
 
 export const AITutorSettings = ({ userProfile }: AITutorSettingsProps) => {
-  return (
-    <div className="space-y-6">
-      {/* Header Section */}
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-8 rounded-3xl">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
-              <Bot className="w-6 h-6 text-primary" />
+  const [settings, setSettings] = useState({
+    urduInput: true,
+    autoTranslation: true,
+    grammarCorrection: true,
+    feedbackTone: 'encouraging',
+    roleMode: 'coach',
+    adaptiveLearning: true,
+    realTimeFeedback: true,
+    progressTracking: true,
+    safetyFilters: true,
+    qualityOversight: true
+  });
+
+  const [activeTab, setActiveTab] = useState('general');
+
+  // Mock analytics data
+  const analyticsData = {
+    activeStudents: 1247,
+    avgSessionTime: 24,
+    completionRate: 73,
+    satisfactionScore: 4.8
+  };
+
+  const handleSave = () => {
+    // Save logic here
+    console.log('Settings saved:', settings);
+  };
+
+  const SettingCard = ({ 
+    title, 
+    description, 
+    icon: Icon, 
+    children, 
+    status = 'active',
+    className = '' 
+  }: {
+    title: string;
+    description: string;
+    icon: any;
+    children: React.ReactNode;
+    status?: 'active' | 'inactive' | 'warning';
+    className?: string;
+  }) => (
+    <Card className={`group overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl border-0 bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50 ${className}`}>
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center shadow-lg">
+              <Icon className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
-                AI Tutor Settings
-              </h1>
-              <p className="text-lg text-muted-foreground font-light">
-                Configure how the AI Tutor behaves across the platform
-              </p>
+              <CardTitle className="text-lg font-semibold">{title}</CardTitle>
+              <p className="text-sm text-muted-foreground">{description}</p>
             </div>
+          </div>
+          <Badge 
+            variant={status === 'active' ? 'default' : status === 'warning' ? 'secondary' : 'outline'}
+            className={status === 'active' ? 'bg-primary/10 text-primary border-primary/20' : ''}
+          >
+            {status === 'active' ? 'Active' : status === 'warning' ? 'Warning' : 'Inactive'}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        {children}
+      </CardContent>
+    </Card>
+  );
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'general':
+        return (
+          <div className="space-y-6">
+            {/* General Settings */}
+            <SettingCard
+              title="General Configuration"
+              description="Basic AI Tutor settings and preferences"
+              icon={Settings2}
+              status="active"
+            >
+              <div className="space-y-4">
+                                 <div className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-accent/5 transition-colors">
+                   <div className="space-y-1">
+                     <div className="flex items-center gap-2">
+                       <label className="text-sm font-medium">Real-time Feedback</label>
+                       <Zap className="w-3 h-3 text-primary" />
+                     </div>
+                     <p className="text-xs text-muted-foreground">
+                       Enable instant feedback during practice sessions
+                     </p>
+                   </div>
+                   <Switch 
+                     checked={settings.realTimeFeedback}
+                     onCheckedChange={(checked) => setSettings({...settings, realTimeFeedback: checked})}
+                   />
+                 </div>
+
+                 <div className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-accent/5 transition-colors">
+                   <div className="space-y-1">
+                     <div className="flex items-center gap-2">
+                       <label className="text-sm font-medium">Progress Tracking</label>
+                       <TrendingUp className="w-3 h-3 text-[#1582B4]" />
+                     </div>
+                     <p className="text-xs text-muted-foreground">
+                       Track student progress and learning analytics
+                     </p>
+                   </div>
+                   <Switch 
+                     checked={settings.progressTracking}
+                     onCheckedChange={(checked) => setSettings({...settings, progressTracking: checked})}
+                   />
+                 </div>
+              </div>
+            </SettingCard>
+          </div>
+        );
+
+      case 'language':
+        return (
+          <div className="space-y-6">
+            <SettingCard
+              title="Language & Input Settings"
+              description="Configure multilingual support and input preferences"
+              icon={Globe}
+              status="active"
+            >
+              <div className="space-y-4">
+                                 <div className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-accent/5 transition-colors">
+                   <div className="space-y-1">
+                     <div className="flex items-center gap-2">
+                       <label className="text-sm font-medium">Allow Urdu Input</label>
+                       <Badge variant="outline" className="text-xs">Beta</Badge>
+                     </div>
+                     <p className="text-xs text-muted-foreground">
+                       Enable students to communicate with the AI tutor using Urdu
+                     </p>
+                   </div>
+                   <Switch 
+                     checked={settings.urduInput}
+                     onCheckedChange={(checked) => setSettings({...settings, urduInput: checked})}
+                   />
+                 </div>
+
+                 <div className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-accent/5 transition-colors">
+                   <div className="space-y-1">
+                     <div className="flex items-center gap-2">
+                       <label className="text-sm font-medium">Auto-Translation Support</label>
+                       <Sparkles className="w-3 h-3 text-[#1582B4]" />
+                     </div>
+                     <p className="text-xs text-muted-foreground">
+                       Real-time translation between English and Urdu
+                     </p>
+                   </div>
+                   <Switch 
+                     checked={settings.autoTranslation}
+                     onCheckedChange={(checked) => setSettings({...settings, autoTranslation: checked})}
+                   />
+                 </div>
+              </div>
+            </SettingCard>
+          </div>
+        );
+
+      case 'behavior':
+        return (
+          <div className="space-y-6">
+            <SettingCard
+              title="Feedback & Correction"
+              description="Configure AI feedback behavior and correction patterns"
+              icon={MessageCircle}
+              status="active"
+            >
+              <div className="space-y-4">
+                                 <div className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-accent/5 transition-colors">
+                   <div className="space-y-1">
+                     <div className="flex items-center gap-2">
+                       <label className="text-sm font-medium">Grammar Correction</label>
+                       <Target className="w-3 h-3 text-primary" />
+                     </div>
+                     <p className="text-xs text-muted-foreground">
+                       Real-time grammar correction during practice
+                     </p>
+                   </div>
+                   <Switch 
+                     checked={settings.grammarCorrection}
+                     onCheckedChange={(checked) => setSettings({...settings, grammarCorrection: checked})}
+                   />
+                 </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Feedback Tone</label>
+                  <Select 
+                    value={settings.feedbackTone} 
+                    onValueChange={(value) => setSettings({...settings, feedbackTone: value})}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="friendly">Friendly & Supportive</SelectItem>
+                      <SelectItem value="formal">Professional & Formal</SelectItem>
+                      <SelectItem value="encouraging">Encouraging & Motivational</SelectItem>
+                      <SelectItem value="strict">Strict & Academic</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </SettingCard>
+
+            <SettingCard
+              title="AI Behavior & Role"
+              description="Define how the AI tutor interacts with students"
+              icon={Brain}
+              status="active"
+            >
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">AI Tutor Role Mode</label>
+                  <Select 
+                    value={settings.roleMode} 
+                    onValueChange={(value) => setSettings({...settings, roleMode: value})}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="coach">Coach - Motivational Guide</SelectItem>
+                      <SelectItem value="peer">Peer - Collaborative Partner</SelectItem>
+                      <SelectItem value="examiner">Examiner - Assessment Focus</SelectItem>
+                      <SelectItem value="tutor">Tutor - Traditional Teacher</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                                 <div className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-accent/5 transition-colors">
+                   <div className="space-y-1">
+                     <div className="flex items-center gap-2">
+                       <label className="text-sm font-medium">Adaptive Learning</label>
+                       <Zap className="w-3 h-3 text-[#1582B4]" />
+                     </div>
+                     <p className="text-xs text-muted-foreground">
+                       AI adapts difficulty based on student performance
+                     </p>
+                   </div>
+                   <Switch 
+                     checked={settings.adaptiveLearning}
+                     onCheckedChange={(checked) => setSettings({...settings, adaptiveLearning: checked})}
+                   />
+                 </div>
+              </div>
+            </SettingCard>
+          </div>
+        );
+
+      case 'safety':
+        return (
+          <div className="space-y-6">
+            <SettingCard
+              title="Safety & Quality Oversight"
+              description="Ensure ethical AI behavior and content quality"
+              icon={Shield}
+              status="active"
+            >
+              <div className="space-y-4">
+                                 <div className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-accent/5 transition-colors">
+                   <div className="space-y-1">
+                     <div className="flex items-center gap-2">
+                       <label className="text-sm font-medium">Safety Filters</label>
+                       <Shield className="w-3 h-3 text-primary" />
+                     </div>
+                     <p className="text-xs text-muted-foreground">
+                       Content filtering and inappropriate response prevention
+                     </p>
+                   </div>
+                   <Switch 
+                     checked={settings.safetyFilters}
+                     onCheckedChange={(checked) => setSettings({...settings, safetyFilters: checked})}
+                   />
+                 </div>
+
+                 <div className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-accent/5 transition-colors">
+                   <div className="space-y-1">
+                     <div className="flex items-center gap-2">
+                       <label className="text-sm font-medium">Quality Oversight</label>
+                       <CheckCircle className="w-3 h-3 text-[#1582B4]" />
+                     </div>
+                     <p className="text-xs text-muted-foreground">
+                       Monitor and maintain response quality standards
+                     </p>
+                   </div>
+                   <Switch 
+                     checked={settings.qualityOversight}
+                     onCheckedChange={(checked) => setSettings({...settings, qualityOversight: checked})}
+                   />
+                 </div>
+              </div>
+            </SettingCard>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="space-y-8">
+      {/* Premium Header Section */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/3 to-[#1582B4]/5 rounded-3xl"></div>
+        <div className="relative p-8 md:p-10 rounded-3xl">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
+                <Bot className="w-8 h-8 text-primary" />
+              </div>
+                             <div>
+                 <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-primary leading-[1.2]">
+                   AI Tutor Settings
+                 </h1>
+                 <p className="text-lg text-muted-foreground font-light mt-4 leading-relaxed">
+                   Configure intelligent learning behavior and interaction patterns
+                 </p>
+               </div>
+            </div>
+            
+
           </div>
         </div>
       </div>
 
-      {/* Settings Card */}
-      <Card className="bg-gradient-to-br from-card to-primary/2">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings2 className="h-5 w-5" />
-            AI Tutor Configuration
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-8">
+      {/* Persistent Performance Metrics */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Activity className="h-5 w-5" />
+          <h3 className="text-lg font-semibold">AI Tutor Performance Metrics</h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Active Students</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{analyticsData.activeStudents.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">Currently learning</p>
+            </CardContent>
+          </Card>
           
-          {/* Language Settings */}
-          <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-foreground border-b pb-2">
-              Language & Input Settings
-            </h3>
-            
-            {/* Allow Urdu Input */}
-            <div className="flex items-center justify-between p-4 rounded-lg border bg-card/50">
-              <div className="space-y-1 flex-1">
-                <div className="flex items-center gap-2">
-                  <label htmlFor="urdu-input" className="text-sm font-medium">
-                    Allow Urdu Input
-                  </label>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Enable students to communicate with the AI tutor using Urdu language input
-                </p>
-              </div>
-              <Switch id="urdu-input" />
-            </div>
+          <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Avg Session Time</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{analyticsData.avgSessionTime}m</div>
+              <p className="text-xs text-muted-foreground">Average duration</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{analyticsData.completionRate}%</div>
+              <p className="text-xs text-muted-foreground">Course completion</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Satisfaction Score</CardTitle>
+              <Award className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{analyticsData.satisfactionScore}/5</div>
+              <p className="text-xs text-muted-foreground">Student rating</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
-            {/* Auto-Translation Support */}
-            <div className="flex items-center justify-between p-4 rounded-lg border bg-card/50">
-              <div className="space-y-1 flex-1">
-                <div className="flex items-center gap-2">
-                  <label htmlFor="auto-translation" className="text-sm font-medium">
-                    Auto-Translation Support
-                  </label>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Automatically translate student responses and AI feedback between English and Urdu
-                </p>
-              </div>
-              <Switch id="auto-translation" />
-            </div>
-          </div>
+      {/* Tab Navigation */}
+      <div className="flex space-x-8 w-fit border-b border-border">
+        {[
+          { id: 'general', label: 'General', icon: Settings2 },
+          { id: 'language', label: 'Language', icon: Globe },
+          { id: 'behavior', label: 'Behavior', icon: Brain },
+          { id: 'safety', label: 'Safety', icon: Shield }
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2 px-1 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${
+              activeTab === tab.id
+                ? 'text-primary border-primary'
+                : 'text-muted-foreground border-transparent hover:text-foreground hover:border-muted-foreground/30'
+            }`}
+          >
+            <tab.icon className="w-4 h-4" />
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-          {/* Feedback Settings */}
-          <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-foreground border-b pb-2">
-              Feedback & Correction Settings
-            </h3>
-            
-            {/* Grammar Correction */}
-            <div className="flex items-center justify-between p-4 rounded-lg border bg-card/50">
-              <div className="space-y-1 flex-1">
-                <div className="flex items-center gap-2">
-                  <label htmlFor="grammar-correction" className="text-sm font-medium">
-                    Grammar Correction Enabled
-                  </label>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Enable real-time grammar correction and suggestions during practice sessions
-                </p>
-              </div>
-              <Switch id="grammar-correction" />
-            </div>
+      {/* Tab Content */}
+      <div className="min-h-[400px] p-6 bg-gradient-to-br from-white/50 via-white/30 to-gray-50/30 dark:from-gray-900/50 dark:via-gray-900/30 dark:to-gray-800/30 rounded-2xl border border-border/50">
+        {renderTabContent()}
+      </div>
 
-            {/* Tone of Feedback */}
-            <div className="space-y-3 p-4 rounded-lg border bg-card/50">
-              <div className="space-y-1">
-                <label htmlFor="feedback-tone" className="text-sm font-medium">
-                  Tone of Feedback
-                </label>
-                <p className="text-xs text-muted-foreground">
-                  Set the communication style for AI tutor feedback and interactions
-                </p>
-              </div>
-              <Select>
-                <SelectTrigger id="feedback-tone" className="w-full">
-                  <SelectValue placeholder="Select feedback tone" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="friendly">Friendly</SelectItem>
-                  <SelectItem value="formal">Formal</SelectItem>
-                  <SelectItem value="encouraging">Encouraging</SelectItem>
-                  <SelectItem value="strict">Strict</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* AI Behavior Settings */}
-          <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-foreground border-b pb-2">
-              AI Behavior Settings
-            </h3>
-            
-            {/* AI Tutor Role Mode */}
-            <div className="space-y-3 p-4 rounded-lg border bg-card/50">
-              <div className="space-y-1">
-                <label htmlFor="role-mode" className="text-sm font-medium">
-                  AI Tutor Role Mode
-                </label>
-                <p className="text-xs text-muted-foreground">
-                  Define how the AI tutor should interact with students during learning sessions
-                </p>
-              </div>
-              <Select>
-                <SelectTrigger id="role-mode" className="w-full">
-                  <SelectValue placeholder="Select AI tutor role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="coach">Coach</SelectItem>
-                  <SelectItem value="peer">Peer</SelectItem>
-                  <SelectItem value="examiner">Examiner</SelectItem>
-                  <SelectItem value="tutor">Tutor</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Save Button */}
-          <div className="flex justify-end pt-6 border-t">
-            <Button className="px-8 py-2 bg-primary hover:bg-primary/90">
-              <Save className="w-4 h-4 mr-2" />
-              Save Settings
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Save Button */}
+      <div className="flex justify-end">
+        <Button 
+          onClick={handleSave}
+          className="group bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:scale-105"
+        >
+          <Save className="w-4 h-4 mr-2 group-hover:animate-pulse" />
+          Save AI Tutor Settings
+        </Button>
+      </div>
     </div>
   );
 };

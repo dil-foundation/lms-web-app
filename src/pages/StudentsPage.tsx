@@ -681,8 +681,7 @@ export default function StudentsPage() {
 
             {/* Modal Actions */}
             <div className="flex justify-end space-x-2">
-                              <Button
-                  variant="outline"
+                <Button
                   onClick={() => {
                     setEnrollModalOpen(false);
                     setSelectedStudentForEnroll('');
@@ -690,14 +689,14 @@ export default function StudentsPage() {
                     setStudentSearchTerm('');
                   }}
                   disabled={enrollmentLoading}
-                  className="hover:bg-gray-100 dark:hover:bg-gray-800"
+                  className="hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800"
                 >
                   Cancel
                 </Button>
-                              <Button
+                <Button
                   onClick={handleEnrollStudent}
                   disabled={!selectedStudentForEnroll || !selectedCourseForEnroll || enrollmentLoading}
-                  className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  className="flex items-center gap-2 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800"
                 >
                 {enrollmentLoading ? (
                   <>
@@ -720,7 +719,7 @@ export default function StudentsPage() {
          <Card className="relative overflow-hidden transition-all duration-200 hover:shadow-lg bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
              <CardTitle className="text-sm font-medium text-muted-foreground">Total Students</CardTitle>
-             <Users className="h-4 w-4 text-blue-500" />
+             <Users className="h-4 w-4 text-[#1582B4]" />
            </CardHeader>
            <CardContent>
              <div className="space-y-1">
@@ -792,7 +791,7 @@ export default function StudentsPage() {
                   variant="outline"
                   size="sm"
                   onClick={fetchStudentDataAndCount}
-                  className="mt-2 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  className="mt-2 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800"
                   disabled={loading}
                 >
                   Try Again
@@ -896,7 +895,7 @@ export default function StudentsPage() {
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-800">
+                            <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800">
                               <span className="sr-only">Open menu</span>
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
@@ -988,7 +987,7 @@ export default function StudentsPage() {
               <p className="text-muted-foreground mb-4">
                 You don't have any students enrolled in your courses yet.
               </p>
-                              <Button variant="outline" onClick={fetchStudentDataAndCount} disabled={loading} className="hover:bg-gray-100 dark:hover:bg-gray-800">
+                              <Button variant="outline" onClick={fetchStudentDataAndCount} disabled={loading} className="hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800">
                   Refresh Data
                 </Button>
             </div>

@@ -28,11 +28,11 @@ const StatCard = ({ title, value, subtext, icon, progress }: { title: string, va
 );
 
 const CourseProgressDetails = ({ courses }: { courses: StudentCourseWithProgress[] }) => (
-  <Card className="bg-card/80 backdrop-blur-sm border border-border/50 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 rounded-3xl overflow-hidden">
+  <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden">
     <CardHeader className="pb-6">
-      <CardTitle className="flex items-center gap-3 text-xl font-bold">
-        <div className="w-8 h-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
-          <BookOpen className="w-4 h-4 text-primary" />
+      <CardTitle className="flex items-center gap-3 text-xl font-bold text-gray-900 dark:text-gray-100">
+        <div className="w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
+          <BookOpen className="w-5 h-5 text-primary" />
         </div>
         Course Progress Details
       </CardTitle>
@@ -40,35 +40,35 @@ const CourseProgressDetails = ({ courses }: { courses: StudentCourseWithProgress
     <CardContent className="space-y-6">
       {courses.length > 0 ? (
         courses.map(course => (
-          <div key={course.course_id} className="group p-4 border border-border/50 rounded-2xl hover:bg-muted/30 transition-all duration-300">
-            <div className="flex justify-between items-center mb-3">
-              <p className="font-semibold text-foreground text-lg">{course.title}</p>
+          <div key={course.course_id} className="group p-6 bg-gradient-to-br from-white/40 to-gray-50/40 dark:from-gray-800/40 dark:to-gray-700/40 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl hover:bg-gradient-to-br hover:from-white/60 hover:to-gray-50/60 dark:hover:from-gray-800/60 dark:hover:to-gray-700/60 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+            <div className="flex justify-between items-center mb-4">
+              <p className="font-semibold text-gray-900 dark:text-gray-100 text-lg">{course.title}</p>
               <div className="text-sm">
                 <span className={`font-bold ${course.progress_percentage > 0 ? 'text-primary' : 'text-muted-foreground'}`}>
                   {course.progress_percentage > 0 ? `${course.progress_percentage}%` : 'Not Started'}
                 </span>
               </div>
             </div>
-            <div className="w-full bg-muted/50 rounded-full h-3 overflow-hidden mb-3">
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden mb-4">
               <div 
                 className="bg-gradient-to-r from-primary to-primary/80 h-3 rounded-full transition-all duration-500 ease-out"
                 style={{ width: `${course.progress_percentage}%` }}
               />
             </div>
             <div className="flex justify-between items-center text-sm text-muted-foreground">
-              <span className="font-medium">{course.completed_lessons} of {course.total_lessons} lessons</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100">{course.completed_lessons} of {course.total_lessons} lessons</span>
               {course.last_accessed && (
-                <span className="text-xs">Last accessed: {new Date(course.last_accessed).toLocaleDateString()}</span>
+                <span className="text-xs text-muted-foreground">Last accessed: {new Date(course.last_accessed).toLocaleDateString()}</span>
               )}
             </div>
           </div>
         ))
       ) : (
         <div className="text-center py-12">
-          <div className="w-16 h-16 bg-gradient-to-br from-muted/20 to-muted/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <BookOpen className="h-8 w-8 text-muted-foreground" />
+          <div className="w-20 h-20 bg-gradient-to-br from-muted/20 to-muted/30 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+            <BookOpen className="h-10 w-10 text-muted-foreground" />
           </div>
-          <p className="text-lg font-semibold text-foreground mb-2">No Courses Enrolled</p>
+          <p className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">No Courses Enrolled</p>
           <p className="text-sm text-muted-foreground">Start your learning journey to see progress here</p>
         </div>
       )}
@@ -125,9 +125,9 @@ export const StudentProgress = ({ userProfile }) => {
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
         <div className="relative p-8 rounded-3xl">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-primary" />
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-14 h-14 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
+              <TrendingUp className="w-7 h-7 text-primary" />
             </div>
             <div>
               <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
@@ -142,31 +142,31 @@ export const StudentProgress = ({ userProfile }) => {
       </div>
 
       {/* Stats Grid - Preserving Clean Design */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Overall Progress"
           value={`${Math.round(overallProgress)}%`}
           subtext="Across all courses"
-          icon={<Target className="h-4 w-4 text-muted-foreground" />}
+          icon={<Target className="h-4 w-4 text-primary" />}
           progress={overallProgress}
         />
         <StatCard
           title="Courses in Progress"
           value={stats.enrolled_courses_count}
           subtext="of total courses"
-          icon={<BookOpen className="h-4 w-4 text-muted-foreground" />}
+          icon={<BookOpen className="h-4 w-4 text-primary" />}
         />
         <StatCard
           title="Completed Lessons"
           value={stats.completed_lessons_count}
           subtext={`of ${stats.total_lessons_count} total lessons`}
-          icon={<CheckCircle className="h-4 w-4 text-muted-foreground" />}
+          icon={<CheckCircle className="h-4 w-4 text-primary" />}
         />
         <StatCard
           title="Study Streak"
           value={`${stats.study_streak_days} days`}
           subtext="in a row"
-          icon={<Flame className="h-4 w-4 text-muted-foreground" />}
+          icon={<Flame className="h-4 w-4 text-primary" />}
         />
       </div>
 

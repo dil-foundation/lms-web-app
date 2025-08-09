@@ -49,21 +49,21 @@ export const AIAdminDashboard = ({ userProfile }: AIAdminDashboardProps) => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header Section */}
+    <div className="space-y-8">
+      {/* Premium Header Section */}
       <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-8 rounded-3xl">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
-                <Shield className="w-6 h-6 text-primary" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/3 to-[#1582B4]/5 rounded-3xl"></div>
+        <div className="relative p-8 md:p-10 rounded-3xl">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
+                <Bot className="w-8 h-8 text-primary" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
-                  Admin dashboard
+                <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                  AI Tutor Overview
                 </h1>
-                <p className="text-lg text-muted-foreground font-light">
+                <p className="text-lg text-muted-foreground font-light mt-2">
                   Welcome back, {userProfile?.first_name || 'Administrator'}
                 </p>
               </div>
@@ -92,7 +92,7 @@ export const AIAdminDashboard = ({ userProfile }: AIAdminDashboardProps) => {
       </div>
 
       {/* User Count Metrics */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -147,20 +147,27 @@ export const AIAdminDashboard = ({ userProfile }: AIAdminDashboardProps) => {
       </div>
 
       {/* Learn Feature Usage Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Brain className="h-5 w-5" />
-            Learn Feature Usage Summary
-          </CardTitle>
+      <Card className="group overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center shadow-lg">
+                <Brain className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-lg font-semibold">Learn Feature Usage Summary</CardTitle>
+                <p className="text-sm text-muted-foreground">AI-powered learning engagement metrics</p>
+              </div>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
+            <div className="p-4 rounded-lg border border-border hover:bg-accent/5 transition-colors">
+              <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium">Today's Access</span>
                 <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
+                  <div className="h-2 w-2 bg-[#1582B4] rounded-full"></div>
                   <span className="text-lg font-bold">{overviewData.learnFeatureUsage.today}</span>
                 </div>
               </div>
@@ -168,8 +175,8 @@ export const AIAdminDashboard = ({ userProfile }: AIAdminDashboardProps) => {
                 Users who accessed Learn feature today
               </p>
             </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
+            <div className="p-4 rounded-lg border border-border hover:bg-accent/5 transition-colors">
+              <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium">This Week</span>
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-2 bg-green-500 rounded-full"></div>
@@ -185,19 +192,26 @@ export const AIAdminDashboard = ({ userProfile }: AIAdminDashboardProps) => {
       </Card>
 
       {/* Most Accessed Content */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Award className="h-5 w-5" />
-            Most Accessed Practice Lessons
-          </CardTitle>
+      <Card className="group overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center shadow-lg">
+                <Award className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-lg font-semibold">Most Accessed Practice Lessons</CardTitle>
+                <p className="text-sm text-muted-foreground">Popular AI tutor learning sessions</p>
+              </div>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
+        <CardContent className="pt-0">
+          <div className="space-y-3">
             {overviewData.mostAccessedLessons.map((lesson, index) => (
-              <div key={index} className="flex items-center justify-between p-3 rounded-lg border hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+              <div key={index} className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-accent/5 transition-colors">
                 <div className="flex items-center gap-3">
-                  <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-lg">
+                  <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center text-lg shadow-sm">
                     {lesson.icon}
                   </div>
                   <div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
 import { 
   Bot, 
   Brain, 
@@ -260,15 +260,15 @@ export const AIStudentDashboard = ({ userProfile }: AIStudentDashboardProps) => 
   const exercisesCompleted = progressData?.total_exercises_completed || 0;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-8">
+      {/* Premium Header Section */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
         <div className="relative p-8 rounded-3xl">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
-                <Bot className="w-6 h-6 text-primary" />
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
+                <Bot className="w-7 h-7 text-primary" />
               </div>
               <div>
                 <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
@@ -279,7 +279,7 @@ export const AIStudentDashboard = ({ userProfile }: AIStudentDashboardProps) => 
                 </p>
               </div>
             </div>
-            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+            <Badge variant="outline" className="bg-gradient-to-br from-primary/10 to-primary/20 border-primary/30 text-primary font-semibold">
               <Sparkles className="h-3 w-3 mr-1" />
               AI Learning Active
             </Badge>
@@ -287,105 +287,129 @@ export const AIStudentDashboard = ({ userProfile }: AIStudentDashboardProps) => 
         </div>
       </div>
 
-             {/* Progress Summary Cards */}
-       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-         <Card className="bg-gradient-to-br from-card to-green-500/5">
-           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-             <CardTitle className="text-sm font-medium">Current Stage</CardTitle>
-             <Target className="h-4 w-4 text-muted-foreground" />
-           </CardHeader>
-           <CardContent>
-             <div className="text-2xl font-bold">{currentStage?.name || 'Loading...'}</div>
-             <p className="text-xs text-muted-foreground">
-               {Math.round(currentStage?.progress || 0)}% complete
-             </p>
-             <Progress value={currentStage?.progress || 0} className="h-1 mt-2" />
-           </CardContent>
-         </Card>
+      {/* Progress Summary Cards - Enhanced with Apple Aesthetics */}
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-900 dark:text-gray-100">Current Stage</CardTitle>
+            <div className="w-8 h-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
+              <Target className="h-4 w-4 text-primary" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{currentStage?.name || 'Loading...'}</div>
+            <p className="text-xs text-muted-foreground">
+              {Math.round(currentStage?.progress || 0)}% complete
+            </p>
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-2">
+              <div 
+                className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${currentStage?.progress || 0}%` }}
+              />
+            </div>
+          </CardContent>
+        </Card>
 
-         <Card className="bg-gradient-to-br from-card to-green-500/5">
-           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-             <CardTitle className="text-sm font-medium">Overall Progress</CardTitle>
-             <TrendingUp className="h-4 w-4 text-muted-foreground" />
-           </CardHeader>
-           <CardContent>
-             <div className="text-2xl font-bold">{Math.round(overallProgress)}%</div>
-             <p className="text-xs text-muted-foreground">
-               Learning journey
-             </p>
-             <Progress value={overallProgress} className="h-1 mt-2" />
-           </CardContent>
-         </Card>
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-900 dark:text-gray-100">Overall Progress</CardTitle>
+            <div className="w-8 h-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
+              <TrendingUp className="h-4 w-4 text-primary" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{Math.round(overallProgress)}%</div>
+            <p className="text-xs text-muted-foreground">
+              Learning journey
+            </p>
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-2">
+              <div 
+                className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${overallProgress}%` }}
+              />
+            </div>
+          </CardContent>
+        </Card>
 
-         <Card className="bg-gradient-to-br from-card to-green-500/5">
-           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-             <CardTitle className="text-sm font-medium">Learning Streak</CardTitle>
-             <Flame className="h-4 w-4 text-muted-foreground" />
-           </CardHeader>
-           <CardContent>
-             <div className="text-2xl font-bold">{streak}</div>
-             <p className="text-xs text-muted-foreground">
-               Days in a row
-             </p>
-           </CardContent>
-         </Card>
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-900 dark:text-gray-100">Learning Streak</CardTitle>
+            <div className="w-8 h-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
+              <Flame className="h-4 w-4 text-primary" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{streak}</div>
+            <p className="text-xs text-muted-foreground">
+              Days in a row
+            </p>
+          </CardContent>
+        </Card>
 
-         <Card className="bg-gradient-to-br from-card to-green-500/5">
-           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-             <CardTitle className="text-sm font-medium">Practice Time</CardTitle>
-             <Clock className="h-4 w-4 text-muted-foreground" />
-           </CardHeader>
-           <CardContent>
-             <div className="text-2xl font-bold">{(practiceTime / 60).toFixed(1)}h</div>
-             <p className="text-xs text-muted-foreground">
-               Total practice
-             </p>
-           </CardContent>
-         </Card>
-       </div>
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-900 dark:text-gray-100">Practice Time</CardTitle>
+            <div className="w-8 h-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
+              <Clock className="h-4 w-4 text-primary" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{(practiceTime / 60).toFixed(1)}h</div>
+            <p className="text-xs text-muted-foreground">
+              Total practice
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Continue Learning */}
-        <Card>
+        <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <PlayCircle className="h-5 w-5 text-green-500" />
+            <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
+              <div className="w-8 h-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
+                <PlayCircle className="h-4 w-4 text-primary" />
+              </div>
               Continue Learning
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-medium">{currentStage?.name}</h3>
-                <Badge variant="secondary">{Math.round(currentStage?.progress || 0)}%</Badge>
+            <div className="p-6 bg-gradient-to-br from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/20 rounded-2xl border border-primary/20">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100">{currentStage?.name}</h3>
+                <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/30">
+                  {Math.round(currentStage?.progress || 0)}%
+                </Badge>
               </div>
-              <p className="text-sm text-muted-foreground mb-3">
+              <p className="text-sm text-muted-foreground mb-4">
                 {currentStage?.subtitle}
               </p>
-                             <Button 
-                 className="w-full bg-green-500 hover:bg-green-600" 
-                 onClick={() => {
-                   const stageId = currentStage?.id;
-                   if (stageId) {
-                     navigate(`/dashboard/practice/stage-${stageId}`);
-                   } else {
-                     navigate('/dashboard/ai-practice');
-                   }
-                 }}
-               >
-                 Continue Learning
-                 <ArrowRight className="ml-2 h-4 w-4" />
-               </Button>
+              <Button 
+                className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300" 
+                onClick={() => {
+                  const stageId = currentStage?.id;
+                  if (stageId) {
+                    navigate(`/dashboard/practice/stage-${stageId}`);
+                  } else {
+                    navigate('/dashboard/ai-practice');
+                  }
+                }}
+              >
+                Continue Learning
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
             </div>
           </CardContent>
         </Card>
 
         {/* Learning Stats */}
-        <Card>
+        <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-yellow-500" />
+            <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
+              <div className="w-8 h-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
+                <Trophy className="h-4 w-4 text-primary" />
+              </div>
               Learning Stats
             </CardTitle>
           </CardHeader>
@@ -393,23 +417,23 @@ export const AIStudentDashboard = ({ userProfile }: AIStudentDashboardProps) => 
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500" />
-                <span className="text-sm">Exercises Completed</span>
+                <span className="text-sm text-gray-900 dark:text-gray-100">Exercises Completed</span>
               </div>
-              <span className="font-semibold">{exercisesCompleted}</span>
+              <span className="font-semibold text-gray-900 dark:text-gray-100">{exercisesCompleted}</span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Star className="h-4 w-4 text-yellow-500" />
-                <span className="text-sm">Achievements</span>
+                <span className="text-sm text-gray-900 dark:text-gray-100">Achievements</span>
               </div>
-              <span className="font-semibold">{progressData?.achievements?.length || 0}</span>
+              <span className="font-semibold text-gray-900 dark:text-gray-100">{progressData?.achievements?.length || 0}</span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <BookOpen className="h-4 w-4 text-blue-500" />
-                <span className="text-sm">Active Stages</span>
+                <BookOpen className="h-4 w-4 text-[#1582B4]" />
+                <span className="text-sm text-gray-900 dark:text-gray-100">Active Stages</span>
               </div>
-              <span className="font-semibold">
+              <span className="font-semibold text-gray-900 dark:text-gray-100">
                 {progressData?.stages?.filter(s => s.unlocked).length || 0}
               </span>
             </div>
@@ -418,10 +442,12 @@ export const AIStudentDashboard = ({ userProfile }: AIStudentDashboardProps) => 
       </div>
 
       {/* Featured Practice Activities */}
-      <Card>
+      <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Brain className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
+            <div className="w-8 h-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
+              <Brain className="h-4 w-4 text-primary" />
+            </div>
             Featured Practice Activities
           </CardTitle>
           <p className="text-sm text-muted-foreground">
@@ -437,29 +463,29 @@ export const AIStudentDashboard = ({ userProfile }: AIStudentDashboardProps) => 
               return (
                 <div
                   key={activity.id}
-                  className={`p-4 border rounded-lg transition-all hover:shadow-md ${
+                  className={`p-6 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl transition-all duration-300 hover:shadow-lg ${
                     isUnlocked 
-                      ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800' 
+                      ? 'cursor-pointer hover:bg-gradient-to-br hover:from-primary/5 hover:to-primary/10 dark:hover:from-primary/10 dark:hover:to-primary/20 hover:border-primary/30' 
                       : 'opacity-50 cursor-not-allowed'
                   }`}
                   onClick={() => isUnlocked && handleActivityClick(activity)}
                 >
-                  <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${
-                        activity.stage === 1 ? 'bg-blue-100 dark:bg-blue-900' : 'bg-green-100 dark:bg-green-900'
+                      <div className={`p-3 rounded-xl ${
+                        activity.stage === 1 ? 'bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20' : 'bg-gradient-to-br from-primary/10 to-primary/20'
                       }`}>
-                        <activity.icon className={`h-4 w-4 ${
-                          activity.stage === 1 ? 'text-blue-600 dark:text-blue-400' : 'text-green-600 dark:text-green-400'
+                        <activity.icon className={`h-5 w-5 ${
+                          activity.stage === 1 ? 'text-[#1582B4]' : 'text-primary'
                         }`} />
                       </div>
                       <div>
-                        <h3 className="font-medium">{activity.title}</h3>
+                        <h3 className="font-semibold text-gray-900 dark:text-gray-100">{activity.title}</h3>
                         <p className="text-sm text-muted-foreground">{activity.description}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <Badge variant="outline" className="mb-1">
+                      <Badge variant="outline" className="mb-1 bg-primary/10 border-primary/30 text-primary">
                         Stage {activity.stage}
                       </Badge>
                       <p className="text-xs text-muted-foreground">{activity.estimatedTime}</p>
@@ -468,7 +494,12 @@ export const AIStudentDashboard = ({ userProfile }: AIStudentDashboardProps) => 
                   
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Progress value={stageProgress} className="h-1 w-20" />
+                      <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-1">
+                        <div 
+                          className="bg-gradient-to-r from-primary to-primary/80 h-1 rounded-full transition-all duration-300"
+                          style={{ width: `${stageProgress}%` }}
+                        />
+                      </div>
                       <span className="text-xs text-muted-foreground">{stageProgress}%</span>
                     </div>
                     {isUnlocked && (
@@ -480,12 +511,16 @@ export const AIStudentDashboard = ({ userProfile }: AIStudentDashboardProps) => 
             })}
           </div>
           
-                     <div className="mt-6 text-center">
-             <Button variant="outline" onClick={() => navigate('/dashboard/ai-practice')}>
-               View All Practice Activities
-               <ArrowRight className="ml-2 h-4 w-4" />
-             </Button>
-           </div>
+          <div className="mt-6 text-center">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/dashboard/ai-practice')} 
+              className="bg-gradient-to-r from-primary/10 to-primary/20 border-primary/30 text-primary hover:bg-primary/20 hover:border-primary/50 hover:text-gray-900 dark:hover:text-gray-100 shadow-lg hover:shadow-xl transition-all duration-300"
+            >
+              View All Practice Activities
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
