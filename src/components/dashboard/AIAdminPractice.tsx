@@ -220,7 +220,7 @@ const StageConfigurationCard = ({ stage }) => {
           </Button>
           <Button 
             variant="outline" 
-            className="w-full" 
+            className="w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20 hover:bg-primary/5 hover:border-primary/50 hover:text-primary" 
             size="sm"
             onClick={() => setIsEditOpen(true)}
           >

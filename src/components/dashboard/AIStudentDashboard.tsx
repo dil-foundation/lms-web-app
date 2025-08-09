@@ -480,12 +480,16 @@ export const AIStudentDashboard = ({ userProfile }: AIStudentDashboardProps) => 
             })}
           </div>
           
-                     <div className="mt-6 text-center">
-             <Button variant="outline" onClick={() => navigate('/dashboard/ai-practice')}>
-               View All Practice Activities
-               <ArrowRight className="ml-2 h-4 w-4" />
-             </Button>
-           </div>
+                               <div className="mt-6 text-center">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/dashboard/ai-practice')}
+              className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20 hover:bg-primary/5 hover:border-primary/50 hover:text-primary"
+            >
+              View All Practice Activities
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

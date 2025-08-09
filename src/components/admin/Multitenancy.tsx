@@ -164,44 +164,44 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-card to-blue-500/5">
+        <Card className="bg-gradient-to-br from-card to-green-500/5">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Active Users</p>
-                <p className="text-2xl font-bold text-blue-600">
+                <p className="text-2xl font-bold text-green-600">
                   {organizations.reduce((sum, org) => sum + org.userCount, 0).toLocaleString()}
                 </p>
               </div>
-              <Users className="h-8 w-8 text-blue-600" />
+              <Users className="h-8 w-8 text-green-600" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-card to-purple-500/5">
+        <Card className="bg-gradient-to-br from-card to-green-500/5">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Courses</p>
-                <p className="text-2xl font-bold text-purple-600">
+                <p className="text-2xl font-bold text-green-600">
                   {organizations.reduce((sum, org) => sum + org.courseCount, 0)}
                 </p>
               </div>
-              <BookOpen className="h-8 w-8 text-purple-600" />
+              <BookOpen className="h-8 w-8 text-green-600" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-card to-orange-500/5">
+        <Card className="bg-gradient-to-br from-card to-green-500/5">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Regions</p>
-                <p className="text-2xl font-bold text-orange-600">
+                <p className="text-2xl font-bold text-green-600">
                   {new Set(organizations.map(org => org.region)).size}
                 </p>
               </div>
-              <MapPin className="h-8 w-8 text-orange-600" />
+              <MapPin className="h-8 w-8 text-green-600" />
             </div>
           </CardContent>
         </Card>

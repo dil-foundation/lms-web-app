@@ -71,7 +71,7 @@ export const StageOne: React.FC = () => {
         <Button 
           variant="outline" 
           size="icon"
-          className="absolute left-6 top-6"
+          className="absolute left-6 top-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
           onClick={() => navigate('/dashboard/ai-practice')}
         >
           <ArrowLeft className="h-4 w-4" />

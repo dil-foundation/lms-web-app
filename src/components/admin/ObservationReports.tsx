@@ -653,7 +653,7 @@ export const ObservationReports = () => {
   }
 
   return (
-    <div className="space-y-8 mx-auto p-4">
+    <div className="space-y-8 mx-auto">
       {/* Premium Header Section */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
@@ -710,7 +710,7 @@ export const ObservationReports = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-card to-blue-500/5 dark:bg-card">
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Observers</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -723,7 +723,7 @@ export const ObservationReports = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-card to-indigo-500/5 dark:bg-card">
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pending Reviews</CardTitle>
             <AlertCircle className="h-4 w-4 text-muted-foreground" />
@@ -736,7 +736,7 @@ export const ObservationReports = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-card to-emerald-500/5 dark:bg-card">
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">TEAL Assessments</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />

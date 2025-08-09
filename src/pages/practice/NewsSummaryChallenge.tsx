@@ -208,13 +208,7 @@ export default function NewsSummaryChallenge() {
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Try Again
               </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => navigate('/dashboard/practice/stage-4')}
-                className="w-full"
-              >
-                Back to Stage 4
-              </Button>
+
             </div>
           </CardContent>
         </Card>
@@ -231,7 +225,7 @@ export default function NewsSummaryChallenge() {
             variant="outline"
             size="icon"
             onClick={() => navigate('/dashboard/practice/stage-4')}
-            className="shrink-0"
+            className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -274,6 +268,7 @@ export default function NewsSummaryChallenge() {
                       disabled={currentItemIndex === newsItems.length - 1}
                       variant="outline"
                       size="sm"
+                      className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
                     >
                       Next
                     </Button>
@@ -509,17 +504,11 @@ export default function NewsSummaryChallenge() {
               <Button
                 onClick={resetChallenge}
                 variant="outline"
-                className="px-6 py-2"
+                className="px-6 py-2 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
               >
                 Reset
               </Button>
-              <Button
-                onClick={() => navigate('/dashboard/practice/stage-4')}
-                variant="outline"
-                className="px-6 py-2"
-              >
-                Back to Stage 4
-              </Button>
+
             </div>
           </div>
 

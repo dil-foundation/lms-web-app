@@ -19,7 +19,6 @@ import {
   Repeat,
   UserX,
   Eye,
-  Filter,
   GraduationCap,
   X
 } from 'lucide-react';
@@ -146,11 +145,6 @@ export const AITeacherDashboard = ({ userProfile }: AITeacherDashboardProps) => 
                   <SelectItem value="this-year">This Year</SelectItem>
                 </SelectContent>
               </Select>
-              
-              <Button variant="outline" size="sm" className="gap-2">
-                <Filter className="h-4 w-4" />
-                Filters
-              </Button>
             </div>
           </div>
         </div>

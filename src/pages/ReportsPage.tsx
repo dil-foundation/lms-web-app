@@ -386,7 +386,7 @@ export default function ReportsPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-card to-blue-500/5 dark:bg-card">
+            <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Active Students</CardTitle>
                 <Activity className="h-4 w-4 text-muted-foreground" />
@@ -401,7 +401,7 @@ export default function ReportsPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-card to-orange-500/5 dark:bg-card">
+            <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Avg Completion</CardTitle>
                 <Target className="h-4 w-4 text-muted-foreground" />
@@ -414,7 +414,7 @@ export default function ReportsPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-card to-purple-500/5 dark:bg-card">
+            <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Avg Score</CardTitle>
                 <Award className="h-4 w-4 text-muted-foreground" />
@@ -618,7 +618,7 @@ export default function ReportsPage() {
                       </Select>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="outline" className="w-full sm:w-auto">
+                          <Button variant="outline" className="w-full sm:w-auto transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary">
                             <SortAsc className="h-4 w-4 mr-2" />
                             Sort
                           </Button>
@@ -816,13 +816,13 @@ export default function ReportsPage() {
                             </div>
                             
                             <div className="grid grid-cols-2 gap-4">
-                              <div className="text-center p-3 bg-blue-50 rounded-lg">
-                                <p className="text-2xl font-bold text-blue-600">{course.completionRate}%</p>
-                                <p className="text-xs text-blue-600">Completion</p>
+                              <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800/30">
+                                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{course.completionRate}%</p>
+                                <p className="text-xs text-blue-600 dark:text-blue-400">Completion</p>
                               </div>
-                              <div className="text-center p-3 bg-green-50 rounded-lg">
-                                <p className="text-2xl font-bold text-green-600">{course.averageScore}%</p>
-                                <p className="text-xs text-green-600">Avg Score</p>
+                              <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800/30">
+                                <p className="text-2xl font-bold text-green-600 dark:text-green-400">{course.averageScore}%</p>
+                                <p className="text-xs text-green-600 dark:text-green-400">Avg Score</p>
                               </div>
                             </div>
                             

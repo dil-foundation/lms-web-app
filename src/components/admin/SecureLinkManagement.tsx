@@ -226,11 +226,11 @@ const LinkCard = ({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-gradient-to-r from-green-100 to-green-200 text-green-800 dark:from-green-900/30 dark:to-green-800/30 dark:text-green-400 border border-green-200 dark:border-green-800/50';
-      case 'expired': return 'bg-gradient-to-r from-red-100 to-red-200 text-red-800 dark:from-red-900/30 dark:to-red-800/30 dark:text-red-400 border border-red-200 dark:border-red-800/50';
-      case 'used': return 'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 dark:from-blue-900/30 dark:to-blue-800/30 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50';
-      case 'deactivated': return 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 dark:from-gray-900/30 dark:to-gray-800/30 dark:text-gray-400 border border-gray-200 dark:border-gray-800/50';
-      default: return 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 dark:from-gray-900/30 dark:to-gray-800/30 dark:text-gray-400 border border-gray-200 dark:border-gray-800/50';
+      case 'active': return 'bg-gradient-to-r from-green-100 to-green-200 text-green-800 dark:from-green-900/30 dark:to-green-800/30 dark:text-green-200 border border-green-200 dark:border-green-800/50';
+      case 'expired': return 'bg-gradient-to-r from-red-100 to-red-200 text-red-800 dark:from-red-900/30 dark:to-red-800/30 dark:text-red-200 border border-red-200 dark:border-red-800/50';
+      case 'used': return 'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 dark:from-blue-900/30 dark:to-blue-800/30 dark:text-blue-200 border border-blue-200 dark:border-blue-800/50';
+      case 'deactivated': return 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 dark:from-gray-900/30 dark:to-gray-800/30 dark:text-gray-300 border border-gray-200 dark:border-gray-800/50';
+      default: return 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 dark:from-gray-900/30 dark:to-gray-800/30 dark:text-gray-300 border border-gray-200 dark:border-gray-800/50';
     }
   };
 
@@ -526,7 +526,7 @@ export const SecureLinkManagement = ({ onBack }: SecureLinkManagementProps) => {
   // Show database setup alert if there's a database-related error
   if (error && error.includes('Database table not set up yet')) {
     return (
-      <div className="space-y-6 mx-auto p-4">
+      <div className="space-y-6 mx-auto">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Secure Link Management</h1>
@@ -546,7 +546,7 @@ export const SecureLinkManagement = ({ onBack }: SecureLinkManagementProps) => {
   }
 
   return (
-    <div className="space-y-8 mx-auto p-4">
+    <div className="space-y-8 mx-auto">
       {/* Premium Header Section */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>

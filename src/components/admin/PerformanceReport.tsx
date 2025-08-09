@@ -59,11 +59,11 @@ const mockReportData = {
   previousScore: 3.8,
   showTealObservations: true, // Added to control TEAL tab visibility
   categories: {
-    instruction: { score: 4.5, weight: 30, trend: "up" },
-    engagement: { score: 4.2, weight: 25, trend: "up" },
+    instruction: { score: 4.0, weight: 25, trend: "up" },
+    engagement: { score: 4.0, weight: 30, trend: "up" },
     environment: { score: 4.0, weight: 20, trend: "stable" },
-    professionalism: { score: 4.1, weight: 15, trend: "up" },
-    resources: { score: 3.8, weight: 10, trend: "down" }
+    resources: { score: 3.5, weight: 15, trend: "up" },
+    fidelity: { score: 4.0, weight: 10, trend: "up" }
   },
   strengths: [
     "Exceptional student engagement with 95% active participation",
@@ -102,22 +102,42 @@ const ScoreCard = ({ title, score, maxScore = 5, trend, subtitle }: {
   };
 
   const getScoreColor = () => {
-    if (percentage >= 80) return "text-green-600 dark:text-green-400";
-    if (percentage >= 60) return "text-yellow-600 dark:text-yellow-400";
+    if (percentage >= 70) return "text-green-600 dark:text-green-400";
+    if (percentage >= 50) return "text-yellow-600 dark:text-yellow-400";
     return "text-red-600 dark:text-red-400";
   };
 
   const getPerformanceLevel = () => {
     if (percentage >= 80) return "Exceeds Standards";
-    if (percentage >= 60) return "Meets Standards";
+    if (percentage >= 70) return "Meets Standards";
     return "Below Standards";
   };
 
   const getPerformanceColor = () => {
     if (percentage >= 80) return "from-green-500 to-green-600 dark:from-green-400 dark:to-green-500";
-    if (percentage >= 60) return "from-yellow-500 to-yellow-600 dark:from-yellow-400 dark:to-yellow-500";
+    if (percentage >= 70) return "from-green-500 to-green-600 dark:from-green-400 dark:to-green-500";
+    if (percentage >= 50) return "from-yellow-500 to-yellow-600 dark:from-yellow-400 dark:to-yellow-500";
     return "from-red-500 to-red-600 dark:from-red-400 dark:to-red-500";
   };
+
+  const getCircleColor = () => {
+    if (percentage >= 80) return "#10b981"; // green-500
+    if (percentage >= 70) return "#10b981"; // green-500
+    if (percentage >= 50) return "#f59e0b"; // yellow-500
+    return "#ef4444"; // red-500
+  };
+
+  const getCircleColorDark = () => {
+    if (percentage >= 80) return "#4ade80"; // green-400
+    if (percentage >= 70) return "#4ade80"; // green-400
+    if (percentage >= 50) return "#fbbf24"; // yellow-400
+    return "#f87171"; // red-400
+  };
+
+  // Calculate stroke dash array for the circle progress
+  const radius = 32; // radius of the circle
+  const circumference = 2 * Math.PI * radius;
+  const strokeDasharray = `${(percentage / 100) * circumference} ${circumference}`;
 
   return (
     <Card className="bg-gradient-to-br from-card to-primary/5 dark:bg-card hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 border border-border/50">
@@ -157,23 +177,49 @@ const ScoreCard = ({ title, score, maxScore = 5, trend, subtitle }: {
             </div>
           </div>
 
-          {/* McKinsey-style Performance Ring */}
+          {/* Clean SVG Progress Ring */}
           <div className="flex justify-center">
             <div className="relative w-20 h-20">
-              {/* Background Ring */}
-              <div className="absolute inset-0 rounded-full border-4 border-gray-200 dark:border-gray-700"></div>
-              {/* Performance Ring */}
-              <div 
-                className="absolute inset-0 rounded-full border-4 border-transparent"
-                style={{
-                  background: `conic-gradient(from 0deg, ${percentage >= 80 ? (document.documentElement.classList.contains('dark') ? '#4ade80' : '#10b981') : percentage >= 60 ? (document.documentElement.classList.contains('dark') ? '#fbbf24' : '#f59e0b') : (document.documentElement.classList.contains('dark') ? '#f87171' : '#ef4444')} 0deg, ${percentage >= 80 ? (document.documentElement.classList.contains('dark') ? '#4ade80' : '#10b981') : percentage >= 60 ? (document.documentElement.classList.contains('dark') ? '#fbbf24' : '#f59e0b') : (document.documentElement.classList.contains('dark') ? '#f87171' : '#ef4444')} ${(percentage / 100) * 360}deg, transparent ${(percentage / 100) * 360}deg)`,
-                  mask: 'radial-gradient(circle at center, transparent 55%, black 56%)'
-                }}
-              ></div>
+              <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 80 80">
+                {/* Background Circle */}
+                <circle
+                  cx="40"
+                  cy="40"
+                  r={radius}
+                  stroke="currentColor"
+                  strokeWidth="6"
+                  fill="transparent"
+                  className="text-gray-200 dark:text-gray-700"
+                />
+                {/* Progress Circle */}
+                <circle
+                  cx="40"
+                  cy="40"
+                  r={radius}
+                  stroke="currentColor"
+                  strokeWidth="6"
+                  fill="transparent"
+                  strokeDasharray={strokeDasharray}
+                  strokeDashoffset="0"
+                  strokeLinecap="round"
+                  className={`transition-all duration-500 ease-out ${
+                    percentage >= 80 
+                      ? 'text-green-500 dark:text-green-400' 
+                      : percentage >= 70 
+                      ? 'text-green-500 dark:text-green-400'
+                      : percentage >= 50 
+                      ? 'text-yellow-500 dark:text-yellow-400'
+                      : 'text-red-500 dark:text-red-400'
+                  }`}
+                  style={{
+                    transformOrigin: '40px 40px'
+                  }}
+                />
+              </svg>
               {/* Center Content */}
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center">
-                  <div className={`text-lg font-bold ${getScoreColor()}`}>
+                  <div className={`text-sm font-bold ${getScoreColor()}`}>
                     {percentage.toFixed(0)}%
                   </div>
                 </div>
@@ -206,8 +252,8 @@ const ExecutiveSummary = ({ data }: { data: any }) => {
   return (
     <div className="space-y-8">
       {/* McKinsey-style Header Section */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 dark:from-primary/10 dark:via-primary/20 dark:to-primary/10"></div>
+      <div className="relative overflow-hidden rounded-3xl">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 dark:from-primary/10 dark:via-primary/20 dark:to-primary/10 rounded-3xl"></div>
         <div className="relative p-8 border border-border/30 rounded-3xl bg-gradient-to-br from-background/80 to-background/40 backdrop-blur-sm">
           <div className="flex items-start justify-between mb-6">
             <div className="flex items-center gap-4">
@@ -240,10 +286,15 @@ const ExecutiveSummary = ({ data }: { data: any }) => {
                 {overallScore >= 4.0 ? 'Exceeds Standards' : overallScore >= 3.0 ? 'Meets Standards' : 'Below Standards'}
               </span>
               </div>
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
               <div 
                 className="bg-gradient-to-r from-primary to-primary/80 dark:from-primary/90 dark:to-primary/70 h-3 rounded-full transition-all duration-500"
-                style={{ width: `${(overallScore / 5) * 100}%` }}
+                style={{ 
+                  width: `${Math.min(100, Math.max(0, 
+                    // Handle different score scales - if score > 5, assume it's on 0-100 scale, otherwise 0-5 scale
+                    overallScore > 5 ? overallScore : (overallScore / 5) * 100
+                  ))}%` 
+                }}
               ></div>
             </div>
             </div>
@@ -343,8 +394,8 @@ const ObservationDetails = ({ data }: { data: any }) => {
   return (
     <div className="space-y-8">
       {/* McKinsey-style Header Section */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 dark:from-primary/10 dark:via-primary/20 dark:to-primary/10"></div>
+      <div className="relative overflow-hidden rounded-3xl">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 dark:from-primary/10 dark:via-primary/20 dark:to-primary/10 rounded-3xl"></div>
         <div className="relative p-8 border border-border/30 rounded-3xl bg-gradient-to-br from-background/80 to-background/40 backdrop-blur-sm">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center shadow-lg">
@@ -432,8 +483,8 @@ const PerformanceMetrics = ({ data }: { data: any }) => {
   return (
     <div className="space-y-8">
       {/* McKinsey-style Header Section */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 dark:from-primary/10 dark:via-primary/20 dark:to-primary/10"></div>
+      <div className="relative overflow-hidden rounded-3xl">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 dark:from-primary/10 dark:via-primary/20 dark:to-primary/10 rounded-3xl"></div>
         <div className="relative p-8 border border-border/30 rounded-3xl bg-gradient-to-br from-background/80 to-background/40 backdrop-blur-sm">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center shadow-lg">
@@ -645,7 +696,7 @@ const ActionPlan = () => (
       <div className="space-y-4">
         <div className="p-4 border rounded-lg">
           <div className="flex items-center gap-2 mb-2">
-            <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Immediate</Badge>
+            <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-200 dark:border-red-800/50">Immediate</Badge>
             <span className="font-medium">0-30 Days</span>
           </div>
           <ul className="space-y-1 text-sm text-muted-foreground ml-4">
@@ -656,7 +707,7 @@ const ActionPlan = () => (
         
         <div className="p-4 border rounded-lg">
           <div className="flex items-center gap-2 mb-2">
-            <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Short-term</Badge>
+            <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-200 dark:border-yellow-800/50">Short-term</Badge>
             <span className="font-medium">1-3 Months</span>
           </div>
           <ul className="space-y-1 text-sm text-muted-foreground ml-4">
@@ -668,7 +719,7 @@ const ActionPlan = () => (
         
         <div className="p-4 border rounded-lg">
           <div className="flex items-center gap-2 mb-2">
-            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Long-term</Badge>
+            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-200 dark:border-green-800/50">Long-term</Badge>
             <span className="font-medium">3-6 Months</span>
           </div>
           <ul className="space-y-1 text-sm text-muted-foreground ml-4">
@@ -849,6 +900,12 @@ export const PerformanceReport: React.FC<PerformanceReportProps> = ({ observatio
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+
+  // Custom tab change handler to prevent scroll behavior
+  const handleTabChange = (value: string) => {
+    // Prevent any default behavior that might cause scrolling
+    setActiveTab(value);
+  };
 
   // PDF Export Function
   const exportToPDF = async () => {
@@ -1048,22 +1105,12 @@ export const PerformanceReport: React.FC<PerformanceReportProps> = ({ observatio
           // Transform API data to expected format or use mock data as fallback
           const reportData = data || mockReportData;
           setReportData(reportData);
-          
-          // If TEAL is not enabled and current tab is teal, switch to overview
-          if (!reportData.showTealObservations && activeTab === 'teal') {
-            setActiveTab('overview');
-          }
         })
         .catch(err => {
           setError(err.message || 'Failed to load report');
           // Use mock data as fallback
-  const reportData = mockReportData;
+          const reportData = mockReportData;
           setReportData(reportData);
-          
-          // If TEAL is not enabled and current tab is teal, switch to overview
-          if (!reportData.showTealObservations && activeTab === 'teal') {
-            setActiveTab('overview');
-          }
         })
         .finally(() => {
           setLoading(false);
@@ -1084,17 +1131,19 @@ export const PerformanceReport: React.FC<PerformanceReportProps> = ({ observatio
       }
       
       setReportData(reportData);
-      
-      // If TEAL is not enabled and current tab is teal, switch to overview
-      if (!reportData.showTealObservations && activeTab === 'teal') {
-        setActiveTab('overview');
-      }
     }
-  }, [observationData, activeTab]);
+  }, [observationData]);
+
+  // Separate useEffect to handle TEAL tab validation when reportData changes
+  useEffect(() => {
+    if (reportData && !reportData.showTealObservations && activeTab === 'teal') {
+      setActiveTab('overview');
+    }
+  }, [reportData, activeTab]);
 
   if (loading) {
     return (
-      <div className="space-y-6 mx-auto p-4 text-center">
+      <div className="space-y-6 mx-auto text-center">
         <ContentLoader />
         <p className="text-muted-foreground">Loading report...</p>
       </div>
@@ -1103,7 +1152,7 @@ export const PerformanceReport: React.FC<PerformanceReportProps> = ({ observatio
 
   if (error && !reportData) {
     return (
-      <div className="space-y-6 mx-auto p-4">
+      <div className="space-y-6 mx-auto">
         <div className="flex items-center justify-between">
           <Button variant="outline" onClick={onBack}>
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -1122,7 +1171,7 @@ export const PerformanceReport: React.FC<PerformanceReportProps> = ({ observatio
 
   if (!reportData) {
     return (
-      <div className="space-y-6 mx-auto p-4 text-center">
+      <div className="space-y-6 mx-auto text-center">
         <div className="flex items-center justify-between">
           <Button variant="outline" onClick={onBack}>
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -1140,7 +1189,7 @@ export const PerformanceReport: React.FC<PerformanceReportProps> = ({ observatio
   }
 
   return (
-    <div className="space-y-8 mx-auto p-4">
+    <div className="space-y-8 mx-auto">
       {/* Premium Header Section */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 dark:from-primary/10 dark:via-transparent dark:to-primary/10 rounded-3xl"></div>
@@ -1199,8 +1248,8 @@ export const PerformanceReport: React.FC<PerformanceReportProps> = ({ observatio
       <ObservationDetails data={reportData} />
 
       {/* Tabbed Content */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-        <div className="bg-gradient-to-r from-background to-background/95 backdrop-blur-sm border border-border/50 rounded-2xl p-2">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-8">
+        <div className="bg-gradient-to-r from-background to-background/95 backdrop-blur-sm border border-border/50 rounded-2xl p-2 sticky top-4 z-10">
           <TabsList className={`grid w-full h-12 ${reportData.showTealObservations ? 'grid-cols-4' : 'grid-cols-3'} bg-transparent`}>
             <TabsTrigger 
               value="overview" 
@@ -1231,21 +1280,21 @@ export const PerformanceReport: React.FC<PerformanceReportProps> = ({ observatio
         </TabsList>
         </div>
 
-        <TabsContent value="overview" className="space-y-6">
+        <TabsContent value="overview" className="space-y-6 animate-in fade-in-0 duration-300">
           <PerformanceMetrics data={reportData} />
         </TabsContent>
 
-        <TabsContent value="detailed" className="space-y-6">
+        <TabsContent value="detailed" className="space-y-6 animate-in fade-in-0 duration-300">
           <DetailedFindings data={reportData} />
         </TabsContent>
 
         {reportData.showTealObservations && (
-        <TabsContent value="teal" className="space-y-6">
+        <TabsContent value="teal" className="space-y-6 animate-in fade-in-0 duration-300">
           <TealAnalysis data={reportData} />
         </TabsContent>
         )}
 
-        <TabsContent value="action" className="space-y-6">
+        <TabsContent value="action" className="space-y-6 animate-in fade-in-0 duration-300">
           <ActionPlan />
         </TabsContent>
       </Tabs>

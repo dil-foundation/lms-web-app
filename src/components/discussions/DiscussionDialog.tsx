@@ -106,7 +106,7 @@ export const DiscussionDialog = ({ isOpen, onOpenChange, editingDiscussion, onSa
           </div>
         </div>
         <div className="flex justify-end space-x-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">Cancel</Button>
           <Button onClick={handleSave} disabled={isSaving}>
             {isSaving ? 'Saving...' : (editingDiscussion ? 'Save Changes' : 'Create Discussion')}
           </Button>
