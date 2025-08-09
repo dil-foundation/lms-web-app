@@ -33,6 +33,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // Mock data for stages
 const mockStages = [
@@ -218,7 +219,7 @@ const TeacherStageCard = ({ stage }) => {
           </Button>
           <Button 
             variant="outline" 
-            className="w-full" 
+            className="w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20 hover:bg-primary/5 hover:border-primary/50 hover:text-primary" 
             size="sm"
             onClick={() => setIsEditOpen(true)}
           >
@@ -255,19 +256,22 @@ const TeacherStageCard = ({ stage }) => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="difficulty">Difficulty Level</Label>
-              <select
-                id="difficulty"
-                className="w-full p-2 border border-input rounded-md"
+              <Select
                 value={editForm.difficulty}
-                onChange={(e) => setEditForm({...editForm, difficulty: e.target.value})}
+                onValueChange={(value) => setEditForm({...editForm, difficulty: value})}
               >
-                <option value="Beginner">Beginner</option>
-                <option value="Elementary">Elementary</option>
-                <option value="Intermediate">Intermediate</option>
-                <option value="Upper Intermediate">Upper Intermediate</option>
-                <option value="Advanced">Advanced</option>
-                <option value="Proficiency">Proficiency</option>
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select difficulty level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Beginner">Beginner</SelectItem>
+                  <SelectItem value="Elementary">Elementary</SelectItem>
+                  <SelectItem value="Intermediate">Intermediate</SelectItem>
+                  <SelectItem value="Upper Intermediate">Upper Intermediate</SelectItem>
+                  <SelectItem value="Advanced">Advanced</SelectItem>
+                  <SelectItem value="Proficiency">Proficiency</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex items-center justify-between">
               <Label htmlFor="active">Assign to Students</Label>
@@ -278,7 +282,11 @@ const TeacherStageCard = ({ stage }) => {
               />
             </div>
             <div className="flex gap-2 pt-4">
-              <Button variant="outline" className="flex-1" onClick={() => setIsEditOpen(false)}>
+              <Button 
+                variant="outline" 
+                className="flex-1 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary" 
+                onClick={() => setIsEditOpen(false)}
+              >
                 Cancel
               </Button>
               <Button className="flex-1" onClick={() => setIsEditOpen(false)}>

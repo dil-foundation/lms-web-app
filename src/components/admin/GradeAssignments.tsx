@@ -185,7 +185,7 @@ export const GradeAssignments = () => {
   }
 
   return (
-    <div className="space-y-6 mx-auto p-4">
+    <div className="space-y-6 mx-auto">
       <div className="relative p-8 rounded-3xl bg-gradient-to-r from-primary/5 via-transparent to-primary/5">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">

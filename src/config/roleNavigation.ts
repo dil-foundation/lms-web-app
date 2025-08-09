@@ -1,5 +1,5 @@
 
-import { Home, BookOpen, FileQuestion, TrendingUp, Users, Settings, BarChart3, GraduationCap, ClipboardList, Award, UserCheck, Database, Shield, MessageSquare, Link, Eye, MessageCircle, Bot, Brain, Zap, Target, Sparkles, BookCheck, FileText, Cog, Settings2, ShieldCheck } from 'lucide-react';
+import { Home, BookOpen, FileQuestion, TrendingUp, Users, Settings, BarChart3, GraduationCap, ClipboardList, Award, UserCheck, Database, Shield, MessageSquare, Link, Eye, MessageCircle, Bot, Brain, Zap, Target, Sparkles, BookCheck, FileText, Cog, Settings2, ShieldCheck, Plug, Building2, Download } from 'lucide-react';
 
 export type UserRole = 'student' | 'teacher' | 'admin';
 
@@ -149,6 +149,9 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean): N
           title: 'SYSTEM',
           items: [
             { title: 'Security', path: '/dashboard/security', icon: Shield },
+            { title: 'Integration APIs', path: '/dashboard/integration-apis', icon: Plug },
+            { title: 'Multitenancy', path: '/dashboard/multitenancy', icon: Building2 },
+            { title: 'Offline Learning', path: '/dashboard/offline-learning', icon: Download },
           ]
         }
       ];

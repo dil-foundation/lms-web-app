@@ -381,7 +381,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
 
   if (isLoading) {
     return (
-      <div className="space-y-8 mx-auto p-4">
+      <div className="space-y-8 mx-auto">
         {/* Premium Header Section */}
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
@@ -593,7 +593,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
 
       {/* Enhanced Course Content */}
       <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-12">
           <div className="lg:col-span-3 space-y-12 order-2 lg:order-1">
             {/* Enhanced What You'll Learn & Course Features */}
             <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm rounded-3xl shadow-lg">

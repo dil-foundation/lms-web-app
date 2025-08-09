@@ -1070,11 +1070,11 @@ export default function StudentsPage() {
                 </div>
             </div>
             <DialogFooter>
-                <Button variant="outline" onClick={() => setIsProfileModalOpen(false)}>
+                <Button variant="outline" onClick={() => setIsProfileModalOpen(false)} className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary">
                     {modalMode === 'edit' ? 'Cancel' : 'Close'}
                 </Button>
                 {modalMode === 'edit' && (
-                    <Button onClick={handleUpdateStudent} disabled={isUpdatingUser}>
+                    <Button onClick={handleUpdateStudent} disabled={isUpdatingUser} className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20">
                         {isUpdatingUser ? "Saving..." : "Save Changes"}
                     </Button>
                 )}

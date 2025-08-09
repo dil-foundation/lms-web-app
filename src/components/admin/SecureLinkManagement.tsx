@@ -529,7 +529,7 @@ export const SecureLinkManagement = ({ onBack }: SecureLinkManagementProps) => {
   // Show database setup alert if there's a database-related error
   if (error && error.includes('Database table not set up yet')) {
     return (
-      <div className="space-y-6 mx-auto p-4">
+      <div className="space-y-6 mx-auto">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Secure Link Management</h1>
@@ -549,7 +549,7 @@ export const SecureLinkManagement = ({ onBack }: SecureLinkManagementProps) => {
   }
 
   return (
-    <div className="space-y-8 mx-auto p-4">
+    <div className="space-y-8 mx-auto">
       {/* Premium Header Section */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>

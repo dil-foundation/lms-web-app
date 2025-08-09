@@ -506,13 +506,14 @@ export const AITeacherProgress = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => setViewMode(viewMode === 'table' ? 'cards' : 'table')}
+                className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
               >
                 {viewMode === 'table' ? 'Card View' : 'Table View'}
               </Button>
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="gap-2"
+                className="gap-2 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
                 onClick={() => handleExportData('csv', 'all')}
               >
                 <Download className="h-4 w-4" />
@@ -521,7 +522,7 @@ export const AITeacherProgress = () => {
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="gap-2"
+                className="gap-2 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
                 onClick={() => handleExportData('pdf', 'all')}
               >
                 <FileText className="h-4 w-4" />
@@ -649,7 +650,7 @@ export const AITeacherProgress = () => {
             <div className="flex items-end">
               <Button 
                 variant="outline" 
-                className="w-full"
+                className="w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
                 onClick={() => {
                   setSearchTerm('');
                   setStageFilter('all');
@@ -723,6 +724,7 @@ export const AITeacherProgress = () => {
                             variant="outline"
                             size="sm"
                             onClick={() => handleViewStudentDetail(student)}
+                            className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
@@ -798,6 +800,7 @@ export const AITeacherProgress = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => handleViewStudentDetail(student)}
+                      className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -1144,6 +1147,7 @@ export const AITeacherProgress = () => {
               <Button 
                 variant="outline" 
                 onClick={() => selectedStudent && handleExportData('pdf', 'individual', selectedStudent.id)}
+                className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
               >
                 <Download className="h-4 w-4 mr-2" />
                 Export Report

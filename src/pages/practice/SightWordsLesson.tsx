@@ -226,8 +226,13 @@ const SightWordsLesson = () => {
     return (
         <div className="w-full">
             <div className="relative flex items-center justify-center mb-6">
-                 <Button variant="ghost" size="icon" className="absolute left-0 top-1/2 -translate-y-1/2" onClick={() => navigate(-1)}>
-                    <ArrowLeft className="h-6 w-6" />
+                 <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="absolute left-0 top-1/2 -translate-y-1/2 transition-all duration-300 hover:-translate-y-1/2 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary" 
+                    onClick={() => navigate(-1)}
+                >
+                    <ArrowLeft className="h-4 w-4" />
                 </Button>
                 <div className="text-center">
                     <div className="inline-block p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl mb-3 shadow-lg">
