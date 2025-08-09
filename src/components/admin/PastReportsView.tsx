@@ -515,7 +515,7 @@ export const PastReportsView = ({ onBack, onViewReport }: PastReportsViewProps) 
   };
 
   return (
-    <div className="space-y-8 mx-auto p-4">
+    <div className="space-y-8 mx-auto">
       {/* Premium Header Section */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>

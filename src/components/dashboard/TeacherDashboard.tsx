@@ -569,7 +569,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
 
 
   return (
-    <div className="space-y-6 p-2 sm:p-0">
+    <div className="space-y-6">
       {loading ? (
         <div className="min-h-screen flex items-center justify-center">
           <ContentLoader message="Loading dashboard..." />
@@ -721,9 +721,9 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                         </div>
                       </div>
                       <DrawerFooter>
-                        <Button className="w-full">Apply Filters</Button>
+                        <Button className="w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20">Apply Filters</Button>
                         <DrawerClose asChild>
-                          <Button variant="outline" className="w-full">Clear All</Button>
+                          <Button variant="outline" className="w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary">Clear All</Button>
                         </DrawerClose>
                       </DrawerFooter>
                     </div>

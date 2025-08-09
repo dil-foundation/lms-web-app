@@ -62,11 +62,11 @@ const mockReportData = {
   previousScore: 3.8,
   showTealObservations: true, // Added to control TEAL tab visibility
   categories: {
-    instruction: { score: 4.5, weight: 30, trend: "up" },
-    engagement: { score: 4.2, weight: 25, trend: "up" },
+    instruction: { score: 4.0, weight: 25, trend: "up" },
+    engagement: { score: 4.0, weight: 30, trend: "up" },
     environment: { score: 4.0, weight: 20, trend: "stable" },
-    professionalism: { score: 4.1, weight: 15, trend: "up" },
-    resources: { score: 3.8, weight: 10, trend: "down" }
+    resources: { score: 3.5, weight: 15, trend: "up" },
+    fidelity: { score: 4.0, weight: 10, trend: "up" }
   },
   strengths: [
     "Exceptional student engagement with 95% active participation",
@@ -112,7 +112,7 @@ const ScoreCard = ({ title, score, maxScore = 5, trend, subtitle }: {
 
   const getPerformanceLevel = () => {
     if (percentage >= 80) return "Exceeds Standards";
-    if (percentage >= 60) return "Meets Standards";
+    if (percentage >= 70) return "Meets Standards";
     return "Below Standards";
   };
 
@@ -823,6 +823,12 @@ export const PerformanceReport: React.FC<PerformanceReportProps> = ({ observatio
   const [error, setError] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
 
+  // Custom tab change handler to prevent scroll behavior
+  const handleTabChange = (value: string) => {
+    // Prevent any default behavior that might cause scrolling
+    setActiveTab(value);
+  };
+
   // PDF Export Function
   const exportToPDF = async () => {
     if (!reportData) {
@@ -1021,22 +1027,12 @@ export const PerformanceReport: React.FC<PerformanceReportProps> = ({ observatio
           // Transform API data to expected format or use mock data as fallback
           const reportData = data || mockReportData;
           setReportData(reportData);
-          
-          // If TEAL is not enabled and current tab is teal, switch to overview
-          if (!reportData.showTealObservations && activeTab === 'teal') {
-            setActiveTab('overview');
-          }
         })
         .catch(err => {
           setError(err.message || 'Failed to load report');
           // Use mock data as fallback
-  const reportData = mockReportData;
+          const reportData = mockReportData;
           setReportData(reportData);
-          
-          // If TEAL is not enabled and current tab is teal, switch to overview
-          if (!reportData.showTealObservations && activeTab === 'teal') {
-            setActiveTab('overview');
-          }
         })
         .finally(() => {
           setLoading(false);
@@ -1057,17 +1053,19 @@ export const PerformanceReport: React.FC<PerformanceReportProps> = ({ observatio
       }
       
       setReportData(reportData);
-      
-      // If TEAL is not enabled and current tab is teal, switch to overview
-      if (!reportData.showTealObservations && activeTab === 'teal') {
-        setActiveTab('overview');
-      }
     }
-  }, [observationData, activeTab]);
+  }, [observationData]);
+
+  // Separate useEffect to handle TEAL tab validation when reportData changes
+  useEffect(() => {
+    if (reportData && !reportData.showTealObservations && activeTab === 'teal') {
+      setActiveTab('overview');
+    }
+  }, [reportData, activeTab]);
 
   if (loading) {
     return (
-      <div className="space-y-6 mx-auto p-4 text-center">
+      <div className="space-y-6 mx-auto text-center">
         <ContentLoader />
         <p className="text-muted-foreground">Loading report...</p>
       </div>
@@ -1076,7 +1074,7 @@ export const PerformanceReport: React.FC<PerformanceReportProps> = ({ observatio
 
   if (error && !reportData) {
     return (
-      <div className="space-y-6 mx-auto p-4">
+      <div className="space-y-6 mx-auto">
         <div className="flex items-center justify-between">
           <Button variant="outline" onClick={onBack}>
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -1095,7 +1093,7 @@ export const PerformanceReport: React.FC<PerformanceReportProps> = ({ observatio
 
   if (!reportData) {
     return (
-      <div className="space-y-6 mx-auto p-4 text-center">
+      <div className="space-y-6 mx-auto text-center">
         <div className="flex items-center justify-between">
           <Button variant="outline" onClick={onBack}>
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -1113,7 +1111,7 @@ export const PerformanceReport: React.FC<PerformanceReportProps> = ({ observatio
   }
 
   return (
-    <div className="space-y-8 mx-auto p-4">
+    <div className="space-y-8 mx-auto">
       {/* Premium Header Section */}
       <div className="relative overflow-hidden bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-2xl p-8">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 dark:from-primary/10 dark:via-transparent dark:to-primary/10"></div>
@@ -1201,11 +1199,11 @@ export const PerformanceReport: React.FC<PerformanceReportProps> = ({ observatio
           </TabsList>
         </div>
 
-        <TabsContent value="overview" className="space-y-6">
+        <TabsContent value="overview" className="space-y-6 animate-in fade-in-0 duration-300">
           <PerformanceMetrics data={reportData} />
         </TabsContent>
 
-        <TabsContent value="detailed" className="space-y-6">
+        <TabsContent value="detailed" className="space-y-6 animate-in fade-in-0 duration-300">
           <DetailedFindings data={reportData} />
         </TabsContent>
 
@@ -1215,7 +1213,7 @@ export const PerformanceReport: React.FC<PerformanceReportProps> = ({ observatio
           </TabsContent>
         )}
 
-        <TabsContent value="action" className="space-y-6">
+        <TabsContent value="action" className="space-y-6 animate-in fade-in-0 duration-300">
           <ActionPlan />
         </TabsContent>
       </Tabs>

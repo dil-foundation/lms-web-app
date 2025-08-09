@@ -529,7 +529,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                 {/* Filter Controls - Matching Reports Page Style */}
                 <div className="flex items-center gap-3">
                   <Select value={timeRange} onValueChange={setTimeRange}>
-                    <SelectTrigger className="w-full sm:w-48">
+                    <SelectTrigger className="w-full sm:w-48 rounded-xl h-9">
                       <SelectValue placeholder="Select time range" />
                     </SelectTrigger>
                     <SelectContent>
@@ -542,7 +542,10 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                     </SelectContent>
                   </Select>
                   
-                  <Button variant="outline">
+                  <Button 
+                    variant="outline"
+                    className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
                     <Filter className="h-4 w-4 mr-2" />
                     Filters
                   </Button>

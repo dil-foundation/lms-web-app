@@ -723,7 +723,7 @@ export default function StorytellingPractice() {
               variant="outline"
               size="icon"
               onClick={() => navigate('/dashboard/practice/stage-3')}
-              className="shrink-0"
+              className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
@@ -760,7 +760,7 @@ export default function StorytellingPractice() {
               variant="outline"
               size="icon"
               onClick={() => navigate('/dashboard/practice/stage-3')}
-              className="shrink-0"
+              className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
@@ -805,7 +805,7 @@ export default function StorytellingPractice() {
               variant="outline"
               size="icon"
               onClick={() => navigate('/dashboard/practice/stage-3')}
-              className="shrink-0"
+              className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
@@ -840,7 +840,7 @@ export default function StorytellingPractice() {
             variant="outline"
             size="icon"
             onClick={() => navigate('/dashboard/practice/stage-3')}
-            className="shrink-0"
+            className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -879,6 +879,7 @@ export default function StorytellingPractice() {
                 size="sm"
                 onClick={handlePreviousPrompt}
                 disabled={currentPrompt === 0}
+                className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
               >
                 Previous
               </Button>
@@ -887,6 +888,7 @@ export default function StorytellingPractice() {
                 size="sm"
                 onClick={handleNextPrompt}
                 disabled={currentPrompt === storyPrompts.length - 1}
+                className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
               >
                 Next
               </Button>
@@ -1016,7 +1018,7 @@ export default function StorytellingPractice() {
                 <Button
                   variant="outline"
                   onClick={() => setShowExample(!showExample)}
-                  className="px-6"
+                  className="px-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
                   disabled={isRecording || isEvaluating}
                 >
                   <Lightbulb className="h-4 w-4 mr-2" />

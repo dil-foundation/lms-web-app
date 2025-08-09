@@ -169,7 +169,7 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                     e.preventDefault();
                     handleSelectOption(option.value);
                   }}
-                  className="cursor-pointer rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+                  className="cursor-pointer rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground group"
                 >
                   <div className="flex items-center gap-2">
                     <Avatar className="h-6 w-6">
@@ -178,7 +178,7 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                     </Avatar>
                     <div>
                       <div>{option.label}</div>
-                      {option.subLabel && <div className="text-xs text-muted-foreground">{option.subLabel}</div>}
+                      {option.subLabel && <div className="text-xs text-muted-foreground group-hover:text-accent-foreground/80">{option.subLabel}</div>}
                     </div>
                   </div>
                 </li>

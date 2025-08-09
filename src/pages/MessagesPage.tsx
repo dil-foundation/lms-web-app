@@ -1152,71 +1152,76 @@ export default function MessagesPage() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Chat List Sidebar */}
-        <div className="w-80 border-r border-border flex flex-col">
-          {/* Enhanced Search */}
-          <div className="relative p-6 border-b border-border/50">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search conversations..."
-                value={conversationsSearchQuery}
-                onChange={(e) => setConversationsSearchQuery(e.target.value)}
-                className="pl-10 h-11 bg-background/50 dark:bg-background/30 border-border/50 focus:border-primary/50 transition-all duration-300 rounded-xl"
-              />
+      {/* Loading State */}
+      {conversationsLoading && !conversationsLoaded ? (
+        <div className="flex-1 flex items-center justify-center">
+          <ContentLoader message="Loading conversations..." />
+        </div>
+      ) : chats.length === 0 ? (
+        /* Empty State - No Conversations */
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 dark:from-primary/20 dark:to-primary/30 rounded-3xl flex items-center justify-center mx-auto mb-6">
+              <MessageSquare className="w-8 h-8 text-primary dark:text-primary/90" />
             </div>
+            <h2 className="text-xl font-bold text-foreground mb-3">No conversations yet</h2>
+            <p className="text-muted-foreground mb-6 max-w-sm">
+              Start messaging with other users by creating your first conversation.
+            </p>
+            <Button 
+              onClick={() => setShowNewChatDialog(true)}
+              className="bg-gradient-to-br from-primary to-primary/90 dark:from-primary/90 dark:to-primary/70 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 text-white dark:text-white"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Create Conversation
+            </Button>
           </div>
+        </div>
+      ) : (
+        /* Main Content - Show Chat UI only when conversations exist */
+        <div className="flex flex-1 overflow-hidden">
+          {/* Chat List Sidebar */}
+          <div className="w-80 border-r border-border flex flex-col">
+            {/* Enhanced Search */}
+            <div className="relative p-6 border-b border-border/50">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search conversations..."
+                  value={conversationsSearchQuery}
+                  onChange={(e) => setConversationsSearchQuery(e.target.value)}
+                  className="pl-10 h-11 bg-background/50 dark:bg-background/30 border-border/50 focus:border-primary/50 transition-all duration-300 rounded-xl"
+                />
+              </div>
+            </div>
 
-          {/* Chat List */}
-          <ScrollArea className="flex-1">
-            <div className="p-2">
-              {(conversationsLoading && conversationsPage === 1) || (conversationsSearchLoading && conversationsSearchQuery.trim()) ? (
-                <div className="flex items-center justify-center py-8">
-                  <ContentLoader message={conversationsSearchQuery.trim() ? "Searching conversations..." : "Loading conversations..."} />
-                </div>
-              ) : chats.length === 0 ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="text-center">
-                    {conversationsSearchQuery.trim() ? (
-                      <>
-                        <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 dark:from-primary/20 dark:to-primary/30 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                          <Search className="w-8 h-8 text-primary dark:text-primary/90" />
-                        </div>
-                        <h2 className="text-xl font-bold text-foreground mb-3">No conversations found</h2>
-                        <p className="text-muted-foreground mb-6 max-w-sm">
-                          No conversations match "{conversationsSearchQuery}"
-                        </p>
-                        <Button 
-                          variant="outline" 
-                          onClick={() => setConversationsSearchQuery('')}
-                          className="bg-background/50 dark:bg-background/30 border-border/50 hover:border-primary/50 transition-all duration-300"
-                        >
-                          Clear search
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 dark:from-primary/20 dark:to-primary/30 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                          <MessageSquare className="w-8 h-8 text-primary dark:text-primary/90" />
-                        </div>
-                        <h2 className="text-xl font-bold text-foreground mb-3">No conversations yet</h2>
-                        <p className="text-muted-foreground mb-6 max-w-sm">
-                          Start messaging with other users by creating your first conversation.
-                        </p>
-                        <Button 
-                          onClick={() => setShowNewChatDialog(true)}
-                          className="bg-gradient-to-br from-primary to-primary/90 dark:from-primary/90 dark:to-primary/70 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 text-white dark:text-white"
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Create Conversation
-                        </Button>
-                      </>
-                    )}
+            {/* Chat List */}
+            <ScrollArea className="flex-1">
+              <div className="p-2">
+                {(conversationsSearchLoading && conversationsSearchQuery.trim()) ? (
+                  <div className="flex items-center justify-center py-8">
+                    <ContentLoader message="Searching conversations..." />
                   </div>
-                </div>
-              ) : (
+                ) : conversationsSearchQuery.trim() && chats.length === 0 ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 dark:from-primary/20 dark:to-primary/30 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                        <Search className="w-8 h-8 text-primary dark:text-primary/90" />
+                      </div>
+                      <h2 className="text-xl font-bold text-foreground mb-3">No conversations found</h2>
+                      <p className="text-muted-foreground mb-6 max-w-sm">
+                        No conversations match "{conversationsSearchQuery}"
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setConversationsSearchQuery('')}
+                        className="bg-background/50 dark:bg-background/30 border-border/50 hover:border-primary/50 transition-all duration-300"
+                      >
+                        Clear search
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
                 <>
                   {chats.map((chat) => (
                     <div
@@ -1463,33 +1468,6 @@ export default function MessagesPage() {
                 </div>
               </div>
             </>
-          ) : chats.length === 0 ? (
-            /* No conversations available */
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 dark:from-primary/20 dark:to-primary/30 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                  <MessageSquare className="w-8 h-8 text-primary dark:text-primary/90" />
-                </div>
-                <h3 className="text-xl font-bold text-foreground mb-3">
-                  {conversationsSearchQuery.trim() ? 'No conversations found' : 'No conversations yet'}
-                </h3>
-                <p className="text-muted-foreground mb-6 max-w-sm">
-                  {conversationsSearchQuery.trim() 
-                    ? `No conversations match "${conversationsSearchQuery}"`
-                    : 'Start messaging with other users by creating your first conversation.'
-                  }
-                </p>
-                {!conversationsSearchQuery.trim() && (
-                  <Button 
-                    onClick={() => setShowNewChatDialog(true)}
-                    className="bg-gradient-to-br from-primary to-primary/90 dark:from-primary/90 dark:to-primary/70 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Conversation
-                  </Button>
-                )}
-              </div>
-            </div>
           ) : (
             /* No conversation selected but conversations exist */
             <div className="flex-1 flex items-center justify-center">
@@ -1505,9 +1483,10 @@ export default function MessagesPage() {
             </div>
           )}
         </div>
-      </div>
+        </div>
+      )}
 
-      {/* Enhanced New Chat Dialog */}
+      {/* Enhanced New Chat Dialog - Always available */}
       <Dialog open={showNewChatDialog} onOpenChange={(open) => {
         setShowNewChatDialog(open);
         if (!open) {
@@ -1637,7 +1616,11 @@ export default function MessagesPage() {
               </SelectContent>
             </Select>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowNewChatDialog(false)}>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowNewChatDialog(false)}
+                className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
                 Cancel
               </Button>
               <Button 
@@ -1673,6 +1656,7 @@ export default function MessagesPage() {
               variant="outline" 
               onClick={() => setShowDeleteDialog(false)}
               disabled={deletingConversation === selectedChat?.id}
+              className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
               Cancel
             </Button>

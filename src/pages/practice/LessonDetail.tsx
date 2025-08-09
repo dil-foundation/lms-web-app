@@ -184,7 +184,12 @@ const AlphabetLesson = () => {
     return (
         <div className="w-full">
             <div className="relative flex items-center justify-center mb-6">
-                <Button variant="outline" size="icon" className="absolute left-0" onClick={() => navigate(-1)}>
+                <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="absolute left-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary" 
+                    onClick={() => navigate(-1)}
+                >
                     <ArrowLeft className="h-4 w-4" />
                 </Button>
                 <div className="text-center">
@@ -306,7 +311,14 @@ const PhonicsLesson = () => {
     return (
         <div className="w-full">
             <div className="relative flex items-center justify-center mb-6">
-                <Button variant="outline" size="icon" className="absolute left-0" onClick={() => navigate(-1)}><ArrowLeft className="h-4 w-4" /></Button>
+                <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="absolute left-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary" 
+                    onClick={() => navigate(-1)}
+                >
+                    <ArrowLeft className="h-4 w-4" />
+                </Button>
                 <div className="text-center">
                     <div className="inline-block p-3 bg-primary/20 rounded-full mb-2"><Music className="h-8 w-8 text-primary" /></div>
                     <h1 className="text-3xl font-bold">Phonics & Sound Confusion</h1>
@@ -453,7 +465,14 @@ const VocabularyLesson = () => {
     return (
          <div className="w-full">
             <div className="relative flex items-center justify-center mb-6">
-                <Button variant="outline" size="icon" className="absolute left-0" onClick={() => navigate(-1)}><ArrowLeft className="h-4 w-4" /></Button>
+                <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="absolute left-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary" 
+                    onClick={() => navigate(-1)}
+                >
+                    <ArrowLeft className="h-4 w-4" />
+                </Button>
                 <div className="text-center">
                     <div className="inline-block p-3 bg-primary/20 rounded-full mb-2"><BookOpen className="h-8 w-8 text-primary" /></div>
                     <h1 className="text-3xl font-bold">Vocabulary Basics</h1>

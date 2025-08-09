@@ -83,7 +83,7 @@ export const StudentCourses = ({ userProfile }: StudentCoursesProps) => {
 
   if (loading) {
     return (
-      <div className="space-y-8 mx-auto p-4">
+      <div className="space-y-8 mx-auto">
         {/* Premium Header Section */}
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
@@ -116,7 +116,7 @@ export const StudentCourses = ({ userProfile }: StudentCoursesProps) => {
   // Show empty state if no courses
   if (courses.length === 0) {
     return (
-      <div className="space-y-8 mx-auto p-4">
+      <div className="space-y-8 mx-auto">
         {/* Premium Header Section */}
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
@@ -153,7 +153,7 @@ export const StudentCourses = ({ userProfile }: StudentCoursesProps) => {
   }
 
   return (
-    <div className="space-y-8 mx-auto p-4">
+    <div className="space-y-8 mx-auto">
       {/* Premium Header Section */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
@@ -189,7 +189,7 @@ export const StudentCourses = ({ userProfile }: StudentCoursesProps) => {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card border border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Average Progress</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -200,7 +200,7 @@ export const StudentCourses = ({ userProfile }: StudentCoursesProps) => {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card border border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Completed</CardTitle>
             <Award className="h-4 w-4 text-muted-foreground" />

@@ -590,13 +590,13 @@ export default function ProblemSolvingSimulations() {
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <Button
-              variant="outline"
-              size="icon"
-              onClick={handleBackToScenarios}
-              className="shrink-0"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
+                          variant="outline"
+            size="icon"
+            onClick={handleBackToScenarios}
+            className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
             
             <div className="text-center flex-1">
               <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-2">
@@ -889,7 +889,7 @@ export default function ProblemSolvingSimulations() {
             variant="outline"
             size="icon"
             onClick={() => navigate('/dashboard/practice/stage-3')}
-            className="shrink-0"
+            className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -994,20 +994,7 @@ export default function ProblemSolvingSimulations() {
           </div>
         )}
 
-        {/* Speak Now Button - Only show when scenarios are loaded */}
-        {!isLoading && scenarios.length > 0 && (
-          <Card>
-            <CardContent className="p-4">
-              <Button
-                className="w-full bg-green-500 hover:bg-green-600 text-white py-6"
-                disabled
-              >
-                <Mic className="h-5 w-5 mr-2" />
-                Speak Now
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+
       </div>
     </div>
   );
