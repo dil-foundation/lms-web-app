@@ -95,7 +95,8 @@ const Dashboard = () => {
     }
   }, [authLoading, user, navigate]);
 
-  const currentRole = profile?.role as UserRole | undefined;
+  const currentRole = profile?.role as UserRole | undefined
+  ;
   
   const displayProfile = profile && currentRole ? {
     ...profile,
@@ -268,9 +269,6 @@ const Dashboard = () => {
                           <Route path="/ai-reports" element={<ReportsAnalytics />} />
                           <Route path="/ai-tutor-settings" element={<AITutorSettings userProfile={finalProfile} />} />
                           <Route path="/ai-safety-ethics" element={<AISafetyEthicsSettings userProfile={finalProfile} />} />
-                          <Route path="/integration-apis" element={<IntegrationAPIs userProfile={finalProfile} />} />
-                          <Route path="/multitenancy" element={<Multitenancy userProfile={finalProfile} />} />
-                          <Route path="/offline-learning" element={<OfflineLearning userProfile={finalProfile} />} />
                           {/* Practice Stage Routes for Admin Viewing */}
                           <Route path="/practice/stage-0" element={<StageZero />} />
                           <Route path="/practice/stage-0/lesson/:lessonId" element={<LessonDetail />} />
@@ -314,6 +312,9 @@ const Dashboard = () => {
                           <Route path="/grade-assignments/:assignmentId/student/:studentId" element={<StudentSubmissionDetail />} />
                           <Route path="/settings" element={<AdminSettings />} />
                           <Route path="/security" element={<AdminSecurity />} />
+                          <Route path="/integration-apis" element={<IntegrationAPIs userProfile={finalProfile} />} />
+                          <Route path="/multitenancy" element={<Multitenancy userProfile={finalProfile} />} />
+                          <Route path="/offline-learning" element={<OfflineLearning userProfile={finalProfile} />} />
                         </>
                       )}
                     </>

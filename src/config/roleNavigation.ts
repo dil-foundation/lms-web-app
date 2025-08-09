@@ -149,6 +149,9 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean): N
           title: 'SYSTEM',
           items: [
             { title: 'Security', path: '/dashboard/security', icon: Shield },
+            { title: 'Integration APIs', path: '/dashboard/integration-apis', icon: Plug },
+            { title: 'Multitenancy', path: '/dashboard/multitenancy', icon: Building2 },
+            { title: 'Offline Learning', path: '/dashboard/offline-learning', icon: Download },
           ]
         }
       ];
@@ -211,9 +214,6 @@ export const getAICategorizedNavigation = (role: UserRole): NavigationCategory[]
             { title: 'Overview', path: '/dashboard', icon: Bot },
             { title: 'AI Tutor Settings', path: '/dashboard/ai-tutor-settings', icon: Settings2 },
             { title: 'AI Safety & Ethics', path: '/dashboard/ai-safety-ethics', icon: ShieldCheck },
-            { title: 'Integration APIs', path: '/dashboard/integration-apis', icon: Plug },
-            { title: 'Multitenancy', path: '/dashboard/multitenancy', icon: Building2 },
-            { title: 'Offline Learning', path: '/dashboard/offline-learning', icon: Download },
           ]
         },
         {
