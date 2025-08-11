@@ -9,6 +9,7 @@ import { BookOpen } from 'lucide-react';
 import { type UserRole } from '@/config/roleNavigation';
 import { ContentLoader } from '@/components/ContentLoader';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { requestNotificationPermission } from '@/utils/fcm';
 
 const AIStudentLearn = lazy(() => import('@/components/dashboard/AIStudentLearn').then(module => ({ default: module.AIStudentLearn })));
 const StudentDashboard = lazy(() => import('@/components/dashboard/StudentDashboard').then(module => ({ default: module.StudentDashboard })));
@@ -94,6 +95,12 @@ const Dashboard = () => {
       navigate('/auth', { replace: true });
     }
   }, [authLoading, user, navigate]);
+
+  useEffect(() => {
+    if (profile) {
+      requestNotificationPermission();
+    }
+  }, [profile]);
 
   const currentRole = profile?.role as UserRole | undefined
   ;
