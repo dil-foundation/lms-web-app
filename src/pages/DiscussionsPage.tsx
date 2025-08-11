@@ -192,15 +192,25 @@ export default function DiscussionsPage() {
 
       if (participantsError) throw new Error(participantsError.message);
 
-      // After successful creation, invoke the notification function
-      await supabase.functions.invoke('send-discussion-notification', {
-        body: { record: discussionData },
+      // After successful creation, invoke the unified notification function
+      await supabase.functions.invoke('send-notification', {
+        body: {
+          type: 'new_discussion',
+          title: 'New Discussion Created',
+          body: `A new discussion "${discussionData.title}" has been started.`,
+          data: {
+            discussionId: discussionData.id,
+            discussionTitle: discussionData.title
+          },
+          targetDiscussionId: discussionData.id
+        },
       });
 
       return discussionData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['discussions'] });
+      queryClient.invalidateQueries({ queryKey: ['discussionsCount'] });
       closeAndResetDialog();
     },
   });
@@ -235,6 +245,7 @@ export default function DiscussionsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['discussions'] });
+      queryClient.invalidateQueries({ queryKey: ['discussionsCount'] });
       closeAndResetDialog();
     },
   });
@@ -579,6 +590,7 @@ export default function DiscussionsPage() {
             </div>
 
       <DiscussionDialog
+        key={isNewDiscussionOpen ? 'new' : 'edit'} // Force re-render when dialog opens
         isOpen={isNewDiscussionOpen}
         onOpenChange={closeAndResetDialog}
         editingDiscussion={editingDiscussion}
