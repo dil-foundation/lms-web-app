@@ -107,7 +107,7 @@ const CourseCard = ({ course }) => {
   };
 
   return (
-    <Card className="group overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50 rounded-2xl">
+    <Card className="group overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50 rounded-2xl h-full flex flex-col">
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
         <img src={course.imageUrl} alt={course.title} className="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-105" />
@@ -124,9 +124,9 @@ const CourseCard = ({ course }) => {
           </div>
         </div>
       </div>
-      <CardContent className="p-6">
-        <div className="space-y-4">
-          <div>
+      <CardContent className="p-6 flex-1 flex flex-col">
+        <div className="space-y-4 flex-1 flex flex-col">
+          <div className="flex-1">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2 line-clamp-2 leading-tight">
               {course.title}
             </h3>
@@ -152,20 +152,22 @@ const CourseCard = ({ course }) => {
             </div>
           </div>
           
-          {course.isLocked ? (
-            <Button disabled className="w-full h-11 bg-gray-100 text-gray-400 border-0 shadow-sm">
-              <Lock className="mr-2 h-4 w-4" />
-              Locked
-            </Button>
-          ) : (
-            <Button 
-              className="w-full h-11 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 border-0" 
-              onClick={handleContinue}
-            >
-              Continue
-              <PlayCircle className="ml-2 h-4 w-4" />
-            </Button>
-          )}
+          <div className="mt-auto pt-2">
+            {course.isLocked ? (
+              <Button disabled className="w-full h-11 bg-gray-100 text-gray-400 border-0 shadow-sm">
+                <Lock className="mr-2 h-4 w-4" />
+                Locked
+              </Button>
+            ) : (
+              <Button 
+                className="w-full h-11 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 border-0" 
+                onClick={handleContinue}
+              >
+                Continue
+                <PlayCircle className="ml-2 h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

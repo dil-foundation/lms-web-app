@@ -18,12 +18,12 @@ interface AppWord {
 
 // --- Lesson Data ---
 const appUIWords: AppWord[] = [
-    { word: "Start", translation: "شروع کریں", icon: Play, color: "from-green-400 to-teal-500" },
-    { word: "Next", translation: "اگلا", icon: ArrowRight, color: "from-red-400 to-orange-500" },
-    { word: "Submit", translation: "جمع کرائیں", icon: CheckCircle, color: "from-blue-400 to-indigo-500" },
-    { word: "Speak", translation: "بولیں", icon: Mic, color: "from-orange-400 to-pink-500" },
-    { word: "Listen", translation: "سنیں", icon: Volume2, color: "from-purple-400 to-yellow-500" },
-    { word: "Finish", translation: "ختم کریں", icon: Flag, color: "from-yellow-400 to-green-500" },
+    { word: "Start", translation: "شروع کریں", icon: Play, color: "from-primary to-primary/90" },
+    { word: "Next", translation: "اگلا", icon: ArrowRight, color: "from-secondary to-secondary/90" },
+    { word: "Submit", translation: "جمع کرائیں", icon: CheckCircle, color: "from-primary to-primary/90" },
+    { word: "Speak", translation: "بولیں", icon: Mic, color: "from-secondary to-secondary/90" },
+    { word: "Listen", translation: "سنیں", icon: Volume2, color: "from-primary to-primary/90" },
+    { word: "Finish", translation: "ختم کریں", icon: Flag, color: "from-secondary to-secondary/90" },
 ];
 
 const AppUIWordsLesson = () => {
@@ -79,77 +79,101 @@ const AppUIWordsLesson = () => {
     };
 
     return (
-        <div className="w-full max-w-2xl mx-auto">
-            {/* Header */}
-            <div className="relative flex items-center justify-center mb-6 text-center">
-                 <Button 
+        <div className="w-full max-w-4xl mx-auto px-6 py-8">
+            {/* Enhanced Header with Apple-style aesthetics */}
+            <div className="relative flex items-center justify-center mb-8 text-center">
+                <Button 
                     variant="outline" 
                     size="icon" 
-                    className="absolute left-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary" 
+                    className="absolute left-0 group w-12 h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
                     onClick={() => navigate(-1)}
                 >
-                    <ArrowLeft className="h-4 w-4" />
+                    <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-300" />
                 </Button>
-                <div>
-                    <div className="inline-block p-3 bg-green-100 dark:bg-green-900/20 rounded-full mb-2">
-                        <Smartphone className="h-8 w-8 text-green-500" />
+                
+                <div className="space-y-3">
+                    <div className="inline-block p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
+                        <Smartphone className="h-10 w-10 text-primary" />
                     </div>
-                    <h1 className="text-2xl font-bold">Lesson 5: App UI Words</h1>
-                    <p className="text-muted-foreground">Master app navigation vocabulary</p>
+                    <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                        Lesson 5: App UI Words
+                    </h1>
+                    <p className="text-muted-foreground text-lg">Master app navigation vocabulary with confidence</p>
                 </div>
             </div>
 
-            {/* Intro Card */}
-            <Card className="p-6 mb-8 text-center bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-                <div className="inline-block p-4 bg-white dark:bg-green-800/50 rounded-full mb-3">
-                     <Smartphone className="h-10 w-10 text-green-500" />
+            {/* Enhanced Intro Card with Apple-style aesthetics */}
+            <Card className="p-8 mb-8 text-center bg-gradient-to-br from-primary/5 via-primary/10 to-secondary/5 border-2 border-primary/20 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
+                <div className="inline-block p-5 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-700 rounded-2xl shadow-lg mb-4">
+                    <Smartphone className="h-12 w-12 text-primary" />
                 </div>
-                <h2 className="text-2xl font-bold">App Navigation Words</h2>
-                <p className="text-muted-foreground">Master the English words you'll encounter in app buttons and menus</p>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                    App Navigation Words
+                </h2>
+                <p className="text-muted-foreground text-lg leading-relaxed max-w-2xl">
+                    Master the English words you'll encounter in app buttons and menus. Each word includes pronunciation and Urdu translation for better understanding.
+                </p>
             </Card>
 
-            {/* Words List */}
-            <div className="space-y-4 mb-8">
+            {/* Enhanced Words List with Apple-style aesthetics */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 {appUIWords.map((item, index) => (
-                    <Card key={index} className="p-4 flex items-center">
-                        <div className="flex-1">
-                            <h3 className="text-2xl font-bold">
-                                {item.word}
-                            </h3>
-                            <p className="font-urdu text-muted-foreground text-xl">{item.translation}</p>
+                    <Card 
+                        key={index} 
+                        className="group p-6 flex items-center bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50 border-2 border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 hover:scale-[1.02]"
+                    >
+                        <div className="flex-1 space-y-3">
+                            <div className="flex items-center space-x-3">
+                                <div className={`p-3 bg-gradient-to-br ${item.color} rounded-xl shadow-md`}>
+                                    <item.icon className="w-6 h-6 text-white" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                                    {item.word}
+                                </h3>
+                            </div>
+                            <p className="font-urdu text-muted-foreground text-xl leading-relaxed">
+                                {item.translation}
+                            </p>
                         </div>
+                        
                         <Button 
                             size="icon" 
-                            className={`w-14 h-14 rounded-full ${
+                            className={`w-16 h-16 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 hover:scale-105 ${
                                 loadingAudio === item.word 
                                     ? 'bg-primary/60 cursor-not-allowed' 
-                                    : 'bg-primary/80 hover:bg-primary'
+                                    : 'bg-gradient-to-br from-primary to-primary/90 hover:from-primary/90 hover:to-primary'
                             }`}
                             onClick={() => handlePlayAudio(item.word)}
                             disabled={loadingAudio === item.word}
                         >
                             {loadingAudio === item.word ? (
-                                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                <div className="w-7 h-7 border-3 border-white border-t-transparent rounded-full animate-spin" />
                             ) : (
-                                <Play className="w-6 h-6" />
+                                <Play className="w-7 h-7" />
                             )}
                         </Button>
                     </Card>
                 ))}
             </div>
             
-            {/* Completion Button */}
-            <Button size="lg" className="w-full h-16 text-xl bg-green-500 hover:bg-green-600 text-white" onClick={() => navigate(-1)}>
-                <div className="flex items-center justify-center">
-                    <div className="p-2 bg-white/30 rounded-full mr-3">
-                        <PartyPopper className="w-6 h-6" />
+            {/* Enhanced Completion Button with Apple-style aesthetics */}
+            <Card className="p-6 bg-gradient-to-br from-primary/5 via-primary/10 to-secondary/5 border-2 border-primary/20 rounded-2xl shadow-xl">
+                <Button 
+                    size="lg" 
+                    className="w-full h-20 text-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:scale-[1.02] rounded-2xl" 
+                    onClick={() => navigate(-1)}
+                >
+                    <div className="flex items-center justify-center space-x-4">
+                        <div className="p-3 bg-white/20 rounded-2xl">
+                            <PartyPopper className="w-8 h-8" />
+                        </div>
+                        <div className="text-left">
+                            <p className="font-bold text-lg">Complete Lesson</p>
+                            <p className="text-sm font-normal opacity-90">Excellent! You've mastered app navigation vocabulary!</p>
+                        </div>
                     </div>
-                    <div>
-                        <p className="font-bold">Complete Lesson</p>
-                        <p className="text-sm font-normal">Excellent! You've mastered app navigation!</p>
-                    </div>
-                </div>
-            </Button>
+                </Button>
+            </Card>
         </div>
     );
 };

@@ -7,39 +7,45 @@ import { Textarea } from '@/components/ui/textarea';
 import { TrendingUp } from 'lucide-react';
 
 export const ProjectManagerAssessment = ({ formData, updateFormData, formErrors }) => (
-  <Card className="bg-green-50/20 border-green-200 dark:bg-green-900/10 dark:border-green-800/50">
-    <CardHeader>
+  <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50">
+    <CardHeader className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 pb-6">
       <div className="flex items-center gap-4">
-        <TrendingUp className="w-6 h-6 text-green-600" />
+        <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
+          <TrendingUp className="w-6 h-6 text-primary" />
+        </div>
         <div>
-          <CardTitle className="text-xl">Project Manager Assessment</CardTitle>
-          <CardDescription>Implementation fidelity and strategic program evaluation</CardDescription>
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 dark:from-white dark:via-gray-100 dark:to-gray-200 bg-clip-text text-transparent">
+            Project Manager Assessment
+          </CardTitle>
+          <CardDescription className="text-base text-gray-600 dark:text-gray-300 mt-1">
+            Implementation fidelity and strategic program evaluation
+          </CardDescription>
         </div>
       </div>
     </CardHeader>
-    <CardContent className="space-y-8">
+    <CardContent className="p-8 space-y-8">
       {/* Implementation Cycle */}
-      <div className="space-y-6">
-        <h3 className="text-lg font-semibold text-muted-foreground">Implementation Context</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <Label>Observation Cycle *</Label>
-            <p className="text-sm text-muted-foreground">Select the current observation cycle</p>
+      <div className="space-y-8">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Implementation Context</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="space-y-3">
+            <Label className="text-base font-semibold text-gray-900 dark:text-gray-100">Observation Cycle *</Label>
+            <p className="text-sm text-gray-600 dark:text-gray-300">Select the current observation cycle</p>
             <Select 
               name="observation-cycle"
               value={formData.observationCycle}
               onValueChange={(value) => updateFormData('observationCycle', value)}
             >
-              <SelectTrigger className={formErrors.observationCycle ? "border-red-500" : ""}>
+              <SelectTrigger className={`h-12 text-lg font-medium border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-4 focus:ring-primary/10 ${formErrors.observationCycle ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : ""}`}>
                 <SelectValue placeholder="Select observation cycle" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="cycle1">Cycle 1</SelectItem>
-                <SelectItem value="cycle2">Cycle 2</SelectItem>
-                <SelectItem value="cycle3">Cycle 3</SelectItem>
+              <SelectContent className="border-2 border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl bg-white dark:bg-gray-800">
+                <SelectItem value="cycle1" className="text-base py-3 hover:bg-primary/5 rounded-xl">Cycle 1</SelectItem>
+                <SelectItem value="cycle2" className="text-base py-3 hover:bg-primary/5 rounded-xl">Cycle 2</SelectItem>
+                <SelectItem value="cycle3" className="text-base py-3 hover:bg-primary/5 rounded-xl">Cycle 3</SelectItem>
               </SelectContent>
             </Select>
-            {formErrors.observationCycle && <p className="text-sm text-red-500">{formErrors.observationCycle}</p>}
+            {formErrors.observationCycle && <p className="text-sm text-red-500 font-medium">{formErrors.observationCycle}</p>}
           </div>
           <ScaleRating
             label="Overall Fidelity Score"
@@ -53,106 +59,57 @@ export const ProjectManagerAssessment = ({ formData, updateFormData, formErrors 
         </div>
       </div>
 
-      <Separator />
+      <Separator className="bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent h-px" />
 
       {/* SOW & Model Alignment */}
-      <div className="space-y-6">
-        <h3 className="text-lg font-semibold text-muted-foreground">Program Alignment</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <Label>SOW Alignment</Label>
-            <p className="text-sm text-muted-foreground">Alignment with Statement of Work requirements</p>
+      <div className="space-y-8">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Program Alignment</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="space-y-3">
+            <Label className="text-base font-semibold text-gray-900 dark:text-gray-100">SOW Alignment</Label>
+            <p className="text-sm text-gray-600 dark:text-gray-300">Alignment with Statement of Work requirements</p>
             <Select name="sow-alignment">
-              <SelectTrigger><SelectValue placeholder="Select alignment level" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="yes">Yes - Fully Aligned</SelectItem>
-                <SelectItem value="partial">Partial - Some Alignment</SelectItem>
-                <SelectItem value="no">No - Not Aligned</SelectItem>
+              <SelectTrigger className="h-12 text-lg font-medium border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-4 focus:ring-primary/10">
+                <SelectValue placeholder="Select alignment level" />
+              </SelectTrigger>
+              <SelectContent className="border-2 border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl bg-white dark:bg-gray-800">
+                <SelectItem value="yes" className="text-base py-3 hover:bg-primary/5 rounded-xl">Yes - Fully Aligned</SelectItem>
+                <SelectItem value="partial" className="text-base py-3 hover:bg-primary/5 rounded-xl">Partial - Some Alignment</SelectItem>
+                <SelectItem value="no" className="text-base py-3 hover:bg-primary/5 rounded-xl">No - Not Aligned</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
-            <Label>Technology Use as per Model</Label>
-            <p className="text-sm text-muted-foreground">Technology integration matches program design (e.g., TEAL implementation)</p>
+          <div className="space-y-3">
+            <Label className="text-base font-semibold text-gray-900 dark:text-gray-100">Technology Use as per Model</Label>
+            <p className="text-sm text-gray-600 dark:text-gray-300">Technology integration matches program design (e.g., TEAL implementation)</p>
             <Select name="technology-model">
-              <SelectTrigger><SelectValue placeholder="Select usage level" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="as-designed">As Designed - Perfect Implementation</SelectItem>
-                <SelectItem value="mostly-correct">Mostly Correct - Minor Deviations</SelectItem>
-                <SelectItem value="partially-correct">Partially Correct - Some Issues</SelectItem>
-                <SelectItem value="incorrect">Incorrect - Significant Problems</SelectItem>
-                <SelectItem value="not-used">Not Used - No Technology Integration</SelectItem>
+              <SelectTrigger className="h-12 text-lg font-medium border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-4 focus:ring-primary/10">
+                <SelectValue placeholder="Select usage level" />
+              </SelectTrigger>
+              <SelectContent className="border-2 border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl bg-white dark:bg-gray-800">
+                <SelectItem value="as-designed" className="text-base py-3 hover:bg-primary/5 rounded-xl">As Designed - Perfect Implementation</SelectItem>
+                <SelectItem value="mostly-correct" className="text-base py-3 hover:bg-primary/5 rounded-xl">Mostly Correct - Minor Deviations</SelectItem>
+                <SelectItem value="partially-correct" className="text-base py-3 hover:bg-primary/5 rounded-xl">Partially Correct - Some Issues</SelectItem>
+                <SelectItem value="incorrect" className="text-base py-3 hover:bg-primary/5 rounded-xl">Incorrect - Significant Problems</SelectItem>
+                <SelectItem value="not-used" className="text-base py-3 hover:bg-primary/5 rounded-xl">Not Used - No Technology Integration</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
       </div>
 
-      <Separator />
+      <Separator className="bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent h-px" />
 
       {/* Stakeholder Assessment */}
-      <div className="space-y-6">
-        <h3 className="text-lg font-semibold text-muted-foreground">Stakeholder Engagement</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="space-y-8">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Stakeholder Engagement</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <ScaleRating
             label="Overall program quality"
             description="Comprehensive assessment of program implementation"
             name="program-quality"
           />
-          <ScaleRating
-            label="Teacher morale"
-            description="Teacher satisfaction and motivation levels"
-            name="teacher-morale"
-          />
-          <ScaleRating
-            label="School admin cooperation"
-            description="Level of administrative support and collaboration"
-            name="admin-cooperation"
-          />
         </div>
-      </div>
-
-      <Separator />
-
-      {/* Implementation Challenges */}
-      <div className="space-y-6">
-        <h3 className="text-lg font-semibold text-muted-foreground">Implementation Support</h3>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="implementation-barriers">Implementation Barriers</Label>
-            <p className="text-sm text-muted-foreground">Challenges hindering effective program implementation</p>
-            <Textarea id="implementation-barriers" placeholder="Describe systemic barriers, resource constraints, capacity issues, or other implementation challenges..." />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <YesNoDropdown
-              label="Coaching Follow-Up Required?"
-              description="Does the teacher/school need additional coaching support?"
-              name="coaching-required"
-            />
-            <div className="space-y-2">
-              <Label htmlFor="coaching-assignee">Coaching Assignee</Label>
-              <p className="text-sm text-muted-foreground">Who should provide the follow-up coaching?</p>
-              <Select>
-                <SelectTrigger><SelectValue placeholder="Select assignee" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="project-team">Project Team Member</SelectItem>
-                  <SelectItem value="master-trainer">Master Trainer</SelectItem>
-                  <SelectItem value="mentor-teacher">Mentor Teacher</SelectItem>
-                  <SelectItem value="district-officer">District Education Officer</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <Separator />
-
-      <div className="space-y-2">
-        <Label htmlFor="final-remarks">Final remarks and recommendations</Label>
-        <p className="text-sm text-muted-foreground">Strategic insights and program-level recommendations</p>
-        <Textarea id="final-remarks" placeholder="Provide final remarks, recommendations, and strategic insights..." />
       </div>
     </CardContent>
   </Card>

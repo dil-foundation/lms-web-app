@@ -713,21 +713,28 @@ export default function DailyRoutine() {
   if (error) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="relative flex items-center justify-center mb-6 p-4 sm:p-6 lg:p-8">
-          <Button variant="outline" size="icon" className="absolute left-4 sm:left-6 lg:left-8 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary" onClick={() => navigate(-1)}>
+        <div className="relative flex items-center justify-center mb-8 p-4 sm:p-6 lg:p-8">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="absolute left-4 sm:left-6 lg:left-8 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60" 
+            onClick={() => navigate(-1)}
+          >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="text-center">
-            <div className="inline-block p-3 bg-primary/20 rounded-full mb-2">
-              <Calendar className="h-8 w-8 text-primary" />
+            <div className="inline-block p-4 bg-gradient-to-br from-primary/10 via-primary/20 to-primary/30 rounded-2xl mb-4 shadow-lg border border-primary/20">
+              <Calendar className="h-10 w-10 text-primary" />
             </div>
-            <h1 className="text-3xl font-bold">Daily Routine</h1>
-            <p className="text-muted-foreground">Narrate Your Daily Activities</p>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-gray-100 dark:via-gray-200 dark:to-gray-100 bg-clip-text text-transparent mb-3">
+              Daily Routine
+            </h1>
+            <p className="text-lg text-muted-foreground font-medium">Narrate Your Daily Activities</p>
           </div>
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
-          <Card className="w-full max-w-md bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg">
+          <Card className="w-full max-w-md bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-xl">
             <CardContent className="p-8">
               <Alert variant="destructive" className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
                 <AlertCircle className="h-4 w-4" />
@@ -739,7 +746,7 @@ export default function DailyRoutine() {
               
               <Button 
                 onClick={handleRetry}
-                className="w-full mt-4 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300"
+                className="w-full mt-4 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 border-0"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Try Again
@@ -763,17 +770,24 @@ export default function DailyRoutine() {
       </div>
       
       {/* Header */}
-      <div className="relative flex items-center justify-center mb-6 p-4 sm:p-6 lg:p-8">
-        <Button variant="outline" size="icon" className="absolute left-4 sm:left-6 lg:left-8 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300" onClick={() => navigate(-1)}>
+      <div className="relative flex items-center justify-center mb-8 p-4 sm:p-6 lg:p-8">
+        <Button 
+          variant="outline" 
+          size="icon" 
+          className="absolute left-4 sm:left-6 lg:left-8 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl hover:-translate-y-0.5" 
+          onClick={() => navigate(-1)}
+        >
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="text-center">
-          <div className="inline-block p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl mb-3 shadow-lg">
-            <Calendar className="h-8 w-8 text-primary" />
+          <div className="inline-block p-4 bg-gradient-to-br from-primary/10 via-primary/20 to-primary/30 rounded-2xl mb-4 shadow-lg border border-primary/20">
+            <Calendar className="h-10 w-10 text-primary" />
           </div>
-          <h1 className="text-3xl font-bold text-primary">Daily Routine</h1>
-          <p className="text-muted-foreground">Narrate Your Daily Activities</p>
-          <p className="text-sm text-muted-foreground mt-1">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent mb-3">
+            Daily Routine
+          </h1>
+          <p className="text-lg text-muted-foreground font-medium">Narrate Your Daily Activities</p>
+          <p className="text-sm text-muted-foreground mt-2">
             Topic: {currentPhraseIndex + 1} of {phrases.length}
           </p>
         </div>
@@ -781,7 +795,7 @@ export default function DailyRoutine() {
 
       {/* Main Content */}
       <div className="flex-1 px-4 pb-4">
-        <Card className="max-w-md mx-auto bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300">
+        <Card className="max-w-md mx-auto bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300">
           <CardContent className="p-8 text-center">
             {/* Question */}
             <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">
@@ -797,7 +811,7 @@ export default function DailyRoutine() {
 
             {/* Example Response */}
             {currentPhrase.example_response && (
-              <div className="bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 border border-[#1582B4]/30 dark:border-[#1582B4]/20 rounded-xl p-4 mb-4 shadow-sm">
+              <div className="bg-gradient-to-br from-[#1582B4]/10 via-[#1582B4]/20 to-[#1582B4]/30 border border-[#1582B4]/30 dark:border-[#1582B4]/20 rounded-2xl p-4 mb-4 shadow-lg">
                 <p className="text-sm font-medium text-[#1582B4] dark:text-[#1582B4]/80 mb-2">
                   Example Response:
                 </p>
@@ -814,7 +828,7 @@ export default function DailyRoutine() {
 
             {/* Expected Keywords */}
             {currentPhrase.expected_keywords && currentPhrase.expected_keywords.length > 0 && (
-              <div className="bg-gradient-to-br from-primary/10 to-primary/20 border border-primary/30 dark:border-primary/20 rounded-xl p-4 mb-6 shadow-sm">
+              <div className="bg-gradient-to-br from-primary/10 via-primary/20 to-primary/30 border border-primary/30 dark:border-primary/20 rounded-2xl p-4 mb-6 shadow-lg">
                 <p className="text-sm font-medium text-primary dark:text-primary/80 mb-2">
                   Expected Keywords:
                 </p>
@@ -831,7 +845,7 @@ export default function DailyRoutine() {
               className={`w-20 h-20 rounded-full text-white shadow-lg mb-6 transition-all duration-300 ${
                 isLoadingAudio 
                   ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed' 
-                  : 'bg-primary hover:bg-primary/90 hover:scale-105 shadow-xl'
+                  : 'bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary hover:scale-105 shadow-xl hover:shadow-2xl'
               }`}
               size="icon"
             >
@@ -855,14 +869,14 @@ export default function DailyRoutine() {
             <Button
               onClick={handlePrevious}
               variant="outline"
-              className="flex-1 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300"
+              className="flex-1 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
             >
               Previous
             </Button>
             <Button
               onClick={handleNext}
               variant="outline"
-              className="flex-1 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300"
+              className="flex-1 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
             >
               Next
             </Button>
@@ -871,7 +885,7 @@ export default function DailyRoutine() {
 
         {/* Feedback Display */}
         {feedback && (
-          <Card className="w-full max-w-md mt-6 mx-auto bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300">
+          <Card className="w-full max-w-md mt-6 mx-auto bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300">
             <CardContent className="p-6">
               <div className="text-center">
                 {feedback.score !== undefined && (
@@ -903,42 +917,42 @@ export default function DailyRoutine() {
                         <li key={index}>{safeDisplay(suggestion)}</li>
                       ))}
                     </ul>
-                </div>
+                  </div>
                 )}
-            </div>
-          </CardContent>
-        </Card>
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
 
       {/* Speak Button */}
-      <div className="p-4 bg-background">
+      <div className="p-4 bg-transparent">
         <div className="max-w-md mx-auto">
-                <Button
+          <Button
             onClick={handleStartRecording}
             disabled={isRecording || isEvaluating}
-            className={`w-full h-16 text-xl font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ${
+            className={`w-full h-16 text-xl font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 ${
               isRecording 
-                ? 'bg-red-500 hover:bg-red-600' 
+                ? 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700' 
                 : isEvaluating
-                ? 'bg-[#1582B4] hover:bg-[#1582B4]/90'
-                : 'bg-primary hover:bg-primary/90'
-            } text-white`}
+                ? 'bg-gradient-to-r from-[#1582B4] to-[#1582B4]/90 hover:from-[#1582B4]/90 hover:to-[#1582B4]'
+                : 'bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary'
+            } text-white hover:-translate-y-0.5 border-0`}
           >
-            <Mic className="w-6 h-6 mr-3" />
+            <Mic className="w-7 h-7 mr-3" />
             {isRecording ? 'Recording...' : isEvaluating ? 'Evaluating...' : 'Speak Now'}
-                </Button>
+          </Button>
                 
           {/* Stop Recording Button */}
           {isRecording && (
-                <Button
+            <Button
               onClick={handleStopRecording}
-              className="w-full mt-4 bg-red-600 hover:bg-red-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
-                >
+              className="w-full mt-4 h-14 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 border-0 rounded-2xl"
+            >
               Stop Recording
-                </Button>
+            </Button>
           )}
-            </div>
+        </div>
       </div>
     </div>
   );
