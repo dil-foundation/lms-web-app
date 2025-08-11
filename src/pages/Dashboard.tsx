@@ -62,7 +62,7 @@ const ObservationReports = lazy(() => import('@/components/admin/ObservationRepo
 const GradeAssignments = lazy(() => import('@/components/admin/GradeAssignments').then(module => ({ default: module.GradeAssignments })));
 const AssignmentSubmissions = lazy(() => import('@/components/admin/AssignmentSubmissions').then(module => ({ default: module.AssignmentSubmissions })));
 const StudentSubmissionDetail = lazy(() => import('@/components/admin/StudentSubmissionDetail').then(module => ({ default: module.StudentSubmissionDetail })));
-const AdminSettings = lazy(() => import('@/components/admin/AdminSettings').then(module => ({ default: module.AdminSettings })));
+const AdminSettings = lazy(() => import('@/components/admin/AdminSettings'));
 const AdminSecurity = lazy(() => import('@/components/admin/AdminSecurity').then(module => ({ default: module.AdminSecurity })));
 const AITutorSettings = lazy(() => import('@/components/admin/AITutorSettings').then(module => ({ default: module.AITutorSettings })));
 const AISafetyEthicsSettings = lazy(() => import('@/components/admin/AISafetyEthicsSettings').then(module => ({ default: module.AISafetyEthicsSettings })));
@@ -104,6 +104,11 @@ const Dashboard = () => {
 
   const currentRole = profile?.role as UserRole | undefined
   ;
+  
+  // Debug logging
+  useEffect(() => {
+    // Dashboard component mounted successfully
+  }, []);
   
   const displayProfile = profile && currentRole ? {
     ...profile,
@@ -276,6 +281,8 @@ const Dashboard = () => {
                           <Route path="/ai-reports" element={<ReportsAnalytics />} />
                           <Route path="/ai-tutor-settings" element={<AITutorSettings userProfile={finalProfile} />} />
                           <Route path="/ai-safety-ethics" element={<AISafetyEthicsSettings userProfile={finalProfile} />} />
+                          <Route path="/admin-settings" element={<AdminSettings />} />
+                          <Route path="/test-admin-settings" element={<AdminSettings />} />
                           {/* Practice Stage Routes for Admin Viewing */}
                           <Route path="/practice/stage-0" element={<StageZero />} />
                           <Route path="/practice/stage-0/lesson/:lessonId" element={<LessonDetail />} />
@@ -317,7 +324,8 @@ const Dashboard = () => {
                           <Route path="/grade-assignments" element={<GradeAssignments />} />
                           <Route path="/grade-assignments/:id" element={<AssignmentSubmissions />} />
                           <Route path="/grade-assignments/:assignmentId/student/:studentId" element={<StudentSubmissionDetail />} />
-                          <Route path="/settings" element={<AdminSettings />} />
+                          <Route path="/admin-settings" element={<AdminSettings />} />
+                          <Route path="/test-admin-settings" element={<AdminSettings />} />
                           <Route path="/security" element={<AdminSecurity />} />
                           <Route path="/integration-apis" element={<IntegrationAPIs userProfile={finalProfile} />} />
                           <Route path="/multitenancy" element={<Multitenancy userProfile={finalProfile} />} />

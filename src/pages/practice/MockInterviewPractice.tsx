@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Mic, Building2, User, Loader2, Play, Pause, VolumeX, Square, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Mic, Building2, User, Loader2, Play, Pause, VolumeX, Square, RotateCcw, Target, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MockInterviewService, { MockInterviewScenario, MockInterviewQuestion, MockInterviewEvaluationResponse } from '@/services/mockInterviewService';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useAuth } from '@/hooks/useAuth';
+import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
 
 export default function MockInterviewPractice() {
   const navigate = useNavigate();
@@ -581,46 +582,56 @@ export default function MockInterviewPractice() {
 
   if (!hasStarted) {
     return (
-      <div className="min-h-screen bg-background p-4">
+      <div className="min-h-screen bg-background">
         <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => navigate('/dashboard/practice/stage-4')}
-              className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
+          {/* Consistent Header Section */}
+          <div className="px-6 py-8">
+            {/* Breadcrumb Navigation */}
+            <PracticeBreadcrumb className="mb-6" />
             
-            <div className="text-center flex-1">
-              <h1 className="text-xl font-semibold text-green-600 dark:text-green-400">
-                Mock Interview
-              </h1>
+            {/* Header with Back Button and Title */}
+            <div className="relative flex items-center justify-center mb-8 text-center">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => navigate('/dashboard/practice/stage-4')}
+                className="absolute left-0 group w-12 h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+              >
+                <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-300" />
+              </Button>
+              
+              <div className="space-y-3">
+                <div className="inline-block p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
+                  <Building2 className="h-10 w-10 text-primary" />
+                </div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                  Mock Interview Practice
+                </h1>
+                <p className="text-muted-foreground text-lg">Master your interview skills with AI-powered feedback</p>
+              </div>
             </div>
-            
-            <div className="w-10"></div>
           </div>
 
           {/* Scenario Selection */}
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold text-center mb-6">Choose Your Interview Scenario</h2>
+          <div className="px-6 pb-8 space-y-6">
+            <h2 className="text-3xl font-bold text-center bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent mb-8">
+              Choose Your Interview Scenario
+            </h2>
             
             {isLoading ? (
-              <Card className="bg-muted/50">
-                <CardContent className="p-6">
+              <Card className="bg-muted/50 border-0 rounded-3xl">
+                <CardContent className="p-8">
                   <div className="text-center">
-                    <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-green-600" />
-                    <p className="text-green-600 dark:text-green-400">Loading interview scenarios...</p>
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-primary" />
+                    <p className="text-primary dark:text-primary font-medium">Loading interview scenarios...</p>
                   </div>
                 </CardContent>
               </Card>
             ) : error ? (
-              <Card className="border-red-200 dark:border-red-800">
-                <CardContent className="p-6">
+              <Card className="border-red-200 dark:border-red-800 border-0 rounded-3xl">
+                <CardContent className="p-8">
                   <div className="text-center">
-                    <p className="text-red-600 dark:text-red-400 mb-2">Failed to load scenarios</p>
+                    <p className="text-red-600 dark:text-red-400 mb-2 font-medium">Failed to load scenarios</p>
                     <p className="text-sm text-muted-foreground">Using fallback scenarios</p>
                   </div>
                 </CardContent>
@@ -630,32 +641,39 @@ export default function MockInterviewPractice() {
             {scenarios.map((scenario) => (
               <Card 
                 key={scenario.id}
-                className="cursor-pointer transition-all hover:shadow-lg hover:ring-2 hover:ring-green-500 hover:bg-green-50 dark:hover:bg-green-900/20"
+                className="cursor-pointer transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-lg hover:shadow-xl overflow-hidden"
                 onClick={() => handleStartInterview(scenario.id)}
               >
-                <CardContent className="p-6">
-                  <div className="flex items-start space-x-4">
-                    <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                      <Building2 className="h-6 w-6 text-green-600 dark:text-green-400" />
+                <CardContent className="p-0">
+                  <div className="bg-gradient-to-br from-primary to-primary/90 p-6 text-white relative overflow-hidden">
+                    <div className="flex items-start space-x-4">
+                      <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shrink-0">
+                        <Building2 className="h-8 w-8 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold mb-2">{scenario.title}</h3>
+                        <p className="text-white/90 text-sm leading-relaxed">{scenario.description}</p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold mb-2">{scenario.title}</h3>
-                      <p className="text-muted-foreground text-sm">{scenario.description}</p>
-                      <div className="flex items-center justify-between mt-3">
-                        <p className="text-xs text-muted-foreground">
+                  </div>
+                  <div className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Target className="h-4 w-4 text-primary" />
+                        <p className="text-sm text-muted-foreground">
                           {scenario.questions.length} questions
                         </p>
-                        <span className="text-xs text-green-600 dark:text-green-400 font-medium px-2 py-1 bg-green-100 dark:bg-green-900/30 rounded-full">
-                          Click to Start
-                        </span>
                       </div>
+                      <span className="text-xs text-primary font-medium px-3 py-1.5 bg-gradient-to-r from-primary/10 to-primary/20 rounded-full border border-primary/20">
+                        Click to Start
+                      </span>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             ))}
 
-            <div className="text-center pt-4">
+            <div className="text-center pt-6">
               <p className="text-muted-foreground text-sm">
                 Select a scenario to begin your mock interview session
               </p>
@@ -667,56 +685,66 @@ export default function MockInterviewPractice() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
+    <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={resetInterview}
-            className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+        {/* Consistent Header Section */}
+        <div className="px-6 py-8">
+          {/* Breadcrumb Navigation */}
+          <PracticeBreadcrumb className="mb-6" />
           
-          <div className="text-center flex-1">
-            <h1 className="text-xl font-semibold text-green-600 dark:text-green-400">
-              Mock Interview
-            </h1>
+          {/* Header with Back Button and Title */}
+          <div className="relative flex items-center justify-center mb-8 text-center">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={resetInterview}
+              className="absolute left-0 group w-12 h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+            >
+              <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-300" />
+            </Button>
+            
+            <div className="space-y-3">
+              <div className="inline-block p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
+                <Building2 className="h-10 w-10 text-primary" />
+              </div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                Mock Interview Practice
+              </h1>
+              <p className="text-muted-foreground text-lg">Master your interview skills with AI-powered feedback</p>
+            </div>
           </div>
-          
-          <div className="w-10"></div>
         </div>
 
         {/* Interview Content */}
-        <div className="space-y-8">
+        <div className="px-6 pb-8 space-y-6">
           {/* Scenario Title */}
-          <Card className="border-0 bg-gradient-to-r from-green-500/10 to-green-600/10 dark:from-green-400/10 dark:to-green-500/10">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-green-500 rounded-2xl flex items-center justify-center shrink-0">
-                  <Building2 className="h-6 w-6 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h2 className="text-xl font-bold text-green-600 dark:text-green-400 mb-1">
-                  {currentScenario.title}
-                </h2>
-                  <p className="text-green-700 dark:text-green-300 text-sm leading-relaxed">
-                  {currentScenario.description}
-                </p>
+          <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
+            <CardContent className="p-0">
+              <div className="bg-gradient-to-br from-primary to-primary/90 p-6 text-white relative overflow-hidden">
+                <div className="flex items-center space-x-4">
+                  <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shrink-0">
+                    <Building2 className="h-8 w-8 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-2xl font-bold text-white mb-2">
+                      {currentScenario.title}
+                    </h2>
+                    <p className="text-white/90 text-sm leading-relaxed">
+                      {currentScenario.description}
+                    </p>
+                  </div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Current Question */}
-          <Card className="bg-muted/30 border-0">
+          <Card className="border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-lg">
             <CardContent className="p-8">
               {isLoadingQuestion ? (
                 <div className="text-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin mx-auto mb-3 text-green-600" />
-                  <p className="text-green-600 dark:text-green-400 font-medium">Loading question details...</p>
+                  <Loader2 className="h-8 w-8 animate-spin mx-auto mb-3 text-primary" />
+                  <p className="text-primary dark:text-primary font-medium">Loading question details...</p>
                 </div>
               ) : questionError ? (
                 <div className="text-center py-4">
@@ -728,7 +756,7 @@ export default function MockInterviewPractice() {
               <div className="text-center space-y-6">
                 {/* Question Text */}
                 <div>
-                  <h3 className="text-xl font-semibold text-foreground mb-6">
+                  <h3 className="text-2xl font-bold text-foreground mb-6">
                     {currentQuestionDetail?.question || currentQuestion?.question || 'Loading question...'}
                   </h3>
                   
@@ -738,25 +766,25 @@ export default function MockInterviewPractice() {
                       <Button
                         onClick={handleToggleAudio}
                         disabled={isLoadingAudio}
-                        className={`w-20 h-20 rounded-full shadow-xl transition-all duration-200 ${
+                        className={`w-24 h-24 rounded-full shadow-xl transition-all duration-200 ${
                           isLoadingAudio
-                            ? 'bg-green-400 hover:bg-green-400 cursor-not-allowed scale-95'
+                            ? 'bg-primary/60 hover:bg-primary/60 cursor-not-allowed scale-95'
                             : audioState.isPlaying
-                            ? 'bg-blue-500 hover:bg-blue-600 scale-105'
+                            ? 'bg-[#1582B4] hover:bg-[#1582B4]/90 scale-105'
                             : audioState.error
                             ? 'bg-red-500 hover:bg-red-600'
-                            : 'bg-green-500 hover:bg-green-600 hover:scale-105'
+                            : 'bg-primary hover:bg-primary/90 hover:scale-105'
                         }`}
                         size="icon"
                       >
                         {isLoadingAudio ? (
-                          <Loader2 className="w-8 h-8 text-white animate-spin" />
+                          <Loader2 className="w-10 h-10 text-white animate-spin" />
                         ) : audioState.isPlaying ? (
-                          <Pause className="w-9 h-9 text-white" />
+                          <Pause className="w-11 h-11 text-white" />
                         ) : audioState.error ? (
-                          <VolumeX className="w-9 h-9 text-white" />
+                          <VolumeX className="w-11 h-11 text-white" />
                         ) : (
-                          <Play className="w-9 h-9 text-white ml-1" />
+                          <Play className="w-11 h-11 text-white ml-1" />
                         )}
                       </Button>
                       
@@ -776,25 +804,25 @@ export default function MockInterviewPractice() {
                 
                 {/* Tips Section - Inline */}
                 {currentQuestionDetail?.tips && currentQuestionDetail.tips.length > 0 && (
-                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-200 dark:border-blue-800">
+                  <div className="bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-2xl border border-[#1582B4]/20 p-4">
                     <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/40 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                        <span className="text-blue-600 dark:text-blue-400 text-sm">💡</span>
-                </div>
-                <div className="flex-1">
-                        <h4 className="text-sm font-semibold text-blue-600 dark:text-blue-400 mb-2">
+                      <div className="w-8 h-8 bg-[#1582B4]/20 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
+                        <span className="text-[#1582B4] text-sm">💡</span>
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="text-sm font-semibold text-[#1582B4] mb-2">
                           Interview Tips
                         </h4>
-                        <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
+                        <ul className="text-sm text-[#1582B4]/80 space-y-1">
                           {currentQuestionDetail.tips.map((tip, index) => (
                             <li key={index} className="flex items-start">
-                              <span className="text-blue-500 mr-2 mt-1.5 text-xs">•</span>
+                              <span className="text-[#1582B4] mr-2 mt-1.5 text-xs">•</span>
                               <span>{tip}</span>
                             </li>
                           ))}
                         </ul>
                       </div>
-                </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -803,49 +831,49 @@ export default function MockInterviewPractice() {
 
           {/* Expected Keywords */}
           {currentQuestionDetail?.expected_keywords && currentQuestionDetail.expected_keywords.length > 0 && (
-            <Card className="border-0 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10">
-            <CardContent className="p-6">
-              <div className="flex items-start space-x-4">
-                  <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center shrink-0">
-                    <span className="text-white text-lg">🎯</span>
-                </div>
-                <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-blue-600 dark:text-blue-400 mb-3">
+            <Card className="border-0 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-3xl shadow-lg">
+              <CardContent className="p-6">
+                <div className="flex items-start space-x-4">
+                  <div className="w-12 h-12 bg-[#1582B4] rounded-2xl flex items-center justify-center shrink-0">
+                    <span className="text-white text-xl">🎯</span>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-[#1582B4] mb-3">
                       Expected Keywords to Include
                     </h3>
                     <div className="flex flex-wrap gap-2">
                       {currentQuestionDetail.expected_keywords.map((keyword, index) => (
                         <span 
                           key={index}
-                          className="px-3 py-1.5 bg-blue-500 text-white text-sm font-medium rounded-lg shadow-sm hover:bg-blue-600 transition-colors"
+                          className="px-3 py-1.5 bg-[#1582B4] text-white text-sm font-medium rounded-lg shadow-sm hover:bg-[#1582B4]/90 transition-colors"
                         >
                           {keyword}
                         </span>
                       ))}
                     </div>
-                    <p className="text-sm text-blue-600 dark:text-blue-400 mt-3 font-medium">
+                    <p className="text-sm text-[#1582B4] mt-3 font-medium">
                       Try to incorporate these keywords naturally in your response
                     </p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
           )}
 
           {/* Expected Structure */}
           {currentQuestionDetail?.expected_structure && (
-            <Card className="border-0 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-800/10">
+            <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg">
               <CardContent className="p-6">
                 <div className="flex items-start space-x-4">
-                  <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center shrink-0">
-                    <span className="text-white text-lg">🏗️</span>
+                  <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center shrink-0">
+                    <span className="text-white text-xl">🏗️</span>
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-green-600 dark:text-green-400 mb-3">
+                    <h3 className="text-lg font-semibold text-primary mb-3">
                       Suggested Structure
                     </h3>
-                    <div className="bg-white/60 dark:bg-green-900/30 p-4 rounded-lg border border-green-200 dark:border-green-700">
-                      <p className="text-green-700 dark:text-green-300 font-semibold text-center">
+                    <div className="bg-white/60 dark:bg-primary/30 p-4 rounded-lg border border-primary/20">
+                      <p className="text-primary font-semibold text-center">
                         {currentQuestionDetail.expected_structure}
                       </p>
                     </div>
@@ -863,18 +891,18 @@ export default function MockInterviewPractice() {
                 <Button
                   onClick={handleStartRecording}
                   disabled={isEvaluating}
-                  className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-10 py-4 rounded-2xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 disabled:opacity-50"
+                  className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white px-12 py-4 rounded-full text-xl font-medium transition-all duration-300 hover:scale-105 hover:shadow-2xl shadow-lg disabled:opacity-50"
                   size="lg"
                 >
                   <Mic className="h-6 w-6 mr-3" />
                   {isEvaluating ? 'Evaluating...' : 'Start Recording'}
                 </Button>
               ) : (
-            <Button
+                <Button
                   onClick={handleStopRecording}
-                  className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-10 py-4 rounded-2xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
-              size="lg"
-            >
+                  className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-12 py-4 rounded-full text-xl font-medium transition-all duration-300 hover:scale-105 hover:shadow-2xl shadow-lg"
+                  size="lg"
+                >
                   <Square className="h-6 w-6 mr-3" />
                   Stop Recording
                 </Button>
@@ -914,7 +942,7 @@ export default function MockInterviewPractice() {
                   </p>
                   <Button
                     onClick={handleEvaluateRecording}
-                    className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-8 py-3 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+                    className="bg-gradient-to-r from-[#1582B4] to-[#1582B4]/90 hover:from-[#1582B4]/90 hover:to-[#1582B4] text-white px-8 py-3 rounded-full text-lg font-medium transition-all duration-300 hover:scale-105 hover:shadow-2xl shadow-lg"
                     size="lg"
                   >
                     <Mic className="h-5 w-5 mr-2" />
@@ -944,7 +972,7 @@ export default function MockInterviewPractice() {
                   onClick={handlePrevQuestion}
                   variant="outline"
                   disabled={currentQuestionIndex === 0}
-                  className="px-6 py-2.5 rounded-xl border-2 font-medium transition-all duration-200 hover:shadow-md disabled:opacity-50 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800 dark:hover:text-gray-100"
+                  className="px-8 py-3 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl hover:-translate-y-0.5 rounded-2xl disabled:opacity-50"
                 >
                   Previous
                 </Button>
@@ -952,7 +980,7 @@ export default function MockInterviewPractice() {
                   onClick={handleNextQuestion}
                   variant="outline"
                   disabled={currentQuestionIndex === currentScenario.questions.length - 1}
-                  className="px-6 py-2.5 rounded-xl border-2 font-medium transition-all duration-200 hover:shadow-md disabled:opacity-50 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800 dark:hover:text-gray-100"
+                  className="px-8 py-3 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl hover:-translate-y-0.5 rounded-2xl disabled:opacity-50"
                 >
                   Next Question
                 </Button>
@@ -962,9 +990,9 @@ export default function MockInterviewPractice() {
 
           {/* Feedback Section */}
           {feedback && (
-            <Card className="border-0 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+            <Card className="border-0 bg-gradient-to-br from-[#1582B4]/10 to-indigo-50 dark:from-[#1582B4]/20 dark:to-indigo-900/20 rounded-3xl shadow-lg">
               <CardHeader>
-                <CardTitle className="text-center text-blue-600 dark:text-blue-400">
+                <CardTitle className="text-center text-2xl font-bold bg-gradient-to-r from-[#1582B4] via-[#1582B4]/90 to-[#1582B4] bg-clip-text text-transparent">
                   Interview Evaluation Results
                 </CardTitle>
               </CardHeader>
@@ -972,7 +1000,7 @@ export default function MockInterviewPractice() {
                 {/* Overall Score */}
                 <div className="text-center">
                   <h3 className="text-lg font-semibold text-foreground mb-2">Overall</h3>
-                  <div className="text-4xl font-bold text-green-600 dark:text-green-400 mb-4">
+                  <div className="text-4xl font-bold bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent mb-4">
                     {feedback.score}/100
                   </div>
                 </div>
@@ -981,23 +1009,23 @@ export default function MockInterviewPractice() {
                 {(feedback.fluency_score || feedback.pronunciation_score || feedback.content_relevance_score || feedback.grammar_score) && (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {feedback.fluency_score && (
-                      <div className="text-center p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg">
-                        <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                      <div className="text-center p-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl border border-gray-200/60 dark:border-gray-700/60 shadow-lg">
+                        <div className="text-2xl font-bold text-[#1582B4]">
                           {feedback.fluency_score}
                         </div>
                         <div className="text-xs text-muted-foreground">Fluency</div>
                       </div>
                     )}
                     {feedback.pronunciation_score && (
-                      <div className="text-center p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg">
-                        <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      <div className="text-center p-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl border border-gray-200/60 dark:border-gray-700/60 shadow-lg">
+                        <div className="text-2xl font-bold text-primary">
                           {feedback.pronunciation_score}
                         </div>
                         <div className="text-xs text-muted-foreground">Pronunciation</div>
                       </div>
                     )}
                     {feedback.content_relevance_score && (
-                      <div className="text-center p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg">
+                      <div className="text-center p-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl border border-gray-200/60 dark:border-gray-700/60 shadow-lg">
                         <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                           {feedback.content_relevance_score}
                         </div>
@@ -1005,7 +1033,7 @@ export default function MockInterviewPractice() {
                       </div>
                     )}
                     {feedback.grammar_score && (
-                      <div className="text-center p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg">
+                      <div className="text-center p-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl border border-gray-200/60 dark:border-gray-700/60 shadow-lg">
                         <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                           {feedback.grammar_score}
                         </div>
@@ -1017,7 +1045,7 @@ export default function MockInterviewPractice() {
 
                 {/* Feedback Text */}
                 {feedback.feedback && (
-                  <div className="bg-white/60 dark:bg-gray-800/60 p-4 rounded-lg">
+                  <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm p-4 rounded-2xl border border-gray-200/60 dark:border-gray-700/60 shadow-lg">
                     <h4 className="text-sm font-semibold text-foreground mb-2">Feedback</h4>
                     <p className="text-sm text-muted-foreground">{feedback.feedback}</p>
                   </div>
@@ -1025,15 +1053,15 @@ export default function MockInterviewPractice() {
 
                 {/* Keywords Used */}
                 {feedback.keywords_used && feedback.keywords_used.length > 0 && (
-                  <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-                    <h4 className="text-sm font-semibold text-green-600 dark:text-green-400 mb-2">
+                  <div className="bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl border border-primary/20 p-4">
+                    <h4 className="text-sm font-semibold text-primary mb-2">
                       Keywords Used ✅
                     </h4>
                     <div className="flex flex-wrap gap-2">
                       {feedback.keywords_used.map((keyword, index) => (
                         <span 
                           key={index}
-                          className="px-2 py-1 bg-green-500 text-white text-xs rounded font-medium"
+                          className="px-2 py-1 bg-primary text-white text-xs rounded font-medium"
                         >
                           {keyword}
                         </span>
@@ -1044,15 +1072,15 @@ export default function MockInterviewPractice() {
 
                 {/* Vocabulary Used */}
                 {feedback.vocabulary_used && feedback.vocabulary_used.length > 0 && (
-                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-                    <h4 className="text-sm font-semibold text-blue-600 dark:text-blue-400 mb-2">
+                  <div className="bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-2xl border border-[#1582B4]/20 p-4">
+                    <h4 className="text-sm font-semibold text-[#1582B4] mb-2">
                       Vocabulary Used
                     </h4>
                     <div className="flex flex-wrap gap-2">
                       {feedback.vocabulary_used.map((word, index) => (
                         <span 
                           key={index}
-                          className="px-2 py-1 bg-blue-500 text-white text-xs rounded font-medium"
+                          className="px-2 py-1 bg-[#1582B4] text-white text-xs rounded font-medium"
                         >
                           {word}
                         </span>
@@ -1063,14 +1091,14 @@ export default function MockInterviewPractice() {
 
                 {/* Strengths */}
                 {feedback.strengths && feedback.strengths.length > 0 && (
-                  <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-                    <h4 className="text-sm font-semibold text-green-600 dark:text-green-400 mb-2">
+                  <div className="bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl border border-primary/20 p-4">
+                    <h4 className="text-sm font-semibold text-primary mb-2">
                       Strengths 💪
                     </h4>
-                    <ul className="text-sm text-green-700 dark:text-green-300 space-y-1">
+                    <ul className="text-sm text-primary/80 space-y-1">
                       {feedback.strengths.map((strength, index) => (
                         <li key={index} className="flex items-start">
-                          <span className="text-green-500 mr-2 mt-1 text-xs">•</span>
+                          <span className="text-primary mr-2 mt-1 text-xs">•</span>
                           <span>{strength}</span>
                         </li>
                       ))}
@@ -1080,11 +1108,11 @@ export default function MockInterviewPractice() {
 
                 {/* Areas for Improvement */}
                 {feedback.areas_for_improvement && feedback.areas_for_improvement.length > 0 && (
-                  <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg">
+                  <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/20 rounded-2xl border border-orange-500/20 p-4">
                     <h4 className="text-sm font-semibold text-orange-600 dark:text-orange-400 mb-2">
                       Areas for Improvement 📈
                     </h4>
-                    <ul className="text-sm text-orange-700 dark:text-orange-300 space-y-1">
+                    <ul className="text-sm text-orange-600/80 space-y-1">
                       {feedback.areas_for_improvement.map((area, index) => (
                         <li key={index} className="flex items-start">
                           <span className="text-orange-500 mr-2 mt-1 text-xs">•</span>
@@ -1097,11 +1125,11 @@ export default function MockInterviewPractice() {
 
                 {/* Suggestions */}
                 {feedback.suggestions && feedback.suggestions.length > 0 && (
-                  <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
+                  <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/20 rounded-2xl border border-purple-500/20 p-4">
                     <h4 className="text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
                       Suggestions 💡
                     </h4>
-                    <ul className="text-sm text-purple-700 dark:text-purple-300 space-y-1">
+                    <ul className="text-sm text-purple-600/80 space-y-1">
                       {feedback.suggestions.map((suggestion, index) => (
                         <li key={index} className="flex items-start">
                           <span className="text-purple-500 mr-2 mt-1 text-xs">•</span>
@@ -1114,11 +1142,11 @@ export default function MockInterviewPractice() {
 
                 {/* Next Steps */}
                 {feedback.next_steps && (
-                  <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg">
+                  <div className="bg-gradient-to-br from-indigo-500/10 to-indigo-600/20 rounded-2xl border border-indigo-500/20 p-4">
                     <h4 className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 mb-2">
                       Next Steps 🎯
                     </h4>
-                    <p className="text-sm text-indigo-700 dark:text-indigo-300">{feedback.next_steps}</p>
+                    <p className="text-sm text-indigo-600/80">{feedback.next_steps}</p>
                   </div>
                 )}
               </CardContent>
@@ -1127,8 +1155,8 @@ export default function MockInterviewPractice() {
 
           {/* Evaluation Error */}
           {evaluationError && (
-            <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
-              <CardContent className="p-4">
+            <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 border-0 rounded-2xl">
+              <CardContent className="p-6">
                 <div className="text-center">
                   <p className="text-red-600 dark:text-red-400 font-medium mb-2">
                     Evaluation Failed
@@ -1136,16 +1164,16 @@ export default function MockInterviewPractice() {
                   <p className="text-sm text-red-600 dark:text-red-400">
                     {evaluationError}
                   </p>
-            <Button
+                  <Button
                     onClick={resetSession}
-              variant="outline"
+                    variant="outline"
                     size="sm"
                     className="mt-3 border-red-300 text-red-600 hover:bg-red-100 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/30"
-            >
+                  >
                     <RotateCcw className="h-4 w-4 mr-2" />
                     Try Again
-            </Button>
-          </div>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           )}

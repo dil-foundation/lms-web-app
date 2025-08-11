@@ -195,6 +195,142 @@ interface LessonItemProps {
   courseId: string | undefined;
 }
 
+// #region ContentTypeSelector Component
+interface ContentTypeSelectorProps {
+  onSelect: (contentType: 'video' | 'assignment' | 'quiz' | 'attachment') => void;
+  onClose: () => void;
+}
+
+const ContentTypeSelector = ({ onSelect, onClose }: ContentTypeSelectorProps) => {
+  const contentTypes = [
+    {
+      type: 'video' as const,
+      label: 'Video',
+      description: 'Upload video content for your lesson',
+      icon: '🎥',
+      color: 'from-blue-500/10 to-blue-600/10',
+      borderColor: 'border-blue-200/50',
+      iconBg: 'bg-blue-500/10',
+      iconColor: 'text-blue-600'
+    },
+    {
+      type: 'assignment' as const,
+      label: 'Assignment',
+      description: 'Create written assignments and tasks',
+      icon: '📝',
+      color: 'from-orange-500/10 to-orange-600/10',
+      borderColor: 'border-orange-200/50',
+      iconBg: 'bg-orange-500/10',
+      iconColor: 'text-orange-600'
+    },
+    {
+      type: 'quiz' as const,
+      label: 'Quiz',
+      description: 'Build interactive quizzes and assessments',
+      icon: '❓',
+      color: 'from-purple-500/10 to-purple-600/10',
+      borderColor: 'border-purple-200/50',
+      iconBg: 'bg-purple-500/10',
+      iconColor: 'text-purple-600'
+    },
+    {
+      type: 'attachment' as const,
+      label: 'Attachment',
+      description: 'Add supporting documents and files',
+      icon: '📎',
+      color: 'from-green-500/10 to-green-600/10',
+      borderColor: 'border-green-200/50',
+      iconBg: 'bg-green-500/10',
+      iconColor: 'text-green-600'
+    }
+  ];
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl max-w-3xl w-full max-h-[80vh] overflow-hidden animate-in fade-in-0 zoom-in-95 duration-300">
+        {/* Header */}
+        <div className="p-4 border-b border-gray-100 dark:border-gray-800 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
+                Add Content to Your Lesson
+              </h2>
+              <p className="text-gray-600 dark:text-gray-300 text-sm">
+                Choose the type of content you'd like to add to engage your students
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="h-8 w-8 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300 hover:scale-105"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Content Grid */}
+        <div className="p-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {contentTypes.map((contentType) => (
+              <div
+                key={contentType.type}
+                onClick={() => onSelect(contentType.type)}
+                className={`
+                  group relative p-4 rounded-xl border-2 cursor-pointer transition-all duration-300
+                  hover:scale-102 hover:shadow-lg hover:-translate-y-0.5
+                  ${contentType.borderColor} hover:border-current/60
+                  bg-gradient-to-br ${contentType.color}
+                  hover:from-current/20 hover:to-current/10
+                  transform-gpu
+                `}
+              >
+                {/* Icon */}
+                <div className={`
+                  w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-3
+                  ${contentType.iconBg} ${contentType.iconColor}
+                  group-hover:scale-105 transition-transform duration-300
+                  shadow-md group-hover:shadow-lg
+                `}>
+                  {contentType.icon}
+                </div>
+
+                {/* Content */}
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                  {contentType.label}
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300 text-xs leading-relaxed">
+                  {contentType.description}
+                </p>
+
+                {/* Hover Effect */}
+                <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                
+                {/* Arrow */}
+                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-1">
+                  <div className="w-8 h-8 rounded-full bg-white/90 dark:bg-gray-800/90 flex items-center justify-center shadow-md">
+                    <Plus className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-3 border-t border-gray-100 dark:border-gray-800 bg-gradient-to-r from-gray-50/50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-900/50">
+          <p className="text-center text-gray-500 dark:text-gray-400 text-xs">
+            Each content type is designed to enhance different learning styles and engagement levels
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// #endregion
+
 // #region LessonContentItem Component
 interface LessonContentItemProps {
   item: LessonContentItem;
@@ -477,32 +613,32 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
   };
 
   return (
-    <div className={`w-full p-5 rounded-xl border-2 transition-all duration-200 hover:shadow-md ${getContentTypeColor(item.content_type)}`}>
-      <div className="flex items-center justify-between gap-4 mb-4">
-        <div className="flex items-center gap-3 flex-1">
-          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/50 dark:bg-black/20">
-            <span className="text-lg">{getContentTypeIcon(item.content_type)}</span>
+    <div className={`w-full p-6 rounded-2xl border-2 transition-all duration-300 hover:shadow-xl ${getContentTypeColor(item.content_type)}`}>
+      <div className="flex items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-4 flex-1">
+          <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-white/80 dark:bg-black/40 shadow-sm">
+            <span className="text-2xl">{getContentTypeIcon(item.content_type)}</span>
           </div>
           <Input
             value={item.title}
             onChange={(e) => onUpdate(lessonId, item.id, { title: e.target.value })}
             placeholder={`${item.content_type.charAt(0).toUpperCase() + item.content_type.slice(1)} Title`}
-            className="font-medium bg-white/50 dark:bg-black/20 border-0 focus-visible:ring-1 focus-visible:ring-current/30"
+            className="font-semibold text-lg bg-white/60 dark:bg-black/30 border-0 focus-visible:ring-2 focus-visible:ring-current/30 rounded-xl px-4 py-3 placeholder:text-gray-500 dark:placeholder:text-gray-400"
           />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Select
             value={item.content_type}
             onValueChange={handleTypeChangeRequest}
           >
-            <SelectTrigger className="w-[130px] h-9 rounded-lg bg-white/50 dark:bg-black/20 border border-current/20 text-xs font-medium">
+            <SelectTrigger className="w-[140px] h-10 rounded-xl bg-white/60 dark:bg-black/30 border-2 border-current/20 text-sm font-medium shadow-sm hover:shadow-md transition-all duration-300">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="video">🎥 Video</SelectItem>
-              <SelectItem value="attachment">📎 Attachment</SelectItem>
-              <SelectItem value="assignment">📝 Assignment</SelectItem>
-              <SelectItem value="quiz">❓ Quiz</SelectItem>
+            <SelectContent className="rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl">
+              <SelectItem value="video" className="rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">🎥 Video</SelectItem>
+              <SelectItem value="attachment" className="rounded-xl hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors">📎 Attachment</SelectItem>
+              <SelectItem value="assignment" className="rounded-xl hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors">📝 Assignment</SelectItem>
+              <SelectItem value="quiz" className="rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors">❓ Quiz</SelectItem>
             </SelectContent>
           </Select>
           {isRemovable && (
@@ -510,29 +646,29 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
               variant="ghost"
               size="icon"
               onClick={() => onRemove(lessonId, item.id)}
-              className="h-8 w-8 text-current/60 hover:text-current hover:bg-white/30 dark:hover:bg-black/30"
+              className="h-10 w-10 text-current/60 hover:text-current hover:bg-white/40 dark:hover:bg-black/40 rounded-xl transition-all duration-300 hover:scale-110"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5" />
             </Button>
           )}
         </div>
       </div>
       
-      <div className="w-full bg-white/30 dark:bg-black/20 rounded-lg p-4 border border-current/10">
+      <div className="w-full bg-white/40 dark:bg-black/30 rounded-2xl p-6 border-2 border-current/10 shadow-sm">
         {renderContentEditor()}
       </div>
 
       <AlertDialog open={isConfirmingChange} onOpenChange={setIsConfirmingChange}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl border-2 border-gray-200 dark:border-gray-700">
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure you want to switch content type?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-lg font-semibold">Are you sure you want to switch content type?</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-600 dark:text-gray-400">
               Your current content will be lost. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setPendingContentType(null)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmTypeChange}>Continue</AlertDialogAction>
+            <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmTypeChange} className="rounded-xl">Continue</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -551,50 +687,35 @@ interface LessonContainerProps {
   dragHandleProps: any;
   onToggleCollapse: (sectionId: string, lessonId: string) => void;
   courseId: string | undefined;
-  onAddContentItem: (lessonId: string, contentType?: 'video' | 'assignment' | 'quiz' | 'attachment') => void;
   onUpdateContentItem: (lessonId: string, itemId: string, updatedItem: Partial<LessonContentItem>) => void;
   onRemoveContentItem: (lessonId: string, itemId: string) => void;
+  onShowContentTypeSelector: (lessonId: string) => void;
 }
 
-const LessonContainer = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, dragHandleProps, onToggleCollapse, courseId, onAddContentItem, onUpdateContentItem, onRemoveContentItem }: LessonContainerProps) => {
-  const contentTypes = [
-    { type: 'video', label: 'Video', icon: '🎥' },
-    { type: 'assignment', label: 'Assignment', icon: '📝' },
-    { type: 'quiz', label: 'Quiz', icon: '❓' },
-    { type: 'attachment', label: 'Attachment', icon: '📎' }
-  ];
-
-  const addContentType = (contentType: string) => {
-    onAddContentItem(lesson.id, contentType as 'video' | 'assignment' | 'quiz' | 'attachment');
-  };
-
-  const getAvailableContentTypes = () => {
-    const existingTypes = lesson.contentItems.map(item => item.content_type);
-    return contentTypes.filter(ct => !existingTypes.includes(ct.type as any));
-  };
+const LessonContainer = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, dragHandleProps, onToggleCollapse, courseId, onUpdateContentItem, onRemoveContentItem, onShowContentTypeSelector }: LessonContainerProps) => {
 
   return (
     <>
-      <div className="p-6 rounded-xl bg-background border border-border/50 shadow-sm space-y-6">
+      <div className="p-6 rounded-2xl bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-900/50 border-2 border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl space-y-6 transition-all duration-300 group">
         {/* Lesson Header */}
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3 flex-1">
-            <div {...dragHandleProps} className="cursor-move pt-2.5 opacity-60 hover:opacity-100 transition-opacity">
-              <GripVertical className="text-muted-foreground w-5 h-5" />
+            <div {...dragHandleProps} className="cursor-move pt-2.5 opacity-60 hover:opacity-100 transition-opacity hover:scale-110">
+              <GripVertical className="text-primary w-5 h-5" />
             </div>
             <div className="flex-1 space-y-3">
               <Input
                 value={lesson.title}
                 onChange={(e) => onUpdate(sectionId, lesson.id, { title: e.target.value })}
                 placeholder="Lesson Title"
-                className="font-semibold text-lg border-0 bg-transparent px-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/60"
+                className="font-semibold text-lg border-0 bg-transparent px-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/60 text-gray-900 dark:text-white"
               />
               <Textarea
                 value={lesson.overview || ''}
                 onChange={(e) => onUpdate(sectionId, lesson.id, { overview: e.target.value })}
                 placeholder="Lesson overview (optional)"
                 rows={2}
-                className="text-sm resize-none border-0 bg-muted/30 rounded-lg px-3 py-2 focus-visible:ring-1 focus-visible:ring-primary/20"
+                className="text-sm resize-none border-0 bg-white/50 dark:bg-gray-800/50 rounded-xl px-4 py-3 focus-visible:ring-2 focus-visible:ring-primary/20 text-gray-700 dark:text-gray-300"
               />
             </div>
           </div>
@@ -604,7 +725,7 @@ const LessonContainer = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovab
                 variant="ghost"
                 size="icon"
                 onClick={() => onRemove(sectionId, lesson.id)}
-                className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all duration-300 hover:scale-105"
               >
                 <X className="w-4 h-4" />
               </Button>
@@ -613,7 +734,7 @@ const LessonContainer = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovab
               variant="ghost" 
               size="icon" 
               onClick={() => onToggleCollapse(sectionId, lesson.id)}
-              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              className="h-9 w-9 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all duration-300 hover:scale-105"
             >
               {lesson.isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
             </Button>
@@ -622,28 +743,30 @@ const LessonContainer = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovab
 
         {/* Content Management */}
         {!lesson.isCollapsed && (
-          <div className="space-y-4 ml-8">
-            {/* Available Content Types to Add */}
-            {getAvailableContentTypes().length > 0 && (
-              <div className="flex flex-wrap gap-2 p-4 bg-muted/20 rounded-lg border border-dashed border-muted-foreground/30">
-                <span className="text-sm text-muted-foreground font-medium mr-2">Add back removed content:</span>
-                {getAvailableContentTypes().map((contentType) => (
-                  <Button
-                    key={contentType.type}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => addContentType(contentType.type)}
-                    className="h-8 px-3 text-xs rounded-full border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 transition-all duration-200"
-                  >
-                    <span className="mr-1">{contentType.icon}</span>
-                    {contentType.label}
-                  </Button>
-                ))}
+          <div className="space-y-6 ml-8">
+            {/* Add Content Button */}
+            <div className="flex items-center justify-between p-6 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 rounded-2xl border-2 border-primary/20 hover:border-primary/30 transition-all duration-300 group">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-primary/100 to-primary/200 dark:from-primary-900/30 dark:to-primary-800/30 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <Plus className="w-6 h-6 text-primary-700 dark:text-primary-300" />
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Add Content</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Enhance your lesson with videos, assignments, quizzes, or attachments</p>
+                </div>
               </div>
-            )}
+                  <Button
+                onClick={() => onShowContentTypeSelector(lesson.id)}
+                className="h-11 px-6 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:scale-105"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Content
+                  </Button>
+              </div>
 
             {/* Existing Content Items */}
-            <div className="space-y-3">
+            {lesson.contentItems.length > 0 ? (
+              <div className="space-y-4">
               {lesson.contentItems.map((item) => (
                 <LessonContentItemComponent
                   key={item.id}
@@ -657,6 +780,23 @@ const LessonContainer = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovab
                 />
               ))}
             </div>
+            ) : (
+              <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-full flex items-center justify-center">
+                  <Plus className="w-10 h-10 text-gray-400 dark:text-gray-500" />
+                </div>
+                <p className="text-lg font-medium mb-2">No content added yet</p>
+                <p className="text-sm text-gray-400 dark:text-gray-500 mb-4">Click "Add Content" to get started</p>
+                <Button
+                  onClick={() => onShowContentTypeSelector(lesson.id)}
+                  variant="outline"
+                  className="h-10 px-6 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-primary hover:text-primary transition-all duration-300 hover:scale-105"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add First Content
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -757,46 +897,58 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
   };
   
   return (
-    <div className="w-full space-y-4">
+    <div className="w-full space-y-6">
       {quiz.questions.map((question, qIndex) => (
-        <Card key={question.id}>
-          <CardHeader>
-            <div className="flex items-center gap-2">
+        <Card key={question.id} className="overflow-hidden border-2 border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardHeader className="bg-gradient-to-r from-purple-50 to-purple-100/50 dark:from-purple-900/10 dark:to-purple-800/10 border-b border-purple-200/50 dark:border-purple-700/30 p-6">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-sm font-semibold text-purple-700 dark:text-purple-300">
+                  {qIndex + 1}
+                </span>
+              </div>
               <Input
                 value={question.question_text}
                 onChange={(e) => updateQuestion(qIndex, e.target.value)}
                 placeholder={`Question ${qIndex + 1}`}
+                className="flex-1 border-0 bg-white/60 dark:bg-gray-800/60 rounded-xl px-4 py-3 focus-visible:ring-2 focus-visible:ring-purple-500/20 text-gray-900 dark:text-white"
               />
               <Button 
                 variant="ghost" 
                 size="icon" 
                 onClick={() => removeQuestion(qIndex)}
-                className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="h-10 w-10 hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 rounded-xl transition-all duration-300 hover:scale-105"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="p-6 space-y-4">
             {question.options.map((option, oIndex) => (
-              <div key={option.id} className="flex items-center gap-2">
+              <div key={option.id} className="flex items-center gap-3 p-4 bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 rounded-xl border border-gray-200/50 dark:border-gray-600/30 hover:border-gray-300 dark:hover:border-gray-500 transition-all duration-300">
                 <Input
                   value={option.option_text}
                   onChange={(e) => updateOption(qIndex, oIndex, e.target.value)}
                   placeholder={`Option ${oIndex + 1}`}
+                  className="flex-1 border-0 bg-white/60 dark:bg-gray-800/60 rounded-xl px-4 py-3 focus-visible:ring-2 focus-visible:ring-purple-500/20 text-gray-900 dark:text-white"
                 />
                 <Button
                   variant={option.is_correct ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setCorrectOption(qIndex, option.id)}
+                  className={`h-9 px-4 rounded-xl transition-all duration-300 hover:scale-105 ${
+                    option.is_correct 
+                      ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg' 
+                      : 'border-green-300 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'
+                  }`}
                 >
-                  Correct
+                  {option.is_correct ? '✓ Correct' : 'Mark Correct'}
                 </Button>
                 <Button 
                   variant="ghost" 
                   size="icon" 
                   onClick={() => removeOption(qIndex, oIndex)}
-                  className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  className="h-9 w-9 hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 rounded-xl transition-all duration-300 hover:scale-105"
                 >
                   <X className="w-4 h-4" />
                 </Button>
@@ -806,8 +958,9 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
               variant="outline" 
               size="sm" 
               onClick={() => addOption(qIndex)}
-              className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="w-full h-10 border-2 border-dashed border-purple-300 dark:border-purple-600 rounded-xl text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/10 hover:border-purple-400 dark:hover:border-purple-500 transition-all duration-300 group hover:scale-105"
             >
+              <Plus className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-300" />
               Add Option
             </Button>
           </CardContent>
@@ -815,8 +968,9 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
       ))}
       <Button 
         onClick={addQuestion}
-        className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        className="w-full h-12 border-2 border-dashed border-purple-300 dark:border-purple-600 rounded-2xl text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/10 hover:border-purple-400 dark:hover:border-purple-500 transition-all duration-300 group hover:scale-105"
       >
+        <Plus className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-300" />
         Add Question
       </Button>
     </div>
@@ -851,6 +1005,8 @@ const CourseBuilder = () => {
   const [touchedFields, setTouchedFields] = useState<Partial<Record<keyof ValidationErrors, boolean>>>({});
   const [imageDbPath, setImageDbPath] = useState<string | undefined>();
   const [isLoadingPage, setIsLoadingPage] = useState(true);
+  const [showContentTypeSelector, setShowContentTypeSelector] = useState(false);
+  const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
   const [courseData, setCourseData] = useState<CourseData>(() => ({
     title: '',
     subtitle: '',
@@ -873,36 +1029,7 @@ const CourseBuilder = () => {
             title: 'New Lesson',
             overview: '',
             isCollapsed: false,
-            contentItems: [
-              {
-                id: `content-${Date.now() + 2}`,
-                title: 'New Video',
-                content_type: 'video',
-                content_path: undefined,
-                quiz: undefined
-              },
-              {
-                id: `content-${Date.now() + 3}`,
-                title: 'New Assignment',
-                content_type: 'assignment',
-                content_path: undefined,
-                quiz: undefined
-              },
-              {
-                id: `content-${Date.now() + 4}`,
-                title: 'New Quiz',
-                content_type: 'quiz',
-                content_path: undefined,
-                quiz: undefined
-              },
-              {
-                id: `content-${Date.now() + 5}`,
-                title: 'New Attachment',
-                content_type: 'attachment',
-                content_path: undefined,
-                quiz: undefined
-              }
-            ],
+            contentItems: [],
           },
         ],
       },
@@ -1672,38 +1799,10 @@ const CourseBuilder = () => {
   // #region Section and Lesson Handlers
   const addSection = () => {
     const timestamp = Date.now();
-    const newLesson: CourseLesson = {
-      id: `lesson-${timestamp}`,
-      title: 'New Lesson',
-      overview: '',
-      isCollapsed: false,
-      contentItems: [
-        {
-          id: `content-${timestamp + 1}`,
-          title: 'New Video',
-          content_type: 'video',
-        },
-        {
-          id: `content-${timestamp + 2}`,
-          title: 'New Assignment',
-          content_type: 'assignment',
-        },
-        {
-          id: `content-${timestamp + 3}`,
-          title: 'New Quiz',
-          content_type: 'quiz',
-        },
-        {
-          id: `content-${timestamp + 4}`,
-          title: 'New Attachment',
-          content_type: 'attachment',
-        }
-      ]
-    };
     const newSection: CourseSection = {
       id: `section-${Date.now() + 1}`,
       title: 'New Section',
-      lessons: [newLesson],
+      lessons: [],
       isCollapsed: false,
     };
     setCourseData(prev => ({ ...prev, sections: [...prev.sections, newSection] }));
@@ -1748,28 +1847,7 @@ const CourseBuilder = () => {
       title: 'New Lesson',
       overview: '',
       isCollapsed: false,
-      contentItems: [
-        {
-          id: `content-${timestamp + 1}`,
-          title: 'New Video',
-          content_type: 'video',
-        },
-        {
-          id: `content-${timestamp + 2}`,
-          title: 'New Assignment',
-          content_type: 'assignment',
-        },
-        {
-          id: `content-${timestamp + 3}`,
-          title: 'New Quiz',
-          content_type: 'quiz',
-        },
-        {
-          id: `content-${timestamp + 4}`,
-          title: 'New Attachment',
-          content_type: 'attachment',
-        }
-      ]
+      contentItems: []
     };
     setCourseData(prev => ({
       ...prev,
@@ -1891,6 +1969,25 @@ const CourseBuilder = () => {
     }));
   };
 
+  // Content Type Selector handlers
+  const handleShowContentTypeSelector = (lessonId: string) => {
+    setSelectedLessonId(lessonId);
+    setShowContentTypeSelector(true);
+  };
+
+  const handleContentTypeSelect = (contentType: 'video' | 'assignment' | 'quiz' | 'attachment') => {
+    if (selectedLessonId) {
+      addContentItem(selectedLessonId, contentType);
+      setShowContentTypeSelector(false);
+      setSelectedLessonId(null);
+    }
+  };
+
+  const handleCloseContentTypeSelector = () => {
+    setShowContentTypeSelector(false);
+    setSelectedLessonId(null);
+  };
+
   const canDelete = user && courseData.id && courseData.authorId && (
     currentUserRole === 'admin' ||
     (currentUserRole === 'teacher' && user.id === courseData.authorId && (courseData.status === 'Draft' || courseData.status === 'Rejected'))
@@ -1945,9 +2042,9 @@ const CourseBuilder = () => {
                   </span>
                 </div>
                 {currentUserRole === 'teacher' && courseData.status === 'Draft' && (
-                    <div className="flex items-center gap-2 mt-2 text-sm text-white bg-blue-50 border border-blue-200 rounded-lg p-2">
-                        <Info className="h-4 w-4" />
-                        <span>You must submit this course for admin review and approval before it can be published.</span>
+                    <div className="flex items-center gap-2 mt-2 text-sm text-blue-800 bg-blue-100 border border-blue-300 rounded-lg p-3 shadow-sm">
+                        <Info className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                        <span className="font-medium">You must submit this course for admin review and approval before it can be published.</span>
                     </div>
                 )}
               </div>
@@ -2139,52 +2236,118 @@ const CourseBuilder = () => {
           </div>
 
           <div className="p-6">
-            <TabsContent value="details" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Basic Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
+            <TabsContent value="details" className="space-y-8">
+              {/* Basic Information Card */}
+              <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50">
+                <CardHeader className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 pb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                      <BookOpen className="w-6 h-6 text-primary-700 dark:text-primary-300" />
+                    </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Course Title</label>
+                      <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 dark:from-white dark:via-gray-100 dark:to-gray-200 bg-clip-text text-transparent">
+                        Basic Information
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Set the foundation for your course with essential details
+                      </p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-8 space-y-6">
+                  {/* Course Title */}
+                  <div className="space-y-3">
+                    <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                      Course Title
+                      <span className="text-red-500 ml-1">*</span>
+                    </label>
                     <Input
                       value={courseData.title}
                       onChange={(e) => setCourseData(prev => ({ ...prev, title: e.target.value }))}
                       onBlur={() => handleBlur('title')}
-                      placeholder="Enter course title"
-                      className={cn(validationErrors.title && (touchedFields.title || courseData.id) && "border-red-500 focus-visible:ring-red-500")}
+                      placeholder="Enter an engaging course title"
+                      className={cn(
+                        "h-12 text-lg font-medium border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg",
+                        "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700",
+                        "focus:border-primary focus:ring-4 focus:ring-primary/10",
+                        "placeholder:text-gray-400 dark:placeholder:text-gray-500",
+                        validationErrors.title && (touchedFields.title || courseData.id) && 
+                        "border-red-500 focus:border-red-500 focus:ring-red-500/10"
+                      )}
                     />
-                    {validationErrors.title && (touchedFields.title || courseData.id) && <p className="text-sm text-red-500 mt-1">{validationErrors.title}</p>}
+                    {validationErrors.title && (touchedFields.title || courseData.id) && (
+                      <div className="flex items-center gap-2 text-red-500 text-sm">
+                        <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                        {validationErrors.title}
+                      </div>
+                    )}
                   </div>
                   
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Course Subtitle</label>
+                  {/* Course Subtitle */}
+                  <div className="space-y-3">
+                    <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                      Course Subtitle
+                      <span className="text-red-500 ml-1">*</span>
+                    </label>
                     <Input
                       value={courseData.subtitle}
                       onChange={(e) => setCourseData(prev => ({ ...prev, subtitle: e.target.value }))}
                       onBlur={() => handleBlur('subtitle')}
-                      placeholder="Enter course subtitle"
-                      className={cn(validationErrors.subtitle && (touchedFields.subtitle || courseData.id) && "border-red-500 focus-visible:ring-red-500")}
+                      placeholder="Add a compelling subtitle to hook learners"
+                      className={cn(
+                        "h-11 text-base font-medium border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg",
+                        "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700",
+                        "focus:border-primary focus:ring-4 focus:ring-primary/10",
+                        "placeholder:text-gray-400 dark:placeholder:text-gray-500",
+                        validationErrors.subtitle && (touchedFields.subtitle || courseData.id) && 
+                        "border-red-500 focus:border-red-500 focus:ring-red-500/10"
+                      )}
                     />
-                    {validationErrors.subtitle && (touchedFields.subtitle || courseData.id) && <p className="text-sm text-red-500 mt-1">{validationErrors.subtitle}</p>}
+                    {validationErrors.subtitle && (touchedFields.subtitle || courseData.id) && (
+                      <div className="flex items-center gap-2 text-red-500 text-sm">
+                        <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                        {validationErrors.subtitle}
+                      </div>
+                    )}
                   </div>
                   
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Course Description</label>
+                  {/* Course Description */}
+                  <div className="space-y-3">
+                    <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                      Course Description
+                      <span className="text-red-500 ml-1">*</span>
+                    </label>
                     <Textarea
                       value={courseData.description}
                       onChange={(e) => setCourseData(prev => ({ ...prev, description: e.target.value }))}
                       onBlur={() => handleBlur('description')}
-                      placeholder="Describe your course"
-                      rows={4}
-                      className={cn(validationErrors.description && (touchedFields.description || courseData.id) && "border-red-500 focus-visible:ring-red-500")}
+                      placeholder="Describe what students will learn and achieve in this course..."
+                      rows={5}
+                      className={cn(
+                        "text-base font-medium border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg resize-none",
+                        "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700",
+                        "focus:border-primary focus:ring-4 focus:ring-primary/10",
+                        "placeholder:text-gray-400 dark:placeholder:text-gray-500",
+                        validationErrors.description && (touchedFields.description || courseData.id) && 
+                        "border-red-500 focus:border-red-500 focus:ring-red-500/10"
+                      )}
                     />
-                    {validationErrors.description && (touchedFields.description || courseData.id) && <p className="text-sm text-red-500 mt-1">{validationErrors.description}</p>}
+                    {validationErrors.description && (touchedFields.description || courseData.id) && (
+                      <div className="flex items-center gap-2 text-red-500 text-sm">
+                        <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                        {validationErrors.description}
+                      </div>
+                    )}
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Category</label>
+                  {/* Course Metadata Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Category */}
+                    <div className="space-y-3">
+                      <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                        Category
+                        <span className="text-red-500 ml-1">*</span>
+                      </label>
                       <Select
                         value={courseData.category}
                         onValueChange={(value) => {
@@ -2192,22 +2355,42 @@ const CourseBuilder = () => {
                           handleBlur('category');
                         }}
                       >
-                        <SelectTrigger className={cn("h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5", validationErrors.category && (touchedFields.category || courseData.id) && "border-red-500 focus:ring-red-500")}>
+                        <SelectTrigger className={cn(
+                          "h-11 border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg",
+                          "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700",
+                          "focus:border-primary focus:ring-4 focus:ring-primary/10",
+                          "text-base font-medium",
+                          validationErrors.category && (touchedFields.category || courseData.id) && 
+                          "border-red-500 focus:border-red-500 focus:ring-red-500/10"
+                        )}>
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl">
                           {categories.map((category) => (
-                            <SelectItem key={category.id} value={category.name}>
+                            <SelectItem 
+                              key={category.id} 
+                              value={category.name}
+                              className="rounded-xl hover:bg-primary/5 focus:bg-primary/10 transition-colors"
+                            >
                               {category.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                      {validationErrors.category && (touchedFields.category || courseData.id) && <p className="text-sm text-red-500 mt-1">{validationErrors.category}</p>}
+                      {validationErrors.category && (touchedFields.category || courseData.id) && (
+                        <div className="flex items-center gap-2 text-red-500 text-sm">
+                          <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                          {validationErrors.category}
+                        </div>
+                      )}
                     </div>
                     
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Language</label>
+                    {/* Language */}
+                    <div className="space-y-3">
+                      <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                        Language
+                        <span className="text-red-500 ml-1">*</span>
+                      </label>
                       <Select
                         value={courseData.language}
                         onValueChange={(value) => {
@@ -2215,22 +2398,42 @@ const CourseBuilder = () => {
                           handleBlur('language');
                         }}
                       >
-                        <SelectTrigger className={cn("h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5", validationErrors.language && (touchedFields.language || courseData.id) && "border-red-500 focus:ring-red-500")}>
+                        <SelectTrigger className={cn(
+                          "h-11 border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg",
+                          "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700",
+                          "focus:border-primary focus:ring-4 focus:ring-primary/10",
+                          "text-base font-medium",
+                          validationErrors.language && (touchedFields.language || courseData.id) && 
+                          "border-red-500 focus:border-red-500 focus:ring-red-500/10"
+                        )}>
                           <SelectValue placeholder="Select language" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl">
                           {languages.map((language) => (
-                            <SelectItem key={language.id} value={language.name}>
+                            <SelectItem 
+                              key={language.id} 
+                              value={language.name}
+                              className="rounded-xl hover:bg-primary/5 focus:bg-primary/10 transition-colors"
+                            >
                               {language.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                      {validationErrors.language && (touchedFields.language || courseData.id) && <p className="text-sm text-red-500 mt-1">{validationErrors.language}</p>}
+                      {validationErrors.language && (touchedFields.language || courseData.id) && (
+                        <div className="flex items-center gap-2 text-red-500 text-sm">
+                          <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                          {validationErrors.language}
+                        </div>
+                      )}
                     </div>
                     
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Level</label>
+                    {/* Level */}
+                    <div className="space-y-3">
+                      <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                        Level
+                        <span className="text-red-500 ml-1">*</span>
+                      </label>
                       <Select
                         value={courseData.level}
                         onValueChange={(value) => {
@@ -2238,44 +2441,87 @@ const CourseBuilder = () => {
                           handleBlur('level');
                         }}
                       >
-                        <SelectTrigger className={cn("h-9 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5", validationErrors.level && (touchedFields.level || courseData.id) && "border-red-500 focus:ring-red-500")}>
+                        <SelectTrigger className={cn(
+                          "h-11 border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg",
+                          "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700",
+                          "focus:border-primary focus:ring-4 focus:ring-primary/10",
+                          "text-base font-medium",
+                          validationErrors.level && (touchedFields.level || courseData.id) && 
+                          "border-red-500 focus:border-red-500 focus:ring-red-500/10"
+                        )}>
                           <SelectValue placeholder="Select level" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl">
                           {levels.map((level) => (
-                            <SelectItem key={level.id} value={level.name}>
+                            <SelectItem 
+                              key={level.id} 
+                              value={level.name}
+                              className="rounded-xl hover:bg-primary/5 focus:bg-primary/10 transition-colors"
+                            >
                               {level.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                      {validationErrors.level && (touchedFields.level || courseData.id) && <p className="text-sm text-red-500 mt-1">{validationErrors.level}</p>}
+                      {validationErrors.level && (touchedFields.level || courseData.id) && (
+                        <div className="flex items-center gap-2 text-red-500 text-sm">
+                          <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                          {validationErrors.level}
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Course Duration</label>
+                  {/* Course Duration */}
+                  <div className="space-y-3">
+                    <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                      Course Duration
+                    </label>
                     <Input
                       value={courseData.duration || ''}
                       onChange={(e) => setCourseData(prev => ({ ...prev, duration: e.target.value }))}
-                      placeholder="e.g., 8 weeks"
+                      placeholder="e.g., 8 weeks, 6 months, 40 hours"
+                      className="h-11 text-base font-medium border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-4 focus:ring-primary/10 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                     />
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Help students understand the time commitment required
+                    </p>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Course Image</CardTitle>
+              {/* Course Image Card */}
+              <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50">
+                <CardHeader className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 pb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                      <Upload className="w-6 h-6 text-primary" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 dark:from-white dark:via-gray-100 dark:to-gray-200 bg-clip-text text-transparent">
+                        Course Thumbnail
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Upload an engaging image that represents your course
+                      </p>
+                    </div>
+                  </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-8">
                   {courseData.image ? (
                     <div className="relative group">
-                      <img src={courseData.image} alt="Course thumbnail" className="rounded-lg w-full h-auto object-cover" />
+                      <div className="relative overflow-hidden rounded-2xl border-2 border-gray-200 dark:border-gray-700">
+                        <img 
+                          src={courseData.image} 
+                          alt="Course thumbnail" 
+                          className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-105" 
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      </div>
                       <Button
                         variant="destructive"
                         size="icon"
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 shadow-lg"
                         onClick={() => {
                           setCourseData(prev => ({...prev, image: undefined}));
                           setImageDbPath(undefined);
@@ -2285,36 +2531,56 @@ const CourseBuilder = () => {
                       </Button>
                   </div>
                   ) : (
+                    <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl p-12 text-center hover:border-primary/50 transition-colors duration-300 group">
+                      <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <UploadCloud className="w-10 h-10 text-primary" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                        Upload Course Thumbnail
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-400 mb-4 max-w-md mx-auto">
+                        Choose a high-quality image that will make your course stand out. 
+                        Recommended size: 1200x800 pixels, JPG or PNG format.
+                      </p>
                     <FileUpload 
                       onUpload={handleImageUpload} 
-                      label={isUploading ? "Uploading..." : "Upload course thumbnail (JPG, PNG)"}
+                        label={isUploading ? "Uploading..." : "Choose Image"}
                       acceptedFileTypes={['image/jpeg', 'image/png']}
                       disabled={isUploading}
                       maxSize={2 * 1024 * 1024} // 2MB
                     />
+                    </div>
                   )}
                 </CardContent>
               </Card>
             </TabsContent>
 
-            <TabsContent value="curriculum" className="space-y-6">
-              <Card className="border-0 shadow-lg">
-                <CardHeader className="flex flex-row items-center justify-between bg-gradient-to-r from-primary/5 to-primary/10 rounded-t-lg">
+            <TabsContent value="curriculum" className="space-y-8">
+              {/* Course Curriculum Card */}
+              <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50">
+                <CardHeader className="flex flex-row items-center justify-between bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 pb-6">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                      <BookOpen className="w-5 h-5 text-primary" />
+                    <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                      <BookOpen className="w-6 h-6 text-primary" />
                     </div>
-                    <CardTitle className="text-xl">Course Curriculum</CardTitle>
+                    <div>
+                      <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 dark:from-white dark:via-gray-100 dark:to-gray-200 bg-clip-text text-transparent">
+                        Course Curriculum
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Structure your course with sections and lessons
+                      </p>
+                    </div>
                   </div>
                   <Button 
                     onClick={addSection}
-                    className="h-10 px-6 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                    className="h-12 px-8 rounded-2xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:scale-105"
                   >
-                    <Plus className="w-4 h-4 mr-2" />
+                    <Plus className="w-5 h-5 mr-2" />
                     Add Section
                   </Button>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="p-8 space-y-6">
                   <DndContext
                     sensors={sensors}
                     collisionDetection={closestCenter}
@@ -2333,13 +2599,13 @@ const CourseBuilder = () => {
                       {courseData.sections.map((section, sectionIndex) => (
                         <SortableItem key={section.id} id={section.id} type="section">
                           {(dragHandleProps) => (
-                            <Card className={`bg-card border border-border ${activeId === section.id ? 'opacity-50' : ''}`}>
-                              <CardHeader className="flex flex-row items-start justify-between p-4 gap-4">
-                                <div className="flex items-start gap-2 flex-1">
-                                  <div {...dragHandleProps} className="cursor-move pt-2.5">
-                                    <GripVertical className="text-muted-foreground" />
+                            <Card className={`bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-900/50 border-2 border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300 ${activeId === section.id ? 'opacity-50 scale-95' : ''}`}>
+                              <CardHeader className="flex flex-row items-start justify-between p-6 gap-4 bg-gradient-to-r from-gray-50/50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-900/50 border-b border-gray-200/50 dark:border-gray-700/30">
+                                <div className="flex items-start gap-3 flex-1">
+                                  <div {...dragHandleProps} className="cursor-move pt-2.5 opacity-60 hover:opacity-100 transition-opacity hover:scale-110">
+                                    <GripVertical className="text-primary w-6 h-6" />
                                   </div>
-                                  <div className="flex-1 space-y-1">
+                                  <div className="flex-1 space-y-3">
                                     <Input
                                       value={section.title}
                                       onChange={(e) => {
@@ -2347,7 +2613,8 @@ const CourseBuilder = () => {
                                         newSections[sectionIndex].title = e.target.value;
                                         setCourseData(prev => ({ ...prev, sections: newSections }));
                                       }}
-                                      className="font-semibold"
+                                      className="font-semibold text-xl border-0 bg-transparent px-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/60 text-gray-900 dark:text-white"
+                                      placeholder="Section Title"
                                     />
                                     <Textarea
                                       value={section.overview || ''}
@@ -2357,46 +2624,47 @@ const CourseBuilder = () => {
                                         setCourseData(prev => ({ ...prev, sections: newSections }));
                                       }}
                                       placeholder="Section overview or summary (optional)"
-                                      rows={1}
-                                      className="text-sm resize-none"
+                                      rows={2}
+                                      className="text-sm resize-none border-0 bg-white/50 dark:bg-gray-800/50 rounded-xl px-4 py-3 focus-visible:ring-2 focus-visible:ring-primary/20 text-gray-700 dark:text-gray-300"
                                     />
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-3">
                                   <Button 
                                     onClick={() => addLesson(section.id)} 
                                     variant="outline"
-                                    className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                                    className="h-10 px-6 rounded-xl bg-white/80 dark:bg-gray-800/80 border-primary/20 text-primary hover:bg-primary hover:text-white transition-all duration-300 hover:scale-105 shadow-md"
                                   >
                                     <Plus className="w-4 h-4 mr-2" />
-                                    Lesson
+                                    Add Lesson
                                   </Button>
                                   {courseData.sections.length > 1 && (
                                     <Button
                                       variant="ghost"
                                       size="icon"
                                       onClick={() => removeSection(section.id)}
+                                      className="h-10 w-10 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-all duration-300 hover:scale-105"
                                     >
-                                      <X className="w-4 h-4" />
+                                      <X className="w-5 h-5" />
                                     </Button>
                                   )}
                                   <Button 
                                     variant="ghost" 
                                     size="icon" 
                                     onClick={() => toggleSectionCollapse(section.id)}
-                                    className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                                    className="h-10 w-10 rounded-xl hover:bg-primary/10 hover:text-primary transition-all duration-300 hover:scale-105"
                                   >
                                     {section.isCollapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
                                   </Button>
                                 </div>
                               </CardHeader>
                               {!section.isCollapsed && (
-                                <CardContent className="space-y-2 pl-12 pr-4 pb-4">
+                                <CardContent className="space-y-4 pl-16 pr-6 pb-6">
                                   <SortableContext items={section.lessons.map(l => l.id)} strategy={verticalListSortingStrategy}>
                                     {section.lessons.map((lesson) => (
                                       <SortableItem key={lesson.id} id={lesson.id} type="lesson" sectionId={section.id}>
                                         {(lessonDragHandleProps) => (
-                                          <div className={`${activeId === lesson.id ? 'opacity-25' : ''}`}>
+                                          <div className={`${activeId === lesson.id ? 'opacity-25 scale-95' : ''} transition-all duration-300`}>
                                             <LessonContainer
                                               key={lesson.id}
                                               lesson={lesson}
@@ -2407,15 +2675,36 @@ const CourseBuilder = () => {
                                               dragHandleProps={lessonDragHandleProps}
                                               onToggleCollapse={toggleLessonCollapse}
                                               courseId={courseId}
-                                              onAddContentItem={addContentItem}
                                               onUpdateContentItem={updateContentItem}
                                               onRemoveContentItem={removeContentItem}
+                                              onShowContentTypeSelector={handleShowContentTypeSelector}
                                             />
                                           </div>
                                         )}
                                       </SortableItem>
                                     ))}
                                   </SortableContext>
+                                  
+                                  {/* Empty State for Lessons */}
+                                  {section.lessons.length === 0 && (
+                                    <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                                      <div className="w-20 h-20 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                                        <BookOpen className="w-10 h-10" />
+                                      </div>
+                                      <p className="text-lg font-medium mb-2">No lessons yet</p>
+                                      <p className="text-sm text-gray-400 dark:text-gray-500 mb-4">
+                                        Start building your course by adding the first lesson
+                                      </p>
+                                      <Button 
+                                        onClick={() => addLesson(section.id)} 
+                                        variant="outline"
+                                        className="h-10 px-6 rounded-xl bg-primary/10 border-primary/20 text-primary hover:bg-primary hover:text-white transition-all duration-300 hover:scale-105"
+                                      >
+                                        <Plus className="w-4 h-4 mr-2" />
+                                        Add First Lesson
+                                      </Button>
+                                    </div>
+                                  )}
                                 </CardContent>
                               )}
                             </Card>
@@ -2423,12 +2712,39 @@ const CourseBuilder = () => {
                         </SortableItem>
                       ))}
                     </SortableContext>
+                    
+                    {/* Empty State for Sections */}
+                    {courseData.sections.length === 0 && (
+                      <div className="text-center py-16 text-gray-500 dark:text-gray-400">
+                        <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                          <BookOpen className="w-12 h-12" />
+                        </div>
+                        <h3 className="text-xl font-semibold mb-3">Start Building Your Course</h3>
+                        <p className="text-gray-400 dark:text-gray-500 mb-6 max-w-md mx-auto">
+                          Create your first section to begin organizing your course content. 
+                          You can add lessons, videos, assignments, and more.
+                        </p>
+                        <Button 
+                          onClick={addSection}
+                          className="h-12 px-8 rounded-2xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:scale-105"
+                        >
+                          <Plus className="w-5 h-5 mr-2" />
+                          Create First Section
+                        </Button>
+                      </div>
+                    )}
+                    
                     <DragOverlay>
                       {activeId ? (
                         activeId.startsWith('section-') ?
-                        <Card className="bg-card border border-border">
-                          <CardHeader>{courseData.sections.find(s => s.id === activeId)?.title}</CardHeader>
+                        <Card className="bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-900/50 border-2 border-primary/20 shadow-2xl scale-105">
+                          <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/20 p-4">
+                            <CardTitle className="text-lg">
+                              {courseData.sections.find(s => s.id === activeId)?.title || 'Section'}
+                            </CardTitle>
+                          </CardHeader>
                         </Card> :
+                        <div className="scale-105">
                                                 <LessonContainer
                           lesson={
                             courseData.sections
@@ -2444,10 +2760,11 @@ const CourseBuilder = () => {
                           dragHandleProps={{}}
                           onToggleCollapse={() => {}}
                           courseId={courseId}
-                          onAddContentItem={() => {}}
                           onUpdateContentItem={() => {}}
                           onRemoveContentItem={() => {}}
+                          onShowContentTypeSelector={() => {}}
                         />
+                        </div>
                       ) : null}
                     </DragOverlay>
                   </DndContext>
@@ -2455,114 +2772,423 @@ const CourseBuilder = () => {
               </Card>
             </TabsContent>
             
-            <TabsContent value="landing" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Course Details</CardTitle>
+            <TabsContent value="landing" className="space-y-8">
+              {/* Course Requirements & Outcomes Card */}
+              <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50">
+                <CardHeader className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 pb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                      <Info className="w-6 h-6 text-primary" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 dark:from-white dark:via-gray-100 dark:to-gray-200 bg-clip-text text-transparent">
+                        Course Landing Page
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Define what students need to know and what they'll learn
+                      </p>
+                    </div>
+                  </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="p-8 space-y-8">
+                  {/* Requirements Section */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-10 h-10 bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-900/20 dark:to-orange-800/20 rounded-xl flex items-center justify-center">
+                        <BookOpen className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                      </div>
                    <div>
-                    <label className="block text-sm font-medium mb-2">Requirements</label>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                          Prerequisites & Requirements
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          What students should know before starting this course
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-3">
                     {courseData.requirements.map((req, index) => (
-                      <div key={index} className="flex items-center gap-2 mb-2">
-                        <Input value={req} onChange={(e) => updateArrayField('requirements', index, e.target.value)} onBlur={() => handleBlur('requirements')} />
+                        <div key={index} className="group flex items-center gap-3 p-4 bg-gradient-to-r from-orange-50/50 to-orange-100/50 dark:from-orange-900/10 dark:to-orange-800/10 rounded-2xl border border-orange-200/50 dark:border-orange-700/30 hover:border-orange-300 dark:hover:border-orange-600 transition-all duration-300">
+                          <div className="w-6 h-6 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-xs font-semibold text-orange-700 dark:text-orange-300">
+                              {index + 1}
+                            </span>
+                          </div>
+                          <Input 
+                            value={req} 
+                            onChange={(e) => updateArrayField('requirements', index, e.target.value)} 
+                            onBlur={() => handleBlur('requirements')}
+                            placeholder="e.g., Basic knowledge of JavaScript, Familiarity with HTML/CSS"
+                            className="flex-1 border-0 bg-transparent text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-0 focus:outline-none text-base"
+                          />
                         <Button 
                           variant="ghost" 
                           size="icon" 
                           onClick={() => removeArrayField('requirements', index)}
-                          className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                            className="opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-orange-200/50 dark:hover:bg-orange-700/30 rounded-xl"
                         >
-                          <X className="h-4 w-4" />
+                            <X className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                         </Button>
                       </div>
                     ))}
+                      
                     <Button 
                       variant="outline" 
                       size="sm" 
                       onClick={() => addArrayField('requirements')}
-                      className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        className="w-full h-12 border-2 border-dashed border-orange-300 dark:border-orange-600 rounded-2xl text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/10 hover:border-orange-400 dark:hover:border-orange-500 transition-all duration-300 group"
                     >
+                        <Plus className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-300" />
                       Add Requirement
                     </Button>
-                    {validationErrors.requirements && (touchedFields.requirements || courseData.id) && <p className="text-sm text-red-500 mt-1">{validationErrors.requirements}</p>}
+                      
+                      {validationErrors.requirements && (touchedFields.requirements || courseData.id) && (
+                        <div className="flex items-center gap-2 text-red-500 text-sm p-3 bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-200 dark:border-red-800">
+                          <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                          {validationErrors.requirements}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   
+                  {/* Learning Outcomes Section */}
+                  <div className="space-y-4 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-10 h-10 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/20 dark:to-green-800/20 rounded-xl flex items-center justify-center">
+                        <BookOpen className="w-5 h-5 text-green-600 dark:text-green-400" />
+                      </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">What you'll learn</label>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                          What You'll Learn
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          The key skills and knowledge students will gain
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-3">
                     {courseData.learningOutcomes.map((outcome, index) => (
-                      <div key={index} className="flex items-center gap-2 mb-2">
-                        <Input value={outcome} onChange={(e) => updateArrayField('learningOutcomes', index, e.target.value)} onBlur={() => handleBlur('learningOutcomes')} />
+                        <div key={index} className="group flex items-center gap-3 p-4 bg-gradient-to-r from-green-50/50 to-green-100/50 dark:from-green-900/10 dark:to-green-800/10 rounded-2xl border border-green-200/50 dark:border-green-700/30 hover:border-green-300 dark:hover:border-green-600 transition-all duration-300">
+                          <div className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-xs font-semibold text-green-700 dark:text-green-300">
+                              {index + 1}
+                            </span>
+                          </div>
+                          <Input 
+                            value={outcome} 
+                            onChange={(e) => updateArrayField('learningOutcomes', index, e.target.value)} 
+                            onBlur={() => handleBlur('learningOutcomes')}
+                            placeholder="e.g., Build responsive web applications, Master modern JavaScript frameworks"
+                            className="flex-1 border-0 bg-transparent text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-0 focus:outline-none text-base"
+                          />
                         <Button 
                           variant="ghost" 
                           size="icon" 
                           onClick={() => removeArrayField('learningOutcomes', index)}
-                          className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                            className="opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-green-200/50 dark:hover:bg-green-700/30 rounded-xl"
                         >
-                          <X className="h-4 w-4" />
+                            <X className="h-4 w-4 text-green-600 dark:text-green-400" />
                         </Button>
                       </div>
                     ))}
+                      
                     <Button 
                       variant="outline" 
                       size="sm" 
                       onClick={() => addArrayField('learningOutcomes')}
-                      className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        className="w-full h-12 border-2 border-dashed border-green-300 dark:border-green-600 rounded-2xl text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/10 hover:border-green-400 dark:hover:border-green-500 transition-all duration-300 group"
                     >
-                      Add Outcome
+                        <Plus className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-300" />
+                        Add Learning Outcome
                     </Button>
-                    {validationErrors.learningOutcomes && (touchedFields.learningOutcomes || courseData.id) && <p className="text-sm text-red-500 mt-1">{validationErrors.learningOutcomes}</p>}
+                      
+                      {validationErrors.learningOutcomes && (touchedFields.learningOutcomes || courseData.id) && (
+                        <div className="flex items-center gap-2 text-red-500 text-sm p-3 bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-200 dark:border-red-800">
+                          <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                          {validationErrors.learningOutcomes}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Tips Section */}
+                  <div className="mt-8 p-6 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-900/10 dark:to-indigo-900/10 rounded-2xl border border-blue-200/50 dark:border-blue-700/30">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Info className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div className="space-y-2">
+                        <h4 className="font-semibold text-blue-900 dark:text-blue-100">
+                          Pro Tips for Better Engagement
+                        </h4>
+                        <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+                          <li>• Be specific and measurable in your learning outcomes</li>
+                          <li>• List realistic prerequisites to set proper expectations</li>
+                          <li>• Use action verbs like "Build", "Create", "Master"</li>
+                          <li>• Keep requirements and outcomes concise but comprehensive</li>
+                        </ul>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
 
             <TabsContent value="access" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Manage Teachers</CardTitle>
-                  <p className="text-sm text-muted-foreground">Add or remove teachers who can manage this course.</p>
+              {/* Teachers Management Card */}
+              <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50">
+                <CardHeader className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 pb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
+                        <BookOpen className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 dark:from-white dark:via-gray-100 dark:to-gray-200 bg-clip-text text-transparent">
+                          Manage Teachers
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Add or remove teachers who can manage this course
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant="secondary" className="bg-primary/10 text-primary-700 dark:text-primary-300 border-primary/20">
+                      {courseData.teachers.length} Assigned
+                    </Badge>
+                  </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-6 space-y-4">
+                  {/* Teacher Selection */}
+                  <div className="space-y-3">
+                    <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                      Select Teachers
+                    </label>
+                    <div className="relative">
                   <MultiSelect
                     options={allTeachers}
                     onValueChange={(selectedIds) => handleMembersChange('teachers', selectedIds)}
                     value={courseData.teachers.map(i => i.id)}
-                    placeholder="Select teachers"
-                  />
-                  <div className="space-y-2 mt-4">
+                        placeholder="Search and select teachers..."
+                        className="min-h-[44px] border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300"
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Teachers can edit course content, manage students, and view analytics
+                    </p>
+                  </div>
+
+                  {/* Selected Teachers List - Compact Grid Layout */}
+                  {courseData.teachers.length > 0 ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
+                          Current Teachers
+                        </h4>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleMembersChange('teachers', [])}
+                          className="h-8 px-3 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                        >
+                          Clear All
+                        </Button>
+                      </div>
+                      
+                      {/* Compact Grid for Large Numbers */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                     {courseData.teachers.map(user => (
-                      <div key={user.id} className="flex items-center justify-between p-2 rounded-md border bg-muted/20">
-                        <div>
-                          <p className="font-medium">{user.name}</p>
-                          <p className="text-sm text-muted-foreground">{user.email}</p>
+                          <div key={user.id} className="flex items-center gap-3 p-3 bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl border border-primary/20 hover:border-primary/30 transition-all duration-300 group hover:scale-105">
+                            <div className="w-8 h-8 bg-gradient-to-br from-primary/100 to-primary-200 dark:from-primary-900/30 dark:to-primary-800/30 rounded-full flex items-center justify-center flex-shrink-0">
+                              <span className="text-xs font-semibold text-primary-700 dark:text-primary-300">
+                                {user.name.split(' ').map(n => n[0]).join('')}
+                              </span>
                         </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-gray-900 dark:text-white text-sm truncate">{user.name}</p>
+                              <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{user.email}</p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                const newTeachers = courseData.teachers.filter(t => t.id !== user.id);
+                                handleMembersChange('teachers', newTeachers.map(t => t.id));
+                              }}
+                              className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 rounded-lg"
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
                       </div>
                     ))}
                   </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                      <div className="w-16 h-16 mx-auto mb-3 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                        <BookOpen className="w-8 h-8" />
+                      </div>
+                      <p className="text-sm font-medium mb-1">No teachers assigned yet</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">Select teachers from the dropdown above</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Manage Students</CardTitle>
-                  <p className="text-sm text-muted-foreground">Enroll or unenroll students from this course.</p>
+              {/* Students Management Card */}
+              <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50">
+                <CardHeader className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 pb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
+                        <BookOpen className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 dark:from-white dark:via-gray-100 dark:to-gray-200 bg-clip-text text-transparent">
+                          Manage Students
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Enroll or unenroll students from this course
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-700">
+                      {courseData.students.length} Enrolled
+                    </Badge>
+                  </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-6 space-y-4">
+                  {/* Student Selection */}
+                  <div className="space-y-3">
+                    <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                      Select Students
+                    </label>
+                    <div className="relative">
                    <MultiSelect
                     options={allStudents}
                     onValueChange={(selectedIds) => handleMembersChange('students', selectedIds)}
                     value={courseData.students.map(s => s.id)}
-                    placeholder="Select students"
-                  />
-                  <div className="space-y-2 mt-4">
-                    {courseData.students.map(user => (
-                      <div key={user.id} className="flex items-center justify-between p-2 rounded-md border bg-muted/20">
-                        <div>
-                          <p className="font-medium">{user.name}</p>
-                          <p className="text-sm text-muted-foreground">{user.email}</p>
+                        placeholder="Search and select students..."
+                        className="min-h-[44px] border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300"
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Students can access course content, submit assignments, and track progress
+                    </p>
+                  </div>
+
+                  {/* Selected Students List - Compact Grid Layout */}
+                  {courseData.students.length > 0 ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
+                          Enrolled Students
+                        </h4>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-3 text-xs border-green-300 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg"
+                          >
+                            Export List
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleMembersChange('students', [])}
+                            className="h-8 px-3 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                          >
+                            Clear All
+                          </Button>
                         </div>
                       </div>
+                      
+                      {/* Compact Grid for Large Numbers */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
+                    {courseData.students.map(user => (
+                          <div key={user.id} className="flex items-center gap-3 p-3 bg-gradient-to-r from-green-50 to-green-100/50 dark:from-green-900/10 dark:to-green-800/10 rounded-xl border border-green-200/50 dark:border-green-700/30 hover:border-green-300 dark:hover:border-green-600 transition-all duration-300 group hover:scale-105">
+                            <div className="w-8 h-8 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/30 rounded-full flex items-center justify-center flex-shrink-0">
+                              <span className="text-xs font-semibold text-green-700 dark:text-green-300">
+                                {user.name.split(' ').map(n => n[0]).join('')}
+                              </span>
+                        </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-gray-900 dark:text-white text-sm truncate">{user.name}</p>
+                              <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{user.email}</p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                const newStudents = courseData.students.filter(s => s.id !== user.id);
+                                handleMembersChange('students', newStudents.map(s => s.id));
+                              }}
+                              className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 rounded-lg"
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                      </div>
                     ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                      <div className="w-16 h-16 mx-auto mb-3 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                        <BookOpen className="w-8 h-8" />
+                      </div>
+                      <p className="text-sm font-medium mb-1">No students enrolled yet</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">Select students from the dropdown above</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Access Control Info Card - Compact */}
+              <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-900/10 dark:to-indigo-900/10 border border-blue-200/50 dark:border-blue-700/30">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/30 dark:to-blue-800/30 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Info className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="text-lg font-bold text-blue-900 dark:text-blue-100 mb-2">
+                          Access Control & Permissions
+                        </h3>
+                        <p className="text-blue-800 dark:text-blue-200 text-sm">
+                          Understand how different user roles interact with your course
+                        </p>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-3">
+                          <h4 className="font-semibold text-blue-900 dark:text-blue-100 flex items-center gap-2 text-sm">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            Teachers ({courseData.teachers.length})
+                          </h4>
+                          <ul className="text-xs text-blue-800 dark:text-blue-200 space-y-1">
+                            <li>• Edit course content and structure</li>
+                            <li>• Manage student enrollments</li>
+                            <li>• View student progress and analytics</li>
+                            <li>• Grade assignments and provide feedback</li>
+                          </ul>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <h4 className="font-semibold text-blue-900 dark:text-blue-100 flex items-center gap-2 text-sm">
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            Students ({courseData.students.length})
+                          </h4>
+                          <ul className="text-xs text-blue-800 dark:text-blue-200 space-y-1">
+                            <li>• Access course content and materials</li>
+                            <li>• Submit assignments and take quizzes</li>
+                            <li>• Track learning progress</li>
+                            <li>• Participate in discussions</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -2655,6 +3281,14 @@ const CourseBuilder = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Content Type Selector Modal */}
+      {showContentTypeSelector && (
+        <ContentTypeSelector
+          onSelect={handleContentTypeSelect}
+          onClose={handleCloseContentTypeSelector}
+        />
+      )}
     </div>
   );
 };

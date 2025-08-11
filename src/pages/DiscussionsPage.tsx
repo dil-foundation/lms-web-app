@@ -50,6 +50,7 @@ import {
   ThumbsUp,
   MessageCircle,
   ChevronLeft,
+  ChevronRight,
   Send,
   Filter,
   SortDesc,
@@ -66,14 +67,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useDebounce } from '@/hooks/useDebounce';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+
 import { ContentLoader } from '@/components/ContentLoader';
 import { DiscussionDialog } from '@/components/discussions/DiscussionDialog';
 
@@ -446,99 +440,126 @@ export default function DiscussionsPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {discussions.map((discussion) => (
               <Card 
                 key={discussion.id} 
-                className="hover:shadow-md transition-all cursor-pointer hover:bg-muted/50"
+                className="group relative bg-gradient-to-br from-white/80 via-white/60 to-gray-50/80 dark:from-gray-900/80 dark:via-gray-900/60 dark:to-gray-800/80 border border-gray-200/60 dark:border-gray-700/60 hover:border-gray-300/80 dark:hover:border-gray-600/80 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 rounded-3xl overflow-hidden backdrop-blur-sm cursor-pointer hover:-translate-y-1"
                 onClick={() => navigate(`/dashboard/discussion/${discussion.id}`)}
               >
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-4">
-                    <Avatar className="h-10 w-10">
+                {/* Subtle accent line */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/40 via-primary to-primary/60 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-5">
+                    {/* Enhanced Avatar */}
+                    <div className="flex-shrink-0">
+                      <Avatar className="h-12 w-12 ring-2 ring-primary/20 group-hover:ring-primary/40 transition-all duration-300">
                         <AvatarImage src={undefined} />
-                      <AvatarFallback className="bg-green-100 text-green-700">
+                        <AvatarFallback className="bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 text-primary font-semibold text-lg shadow-lg">
                           {discussion.creator_first_name?.[0]}{discussion.creator_last_name?.[0]}
-                      </AvatarFallback>
-                    </Avatar>
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
                     
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-medium text-base truncate">
+                    {/* Main Content */}
+                    <div className="flex-1 min-w-0 space-y-3">
+                      {/* Title and Badges */}
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 truncate group-hover:text-primary transition-colors duration-300">
                           {discussion.title}
                         </h3>
-                          {discussion.discussion_type && (
-                            <Badge variant="blue" className="text-xs capitalize">
-                              {discussion.discussion_type}
-                            </Badge>
-                          )}
-                          {discussion.course_title ? (
-                            <Badge variant="outline" className="text-xs">
-                              {discussion.course_title}
-                            </Badge>
-                          ) : (
-                        <Badge variant="outline" className="text-xs">
-                              General Discussion
-                        </Badge>
-                          )}
+                        {discussion.discussion_type && (
+                          <Badge variant="blue" className="text-xs capitalize font-medium shadow-sm bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0">
+                            {discussion.discussion_type}
+                          </Badge>
+                        )}
+                        {discussion.course_title ? (
+                          <Badge variant="outline" className="text-xs font-medium shadow-sm border-gray-300/60 dark:border-gray-600/60 bg-gray-50/80 dark:bg-gray-800/80">
+                            {discussion.course_title}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-xs font-medium shadow-sm border-gray-300/60 dark:border-gray-600/60 bg-gray-50/80 dark:bg-gray-800/80">
+                            General Discussion
+                          </Badge>
+                        )}
                       </div>
                       
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                      {/* Content Preview */}
+                      <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed font-medium">
                         {discussion.content}
                       </p>
                       
+                      {/* Author and Date */}
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span className="font-medium">{discussion.creator_first_name} {discussion.creator_last_name}</span>
-                        <span>•</span>
-                          <span>{format(new Date(discussion.created_at), 'MMM d, yyyy')}</span>
+                        <span className="font-semibold text-gray-700 dark:text-gray-300">{discussion.creator_first_name} {discussion.creator_last_name}</span>
+                        <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
+                        <span className="font-medium">{format(new Date(discussion.created_at), 'MMM d, yyyy')}</span>
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <MessageCircle className="h-4 w-4" />
-                          <span>{discussion.replies_count}</span>
+                    {/* Engagement Metrics and Actions */}
+                    <div className="flex flex-col items-end gap-4 text-sm text-muted-foreground">
+                      {/* Engagement Stats */}
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2 group/stat">
+                          <div className="w-8 h-8 bg-gradient-to-br from-blue-400/20 via-blue-500/30 to-blue-600/20 rounded-xl flex items-center justify-center shadow-lg ring-1 ring-blue-500/20 group-hover/stat:ring-blue-500/40 transition-all duration-300">
+                            <MessageCircle className="h-4 w-4 text-blue-600 dark:text-blue-500" />
+                          </div>
+                          <span className="font-semibold text-gray-700 dark:text-gray-300 min-w-[20px] text-center">
+                            {discussion.replies_count}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 group/stat">
+                          <div className="w-8 h-8 bg-gradient-to-br from-green-400/20 via-green-500/30 to-green-600/20 rounded-xl flex items-center justify-center shadow-lg ring-1 ring-green-500/20 group-hover/stat:ring-green-500/40 transition-all duration-300">
+                            <ThumbsUp className="h-4 w-4 text-green-600 dark:text-green-500" />
+                          </div>
+                          <span className="font-semibold text-gray-700 dark:text-gray-300 min-w-[20px] text-center">
+                            {discussion.likes_count}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <ThumbsUp className="h-4 w-4" />
-                          <span>{discussion.likes_count}</span>
-                      </div>
-                        {(user?.id === discussion.creator_id || profile?.role === 'admin') && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                }}
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={(e) => {
+                      
+                      {/* Action Menu */}
+                      {(user?.id === discussion.creator_id || profile?.role === 'admin') && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="h-9 w-9 p-0 rounded-xl hover:bg-gray-100/80 dark:hover:bg-gray-800/80 hover:shadow-lg transition-all duration-300"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                              }}
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48 rounded-2xl shadow-xl border border-gray-200/60 dark:border-gray-700/60">
+                            <DropdownMenuItem 
+                              onClick={(e) => {
                                 e.stopPropagation();
                                 openEditDialog(discussion);
-                              }}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit
-                              </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                className="text-red-600"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setDiscussionToDelete(discussion);
-                                }}
-                              >
-                                <Trash className="mr-2 h-4 w-4" />
-                                Delete
-                              </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                        )}
+                              }}
+                              className="rounded-xl cursor-pointer"
+                            >
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator className="bg-gray-200/60 dark:bg-gray-700/60" />
+                            <DropdownMenuItem
+                              className="text-red-600 rounded-xl cursor-pointer hover:bg-red-50 dark:hover:bg-red-950/20"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDiscussionToDelete(discussion);
+                              }}
+                            >
+                              <Trash className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -547,45 +568,51 @@ export default function DiscussionsPage() {
           </div>
         )}
 
+        {/* Enhanced Pagination */}
         {!isFetching && totalPages > 0 && (
-          <Pagination className="mt-6">
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setCurrentPage((prev) => Math.max(1, prev - 1));
-                  }}
-                  className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-                />
-              </PaginationItem>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <PaginationItem key={page}>
-                  <PaginationLink
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setCurrentPage(page);
-                    }}
-                    isActive={currentPage === page}
-                  >
-                    {page}
-                  </PaginationLink>
-                </PaginationItem>
-              ))}
-              <PaginationItem>
-                <PaginationNext
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setCurrentPage((prev) => Math.min(totalPages, prev + 1));
-                  }}
-                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
+          <div className="mt-8 flex justify-center">
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800"
+              >
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                Previous
+              </Button>
+              
+                             <div className="flex items-center space-x-1">
+                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                   <Button
+                     key={page}
+                     variant={currentPage === page ? "default" : "outline"}
+                     size="sm"
+                     onClick={() => setCurrentPage(page)}
+                     className={`w-9 h-9 rounded-xl transition-all duration-300 ${
+                       currentPage === page
+                         ? "bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5 border-0"
+                         : "bg-background border border-input shadow-sm hover:bg-primary/10 hover:text-primary hover:border-primary/30"
+                     }`}
+                   >
+                     {page}
+                   </Button>
+                 ))}
+               </div>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800"
+              >
+                Next
+                <ChevronRight className="h-4 w-4 ml-2" />
+              </Button>
+            </div>
+          </div>
         )}
             </div>
 
