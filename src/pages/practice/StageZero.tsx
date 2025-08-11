@@ -41,7 +41,7 @@ const LessonCard = ({ lesson, index }) => {
   const navigate = useNavigate();
   return (
     <Card 
-      className="group overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50 rounded-2xl cursor-pointer"
+      className="group overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50 rounded-2xl cursor-pointer h-full flex flex-col"
       onClick={() => navigate(`/dashboard/practice/stage-0/lesson/${index + 1}`)}
     >
       <div className="bg-gradient-to-br from-primary to-primary/90 flex items-center justify-center p-8 h-40 relative overflow-hidden">
@@ -51,8 +51,8 @@ const LessonCard = ({ lesson, index }) => {
           <Sparkles className="w-8 h-8 text-white" />
         </div>
       </div>
-      <div className="p-6 flex flex-col flex-grow">
-        <div className="flex items-center mb-4">
+      <div className="p-6 flex flex-col flex-1">
+        <div className="flex items-center mb-4 flex-1">
           <div className="p-3 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl mr-4 shadow-sm">
             <lesson.icon className="w-6 h-6 text-primary" />
           </div>
@@ -61,13 +61,15 @@ const LessonCard = ({ lesson, index }) => {
             <p className="text-sm text-muted-foreground mt-1">{lesson.description}</p>
           </div>
         </div>
-        <Button 
-          className="w-full mt-auto bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 border-0"
-          variant="outline"
-        >
-          Start Lesson
-          <ChevronRight className="w-4 h-4 ml-2" />
-        </Button>
+        <div className="mt-auto pt-2">
+          <Button 
+            className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 border-0"
+            variant="outline"
+          >
+            Start Lesson
+            <ChevronRight className="w-4 h-4 ml-2" />
+          </Button>
+        </div>
       </div>
     </Card>
   );

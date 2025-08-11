@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, BookOpen, Mic, Lightbulb, Play, Pause, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
+import { ArrowLeft, BookOpen, Mic, Lightbulb, Play, Pause, Loader2, CheckCircle, XCircle, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
 import { useAuth } from '@/hooks/useAuth';
@@ -718,22 +719,27 @@ export default function StorytellingPractice() {
     return (
       <div className="min-h-screen bg-background p-4">
         <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
+          {/* Breadcrumb */}
+          <div className="mb-6">
+            <PracticeBreadcrumb />
+          </div>
+          
+          <div className="flex items-center justify-between mb-8">
             <Button
               variant="outline"
               size="icon"
               onClick={() => navigate('/dashboard/practice/stage-3')}
-              className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
+              className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20 hover:bg-primary/10 hover:border-primary/30 hover:text-primary bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg"
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
             
             <div className="text-center flex-1">
-              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-2">
-                <BookOpen className="h-6 w-6 text-green-600 dark:text-green-400" />
+              <div className="w-16 h-16 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg border border-primary/30 dark:border-primary/40">
+                <BookOpen className="h-8 w-8 text-primary" />
               </div>
-              <h1 className="text-2xl font-bold">Storytelling</h1>
-              <p className="text-muted-foreground">Practice describing experiences</p>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent mb-2">Storytelling Practice</h1>
+              <p className="text-lg text-muted-foreground">Master the Art of Narrative Expression</p>
             </div>
             
             <div className="w-10"></div>
@@ -741,7 +747,7 @@ export default function StorytellingPractice() {
 
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-green-600" />
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
               <p className="text-muted-foreground">Loading storytelling prompts...</p>
             </div>
           </div>
@@ -755,28 +761,33 @@ export default function StorytellingPractice() {
     return (
       <div className="min-h-screen bg-background p-4">
         <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
+          {/* Breadcrumb */}
+          <div className="mb-6">
+            <PracticeBreadcrumb />
+          </div>
+          
+          <div className="flex items-center justify-between mb-8">
             <Button
               variant="outline"
               size="icon"
               onClick={() => navigate('/dashboard/practice/stage-3')}
-              className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
+              className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20 hover:bg-primary/10 hover:border-primary/30 hover:text-primary bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg"
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
             
             <div className="text-center flex-1">
-              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-2">
-                <BookOpen className="h-6 w-6 text-green-600 dark:text-green-400" />
+              <div className="w-16 h-16 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg border border-primary/30 dark:border-primary/40">
+                <BookOpen className="h-8 w-8 text-primary" />
               </div>
-              <h1 className="text-2xl font-bold">Storytelling</h1>
-              <p className="text-muted-foreground">Practice describing experiences</p>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent mb-2">Storytelling Practice</h1>
+              <p className="text-lg text-muted-foreground">Master the Art of Narrative Expression</p>
             </div>
             
             <div className="w-10"></div>
           </div>
 
-          <Card className="bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
+          <Card className="bg-gradient-to-r from-red-50 via-red-100 to-red-50 dark:from-red-900/20 dark:via-red-800/20 dark:to-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl shadow-lg">
             <CardContent className="p-6 text-center">
               <p className="text-red-800 dark:text-red-200 mb-4">
                 Unable to load storytelling prompts: {error}
@@ -784,7 +795,7 @@ export default function StorytellingPractice() {
               <Button 
                 onClick={() => window.location.reload()} 
                 variant="outline"
-                className="border-red-300 text-red-700 hover:bg-red-100"
+                className="border-red-300 text-red-700 hover:bg-red-100 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 rounded-2xl"
               >
                 Try Again
               </Button>
@@ -800,28 +811,33 @@ export default function StorytellingPractice() {
     return (
       <div className="min-h-screen bg-background p-4">
         <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
+          {/* Breadcrumb */}
+          <div className="mb-6">
+            <PracticeBreadcrumb />
+          </div>
+          
+          <div className="flex items-center justify-between mb-8">
             <Button
               variant="outline"
               size="icon"
               onClick={() => navigate('/dashboard/practice/stage-3')}
-              className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
+              className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20 hover:bg-primary/10 hover:border-primary/30 hover:text-primary bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg"
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
             
             <div className="text-center flex-1">
-              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-2">
-                <BookOpen className="h-6 w-6 text-green-600 dark:text-green-400" />
+              <div className="w-16 h-16 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg border border-primary/30 dark:border-primary/40">
+                <BookOpen className="h-8 w-8 text-primary" />
               </div>
-              <h1 className="text-2xl font-bold">Storytelling</h1>
-              <p className="text-muted-foreground">Practice describing experiences</p>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent mb-2">Storytelling Practice</h1>
+              <p className="text-lg text-muted-foreground">Master the Art of Narrative Expression</p>
             </div>
             
             <div className="w-10"></div>
           </div>
 
-          <Card>
+          <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg">
             <CardContent className="p-6 text-center">
               <p className="text-muted-foreground">No storytelling prompts available.</p>
             </CardContent>
@@ -834,23 +850,28 @@ export default function StorytellingPractice() {
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-4xl mx-auto">
+        {/* Breadcrumb */}
+        <div className="mb-6">
+          <PracticeBreadcrumb />
+        </div>
+        
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-8">
           <Button
             variant="outline"
             size="icon"
             onClick={() => navigate('/dashboard/practice/stage-3')}
-            className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
+            className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20 hover:bg-primary/10 hover:border-primary/30 hover:text-primary bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           
           <div className="text-center flex-1">
-            <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-2">
-              <BookOpen className="h-6 w-6 text-green-600 dark:text-green-400" />
+            <div className="w-16 h-16 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg border border-primary/30 dark:border-primary/40">
+              <BookOpen className="h-8 w-8 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold">Storytelling</h1>
-            <p className="text-muted-foreground">Practice describing experiences</p>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent mb-2">Storytelling Practice</h1>
+            <p className="text-lg text-muted-foreground">Master the Art of Narrative Expression</p>
           </div>
           
           <div className="w-10"></div>
@@ -858,9 +879,9 @@ export default function StorytellingPractice() {
 
         {/* Error banner if API failed but fallbacks loaded */}
         {error && storyPrompts.length > 0 && (
-          <Card className="mb-4 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
+          <Card className="mb-6 bg-gradient-to-r from-yellow-50 via-yellow-100 to-yellow-50 dark:from-yellow-900/20 dark:via-yellow-800/20 dark:to-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-2xl shadow-lg">
             <CardContent className="p-4">
-              <p className="text-yellow-800 dark:text-yellow-200 text-sm">
+              <p className="text-yellow-800 dark:text-yellow-200 text-sm font-medium">
                 ⚠️ Using offline content. Some features may be limited.
               </p>
             </CardContent>
@@ -879,7 +900,7 @@ export default function StorytellingPractice() {
                 size="sm"
                 onClick={handlePreviousPrompt}
                 disabled={currentPrompt === 0}
-                className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
+                className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl rounded-2xl"
               >
                 Previous
               </Button>
@@ -888,7 +909,7 @@ export default function StorytellingPractice() {
                 size="sm"
                 onClick={handleNextPrompt}
                 disabled={currentPrompt === storyPrompts.length - 1}
-                className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
+                className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl rounded-2xl"
               >
                 Next
               </Button>
@@ -896,27 +917,27 @@ export default function StorytellingPractice() {
           </div>
           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
             <div 
-              className="bg-green-600 h-2 rounded-full transition-all duration-300"
+              className="bg-gradient-to-r from-primary to-primary/90 h-2 rounded-full transition-all duration-300 shadow-sm"
               style={{ width: `${((currentPrompt + 1) / storyPrompts.length) * 100}%` }}
             />
           </div>
         </div>
 
         {/* Story Prompt */}
-        <Card className="mb-6 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+        <Card className="mb-6 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 dark:from-primary/10 dark:via-primary/20 dark:to-primary/10 border border-primary/20 dark:border-primary/30 rounded-2xl shadow-lg">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-xl font-semibold text-green-800 dark:text-green-200">
+              <h2 className="text-xl font-semibold text-primary dark:text-primary/90">
                 {currentStoryPrompt.title}
               </h2>
               <Button
                 onClick={handlePlayAudio}
                 disabled={isLoadingAudio}
-                className={`w-12 h-12 rounded-full ${
+                className={`w-12 h-12 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 ${
                   isLoadingAudio 
-                    ? 'bg-green-400 hover:bg-green-400 cursor-not-allowed' 
-                    : 'bg-green-600 hover:bg-green-700'
-                } text-white shadow-lg`}
+                    ? 'bg-primary/60 hover:bg-primary/60 cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary'
+                } text-white`}
                 size="icon"
               >
                 {isLoadingAudio ? (
@@ -926,21 +947,21 @@ export default function StorytellingPractice() {
                 )}
               </Button>
             </div>
-            <p className="text-green-700 dark:text-green-300 mb-4">
+            <p className="text-primary/80 dark:text-primary/70 mb-4">
               {currentStoryPrompt.prompt}
             </p>
             
             {/* Keywords */}
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 dark:from-primary/10 dark:via-primary/20 dark:to-primary/10 border border-primary/20 dark:border-primary/30 rounded-2xl p-4 shadow-md">
               <div className="flex items-center space-x-2 mb-3">
-                <Lightbulb className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                <span className="text-sm font-medium text-blue-800 dark:text-blue-200">Keywords:</span>
+                <Lightbulb className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium text-primary dark:text-primary/90">Keywords:</span>
               </div>
               <div className="flex flex-wrap gap-2">
                 {currentStoryPrompt.example_keywords.map((keyword, index) => (
                   <span 
                     key={index} 
-                    className="inline-flex items-center px-2.5 py-1 text-xs font-medium bg-blue-100 dark:bg-blue-800/50 text-white dark:text-blue-200 rounded-full border border-blue-200 dark:border-blue-700"
+                    className="inline-flex items-center px-2.5 py-1 text-xs font-medium bg-gradient-to-r from-primary/20 to-primary/30 dark:from-primary/30 dark:to-primary/40 text-primary dark:text-primary/90 rounded-full border border-primary/30 dark:border-primary/40 shadow-sm"
                   >
                     {keyword}
                   </span>
@@ -952,20 +973,20 @@ export default function StorytellingPractice() {
 
         {/* Example Story */}
         {showExample && currentStoryPrompt?.model_answer && (
-          <Card className="mb-6 bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800">
+          <Card className="mb-6 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 dark:from-primary/10 dark:via-primary/20 dark:to-primary/10 border border-primary/20 dark:border-primary/30 rounded-2xl shadow-lg">
             <CardContent className="p-6">
               <div className="flex items-center space-x-2 mb-3">
-                <Lightbulb className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-                <h3 className="text-lg font-semibold text-orange-800 dark:text-orange-200">
+                <Lightbulb className="h-5 w-5 text-primary" />
+                <h3 className="text-lg font-semibold text-primary dark:text-primary/90">
                   Example Story
                 </h3>
               </div>
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-orange-200 dark:border-orange-700">
+              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl p-4 border border-primary/20 dark:border-primary/30 shadow-md">
                 <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
                   {currentStoryPrompt.model_answer}
                 </p>
               </div>
-              <p className="text-xs text-orange-600 dark:text-orange-400 mt-2">
+              <p className="text-xs text-primary/70 dark:text-primary/60 mt-2">
                 💡 Use this as inspiration for your own story. Try to include similar details and structure.
               </p>
             </CardContent>
@@ -976,13 +997,13 @@ export default function StorytellingPractice() {
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center space-x-4">
             <div className="text-sm text-muted-foreground">
-              Speaking Time: <span className="font-mono text-green-600 dark:text-green-400">
+              Speaking Time: <span className="font-mono text-primary">
                 {formatTime(recordingTime)}/30s
               </span>
             </div>
             <div className="w-24 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <div 
-                className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                className="bg-gradient-to-r from-primary to-primary/90 h-2 rounded-full transition-all duration-300 shadow-sm"
                 style={{ width: `${Math.min((recordingTime / 30) * 100, 100)}%` }}
               />
             </div>
@@ -998,8 +1019,8 @@ export default function StorytellingPractice() {
               )}
               {isEvaluating && (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-                  <span className="text-blue-600 dark:text-blue-400">Evaluating...</span>
+                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                  <span className="text-primary">Evaluating...</span>
                 </>
               )}
             </div>
@@ -1007,7 +1028,7 @@ export default function StorytellingPractice() {
         </div>
 
         {/* Recording Controls */}
-        <Card className="mb-6">
+        <Card className="mb-6 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg">
           <CardContent className="p-6">
             <div className="text-center">
               <p className="text-muted-foreground mb-6">
@@ -1018,7 +1039,7 @@ export default function StorytellingPractice() {
                 <Button
                   variant="outline"
                   onClick={() => setShowExample(!showExample)}
-                  className="px-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
+                  className="px-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl rounded-2xl"
                   disabled={isRecording || isEvaluating}
                 >
                   <Lightbulb className="h-4 w-4 mr-2" />
@@ -1029,7 +1050,7 @@ export default function StorytellingPractice() {
                   <Button
                     onClick={handleStartRecording}
                     disabled={isEvaluating}
-                    className="px-8 py-3 bg-green-600 hover:bg-green-700 text-white text-lg"
+                    className="px-8 py-3 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 rounded-2xl"
                     size="lg"
                   >
                     <Mic className="h-5 w-5 mr-2" />
@@ -1038,7 +1059,7 @@ export default function StorytellingPractice() {
                 ) : (
                   <Button
                     onClick={handleStopRecording}
-                    className="px-8 py-3 bg-red-600 hover:bg-red-700 text-white text-lg"
+                    className="px-8 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 rounded-2xl"
                     size="lg"
                   >
                     <Pause className="h-5 w-5 mr-2" />
@@ -1052,10 +1073,10 @@ export default function StorytellingPractice() {
 
         {/* Feedback */}
         {feedback && (
-          <Card className="mb-6 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+          <Card className="mb-6 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 dark:from-primary/10 dark:via-primary/20 dark:to-primary/10 border border-primary/20 dark:border-primary/30 rounded-2xl shadow-lg">
             <CardContent className="p-6">
               <div className="flex items-start space-x-3 mb-4">
-                <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-2xl flex items-center justify-center shadow-md border border-primary/30 dark:border-primary/40">
                   {feedback.score && feedback.score >= 70 ? (
                     <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
                   ) : (
@@ -1064,28 +1085,28 @@ export default function StorytellingPractice() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-blue-800 dark:text-blue-200">
+                    <h3 className="font-semibold text-primary dark:text-primary/90">
                       Storytelling Evaluation
                     </h3>
                     {feedback.score && (
-                      <span className="text-lg font-bold text-blue-700 dark:text-blue-300">
+                      <span className="text-lg font-bold text-primary">
                         {feedback.score}%
                       </span>
                     )}
                   </div>
                   
                   {feedback.message && (
-                    <p className="text-blue-700 dark:text-blue-300 mb-3">
+                    <p className="text-primary/80 dark:text-primary/70 mb-3">
                       {feedback.message}
                     </p>
                   )}
                   
                   {feedback.pronunciation && (
                     <div className="mb-2">
-                      <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                      <span className="text-sm font-medium text-primary dark:text-primary/90">
                         Pronunciation: 
                       </span>
-                      <span className="text-sm text-blue-700 dark:text-blue-300 ml-1">
+                      <span className="text-sm text-primary/80 dark:text-primary/70 ml-1">
                         {feedback.pronunciation}
                       </span>
                     </div>
@@ -1093,12 +1114,12 @@ export default function StorytellingPractice() {
                   
                   {feedback.suggestions && feedback.suggestions.length > 0 && (
                     <div>
-                      <span className="text-sm font-medium text-blue-800 dark:text-blue-200 block mb-1">
+                      <span className="text-sm font-medium text-primary dark:text-primary/90 block mb-1">
                         Suggestions:
                       </span>
                       <ul className="list-disc list-inside space-y-1">
                         {feedback.suggestions.map((suggestion, index) => (
-                          <li key={index} className="text-sm text-blue-700 dark:text-blue-300">
+                          <li key={index} className="text-sm text-primary/80 dark:text-primary/70">
                             {suggestion}
                           </li>
                         ))}
@@ -1110,7 +1131,7 @@ export default function StorytellingPractice() {
               
               {/* Full width suggested improvement */}
               {feedback.suggested_improvement && (
-                <div className="w-full p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
+                <div className="w-full p-4 bg-gradient-to-r from-yellow-50 via-yellow-100 to-yellow-50 dark:from-yellow-900/20 dark:via-yellow-800/20 dark:to-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-2xl shadow-md">
                   <span className="text-sm font-medium text-yellow-800 dark:text-yellow-200 block mb-2">
                     💡 Suggested Improvement:
                   </span>

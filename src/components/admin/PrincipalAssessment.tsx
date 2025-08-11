@@ -6,21 +6,27 @@ import { Textarea } from '@/components/ui/textarea';
 import { Star } from 'lucide-react';
 
 export const PrincipalAssessment = ({ formData, updateFormData, formErrors }) => (
-  <Card className="bg-green-50/20 border-green-200 dark:bg-green-900/10 dark:border-green-800/50">
-    <CardHeader>
+  <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50">
+    <CardHeader className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 pb-6">
       <div className="flex items-center gap-4">
-        <Star className="w-6 h-6 text-green-600" />
+        <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
+          <Star className="w-6 h-6 text-primary" />
+        </div>
         <div>
-          <CardTitle className="text-xl">Principal Assessment</CardTitle>
-          <CardDescription>Evaluate teaching effectiveness and classroom environment</CardDescription>
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 dark:from-white dark:via-gray-100 dark:to-gray-200 bg-clip-text text-transparent">
+            Principal Assessment
+          </CardTitle>
+          <CardDescription className="text-base text-gray-600 dark:text-gray-300 mt-1">
+            Evaluate teaching effectiveness and classroom environment
+          </CardDescription>
         </div>
       </div>
     </CardHeader>
-    <CardContent className="space-y-8">
+    <CardContent className="p-8 space-y-8">
       {/* Core Teaching Assessment */}
-      <div className="space-y-6">
-        <h3 className="text-lg font-semibold text-muted-foreground">Teaching Effectiveness</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="space-y-8">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Teaching Effectiveness</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <ScaleRating
             label="Teacher gives clear instructions"
             description="Rate how clearly the teacher communicates lesson objectives and tasks"
@@ -54,17 +60,16 @@ export const PrincipalAssessment = ({ formData, updateFormData, formErrors }) =>
             name="lessonAdherence"
             value={formData.lessonAdherence}
             onChange={(value) => updateFormData('lessonAdherence', value)}
-            error={formErrors.lessonAdherence}
           />
         </div>
       </div>
 
-      <Separator />
+      <Separator className="bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent h-px" />
 
       {/* Material Usage */}
-      <div className="space-y-6">
-        <h3 className="text-lg font-semibold text-muted-foreground">Resource Utilization</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="space-y-8">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Resource Utilization</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <YesNoDropdown
             label="Use of learning materials"
             description="Were appropriate learning materials utilized during the lesson?"
@@ -73,31 +78,43 @@ export const PrincipalAssessment = ({ formData, updateFormData, formErrors }) =>
         </div>
       </div>
 
-      <Separator />
+      <Separator className="bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent h-px" />
 
       {/* Professional Development */}
-      <div className="space-y-6">
-        <h3 className="text-lg font-semibold text-muted-foreground">Professional Conduct & Development</h3>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="professionalism">Professionalism & Teacher Conduct</Label>
-            <p className="text-sm text-muted-foreground">Optional narrative on teacher's professional behavior and classroom management</p>
-            <Textarea id="professionalism" placeholder="Describe observations about teacher's professionalism, punctuality, interaction with students, etc." />
+      <div className="space-y-8">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Professional Conduct & Development</h3>
+        <div className="space-y-6">
+          <div className="space-y-3">
+            <Label htmlFor="professionalism" className="text-base font-semibold text-gray-900 dark:text-gray-100">Professionalism & Teacher Conduct</Label>
+            <p className="text-sm text-gray-600 dark:text-gray-300">Optional narrative on teacher's professional behavior and classroom management</p>
+            <Textarea 
+              id="professionalism" 
+              placeholder="Describe observations about teacher's professionalism, punctuality, interaction with students, etc." 
+              className="min-h-[120px] text-lg font-medium border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-4 focus:ring-primary/10 placeholder:text-gray-400 dark:placeholder:text-gray-500 resize-none"
+            />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="coaching-recommendations">Recommendations for Coaching or Training</Label>
-            <p className="text-sm text-muted-foreground">Specific areas where additional support or training would be beneficial</p>
-            <Textarea id="coaching-recommendations" placeholder="Suggest specific coaching areas, training programs, or skill development needs..." />
+          <div className="space-y-3">
+            <Label htmlFor="coaching-recommendations" className="text-base font-semibold text-gray-900 dark:text-gray-100">Recommendations for Coaching or Training</Label>
+            <p className="text-sm text-gray-600 dark:text-gray-300">Specific areas where additional support or training would be beneficial</p>
+            <Textarea 
+              id="coaching-recommendations" 
+              placeholder="Suggest specific coaching areas, training programs, or skill development needs..." 
+              className="min-h-[120px] text-lg font-medium border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-4 focus:ring-primary/10 placeholder:text-gray-400 dark:placeholder:text-gray-500 resize-none"
+            />
           </div>
         </div>
       </div>
 
-      <Separator />
+      <Separator className="bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent h-px" />
 
-      <div className="space-y-2">
-        <Label htmlFor="immediate-concerns">Any immediate concerns?</Label>
-        <p className="text-sm text-muted-foreground">Critical issues requiring immediate attention</p>
-        <Textarea id="immediate-concerns" placeholder="Describe any immediate concerns or issues observed..." />
+      <div className="space-y-3">
+        <Label htmlFor="immediate-concerns" className="text-base font-semibold text-gray-900 dark:text-gray-100">Any immediate concerns?</Label>
+        <p className="text-sm text-gray-600 dark:text-gray-300">Critical issues requiring immediate attention</p>
+        <Textarea 
+          id="immediate-concerns" 
+          placeholder="Describe any immediate concerns or issues observed..." 
+          className="min-h-[120px] text-lg font-medium border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-4 focus:ring-primary/10 placeholder:text-gray-400 dark:placeholder:text-gray-500 resize-none"
+        />
       </div>
     </CardContent>
   </Card>

@@ -8,105 +8,102 @@ import { Textarea } from '@/components/ui/textarea';
 import { Shield } from 'lucide-react';
 
 export const SchoolOfficerAssessment = ({ formData, updateFormData, formErrors }) => (
-  <Card className="bg-green-50/20 border-green-200 dark:bg-green-900/10 dark:border-green-800/50">
-    <CardHeader>
+  <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50">
+    <CardHeader className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 pb-6">
       <div className="flex items-center gap-4">
-        <Shield className="w-6 h-6 text-green-600" />
+        <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
+          <Shield className="w-6 h-6 text-primary" />
+        </div>
         <div>
-          <CardTitle className="text-xl">School Officer Assessment</CardTitle>
-          <CardDescription>Administrative compliance and logistical evaluations</CardDescription>
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 dark:from-white dark:via-gray-100 dark:to-gray-200 bg-clip-text text-transparent">
+            School Officer Assessment
+          </CardTitle>
+          <CardDescription className="text-base text-gray-600 dark:text-gray-300 mt-1">
+            Administrative compliance and logistical evaluations
+          </CardDescription>
         </div>
       </div>
     </CardHeader>
-    <CardContent className="space-y-8">
+    <CardContent className="p-8 space-y-8">
       {/* Administrative Compliance */}
-      <div className="space-y-6">
-        <h3 className="text-lg font-semibold text-muted-foreground">Administrative Compliance</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <Label htmlFor="project-name-officer">Project Name *</Label>
+      <div className="space-y-8">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Administrative Compliance</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="space-y-3">
+            <Label htmlFor="project-name-officer" className="text-base font-semibold text-gray-900 dark:text-gray-100">Project Name *</Label>
             <Input 
               id="project-name-officer" 
               placeholder="Enter project name..." 
               value={formData.projectNameOfficer}
               onChange={(e) => updateFormData('projectNameOfficer', e.target.value)}
-              className={formErrors.projectNameOfficer ? "border-red-500" : ""}
+              className={`h-12 text-lg font-medium border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-4 focus:ring-primary/10 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${formErrors.projectNameOfficer ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : ""}`}
             />
-            {formErrors.projectNameOfficer && <p className="text-sm text-red-500">{formErrors.projectNameOfficer}</p>}
+            {formErrors.projectNameOfficer && <p className="text-sm text-red-500 font-medium">{formErrors.projectNameOfficer}</p>}
           </div>
-          <div className="space-y-2">
-            <Label>Quarter *</Label>
-            <p className="text-sm text-muted-foreground">Select the current quarter</p>
+          <div className="space-y-3">
+            <Label className="text-base font-semibold text-gray-900 dark:text-gray-100">Quarter *</Label>
+            <p className="text-sm text-gray-600 dark:text-gray-300">Select the current quarter</p>
             <Select 
               value={formData.quarter} 
               onValueChange={(value) => updateFormData('quarter', value)}
             >
-              <SelectTrigger className={formErrors.quarter ? "border-red-500" : ""}>
+              <SelectTrigger className={`h-12 text-lg font-medium border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-4 focus:ring-primary/10 ${formErrors.quarter ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : ""}`}>
                 <SelectValue placeholder="Select quarter" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="q1">Q1</SelectItem>
-                <SelectItem value="q2">Q2</SelectItem>
-                <SelectItem value="q3">Q3</SelectItem>
-                <SelectItem value="q4">Q4</SelectItem>
+              <SelectContent className="border-2 border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl bg-white dark:bg-gray-800">
+                <SelectItem value="q1" className="text-base py-3 hover:bg-primary/5 rounded-xl">Q1</SelectItem>
+                <SelectItem value="q2" className="text-base py-3 hover:bg-primary/5 rounded-xl">Q2</SelectItem>
+                <SelectItem value="q3" className="text-base py-3 hover:bg-primary/5 rounded-xl">Q3</SelectItem>
+                <SelectItem value="q4" className="text-base py-3 hover:bg-primary/5 rounded-xl">Q4</SelectItem>
               </SelectContent>
             </Select>
-            {formErrors.quarter && <p className="text-sm text-red-500">{formErrors.quarter}</p>}
+            {formErrors.quarter && <p className="text-sm text-red-500 font-medium">{formErrors.quarter}</p>}
           </div>
         </div>
       </div>
 
-      <Separator />
+      <Separator className="bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent h-px" />
 
       {/* Attendance & Schedule Compliance */}
-      <div className="space-y-6">
-        <h3 className="text-lg font-semibold text-muted-foreground">Attendance & Schedule</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <input type="checkbox" id="attendance-review" className="rounded" />
-              <Label htmlFor="attendance-review">Teacher Attendance Record Review</Label>
+      <div className="space-y-8">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Attendance & Schedule</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="space-y-3">
+            <div className="flex items-center space-x-3">
+              <input type="checkbox" id="attendance-review" className="w-5 h-5 rounded border-2 border-gray-300 focus:ring-2 focus:ring-primary/20" />
+              <Label htmlFor="attendance-review" className="text-base font-semibold text-gray-900 dark:text-gray-100">Teacher Attendance Record Review</Label>
             </div>
-            <p className="text-sm text-muted-foreground">Check if attendance records were reviewed and are satisfactory</p>
+            <p className="text-sm text-gray-600 dark:text-gray-300 ml-8">Check if attendance records were reviewed and are satisfactory</p>
           </div>
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <input type="checkbox" id="timetable-compliance" className="rounded" />
-              <Label htmlFor="timetable-compliance">Timetable Compliance</Label>
+          <div className="space-y-3">
+            <div className="flex items-center space-x-3">
+              <input type="checkbox" id="timetable-compliance" className="w-5 h-5 rounded border-2 border-gray-300 focus:ring-2 focus:ring-primary/20" />
+              <Label htmlFor="timetable-compliance" className="text-base font-semibold text-gray-900 dark:text-gray-100">Timetable Compliance</Label>
             </div>
-            <p className="text-sm text-muted-foreground">Lesson matched scheduled subject and time slot</p>
+            <p className="text-sm text-gray-600 dark:text-gray-300 ml-8">Lesson matched scheduled subject and time slot</p>
           </div>
         </div>
       </div>
 
-      <Separator />
+      <Separator className="bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent h-px" />
 
       {/* Documentation & Facility */}
-      <div className="space-y-6">
-        <h3 className="text-lg font-semibold text-muted-foreground">Documentation & Facility</h3>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Documentation Complete</Label>
-            <p className="text-sm text-muted-foreground">Check all available documentation</p>
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <input type="checkbox" id="lesson-plan-doc" className="rounded" />
-                <Label htmlFor="lesson-plan-doc">Lesson Plan Available</Label>
+      <div className="space-y-8">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Documentation & Facility</h3>
+        <div className="space-y-6">
+          <div className="space-y-3">
+            <Label className="text-base font-semibold text-gray-900 dark:text-gray-100">Documentation Complete</Label>
+            <p className="text-sm text-gray-600 dark:text-gray-300">Check all available documentation</p>
+            <div className="space-y-3 ml-4">
+              <div className="flex items-center space-x-3">
+                <input type="checkbox" id="lesson-plan-doc" className="w-5 h-5 rounded border-2 border-gray-300 focus:ring-2 focus:ring-primary/20" />
+                <Label htmlFor="lesson-plan-doc" className="text-base font-medium text-gray-900 dark:text-gray-100">Lesson Plan Available</Label>
               </div>
-              <div className="flex items-center space-x-2">
-                <input type="checkbox" id="register-doc" className="rounded" />
-                <Label htmlFor="register-doc">Attendance Register Updated</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <input type="checkbox" id="assessment-doc" className="rounded" />
-                <Label htmlFor="assessment-doc">Assessment Records Current</Label>
+              <div className="flex items-center space-x-3">
+                <input type="checkbox" id="register-doc" className="w-5 h-5 rounded border-2 border-gray-300 focus:ring-2 focus:ring-primary/20" />
+                <Label htmlFor="register-doc" className="text-base font-medium text-gray-900 dark:text-gray-100">Attendance Register Updated</Label>
               </div>
             </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="facility-concerns">Facility/Infrastructure Concerns Noted</Label>
-            <p className="text-sm text-muted-foreground">Any issues with physical infrastructure or learning environment</p>
-            <Textarea id="facility-concerns" placeholder="Note any concerns about classroom facilities, safety, equipment, or infrastructure..." />
           </div>
         </div>
       </div>
