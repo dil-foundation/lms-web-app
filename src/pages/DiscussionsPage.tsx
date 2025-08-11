@@ -192,6 +192,11 @@ export default function DiscussionsPage() {
 
       if (participantsError) throw new Error(participantsError.message);
 
+      // After successful creation, invoke the notification function
+      await supabase.functions.invoke('send-discussion-notification', {
+        body: { record: discussionData },
+      });
+
       return discussionData;
     },
     onSuccess: () => {
