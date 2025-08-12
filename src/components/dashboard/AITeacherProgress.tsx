@@ -31,11 +31,17 @@ import {
   BookOpen,
   MessageCircle,
   Award,
-  Activity
+  Activity,
+  RefreshCw
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { 
+  teacherDashboardService, 
+  TeacherProgressOverviewData, 
+  StudentProgressData 
+} from '@/services/teacherDashboardService';
 
 interface StudentProgress {
   id: string;
@@ -93,140 +99,60 @@ interface StudentDetailData {
 export const AITeacherProgress = () => {
   const { user } = useAuth();
   const { profile } = useUserProfile();
-  const [students, setStudents] = useState<StudentProgress[]>([]);
-  const [filteredStudents, setFilteredStudents] = useState<StudentProgress[]>([]);
+  const [students, setStudents] = useState<StudentProgressData[]>([]);
+  const [filteredStudents, setFilteredStudents] = useState<StudentProgressData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [stageFilter, setStageFilter] = useState('all');
   const [lessonFilter, setLessonFilter] = useState('all');
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
-  const [selectedStudent, setSelectedStudent] = useState<StudentProgress | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<StudentProgressData | null>(null);
   const [studentDetailData, setStudentDetailData] = useState<StudentDetailData | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [progressOverviewData, setProgressOverviewData] = useState<TeacherProgressOverviewData | null>(null);
+  const [timeRange, setTimeRange] = useState('all_time');
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Mock data - Replace with actual API calls
-  const mockStudents: StudentProgress[] = [
-    {
-      id: '1',
-      name: 'Emma Johnson',
-      email: 'emma.johnson@school.edu',
-      stage: 'Stage 3',
-      completionPercentage: 68,
-      averageScore: 85,
-      lastActive: '2024-01-15',
-      enrolledDate: '2023-12-01',
-      totalLessons: 25,
-      completedLessons: 17,
-      aiTutorFeedback: {
-        summary: 'Shows excellent progress in conversational skills but needs work on pronunciation.',
-        sentiment: 'positive',
-        lastFeedback: 'Great improvement in fluency! Keep practicing pronunciation exercises.'
-      },
-      performance: {
-        trend: 'up',
-        strugglingAreas: ['Pronunciation', 'Grammar'],
-        strongAreas: ['Vocabulary', 'Listening']
-      },
-      flags: {}
-    },
-    {
-      id: '2',
-      name: 'Alex Chen',
-      email: 'alex.chen@school.edu',
-      stage: 'Stage 2',
-      completionPercentage: 45,
-      averageScore: 72,
-      lastActive: '2024-01-10',
-      enrolledDate: '2023-11-15',
-      totalLessons: 20,
-      completedLessons: 9,
-      aiTutorFeedback: {
-        summary: 'Making steady progress but struggling with complex sentence structures.',
-        sentiment: 'neutral',
-        lastFeedback: 'Focus on daily routine conversations to build confidence.'
-      },
-      performance: {
-        trend: 'stable',
-        strugglingAreas: ['Sentence Structure', 'Speaking Confidence'],
-        strongAreas: ['Reading Comprehension']
-      },
-      flags: {
-        excessive_retries: 8
+  // Fetch progress overview data
+  const fetchProgressData = async (showRefreshIndicator = false, customTimeRange = 'all_time') => {
+    try {
+      if (showRefreshIndicator) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
       }
-    },
-    {
-      id: '3',
-      name: 'Maria Rodriguez',
-      email: 'maria.rodriguez@school.edu',
-      stage: 'Stage 4',
-      completionPercentage: 92,
-      averageScore: 94,
-      lastActive: '2024-01-16',
-      enrolledDate: '2023-10-01',
-      totalLessons: 30,
-      completedLessons: 28,
-      aiTutorFeedback: {
-        summary: 'Exceptional performance across all areas. Ready for advanced challenges.',
-        sentiment: 'positive',
-        lastFeedback: 'Outstanding work on critical thinking exercises! You\'re ready for Stage 5.'
-      },
-      performance: {
-        trend: 'up',
-        strugglingAreas: [],
-        strongAreas: ['Critical Thinking', 'Academic Presentations', 'Problem Solving']
-      },
-      flags: {}
-    },
-    {
-      id: '4',
-      name: 'David Kim',
-      email: 'david.kim@school.edu',
-      stage: 'Stage 1',
-      completionPercentage: 23,
-      averageScore: 65,
-      lastActive: '2024-01-05',
-      enrolledDate: '2023-12-20',
-      totalLessons: 15,
-      completedLessons: 3,
-      aiTutorFeedback: {
-        summary: 'Needs more consistent practice and additional support with basic concepts.',
-        sentiment: 'negative',
-        lastFeedback: 'Try breaking down lessons into smaller chunks. Remember to practice daily!'
-      },
-      performance: {
-        trend: 'down',
-        strugglingAreas: ['Basic Vocabulary', 'Pronunciation', 'Consistency'],
-        strongAreas: ['Listening']
-      },
-      flags: {
-        inactive_days: 10,
-        stuck_days: 15
-      }
-    },
-    {
-      id: '5',
-      name: 'Sarah Wilson',
-      email: 'sarah.wilson@school.edu',
-      stage: 'Stage 5',
-      completionPercentage: 78,
-      averageScore: 88,
-      lastActive: '2024-01-14',
-      enrolledDate: '2023-09-15',
-      totalLessons: 35,
-      completedLessons: 27,
-      aiTutorFeedback: {
-        summary: 'Advanced learner with strong analytical skills. Minor areas for refinement.',
-        sentiment: 'positive',
-        lastFeedback: 'Excellent work on abstract reasoning! Your presentation skills are impressive.'
-      },
-      performance: {
-        trend: 'up',
-        strugglingAreas: ['Cultural Context'],
-        strongAreas: ['Abstract Reasoning', 'Academic Writing', 'Presentations']
-      },
-      flags: {}
+      setError(null);
+
+      console.log('🔄 Fetching teacher progress data with timeRange:', customTimeRange);
+      
+      const data = await teacherDashboardService.getProgressOverviewData(customTimeRange);
+      setProgressOverviewData(data);
+      setStudents(data.students);
+      setFilteredStudents(data.students);
+      
+      console.log('✅ Successfully loaded teacher progress data');
+      
+    } catch (error: any) {
+      console.error('❌ Error fetching teacher progress data:', error);
+      setError(error.message || 'Failed to load progress data');
+      toast.error('Failed to load progress data');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-  ];
+  };
+
+  // Handle time range change
+  const handleTimeRangeChange = async (newTimeRange: string) => {
+    setTimeRange(newTimeRange);
+    await fetchProgressData(true, newTimeRange);
+  };
+
+  // Handle refresh
+  const handleRefresh = async () => {
+    await fetchProgressData(true, timeRange);
+  };
 
   const stages = ['Stage 1', 'Stage 2', 'Stage 3', 'Stage 4', 'Stage 5', 'Stage 6'];
   const lessons = [
@@ -238,13 +164,9 @@ export const AITeacherProgress = () => {
     'Abstract Topic Monologue'
   ];
 
+  // Initial data fetch
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setStudents(mockStudents);
-      setFilteredStudents(mockStudents);
-      setLoading(false);
-    }, 1000);
+    fetchProgressData();
   }, []);
 
   useEffect(() => {
@@ -480,6 +402,28 @@ export const AITeacherProgress = () => {
     );
   }
 
+  // Show error state
+  if (error && !progressOverviewData) {
+    return (
+      <div className="space-y-6">
+        <Alert className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/30">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Failed to load student progress data: {error}
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="ml-2" 
+              onClick={() => fetchProgressData()}
+            >
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       {/* Premium Header Section */}
@@ -503,6 +447,27 @@ export const AITeacherProgress = () => {
             
             {/* Action Controls */}
             <div className="flex items-center gap-3">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="gap-2 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
+              >
+                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+              <Select value={timeRange} onValueChange={handleTimeRangeChange}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all_time">All Time</SelectItem>
+                  <SelectItem value="this_week">This Week</SelectItem>
+                  <SelectItem value="this_month">This Month</SelectItem>
+                  <SelectItem value="this_year">This Year</SelectItem>
+                </SelectContent>
+              </Select>
               <Button
                 variant="outline"
                 size="sm"
@@ -542,7 +507,7 @@ export const AITeacherProgress = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{students.length}</div>
+            <div className="text-2xl font-bold">{progressOverviewData?.totalStudents || 0}</div>
             <p className="text-xs text-muted-foreground">
               Enrolled in AI courses
             </p>
@@ -555,9 +520,7 @@ export const AITeacherProgress = () => {
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {Math.round(students.reduce((acc, s) => acc + s.completionPercentage, 0) / students.length)}%
-            </div>
+            <div className="text-2xl font-bold">{progressOverviewData?.averageCompletion || 0}%</div>
             <p className="text-xs text-muted-foreground">
               Across all students
             </p>
@@ -570,9 +533,7 @@ export const AITeacherProgress = () => {
             <Star className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {Math.round(students.reduce((acc, s) => acc + s.averageScore, 0) / students.length)}
-            </div>
+            <div className="text-2xl font-bold">{progressOverviewData?.averageScore || 0}</div>
             <p className="text-xs text-muted-foreground">
               AI assessment score
             </p>
@@ -585,9 +546,7 @@ export const AITeacherProgress = () => {
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {students.filter(s => Object.keys(s.flags).length > 0).length}
-            </div>
+            <div className="text-2xl font-bold text-red-600">{progressOverviewData?.studentsAtRisk || 0}</div>
             <p className="text-xs text-muted-foreground">
               Need attention
             </p>

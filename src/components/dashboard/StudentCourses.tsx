@@ -164,10 +164,10 @@ export const StudentCourses = ({ userProfile }: StudentCoursesProps) => {
                 <BookOpen className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
+                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text', lineHeight: '3rem' }}>
                   My Courses
                 </h1>
-                <p className="text-lg text-muted-foreground mt-2 leading-relaxed">
+                <p className="text-lg text-muted-foreground leading-relaxed">
                   View and manage your enrolled courses with enterprise-grade tracking
                 </p>
               </div>
