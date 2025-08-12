@@ -3,8 +3,9 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
-import { Menu, X, LogOut, Settings, Home, Layout } from 'lucide-react';
+import { Menu, X, LogOut, Settings, Home, Layout, Bell } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
+import { NotificationToggle } from './NotificationToggle';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -102,6 +103,19 @@ export const MobileMenu = memo(() => {
                       <LogOut className="h-5 w-5 text-muted-foreground" />
                       <span>Sign Out</span>
                     </button>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Notifications Section */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                    Notifications
+                  </h3>
+                  <div className="flex items-center justify-between px-3 py-2">
+                    <span className="text-sm">Notifications</span>
+                    <NotificationToggle />
                   </div>
                 </div>
 

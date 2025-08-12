@@ -236,6 +236,28 @@ serve(async (req) => {
     if (tokensError) throw tokensError;
     const tokens = tokensResult.map((t: any) => t.token);
 
+    // Create notifications in database for all target users
+    const notificationPromises = userIds.map(userId => 
+      supabaseAdmin
+        .from('notifications')
+        .insert({
+          user_id: userId,
+          title: payload.title,
+          message: payload.body,
+          type: 'info', // Default type, can be enhanced later
+          notification_type: payload.type,
+          read: false,
+          action_url: payload.data?.url || null,
+          action_data: payload.data || null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+    );
+
+    // Wait for all notifications to be created
+    await Promise.all(notificationPromises);
+
+    // Send FCM notifications if tokens are available
     if (tokens && tokens.length > 0) {
       const accessToken = await getGoogleAuthToken();
       const projectId = Deno.env.get("FIREBASE_PROJECT_ID")!;
