@@ -331,9 +331,6 @@ export default function SensitiveScenarioRoleplay() {
           <div className="px-6 pb-8 space-y-6">
             {/* Scenario Selection */}
             <div className="text-center">
-              <h2 className="text-3xl font-bold mb-3 bg-gradient-to-r from-primary to-[#1582B4] bg-clip-text text-transparent">
-                Choose Your Roleplay Scenario
-              </h2>
               <p className="text-muted-foreground text-lg">Click on a scenario to start the roleplay immediately</p>
             </div>
 
