@@ -349,7 +349,7 @@ export const AIStudentProgress: React.FC = () => {
                 <BarChart3 className="w-7 h-7 text-primary" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ lineHeight: '3rem' }}>
                   Learning Progress
                 </h1>
                 <p className="text-lg text-muted-foreground font-light">

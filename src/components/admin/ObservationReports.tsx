@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
 import { useAuth } from '@/hooks/useAuth';
 import { useObservationReports } from '@/contexts/ObservationReportsContext';
+import { useObservationStats } from '@/hooks/useObservationStats';
 import {
   User,
   ClipboardList,
@@ -556,6 +557,7 @@ const submitObservationReport = async (
 export const ObservationReports = () => {
   const { user } = useAuth();
   const { addReport } = useObservationReports();
+  const { stats: observationStats, isLoading: statsLoading, error: statsError } = useObservationStats();
   const [observerRole, setObserverRole] = useState<ObserverRole>('');
   const [viewMode, setViewMode] = useState<ViewMode>('reporting');
   const [showTealObservations, setShowTealObservations] = useState(false);
@@ -721,6 +723,16 @@ export const ObservationReports = () => {
         </div>
       </div>
 
+      {/* Stats Error Alert */}
+      {statsError && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Failed to load statistics: {statsError}
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Stats Cards Section */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
@@ -729,9 +741,18 @@ export const ObservationReports = () => {
             <ClipboardList className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,247</div>
+            <div className="text-2xl font-bold">
+              {statsLoading ? (
+                <div className="flex items-center">
+                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                  <span className="text-lg">Loading...</span>
+                </div>
+              ) : (
+                observationStats?.totalReports?.toLocaleString() || '0'
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">
-              +12% from last month
+              {statsLoading ? 'Calculating...' : (observationStats?.totalReportsChange || 'No change')} from last month
             </p>
           </CardContent>
         </Card>
@@ -742,9 +763,18 @@ export const ObservationReports = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">89</div>
+            <div className="text-2xl font-bold">
+              {statsLoading ? (
+                <div className="flex items-center">
+                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                  <span className="text-lg">Loading...</span>
+                </div>
+              ) : (
+                observationStats?.activeObservers?.toLocaleString() || '0'
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">
-              +5% from last month
+              {statsLoading ? 'Calculating...' : (observationStats?.activeObserversChange || 'No change')} from last month
             </p>
           </CardContent>
         </Card>
@@ -755,9 +785,18 @@ export const ObservationReports = () => {
             <AlertCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">23</div>
+            <div className="text-2xl font-bold">
+              {statsLoading ? (
+                <div className="flex items-center">
+                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                  <span className="text-lg">Loading...</span>
+                </div>
+              ) : (
+                observationStats?.pendingReviews?.toLocaleString() || '0'
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">
-              -15% from last month
+              {statsLoading ? 'Calculating...' : (observationStats?.pendingReviewsChange || 'No change')} from last month
             </p>
           </CardContent>
         </Card>
@@ -768,9 +807,18 @@ export const ObservationReports = () => {
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">892</div>
+            <div className="text-2xl font-bold">
+              {statsLoading ? (
+                <div className="flex items-center">
+                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                  <span className="text-lg">Loading...</span>
+                </div>
+              ) : (
+                observationStats?.tealAssessments?.toLocaleString() || '0'
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">
-              +18% from last month
+              {statsLoading ? 'Calculating...' : (observationStats?.tealAssessmentsChange || 'No change')} from last month
             </p>
           </CardContent>
         </Card>

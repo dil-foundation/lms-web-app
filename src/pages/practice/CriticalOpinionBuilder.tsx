@@ -289,9 +289,6 @@ export default function CriticalOpinionBuilder() {
           {/* Topic Selection */}
           <div className="space-y-8">
             <div className="text-center">
-              <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                Choose Your Opinion Topic
-              </h2>
               <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
                 Click on a topic to start building your opinion immediately with our AI-powered guidance system
               </p>
