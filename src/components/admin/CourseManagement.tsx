@@ -115,10 +115,10 @@ const CourseCard = ({ course, onDelete }: { course: Course, onDelete: (course: C
       </CardContent>
       <CardFooter className="p-4 pt-0">
         <Button 
-          variant="secondary" 
-          className="w-full text-white dark:text-secondary-foreground" 
           onClick={() => navigate(`/dashboard/courses/builder/${course.id}`)}
+          className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-3 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:scale-105 rounded-xl"
         >
+          <Edit3 className="w-4 h-4 mr-2" />
           Edit Course
         </Button>
       </CardFooter>
@@ -543,7 +543,7 @@ const CourseManagement = () => {
                   title="No Courses Found"
                   description="You haven't created any courses yet. Get started by creating a new one."
               />
-              <Button onClick={handleCreateCourse} className="mt-4">
+              <Button onClick={handleCreateCourse} className="mt-4 h-10 px-6 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
                   <PlusCircle className="h-4 w-4 mr-2" />
                   Create Course
               </Button>

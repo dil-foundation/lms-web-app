@@ -45,8 +45,6 @@ export const getRoleNavigation = (role?: UserRole): NavigationItem[] => {
         { title: 'Courses', path: '/dashboard/courses', icon: BookOpen },
         { title: 'Reports', path: '/dashboard/reports', icon: FileQuestion },
         { title: 'Observation Reports', path: '/dashboard/observation-reports', icon: Eye },
-        { title: 'Settings', path: '/dashboard/settings', icon: Settings },
-        { title: 'Security', path: '/dashboard/security', icon: Shield },
         { title: 'Discussion', path: '/dashboard/discussion', icon: MessageSquare },
         { title: 'Assessments', path: '/dashboard/grade-assignments', icon: Award },
       ];
@@ -134,6 +132,7 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean): N
           items: [
             { title: 'Users', path: '/dashboard/users', icon: Users },
             { title: 'Courses', path: '/dashboard/courses', icon: BookOpen },
+            { title: 'Assessments', path: '/dashboard/grade-assignments', icon: Award },
             { title: 'Messages', path: '/dashboard/messages', icon: MessageSquare },
             { title: 'Discussion', path: '/dashboard/discussion', icon: MessageCircle },
           ]
@@ -148,6 +147,7 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean): N
         {
           title: 'SYSTEM',
           items: [
+            { title: 'Admin Settings', path: '/dashboard/admin-settings', icon: Settings },
             { title: 'Security', path: '/dashboard/security', icon: Shield },
             { title: 'Integration APIs', path: '/dashboard/integration-apis', icon: Plug },
             { title: 'Multitenancy', path: '/dashboard/multitenancy', icon: Building2 },
@@ -173,9 +173,14 @@ export const getAICategorizedNavigation = (role: UserRole): NavigationCategory[]
     case 'student':
       return [
         {
-          title: 'LEARNING',
+          title: 'MAIN',
           items: [
             { title: 'Overview', path: '/dashboard', icon: Bot },
+          ]
+        },
+        {
+          title: 'LEARNING',
+          items: [
             { title: 'Learn', path: '/dashboard/ai-learn', icon: BookOpen },
           ]
         },
@@ -209,11 +214,9 @@ export const getAICategorizedNavigation = (role: UserRole): NavigationCategory[]
     case 'admin':
       return [
         {
-          title: 'SYSTEM MANAGEMENT',
+          title: 'MAIN',
           items: [
             { title: 'Overview', path: '/dashboard', icon: Bot },
-            { title: 'AI Tutor Settings', path: '/dashboard/ai-tutor-settings', icon: Settings2 },
-            { title: 'AI Safety & Ethics', path: '/dashboard/ai-safety-ethics', icon: ShieldCheck },
           ]
         },
         {
@@ -221,7 +224,20 @@ export const getAICategorizedNavigation = (role: UserRole): NavigationCategory[]
           items: [
             { title: 'Learn', path: '/dashboard/ai-learn', icon: Target },
             { title: 'Practice', path: '/dashboard/ai-practice', icon: Brain },
+          ]
+        },
+        {
+          title: 'ANALYTICS',
+          items: [
             { title: 'Reports & Analytics', path: '/dashboard/ai-reports', icon: BarChart3 },
+          ]
+        },
+        {
+          title: 'SYSTEM MANAGEMENT',
+          items: [
+            { title: 'Admin Settings', path: '/dashboard/admin-settings', icon: Settings },
+            { title: 'AI Tutor Settings', path: '/dashboard/ai-tutor-settings', icon: Settings2 },
+            { title: 'AI Safety & Ethics', path: '/dashboard/ai-safety-ethics', icon: ShieldCheck },
           ]
         }
       ];

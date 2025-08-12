@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Users, Mic, Send, Play, Utensils, Stethoscope, ChevronLeft, ChevronRight, AlertCircle, RefreshCw, MicOff } from 'lucide-react';
+import { ArrowLeft, Users, Mic, Send, Play, Utensils, Stethoscope, ChevronLeft, ChevronRight, AlertCircle, RefreshCw, MicOff, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ContentLoader } from '@/components/ContentLoader';
@@ -12,6 +12,7 @@ import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { initializeUserProgress, getCurrentTopicProgress, updateCurrentProgress } from '@/utils/progressTracker';
 import { getAuthHeadersWithAccept, getAuthHeaders } from '@/utils/authUtils';
+import { Badge } from '@/components/ui/badge';
 
 interface Message {
   type: 'ai' | 'user';
@@ -38,6 +39,7 @@ interface Scenario {
   initial_prompt?: string;
   initial_prompt_urdu?: string;
   created_at?: string;
+  duration?: string; // Added for new card
 }
 
 interface EvaluationResult {
@@ -204,6 +206,7 @@ const fetchRoleplayScenarios = async (userId?: string): Promise<Scenario[]> => {
           initial_prompt: getStringValue(item, 'initial_prompt', 'prompt'),
           initial_prompt_urdu: getStringValue(item, 'initial_prompt_urdu', 'urdu_prompt'),
           created_at: getStringValue(item, 'created_at', 'createdAt', 'timestamp'),
+          duration: getStringValue(item, 'duration', 'time', 'estimated_time'), // Added duration
         };
       } else {
         scenario = {
@@ -323,6 +326,7 @@ const fetchSingleScenario = async (scenarioId: string, userId?: string): Promise
       initial_prompt: getStringValue(scenarioData, 'initial_prompt', 'prompt'),
       initial_prompt_urdu: getStringValue(scenarioData, 'initial_prompt_urdu', 'urdu_prompt'),
       created_at: getStringValue(scenarioData, 'created_at', 'createdAt', 'timestamp'),
+      duration: getStringValue(scenarioData, 'duration', 'time', 'estimated_time'), // Added duration
     };
 
     return scenario;
@@ -1265,19 +1269,26 @@ export default function RoleplaySimulation() {
         </div>
         
         {/* Header */}
-        <div className="relative flex items-center justify-center mb-6 p-4 sm:p-6 lg:p-8">
-          <Button variant="outline" size="icon" className="absolute left-4 sm:left-6 lg:left-8 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary" onClick={() => {
-            stopAudio();
-            navigate(-1);
-          }}>
+        <div className="relative flex items-center justify-center mb-8 p-4 sm:p-6 lg:p-8">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="absolute left-4 sm:left-6 lg:left-8 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60" 
+            onClick={() => {
+              stopAudio();
+              navigate(-1);
+            }}
+          >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="text-center">
-            <div className="inline-block p-3 bg-primary/20 rounded-full mb-2">
-              <Users className="h-8 w-8 text-primary" />
+            <div className="inline-block p-4 bg-gradient-to-br from-primary/10 via-primary/20 to-primary/30 rounded-2xl mb-4 shadow-lg border border-primary/20">
+              <Users className="h-10 w-10 text-primary" />
             </div>
-            <h1 className="text-3xl font-bold">Roleplay Simulation</h1>
-            <p className="text-muted-foreground">Practice Real Conversations</p>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent mb-3">
+              Roleplay Simulation
+            </h1>
+            <p className="text-lg text-muted-foreground font-medium">Practice Real Conversations</p>
           </div>
         </div>
 
@@ -1290,42 +1301,37 @@ export default function RoleplaySimulation() {
             </p>
 
             {/* Scenario Cards */}
-            <div className="space-y-4">
-              {currentScenarios.map((scenario) => {
+            <div className="space-y-4 px-4 sm:px-6 lg:px-8">
+              {currentScenarios.map((scenario, index) => {
                 const IconComponent = getIconComponent(scenario.icon_type, scenario.scenario_type);
                 return (
-                  <Card key={scenario.id} className="overflow-hidden">
-                    <CardContent className="p-6">
-                      {/* Header with Icon and Title */}
-                      <div className="flex items-start space-x-4 mb-4">
-                        <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                          <IconComponent className="w-6 h-6 text-green-600 dark:text-green-400" />
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="text-xl font-bold mb-1">{scenario.title}</h3>
-                          <p className="text-muted-foreground mb-2" style={{ fontFamily: 'Noto Nastaliq Urdu, Arial, sans-serif' }}>
-                            {scenario.title_urdu || scenario.title}
-                          </p>
-                          <span className="inline-block px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm rounded-full">
-                            {scenario.difficulty}
-                          </span>
-                        </div>
+                  <Card
+                    key={scenario.id}
+                    className="cursor-pointer bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
+                  >
+                    <div className="p-6">
+                      <div className="w-12 h-12 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-2xl flex items-center justify-center mb-4 shadow-lg border border-primary/30 dark:border-primary/40">
+                        <IconComponent className="h-6 w-6 text-primary" />
                       </div>
-
-                      {/* Description */}
-                      <p className="text-sm text-foreground mb-2">
+                      <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">
+                        {scenario.title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mb-2" style={{ fontFamily: 'Noto Nastaliq Urdu, Arial, sans-serif' }}>
+                        {scenario.title_urdu || scenario.title}
+                      </p>
+                      <p className="text-sm text-foreground mb-3 line-clamp-3">
                         {scenario.description}
                       </p>
                       <p className="text-sm text-muted-foreground mb-4" style={{ fontFamily: 'Noto Nastaliq Urdu, Arial, sans-serif' }}>
                         {scenario.description_urdu || scenario.description}
                       </p>
-
+                      
                       {/* Keywords */}
-                      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6">
-                        <p className="text-sm font-medium text-yellow-700 dark:text-yellow-300 mb-2">
+                      <div className="bg-gradient-to-r from-primary/10 via-primary/20 to-primary/30 dark:from-primary/20 dark:via-primary/30 dark:to-primary/40 border border-primary/30 dark:border-primary/40 rounded-2xl p-4 mb-4 shadow-md">
+                        <p className="text-sm font-medium text-primary dark:text-primary/90 mb-2">
                           Keywords to Practice:
                         </p>
-                        <p className="text-yellow-600 dark:text-yellow-400 font-medium">
+                        <p className="text-primary dark:text-primary/80 font-medium">
                           {scenario.keywords && scenario.keywords.length > 0 
                             ? scenario.keywords.join(', ')
                             : 'Practice general conversation skills'
@@ -1333,11 +1339,22 @@ export default function RoleplaySimulation() {
                         </p>
                       </div>
 
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-2">
+                          <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
+                            {scenario.difficulty || 'Beginner'}
+                          </Badge>
+                          <Badge variant="outline" className="border-primary/30 text-primary/70">
+                            {scenario.duration || '5-10 min'}
+                          </Badge>
+                        </div>
+                      </div>
+
                       {/* Start Button */}
                       <Button 
                         onClick={() => handleStartScenario(scenario)}
                         disabled={loadingScenario}
-                        className="w-full bg-green-500 hover:bg-green-600 text-white"
+                        className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 rounded-2xl border-0"
                       >
                         {loadingScenario ? (
                           <>
@@ -1351,7 +1368,7 @@ export default function RoleplaySimulation() {
                           </>
                         )}
                       </Button>
-                    </CardContent>
+                    </div>
                   </Card>
                 );
               })}
@@ -1364,7 +1381,7 @@ export default function RoleplaySimulation() {
                   variant="outline"
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="px-3 py-2"
+                  className="px-3 py-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 hover:border-primary/30"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
@@ -1375,7 +1392,7 @@ export default function RoleplaySimulation() {
                   variant="outline"
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="px-3 py-2"
+                  className="px-3 py-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 hover:border-primary/30"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
@@ -1390,7 +1407,7 @@ export default function RoleplaySimulation() {
             
             {error && (
               <div className="mt-6">
-                <Alert variant="destructive">
+                <Alert variant="destructive" className="bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 rounded-2xl shadow-md">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
                     {error}
@@ -1399,7 +1416,7 @@ export default function RoleplaySimulation() {
                 <Button
                   onClick={handleRetry}
                   variant="outline"
-                  className="mt-4 w-full"
+                  className="mt-4 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 hover:border-primary/30"
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Retry Loading Scenarios
@@ -1408,7 +1425,7 @@ export default function RoleplaySimulation() {
             )}
 
             {!loading && !error && allScenarios.length === 0 && (
-              <Alert className="mt-6">
+              <Alert className="mt-6 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 rounded-2xl shadow-md">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
                   No scenarios found. Please try again later or check your internet connection.
@@ -1442,16 +1459,16 @@ export default function RoleplaySimulation() {
             variant="outline"
             size="icon"
             onClick={handleBackToScenarios}
-            className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
+            className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-md hover:shadow-lg"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           
           <div className="text-center flex-1">
-            <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-2">
-              <Users className="h-6 w-6 text-white" />
+            <div className="w-12 h-12 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-2xl flex items-center justify-center mx-auto mb-2 shadow-lg border border-primary/30 dark:border-primary/40">
+              <Users className="h-6 w-6 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold">{selectedScenario.title}</h1>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent">{selectedScenario.title}</h1>
             <p className="text-muted-foreground">
               Roleplay as {selectedScenario?.scenario_type === 'restaurant' || selectedScenario?.icon_type === 'utensils' ? 'waiter' : 
                           selectedScenario?.scenario_type === 'doctor' || selectedScenario?.icon_type === 'stethoscope' ? 'doctor' : 'assistant'}
@@ -1462,12 +1479,12 @@ export default function RoleplaySimulation() {
         </div>
 
         {/* Scenario Info Card */}
-        <Card className="mb-6 mx-6 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+        <Card className="mb-6 mx-6 bg-gradient-to-r from-primary/10 via-primary/20 to-primary/30 dark:from-primary/20 dark:via-primary/30 dark:to-primary/40 border-primary/30 dark:border-primary/40 rounded-3xl shadow-lg">
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="font-medium text-green-800 dark:text-green-200">
+              <div className="w-2 h-2 bg-primary rounded-full"></div>
+                <span className="font-medium text-primary dark:text-primary/90">
                   Active Scenario
                 </span>
               </div>
@@ -1478,12 +1495,12 @@ export default function RoleplaySimulation() {
                 </span>
               </div>
             </div>
-            <p className="text-sm text-green-700 dark:text-green-300">
+            <p className="text-sm text-primary dark:text-primary/80">
               {selectedScenario.description}
             </p>
             {selectedScenario.keywords && selectedScenario.keywords.length > 0 && (
               <div className="mt-2">
-                <span className="text-xs text-green-600 dark:text-green-400 font-medium">
+                <span className="text-xs text-primary dark:text-primary/70 font-medium">
                   Practice Keywords: {selectedScenario.keywords.join(', ')}
             </span>
           </div>
@@ -1496,42 +1513,75 @@ export default function RoleplaySimulation() {
           </CardContent>
         </Card>
 
-        {/* Conversation Area */}
+        {/* Conversation Interface */}
         <div className="mx-6 mb-6">
-          <Card>
+          <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-lg">
             <CardContent className="p-6">
+              {/* Conversation Header */}
+              <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200/60 dark:border-gray-700/60">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-2xl flex items-center justify-center shadow-md border border-primary/30 dark:border-primary/40">
+                    <Users className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                      {selectedScenario?.title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Roleplay Simulation • {selectedScenario?.difficulty || 'Beginner'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRestart}
+                    className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 hover:border-primary/30"
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Reset
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleBackToScenarios}
+                    className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 hover:border-primary/30"
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Back
+                  </Button>
+                </div>
+              </div>
+
+              {/* Conversation Area */}
               {loadingScenario ? (
                 <div className="flex justify-center py-8">
                   <ContentLoader />
                 </div>
               ) : (
-                            <div 
-                  ref={conversationContainerRef}
-                  className="space-y-4 max-h-96 overflow-y-auto"
-                >
-              {conversation.map((msg, index) => (
-                <div
-                  key={index}
-                  className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div className="max-w-xs lg:max-w-md">
-                    {msg.type === 'ai' && (
+                <div className="space-y-4 max-h-96 overflow-y-auto mb-6">
+                  {conversation.map((msg, index) => (
+                    <div
+                      key={index}
+                      className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl shadow-sm ${
+                          msg.type === 'user'
+                            ? 'bg-gradient-to-r from-primary to-primary/90 text-white rounded-br-md'
+                            : 'bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-md'
+                        }`}
+                      >
+                        {msg.type === 'ai' && (
                           <div className="text-xs text-muted-foreground mb-1 capitalize">
                             {msg.role || 'Assistant'}
+                          </div>
+                        )}
+                        <p className="text-sm leading-relaxed">{msg.message}</p>
                       </div>
-                    )}
-                    <div
-                          className={`px-4 py-3 rounded-lg ${
-                        msg.type === 'user'
-                              ? 'bg-green-500 text-white'
-                              : 'bg-muted text-foreground'
-                      }`}
-                    >
-                          <p className="text-sm leading-relaxed">{msg.message}</p>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  ))}
                   
                   {conversation.length === 0 && !loadingScenario && (
                     <div className="text-center py-8 text-muted-foreground">
@@ -1542,68 +1592,57 @@ export default function RoleplaySimulation() {
                           : "Practice mode active. Start the conversation by typing a message or using voice input."
                         }
                       </p>
-            </div>
+                    </div>
                   )}
-
-
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </div>
 
-        {/* Input Area */}
-        <div className="mx-6">
-          <Card>
-            <CardContent className="p-4">
+              {/* Input Area */}
               <div className="space-y-4">
-                <div className="flex gap-3">
-                  <div className="flex-1">
-                                        <input
+                <div className="flex items-center space-x-3">
+                  <div className="flex-1 relative">
+                    <input
                       type="text"
-                      placeholder="Type your response here..."
                       value={userInput}
                       onChange={(e) => setUserInput(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
-                      className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-background text-foreground placeholder:text-muted-foreground dark:placeholder:text-muted-foreground"
+                      placeholder="Type your response..."
+                      className="w-full px-4 py-3 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/300 transition-all duration-300 placeholder:text-muted-foreground"
                       disabled={isRecording}
                     />
                   </div>
-                
+                  
                   <Button
                     onClick={handleVoiceInput}
                     size="icon"
-                    className={`w-12 h-12 ${
+                    className={`w-12 h-12 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 ${
                       isRecording 
-                        ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
-                        : 'bg-green-500 hover:bg-green-600'
-                    } text-white`}
+                        ? 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 animate-pulse' 
+                        : 'bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary'
+                    } text-white border-0`}
                   >
                     {isRecording ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
                   </Button>
-                </div>
                   
-                <div className="flex gap-2">
                   <Button
                     onClick={handleSubmit}
-                    className="flex-1 bg-green-500 hover:bg-green-600 text-white"
                     disabled={!userInput.trim() || isRecording}
+                    className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 rounded-2xl border-0 px-6"
                   >
-                    <Send className="h-4 w-4 mr-2" />
-                    Send Message
+                    <Send className="h-4 w-4" />
                   </Button>
                 </div>
 
                 {/* Status Messages */}
                 {recordingError && (
-                  <Alert variant="destructive">
+                  <Alert variant="destructive" className="bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 rounded-2xl shadow-md">
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>{recordingError}</AlertDescription>
                   </Alert>
                 )}
                 
                 {isRecording && (
-                  <Alert>
+                  <Alert className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 rounded-2xl shadow-md">
                     <Mic className="h-4 w-4" />
                     <AlertDescription>
                       🎤 Recording... Click the microphone button again to stop
@@ -1618,10 +1657,10 @@ export default function RoleplaySimulation() {
         {/* Evaluation Dialog */}
         {showEvaluationDialog && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <Card className="w-96 mx-4">
+            <Card className="w-96 mx-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-2xl">
               <CardContent className="p-6 text-center">
-                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Users className="h-8 w-8 text-green-600 dark:text-green-400" />
+                <div className="w-16 h-16 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg border border-primary/30 dark:border-primary/40">
+                  <Users className="h-8 w-8 text-primary" />
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Conversation Complete! 🎉</h3>
                 <p className="text-muted-foreground mb-6">
@@ -1631,13 +1670,13 @@ export default function RoleplaySimulation() {
                   <Button 
                     variant="outline" 
                     onClick={() => setShowEvaluationDialog(false)}
-                    className="flex-1"
+                    className="flex-1 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 hover:border-primary/30"
                   >
                     Skip
                   </Button>
                   <Button 
                     onClick={handleEvaluatePerformance}
-                    className="flex-1 bg-green-500 hover:bg-green-600"
+                    className="flex-1 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 rounded-2xl border-0"
                   >
                     Evaluate Performance
                   </Button>
@@ -1650,9 +1689,9 @@ export default function RoleplaySimulation() {
         {/* Evaluation Loading */}
         {isEvaluating && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <Card className="w-96 mx-4">
+            <Card className="w-96 mx-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-2xl">
               <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 border-4 border-green-200 border-t-green-500 rounded-full animate-spin mx-auto mb-4"></div>
+                <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
                 <h3 className="text-lg font-semibold mb-2">Evaluating Your Performance</h3>
                 <p className="text-muted-foreground">
                   Analyzing your conversation skills, grammar, and keyword usage...
@@ -1665,11 +1704,11 @@ export default function RoleplaySimulation() {
         {/* Evaluation Results */}
         {evaluationResult && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-2xl">
               <CardContent className="p-6">
                 <div className="text-center mb-6">
-                  <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span className="text-2xl font-bold text-green-600">
+                  <div className="w-20 h-20 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg border border-primary/30 dark:border-primary/40">
+                    <span className="text-2xl font-bold text-primary">
                       {evaluationResult.overall_score}%
                     </span>
                   </div>
@@ -1679,19 +1718,19 @@ export default function RoleplaySimulation() {
 
                 {/* Score Breakdown */}
                 <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="text-center p-3 bg-muted rounded-lg">
+                  <div className="text-center p-3 bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 rounded-2xl shadow-sm">
                     <div className="text-lg font-semibold">{evaluationResult.conversation_flow_score}%</div>
                     <div className="text-sm text-muted-foreground">Flow</div>
                   </div>
-                  <div className="text-center p-3 bg-muted rounded-lg">
+                  <div className="text-center p-3 bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 rounded-2xl shadow-sm">
                     <div className="text-lg font-semibold">{evaluationResult.keyword_usage_score}%</div>
                     <div className="text-sm text-muted-foreground">Keywords</div>
                   </div>
-                  <div className="text-center p-3 bg-muted rounded-lg">
+                  <div className="text-center p-3 bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 rounded-2xl shadow-sm">
                     <div className="text-lg font-semibold">{evaluationResult.grammar_fluency_score}%</div>
                     <div className="text-sm text-muted-foreground">Grammar</div>
                   </div>
-                  <div className="text-center p-3 bg-muted rounded-lg">
+                  <div className="text-center p-3 bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 rounded-2xl shadow-sm">
                     <div className="text-lg font-semibold">{evaluationResult.engagement_score}%</div>
                     <div className="text-sm text-muted-foreground">Engagement</div>
                   </div>
@@ -1701,7 +1740,7 @@ export default function RoleplaySimulation() {
                 <div className="space-y-4 mb-6">
                   {evaluationResult.strengths.length > 0 && (
                     <div>
-                      <h4 className="font-semibold text-green-600 mb-2">✅ Strengths</h4>
+                      <h4 className="font-semibold text-primary mb-2">✅ Strengths</h4>
                       <ul className="list-disc list-inside space-y-1 text-sm">
                         {evaluationResult.strengths.map((strength, index) => (
                           <li key={index}>{strength}</li>
@@ -1738,13 +1777,13 @@ export default function RoleplaySimulation() {
                   <Button 
                     variant="outline" 
                     onClick={() => setEvaluationResult(null)}
-                    className="flex-1 hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
+                    className="flex-1 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 hover:border-primary/30"
                   >
                     Close
                   </Button>
                   <Button 
                     onClick={handleBackToScenarios}
-                    className="flex-1 bg-green-500 hover:bg-green-600"
+                    className="flex-1 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 rounded-2xl border-0"
                   >
                     Try Another Scenario
                   </Button>

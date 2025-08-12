@@ -33,7 +33,7 @@ const ActivityCard = ({ activity, index }) => {
   
   return (
     <Card 
-      className="group overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50 rounded-2xl cursor-pointer"
+      className="group overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl cursor-pointer shadow-lg hover:shadow-xl"
       onClick={() => navigate(`/dashboard/practice/stage-6/${activity.id}`)}
     >
       <div className={`${activity.bgColor} p-6 text-white relative overflow-hidden`}>
@@ -47,7 +47,7 @@ const ActivityCard = ({ activity, index }) => {
               <h3 className="text-xl font-semibold">{activity.title}</h3>
             </div>
           </div>
-          <ChevronRight className="w-6 h-6 opacity-70" />
+          <ChevronRight className="w-6 h-6 opacity-70 group-hover:translate-x-1 transition-transform duration-300" />
         </div>
       </div>
       <CardContent className="p-6">
@@ -74,7 +74,7 @@ export const StageSix: React.FC = () => {
                 variant="outline" 
                 size="icon"
                 onClick={() => navigate('/dashboard/ai-practice')}
-                className="hover:bg-primary/10 hover:border-primary/30 transition-all duration-300"
+                className="hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
@@ -83,7 +83,7 @@ export const StageSix: React.FC = () => {
                   <GraduationCap className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-primary">Stage 6 - C2 Proficiency</h1>
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent">Stage 6 - C2 Proficiency</h1>
                   <p className="text-sm text-muted-foreground">C2 Proficiency Level</p>
                 </div>
               </div>
@@ -91,11 +91,11 @@ export const StageSix: React.FC = () => {
             
             {/* Stage Stats */}
             <div className="flex flex-wrap gap-4">
-              <div className="flex items-center gap-2 px-4 py-2 bg-white/60 dark:bg-gray-800/60 rounded-xl border border-gray-200/50 dark:border-gray-700/50">
+              <div className="flex items-center gap-2 px-4 py-2 bg-white/60 dark:bg-gray-800/60 rounded-xl border border-gray-200/50 dark:border-gray-700/50 shadow-md">
                 <Target className="w-4 h-4 text-primary" />
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">3 Activities</span>
               </div>
-              <div className="flex items-center gap-2 px-4 py-2 bg-white/60 dark:bg-gray-800/60 rounded-xl border border-gray-200/50 dark:border-gray-700/50">
+              <div className="flex items-center gap-2 px-4 py-2 bg-white/60 dark:bg-gray-800/60 rounded-xl border border-gray-200/50 dark:border-gray-700/50 shadow-md">
                 <TrendingUp className="w-4 h-4 text-[#1582B4]" />
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Proficiency</span>
               </div>
@@ -110,8 +110,6 @@ export const StageSix: React.FC = () => {
           </div>
         </div>
       </div>
-
-
 
       {/* Activity Cards */}
       <div className="px-6 pb-8 mt-8">

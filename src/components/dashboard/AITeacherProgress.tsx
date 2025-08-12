@@ -362,21 +362,21 @@ export const AITeacherProgress = () => {
 
   if (loading && students.length === 0) {
     return (
-      <div className="space-y-6">
-        {/* Header Section */}
+      <div className="space-y-8">
+        {/* Premium Header Section */}
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-          <div className="relative p-8 rounded-3xl">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
-                  <BarChart3 className="w-6 h-6 text-primary" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/3 to-[#1582B4]/5 rounded-3xl"></div>
+          <div className="relative p-8 md:p-10 rounded-3xl">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
+                  <BarChart3 className="w-8 h-8 text-primary" />
                 </div>
                 <div>
-                  <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                  <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-primary leading-[1.2]">
                     Student Progress
                   </h1>
-                  <p className="text-lg text-muted-foreground font-light">
+                  <p className="text-lg text-muted-foreground font-light mt-4 leading-relaxed">
                     AI-powered learning analytics
                   </p>
                 </div>
@@ -384,11 +384,12 @@ export const AITeacherProgress = () => {
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardHeader>
+            <Card key={i} className="animate-pulse bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <div className="h-4 bg-muted rounded w-3/4"></div>
+                <div className="h-4 w-4 bg-muted rounded"></div>
               </CardHeader>
               <CardContent>
                 <div className="h-8 bg-muted rounded w-1/2 mb-2"></div>
@@ -424,28 +425,28 @@ export const AITeacherProgress = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header Section */}
+    <div className="space-y-8">
+      {/* Premium Header Section */}
       <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-8 rounded-3xl">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
-                <BarChart3 className="w-6 h-6 text-primary" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/3 to-[#1582B4]/5 rounded-3xl"></div>
+        <div className="relative p-8 md:p-10 rounded-3xl">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
+                <BarChart3 className="w-8 h-8 text-primary" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-primary leading-[1.2]">
                   Student Progress
                 </h1>
-                <p className="text-lg text-muted-foreground font-light">
+                <p className="text-lg text-muted-foreground font-light mt-4 leading-relaxed">
                   Welcome {profile?.first_name || 'Teacher'} - AI-powered learning analytics for {students.length} students
                 </p>
               </div>
             </div>
             
             {/* Action Controls */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <Button
                 size="sm"
                 variant="outline"
@@ -471,14 +472,14 @@ export const AITeacherProgress = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => setViewMode(viewMode === 'table' ? 'cards' : 'table')}
-                className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
+                className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800"
               >
                 {viewMode === 'table' ? 'Card View' : 'Table View'}
               </Button>
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="gap-2 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
+                className="h-9 px-4 rounded-xl gap-2 bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800"
                 onClick={() => handleExportData('csv', 'all')}
               >
                 <Download className="h-4 w-4" />
@@ -487,7 +488,7 @@ export const AITeacherProgress = () => {
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="gap-2 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
+                className="h-9 px-4 rounded-xl gap-2 bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800"
                 onClick={() => handleExportData('pdf', 'all')}
               >
                 <FileText className="h-4 w-4" />
@@ -499,10 +500,10 @@ export const AITeacherProgress = () => {
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Students</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -513,9 +514,9 @@ export const AITeacherProgress = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Completion</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Average Completion</CardTitle>
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -526,9 +527,9 @@ export const AITeacherProgress = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Score</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Average Score</CardTitle>
             <Star className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -539,9 +540,9 @@ export const AITeacherProgress = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Students at Risk</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Students at Risk</CardTitle>
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -554,32 +555,32 @@ export const AITeacherProgress = () => {
       </div>
 
       {/* Filters */}
-      <Card>
+      <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card border-0 shadow-lg">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filters
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+            <Filter className="h-5 w-5 text-primary" />
+            Filters & Search
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Search Students</label>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-muted-foreground">Search Students</label>
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search by name or email..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
+                  className="pl-9 h-11 rounded-xl border-2 focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
                 />
               </div>
             </div>
             
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Stage Filter</label>
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-muted-foreground">Stage Filter</label>
               <Select value={stageFilter} onValueChange={setStageFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="h-11 rounded-xl border-2 focus:border-primary/50 focus:ring-2 focus:ring-primary/20">
                   <SelectValue placeholder="All Stages" />
                 </SelectTrigger>
                 <SelectContent>

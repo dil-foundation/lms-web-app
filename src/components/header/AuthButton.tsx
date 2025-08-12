@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { LogIn, LogOut, User, Settings, ChevronDown, Home, Shield, GraduationCap } from 'lucide-react';
+import { LogIn, LogOut, User, ChevronDown, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -120,27 +120,9 @@ export const AuthButton = () => {
                 </Link>
 
                 {/* Role-specific settings */}
-                {userRole === 'admin' && (
-                  <Link
-                    to="/dashboard/admin-settings"
-                    onClick={() => setIsDropdownOpen(false)}
-                    className="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:text-primary hover:bg-primary/5 rounded-lg transition-all duration-200 group"
-                  >
-                    <Shield className="h-4 w-4 mr-3 text-gray-500 dark:text-gray-400 group-hover:text-primary transition-colors duration-200" />
-                    Admin Settings
-                  </Link>
-                )}
+                {/* Admin Settings moved to left navigation under SYSTEM category */}
 
-                {userRole === 'teacher' && (
-                  <Link
-                    to="/dashboard/teacher-settings"
-                    onClick={() => setIsDropdownOpen(false)}
-                    className="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:text-primary hover:bg-primary/5 rounded-lg transition-all duration-200 group"
-                  >
-                    <GraduationCap className="h-4 w-4 mr-3 text-gray-500 dark:text-gray-400 group-hover:text-primary transition-colors duration-200" />
-                    Teacher Settings
-                  </Link>
-                )}
+                {/* Teacher Settings - route not implemented yet */}
 
                 <div className="border-t border-gray-200/50 dark:border-gray-700/50 my-1" />
 

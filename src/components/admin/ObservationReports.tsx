@@ -87,38 +87,44 @@ interface ValidationRule {
 
 // Helper Components for consistency
 const ObserverInformation = ({ observerRole, onRoleChange }) => (
-  <Card className="bg-green-50/20 border-green-200 dark:bg-green-900/10 dark:border-green-800/50">
-    <CardHeader className="flex flex-row items-center gap-4">
-      <User className="w-6 h-6 text-green-600" />
+  <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50">
+    <CardHeader className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 pb-6">
+      <div className="flex flex-row items-center gap-4">
+        <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
+          <User className="w-6 h-6 text-primary" />
+        </div>
       <div>
-        <CardTitle className="text-xl">Observer Information</CardTitle>
-        <CardDescription>
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 dark:from-white dark:via-gray-100 dark:to-gray-200 bg-clip-text text-transparent">
+            Observer Information
+          </CardTitle>
+          <CardDescription className="text-base text-gray-600 dark:text-gray-300 mt-1">
           Select your role and provide basic information about the observation
         </CardDescription>
+        </div>
       </div>
     </CardHeader>
-    <CardContent>
+    <CardContent className="p-8">
       <div className="max-w-md mx-auto">
-        <Label htmlFor="observer-role" className="text-center block mb-2 font-semibold">
+        <Label htmlFor="observer-role" className="text-center block mb-4 font-semibold text-lg text-gray-900 dark:text-gray-100">
           Observer Role *
         </Label>
         <Select value={observerRole} onValueChange={onRoleChange}>
-          <SelectTrigger id="observer-role" className="h-12 text-base">
+          <SelectTrigger id="observer-role" className="h-14 text-lg font-medium border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-4 focus:ring-primary/10">
             <SelectValue placeholder="Select your observer role" />
           </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="principal">Principal</SelectItem>
-            <SelectItem value="ece">ECE Observer</SelectItem>
-            <SelectItem value="school-officer">School Officer</SelectItem>
-            <SelectItem value="project-manager">Project Manager</SelectItem>
+          <SelectContent className="border-2 border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl bg-white dark:bg-gray-800">
+            <SelectItem value="principal" className="text-base py-3 hover:bg-primary/5 rounded-xl">Principal</SelectItem>
+            <SelectItem value="ece" className="text-base py-3 hover:bg-primary/5 rounded-xl">ECE Observer</SelectItem>
+            <SelectItem value="school-officer" className="text-base py-3 hover:bg-primary/5 rounded-xl">School Officer</SelectItem>
+            <SelectItem value="project-manager" className="text-base py-3 hover:bg-primary/5 rounded-xl">Project Manager</SelectItem>
           </SelectContent>
         </Select>
       </div>
       {observerRole && (
-        <div className="text-center mt-6">
-          <Badge variant="outline" className="border-green-300 bg-white text-green-800 dark:bg-green-950 dark:text-green-100 dark:border-green-700">
-            <Check className="w-4 h-4 mr-2 text-green-600 dark:text-green-400" />
-            Role-specific questionnaire will appear below
+        <div className="text-center mt-8">
+          <Badge variant="outline" className="border-primary/30 bg-gradient-to-r from-primary/5 to-primary/10 text-primary-800 dark:text-primary-200 dark:bg-primary/10 dark:border-primary/30 px-6 py-3 rounded-2xl shadow-lg">
+            <Check className="w-5 h-5 mr-2 text-primary-600 dark:text-primary-400" />
+            <span className="font-semibold">Role-specific questionnaire will appear below</span>
           </Badge>
         </div>
       )}
@@ -135,91 +141,99 @@ const ObservationDetails = ({
   updateFormData: (field: string, value: any) => void; 
   formErrors: FormErrors; 
 }) => (
-  <Card className="bg-green-50/20 border-green-200 dark:bg-green-900/10 dark:border-green-800/50">
-    <CardHeader className="flex flex-row items-center gap-4">
-      <ClipboardList className="w-6 h-6 text-green-600" />
+  <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50">
+    <CardHeader className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 pb-6">
+      <div className="flex flex-row items-center gap-4">
+        <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
+          <ClipboardList className="w-6 h-6 text-primary" />
+        </div>
       <div>
-        <CardTitle className="text-xl">Observation Details</CardTitle>
-        <CardDescription>Basic information about the observation session</CardDescription>
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 dark:from-white dark:via-gray-100 dark:to-gray-200 bg-clip-text text-transparent">
+            Observation Details
+          </CardTitle>
+          <CardDescription className="text-base text-gray-600 dark:text-gray-300 mt-1">
+            Basic information about the observation session
+          </CardDescription>
+        </div>
       </div>
     </CardHeader>
-    <CardContent className="space-y-8">
+    <CardContent className="p-8 space-y-8">
       {/* Basic Information */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-2">
-          <Label htmlFor="observer-name">Observer Name *</Label>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="space-y-3">
+          <Label htmlFor="observer-name" className="text-base font-semibold text-gray-900 dark:text-gray-100">Observer Name *</Label>
           <Input 
             id="observer-name" 
             placeholder="Enter your full name..." 
             value={formData.observerName}
             onChange={(e) => updateFormData('observerName', e.target.value)}
-            className={formErrors.observerName ? "border-red-500" : ""}
+            className={`h-12 text-lg font-medium border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-4 focus:ring-primary/10 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${formErrors.observerName ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : ""}`}
           />
-          {formErrors.observerName && <p className="text-sm text-red-500">{formErrors.observerName}</p>}
+          {formErrors.observerName && <p className="text-sm text-red-500 font-medium">{formErrors.observerName}</p>}
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="observation-date">Observation Date *</Label>
+        <div className="space-y-3">
+          <Label htmlFor="observation-date" className="text-base font-semibold text-gray-900 dark:text-gray-100">Observation Date *</Label>
           <Input 
             id="observation-date" 
             type="date" 
             value={formData.observationDate}
             onChange={(e) => updateFormData('observationDate', e.target.value)}
-            className={`${formErrors.observationDate ? "border-red-500" : ""} [&::-webkit-calendar-picker-indicator]:dark:invert [&::-webkit-calendar-picker-indicator]:dark:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
+            className={`h-12 text-lg font-medium border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-4 focus:ring-primary/10 [&::-webkit-calendar-picker-indicator]:dark:invert [&::-webkit-calendar-picker-indicator]:dark:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer ${formErrors.observationDate ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : ""}`}
           />
-          {formErrors.observationDate && <p className="text-sm text-red-500">{formErrors.observationDate}</p>}
+          {formErrors.observationDate && <p className="text-sm text-red-500 font-medium">{formErrors.observationDate}</p>}
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="school-name">School Name *</Label>
+        <div className="space-y-3">
+          <Label htmlFor="school-name" className="text-base font-semibold text-gray-900 dark:text-gray-100">School Name *</Label>
           <Input 
             id="school-name" 
             placeholder="Enter school name..." 
             value={formData.schoolName}
             onChange={(e) => updateFormData('schoolName', e.target.value)}
-            className={formErrors.schoolName ? "border-red-500" : ""}
+            className={`h-12 text-lg font-medium border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-4 focus:ring-primary/10 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${formErrors.schoolName ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : ""}`}
           />
-          {formErrors.schoolName && <p className="text-sm text-red-500">{formErrors.schoolName}</p>}
+          {formErrors.schoolName && <p className="text-sm text-red-500 font-medium">{formErrors.schoolName}</p>}
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="teacher-name">Teacher Name *</Label>
+        <div className="space-y-3">
+          <Label htmlFor="teacher-name" className="text-base font-semibold text-gray-900 dark:text-gray-100">Teacher Name *</Label>
           <Input 
             id="teacher-name" 
             placeholder="Enter teacher name..." 
             value={formData.teacherName}
             onChange={(e) => updateFormData('teacherName', e.target.value)}
-            className={formErrors.teacherName ? "border-red-500" : ""}
+            className={`h-12 text-lg font-medium border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-4 focus:ring-primary/10 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${formErrors.teacherName ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : ""}`}
           />
-          {formErrors.teacherName && <p className="text-sm text-red-500">{formErrors.teacherName}</p>}
+          {formErrors.teacherName && <p className="text-sm text-red-500 font-medium">{formErrors.teacherName}</p>}
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="start-time">Start Time *</Label>
+        <div className="space-y-3">
+          <Label htmlFor="start-time" className="text-base font-semibold text-gray-900 dark:text-gray-100">Start Time *</Label>
           <Input 
             id="start-time" 
             type="time" 
             value={formData.startTime}
             onChange={(e) => updateFormData('startTime', e.target.value)}
-            className={`${formErrors.startTime ? "border-red-500" : ""} [&::-webkit-calendar-picker-indicator]:dark:invert [&::-webkit-calendar-picker-indicator]:dark:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
+            className={`h-12 text-lg font-medium border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-4 focus:ring-primary/10 [&::-webkit-calendar-picker-indicator]:dark:invert [&::-webkit-calendar-picker-indicator]:dark:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer ${formErrors.startTime ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : ""}`}
           />
-          {formErrors.startTime && <p className="text-sm text-red-500">{formErrors.startTime}</p>}
+          {formErrors.startTime && <p className="text-sm text-red-500 font-medium">{formErrors.startTime}</p>}
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="end-time">End Time *</Label>
+        <div className="space-y-3">
+          <Label htmlFor="end-time" className="text-base font-semibold text-gray-900 dark:text-gray-100">End Time *</Label>
           <Input 
             id="end-time" 
             type="time" 
             value={formData.endTime}
             onChange={(e) => updateFormData('endTime', e.target.value)}
-            className={`${formErrors.endTime ? "border-red-500" : ""} [&::-webkit-calendar-picker-indicator]:dark:invert [&::-webkit-calendar-picker-indicator]:dark:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
+            className={`h-12 text-lg font-medium border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-4 focus:ring-primary/10 [&::-webkit-calendar-picker-indicator]:dark:invert [&::-webkit-calendar-picker-indicator]:dark:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer ${formErrors.endTime ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : ""}`}
           />
-          {formErrors.endTime && <p className="text-sm text-red-500">{formErrors.endTime}</p>}
+          {formErrors.endTime && <p className="text-sm text-red-500 font-medium">{formErrors.endTime}</p>}
         </div>
       </div>
 
-      <Separator />
+      <Separator className="bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent h-px" />
 
       {/* Enhanced Universal Fields */}
-      <div className="space-y-6">
-        <h3 className="text-lg font-semibold text-muted-foreground">Project & Teacher Information</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="space-y-8">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Project & Teacher Information</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <TagInput 
             label="Project Name & Category *"
             description="Enter project name and category for program aggregation"
@@ -229,44 +243,46 @@ const ObservationDetails = ({
             error={formErrors.projectName}
             required
           />
-          <div className="space-y-2">
-            <Label htmlFor="teacher-joining-date">Date of Teacher's Joining DIL</Label>
-            <p className="text-sm text-muted-foreground">For tenure context and expectation setting</p>
+          <div className="space-y-3">
+            <Label htmlFor="teacher-joining-date" className="text-base font-semibold text-gray-900 dark:text-gray-100">Date of Teacher's Joining DIL</Label>
+            <p className="text-sm text-gray-600 dark:text-gray-300">For tenure context and expectation setting</p>
             <Input 
               id="teacher-joining-date" 
               type="date" 
-              className="[&::-webkit-calendar-picker-indicator]:dark:invert [&::-webkit-calendar-picker-indicator]:dark:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+              className="h-12 text-lg font-medium border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-4 focus:ring-primary/10 [&::-webkit-calendar-picker-indicator]:dark:invert [&::-webkit-calendar-picker-indicator]:dark:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="teacher-qualification">Teacher Qualification</Label>
-            <p className="text-sm text-muted-foreground">Educational background and certifications</p>
+          <div className="space-y-3">
+            <Label htmlFor="teacher-qualification" className="text-base font-semibold text-gray-900 dark:text-gray-100">Teacher Qualification</Label>
+            <p className="text-sm text-gray-600 dark:text-gray-300">Educational background and certifications</p>
             <Select>
-              <SelectTrigger><SelectValue placeholder="Select qualification" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="bachelor">Bachelor's Degree</SelectItem>
-                <SelectItem value="master">Master's Degree</SelectItem>
-                <SelectItem value="diploma">Teaching Diploma</SelectItem>
-                <SelectItem value="certificate">Teaching Certificate</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
+              <SelectTrigger className="h-12 text-lg font-medium border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-4 focus:ring-primary/10">
+                <SelectValue placeholder="Select qualification" />
+              </SelectTrigger>
+              <SelectContent className="border-2 border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl bg-white dark:bg-gray-800">
+                <SelectItem value="bachelor" className="text-base py-3 hover:bg-primary/5 rounded-xl">Bachelor's Degree</SelectItem>
+                <SelectItem value="master" className="text-base py-3 hover:bg-primary/5 rounded-xl">Master's Degree</SelectItem>
+                <SelectItem value="diploma" className="text-base py-3 hover:bg-primary/5 rounded-xl">Teaching Diploma</SelectItem>
+                <SelectItem value="certificate" className="text-base py-3 hover:bg-primary/5 rounded-xl">Teaching Certificate</SelectItem>
+                <SelectItem value="other" className="text-base py-3 hover:bg-primary/5 rounded-xl">Other</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="lesson-code">Lesson Code *</Label>
-            <p className="text-sm text-muted-foreground">For lesson traceability and tracking</p>
+          <div className="space-y-3">
+            <Label htmlFor="lesson-code" className="text-base font-semibold text-gray-900 dark:text-gray-100">Lesson Code *</Label>
+            <p className="text-sm text-gray-600 dark:text-gray-300">For lesson traceability and tracking</p>
             <Input 
               id="lesson-code" 
               placeholder="e.g., ENG-G3-L15" 
               value={formData.lessonCode}
               onChange={(e) => updateFormData('lessonCode', e.target.value)}
-              className={formErrors.lessonCode ? "border-red-500" : ""}
+              className={`h-12 text-lg font-medium border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-4 focus:ring-primary/10 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${formErrors.lessonCode ? "border-red-500 focus:border-red-500 focus:ring-red-500/10" : ""}`}
             />
-            {formErrors.lessonCode && <p className="text-sm text-red-500">{formErrors.lessonCode}</p>}
+            {formErrors.lessonCode && <p className="text-sm text-red-500 font-medium">{formErrors.lessonCode}</p>}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <YesNoDropdown
             label="Scripted Lesson Plan Available?"
             description="Was a detailed lesson plan available for review?"
@@ -280,12 +296,16 @@ const ObservationDetails = ({
         </div>
       </div>
 
-      <Separator />
+      <Separator className="bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent h-px" />
 
-      <div className="space-y-2">
-        <Label htmlFor="general-notes">General Notes</Label>
-        <p className="text-sm text-muted-foreground">Any additional observations or context</p>
-        <Textarea id="general-notes" placeholder="Add any general observations or notes..." />
+      <div className="space-y-3">
+        <Label htmlFor="general-notes" className="text-base font-semibold text-gray-900 dark:text-gray-100">General Notes</Label>
+        <p className="text-sm text-gray-600 dark:text-gray-300">Any additional observations or context</p>
+        <Textarea 
+          id="general-notes" 
+          placeholder="Add any general observations or notes..." 
+          className="min-h-[120px] text-lg font-medium border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-4 focus:ring-primary/10 placeholder:text-gray-400 dark:placeholder:text-gray-500 resize-none"
+        />
       </div>
     </CardContent>
   </Card>
@@ -295,18 +315,24 @@ const TealObservations = ({ isVisible }: { isVisible: boolean }) => {
   if (!isVisible) return null;
 
   return (
-    <Card className="bg-blue-50/20 border-blue-200 dark:bg-blue-900/10 dark:border-blue-800/50">
-      <CardHeader>
+    <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-blue-50/30 via-blue-50/20 to-blue-50/10 dark:from-blue-900/20 dark:via-blue-900/10 dark:to-blue-900/5">
+      <CardHeader className="bg-gradient-to-r from-blue-500/5 via-blue-500/10 to-blue-500/5 border-b border-blue-200/30 dark:border-blue-700/30 pb-6">
         <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-gradient-to-br from-blue-500/10 to-blue-500/20 rounded-2xl flex items-center justify-center shadow-lg">
           <BookOpen className="w-6 h-6 text-blue-600" />
+          </div>
           <div>
-            <CardTitle className="text-xl">TEAL Observations</CardTitle>
-            <CardDescription>Technology Enhanced Active Learning specific assessments</CardDescription>
+            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 dark:from-blue-100 dark:via-blue-200 dark:to-blue-300 bg-clip-text text-transparent">
+              TEAL Observations
+            </CardTitle>
+            <CardDescription className="text-base text-blue-700 dark:text-blue-300 mt-1">
+              Technology Enhanced Active Learning specific assessments
+            </CardDescription>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <CardContent className="p-8 space-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <YesNoDropdown
             label="Video Content Used?"
             description="Was instructional video content utilized during the lesson?"
@@ -758,16 +784,18 @@ export const ObservationReports = () => {
 
       {/* TEAL Observations Toggle */}
       {observerRole && (
-        <Card className="bg-blue-50/20 border-blue-200 dark:bg-blue-900/10 dark:border-blue-800/50">
-          <CardContent className="p-4">
+        <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-blue-50/20 via-blue-50/10 to-blue-50/5 dark:from-blue-900/10 dark:via-blue-900/5 dark:to-blue-900/2">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500/10 to-blue-500/20 rounded-xl flex items-center justify-center shadow-md">
                 <Settings className="w-5 h-5 text-blue-600" />
+                </div>
                 <div>
-                  <Label htmlFor="teal-toggle" className="text-base font-medium">
+                  <Label htmlFor="teal-toggle" className="text-lg font-semibold text-blue-900 dark:text-blue-100">
                     Include TEAL Observations
                   </Label>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
                     Add Technology Enhanced Active Learning specific assessments
                   </p>
                 </div>
@@ -776,6 +804,7 @@ export const ObservationReports = () => {
                 id="teal-toggle"
                 checked={showTealObservations}
                 onCheckedChange={setShowTealObservations}
+                className="data-[state=checked]:bg-blue-600 data-[state=unchecked]:bg-gray-200"
               />
             </div>
           </CardContent>

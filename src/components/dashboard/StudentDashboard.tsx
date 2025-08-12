@@ -333,36 +333,44 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
 
       {/* Quick Actions & Upcoming Assignments - Enhanced Premium Redesign */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 rounded-3xl overflow-hidden">
-          <CardHeader className="pb-6">
+        {/* Upcoming Assignments - Enhanced Apple Style */}
+        <Card className="group relative bg-gradient-to-br from-white/80 via-white/60 to-gray-50/80 dark:from-gray-900/80 dark:via-gray-900/60 dark:to-gray-800/80 border border-gray-200/60 dark:border-gray-700/60 hover:border-gray-300/80 dark:hover:border-gray-600/80 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 rounded-3xl overflow-hidden backdrop-blur-sm">
+          {/* Subtle accent line */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          
+          <CardHeader className="pb-6 relative">
             <CardTitle className="flex items-center gap-3 text-xl font-bold text-gray-900 dark:text-gray-100">
-              <div className="w-8 h-8 bg-gradient-to-br from-orange-500/10 to-orange-500/20 rounded-xl flex items-center justify-center shadow-lg">
-                <Clock className="h-4 w-4 text-orange-500" />
+              <div className="w-10 h-10 bg-gradient-to-br from-orange-400/20 via-orange-500/30 to-orange-600/20 rounded-2xl flex items-center justify-center shadow-lg ring-1 ring-orange-500/20 group-hover:ring-orange-500/40 transition-all duration-300">
+                <Clock className="h-5 w-5 text-orange-600 dark:text-orange-500" />
               </div>
-              Upcoming Assignments
+              <span className="bg-gradient-to-r from-gray-900 to-gray-700 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent">
+                Upcoming Assignments
+              </span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {upcomingAssignments.length === 0 ? (
               <div className="text-center py-12">
-                <div className="w-16 h-16 bg-gradient-to-br from-green-500/10 to-green-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                  <Calendar className="h-8 w-8 text-green-500" />
+                <div className="w-20 h-20 bg-gradient-to-br from-green-400/20 via-green-500/30 to-green-600/20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl ring-1 ring-green-500/20 group-hover:ring-green-500/40 transition-all duration-300">
+                  <Calendar className="h-10 w-10 text-green-600 dark:text-green-500" />
                 </div>
-                <p className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">All Caught Up!</p>
-                <p className="text-sm text-muted-foreground">No upcoming assignments</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3 bg-gradient-to-r from-green-600 to-green-700 dark:from-green-400 dark:to-green-500 bg-clip-text text-transparent">
+                  All Caught Up!
+                </p>
+                <p className="text-sm text-muted-foreground font-medium">No upcoming assignments</p>
               </div>
             ) : (
               <div className="space-y-4">
                 {upcomingAssignments.map((assignment) => (
-                  <div key={assignment.assignment_id} className="group p-4 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-all duration-300">
+                  <div key={assignment.assignment_id} className="group/item p-5 border border-gray-200/60 dark:border-gray-700/60 rounded-2xl hover:bg-gradient-to-r hover:from-gray-50/80 hover:to-white/60 dark:hover:from-gray-800/80 dark:hover:to-gray-700/60 hover:border-gray-300/80 dark:hover:border-gray-600/80 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4">
-                        <div className="w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center shadow-lg">
-                          <FileText className="h-5 w-5 text-primary" />
+                        <div className="w-12 h-12 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 rounded-2xl flex items-center justify-center shadow-lg ring-1 ring-primary/20 group-hover/item:ring-primary/40 transition-all duration-300">
+                          <FileText className="h-6 w-6 text-primary" />
                         </div>
                         <div>
-                          <p className="font-semibold text-gray-900 dark:text-gray-100">{assignment.assignment_title}</p>
-                          <p className="text-sm text-muted-foreground">{assignment.course_title}</p>
+                          <p className="font-semibold text-gray-900 dark:text-gray-100 text-base">{assignment.assignment_title}</p>
+                          <p className="text-sm text-muted-foreground font-medium">{assignment.course_title}</p>
                         </div>
                       </div>
                       <div className="text-right">
@@ -377,7 +385,7 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
                             assignment.priority === 'Medium' ? 'secondary' :
                             'outline'
                           }
-                          className="mt-1"
+                          className="mt-2 font-medium shadow-sm"
                         >
                           {assignment.priority}
                         </Badge>
@@ -390,35 +398,44 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 rounded-3xl overflow-hidden">
-          <CardHeader className="pb-6">
+        {/* Recent Activity - Enhanced Apple Style */}
+        <Card className="group relative bg-gradient-to-br from-white/80 via-white/60 to-gray-50/80 dark:from-gray-900/80 dark:via-gray-900/60 dark:to-gray-800/80 border border-gray-200/60 dark:border-gray-700/60 hover:border-gray-300/80 dark:hover:border-gray-600/80 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-500 rounded-3xl overflow-hidden backdrop-blur-sm">
+          {/* Subtle accent line */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          
+          <CardHeader className="pb-6 relative">
             <CardTitle className="flex items-center gap-3 text-xl font-bold text-gray-900 dark:text-gray-100">
-              <div className="w-8 h-8 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-xl flex items-center justify-center shadow-lg">
-                <AlertCircle className="h-4 w-4 text-[#1582B4]" />
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-400/20 via-blue-500/30 to-blue-600/20 rounded-2xl flex items-center justify-center shadow-lg ring-1 ring-blue-500/20 group-hover:ring-blue-500/40 transition-all duration-300">
+                <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-500" />
               </div>
-              Recent Activity
+              <span className="bg-gradient-to-r from-gray-900 to-gray-700 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent">
+                Recent Activity
+              </span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {recentActivity.length === 0 ? (
               <div className="text-center py-12">
-                <div className="w-16 h-16 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                  <Users className="h-8 w-8 text-[#1582B4]" />
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-400/20 via-blue-500/30 to-blue-600/20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl ring-1 ring-blue-500/20 group-hover:ring-blue-500/40 transition-all duration-300">
+                  <Users className="h-10 w-10 text-blue-600 dark:text-blue-500" />
                 </div>
-                <p className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Start Learning</p>
-                <p className="text-sm text-muted-foreground">Begin your journey to see updates here</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3 bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-400 dark:to-blue-500 bg-clip-text text-transparent">
+                  Start Learning
+                </p>
+                <p className="text-sm text-muted-foreground font-medium">Begin your journey to see updates here</p>
               </div>
             ) : (
               <div className="space-y-4">
                 {recentActivity.map((activity, index) => (
-                  <div key={index} className="group p-4 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-all duration-300">
+                  <div key={index} className="group/item p-5 border border-gray-200/60 dark:border-gray-700/60 rounded-2xl hover:bg-gradient-to-r hover:from-gray-50/80 hover:to-white/60 dark:hover:from-gray-800/80 dark:hover:to-gray-700/60 hover:border-gray-300/80 dark:hover:border-gray-600/80 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                     <div className="flex items-start space-x-4">
                       <div className="flex-shrink-0 mt-1">
-                        <div className="w-3 h-3 bg-gradient-to-r from-primary to-primary/80 rounded-full" />
+                        <div className="w-4 h-4 bg-gradient-to-r from-primary via-primary/90 to-primary/80 rounded-full shadow-lg ring-2 ring-primary/20 group-hover/item:ring-primary/40 transition-all duration-300" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{activity.activity_description}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-relaxed">{activity.activity_description}</p>
+                        <p className="text-xs text-muted-foreground mt-2 font-medium flex items-center gap-2">
+                          <Calendar className="h-3 w-3" />
                           {new Date(activity.activity_time).toLocaleDateString()} • {activity.course_title}
                         </p>
                       </div>
