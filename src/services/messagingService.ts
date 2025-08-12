@@ -496,13 +496,12 @@ export const getStudentsForTeacherMessaging = async (teacherId: string, page: nu
   }
 };
 
-export const getTeachersForStudentMessaging = async (studentId: string, page: number = 1, limit: number = 10) => {
+export const getUsersForStudentMessaging = async (studentId: string, page: number = 1, limit: number = 10) => {
   const from = (page - 1) * limit;
   const to = from + limit - 1;
 
   try {
-    // Get teachers for this student by querying course_members
-    // First, get all courses where this student is a member
+    // Get courses where this student is enrolled
     const { data: studentCourses, error: studentCoursesError } = await supabase
       .from('course_members')
       .select('course_id')
@@ -521,42 +520,62 @@ export const getTeachersForStudentMessaging = async (studentId: string, page: nu
 
     const courseIds = studentCourses.map(sc => sc.course_id);
 
-    // Get unique teacher IDs from those courses
-    const { data: teacherIds, error: teacherIdsError } = await supabase
+    // Get all users (teachers and students) from those courses
+    const { data: courseMembers, error: courseMembersError } = await supabase
       .from('course_members')
-      .select('user_id')
+      .select('user_id, role')
       .in('course_id', courseIds)
-      .eq('role', 'teacher');
+      .neq('user_id', studentId); // Exclude the current student
 
-    if (teacherIdsError) throw teacherIdsError;
+    if (courseMembersError) throw courseMembersError;
 
-    // Get unique teacher profiles
-    let teachers: any[] = [];
-    if (teacherIds && teacherIds.length > 0) {
-      const uniqueTeacherIds = [...new Set(teacherIds.map(t => t.user_id))];
-      const { data: courseTeachers, error: courseError } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name, email, role')
-        .in('id', uniqueTeacherIds)
-        .eq('role', 'teacher');
-
-      if (courseError) throw courseError;
-      teachers = courseTeachers || [];
+    if (!courseMembers || courseMembers.length === 0) {
+      return {
+        users: [],
+        hasMore: false,
+        total: 0
+      };
     }
 
+    // Get unique user IDs
+    const uniqueUserIds = [...new Set(courseMembers.map(cm => cm.user_id))];
+
+    // Get user profiles
+    const { data: users, error: usersError } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name, email, role')
+      .in('id', uniqueUserIds);
+
+    if (usersError) throw usersError;
+
+    // Sort users: teachers first, then students, then by name
+    const sortedUsers = (users || []).sort((a, b) => {
+      // First sort by role (teachers first)
+      if (a.role === 'teacher' && b.role !== 'teacher') return -1;
+      if (a.role !== 'teacher' && b.role === 'teacher') return 1;
+      
+      // Then sort by name
+      const nameA = `${a.first_name || ''} ${a.last_name || ''}`.trim();
+      const nameB = `${b.first_name || ''} ${b.last_name || ''}`.trim();
+      return nameA.localeCompare(nameB);
+    });
+
     // Apply client-side pagination
-    const paginatedTeachers = teachers.slice(from, from + limit);
+    const paginatedUsers = sortedUsers.slice(from, from + limit);
 
     return {
-      users: paginatedTeachers,
-      hasMore: from + limit < teachers.length,
-      total: teachers.length
+      users: paginatedUsers,
+      hasMore: from + limit < sortedUsers.length,
+      total: sortedUsers.length
     };
   } catch (error) {
-    console.error('Error fetching teachers for student:', error);
+    console.error('Error fetching users for student:', error);
     throw error;
   }
 };
+
+// Keep the old function name for backward compatibility
+export const getTeachersForStudentMessaging = getUsersForStudentMessaging;
 
 // Search functions (keep existing)
 export const searchUsersForMessaging = async (searchTerm: string, page: number = 1, limit: number = 10) => {
@@ -698,13 +717,12 @@ export const searchStudentsForTeacherMessaging = async (teacherId: string, searc
   }
 };
 
-export const searchTeachersForStudentMessaging = async (studentId: string, searchTerm: string, page: number = 1, limit: number = 10) => {
+export const searchUsersForStudentMessaging = async (studentId: string, searchTerm: string, page: number = 1, limit: number = 10) => {
   const from = (page - 1) * limit;
   const to = from + limit - 1;
 
   try {
-    // Get teachers for this student by querying course_members
-    // First, get all courses where this student is a member
+    // Get courses where this student is enrolled
     const { data: studentCourses, error: studentCoursesError } = await supabase
       .from('course_members')
       .select('course_id')
@@ -723,54 +741,69 @@ export const searchTeachersForStudentMessaging = async (studentId: string, searc
 
     const courseIds = studentCourses.map(sc => sc.course_id);
 
-    // Get unique teacher IDs from those courses
-    const { data: teacherIds, error: teacherIdsError } = await supabase
+    // Get all users (teachers and students) from those courses
+    const { data: courseMembers, error: courseMembersError } = await supabase
       .from('course_members')
-      .select('user_id')
+      .select('user_id, role')
       .in('course_id', courseIds)
-      .eq('role', 'teacher');
+      .neq('user_id', studentId); // Exclude the current student
 
-    if (teacherIdsError) throw teacherIdsError;
+    if (courseMembersError) throw courseMembersError;
 
-    // Get unique teacher profiles
-    let teachers: any[] = [];
-    if (teacherIds && teacherIds.length > 0) {
-      const uniqueTeacherIds = [...new Set(teacherIds.map(t => t.user_id))];
-      const { data: courseTeachers, error: courseError } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name, email, role')
-        .in('id', uniqueTeacherIds)
-        .eq('role', 'teacher');
-
-      if (courseError) throw courseError;
-      teachers = courseTeachers || [];
+    if (!courseMembers || courseMembers.length === 0) {
+      return {
+        users: [],
+        hasMore: false,
+        total: 0
+      };
     }
 
+    // Get unique user IDs
+    const uniqueUserIds = [...new Set(courseMembers.map(cm => cm.user_id))];
+
+    // Get user profiles
+    const { data: users, error: usersError } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name, email, role')
+      .in('id', uniqueUserIds);
+
+    if (usersError) throw usersError;
+
     // Filter by search term
-    const filteredTeachers = teachers.filter(teacher => {
-      const fullName = `${teacher.first_name || ''} ${teacher.last_name || ''}`.trim();
+    const filteredUsers = (users || []).filter(user => {
+      const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
       return fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        teacher.email.toLowerCase().includes(searchTerm.toLowerCase());
+        user.email.toLowerCase().includes(searchTerm.toLowerCase());
     });
 
-    // Sort and paginate
-    const sortedTeachers = filteredTeachers.sort((a, b) => {
+    // Sort users: teachers first, then students, then by name
+    const sortedUsers = filteredUsers.sort((a, b) => {
+      // First sort by role (teachers first)
+      if (a.role === 'teacher' && b.role !== 'teacher') return -1;
+      if (a.role !== 'teacher' && b.role === 'teacher') return 1;
+      
+      // Then sort by name
       const nameA = `${a.first_name || ''} ${a.last_name || ''}`.trim();
       const nameB = `${b.first_name || ''} ${b.last_name || ''}`.trim();
       return nameA.localeCompare(nameB);
     });
-    const paginatedTeachers = sortedTeachers.slice(from, from + limit);
+
+    // Apply client-side pagination
+    const paginatedUsers = sortedUsers.slice(from, from + limit);
 
     return {
-      users: paginatedTeachers,
-      hasMore: from + limit < filteredTeachers.length,
-      total: filteredTeachers.length
+      users: paginatedUsers,
+      hasMore: from + limit < sortedUsers.length,
+      total: sortedUsers.length
     };
   } catch (error) {
-    console.error('Error searching teachers for student:', error);
+    console.error('Error searching users for student:', error);
     throw error;
   }
 };
+
+// Keep the old function name for backward compatibility
+export const searchTeachersForStudentMessaging = searchUsersForStudentMessaging;
 
 // New API functions for conversations and messages
 export const createConversation = async (data: CreateConversationRequest): Promise<Conversation> => {
