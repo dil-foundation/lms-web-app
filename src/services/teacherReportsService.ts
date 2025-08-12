@@ -138,14 +138,14 @@ export class TeacherReportsService {
 
       const { data: lessons, error: lessonsError } = await supabase
         .from('course_lessons')
-        .select('id, section_id, due_date')
+        .select('id, section_id')
         .in('section_id', sectionIds);
       if (lessonsError) throw lessonsError;
       const lessonIds = lessons.map(l => l.id);
 
       const { data: allContentItems, error: contentError } = await supabase
         .from('course_lesson_content')
-        .select('id, lesson_id, title, content_type')
+        .select('id, lesson_id, title, content_type, due_date')
         .in('lesson_id', lessonIds);
       if (contentError) throw contentError;
       
@@ -158,7 +158,7 @@ export class TeacherReportsService {
                 id: item.id,
                 title: item.title,
                 course_id: section?.course_id,
-                due_date: lesson?.due_date,
+                due_date: item.due_date,
             };
         });
 
@@ -422,7 +422,7 @@ private calculateStudentProgress(enrollments: any[], studentProfiles: any[], cou
       
       // Calculate average score
       const avgScore = assignmentSubmissions.length > 0
-        ? assignmentSubmissions.reduce((sum, s) => sum + (s.score || 0), 0) / assignmentSubmissions.length
+        ? assignmentSubmissions.reduce((sum, s) => sum + (s.grade || 0), 0) / assignmentSubmissions.length
         : 0;
       
       // Determine status

@@ -27,11 +27,11 @@ BEGIN
       clc.id as assignment_id,
       clc.title as assignment_title,
       c.title as course_title,
-      cl.due_date,
-      EXTRACT(DAY FROM cl.due_date - NOW())::INTEGER as days_remaining,
+      clc.due_date,
+      EXTRACT(DAY FROM clc.due_date - NOW())::INTEGER as days_remaining,
       CASE 
-        WHEN cl.due_date <= NOW() + INTERVAL '1 day' THEN 'High'
-        WHEN cl.due_date <= NOW() + INTERVAL '3 days' THEN 'Medium'
+        WHEN clc.due_date <= NOW() + INTERVAL '1 day' THEN 'High'
+        WHEN clc.due_date <= NOW() + INTERVAL '3 days' THEN 'Medium'
         ELSE 'Low'
       END as priority,
       CASE 
@@ -47,9 +47,9 @@ BEGIN
     JOIN student_courses sc ON cs.course_id = sc.course_id
     JOIN public.courses c ON sc.course_id = c.id
     WHERE clc.content_type = 'assignment'
-      AND cl.due_date IS NOT NULL
-      AND cl.due_date > NOW()
-      AND cl.due_date <= NOW() + (days_ahead || ' days')::INTERVAL
+      AND clc.due_date IS NOT NULL
+      AND clc.due_date > NOW()
+      AND clc.due_date <= NOW() + (days_ahead || ' days')::INTERVAL
   )
   SELECT ua.* FROM upcoming_assignments ua
   ORDER BY ua.due_date ASC;

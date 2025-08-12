@@ -45,14 +45,7 @@ export const AuthButton = () => {
   // Get user role from profile data (more reliable than user metadata)
   const userRole = (profile?.role || user?.user_metadata?.role || 'student').toLowerCase();
 
-  // Debug: Log role detection for troubleshooting
-  console.log('AuthButton - Role Detection:', {
-    profileRole: profile?.role,
-    metadataRole: user?.user_metadata?.role,
-    finalRole: userRole,
-    profile: profile,
-    user: user
-  });
+
 
   if (user) {
     return (
