@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { ContentLoader } from '@/components/ContentLoader';
+import { toast } from 'sonner';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -19,102 +21,108 @@ import {
   Activity,
   Star,
   Eye,
-  Shield
+  Shield,
+  RefreshCw
 } from 'lucide-react';
+import { 
+  reportsService, 
+  PracticeStagePerformanceData,
+  UserEngagementData,
+  TimeUsagePatternsData,
+  TopContentData,
+  AnalyticsOverview
+} from '@/services/reportsService';
+import { 
+  adminDashboardService,
+  KeyMetricsData
+} from '@/services/adminDashboardService';
 
 export const ReportsAnalytics = () => {
-  const [dateRange, setDateRange] = useState('30days');
+  const [dateRange, setDateRange] = useState('thismonth');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Mock data for Practice Stage Performance
-  const practiceStageData = [
-    { stage: 'Stage 0', performance: 85, users: 234, avgScore: 8.5, status: 'good' },
-    { stage: 'Stage 1', performance: 92, users: 189, avgScore: 9.2, status: 'excellent' },
-    { stage: 'Stage 2', performance: 78, users: 156, avgScore: 7.8, status: 'needs-attention' },
-    { stage: 'Stage 3', performance: 88, users: 143, avgScore: 8.8, status: 'good' },
-    { stage: 'Stage 4', performance: 95, users: 98, avgScore: 9.5, status: 'excellent' },
-    { stage: 'Stage 5', performance: 82, users: 67, avgScore: 8.2, status: 'good' },
-    { stage: 'Stage 6', performance: 75, users: 45, avgScore: 7.5, status: 'needs-attention' },
-  ];
+  // API data states
+  const [practiceStageData, setPracticeStageData] = useState<PracticeStagePerformanceData | null>(null);
+  const [userEngagementData, setUserEngagementData] = useState<UserEngagementData | null>(null);
+  const [timeUsageData, setTimeUsageData] = useState<TimeUsagePatternsData | null>(null);
+  const [topContentData, setTopContentData] = useState<TopContentData | null>(null);
+  const [analyticsOverview, setAnalyticsOverview] = useState<AnalyticsOverview | null>(null);
+  const [keyMetrics, setKeyMetrics] = useState<KeyMetricsData | null>(null);
 
-  // Mock data for Learn Feature Usage
-  const learnMetrics = {
-    totalUsers: 1247,
-    activeToday: 156,
-    avgSessionTime: 24, // minutes
-    completionRate: 73,
-    weeklyGrowth: 12
+  // Map UI time range values to API values
+  const mapTimeRangeToApiValue = (uiValue: string): string => {
+    const mapping: Record<string, string> = {
+      'today': 'today',
+      'thisweek': 'this_week',
+      'thismonth': 'this_month',
+      '7days': 'this_week',
+      '30days': 'this_month',
+      '3months': 'this_month', // fallback to month for 3 months
+      'alltime': 'all_time'
+    };
+    return mapping[uiValue] || 'all_time';
   };
 
-  // Mock data for User Engagement Overview
-  const engagementData = [
-    { name: 'Practice', value: 56, users: 561, color: '#3B82F6' },
-    { name: 'Learn', value: 44, users: 437, color: '#10B981' },
-  ];
+  // Fetch all reports data
+  const fetchReportsData = async (showRefreshIndicator = false, customTimeRange = dateRange) => {
+    try {
+      if (showRefreshIndicator) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
 
-  // Mock data for Time of Day Usage
-  const timeUsageData = [
-    { hour: '00:00', users: 12 },
-    { hour: '02:00', users: 8 },
-    { hour: '04:00', users: 5 },
-    { hour: '06:00', users: 15 },
-    { hour: '08:00', users: 45 },
-    { hour: '10:00', users: 78 },
-    { hour: '12:00', users: 92 },
-    { hour: '14:00', users: 87 },
-    { hour: '16:00', users: 134 },
-    { hour: '18:00', users: 156 },
-    { hour: '20:00', users: 143 },
-    { hour: '22:00', users: 89 },
-  ];
+      const apiTimeRange = mapTimeRangeToApiValue(customTimeRange);
+      
+      // Fetch reports data and key metrics in parallel
+      const [reportsData, dashboardData] = await Promise.all([
+        reportsService.getAllReportsData(apiTimeRange),
+        adminDashboardService.getAllOverviewData(apiTimeRange)
+      ]);
+      
+      setPracticeStageData(reportsData.practiceStagePerformance);
+      setUserEngagementData(reportsData.userEngagement);
+      setTimeUsageData(reportsData.timeUsagePatterns);
+      setTopContentData(reportsData.topContentAccessed);
+      setAnalyticsOverview(reportsData.analyticsOverview);
+      setKeyMetrics(dashboardData.keyMetrics);
 
-  // Mock data for Top Content
-  const topContent = [
-    { 
-      title: 'Basic Conversation Starters', 
-      type: 'Practice', 
-      stage: 'Stage 1', 
-      views: 1234, 
-      avgScore: 8.7,
-      icon: '💬',
-      trend: 'up'
-    },
-    { 
-      title: 'English Grammar Fundamentals', 
-      type: 'Learn', 
-      stage: 'Core Module', 
-      views: 987, 
-      avgScore: 9.2,
-      icon: '📚',
-      trend: 'up'
-    },
-    { 
-      title: 'Daily Routine Vocabulary', 
-      type: 'Practice', 
-      stage: 'Stage 2', 
-      views: 876, 
-      avgScore: 8.3,
-      icon: '🕐',
-      trend: 'stable'
-    },
-    { 
-      title: 'Pronunciation Practice', 
-      type: 'Learn', 
-      stage: 'Advanced Module', 
-      views: 654, 
-      avgScore: 8.9,
-      icon: '🗣️',
-      trend: 'up'
-    },
-    { 
-      title: 'Quick Response Practice', 
-      type: 'Practice', 
-      stage: 'Stage 3', 
-      views: 543, 
-      avgScore: 7.8,
-      icon: '⚡',
-      trend: 'down'
-    },
-  ];
+      if (showRefreshIndicator) {
+        toast.success('Reports data refreshed successfully');
+      }
+    } catch (err: any) {
+      console.error('Error fetching reports data:', err);
+      setError(err.message || 'Failed to load reports data');
+      toast.error('Failed to load reports data', {
+        description: err.message || 'Please try refreshing the page'
+      });
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  // Load data on component mount
+  useEffect(() => {
+    fetchReportsData();
+  }, []);
+
+  // Handle time range change and fetch new data
+  const handleTimeRangeChange = (newTimeRange: string) => {
+    setDateRange(newTimeRange);
+    console.log('Time range changed to:', newTimeRange);
+    fetchReportsData(true, newTimeRange);
+  };
+
+  // Handle manual refresh
+  const handleRefresh = () => {
+    fetchReportsData(true, dateRange);
+  };
+
+
 
   const getPerformanceColor = (status: string) => {
     switch (status) {
@@ -157,35 +165,67 @@ export const ReportsAnalytics = () => {
             
             {/* Filter Controls */}
             <div className="flex items-center gap-3">
-              <Select value={dateRange} onValueChange={setDateRange}>
+              <Select value={dateRange} onValueChange={handleTimeRangeChange}>
                 <SelectTrigger className="w-full sm:w-48">
                   <SelectValue placeholder="Select time range" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="7days">Last 7 days</SelectItem>
-                  <SelectItem value="30days">Last 30 days</SelectItem>
-                  <SelectItem value="3months">Last 3 months</SelectItem>
-                  <SelectItem value="6months">Last 6 months</SelectItem>
-                  <SelectItem value="1year">Last year</SelectItem>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="thisweek">This week</SelectItem>
+                  <SelectItem value="thismonth">This month</SelectItem>
                   <SelectItem value="alltime">All time</SelectItem>
                 </SelectContent>
               </Select>
+              
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="p-2 bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors disabled:opacity-50"
+                title="Refresh reports data"
+              >
+                <RefreshCw className={`w-4 h-4 text-primary ${refreshing ? 'animate-spin' : ''}`} />
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Learn Feature Usage Metrics */}
+      {/* Show loading state */}
+      {loading && !practiceStageData && (
+        <div className="space-y-6">
+          <ContentLoader message="Loading Reports & Analytics..." />
+        </div>
+      )}
+
+      {/* Show error state */}
+      {error && !practiceStageData && (
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Shield className="w-8 h-8 text-red-600" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Failed to Load Reports</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={() => fetchReportsData()}
+            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      )}
+
+      {/* Key Metrics from Admin Dashboard */}
+      {keyMetrics && (
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Learn Users</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{learnMetrics.totalUsers.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{keyMetrics.totalUsers?.toLocaleString() || '0'}</div>
             <p className="text-xs text-muted-foreground">
-              +{learnMetrics.weeklyGrowth}% from last week
+              {keyMetrics.students || 0} students, {keyMetrics.teachers || 0} teachers
             </p>
           </CardContent>
         </Card>
@@ -196,41 +236,43 @@ export const ReportsAnalytics = () => {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{learnMetrics.activeToday}</div>
+            <div className="text-2xl font-bold">{keyMetrics.activeToday?.toLocaleString() || '0'}</div>
             <p className="text-xs text-muted-foreground">
-              Currently learning
+              Users active today
             </p>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Session Time</CardTitle>
+            <CardTitle className="text-sm font-medium">Students</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{learnMetrics.avgSessionTime}m</div>
+            <div className="text-2xl font-bold">{keyMetrics.students?.toLocaleString() || '0'}</div>
             <p className="text-xs text-muted-foreground">
-              Per learning session
+              {Math.round(keyMetrics.studentsPercentage || 0)}% of total users
             </p>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
+            <CardTitle className="text-sm font-medium">Teachers</CardTitle>
             <Award className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{learnMetrics.completionRate}%</div>
+            <div className="text-2xl font-bold">{keyMetrics.teachers?.toLocaleString() || '0'}</div>
             <p className="text-xs text-muted-foreground">
-              Module completion
+              {Math.round(keyMetrics.teachersPercentage || 0)}% of total users
             </p>
           </CardContent>
         </Card>
       </div>
+      )}
 
       {/* Practice Stage Performance & User Engagement */}
+      {(practiceStageData || userEngagementData) && (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
@@ -296,7 +338,7 @@ export const ReportsAnalytics = () => {
                 `}
               </style>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={practiceStageData}>
+                <BarChart data={practiceStageData?.stages || []}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="stage" />
                   <YAxis />
@@ -324,7 +366,7 @@ export const ReportsAnalytics = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={engagementData}
+                    data={userEngagementData?.engagementTypes || []}
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
@@ -332,7 +374,7 @@ export const ReportsAnalytics = () => {
                     paddingAngle={5}
                     dataKey="value"
                   >
-                    {engagementData.map((entry, index) => (
+                    {(userEngagementData?.engagementTypes || []).map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
@@ -341,7 +383,7 @@ export const ReportsAnalytics = () => {
               </ResponsiveContainer>
             </div>
             <div className="space-y-2">
-              {engagementData.map((item, index) => (
+              {(userEngagementData?.engagementTypes || []).map((item, index) => (
                 <div key={index} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div 
@@ -352,7 +394,7 @@ export const ReportsAnalytics = () => {
                   </div>
                   <div className="text-right">
                     <div className="text-sm font-bold">{item.value}%</div>
-                    <div className="text-xs text-muted-foreground">{item.users} users</div>
+                    <div className="text-xs text-muted-foreground">{item.users.toLocaleString()} users</div>
                   </div>
                 </div>
               ))}
@@ -360,8 +402,10 @@ export const ReportsAnalytics = () => {
           </CardContent>
         </Card>
       </div>
+      )}
 
       {/* Time of Day Usage */}
+      {timeUsageData && (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -372,7 +416,7 @@ export const ReportsAnalytics = () => {
         <CardContent>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={timeUsageData}>
+              <LineChart data={timeUsageData?.patterns || []}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="hour" />
                 <YAxis />
@@ -389,8 +433,10 @@ export const ReportsAnalytics = () => {
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* Top Content Accessed */}
+      {topContentData && (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -400,7 +446,7 @@ export const ReportsAnalytics = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {topContent.map((content, index) => (
+            {(topContentData?.content || []).map((content, index) => (
               <div key={index} className="flex items-center justify-between p-4 rounded-lg border hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                 <div className="flex items-center gap-4">
                   <div className="text-2xl">{content.icon}</div>
@@ -419,21 +465,20 @@ export const ReportsAnalytics = () => {
                     <div>
                       <div className="flex items-center gap-1">
                         <Eye className="h-3 w-3" />
-                        <span className="text-sm font-medium">{content.views.toLocaleString()}</span>
+                        <span className="text-sm font-medium">{content.accessCount.toLocaleString()}</span>
                       </div>
                       <div className="text-xs text-muted-foreground">views</div>
                     </div>
                     <div>
                       <div className="flex items-center gap-1">
                         <Star className="h-3 w-3" />
-                        <span className="text-sm font-medium">{content.avgScore}</span>
+                        <span className="text-sm font-medium">{content.avgRating.toFixed(1)}</span>
                       </div>
                       <div className="text-xs text-muted-foreground">avg score</div>
                     </div>
-                    <div className="flex items-center">
-                      {content.trend === 'up' && <TrendingUp className="h-4 w-4 text-green-500" />}
-                      {content.trend === 'stable' && <div className="h-4 w-4 bg-yellow-500 rounded-full" />}
-                      {content.trend === 'down' && <TrendingUp className="h-4 w-4 text-red-500 rotate-180" />}
+                    <div>
+                      <div className="text-sm font-medium">{Math.round(content.completionRate)}%</div>
+                      <div className="text-xs text-muted-foreground">completion</div>
                     </div>
                   </div>
                 </div>
@@ -442,6 +487,7 @@ export const ReportsAnalytics = () => {
           </div>
         </CardContent>
       </Card>
+      )}
     </div>
   );
 };
