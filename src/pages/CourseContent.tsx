@@ -33,7 +33,8 @@ import {
   XCircle,
   FileText,
   Timer,
-  Sparkles
+  Sparkles,
+  Calendar
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
@@ -127,6 +128,14 @@ const CourseNavigationSidebar = ({ course, openSectionIds, setOpenSectionIds, cu
                                                         )}>
                                                             {item.title}
                                                         </span>
+                                                        {(item.content_type === 'assignment' || item.content_type === 'quiz') && item.due_date && (
+                                                            <div className="flex items-center gap-1 mt-1">
+                                                                <Calendar className="h-3 w-3 text-yellow-500" />
+                                                                <span className="text-xs text-yellow-600 dark:text-yellow-400 truncate">
+                                                                    {new Date(item.due_date).toLocaleDateString()}
+                                                                </span>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                     <Badge variant={getBadgeVariant(item.content_type)} className="capitalize text-xs h-6 px-2.5 flex-shrink-0">
                                                         {item.content_type === 'attachment' ? 'File' : item.content_type}
@@ -567,6 +576,13 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
             <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
               <CardHeader>
                 <CardTitle className="text-gray-900 dark:text-gray-100">Assignment Details</CardTitle>
+                {currentContentItem.due_date && (
+                  <div className="flex items-center gap-2 text-sm text-yellow-600 dark:text-yellow-400">
+                    <Calendar className="h-4 w-4" />
+                    <span className="font-medium">Due:</span>
+                    <span>{new Date(currentContentItem.due_date).toLocaleString()}</span>
+                  </div>
+                )}
               </CardHeader>
               <CardContent>
                 <div className="prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: mainContentHtml }} />
@@ -611,6 +627,13 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
           <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
             <CardHeader>
               <CardTitle className="text-gray-900 dark:text-gray-100">Knowledge Check</CardTitle>
+              {currentContentItem.due_date && (
+                <div className="flex items-center gap-2 text-sm text-yellow-600 dark:text-yellow-400">
+                  <Calendar className="h-4 w-4" />
+                  <span className="font-medium">Due:</span>
+                  <span>{new Date(currentContentItem.due_date).toLocaleString()}</span>
+                </div>
+              )}
             </CardHeader>
             <CardContent className="space-y-6">
               {questions.map((q: any, index: number) => {

@@ -330,7 +330,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       
       // Use the dynamic SQL function
       const { data, error } = await supabase.rpc('get_course_performance_data', {
-        teacher_id: userProfile.id
+        p_teacher_id: userProfile.id
       });
 
 

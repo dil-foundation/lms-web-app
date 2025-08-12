@@ -1,6 +1,6 @@
 DROP FUNCTION IF EXISTS public.get_course_performance_data(uuid);
 
-CREATE OR REPLACE FUNCTION public.get_course_performance_data(teacher_id uuid)
+CREATE OR REPLACE FUNCTION public.get_course_performance_data(p_teacher_id uuid)
 RETURNS TABLE(course_title text, enrolled_students integer, completed_students integer, in_progress_students integer, avg_rating numeric)
 LANGUAGE plpgsql
 AS $$
@@ -10,7 +10,7 @@ BEGIN
     -- Find all courses taught by the given teacher
     SELECT DISTINCT cm.course_id
     FROM course_members cm
-    WHERE cm.user_id = teacher_id AND cm.role = 'teacher'
+    WHERE cm.user_id = p_teacher_id AND cm.role = 'teacher'
   ),
   course_stats AS (
     SELECT

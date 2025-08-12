@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -59,10 +60,10 @@ import { ContentLoader } from '@/components/ContentLoader';
 import { CourseOverview } from './CourseOverview';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
+import { TimePicker } from "@/components/ui/time-picker";
+import { DatePicker } from "@/components/ui/date-picker";
 
 // #region Interfaces
 interface CourseSection {
@@ -77,7 +78,6 @@ interface CourseLesson {
   id: string;
   title: string;
   overview?: string;
-  due_date?: string;
   isCollapsed?: boolean;
   contentItems: LessonContentItem[];
 }
@@ -88,6 +88,7 @@ interface LessonContentItem {
   content_type: 'video' | 'attachment' | 'assignment' | 'quiz';
   content_path?: string; // For video, attachment, assignment HTML
   quiz?: QuizData; // For quiz type
+  due_date?: string; // Due date for assignments and quizzes
 }
 
 interface QuizData {
@@ -360,7 +361,7 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
       if (!isMounted) return;
 
       if (error) {
-        console.error(`Error creating signed URL for ${type}:`, error);
+
         toast.error(`Could not load ${type} preview.`);
       } else if (data) {
         if (type === 'video') {
@@ -572,20 +573,122 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
         );
       case 'assignment':
         return (
-          <RichTextEditor
-            value={item.content_path || ''}
-            onChange={(content) => onUpdate(lessonId, item.id, { content_path: content })}
-            placeholder="Write the assignment details here..."
-            onImageUpload={handleAssignmentImageUpload}
-            onFileUpload={handleAssignmentFileUpload}
-          />
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor={`assignment-title-${item.id}`}>Assignment Title</Label>
+              <Input
+                id={`assignment-title-${item.id}`}
+                value={item.title}
+                onChange={(e) => onUpdate(lessonId, item.id, { title: e.target.value })}
+                placeholder="Enter assignment title"
+              />
+            </div>
+            <div>
+              <Label htmlFor={`assignment-due-date-${item.id}`}>Due Date</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="relative">
+                  <Label htmlFor={`assignment-date-${item.id}`}>Date</Label>
+                  <DatePicker
+                    value={item.due_date ? new Date(item.due_date) : undefined}
+                    onChange={(date) => {
+                      if (date) {
+                        const currentTime = item.due_date ? new Date(item.due_date) : new Date();
+                        const newDateTime = new Date(date);
+                        newDateTime.setHours(currentTime.getHours(), currentTime.getMinutes(), 0, 0);
+                        onUpdate(lessonId, item.id, { due_date: newDateTime.toISOString() });
+                      } else {
+                        onUpdate(lessonId, item.id, { due_date: undefined });
+                      }
+                    }}
+                    placeholder="Select date"
+                  />
+                </div>
+                <div className="relative">
+                  <Label htmlFor={`assignment-time-${item.id}`}>Time</Label>
+                  <TimePicker
+                    value={item.due_date ? new Date(item.due_date).toTimeString().slice(0, 5) : ''}
+                    onChange={(time) => {
+                      if (item.due_date && time) {
+                        const [hours, minutes] = time.split(':');
+                        const newDateTime = new Date(item.due_date);
+                        newDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+                        onUpdate(lessonId, item.id, { due_date: newDateTime.toISOString() });
+                      }
+                    }}
+                    placeholder="Select time"
+                  />
+                </div>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor={`assignment-content-${item.id}`}>Assignment Details</Label>
+              <RichTextEditor
+                value={item.content_path || ''}
+                onChange={(content) => onUpdate(lessonId, item.id, { content_path: content })}
+                placeholder="Write the assignment details here..."
+                onImageUpload={handleAssignmentImageUpload}
+                onFileUpload={handleAssignmentFileUpload}
+              />
+            </div>
+          </div>
         );
       case 'quiz':
         return (
-          <QuizBuilder
-            quiz={item.quiz || { id: '', questions: [] }}
-            onQuizChange={(quiz) => onUpdate(lessonId, item.id, { quiz })}
-          />
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor={`quiz-title-${item.id}`}>Quiz Title</Label>
+              <Input
+                id={`quiz-title-${item.id}`}
+                value={item.title}
+                onChange={(e) => onUpdate(lessonId, item.id, { title: e.target.value })}
+                placeholder="Enter quiz title"
+              />
+            </div>
+            <div>
+              <Label htmlFor={`quiz-due-date-${item.id}`}>Due Date</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="relative">
+                  <Label htmlFor={`quiz-date-${item.id}`}>Date</Label>
+                  <DatePicker
+                    value={item.due_date ? new Date(item.due_date) : undefined}
+                    onChange={(date) => {
+                      if (date) {
+                        const currentTime = item.due_date ? new Date(item.due_date) : new Date();
+                        const newDateTime = new Date(date);
+                        newDateTime.setHours(currentTime.getHours(), currentTime.getMinutes(), 0, 0);
+                        onUpdate(lessonId, item.id, { due_date: newDateTime.toISOString() });
+                      } else {
+                        onUpdate(lessonId, item.id, { due_date: undefined });
+                      }
+                    }}
+                    placeholder="Select date"
+                  />
+                </div>
+                <div className="relative">
+                  <Label htmlFor={`quiz-time-${item.id}`}>Time</Label>
+                  <TimePicker
+                    value={item.due_date ? new Date(item.due_date).toTimeString().slice(0, 5) : ''}
+                    onChange={(time) => {
+                      if (item.due_date && time) {
+                        const [hours, minutes] = time.split(':');
+                        const newDateTime = new Date(item.due_date);
+                        newDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+                        onUpdate(lessonId, item.id, { due_date: newDateTime.toISOString() });
+                      }
+                    }}
+                    placeholder="Select time"
+                  />
+                </div>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor={`quiz-builder-${item.id}`}>Quiz Questions</Label>
+              <QuizBuilder
+                quiz={item.quiz || { id: '', questions: [] }}
+                onQuizChange={(quiz) => onUpdate(lessonId, item.id, { quiz })}
+              />
+            </div>
+          </div>
         );
       default:
         return null;
@@ -654,8 +757,20 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
         </div>
       </div>
       
-      <div className="w-full bg-white/40 dark:bg-black/30 rounded-2xl p-6 border-2 border-current/10 shadow-sm">
-        {renderContentEditor()}
+      <div className="w-full bg-white/40 dark:bg-black/30 rounded-2xl p-6 border-2 border-current/10 shadow-sm relative">
+        {/* Show due date for assignments and quizzes */}
+        {(item.content_type === 'assignment' || item.content_type === 'quiz') && item.due_date && (
+          <div className="mb-6 p-3 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl shadow-sm">
+            <div className="flex items-center gap-2 text-sm text-yellow-700 dark:text-yellow-300">
+              <CalendarIcon className="h-4 w-4 flex-shrink-0" />
+              <span className="font-medium">Due:</span>
+              <span className="font-semibold">{format(new Date(item.due_date), "PPP 'at' p")}</span>
+            </div>
+          </div>
+        )}
+        <div className="space-y-6">
+          {renderContentEditor()}
+        </div>
       </div>
 
       <AlertDialog open={isConfirmingChange} onOpenChange={setIsConfirmingChange}>
@@ -1083,7 +1198,7 @@ const CourseBuilder = () => {
                 .createSignedUrl(avatarPath, 3600); // 1-hour expiry
                 
             if (error) {
-                console.error("Error creating signed URL for avatar:", error);
+        
                 return undefined;
             }
             return data.signedUrl;
@@ -1152,13 +1267,13 @@ const CourseBuilder = () => {
 
           if (error) {
             toast.error("Failed to load course data.");
-            console.error("Error loading course data:", error);
+    
             navigate('/dashboard/courses');
             return;
           }
           
                     if (data) {
-            console.log('[CourseBuilder] Fetched Course Data:', data);
+    
             if (data.review_feedback) {
               setPersistentFeedback(data.review_feedback);
             }
@@ -1217,6 +1332,7 @@ const CourseBuilder = () => {
                           title: ci.title,
                           content_type: ci.content_type,
                           content_path: ci.content_path,
+                          due_date: ci.due_date,
                           quiz: quizData
                         };
                       })
@@ -1232,7 +1348,7 @@ const CourseBuilder = () => {
         toast.error("Failed to initialize course builder.", {
           description: error.message,
         });
-        console.error("Initialization error:", error);
+
         navigate('/dashboard/courses');
       } finally {
         setIsLoadingPage(false);
@@ -1273,7 +1389,6 @@ const CourseBuilder = () => {
 
     } catch (error: any) {
       toast.error('Image upload failed.', { description: error.message });
-      console.error(error);
     } finally {
       setIsUploading(false);
     }
@@ -1337,23 +1452,24 @@ const CourseBuilder = () => {
       for (const [lessonIndex, lesson] of section.lessons.entries()) {
         const { data: savedLesson, error: lessonError } = await supabase
             .from('course_lessons')
-            .insert({ section_id: savedSection.id, title: lesson.title, overview: lesson.overview, position: lessonIndex, due_date: lesson.due_date })
+            .insert({ section_id: savedSection.id, title: lesson.title, overview: lesson.overview, position: lessonIndex })
             .select('id').single();
         
         if (lessonError) throw lessonError;
         if (!savedLesson) throw new Error("Failed to save a course lesson.");
 
         for (const [contentIndex, item] of lesson.contentItems.entries()) {
-            const { data: savedContent, error: contentError } = await supabase
-                .from('course_lesson_content')
-                .insert({
-                    lesson_id: savedLesson.id,
-                    title: item.title,
-                    content_type: item.content_type,
-                    content_path: item.content_path,
-                    position: contentIndex,
-                })
-                .select('id').single();
+                            const { data: savedContent, error: contentError } = await supabase
+                    .from('course_lesson_content')
+                    .insert({
+                        lesson_id: savedLesson.id,
+                        title: item.title,
+                        content_type: item.content_type,
+                        content_path: item.content_path,
+                        position: contentIndex,
+                        due_date: item.due_date,
+                    })
+                    .select('id').single();
 
             if (contentError) throw contentError;
             if (!savedContent) throw new Error("Failed to save a lesson content item.");
@@ -1463,7 +1579,7 @@ const CourseBuilder = () => {
         }
     } catch (error: any) {
         toast.error('Failed to create a new draft.', { description: error.message });
-        console.error(error);
+
     } finally {
         setSaveAction(null);
     }
@@ -1490,7 +1606,6 @@ const CourseBuilder = () => {
       }
     } catch (error: any) {
       toast.error('Failed to save draft.', { description: error.message });
-      console.error(error);
     } finally {
       setSaveAction(null);
     }
@@ -1536,7 +1651,6 @@ const CourseBuilder = () => {
       }
     } catch (error: any) {
       toast.error('Failed to publish course.', { description: error.message });
-      console.error(error);
     } finally {
       setSaveAction(null);
     }
@@ -1557,7 +1671,6 @@ const CourseBuilder = () => {
       setCourseData(prev => ({...prev, status: 'Draft'}));
     } catch (error: any) {
       toast.error('Failed to unpublish course.', { description: error.message });
-      console.error(error);
     } finally {
       setSaveAction(null);
     }
@@ -1603,13 +1716,12 @@ const CourseBuilder = () => {
       const { error } = await supabase.rpc('submit_for_review', { course_id_in: savedId });
       if (error) throw error;
       
-      console.log('[CourseBuilder] Submitting for review. Clearing persistent feedback.');
+      
       toast.success("Course submitted for review successfully!");
       // Update the local state to reflect the new status and ID if it was a new course
       setCourseData(prev => ({ ...prev, id: savedId, status: 'Under Review' }));
     } catch (error: any) {
       toast.error('Failed to submit for review.', { description: error.message });
-      console.error(error);
     } finally {
       setSaveAction(null);
     }
@@ -1622,13 +1734,12 @@ const CourseBuilder = () => {
             const { error } = await supabase.rpc('approve_submission', { course_id_in: courseData.id });
       if (error) throw error;
       
-      console.log('[CourseBuilder] Approving submission. Clearing persistent feedback.');
+      
       setPersistentFeedback(null);
       toast.success("Course approved and published successfully!");
       navigate('/dashboard/courses');
     } catch (error: any) {
       toast.error('Failed to approve submission.', { description: error.message });
-      console.error(error);
     } finally {
       setSaveAction(null);
     }
@@ -1647,7 +1758,7 @@ const CourseBuilder = () => {
       });
       if (error) throw error;
       
-      console.log('[CourseBuilder] Rejecting submission. Setting persistent feedback:', rejectionFeedback);
+      
             setPersistentFeedback(rejectionFeedback);
       toast.success("Submission rejected.");
       setCourseData(prev => ({ ...prev, status: 'Rejected', review_feedback: rejectionFeedback }));
@@ -1655,7 +1766,6 @@ const CourseBuilder = () => {
       setRejectionFeedback("");
     } catch (error: any) {
       toast.error('Failed to reject submission.', { description: error.message });
-      console.error(error);
     } finally {
       setSaveAction(null);
     }
@@ -2003,7 +2113,7 @@ const CourseBuilder = () => {
     );
   }
 
-  console.log('[CourseBuilder] Rendering Feedback Alert. Role:', currentUserRole, 'Feedback:', persistentFeedback);
+  
 
   return (
     <div className="min-h-screen bg-background w-full">
@@ -3086,13 +3196,7 @@ const CourseBuilder = () => {
                           Enrolled Students
                         </h4>
                         <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 px-3 text-xs border-green-300 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg"
-                          >
-                            Export List
-                          </Button>
+
                           <Button
                             variant="ghost"
                             size="sm"

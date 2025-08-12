@@ -34,7 +34,7 @@ BEGIN
       tc.title AS course,
       tc.id AS course_id,
       clc.content_type AS type,
-      cl.due_date
+      clc.due_date
     FROM course_lesson_content clc
     JOIN course_lessons cl ON clc.lesson_id = cl.id
     JOIN course_sections cs ON cl.section_id = cs.id
