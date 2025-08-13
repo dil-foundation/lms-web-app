@@ -2581,26 +2581,82 @@ const CourseBuilder = () => {
   const handleDeleteConfirmed = async () => {
     if (!courseData.id) return;
 
-    // Only delete assets if the course is not a draft of an existing published course.
-    // If published_course_id exists, it means this draft shares assets with a published version.
-    if (imageDbPath && !courseData.published_course_id) {
-        const { error: storageError } = await supabase.storage.from('dil-lms').remove([imageDbPath]);
-        if (storageError) {
-            toast.error("Could not delete course image. The course record was not deleted.", { description: storageError.message });
-            setIsDeleteDialogOpen(false);
-            return;
-        }
-    }
+    try {
+      // First, check if the course can be safely deleted
+      const { data: safetyCheck, error: safetyError } = await supabase.rpc('can_delete_course', {
+        course_id_to_check: courseData.id
+      });
 
-    const { error } = await supabase.from('courses').delete().eq('id', courseData.id);
-    
-    if (error) {
-      toast.error("Failed to delete course.", { description: error.message });
-    } else {
+      if (safetyError) {
+        console.warn('Safety check failed, proceeding with deletion:', safetyError);
+      } else if (safetyCheck && safetyCheck.length > 0) {
+        const checkResult = safetyCheck[0];
+        if (!checkResult.can_delete) {
+          // Show warning but allow deletion
+          console.warn('Course has student data:', {
+            reason: checkResult.reason,
+            studentCount: Number(checkResult.student_count),
+            progressCount: Number(checkResult.progress_count),
+            submissionCount: Number(checkResult.submission_count)
+          });
+        }
+      }
+
+      // Only delete assets if the course is not a draft of an existing published course.
+      // If published_course_id exists, it means this draft shares assets with a published version.
+      if (imageDbPath && !courseData.published_course_id) {
+          const { error: storageError } = await supabase.storage.from('dil-lms').remove([imageDbPath]);
+          if (storageError) {
+              toast.error("Could not delete course image. The course record was not deleted.", { description: storageError.message });
+              setIsDeleteDialogOpen(false);
+              return;
+          }
+      }
+
+      // Try the safe delete function first
+      let deleteSuccess = false;
+      try {
+        const { data: deleteResult, error } = await supabase.rpc('safe_delete_course', {
+          course_id_to_delete: courseData.id
+        });
+        
+        if (error) {
+          console.warn('Safe delete failed, trying direct deletion:', error);
+          throw error; // This will trigger the fallback
+        }
+        
+        deleteSuccess = true;
+      } catch (deleteError) {
+        // If the safe delete function fails, try the direct approach as fallback
+        console.warn('Safe delete failed, trying direct deletion:', deleteError);
+        
+        try {
+          const { error: directError } = await supabase.from('courses').delete().eq('id', courseData.id);
+          
+          if (directError) {
+            toast.error("Failed to delete course.", { description: directError.message });
+            return;
+          }
+          
+          deleteSuccess = true;
+        } catch (directDeleteError: any) {
+          toast.error("Failed to delete course.", { description: directDeleteError.message });
+          return;
+        }
+      }
+      
+      if (!deleteSuccess) {
+        toast.error("Failed to delete course.");
+        return;
+      }
+      
       toast.success(`Course "${courseData.title}" deleted successfully.`);
       navigate('/dashboard/courses');
+    } catch (error: any) {
+      toast.error("Failed to delete course.", { description: error.message });
+    } finally {
+      setIsDeleteDialogOpen(false);
     }
-    setIsDeleteDialogOpen(false);
   };
 
   const handleSubmitForReview = async () => {
