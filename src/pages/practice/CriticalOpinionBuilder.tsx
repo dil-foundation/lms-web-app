@@ -289,9 +289,6 @@ export default function CriticalOpinionBuilder() {
           {/* Topic Selection */}
           <div className="space-y-8">
             <div className="text-center">
-              <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                Choose Your Opinion Topic
-              </h2>
               <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
                 Click on a topic to start building your opinion immediately with our AI-powered guidance system
               </p>
@@ -302,7 +299,7 @@ export default function CriticalOpinionBuilder() {
                 {topics.map((topic) => (
                   <Card 
                     key={topic.id}
-                    className="group cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 hover:scale-105 border-2 border-transparent hover:border-primary/20 bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900/50 dark:to-gray-800/50 rounded-2xl overflow-hidden"
+                    className="group cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 hover:scale-105 border-2 border-transparent hover:border-primary/20 bg-gradient-to-br from-card to-card/50 dark:bg-card rounded-2xl overflow-hidden"
                     onClick={() => handleTopicClick(topic)}
                   >
                     <CardContent className="p-6">

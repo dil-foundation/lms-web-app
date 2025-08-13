@@ -548,12 +548,12 @@ export const DiscussionViewPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+    <div className="min-h-screen bg-background">
       <div className="p-4 sm:p-6 lg:p-8 space-y-8">
         {/* Premium Header Navigation */}
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-          <div className="relative">
+          <div className="relative p-6">
             <Link
               to="/dashboard/discussion"
               className="inline-flex items-center gap-3 px-4 py-2 rounded-xl bg-background/80 backdrop-blur-sm border border-border/50 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-background/90 transition-all duration-300 shadow-sm hover:shadow-md"

@@ -92,7 +92,7 @@ const AssignmentDetailModal = memo(({
   if (!assignment) return null;
 
   return (
-    <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm">
+    <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm">
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5"></div>
         <div className="relative p-6 border-b border-gray-200/50 dark:border-gray-700/50">
@@ -117,7 +117,7 @@ const AssignmentDetailModal = memo(({
       <div className="flex-1 overflow-y-auto">
         <div className="p-8 space-y-8">
           
-          <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
+          <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-3 text-xl text-gray-900 dark:text-gray-100">
                 <BookOpen className="w-6 h-6 text-primary" />
@@ -156,7 +156,7 @@ const AssignmentDetailModal = memo(({
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
+          <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-3 text-xl text-gray-900 dark:text-gray-100">
                 <FileText className="w-6 h-6 text-primary" />
@@ -169,7 +169,7 @@ const AssignmentDetailModal = memo(({
           </Card>
 
           {assignment.status === 'graded' && (
-            <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
+            <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center gap-3 text-xl text-gray-900 dark:text-gray-100">
                   <GraduationCap className="w-6 h-6 text-primary" />
@@ -206,7 +206,7 @@ const AssignmentDetailModal = memo(({
           )}
 
           {assignment.submittedAt && (
-            <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
+            <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center gap-3 text-xl text-gray-900 dark:text-gray-100">
                   <CheckCircle className="w-6 h-6 text-primary" />
@@ -223,7 +223,7 @@ const AssignmentDetailModal = memo(({
           )}
 
           {assignment.attachments && assignment.attachments.length > 0 && (
-            <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
+            <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center gap-3 text-xl text-gray-900 dark:text-gray-100">
                   <Paperclip className="w-6 h-6 text-primary" />
@@ -354,7 +354,7 @@ const AssignmentSubmissionModal = memo(({
 
   return (
     <>
-      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col p-0 bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm">
+      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col p-0 bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm">
         <DialogHeader className="p-6 pb-4 border-b border-gray-200/50 dark:border-gray-700/50">
           <DialogTitle className="text-gray-900 dark:text-gray-100">Submit Assignment: {assignment.title}</DialogTitle>
           <DialogDescription className="sr-only">
@@ -374,7 +374,7 @@ const AssignmentSubmissionModal = memo(({
                   <Label className="text-sm font-medium text-gray-900 dark:text-gray-100">Attachments</Label>
                   <div className="space-y-2 mt-1">
                     {assignment.attachments.map((attachment, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 border border-gray-200/50 dark:border-gray-600/50 rounded-xl bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-800/60 dark:to-gray-700/60">
+                      <div key={index} className="flex items-center justify-between p-2 border border-gray-200/50 dark:border-gray-600/50 rounded-xl bg-gradient-to-br from-card to-card/50 dark:bg-card">
                         <span className="text-sm text-gray-900 dark:text-gray-100">{attachment.name}</span>
                         <div className="flex items-center gap-1">
                           <a href={attachment.url} target="_blank" rel="noopener noreferrer">
@@ -414,7 +414,7 @@ const AssignmentSubmissionModal = memo(({
                     placeholder="Enter your assignment submission here..."
                     value={submissionText}
                     onChange={(e) => setSubmissionText(e.target.value)}
-                    className="mt-2 min-h-[200px] bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl"
+                    className="mt-2 min-h-[200px] bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-2xl"
                   />
                 </div>
                 <Button 
@@ -437,7 +437,7 @@ const AssignmentSubmissionModal = memo(({
                         PDF, DOC, DOCX, TXT files up to 10MB
                       </p>
                       {existingFileName && !submissionFile && existingFileUrl && (
-                        <div className="mt-4 p-2 border border-gray-200/50 dark:border-gray-600/50 rounded-xl bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-800/60 dark:to-gray-700/60 text-left">
+                        <div className="mt-4 p-2 border border-gray-200/50 dark:border-gray-600/50 rounded-xl bg-gradient-to-br from-card to-card/50 dark:bg-card text-left">
                           <p className="text-sm text-muted-foreground mb-1">Current submission:</p>
                           <div className="flex items-center justify-between">
                             <span className="text-sm font-medium text-green-600 truncate flex-1 pr-2">{existingFileName}</span>
@@ -465,7 +465,7 @@ const AssignmentSubmissionModal = memo(({
                         type="file"
                         accept=".pdf,.doc,.docx,.txt"
                         onChange={(e) => setSubmissionFile(e.target.files?.[0] || null)}
-                        className="mt-4 bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl"
+                        className="mt-4 bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-2xl"
                       />
                     </div>
                   </div>
@@ -488,7 +488,7 @@ const AssignmentSubmissionModal = memo(({
                     placeholder="https://example.com/your-submission"
                     value={submissionLink}
                     onChange={(e) => setSubmissionLink(e.target.value)}
-                    className="mt-2 bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl"
+                    className="mt-2 bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-2xl"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     Provide a link to your submission (e.g., Google Drive, GitHub, etc.)
@@ -805,7 +805,7 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
     };
 
     return (
-      <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+      <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
         {isCollapsed ? (
           // Slim collapsed state
           <div className="p-4">
@@ -995,7 +995,7 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
                 <ClipboardList className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ lineHeight: '3rem' }}>
                   Assignments
                 </h1>
                 <p className="text-lg text-muted-foreground font-light">
@@ -1015,13 +1015,13 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
               placeholder="Search by assignment or course name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-96 bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg"
+              className="pl-10 w-96 bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg"
             />
           </div>
           <div className="flex items-center space-x-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
             <Select value={filterStatus} onValueChange={(value) => setFilterStatus(value as any)}>
-              <SelectTrigger className="w-32 bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg">
+              <SelectTrigger className="w-32 bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg">
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent>
@@ -1094,7 +1094,7 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
       </div>
 
       {assignments.length === 0 ? (
-        <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
+        <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
           <CardContent className="p-8">
             <EmptyState
               title="No assignments yet"

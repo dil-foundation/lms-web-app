@@ -138,14 +138,14 @@ export class TeacherReportsService {
 
       const { data: lessons, error: lessonsError } = await supabase
         .from('course_lessons')
-        .select('id, section_id, due_date')
+        .select('id, section_id')
         .in('section_id', sectionIds);
       if (lessonsError) throw lessonsError;
       const lessonIds = lessons.map(l => l.id);
 
       const { data: allContentItems, error: contentError } = await supabase
         .from('course_lesson_content')
-        .select('id, lesson_id, title, content_type')
+        .select('id, lesson_id, title, content_type, due_date')
         .in('lesson_id', lessonIds);
       if (contentError) throw contentError;
       
@@ -158,7 +158,7 @@ export class TeacherReportsService {
                 id: item.id,
                 title: item.title,
                 course_id: section?.course_id,
-                due_date: lesson?.due_date,
+                due_date: item.due_date,
             };
         });
 
@@ -178,6 +178,27 @@ export class TeacherReportsService {
         .in('course_id', courseIds);
       if (progressError) throw progressError;
 
+      // 7. Get student status distribution from database function
+      const { data: studentStatusDistribution, error: statusError } = await supabase
+        .rpc('get_student_status_distribution', {
+          p_teacher_id: this.teacherId
+        });
+      if (statusError) throw statusError;
+
+      // 8. Get course performance data from database function
+      const { data: coursePerformanceData, error: coursePerformanceError } = await supabase
+        .rpc('get_course_performance_data', {
+          p_teacher_id: this.teacherId
+        });
+      if (coursePerformanceError) throw coursePerformanceError;
+
+      // 9. Get overall metrics from database function
+      const { data: overallMetricsData, error: overallMetricsError } = await supabase
+        .rpc('get_teacher_overall_metrics', {
+          p_teacher_id: this.teacherId
+        });
+      if (overallMetricsError) throw overallMetricsError;
+
       // Process the data
       const reportsData = this.processReportsData(
         publishedCourses || [],
@@ -189,7 +210,10 @@ export class TeacherReportsService {
         courseProgress || [],
         allContentItems || [],
         lessons || [],
-        sections || []
+        sections || [],
+        studentStatusDistribution || [],
+        coursePerformanceData || [],
+        overallMetricsData || []
       );
 
       return reportsData;
@@ -210,7 +234,10 @@ export class TeacherReportsService {
     courseProgress: any[],
     allContentItems: any[],
     lessons: any[],
-    sections: any[]
+    sections: any[],
+    studentStatusDistribution: any[],
+    coursePerformanceData: any[],
+    overallMetricsData: any[]
   ): TeacherReportsData {
 
 
@@ -221,7 +248,8 @@ export class TeacherReportsService {
       assignments,
       submissions,
       courseProgress,
-      allContentItems
+      allContentItems,
+      overallMetricsData
     );
 
     // Calculate course performance
@@ -234,7 +262,8 @@ export class TeacherReportsService {
       courseProgress,
       allContentItems,
       lessons,
-      sections
+      sections,
+      coursePerformanceData
     );
 
     // Calculate student progress
@@ -261,7 +290,7 @@ export class TeacherReportsService {
     const monthlyTrends = this.calculateMonthlyTrends(enrollments, courseProgress, submissions);
 
     // Calculate student status distribution
-    const studentStatusDistribution = this.calculateStudentStatusDistribution(studentProgress);
+    const studentStatusDistributionData = this.calculateStudentStatusDistribution(studentProgress, studentStatusDistribution);
 
     // Generate key insights
     const keyInsights = this.generateKeyInsights(
@@ -276,12 +305,27 @@ export class TeacherReportsService {
       studentProgress,
       assignmentPerformance,
       monthlyTrends,
-      studentStatusDistribution,
+      studentStatusDistribution: studentStatusDistributionData,
       keyInsights
     };
   }
 
-  private calculateOverallMetrics(teacherCourses: any[], enrollments: any[], assignments: any[], submissions: any[], courseProgress: any[], allContentItems: any[]): TeacherOverallMetrics {
+  private calculateOverallMetrics(teacherCourses: any[], enrollments: any[], assignments: any[], submissions: any[], courseProgress: any[], allContentItems: any[], overallMetricsData: any[]): TeacherOverallMetrics {
+    // Use the database function data directly
+    if (overallMetricsData && overallMetricsData.length > 0) {
+      const dbEntry = overallMetricsData[0];
+      return {
+        totalStudents: dbEntry.total_students,
+        activeStudents: dbEntry.active_students,
+        averageCompletion: dbEntry.average_completion,
+        averageScore: dbEntry.average_score,
+        coursesPublished: teacherCourses.length,
+        totalAssignments: assignments.length,
+        totalEnrollments: enrollments.length,
+        averageEngagement: dbEntry.average_engagement,
+      };
+    }
+
     const studentIds = [...new Set(enrollments.map(e => e.user_id))];
     const totalStudents = studentIds.length;
 
@@ -290,9 +334,16 @@ export class TeacherReportsService {
     const activeStudentIds = new Set(courseProgress.filter(p => new Date(p.updated_at) > thirtyDaysAgo).map(p => p.user_id));
     const activeStudents = activeStudentIds.size;
 
-    const totalCompletedItems = courseProgress.filter(p => p.status && p.status.toLowerCase() === 'completed').length;
-    const totalEnrollmentItems = enrollments.length * (allContentItems.length / teacherCourses.length || 1); // rough estimate
-    const averageCompletion = totalEnrollmentItems > 0 ? Math.round((totalCompletedItems / totalEnrollmentItems) * 100) : 0;
+    // Calculate average completion rate across all students
+    let averageCompletion = 0;
+    if (studentIds.length > 0 && allContentItems.length > 0) {
+        const studentCompletionRates = studentIds.map(studentId => {
+            const studentProgressEntries = courseProgress.filter(p => p.user_id === studentId);
+            const completedItems = studentProgressEntries.filter(p => p.status && p.status.toLowerCase() === 'completed').length;
+            return (completedItems / allContentItems.length) * 100;
+        });
+        averageCompletion = Math.round(studentCompletionRates.reduce((sum, rate) => sum + rate, 0) / studentCompletionRates.length);
+    }
     
     const gradedSubmissions = submissions.filter(s => s.grade !== null);
     const averageScore = gradedSubmissions.length > 0 ? Math.round(gradedSubmissions.reduce((sum, s) => sum + s.grade, 0) / gradedSubmissions.length) : 0;
@@ -312,7 +363,24 @@ export class TeacherReportsService {
 }
 
 
-private calculateCoursePerformance(teacherCourses: any[], enrollments: any[], courseDetails: any[], assignments: any[], submissions: any[], courseProgress: any[], allContentItems: any[], lessons: any[], sections: any[]): CoursePerformanceData[] {
+private calculateCoursePerformance(teacherCourses: any[], enrollments: any[], courseDetails: any[], assignments: any[], submissions: any[], courseProgress: any[], allContentItems: any[], lessons: any[], sections: any[], coursePerformanceData: any[]): CoursePerformanceData[] {
+    // Use the database function data directly
+    if (coursePerformanceData && coursePerformanceData.length > 0) {
+      return coursePerformanceData.map(dbEntry => ({
+        courseId: dbEntry.course_id,
+        courseTitle: dbEntry.course_title,
+        courseDescription: dbEntry.course_description,
+        totalStudents: dbEntry.total_students,
+        activeStudents: dbEntry.active_students,
+        completionRate: dbEntry.completion_rate,
+        averageScore: dbEntry.average_score,
+        totalAssignments: dbEntry.total_assignments,
+        completedAssignments: dbEntry.completed_assignments,
+        lastActivity: dbEntry.last_activity
+      }));
+    }
+    
+    // Fallback to client-side calculation if database function fails
     return courseDetails.map(course => {
         const courseId = course.id;
         const courseEnrollments = enrollments.filter(e => e.course_id === courseId);
@@ -326,8 +394,17 @@ private calculateCoursePerformance(teacherCourses: any[], enrollments: any[], co
         });
 
         const totalCourseItems = courseContent.length;
-        const completedItems = courseProgress.filter(p => p.course_id === courseId && p.status && p.status.toLowerCase() === 'completed').length;
-        const completionRate = totalCourseItems > 0 ? Math.round((completedItems / (totalCourseItems * courseStudentIds.length)) * 100) : 0;
+        
+        // Calculate completion rate as average across all students
+        let completionRate = 0;
+        if (courseStudentIds.length > 0 && totalCourseItems > 0) {
+            const studentCompletionRates = courseStudentIds.map(studentId => {
+                const studentProgressEntries = courseProgress.filter(p => p.user_id === studentId && p.course_id === courseId);
+                const completedItems = studentProgressEntries.filter(p => p.status && p.status.toLowerCase() === 'completed').length;
+                return (completedItems / totalCourseItems) * 100;
+            });
+            completionRate = Math.round(studentCompletionRates.reduce((sum, rate) => sum + rate, 0) / studentCompletionRates.length);
+        }
 
         const gradedSubmissions = courseSubmissions.filter(s => s.grade !== null);
         const averageScore = gradedSubmissions.length > 0 ? Math.round(gradedSubmissions.reduce((sum, s) => sum + s.grade, 0) / gradedSubmissions.length) : 0;
@@ -351,7 +428,7 @@ private calculateCoursePerformance(teacherCourses: any[], enrollments: any[], co
             lastActivity,
         };
     });
-}
+  }
 
 
 private calculateStudentProgress(enrollments: any[], studentProfiles: any[], courseDetails: any[], assignments: any[], submissions: any[], courseProgress: any[], allContentItems: any[], lessons: any[], sections: any[]): StudentProgressData[] {
@@ -382,10 +459,31 @@ private calculateStudentProgress(enrollments: any[], studentProfiles: any[], cou
         let status: 'active' | 'inactive' | 'completed' | 'at-risk' = 'inactive';
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        if (new Date(lastActivity) > thirtyDaysAgo) {
-            status = completionRate > 70 ? 'active' : 'at-risk';
+        
+        // Check if student has been active in the last 30 days
+        const isRecentlyActive = new Date(lastActivity) > thirtyDaysAgo;
+        
+        if (completionRate >= 100) {
+            status = 'completed';
+        } else if (isRecentlyActive) {
+            // If student is active, categorize based on completion rate
+            if (completionRate >= 70) {
+                status = 'active';
+            } else if (completionRate > 0) {
+                // Students with some progress but less than 70% are still active, not at-risk
+                status = 'active';
+            } else {
+                // Students with no progress but recent activity are at-risk
+                status = 'at-risk';
+            }
+        } else {
+            // Inactive students (no activity in 30 days)
+            if (completionRate > 0) {
+                status = 'at-risk'; // Had progress but became inactive
+            } else {
+                status = 'inactive'; // Never started
+            }
         }
-        if(completionRate >= 100) status = 'completed';
 
         return {
             studentId,
@@ -422,7 +520,7 @@ private calculateStudentProgress(enrollments: any[], studentProfiles: any[], cou
       
       // Calculate average score
       const avgScore = assignmentSubmissions.length > 0
-        ? assignmentSubmissions.reduce((sum, s) => sum + (s.score || 0), 0) / assignmentSubmissions.length
+        ? assignmentSubmissions.reduce((sum, s) => sum + (s.grade || 0), 0) / assignmentSubmissions.length
         : 0;
       
       // Determine status
@@ -500,8 +598,20 @@ private calculateStudentProgress(enrollments: any[], studentProfiles: any[], cou
   }
 
   private calculateStudentStatusDistribution(
-    studentProgress: StudentProgressData[]
+    studentProgress: StudentProgressData[],
+    studentStatusDistribution: any[]
   ): StudentStatusDistribution[] {
+    // Use the database function data directly
+    if (studentStatusDistribution && studentStatusDistribution.length > 0) {
+      return studentStatusDistribution.map(dbEntry => ({
+        status: dbEntry.status,
+        count: dbEntry.count,
+        percentage: dbEntry.percentage,
+        color: dbEntry.color
+      }));
+    }
+    
+    // Fallback to client-side calculation if database function fails
     const statusCounts = new Map<string, number>();
     
     studentProgress.forEach(student => {

@@ -356,28 +356,84 @@ const CourseManagement = () => {
   const handleDeleteConfirmed = async () => {
     if (!courseToDelete) return;
 
-    // Also delete the image from storage.
-    if (courseToDelete.imagePath) {
-        const { error: storageError } = await supabase.storage.from('dil-lms').remove([courseToDelete.imagePath]);
-        if (storageError) {
-            toast.error("Could not delete course image. The course was not deleted.", { description: storageError.message });
-            setCourseToDelete(null);
-            return;
+    try {
+      // First, check if the course can be safely deleted
+      const { data: safetyCheck, error: safetyError } = await supabase.rpc('can_delete_course', {
+        course_id_to_check: courseToDelete.id
+      });
+
+      if (safetyError) {
+        console.warn('Safety check failed, proceeding with deletion:', safetyError);
+      } else if (safetyCheck && safetyCheck.length > 0) {
+        const checkResult = safetyCheck[0];
+        if (!checkResult.can_delete) {
+          // Show warning but allow deletion
+          console.warn('Course has student data:', {
+            reason: checkResult.reason,
+            studentCount: Number(checkResult.student_count),
+            progressCount: Number(checkResult.progress_count),
+            submissionCount: Number(checkResult.submission_count)
+          });
         }
-    }
+      }
 
-    const { error } = await supabase.from('courses').delete().eq('id', courseToDelete.id);
+      // Also delete the image from storage.
+      if (courseToDelete.imagePath) {
+          const { error: storageError } = await supabase.storage.from('dil-lms').remove([courseToDelete.imagePath]);
+          if (storageError) {
+              toast.error("Could not delete course image. The course was not deleted.", { description: storageError.message });
+              setCourseToDelete(null);
+              return;
+          }
+      }
 
-    if (error) {
-      toast.error("Failed to delete course.", { description: error.message });
-    } else {
+      // Try the safe delete function first
+      let deleteSuccess = false;
+      try {
+        const { data: deleteResult, error } = await supabase.rpc('safe_delete_course', {
+          course_id_to_delete: courseToDelete.id
+        });
+        
+        if (error) {
+          console.warn('Safe delete failed, trying direct deletion:', error);
+          throw error; // This will trigger the fallback
+        }
+        
+        deleteSuccess = true;
+      } catch (deleteError) {
+        // If the safe delete function fails, try the direct approach as fallback
+        console.warn('Safe delete failed, trying direct deletion:', deleteError);
+        
+        try {
+          const { error: directError } = await supabase.from('courses').delete().eq('id', courseToDelete.id);
+          
+          if (directError) {
+            toast.error("Failed to delete course.", { description: directError.message });
+            return;
+          }
+          
+          deleteSuccess = true;
+        } catch (directDeleteError: any) {
+          toast.error("Failed to delete course.", { description: directDeleteError.message });
+          return;
+        }
+      }
+      
+      if (!deleteSuccess) {
+        toast.error("Failed to delete course.");
+        return;
+      }
+      
       toast.success(`Course "${courseToDelete.title}" deleted successfully.`);
       // Optimistically update the UI
       setCourses(prev => prev.filter(c => c.id !== courseToDelete.id));
       // You might want to re-calculate stats here as well
       fetchStats();
+    } catch (error: any) {
+      toast.error("Failed to delete course.", { description: error.message });
+    } finally {
+      setCourseToDelete(null);
     }
-    setCourseToDelete(null);
   };
 
   const { total, published, draft } = stats;
@@ -395,7 +451,7 @@ const CourseManagement = () => {
                 <BookOpen className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ lineHeight: '3rem' }}>
                   Course Management
                 </h1>
                 <p className="text-lg text-muted-foreground font-light">

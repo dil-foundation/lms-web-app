@@ -64,10 +64,10 @@ import {
   stopTokenRefreshInterval,
   getUsersForAdminMessaging,
   getStudentsForTeacherMessaging,
-  getTeachersForStudentMessaging,
+  getUsersForStudentMessaging,
   searchUsersForMessaging,
   searchStudentsForTeacherMessaging,
-  searchTeachersForStudentMessaging,
+  searchUsersForStudentMessaging,
   createConversation,
   getConversations,
   getMessages,
@@ -378,9 +378,9 @@ export default function MessagesPage() {
         } else if (profile.role === 'student') {
           // Student can message their enrolled teachers
           if (userSearchQuery.trim()) {
-            result = await searchTeachersForStudentMessaging(user.id, userSearchQuery, currentPage, 10);
+            result = await searchUsersForStudentMessaging(user.id, userSearchQuery, currentPage, 10);
           } else {
-            result = await getTeachersForStudentMessaging(user.id, currentPage, 10);
+            result = await getUsersForStudentMessaging(user.id, currentPage, 10);
           }
         } else {
           return;
@@ -1132,7 +1132,7 @@ export default function MessagesPage() {
                 <MessageSquare className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ lineHeight: '3rem' }}>
                   Messages
                 </h1>
                 <p className="text-lg text-muted-foreground font-light">
@@ -1187,7 +1187,10 @@ export default function MessagesPage() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search conversations..."
+                  placeholder={profile?.role === 'student' 
+                    ? "Search teachers and fellow students by name or email..." 
+                    : "Search users by name or email..."
+                  }
                   value={conversationsSearchQuery}
                   onChange={(e) => setConversationsSearchQuery(e.target.value)}
                   className="pl-10 h-11 bg-background/50 dark:bg-background/30 border-border/50 focus:border-primary/50 transition-all duration-300 rounded-xl"
@@ -1505,7 +1508,12 @@ export default function MessagesPage() {
               </div>
               <div>
                 <DialogTitle className="text-xl font-bold text-foreground">Start New Conversation</DialogTitle>
-                <p className="text-sm text-muted-foreground mt-1">Connect with your team members</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {profile?.role === 'student' 
+                    ? 'Connect with your teachers and fellow students' 
+                    : 'Connect with your team members'
+                  }
+                </p>
               </div>
             </div>
           </DialogHeader>
@@ -1515,7 +1523,10 @@ export default function MessagesPage() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search users by name or email..."
+                placeholder={profile?.role === 'student' 
+                  ? "Search teachers and fellow students by name or email..." 
+                  : "Search users by name or email..."
+                }
                 value={userSearchQuery}
                 onChange={(e) => setUserSearchQuery(e.target.value)}
                 className="pl-10 h-11 bg-background/50 dark:bg-background/30 border-border/50 focus:border-primary/50 transition-all duration-300"
@@ -1524,7 +1535,7 @@ export default function MessagesPage() {
             
             <Select value={selectedUser} onValueChange={setSelectedUser}>
               <SelectTrigger>
-                <SelectValue placeholder="Select a user" />
+                <SelectValue placeholder={profile?.role === 'student' ? "Select a teacher or fellow student" : "Select a user"} />
               </SelectTrigger>
               <SelectContent>
                 <div 
@@ -1556,8 +1567,8 @@ export default function MessagesPage() {
                 ) : availableUsers.length === 0 && !usersLoading ? (
                   <div className="px-2 py-1.5 text-sm text-gray-600 dark:text-gray-300 text-center">
                     {userSearchQuery.trim() 
-                      ? `No ${profile?.role === 'admin' ? 'users' : profile?.role === 'teacher' ? 'students or admins' : 'teachers'} found matching "${userSearchQuery}"`
-                      : `No ${profile?.role === 'admin' ? 'users' : profile?.role === 'teacher' ? 'students or admins' : 'teachers'} available to message`
+                      ? `No ${profile?.role === 'admin' ? 'users' : profile?.role === 'teacher' ? 'students or admins' : 'teachers and fellow students'} found matching "${userSearchQuery}"`
+                      : `No ${profile?.role === 'admin' ? 'users' : profile?.role === 'teacher' ? 'students or admins' : 'teachers and fellow students'} available to message`
                     }
                   </div>
                 ) : (
@@ -1607,7 +1618,7 @@ export default function MessagesPage() {
                     )}
                     {!hasMoreUsers && availableUsers.length > 0 && (
                       <div className="px-2 py-1.5 text-sm text-gray-600 dark:text-gray-300">
-                        No more {profile?.role === 'admin' ? 'users' : profile?.role === 'teacher' ? 'students and admins' : 'teachers'}
+                        No more {profile?.role === 'admin' ? 'users' : profile?.role === 'teacher' ? 'students and admins' : 'teachers and fellow students'}
                       </div>
                     )}
                   </>

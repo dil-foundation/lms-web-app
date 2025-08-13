@@ -61,10 +61,10 @@ BEGIN
       SELECT id INTO match_lesson_id FROM public.course_lessons WHERE section_id = match_section_id AND position = rec_lesson.position;
       
       IF match_lesson_id IS NOT NULL THEN
-        UPDATE public.course_lessons SET title = rec_lesson.title, overview = rec_lesson.overview, due_date = rec_lesson.due_date WHERE id = match_lesson_id;
+        UPDATE public.course_lessons SET title = rec_lesson.title, overview = rec_lesson.overview WHERE id = match_lesson_id;
       ELSE
-        INSERT INTO public.course_lessons (section_id, title, overview, due_date, "position")
-        VALUES (match_section_id, rec_lesson.title, rec_lesson.overview, rec_lesson.due_date, rec_lesson.position)
+        INSERT INTO public.course_lessons (section_id, title, overview, "position")
+        VALUES (match_section_id, rec_lesson.title, rec_lesson.overview, rec_lesson.position)
         RETURNING id INTO match_lesson_id;
       END IF;
       active_lesson_ids := array_append(active_lesson_ids, match_lesson_id);
@@ -73,10 +73,10 @@ BEGIN
         SELECT id INTO match_content_item_id FROM public.course_lesson_content WHERE lesson_id = match_lesson_id AND position = rec_content_item.position;
 
         IF match_content_item_id IS NOT NULL THEN
-          UPDATE public.course_lesson_content SET title = rec_content_item.title, content_type = rec_content_item.content_type, content_path = rec_content_item.content_path WHERE id = match_content_item_id;
+          UPDATE public.course_lesson_content SET title = rec_content_item.title, content_type = rec_content_item.content_type, content_path = rec_content_item.content_path, due_date = rec_content_item.due_date WHERE id = match_content_item_id;
         ELSE
-          INSERT INTO public.course_lesson_content (lesson_id, title, content_type, content_path, position)
-          VALUES (match_lesson_id, rec_content_item.title, rec_content_item.content_type, rec_content_item.content_path, rec_content_item.position)
+          INSERT INTO public.course_lesson_content (lesson_id, title, content_type, content_path, due_date, position)
+          VALUES (match_lesson_id, rec_content_item.title, rec_content_item.content_type, rec_content_item.content_path, rec_content_item.due_date, rec_content_item.position)
           RETURNING id INTO match_content_item_id;
         END IF;
         active_content_item_ids := array_append(active_content_item_ids, match_content_item_id);

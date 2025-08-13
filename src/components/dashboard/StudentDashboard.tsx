@@ -281,7 +281,7 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
         </div>
         
         {courses.length === 0 ? (
-          <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg overflow-hidden">
+          <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg overflow-hidden">
             <CardContent className="py-16">
               <EmptyState
                 title="No Courses Enrolled"
@@ -293,7 +293,7 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
         ) : (
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {courses.map((course) => (
-              <Card key={course.id} className="group bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 hover:-translate-y-2 rounded-3xl overflow-hidden">
+              <Card key={course.id} className="group bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 hover:-translate-y-2 rounded-3xl overflow-hidden">
                 <div className="relative overflow-hidden">
                   <img 
                     src={course.image_url} 
@@ -334,7 +334,7 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
       {/* Quick Actions & Upcoming Assignments - Enhanced Premium Redesign */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         {/* Upcoming Assignments - Enhanced Apple Style */}
-        <Card className="group relative bg-gradient-to-br from-white/80 via-white/60 to-gray-50/80 dark:from-gray-900/80 dark:via-gray-900/60 dark:to-gray-800/80 border border-gray-200/60 dark:border-gray-700/60 hover:border-gray-300/80 dark:hover:border-gray-600/80 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 rounded-3xl overflow-hidden backdrop-blur-sm">
+        <Card className="group relative bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/60 dark:border-gray-700/60 hover:border-gray-300/80 dark:hover:border-gray-600/80 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 rounded-3xl overflow-hidden backdrop-blur-sm">
           {/* Subtle accent line */}
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           
@@ -399,7 +399,7 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
         </Card>
 
         {/* Recent Activity - Enhanced Apple Style */}
-        <Card className="group relative bg-gradient-to-br from-white/80 via-white/60 to-gray-50/80 dark:from-gray-900/80 dark:via-gray-900/60 dark:to-gray-800/80 border border-gray-200/60 dark:border-gray-700/60 hover:border-gray-300/80 dark:hover:border-gray-600/80 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-500 rounded-3xl overflow-hidden backdrop-blur-sm">
+        <Card className="group relative bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/60 dark:border-gray-700/60 hover:border-gray-300/80 dark:hover:border-gray-600/80 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-500 rounded-3xl overflow-hidden backdrop-blur-sm">
           {/* Subtle accent line */}
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           

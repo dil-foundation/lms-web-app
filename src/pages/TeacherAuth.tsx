@@ -249,7 +249,7 @@ const TeacherAuth = () => {
         email: signupData.email,
         password: signupData.password,
         options: {
-          emailRedirectTo: `https://dil.lovable.app/dashboard`,
+          emailRedirectTo: `${window.location.origin}/dashboard`,
           data: {
             role: 'teacher',
             first_name: signupData.firstName,

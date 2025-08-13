@@ -331,9 +331,6 @@ export default function SensitiveScenarioRoleplay() {
           <div className="px-6 pb-8 space-y-6">
             {/* Scenario Selection */}
             <div className="text-center">
-              <h2 className="text-3xl font-bold mb-3 bg-gradient-to-r from-primary to-[#1582B4] bg-clip-text text-transparent">
-                Choose Your Roleplay Scenario
-              </h2>
               <p className="text-muted-foreground text-lg">Click on a scenario to start the roleplay immediately</p>
             </div>
 
@@ -565,10 +562,10 @@ export default function SensitiveScenarioRoleplay() {
 
               {/* Expected Keywords Section */}
               {selectedScenario.expected_keywords && selectedScenario.expected_keywords.length > 0 && (
-                <Card className="border-0 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-3xl shadow-lg overflow-hidden">
+                <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
                   <CardContent className="p-6">
                     <div className="flex items-start space-x-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-[#1582B4] to-[#1582B4]/80 rounded-full flex items-center justify-center mt-1 border border-[#1582B4]/30">
+                      <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center mt-1 border border-primary/30">
                         <Zap className="h-5 w-5 text-white" />
                       </div>
                       <div className="flex-1">
@@ -579,7 +576,7 @@ export default function SensitiveScenarioRoleplay() {
                           {selectedScenario.expected_keywords.map((keyword, index) => (
                             <span 
                               key={index}
-                              className="px-4 py-2 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm text-[#1582B4] text-sm rounded-full border border-[#1582B4]/30 font-medium"
+                              className="px-4 py-2 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm text-[#1582B4] text-sm rounded-full border border-primary/30 font-medium"
                             >
                               {keyword}
                             </span>
@@ -602,7 +599,7 @@ export default function SensitiveScenarioRoleplay() {
 
           {/* Evaluation Loading State */}
           {isEvaluating && (
-            <Card className="mb-6 border-0 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-3xl shadow-lg overflow-hidden">
+            <Card className="mb-6 border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
               <CardContent className="p-6 text-center">
                 <div className="flex items-center justify-center space-x-3">
                   <Loader2 className="h-10 w-10 animate-spin text-[#1582B4]" />

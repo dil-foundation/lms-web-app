@@ -99,6 +99,16 @@
     animation: fadeInUp 0.8s ease-out forwards;
   }
 
+  /* Hide scrollbar for time picker */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
   .animate-fade-in-right {
     animation: fadeInRight 0.8s ease-out forwards;
   }

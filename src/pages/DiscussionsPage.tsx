@@ -536,7 +536,7 @@ export default function DiscussionsPage() {
             {discussions.map((discussion) => (
               <Card 
                 key={discussion.id} 
-                className="group relative bg-gradient-to-br from-white/80 via-white/60 to-gray-50/80 dark:from-gray-900/80 dark:via-gray-900/60 dark:to-gray-800/80 border border-gray-200/60 dark:border-gray-700/60 hover:border-gray-300/80 dark:hover:border-gray-600/80 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 rounded-3xl overflow-hidden backdrop-blur-sm cursor-pointer hover:-translate-y-1"
+                className="group relative bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/60 dark:border-gray-700/60 hover:border-gray-300/80 dark:hover:border-gray-600/80 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 rounded-3xl overflow-hidden backdrop-blur-sm cursor-pointer hover:-translate-y-1"
                 onClick={() => navigate(`/dashboard/discussion/${discussion.id}`)}
               >
                 {/* Subtle accent line */}

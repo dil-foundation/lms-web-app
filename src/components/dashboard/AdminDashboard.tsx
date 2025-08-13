@@ -381,61 +381,32 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
 
   const fetchCourseAnalyticsData = async () => {
     try {
-      const { startDate, endDate } = getDateRange(timeRange);
-      // Get all published courses with their data in a single query
-      const { data: courses, error: coursesError } = await supabase
-        .from('courses')
-        .select('id, title')
-        .eq('status', 'Published')
-        .limit(5);
+      console.log('🔍 [DEBUG] fetchCourseAnalyticsData called');
+      
+      // Use the new database function
+      const { data, error } = await supabase.rpc('get_admin_course_analytics');
 
-      if (coursesError) throw coursesError;
+      console.log('🔍 [DEBUG] get_admin_course_analytics response:', { data, error });
 
-      if (!courses || courses.length === 0) {
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        console.log('🔍 [DEBUG] No course analytics data found');
         setCourseAnalyticsData([]);
         return;
       }
 
-      // Get all course members in a single query
-      const { data: allCourseMembers, error: membersError } = await supabase
-        .from('course_members')
-        .select('course_id, role');
+      // Transform the data to match the expected format
+      const courseAnalytics: CourseAnalyticsData[] = data.map((item: any) => ({
+        course: item.course_title,
+        enrolled: item.enrolled_students,
+        completed: item.completed_students,
+        progress: item.completion_rate,
+        rating: item.average_score || 0,
+      }));
 
-      if (membersError) throw membersError;
-
-      // Get all completed assignments in a single query
-      const { data: allCompletedAssignments, error: assignmentsError } = await supabase
-        .from('assignment_submissions')
-        .select('*')
-        .eq('status', 'completed');
-
-      if (assignmentsError) throw assignmentsError;
-
-      const courseAnalytics: CourseAnalyticsData[] = [];
-
-      for (const course of courses) {
-        // Calculate enrollment from the fetched data
-        const enrolled = allCourseMembers?.filter(member => 
-          member.course_id === course.id && member.role === 'student'
-        ).length ?? 0;
-
-        // Calculate completed assignments for this course
-        const completed = allCompletedAssignments?.filter(assignment => 
-          assignment.assignment_id === course.id
-        ).length ?? 0;
-
-        const progress = enrolled > 0 ? Math.round((completed / enrolled) * 100) : 0;
-
-        courseAnalytics.push({
-          course: course.title,
-          enrolled,
-          completed,
-          progress,
-          rating: 4.5, // Mock rating for now
-        });
-      }
-
-        setCourseAnalyticsData(courseAnalytics);
+      console.log('🔍 [DEBUG] Transformed course analytics:', courseAnalytics);
+      setCourseAnalyticsData(courseAnalytics);
     } catch (error) {
       console.error("Failed to fetch course analytics data:", error);
       setCourseAnalyticsData([]);
