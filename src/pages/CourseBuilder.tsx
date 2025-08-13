@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -59,10 +60,10 @@ import { ContentLoader } from '@/components/ContentLoader';
 import { CourseOverview } from './CourseOverview';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
+import { TimePicker } from "@/components/ui/time-picker";
+import { DatePicker } from "@/components/ui/date-picker";
 
 // #region Interfaces
 interface CourseSection {
@@ -77,7 +78,6 @@ interface CourseLesson {
   id: string;
   title: string;
   overview?: string;
-  due_date?: string;
   isCollapsed?: boolean;
   contentItems: LessonContentItem[];
 }
@@ -88,6 +88,7 @@ interface LessonContentItem {
   content_type: 'video' | 'attachment' | 'assignment' | 'quiz';
   content_path?: string; // For video, attachment, assignment HTML
   quiz?: QuizData; // For quiz type
+  due_date?: string; // Due date for assignments and quizzes
 }
 
 interface QuizData {
@@ -360,7 +361,7 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
       if (!isMounted) return;
 
       if (error) {
-        console.error(`Error creating signed URL for ${type}:`, error);
+
         toast.error(`Could not load ${type} preview.`);
       } else if (data) {
         if (type === 'video') {
@@ -572,20 +573,122 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
         );
       case 'assignment':
         return (
-          <RichTextEditor
-            value={item.content_path || ''}
-            onChange={(content) => onUpdate(lessonId, item.id, { content_path: content })}
-            placeholder="Write the assignment details here..."
-            onImageUpload={handleAssignmentImageUpload}
-            onFileUpload={handleAssignmentFileUpload}
-          />
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor={`assignment-title-${item.id}`}>Assignment Title</Label>
+              <Input
+                id={`assignment-title-${item.id}`}
+                value={item.title}
+                onChange={(e) => onUpdate(lessonId, item.id, { title: e.target.value })}
+                placeholder="Enter assignment title"
+              />
+            </div>
+            <div>
+              <Label htmlFor={`assignment-due-date-${item.id}`}>Due Date</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="relative">
+                  <Label htmlFor={`assignment-date-${item.id}`}>Date</Label>
+                  <DatePicker
+                    value={item.due_date ? new Date(item.due_date) : undefined}
+                    onChange={(date) => {
+                      if (date) {
+                        const currentTime = item.due_date ? new Date(item.due_date) : new Date();
+                        const newDateTime = new Date(date);
+                        newDateTime.setHours(currentTime.getHours(), currentTime.getMinutes(), 0, 0);
+                        onUpdate(lessonId, item.id, { due_date: newDateTime.toISOString() });
+                      } else {
+                        onUpdate(lessonId, item.id, { due_date: undefined });
+                      }
+                    }}
+                    placeholder="Select date"
+                  />
+                </div>
+                <div className="relative">
+                  <Label htmlFor={`assignment-time-${item.id}`}>Time</Label>
+                  <TimePicker
+                    value={item.due_date ? new Date(item.due_date).toTimeString().slice(0, 5) : ''}
+                    onChange={(time) => {
+                      if (item.due_date && time) {
+                        const [hours, minutes] = time.split(':');
+                        const newDateTime = new Date(item.due_date);
+                        newDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+                        onUpdate(lessonId, item.id, { due_date: newDateTime.toISOString() });
+                      }
+                    }}
+                    placeholder="Select time"
+                  />
+                </div>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor={`assignment-content-${item.id}`}>Assignment Details</Label>
+              <RichTextEditor
+                value={item.content_path || ''}
+                onChange={(content) => onUpdate(lessonId, item.id, { content_path: content })}
+                placeholder="Write the assignment details here..."
+                onImageUpload={handleAssignmentImageUpload}
+                onFileUpload={handleAssignmentFileUpload}
+              />
+            </div>
+          </div>
         );
       case 'quiz':
         return (
-          <QuizBuilder
-            quiz={item.quiz || { id: '', questions: [] }}
-            onQuizChange={(quiz) => onUpdate(lessonId, item.id, { quiz })}
-          />
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor={`quiz-title-${item.id}`}>Quiz Title</Label>
+              <Input
+                id={`quiz-title-${item.id}`}
+                value={item.title}
+                onChange={(e) => onUpdate(lessonId, item.id, { title: e.target.value })}
+                placeholder="Enter quiz title"
+              />
+            </div>
+            <div>
+              <Label htmlFor={`quiz-due-date-${item.id}`}>Due Date</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="relative">
+                  <Label htmlFor={`quiz-date-${item.id}`}>Date</Label>
+                  <DatePicker
+                    value={item.due_date ? new Date(item.due_date) : undefined}
+                    onChange={(date) => {
+                      if (date) {
+                        const currentTime = item.due_date ? new Date(item.due_date) : new Date();
+                        const newDateTime = new Date(date);
+                        newDateTime.setHours(currentTime.getHours(), currentTime.getMinutes(), 0, 0);
+                        onUpdate(lessonId, item.id, { due_date: newDateTime.toISOString() });
+                      } else {
+                        onUpdate(lessonId, item.id, { due_date: undefined });
+                      }
+                    }}
+                    placeholder="Select date"
+                  />
+                </div>
+                <div className="relative">
+                  <Label htmlFor={`quiz-time-${item.id}`}>Time</Label>
+                  <TimePicker
+                    value={item.due_date ? new Date(item.due_date).toTimeString().slice(0, 5) : ''}
+                    onChange={(time) => {
+                      if (item.due_date && time) {
+                        const [hours, minutes] = time.split(':');
+                        const newDateTime = new Date(item.due_date);
+                        newDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+                        onUpdate(lessonId, item.id, { due_date: newDateTime.toISOString() });
+                      }
+                    }}
+                    placeholder="Select time"
+                  />
+                </div>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor={`quiz-builder-${item.id}`}>Quiz Questions</Label>
+              <QuizBuilder
+                quiz={item.quiz || { id: '', questions: [] }}
+                onQuizChange={(quiz) => onUpdate(lessonId, item.id, { quiz })}
+              />
+            </div>
+          </div>
         );
       default:
         return null;
@@ -654,8 +757,20 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
         </div>
       </div>
       
-      <div className="w-full bg-white/40 dark:bg-black/30 rounded-2xl p-6 border-2 border-current/10 shadow-sm">
-        {renderContentEditor()}
+      <div className="w-full bg-white/40 dark:bg-black/30 rounded-2xl p-6 border-2 border-current/10 shadow-sm relative">
+        {/* Show due date for assignments and quizzes */}
+        {(item.content_type === 'assignment' || item.content_type === 'quiz') && item.due_date && (
+          <div className="mb-6 p-3 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl shadow-sm">
+            <div className="flex items-center gap-2 text-sm text-yellow-700 dark:text-yellow-300">
+              <CalendarIcon className="h-4 w-4 flex-shrink-0" />
+              <span className="font-medium">Due:</span>
+              <span className="font-semibold">{format(new Date(item.due_date), "PPP 'at' p")}</span>
+            </div>
+          </div>
+        )}
+        <div className="space-y-6">
+          {renderContentEditor()}
+        </div>
       </div>
 
       <AlertDialog open={isConfirmingChange} onOpenChange={setIsConfirmingChange}>
@@ -713,7 +828,7 @@ const LessonContainer = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovab
               <Textarea
                 value={lesson.overview || ''}
                 onChange={(e) => onUpdate(sectionId, lesson.id, { overview: e.target.value })}
-                placeholder="Lesson overview (optional)"
+                placeholder="Lesson overview or summary (optional)"
                 rows={2}
                 className="text-sm resize-none border-0 bg-white/50 dark:bg-gray-800/50 rounded-xl px-4 py-3 focus-visible:ring-2 focus-visible:ring-primary/20 text-gray-700 dark:text-gray-300"
               />
@@ -1083,7 +1198,7 @@ const CourseBuilder = () => {
                 .createSignedUrl(avatarPath, 3600); // 1-hour expiry
                 
             if (error) {
-                console.error("Error creating signed URL for avatar:", error);
+        
                 return undefined;
             }
             return data.signedUrl;
@@ -1152,13 +1267,13 @@ const CourseBuilder = () => {
 
           if (error) {
             toast.error("Failed to load course data.");
-            console.error("Error loading course data:", error);
+    
             navigate('/dashboard/courses');
             return;
           }
           
                     if (data) {
-            console.log('[CourseBuilder] Fetched Course Data:', data);
+    
             if (data.review_feedback) {
               setPersistentFeedback(data.review_feedback);
             }
@@ -1217,6 +1332,7 @@ const CourseBuilder = () => {
                           title: ci.title,
                           content_type: ci.content_type,
                           content_path: ci.content_path,
+                          due_date: ci.due_date,
                           quiz: quizData
                         };
                       })
@@ -1232,7 +1348,7 @@ const CourseBuilder = () => {
         toast.error("Failed to initialize course builder.", {
           description: error.message,
         });
-        console.error("Initialization error:", error);
+
         navigate('/dashboard/courses');
       } finally {
         setIsLoadingPage(false);
@@ -1273,7 +1389,6 @@ const CourseBuilder = () => {
 
     } catch (error: any) {
       toast.error('Image upload failed.', { description: error.message });
-      console.error(error);
     } finally {
       setIsUploading(false);
     }
@@ -1337,23 +1452,24 @@ const CourseBuilder = () => {
       for (const [lessonIndex, lesson] of section.lessons.entries()) {
         const { data: savedLesson, error: lessonError } = await supabase
             .from('course_lessons')
-            .insert({ section_id: savedSection.id, title: lesson.title, overview: lesson.overview, position: lessonIndex, due_date: lesson.due_date })
+            .insert({ section_id: savedSection.id, title: lesson.title, overview: lesson.overview, position: lessonIndex })
             .select('id').single();
         
         if (lessonError) throw lessonError;
         if (!savedLesson) throw new Error("Failed to save a course lesson.");
 
         for (const [contentIndex, item] of lesson.contentItems.entries()) {
-            const { data: savedContent, error: contentError } = await supabase
-                .from('course_lesson_content')
-                .insert({
-                    lesson_id: savedLesson.id,
-                    title: item.title,
-                    content_type: item.content_type,
-                    content_path: item.content_path,
-                    position: contentIndex,
-                })
-                .select('id').single();
+                            const { data: savedContent, error: contentError } = await supabase
+                    .from('course_lesson_content')
+                    .insert({
+                        lesson_id: savedLesson.id,
+                        title: item.title,
+                        content_type: item.content_type,
+                        content_path: item.content_path,
+                        position: contentIndex,
+                        due_date: item.due_date,
+                    })
+                    .select('id').single();
 
             if (contentError) throw contentError;
             if (!savedContent) throw new Error("Failed to save a lesson content item.");
@@ -1445,6 +1561,781 @@ const CourseBuilder = () => {
     return currentCourseId;
   };
 
+  const saveCourseMetadataOnly = async (courseToSave: CourseData): Promise<string | null> => {
+    if (!user) {
+      toast.error("You must be logged in to save a course.");
+      throw new Error("User not logged in");
+    }
+
+    const isUpdate = !!courseToSave.id;
+
+    const courseDetails: any = {
+      title: courseToSave.title,
+      subtitle: courseToSave.subtitle,
+      description: courseToSave.description,
+      category_id: categories.find(c => c.name === courseToSave.category)?.id,
+      language_id: languages.find(l => l.name === courseToSave.language)?.id,
+      level_id: levels.find(l => l.name === courseToSave.level)?.id,
+      image_url: imageDbPath,
+      duration: courseToSave.duration,
+      requirements: courseToSave.requirements.filter(r => r.trim() !== ''),
+      learning_outcomes: courseToSave.learningOutcomes.filter(o => o.trim() !== ''),
+      status: courseToSave.status,
+      published_course_id: courseToSave.published_course_id,
+    };
+
+    let savedCourse: { id: string } | null = null;
+    let courseError: any = null;
+
+    if (isUpdate) {
+      const { data, error } = await supabase.from('courses').update(courseDetails).eq('id', courseToSave.id!).select('id').single();
+      savedCourse = data;
+      courseError = error;
+    } else {
+      courseDetails.author_id = user.id;
+      const { data, error } = await supabase.from('courses').insert(courseDetails).select('id').single();
+      savedCourse = data;
+      courseError = error;
+    }
+
+    if (courseError) throw courseError;
+    if (!savedCourse) throw new Error("Failed to save course and retrieve its ID.");
+
+    const currentCourseId = savedCourse.id;
+
+    // Sync the members (this doesn't affect curriculum)
+    const membersMap = new Map<string, { role: 'teacher' | 'student' }>();
+    courseToSave.teachers.forEach(t => membersMap.set(t.id, { role: 'teacher' }));
+    courseToSave.students.forEach(s => {
+      if (!membersMap.has(s.id)) {
+        membersMap.set(s.id, { role: 'student' });
+      }
+    });
+
+    const desiredMembers = Array.from(membersMap.entries()).map(([user_id, { role }]) => ({
+      course_id: currentCourseId,
+      user_id,
+      role: role as 'teacher' | 'student'
+    }));
+
+    if (desiredMembers.length > 0) {
+      const { error: upsertError } = await supabase
+        .from('course_members')
+        .upsert(desiredMembers, { onConflict: 'course_id,user_id' });
+      if (upsertError) throw new Error(`There was an issue updating course members: ${upsertError.message}`);
+    }
+
+    const { data: currentDbMembers, error: fetchError } = await supabase
+      .from('course_members')
+      .select('user_id')
+      .eq('course_id', currentCourseId);
+
+    if (fetchError) {
+      toast.warning("Could not verify member list for cleanup.", { description: fetchError.message });
+    } else {
+        const desiredMemberIds = new Set(desiredMembers.map(m => m.user_id));
+        const membersToRemove = currentDbMembers
+          .filter(dbMember => !desiredMemberIds.has(dbMember.user_id))
+          .map(dbMember => dbMember.user_id);
+    
+        if (membersToRemove.length > 0) {
+          const { error: deleteError } = await supabase
+            .from('course_members')
+            .delete()
+            .eq('course_id', currentCourseId)
+            .in('user_id', membersToRemove);
+          
+          if (deleteError) {
+            toast.warning("Failed to clean up old course members.", { description: deleteError.message });
+          }
+        } else if (currentDbMembers.length > 0 && desiredMembers.length === 0) {
+            const { error: deleteAllError } = await supabase
+                .from('course_members')
+                .delete()
+                .eq('course_id', currentCourseId);
+            if (deleteAllError) {
+                 toast.warning("Failed to remove all course members.", { description: deleteAllError.message });
+            }
+        }
+    }
+    
+    return currentCourseId;
+  };
+
+  const updateCurriculumPreservingProgress = async (courseId: string, sections: CourseSection[]) => {
+    // Get existing curriculum structure
+    const { data: existingSections, error: sectionsError } = await supabase
+      .from('course_sections')
+      .select(`
+        id,
+        title,
+        overview,
+        position,
+        course_lessons (
+          id,
+          title,
+          overview,
+          position,
+          course_lesson_content (
+            id,
+            title,
+            content_type,
+            content_path,
+            position,
+            due_date
+          )
+        )
+      `)
+      .eq('course_id', courseId)
+      .order('position');
+    
+    if (sectionsError) throw sectionsError;
+    
+    // Track which existing items we've processed to handle deletions
+    const processedSectionIds = new Set<string>();
+    const processedLessonIds = new Set<string>();
+    const processedContentIds = new Set<string>();
+    
+    // Update sections
+    for (const [sectionIndex, section] of sections.entries()) {
+      const existingSection = existingSections?.find(s => s.position === sectionIndex);
+      
+      if (existingSection) {
+        processedSectionIds.add(existingSection.id);
+        
+        // Update existing section
+        await supabase
+          .from('course_sections')
+          .update({ title: section.title, overview: section.overview })
+          .eq('id', existingSection.id);
+        
+        // Update lessons in this section
+        for (const [lessonIndex, lesson] of section.lessons.entries()) {
+          const existingLesson = existingSection.course_lessons?.find(l => l.position === lessonIndex);
+          
+          if (existingLesson) {
+            processedLessonIds.add(existingLesson.id);
+            
+            // Update existing lesson
+            await supabase
+              .from('course_lessons')
+              .update({ title: lesson.title, overview: lesson.overview })
+              .eq('id', existingLesson.id);
+            
+            // Update content items in this lesson
+            for (const [contentIndex, item] of lesson.contentItems.entries()) {
+              const existingContent = existingLesson.course_lesson_content?.find(c => c.position === contentIndex);
+              
+              if (existingContent) {
+                processedContentIds.add(existingContent.id);
+                
+                // Update existing content item (preserves ID and progress)
+                await supabase
+                  .from('course_lesson_content')
+                  .update({
+                    title: item.title,
+                    content_type: item.content_type,
+                    content_path: item.content_path,
+                    due_date: item.due_date
+                  })
+                  .eq('id', existingContent.id);
+                
+                // Handle quiz updates if needed
+                if (item.content_type === 'quiz' && item.quiz) {
+                  // Get existing quiz questions for this content item
+                  const { data: existingQuestions, error: questionsError } = await supabase
+                    .from('quiz_questions')
+                    .select(`
+                      id,
+                      question_text,
+                      position,
+                      question_options (
+                        id,
+                        option_text,
+                        is_correct,
+                        position
+                      )
+                    `)
+                    .eq('lesson_content_id', existingContent.id)
+                    .order('position');
+                  
+                  if (questionsError) throw questionsError;
+                  
+                  // Track which questions we've processed
+                  const processedQuestionIds = new Set<string>();
+                  
+                  // Update or create questions
+                  for (const [qIndex, question] of item.quiz.questions.entries()) {
+                    const existingQuestion = existingQuestions?.find(q => q.position === qIndex);
+                    
+                    if (existingQuestion) {
+                      processedQuestionIds.add(existingQuestion.id);
+                      
+                      // Update existing question
+                      await supabase
+                        .from('quiz_questions')
+                        .update({ question_text: question.question_text })
+                        .eq('id', existingQuestion.id);
+                      
+                      // Track which options we've processed
+                      const processedOptionIds = new Set<string>();
+                      
+                      // Update or create options
+                      for (const [oIndex, option] of question.options.entries()) {
+                        const existingOption = existingQuestion.question_options?.find(opt => opt.position === oIndex);
+                        
+                        if (existingOption) {
+                          processedOptionIds.add(existingOption.id);
+                          
+                          // Update existing option
+                          await supabase
+                            .from('question_options')
+                            .update({
+                              option_text: option.option_text,
+                              is_correct: option.is_correct
+                            })
+                            .eq('id', existingOption.id);
+                        } else {
+                          // Create new option
+                          await supabase.from('question_options').insert({
+                            question_id: existingQuestion.id,
+                            option_text: option.option_text,
+                            is_correct: option.is_correct,
+                            position: oIndex
+                          });
+                        }
+                      }
+                      
+                      // Clean up deleted options
+                      const optionsToDelete = existingQuestion.question_options?.filter(opt => !processedOptionIds.has(opt.id)) || [];
+                      if (optionsToDelete.length > 0) {
+                        const optionIdsToDelete = optionsToDelete.map(opt => opt.id);
+                        await supabase.from('question_options').delete().in('id', optionIdsToDelete);
+                      }
+                    } else {
+                      // Create new question
+                      const { data: newQuestion, error: qError } = await supabase
+                        .from('quiz_questions')
+                        .insert({
+                          lesson_content_id: existingContent.id,
+                          question_text: question.question_text,
+                          position: qIndex
+                        })
+                        .select('id')
+                        .single();
+                      
+                      if (qError) throw qError;
+                      
+                      // Create options for new question
+                      for (const [oIndex, option] of question.options.entries()) {
+                        await supabase.from('question_options').insert({
+                          question_id: newQuestion.id,
+                          option_text: option.option_text,
+                          is_correct: option.is_correct,
+                          position: oIndex
+                        });
+                      }
+                    }
+                  }
+                  
+                  // Clean up deleted questions
+                  const questionsToDelete = existingQuestions?.filter(q => !processedQuestionIds.has(q.id)) || [];
+                  if (questionsToDelete.length > 0) {
+                    const questionIdsToDelete = questionsToDelete.map(q => q.id);
+                    
+                    // Delete associated options first
+                    for (const questionId of questionIdsToDelete) {
+                      await supabase.from('question_options').delete().eq('question_id', questionId);
+                    }
+                    
+                    // Delete questions
+                    await supabase.from('quiz_questions').delete().in('id', questionIdsToDelete);
+                  }
+                }
+              } else {
+                // Create new content item
+                const { data: newContent, error: contentError } = await supabase
+                  .from('course_lesson_content')
+                  .insert({
+                    lesson_id: existingLesson.id,
+                    title: item.title,
+                    content_type: item.content_type,
+                    content_path: item.content_path,
+                    position: contentIndex,
+                    due_date: item.due_date
+                  })
+                  .select('id')
+                  .single();
+                
+                if (contentError) throw contentError;
+                
+                // Handle quiz creation if needed
+                if (item.content_type === 'quiz' && item.quiz && newContent) {
+                  for (const [qIndex, question] of item.quiz.questions.entries()) {
+                    const { data: savedQuestion, error: qError } = await supabase
+                      .from('quiz_questions')
+                      .insert({
+                        lesson_content_id: newContent.id,
+                        question_text: question.question_text,
+                        position: qIndex
+                      })
+                      .select('id')
+                      .single();
+                    
+                    if (qError) throw qError;
+                    
+                    for (const [oIndex, option] of question.options.entries()) {
+                      await supabase.from('question_options').insert({
+                        question_id: savedQuestion.id,
+                        option_text: option.option_text,
+                        is_correct: option.is_correct,
+                        position: oIndex
+                      });
+                    }
+                  }
+                }
+              }
+            }
+            
+            // Clean up deleted content items in this lesson
+            const existingContentItems = existingLesson.course_lesson_content || [];
+            const contentItemsToDelete = existingContentItems.filter(content => !processedContentIds.has(content.id));
+            
+            if (contentItemsToDelete.length > 0) {
+              const contentIdsToDelete = contentItemsToDelete.map(c => c.id);
+              
+              // Delete associated quiz questions and options first
+              for (const contentId of contentIdsToDelete) {
+                const { data: quizQuestions } = await supabase
+                  .from('quiz_questions')
+                  .select('id')
+                  .eq('lesson_content_id', contentId);
+                
+                if (quizQuestions && quizQuestions.length > 0) {
+                  const questionIds = quizQuestions.map(q => q.id);
+                  await supabase.from('question_options').delete().in('question_id', questionIds);
+                  await supabase.from('quiz_questions').delete().in('id', questionIds);
+                }
+              }
+              
+              // Delete content items
+              await supabase.from('course_lesson_content').delete().in('id', contentIdsToDelete);
+            }
+          } else {
+            // Create new lesson
+            const { data: newLesson, error: lessonError } = await supabase
+              .from('course_lessons')
+              .insert({
+                section_id: existingSection.id,
+                title: lesson.title,
+                overview: lesson.overview,
+                position: lessonIndex
+              })
+              .select('id')
+              .single();
+            
+            if (lessonError) throw lessonError;
+            
+            // Create content items for new lesson
+            for (const [contentIndex, item] of lesson.contentItems.entries()) {
+              const { data: newContent, error: contentError } = await supabase
+                .from('course_lesson_content')
+                .insert({
+                  lesson_id: newLesson.id,
+                  title: item.title,
+                  content_type: item.content_type,
+                  content_path: item.content_path,
+                  position: contentIndex,
+                  due_date: item.due_date
+                })
+                .select('id')
+                .single();
+              
+              if (contentError) throw contentError;
+              
+              // Handle quiz creation if needed
+              if (item.content_type === 'quiz' && item.quiz && newContent) {
+                for (const [qIndex, question] of item.quiz.questions.entries()) {
+                  const { data: savedQuestion, error: qError } = await supabase
+                    .from('quiz_questions')
+                    .insert({
+                      lesson_content_id: newContent.id,
+                      question_text: question.question_text,
+                      position: qIndex
+                    })
+                    .select('id')
+                    .single();
+                  
+                  if (qError) throw qError;
+                  
+                  for (const [oIndex, option] of question.options.entries()) {
+                    await supabase.from('question_options').insert({
+                      question_id: savedQuestion.id,
+                      option_text: option.option_text,
+                      is_correct: option.is_correct,
+                      position: oIndex
+                    });
+                  }
+                }
+              }
+            }
+          }
+        }
+        
+        // Clean up deleted lessons in this section
+        const existingLessons = existingSection.course_lessons || [];
+        const lessonsToDelete = existingLessons.filter(lesson => !processedLessonIds.has(lesson.id));
+        
+        if (lessonsToDelete.length > 0) {
+          const lessonIdsToDelete = lessonsToDelete.map(l => l.id);
+          
+          // Delete all content items in these lessons first
+          for (const lessonId of lessonIdsToDelete) {
+            const { data: contentItems } = await supabase
+              .from('course_lesson_content')
+              .select('id')
+              .eq('lesson_id', lessonId);
+            
+            if (contentItems && contentItems.length > 0) {
+              const contentIds = contentItems.map(c => c.id);
+              
+              // Delete associated quiz questions and options
+              for (const contentId of contentIds) {
+                const { data: quizQuestions } = await supabase
+                  .from('quiz_questions')
+                  .select('id')
+                  .eq('lesson_content_id', contentId);
+                
+                if (quizQuestions && quizQuestions.length > 0) {
+                  const questionIds = quizQuestions.map(q => q.id);
+                  await supabase.from('question_options').delete().in('question_id', questionIds);
+                  await supabase.from('quiz_questions').delete().in('id', questionIds);
+                }
+              }
+              
+              await supabase.from('course_lesson_content').delete().in('id', contentIds);
+            }
+          }
+          
+          // Delete lessons
+          await supabase.from('course_lessons').delete().in('id', lessonIdsToDelete);
+        }
+      } else {
+        // Create new section
+        const { data: newSection, error: sectionError } = await supabase
+          .from('course_sections')
+          .insert({
+            course_id: courseId,
+            title: section.title,
+            overview: section.overview,
+            position: sectionIndex
+          })
+          .select('id')
+          .single();
+        
+        if (sectionError) throw sectionError;
+        
+        // Create lessons and content items for new section
+        for (const [lessonIndex, lesson] of section.lessons.entries()) {
+          const { data: newLesson, error: lessonError } = await supabase
+            .from('course_lessons')
+            .insert({
+              section_id: newSection.id,
+              title: lesson.title,
+              overview: lesson.overview,
+              position: lessonIndex
+            })
+            .select('id')
+            .single();
+          
+          if (lessonError) throw lessonError;
+          
+          for (const [contentIndex, item] of lesson.contentItems.entries()) {
+            const { data: newContent, error: contentError } = await supabase
+              .from('course_lesson_content')
+              .insert({
+                lesson_id: newLesson.id,
+                title: item.title,
+                content_type: item.content_type,
+                content_path: item.content_path,
+                position: contentIndex,
+                due_date: item.due_date
+              })
+              .select('id')
+              .single();
+            
+            if (contentError) throw contentError;
+            
+            // Handle quiz creation if needed
+            if (item.content_type === 'quiz' && item.quiz && newContent) {
+              for (const [qIndex, question] of item.quiz.questions.entries()) {
+                const { data: savedQuestion, error: qError } = await supabase
+                  .from('quiz_questions')
+                  .insert({
+                    lesson_content_id: newContent.id,
+                    question_text: question.question_text,
+                    position: qIndex
+                  })
+                  .select('id')
+                  .single();
+                
+                if (qError) throw qError;
+                
+                for (const [oIndex, option] of question.options.entries()) {
+                  await supabase.from('question_options').insert({
+                    question_id: savedQuestion.id,
+                    option_text: option.option_text,
+                    is_correct: option.is_correct,
+                    position: oIndex
+                  });
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    // Clean up deleted sections
+    const sectionsToDelete = existingSections?.filter(section => !processedSectionIds.has(section.id)) || [];
+    
+    if (sectionsToDelete.length > 0) {
+      const sectionIdsToDelete = sectionsToDelete.map(s => s.id);
+      
+      // Delete all lessons in these sections first
+      for (const sectionId of sectionIdsToDelete) {
+        const { data: lessons } = await supabase
+          .from('course_lessons')
+          .select('id')
+          .eq('section_id', sectionId);
+        
+        if (lessons && lessons.length > 0) {
+          const lessonIds = lessons.map(l => l.id);
+          
+          // Delete all content items in these lessons
+          for (const lessonId of lessonIds) {
+            const { data: contentItems } = await supabase
+              .from('course_lesson_content')
+              .select('id')
+              .eq('lesson_id', lessonId);
+            
+            if (contentItems && contentItems.length > 0) {
+              const contentIds = contentItems.map(c => c.id);
+              
+              // Delete associated quiz questions and options
+              for (const contentId of contentIds) {
+                const { data: quizQuestions } = await supabase
+                  .from('quiz_questions')
+                  .select('id')
+                  .eq('lesson_content_id', contentId);
+                
+                if (quizQuestions && quizQuestions.length > 0) {
+                  const questionIds = quizQuestions.map(q => q.id);
+                  await supabase.from('question_options').delete().in('question_id', questionIds);
+                  await supabase.from('quiz_questions').delete().in('id', questionIds);
+                }
+              }
+              
+              await supabase.from('course_lesson_content').delete().in('id', contentIds);
+            }
+          }
+          
+          await supabase.from('course_lessons').delete().in('id', lessonIds);
+        }
+      }
+      
+      // Delete sections
+      await supabase.from('course_sections').delete().in('id', sectionIdsToDelete);
+    }
+  };
+
+  const saveCourseWithCurriculum = async (courseToSave: CourseData): Promise<string | null> => {
+    if (!user) {
+      toast.error("You must be logged in to save a course.");
+      throw new Error("User not logged in");
+    }
+
+    const isUpdate = !!courseToSave.id;
+    const isDraftOfPublished = !!courseToSave.published_course_id;
+
+    const courseDetails: any = {
+      title: courseToSave.title,
+      subtitle: courseToSave.subtitle,
+      description: courseToSave.description,
+      category_id: categories.find(c => c.name === courseToSave.category)?.id,
+      language_id: languages.find(l => l.name === courseToSave.language)?.id,
+      level_id: levels.find(l => l.name === courseToSave.level)?.id,
+      image_url: imageDbPath,
+      duration: courseToSave.duration,
+      requirements: courseToSave.requirements.filter(r => r.trim() !== ''),
+      learning_outcomes: courseToSave.learningOutcomes.filter(o => o.trim() !== ''),
+      status: courseToSave.status,
+      published_course_id: courseToSave.published_course_id,
+    };
+
+    let savedCourse: { id: string } | null = null;
+    let courseError: any = null;
+
+    if (isUpdate) {
+      const { data, error } = await supabase.from('courses').update(courseDetails).eq('id', courseToSave.id!).select('id').single();
+      savedCourse = data;
+      courseError = error;
+    } else {
+      courseDetails.author_id = user.id;
+      const { data, error } = await supabase.from('courses').insert(courseDetails).select('id').single();
+      savedCourse = data;
+      courseError = error;
+    }
+
+    if (courseError) throw courseError;
+    if (!savedCourse) throw new Error("Failed to save course and retrieve its ID.");
+
+    const currentCourseId = savedCourse.id;
+
+    // Check if this is the same course scenario (admin unpublish/republish)
+    const isSameCourse = courseToSave.id === courseToSave.published_course_id;
+    
+    // Save curriculum if:
+    // 1. This is NOT a draft of a published course (new course or teacher draft), OR
+    // 2. This IS the same course scenario (admin unpublish/republish) - we need to save changes
+    const shouldSaveCurriculum = !isDraftOfPublished || isSameCourse;
+    
+    if (shouldSaveCurriculum) {
+      if (isSameCourse) {
+        // For same course scenario, we need to update existing content items instead of deleting/recreating
+        // to preserve student progress
+        await updateCurriculumPreservingProgress(currentCourseId, courseToSave.sections);
+      } else {
+        // A. Delete existing curriculum for this course to handle reordering/deletions
+        await supabase.from('course_sections').delete().eq('course_id', currentCourseId);
+
+        // B. Re-insert the full curriculum from the current state
+        for (const [sectionIndex, section] of courseToSave.sections.entries()) {
+          const { data: savedSection, error: sectionError } = await supabase
+          .from('course_sections')
+          .insert({ course_id: currentCourseId, title: section.title, overview: section.overview, position: sectionIndex })
+          .select('id').single();
+        
+        if (sectionError) throw sectionError;
+        if (!savedSection) throw new Error("Failed to save a course section.");
+
+        for (const [lessonIndex, lesson] of section.lessons.entries()) {
+          const { data: savedLesson, error: lessonError } = await supabase
+              .from('course_lessons')
+              .insert({ section_id: savedSection.id, title: lesson.title, overview: lesson.overview, position: lessonIndex })
+              .select('id').single();
+          
+          if (lessonError) throw lessonError;
+          if (!savedLesson) throw new Error("Failed to save a course lesson.");
+
+          for (const [contentIndex, item] of lesson.contentItems.entries()) {
+            const { data: savedContent, error: contentError } = await supabase
+                .from('course_lesson_content')
+                .insert({
+                    lesson_id: savedLesson.id,
+                    title: item.title,
+                    content_type: item.content_type,
+                    content_path: item.content_path,
+                    position: contentIndex,
+                    due_date: item.due_date,
+                })
+                .select('id').single();
+
+              if (contentError) throw contentError;
+              if (!savedContent) throw new Error("Failed to save a lesson content item.");
+
+              if (item.content_type === 'quiz' && item.quiz) {
+                  for (const [qIndex, question] of item.quiz.questions.entries()) {
+                      const { data: savedQuestion, error: qError } = await supabase
+                          .from('quiz_questions')
+                          .insert({
+                              lesson_content_id: savedContent.id,
+                              question_text: question.question_text,
+                              position: qIndex,
+                          })
+                          .select('id').single();
+
+                      if (qError) throw qError;
+                      if (!savedQuestion) throw new Error("Failed to save a quiz question.");
+
+                      for (const [oIndex, option] of question.options.entries()) {
+                          await supabase.from('question_options').insert({
+                              question_id: savedQuestion.id,
+                              option_text: option.option_text,
+                              is_correct: option.is_correct,
+                              position: oIndex,
+                          });
+                      }
+                  }
+              }
+          }
+        }
+      }
+      }
+    } else {
+      // Skipping curriculum save - preserving existing structure (teacher draft scenario)
+    }
+
+    // Sync the members
+    // Sync the members
+    const membersMap = new Map<string, { role: 'teacher' | 'student' }>();
+    courseToSave.teachers.forEach(t => membersMap.set(t.id, { role: 'teacher' }));
+    courseToSave.students.forEach(s => {
+      if (!membersMap.has(s.id)) {
+        membersMap.set(s.id, { role: 'student' });
+      }
+    });
+
+    const desiredMembers = Array.from(membersMap.entries()).map(([user_id, { role }]) => ({
+      course_id: currentCourseId,
+      user_id,
+      role: role as 'teacher' | 'student'
+    }));
+
+    if (desiredMembers.length > 0) {
+      const { error: upsertError } = await supabase
+        .from('course_members')
+        .upsert(desiredMembers, { onConflict: 'course_id,user_id' });
+      if (upsertError) throw new Error(`There was an issue updating course members: ${upsertError.message}`);
+    }
+
+    const { data: currentDbMembers, error: fetchError } = await supabase
+      .from('course_members')
+      .select('user_id')
+      .eq('course_id', currentCourseId);
+
+    if (fetchError) {
+      toast.warning("Could not verify member list for cleanup.", { description: fetchError.message });
+    } else {
+        const desiredMemberIds = new Set(desiredMembers.map(m => m.user_id));
+        const membersToRemove = currentDbMembers
+          .filter(dbMember => !desiredMemberIds.has(dbMember.user_id))
+          .map(dbMember => dbMember.user_id);
+    
+        if (membersToRemove.length > 0) {
+          const { error: deleteError } = await supabase
+            .from('course_members')
+            .delete()
+            .eq('course_id', currentCourseId)
+            .in('user_id', membersToRemove);
+          
+          if (deleteError) {
+            toast.warning("Failed to clean up old course members.", { description: deleteError.message });
+          }
+        } else if (currentDbMembers.length > 0 && desiredMembers.length === 0) {
+            const { error: deleteAllError } = await supabase
+                .from('course_members')
+                .delete()
+                .eq('course_id', currentCourseId);
+            if (deleteAllError) {
+                 toast.warning("Failed to remove all course members.", { description: deleteAllError.message });
+            }
+        }
+    }
+    
+    return currentCourseId;
+  };
+
   const handleConfirmCreateDraft = async () => {
     setSaveAction('draft');
     try {
@@ -1463,7 +2354,7 @@ const CourseBuilder = () => {
         }
     } catch (error: any) {
         toast.error('Failed to create a new draft.', { description: error.message });
-        console.error(error);
+
     } finally {
         setSaveAction(null);
     }
@@ -1490,9 +2381,102 @@ const CourseBuilder = () => {
       }
     } catch (error: any) {
       toast.error('Failed to save draft.', { description: error.message });
-      console.error(error);
     } finally {
       setSaveAction(null);
+    }
+  };
+
+  const checkContentItemsState = async (courseId: string, label: string) => {
+    try {
+      // First get sections for the course
+      const { data: sections, error: sectionsError } = await supabase
+        .from('course_sections')
+        .select('id')
+        .eq('course_id', courseId);
+      
+      if (sectionsError) {
+        return;
+      }
+      
+      if (!sections || sections.length === 0) {
+        return;
+      }
+      
+      const sectionIds = sections.map(s => s.id);
+      
+      // Get lessons for these sections
+      const { data: lessons, error: lessonsError } = await supabase
+        .from('course_lessons')
+        .select('id')
+        .in('section_id', sectionIds);
+      
+      if (lessonsError) {
+        return;
+      }
+      
+      if (!lessons || lessons.length === 0) {
+        return;
+      }
+      
+      const lessonIds = lessons.map(l => l.id);
+      
+      // Get content items for these lessons
+      const { data: draftContent, error: draftError } = await supabase
+        .from('course_lesson_content')
+        .select('id, title, content_type, lesson_id')
+        .in('lesson_id', lessonIds);
+      
+      if (draftError) {
+        // Error fetching draft content
+      }
+
+      // Check published course content items if it exists
+      if (courseData.published_course_id && courseData.published_course_id !== courseId) {
+        const { data: publishedSections, error: publishedSectionsError } = await supabase
+          .from('course_sections')
+          .select('id')
+          .eq('course_id', courseData.published_course_id);
+        
+        if (publishedSectionsError) {
+          // Error fetching published sections
+        } else if (publishedSections && publishedSections.length > 0) {
+          const publishedSectionIds = publishedSections.map(s => s.id);
+          
+          const { data: publishedLessons, error: publishedLessonsError } = await supabase
+            .from('course_lessons')
+            .select('id')
+            .in('section_id', publishedSectionIds);
+          
+          if (publishedLessonsError) {
+            // Error fetching published lessons
+          } else if (publishedLessons && publishedLessons.length > 0) {
+            const publishedLessonIds = publishedLessons.map(l => l.id);
+            
+            const { data: publishedContent, error: publishedError } = await supabase
+              .from('course_lesson_content')
+              .select('id, title, content_type, lesson_id')
+              .in('lesson_id', publishedLessonIds);
+            
+            if (publishedError) {
+              // Error fetching published content
+            }
+          }
+        }
+      }
+      
+      // Check student progress for published course
+      if (courseData.published_course_id) {
+        const { data: progressData, error: progressError } = await supabase
+          .from('user_content_item_progress')
+          .select('id, lesson_content_id, user_id, status, progress_data, completed_at')
+          .eq('course_id', courseData.published_course_id);
+        
+        if (progressError) {
+          // Error fetching progress
+        }
+      }
+    } catch (error) {
+      console.error(`❌ [DEBUG] ${label} - Unexpected error:`, error);
     }
   };
 
@@ -1515,19 +2499,39 @@ const CourseBuilder = () => {
     setSaveAction('publish');
     try {
       if (courseData.published_course_id && courseData.id) {
-        // First, save any pending changes to the draft.
-        await saveCourseData({ ...courseData, status: 'Draft' });
+        // This is an update to an existing published course
+        // Save metadata, members, and curriculum structure (but preserve existing content)
+        await saveCourseWithCurriculum({ ...courseData, status: 'Draft' });
         
-        // Then, call the RPC to publish.
-        const { error } = await supabase.rpc('publish_draft', {
-          draft_id_in: courseData.id,
-          published_id_in: courseData.published_course_id,
-        });
-        if (error) throw error;
+        // Check if this is the same course (admin unpublish/republish scenario)
+        const isSameCourse = courseData.id === courseData.published_course_id;
+        
+        if (isSameCourse) {
+          // For same course scenario, just update the status to Published
+          // The changes are already saved in the database through saveCourseWithCurriculum
+          const { error: updateError } = await supabase
+            .from('courses')
+            .update({ status: 'Published' })
+            .eq('id', courseData.id);
+            
+          if (updateError) {
+            throw updateError;
+          }
+        } else {
+          // For different course scenario (teacher draft), call the RPC to sync curriculum
+          const { error } = await supabase.rpc('publish_draft', {
+            draft_id_in: courseData.id,
+            published_id_in: courseData.published_course_id,
+          });
+          if (error) {
+            throw error;
+          }
+        }
         
         toast.success("Course published successfully!");
         navigate('/dashboard/courses');
       } else {
+        // This is a new course, safe to save everything
         const savedId = await saveCourseData({ ...courseData, status: 'Published' });
         if(savedId) {
           toast.success("Course published successfully!");
@@ -1536,7 +2540,6 @@ const CourseBuilder = () => {
       }
     } catch (error: any) {
       toast.error('Failed to publish course.', { description: error.message });
-      console.error(error);
     } finally {
       setSaveAction(null);
     }
@@ -1546,18 +2549,30 @@ const CourseBuilder = () => {
     if (!courseData.id) return;
     setSaveAction('unpublish');
     try {
+      // When unpublishing, we need to set published_course_id to the course's own ID
+      // so the system knows this is a draft of an existing published course
+      const updateData: any = { 
+        status: 'Draft',
+        published_course_id: courseData.id // Set to self to indicate this is a draft of a published course
+      };
+      
       const { error } = await supabase
         .from('courses')
-        .update({ status: 'Draft' })
+        .update(updateData)
         .eq('id', courseData.id);
 
-      if (error) throw error;
-
+      if (error) {
+        throw error;
+      }
+      
       toast.success("Course unpublished and saved as a draft.");
-      setCourseData(prev => ({...prev, status: 'Draft'}));
+      setCourseData(prev => ({
+        ...prev, 
+        status: 'Draft',
+        published_course_id: courseData.id // Update local state as well
+      }));
     } catch (error: any) {
       toast.error('Failed to unpublish course.', { description: error.message });
-      console.error(error);
     } finally {
       setSaveAction(null);
     }
@@ -1603,13 +2618,12 @@ const CourseBuilder = () => {
       const { error } = await supabase.rpc('submit_for_review', { course_id_in: savedId });
       if (error) throw error;
       
-      console.log('[CourseBuilder] Submitting for review. Clearing persistent feedback.');
+      
       toast.success("Course submitted for review successfully!");
       // Update the local state to reflect the new status and ID if it was a new course
       setCourseData(prev => ({ ...prev, id: savedId, status: 'Under Review' }));
     } catch (error: any) {
       toast.error('Failed to submit for review.', { description: error.message });
-      console.error(error);
     } finally {
       setSaveAction(null);
     }
@@ -1622,13 +2636,12 @@ const CourseBuilder = () => {
             const { error } = await supabase.rpc('approve_submission', { course_id_in: courseData.id });
       if (error) throw error;
       
-      console.log('[CourseBuilder] Approving submission. Clearing persistent feedback.');
+      
       setPersistentFeedback(null);
       toast.success("Course approved and published successfully!");
       navigate('/dashboard/courses');
     } catch (error: any) {
       toast.error('Failed to approve submission.', { description: error.message });
-      console.error(error);
     } finally {
       setSaveAction(null);
     }
@@ -1647,7 +2660,7 @@ const CourseBuilder = () => {
       });
       if (error) throw error;
       
-      console.log('[CourseBuilder] Rejecting submission. Setting persistent feedback:', rejectionFeedback);
+      
             setPersistentFeedback(rejectionFeedback);
       toast.success("Submission rejected.");
       setCourseData(prev => ({ ...prev, status: 'Rejected', review_feedback: rejectionFeedback }));
@@ -1655,7 +2668,6 @@ const CourseBuilder = () => {
       setRejectionFeedback("");
     } catch (error: any) {
       toast.error('Failed to reject submission.', { description: error.message });
-      console.error(error);
     } finally {
       setSaveAction(null);
     }
@@ -2003,7 +3015,7 @@ const CourseBuilder = () => {
     );
   }
 
-  console.log('[CourseBuilder] Rendering Feedback Alert. Role:', currentUserRole, 'Feedback:', persistentFeedback);
+  
 
   return (
     <div className="min-h-screen bg-background w-full">
@@ -3086,13 +4098,7 @@ const CourseBuilder = () => {
                           Enrolled Students
                         </h4>
                         <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 px-3 text-xs border-green-300 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg"
-                          >
-                            Export List
-                          </Button>
+
                           <Button
                             variant="ghost"
                             size="sm"
@@ -3289,6 +4295,8 @@ const CourseBuilder = () => {
           onClose={handleCloseContentTypeSelector}
         />
       )}
+
+
     </div>
   );
 };

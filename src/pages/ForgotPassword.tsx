@@ -22,7 +22,7 @@ const ForgotPassword = () => {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `https://dil.lovable.app/dashboard/profile-settings?source=reset`,
+        redirectTo: `${window.location.origin}/dashboard/profile-settings?source=reset`,
       });
 
       if (error) throw error;

@@ -99,8 +99,8 @@ BEGIN
     JOIN public.course_sections cs ON cl.section_id = cs.id
     WHERE clc.content_type = 'assignment'
     AND cs.course_id IN (SELECT course_id FROM student_courses)
-    AND cl.due_date > NOW()
-    AND cl.due_date <= NOW() + INTERVAL '7 days'
+    AND clc.due_date > NOW()
+    AND clc.due_date <= NOW() + INTERVAL '7 days'
     AND NOT EXISTS (
         SELECT 1 FROM public.assignment_submissions asub
         WHERE asub.assignment_id = clc.id AND asub.user_id = student_id

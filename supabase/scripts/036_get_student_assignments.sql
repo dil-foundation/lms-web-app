@@ -25,7 +25,7 @@ BEGIN
     clc.title,
     cl.overview,
     clc.content_path AS description,
-    cl.due_date,
+    clc.due_date,
     c.title AS course_title,
     c.id AS course_id,
     sub.id AS submission_id,
