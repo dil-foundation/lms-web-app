@@ -16,7 +16,7 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 const getInitialUser = () => {
   try {
-    const sessionStr = localStorage.getItem('sb-yfaiauooxwvekdimfeuu-auth-token');
+    const sessionStr = localStorage.getItem(import.meta.env.VITE_AUTH_TOKEN);
     if (sessionStr) {
       const session = JSON.parse(sessionStr);
       return session.user || null;
