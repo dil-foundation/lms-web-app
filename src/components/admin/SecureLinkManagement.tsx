@@ -90,7 +90,7 @@ const GenerateLinkModal = ({ onGenerate, isGenerating }: { onGenerate: (link: Se
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5">
+        <Button className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5">
           <Plus className="w-4 h-4 mr-2" />
           Generate Secure Link
         </Button>
@@ -115,7 +115,7 @@ const GenerateLinkModal = ({ onGenerate, isGenerating }: { onGenerate: (link: Se
             <div className="space-y-2">
               <label className="text-sm font-semibold text-foreground">Observer Role</label>
               <Select value={role} onValueChange={setRole}>
-                <SelectTrigger className="h-10 rounded-lg border-2 border-input bg-background hover:bg-accent/50 focus:ring-2 focus:ring-green-500/20 focus:border-green-500/40 transition-all duration-300">
+                <SelectTrigger className="h-10 rounded-lg border-2 border-input bg-background hover:bg-accent/50 focus:ring-2 focus:ring-accent/20 focus:border-accent/40 transition-all duration-300">
                   <SelectValue placeholder="Select observer role" />
                 </SelectTrigger>
                 <SelectContent className="bg-background/95 backdrop-blur-sm border border-border/50">
@@ -130,7 +130,7 @@ const GenerateLinkModal = ({ onGenerate, isGenerating }: { onGenerate: (link: Se
             <div className="space-y-2">
               <label className="text-sm font-semibold text-foreground">Expiry Duration</label>
               <Select value={expiry} onValueChange={setExpiry}>
-                <SelectTrigger className="h-10 rounded-lg border-2 border-input bg-background hover:bg-accent/50 focus:ring-2 focus:ring-green-500/20 focus:border-green-500/40 transition-all duration-300">
+                <SelectTrigger className="h-10 rounded-lg border-2 border-input bg-background hover:bg-accent/50 focus:ring-2 focus:ring-accent/20 focus:border-accent/40 transition-all duration-300">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-background/95 backdrop-blur-sm border border-border/50">
@@ -146,7 +146,7 @@ const GenerateLinkModal = ({ onGenerate, isGenerating }: { onGenerate: (link: Se
             <Button 
               onClick={handleGenerate} 
               disabled={isGenerating} 
-              className="w-full h-10 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5"
+              className="w-full h-10 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5"
             >
               {isGenerating ? (
                 <>
@@ -177,7 +177,7 @@ const GenerateLinkModal = ({ onGenerate, isGenerating }: { onGenerate: (link: Se
                   size="sm"
                   variant="outline"
                   onClick={() => copyToClipboard(generatedLink.fullUrl)}
-                  className="h-8 w-8 p-0 rounded-lg border-2 hover:border-green-500/40 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-300"
+                  className="h-8 px-3 rounded-lg border-2 hover:border-accent/40 hover:bg-accent/5 transition-all duration-300"
                 >
                   <Copy className="w-3 h-3" />
                 </Button>
@@ -226,11 +226,11 @@ const LinkCard = ({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-gradient-to-r from-green-100 to-green-200 text-green-800 dark:from-green-900/30 dark:to-green-800/30 dark:text-green-200 border border-green-200 dark:border-green-800/50';
-      case 'expired': return 'bg-gradient-to-r from-red-100 to-red-200 text-red-800 dark:from-red-900/30 dark:to-red-800/30 dark:text-red-200 border border-red-200 dark:border-red-800/50';
-      case 'used': return 'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 dark:from-blue-900/30 dark:to-blue-800/30 dark:text-blue-200 border border-blue-200 dark:border-blue-800/50';
-      case 'deactivated': return 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 dark:from-gray-900/30 dark:to-gray-800/30 dark:text-gray-300 border border-gray-200 dark:border-gray-800/50';
-      default: return 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 dark:from-gray-900/30 dark:to-gray-800/30 dark:text-gray-300 border border-gray-200 dark:border-gray-800/50';
+      case 'active': return 'bg-gradient-to-r from-green-100 to-green-200 text-green-800 dark:from-green-900/30 dark:to-green-800/30 dark:text-green-400 border border-green-200 dark:border-green-800/50';
+      case 'expired': return 'bg-gradient-to-r from-red-100 to-red-200 text-red-800 dark:from-red-900/30 dark:to-red-800/30 dark:text-red-400 border border-red-200 dark:border-red-800/50';
+      case 'used': return 'bg-gradient-to-r from-blue-100 to-blue-200 text-white dark:from-blue-900/30 dark:to-blue-800/30 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50';
+      case 'deactivated': return 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 dark:from-gray-900/30 dark:to-gray-800/30 dark:text-gray-400 border border-gray-200 dark:border-gray-800/50';
+      default: return 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 dark:from-gray-900/30 dark:to-gray-800/30 dark:text-gray-400 border border-gray-200 dark:border-gray-800/50';
     }
   };
 
@@ -265,7 +265,7 @@ const LinkCard = ({
                     size="sm"
                   variant="outline"
                     onClick={() => copyToClipboard(link.fullUrl)}
-                  className="h-8 px-3 rounded-lg border-2 hover:border-green-500/40 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-300"
+                  className="h-8 px-3 rounded-lg border-2 hover:border-accent/40 hover:bg-accent/5 transition-all duration-300"
                   >
                     <Copy className="w-3 h-3 mr-1" />
                   Copy
@@ -299,16 +299,16 @@ const LinkCard = ({
           </div>
           
           {/* Right section - Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <Button
               size="sm"
               variant="outline"
               onClick={() => window.open(link.fullUrl, '_blank')}
               disabled={displayStatus !== 'active'}
-              className="h-8 px-3 rounded-lg border-2 hover:border-primary/40 hover:bg-primary/5 transition-all duration-300"
+              className="h-8 px-3 rounded-lg border-2 hover:border-accent/40 hover:bg-accent/5 transition-all duration-300 flex items-center gap-1"
             >
-              <Eye className="w-3 h-3 mr-1" />
-              View
+              <Eye className="w-3 h-3" />
+              <span className="text-xs">View</span>
             </Button>
             
             {link.status === 'active' && !isExpired && (
@@ -327,12 +327,15 @@ const LinkCard = ({
               variant="outline"
               onClick={onDelete}
               disabled={isDeleting}
-              className="h-8 px-3 rounded-lg border-2 border-red-200 hover:border-red-300 hover:bg-red-50 text-red-600 hover:text-red-700 transition-all duration-300 dark:border-red-800 dark:hover:border-red-700 dark:hover:bg-red-900/20 dark:text-red-400"
+              className="h-8 px-3 rounded-lg border-2 border-red-200 hover:border-red-300 hover:bg-red-50 text-red-600 hover:text-red-700 transition-all duration-300 dark:border-red-800 dark:hover:border-red-700 dark:hover:bg-red-900/20 dark:text-red-400 flex items-center gap-1"
             >
               {isDeleting ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
               ) : (
-                <Trash2 className="w-3 h-3" />
+                <>
+                  <Trash2 className="w-3 h-3" />
+                  <span className="text-xs">Delete</span>
+                </>
               )}
             </Button>
           </div>
@@ -570,19 +573,19 @@ export const SecureLinkManagement = ({ onBack }: SecureLinkManagementProps) => {
               <Button 
                 variant="outline" 
                 onClick={handleRefresh}
-                className="h-10 px-6 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="h-10 px-6 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800"
               >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
-          </Button>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Refresh
+              </Button>
               <Button 
                 variant="outline" 
                 onClick={onBack}
-                className="h-10 px-6 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="h-10 px-6 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800"
               >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
-          </Button>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
+              </Button>
             </div>
           </div>
         </div>

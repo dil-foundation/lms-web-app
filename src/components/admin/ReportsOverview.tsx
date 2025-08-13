@@ -202,11 +202,25 @@ export const ReportsOverview = () => {
   // Fetch course performance data
   const fetchCoursePerformanceData = async () => {
     try {
+      console.log('🔍 [DEBUG] fetchCoursePerformanceData called');
+      
       const { data, error } = await supabase
-        .rpc('get_course_performance_data_admin');
+        .rpc('get_admin_course_analytics');
+
+      console.log('🔍 [DEBUG] get_admin_course_analytics response:', { data, error });
 
       if (error) throw error;
-      setCoursePerformanceData(data || []);
+      
+      // Transform the data to match the expected interface
+      const transformedData = data?.map((item: any) => ({
+        course_title: item.course_title,
+        enrollments: item.enrolled_students,
+        completion_rate: item.completion_rate,
+        avg_rating: item.average_score || 0
+      })) || [];
+
+      console.log('🔍 [DEBUG] Transformed course performance data:', transformedData);
+      setCoursePerformanceData(transformedData);
     } catch (err: any) {
       console.error('Error fetching course performance data:', err);
       setError(err.message);
@@ -369,7 +383,7 @@ export const ReportsOverview = () => {
                 <BarChart3 className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
+                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text', lineHeight: '3rem' }}>
                   Reports & Analytics
                 </h1>
                 <p className="text-lg text-muted-foreground font-light">
@@ -396,16 +410,22 @@ export const ReportsOverview = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {summaryCards.map((card, index) => (
           <Card key={index} className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
-              <card.icon className={`h-4 w-4 ${card.color}`} />
+              <card.icon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-xl sm:text-2xl font-bold">{card.value}</div>
-
+              <div className="text-2xl font-bold">{card.value}</div>
+              <div className="flex items-center gap-2 mt-2">
+                <div className="flex items-center gap-1 text-sm text-green-600 dark:text-green-400">
+                  <TrendingUp className="w-4 h-4" />
+                  <span className="font-medium">{card.change}</span>
+                </div>
+                <span className="text-xs text-muted-foreground">vs last period</span>
+              </div>
             </CardContent>
           </Card>
         ))}

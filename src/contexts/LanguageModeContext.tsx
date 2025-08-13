@@ -236,7 +236,7 @@ export const LanguageModeSelector = ({
             className={`
               px-4 py-2 text-sm font-medium transition-colors
               ${languageMode === lang.value
-                ? 'bg-blue-500 text-white'
+                ? 'bg-secondary text-white dark:text-secondary-foreground'
                 : 'bg-white text-gray-700 hover:bg-gray-50'
               }
               ${lang.value === LANGUAGE_MODES.ENGLISH 
@@ -261,7 +261,7 @@ export const LanguageModeSelector = ({
         disabled={disabled || isLoading}
         className={`
           px-3 py-2 border border-gray-300 rounded-md text-sm
-          focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+          focus:ring-2 focus:ring-secondary focus:border-secondary
           ${disabled || isLoading ? 'opacity-50 cursor-not-allowed' : ''}
           ${className}
         `}
@@ -286,7 +286,7 @@ export const LanguageModeSelector = ({
             className={`
               px-4 py-2 text-sm font-medium rounded-md transition-colors
               ${languageMode === lang.value
-                ? 'bg-blue-500 text-white'
+                ? 'bg-secondary text-white dark:text-secondary-foreground'
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }
               ${disabled || isLoading ? 'opacity-50 cursor-not-allowed' : ''}
@@ -310,7 +310,7 @@ export const LanguageModeIndicator = ({ className = '' }) => {
     <div 
       className={`
         inline-flex items-center gap-1 px-2 py-1 
-        bg-blue-100 text-blue-800 rounded-md text-xs font-medium
+        bg-secondary/10 text-secondary rounded-md text-xs font-medium
         ${className}
       `}
       dir={currentIsRTL ? 'rtl' : 'ltr'}

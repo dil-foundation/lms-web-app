@@ -40,28 +40,29 @@ const StageTwo = lazy(() => import('@/pages/practice/StageTwo').then(module => (
 const DailyRoutine = lazy(() => import('@/pages/practice/DailyRoutine'));
 const QuickAnswer = lazy(() => import('@/pages/practice/QuickAnswer'));
 const RoleplaySimulation = lazy(() => import('@/pages/practice/RoleplaySimulation'));
-const StageThree = lazy(() => import('@/pages/practice/StageThree'));
+const StageThree = lazy(() => import('@/pages/practice/StageThree').then(module => ({ default: module.StageThree })));
 const StorytellingPractice = lazy(() => import('@/pages/practice/StorytellingPractice'));
 const GroupDialogue = lazy(() => import('@/pages/practice/GroupDialogue'));
 const ProblemSolvingSimulations = lazy(() => import('@/pages/practice/ProblemSolvingSimulations'));
-const StageFour = lazy(() => import('@/pages/practice/StageFour'));
+const StageFour = lazy(() => import('@/pages/practice/StageFour').then(module => ({ default: module.StageFour })));
 const AbstractTopicMonologue = lazy(() => import('@/pages/practice/AbstractTopicMonologue'));
 const MockInterviewPractice = lazy(() => import('@/pages/practice/MockInterviewPractice'));
 const NewsSummaryChallenge = lazy(() => import('@/pages/practice/NewsSummaryChallenge'));
-const StageFive = lazy(() => import('@/pages/practice/StageFive'));
+const StageFive = lazy(() => import('@/pages/practice/StageFive').then(module => ({ default: module.StageFive })));
 const CriticalThinkingDialogues = lazy(() => import('@/pages/practice/CriticalThinkingDialogues'));
 const AcademicPresentations = lazy(() => import('@/pages/practice/AcademicPresentations'));
 const InDepthInterviewSimulation = lazy(() => import('@/pages/practice/InDepthInterviewSimulation'));
-const StageSix = lazy(() => import('@/pages/practice/StageSix'));
+const StageSix = lazy(() => import('@/pages/practice/StageSix').then(module => ({ default: module.StageSix })));
 const AIGuidedSpontaneousSpeech = lazy(() => import('@/pages/practice/AIGuidedSpontaneousSpeech'));
 const SensitiveScenarioRoleplay = lazy(() => import('@/pages/practice/SensitiveScenarioRoleplay'));
 const CriticalOpinionBuilder = lazy(() => import('@/pages/practice/CriticalOpinionBuilder'));
 const ReportsOverview = lazy(() => import('@/components/admin/ReportsOverview').then(module => ({ default: module.ReportsOverview })));
 const ObservationReports = lazy(() => import('@/components/admin/ObservationReports').then(module => ({ default: module.ObservationReports })));
 const GradeAssignments = lazy(() => import('@/components/admin/GradeAssignments').then(module => ({ default: module.GradeAssignments })));
+const AdminAssessments = lazy(() => import('@/components/admin/AdminAssessments').then(module => ({ default: module.AdminAssessments })));
 const AssignmentSubmissions = lazy(() => import('@/components/admin/AssignmentSubmissions').then(module => ({ default: module.AssignmentSubmissions })));
 const StudentSubmissionDetail = lazy(() => import('@/components/admin/StudentSubmissionDetail').then(module => ({ default: module.StudentSubmissionDetail })));
-const AdminSettings = lazy(() => import('@/components/admin/AdminSettings').then(module => ({ default: module.AdminSettings })));
+const AdminSettings = lazy(() => import('@/components/admin/AdminSettings'));
 const AdminSecurity = lazy(() => import('@/components/admin/AdminSecurity').then(module => ({ default: module.AdminSecurity })));
 const AITutorSettings = lazy(() => import('@/components/admin/AITutorSettings').then(module => ({ default: module.AITutorSettings })));
 const AISafetyEthicsSettings = lazy(() => import('@/components/admin/AISafetyEthicsSettings').then(module => ({ default: module.AISafetyEthicsSettings })));
@@ -97,6 +98,11 @@ const Dashboard = () => {
 
   const currentRole = profile?.role as UserRole | undefined
   ;
+  
+  // Debug logging
+  useEffect(() => {
+    // Dashboard component mounted successfully
+  }, []);
   
   const displayProfile = profile && currentRole ? {
     ...profile,
@@ -269,6 +275,8 @@ const Dashboard = () => {
                           <Route path="/ai-reports" element={<ReportsAnalytics />} />
                           <Route path="/ai-tutor-settings" element={<AITutorSettings userProfile={finalProfile} />} />
                           <Route path="/ai-safety-ethics" element={<AISafetyEthicsSettings userProfile={finalProfile} />} />
+                          <Route path="/admin-settings" element={<AdminSettings />} />
+                          <Route path="/test-admin-settings" element={<AdminSettings />} />
                           {/* Practice Stage Routes for Admin Viewing */}
                           <Route path="/practice/stage-0" element={<StageZero />} />
                           <Route path="/practice/stage-0/lesson/:lessonId" element={<LessonDetail />} />
@@ -307,10 +315,11 @@ const Dashboard = () => {
                           <Route path="/messages" element={<MessagesPage />} />
                           <Route path="/discussion" element={<DiscussionsPage />} />
                           <Route path="/discussion/:id" element={<DiscussionViewPage />} />
-                          <Route path="/grade-assignments" element={<GradeAssignments />} />
+                          <Route path="/grade-assignments" element={<AdminAssessments />} />
                           <Route path="/grade-assignments/:id" element={<AssignmentSubmissions />} />
                           <Route path="/grade-assignments/:assignmentId/student/:studentId" element={<StudentSubmissionDetail />} />
-                          <Route path="/settings" element={<AdminSettings />} />
+                          <Route path="/admin-settings" element={<AdminSettings />} />
+                          <Route path="/test-admin-settings" element={<AdminSettings />} />
                           <Route path="/security" element={<AdminSecurity />} />
                           <Route path="/integration-apis" element={<IntegrationAPIs userProfile={finalProfile} />} />
                           <Route path="/multitenancy" element={<Multitenancy userProfile={finalProfile} />} />

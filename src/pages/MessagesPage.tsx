@@ -44,6 +44,10 @@ import {
   Check,
   CheckCheck,
   AlertTriangle,
+  Sparkles,
+  TrendingUp,
+  Clock,
+  Bell,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -60,10 +64,10 @@ import {
   stopTokenRefreshInterval,
   getUsersForAdminMessaging,
   getStudentsForTeacherMessaging,
-  getTeachersForStudentMessaging,
+  getUsersForStudentMessaging,
   searchUsersForMessaging,
   searchStudentsForTeacherMessaging,
-  searchTeachersForStudentMessaging,
+  searchUsersForStudentMessaging,
   createConversation,
   getConversations,
   getMessages,
@@ -177,21 +181,19 @@ const getRoleIcon = (role: UserRole) => {
   }
 };
 
-  // Helper function to get role color
-  const getRoleColor = (role: UserRole) => {
-    switch (role) {
-      case 'admin':
-        return 'text-red-500';
-      case 'teacher':
-        return 'text-blue-500';
-      case 'student':
-        return 'text-green-500';
-      default:
-        return 'text-gray-500';
-    }
-  };
-
-
+// Helper function to get role color
+const getRoleColor = (role: UserRole) => {
+  switch (role) {
+    case 'admin':
+      return 'text-red-500';
+    case 'teacher':
+      return 'text-[#1582B4]';
+    case 'student':
+      return 'text-green-500';
+    default:
+      return 'text-gray-500';
+  }
+};
 
 const getSelectedRoleColor = (role: UserRole) => {
   switch (role) {
@@ -265,15 +267,38 @@ export default function MessagesPage() {
   const [loadingMessagesForChat, setLoadingMessagesForChat] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deletingConversation, setDeletingConversation] = useState<string | null>(null);
-  const initialLoadCompleteRef = useRef(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [showArchiveDialog, setShowArchiveDialog] = useState(false);
+  const [archivingConversation, setArchivingConversation] = useState<string | null>(null);
+  const [showStarDialog, setShowStarDialog] = useState(false);
+  const [starringConversation, setStarringConversation] = useState<string | null>(null);
+  const [showUnstarDialog, setShowUnstarDialog] = useState(false);
+  const [unstarringConversation, setUnstarringConversation] = useState<string | null>(null);
+  const [showDeleteMessageDialog, setShowDeleteMessageDialog] = useState(false);
+  const [deletingMessage, setDeletingMessage] = useState<string | null>(null);
+  const [showArchiveMessageDialog, setShowArchiveMessageDialog] = useState(false);
+  const [archivingMessage, setArchivingMessage] = useState<string | null>(null);
+  const [showStarMessageDialog, setShowStarMessageDialog] = useState(false);
+  const [starringMessage, setStarringMessage] = useState<string | null>(null);
+  const [showUnstarMessageDialog, setShowUnstarMessageDialog] = useState(false);
+  const [unstarringMessage, setUnstarringMessage] = useState<string | null>(null);
+  const [showDeleteUserDialog, setShowDeleteUserDialog] = useState(false);
+  const [deletingUser, setDeletingUser] = useState<string | null>(null);
+  const [showArchiveUserDialog, setShowArchiveUserDialog] = useState(false);
+  const [archivingUser, setArchivingUser] = useState<string | null>(null);
+  const [showStarUserDialog, setShowStarUserDialog] = useState(false);
+  const [starringUser, setStarringUser] = useState<string | null>(null);
+  const [showUnstarUserDialog, setShowUnstarUserDialog] = useState(false);
+  const [unstarringUser, setUnstarringUser] = useState<string | null>(null);
+
+  // Refs
   const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const conversationsContainerRef = useRef<any>(null);
-  const justLoadedMessagesRef = useRef(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const conversationsContainerRef = useRef<HTMLDivElement>(null);
+  const conversationsEndRef = useRef<HTMLDivElement>(null);
   const componentMountedRef = useRef(false);
   const loadingOlderMessagesRef = useRef(false);
-
-
+  const justLoadedMessagesRef = useRef(false);
+  const initialLoadCompleteRef = useRef(false);
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedChat || !user?.id) return;
@@ -353,9 +378,9 @@ export default function MessagesPage() {
         } else if (profile.role === 'student') {
           // Student can message their enrolled teachers
           if (userSearchQuery.trim()) {
-            result = await searchTeachersForStudentMessaging(user.id, userSearchQuery, currentPage, 10);
+            result = await searchUsersForStudentMessaging(user.id, userSearchQuery, currentPage, 10);
           } else {
-            result = await getTeachersForStudentMessaging(user.id, currentPage, 10);
+            result = await getUsersForStudentMessaging(user.id, currentPage, 10);
           }
         } else {
           return;
@@ -466,9 +491,9 @@ export default function MessagesPage() {
     
     // Only prevent duplicate initial loads if we have conversations already loaded
     if (!conversationsSearchQuery.trim() && initialLoadCompleteRef.current && chats.length > 0) {
-      return;
-    }
-    
+        return;
+      }
+      
     const loadConversations = async () => {
       if (!user?.id) {
         return;
@@ -526,16 +551,16 @@ export default function MessagesPage() {
             });
             
             setChats(updatedChats);
-          } catch (statusError) {
-            console.error('Error fetching user status:', statusError);
-            // Keep default online status if API fails
+      } catch (statusError) {
+        console.error('Error fetching user status:', statusError);
+        // Keep default online status if API fails
           }
-        }
-        
-        // Mark as loaded only after we've successfully processed the data
-        setConversationsLoaded(true);
-        setInitialLoadComplete(true);
-        initialLoadCompleteRef.current = true;
+    }
+    
+    // Mark as loaded only after we've successfully processed the data
+    setConversationsLoaded(true);
+    setInitialLoadComplete(true);
+    initialLoadCompleteRef.current = true;
       } catch (error) {
         console.error('Error loading conversations:', error);
         // Don't set conversationsLoaded to true on error
@@ -548,18 +573,18 @@ export default function MessagesPage() {
 
     // Debounced loading for search queries
     if (conversationsSearchQuery.trim()) {
-      setConversationsSearchLoading(true);
-      const timer = setTimeout(() => {
+    setConversationsSearchLoading(true);
+    const timer = setTimeout(() => {
         loadConversations();
       }, 800);
       
       return () => {
         clearTimeout(timer);
       };
-    } else {
+            } else {
       // Immediate loading for initial load or when search is cleared
-      loadConversations();
-    }
+        loadConversations();
+      }
   }, [user?.id, conversationsSearchQuery]);
 
 
@@ -569,7 +594,7 @@ export default function MessagesPage() {
     // Only auto-scroll if we have messages and we're not in the middle of loading more messages
     // Also check if we're loading older messages (pagination) to prevent auto-scroll
     if (selectedChat?.messages.length > 0 && !messagesLoading && !loadingMoreMessages && !loadingOlderMessagesRef.current) {
-      scrollToBottom();
+    scrollToBottom();
     }
     // Message read marking temporarily disabled
   }, [selectedChat?.messages, messagesLoading, loadingMoreMessages]);
@@ -1027,7 +1052,7 @@ export default function MessagesPage() {
     }
   };
 
-    // Helper function to load messages for a chat
+  // Helper function to load messages for a chat
   const loadMessagesForChat = async (chat: Chat) => {
     if (chat.messages.length > 0) {
       return; // Already loaded
@@ -1096,146 +1121,124 @@ export default function MessagesPage() {
   };
 
   return (
-    <div className="flex h-[80vh] bg-background">
-      {/* Show loading state while waiting for initial API response */}
-      {!initialLoadComplete && conversationsLoading ? (
+    <div className="flex flex-col h-[80vh] bg-background">
+      {/* Premium Header Section */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
+        <div className="relative p-8 rounded-3xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
+                <MessageSquare className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ lineHeight: '3rem' }}>
+                  Messages
+                </h1>
+                <p className="text-lg text-muted-foreground font-light">
+                  Connect and communicate with your team
+                </p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              onClick={() => setShowNewChatDialog(true)}
+              className="h-12 px-6 bg-gradient-to-br from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              New Chat
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Loading State */}
+      {conversationsLoading && !conversationsLoaded ? (
         <div className="flex-1 flex items-center justify-center">
           <ContentLoader message="Loading conversations..." />
         </div>
-      ) : chats.length === 0 && !conversationsSearchLoading ? (
-        /* Show single centered empty state when no conversations exist */
+      ) : chats.length === 0 ? (
+        /* Empty State - No Conversations */
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 dark:from-primary/20 dark:to-primary/30 rounded-3xl flex items-center justify-center mx-auto mb-6">
               <MessageSquare className="w-8 h-8 text-primary dark:text-primary/90" />
             </div>
-            <h3 className="text-xl font-bold text-foreground mb-3">
-              {conversationsSearchQuery.trim() ? 'No conversations found' : 'No conversations yet'}
-            </h3>
+            <h2 className="text-xl font-bold text-foreground mb-3">No conversations yet</h2>
             <p className="text-muted-foreground mb-6 max-w-sm">
-              {conversationsSearchQuery.trim() 
-                ? `No conversations match "${conversationsSearchQuery}"`
-                : 'Start messaging with other users by creating your first conversation.'
-              }
+              Start messaging with other users by creating your first conversation.
             </p>
-            {!conversationsSearchQuery.trim() && (
-              <Button 
-                onClick={() => setShowNewChatDialog(true)}
-                className="bg-gradient-to-br from-primary to-primary/90 dark:from-primary/90 dark:to-primary/70 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Create Conversation
-              </Button>
-            )}
+            <Button 
+              onClick={() => setShowNewChatDialog(true)}
+              className="bg-gradient-to-br from-primary to-primary/90 dark:from-primary/90 dark:to-primary/70 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 text-white dark:text-white"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Create Conversation
+            </Button>
           </div>
         </div>
       ) : (
-        /* Show full layout with sidebar when conversations exist or loading */
-        <>
-        {/* Chat List Sidebar */}
-        <div className="w-80 border-r border-border flex flex-col">
-          {/* Enhanced Header */}
-          <div className="relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 dark:from-primary/10 dark:via-transparent dark:to-primary/10"></div>
-            <div className="relative p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-primary/15 to-primary/25 dark:from-primary/20 dark:to-primary/30 rounded-xl flex items-center justify-center">
-                    <MessageSquare className="w-5 h-5 text-primary dark:text-primary/90" />
-                  </div>
-                  <div>
-                    <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground via-foreground to-foreground/80 dark:from-foreground/90 dark:via-foreground dark:to-foreground/70 bg-clip-text text-transparent">
-                      Messages
-                    </h1>
-                    <p className="text-sm text-muted-foreground font-light mt-1">
-                      Connect and communicate with your team
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  size="sm"
-                  onClick={() => setShowNewChatDialog(true)}
-                  className="h-10 w-10 p-0 bg-gradient-to-br from-primary/10 to-primary/20 dark:from-primary/20 dark:to-primary/30 border border-primary/20 dark:border-primary/30 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300"
-                >
-                  <Plus className="h-4 w-4 text-foreground dark:text-foreground" />
-                </Button>
-              </div>
-              
-              {/* Enhanced Search */}
+        /* Main Content - Show Chat UI only when conversations exist */
+        <div className="flex flex-1 overflow-hidden">
+          {/* Chat List Sidebar */}
+          <div className="w-80 border-r border-border flex flex-col">
+            {/* Enhanced Search */}
+            <div className="relative p-6 border-b border-border/50">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search conversations..."
+                  placeholder={profile?.role === 'student' 
+                    ? "Search teachers and fellow students by name or email..." 
+                    : "Search users by name or email..."
+                  }
                   value={conversationsSearchQuery}
                   onChange={(e) => setConversationsSearchQuery(e.target.value)}
-                  className="pl-10 h-11 bg-background/50 dark:bg-background/30 border-border/50 focus:border-primary/50 transition-all duration-300"
+                  className="pl-10 h-11 bg-background/50 dark:bg-background/30 border-border/50 focus:border-primary/50 transition-all duration-300 rounded-xl"
                 />
               </div>
             </div>
-          </div>
 
-          {/* Chat List */}
-          <ScrollArea className="flex-1">
-            <div className="p-2">
-              {(conversationsSearchLoading && conversationsSearchQuery.trim()) ? (
-                <div className="flex items-center justify-center py-8">
-                  <ContentLoader message="Searching conversations..." />
-                </div>
-              ) : chats.length === 0 ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="text-center">
-                    {conversationsSearchQuery.trim() ? (
-                      <>
-                        <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 dark:from-primary/20 dark:to-primary/30 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                          <Search className="w-8 h-8 text-primary dark:text-primary/90" />
-                        </div>
-                        <h2 className="text-xl font-bold text-foreground mb-3">No conversations found</h2>
-                        <p className="text-muted-foreground mb-6 max-w-sm">
-                          No conversations match "{conversationsSearchQuery}"
-                        </p>
-                        <Button 
-                          variant="outline" 
-                          onClick={() => setConversationsSearchQuery('')}
-                          className="bg-background/50 dark:bg-background/30 border-border/50 hover:border-primary/50 transition-all duration-300"
-                        >
-                          Clear search
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 dark:from-primary/20 dark:to-primary/30 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                          <MessageSquare className="w-8 h-8 text-primary dark:text-primary/90" />
-                        </div>
-                        <h2 className="text-xl font-bold text-foreground mb-3">No conversations yet</h2>
-                        <p className="text-muted-foreground mb-6 max-w-sm">
-                          Start messaging with other users by creating your first conversation.
-                        </p>
-                        <Button 
-                          onClick={() => setShowNewChatDialog(true)}
-                          className="bg-gradient-to-br from-primary to-primary/90 dark:from-primary/90 dark:to-primary/70 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 text-white dark:text-white"
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Create Conversation
-                        </Button>
-                      </>
-                    )}
+            {/* Chat List */}
+            <ScrollArea className="flex-1">
+              <div className="p-2">
+                {(conversationsSearchLoading && conversationsSearchQuery.trim()) ? (
+                  <div className="flex items-center justify-center py-8">
+                    <ContentLoader message="Searching conversations..." />
                   </div>
-                </div>
-              ) : (
+                ) : conversationsSearchQuery.trim() && chats.length === 0 ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 dark:from-primary/20 dark:to-primary/30 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                        <Search className="w-8 h-8 text-primary dark:text-primary/90" />
+                      </div>
+                      <h2 className="text-xl font-bold text-foreground mb-3">No conversations found</h2>
+                      <p className="text-muted-foreground mb-6 max-w-sm">
+                        No conversations match "{conversationsSearchQuery}"
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setConversationsSearchQuery('')}
+                        className="bg-background/50 dark:bg-background/30 border-border/50 hover:border-primary/50 transition-all duration-300"
+                      >
+                        Clear search
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
                 <>
                   {chats.map((chat) => (
                     <div
                       key={chat.id}
-                      className={`p-4 rounded-xl cursor-pointer transition-all duration-300 ${
+                      className={`p-4 rounded-2xl cursor-pointer transition-all duration-300 hover:shadow-lg ${
                         selectedChat?.id === chat.id
-                          ? 'bg-gradient-to-r from-primary/10 to-primary/20 dark:from-primary/20 dark:to-primary/30 border border-primary/30 dark:border-primary/40 shadow-sm'
-                          : 'hover:bg-gradient-to-r hover:from-primary/5 hover:to-primary/10 dark:hover:from-primary/10 dark:hover:to-primary/20 border border-transparent hover:border-primary/20 dark:hover:border-primary/30'
+                          ? 'bg-gradient-to-br from-primary/10 to-primary/20 dark:from-primary/20 dark:to-primary/30 border border-primary/30 dark:border-primary/40 shadow-lg'
+                          : 'hover:bg-gradient-to-br hover:from-primary/5 hover:to-primary/10 dark:hover:from-primary/10 dark:hover:to-primary/20 border border-transparent hover:border-primary/20 dark:hover:border-primary/30'
                       }`}
                       onClick={() => handleSelectChat(chat)}
                     >
                       <div className="flex items-center gap-3">
                         <div className="relative">
-                          <Avatar className="h-12 w-12 border-2 border-background dark:border-background/50">
+                          <Avatar className="h-12 w-12 border-2 border-background dark:border-background/50 shadow-lg">
                             <AvatarImage src={chat.avatar} alt={chat.name} />
                             <AvatarFallback className="bg-gradient-to-br from-primary/10 to-primary/20 dark:from-primary/20 dark:to-primary/30 text-primary dark:text-primary/90 font-semibold">
                               {getUserInitials(chat.name, chat.email)}
@@ -1249,7 +1252,7 @@ export default function MessagesPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-1">
                             <div className="flex items-center gap-2">
-                              <h3 className={`font-semibold truncate ${selectedChat?.id === chat.id ? 'text-foreground' : 'text-foreground'}`}>
+                              <h3 className={`font-semibold truncate ${selectedChat?.id === chat.id ? 'text-gray-900 dark:text-gray-100' : 'text-gray-900 dark:text-gray-100'}`}>
                                 {chat.name}
                               </h3>
                             </div>
@@ -1311,42 +1314,42 @@ export default function MessagesPage() {
               <div className="relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 dark:from-primary/10 dark:via-transparent dark:to-primary/10"></div>
                 <div className="relative p-6 border-b border-border/50 flex-shrink-0">
-                  <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <div className="relative">
                         <Avatar className="h-12 w-12 border-2 border-background dark:border-background/50">
-                          <AvatarImage src={selectedChat.avatar} alt={selectedChat.name} />
+                      <AvatarImage src={selectedChat.avatar} alt={selectedChat.name} />
                           <AvatarFallback className="bg-gradient-to-br from-primary/10 to-primary/20 dark:from-primary/20 dark:to-primary/30 text-primary dark:text-primary/90 font-semibold">
-                            {getUserInitials(selectedChat.name, selectedChat.email)}
-                          </AvatarFallback>
-                        </Avatar>
+                        {getUserInitials(selectedChat.name, selectedChat.email)}
+                      </AvatarFallback>
+                    </Avatar>
                         {selectedChat.isOnline && (
                           <div className="absolute -bottom-1 -right-1 h-3 w-3 bg-green-500 dark:bg-green-400 rounded-full border-2 border-background dark:border-background/50 shadow-sm" />
                         )}
                       </div>
-                      <div>
+                    <div>
                         <div className="flex items-center gap-3 mb-2">
                           <h2 className="text-xl font-bold text-foreground">{selectedChat.name}</h2>
-                          {selectedChat.role && (
+                        {selectedChat.role && (
                             <div className="flex items-center gap-2">
-                              {(() => {
-                                const RoleIcon = getRoleIcon(selectedChat.role);
-                                return (
+                            {(() => {
+                              const RoleIcon = getRoleIcon(selectedChat.role);
+                              return (
                                   <RoleIcon className="h-4 w-4 text-primary dark:text-primary/90" />
-                                );
-                              })()}
+                              );
+                            })()}
                               <span className="text-sm font-medium text-primary dark:text-primary/90 bg-primary/10 dark:bg-primary/20 px-3 py-1 rounded-full">
-                                {selectedChat.role.charAt(0).toUpperCase() + selectedChat.role.slice(1)}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                        <Badge 
-                          variant={selectedChat.isOnline ? "default" : "destructive"} 
+                              {selectedChat.role.charAt(0).toUpperCase() + selectedChat.role.slice(1)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <Badge 
+                        variant={selectedChat.isOnline ? "default" : "destructive"} 
                           className={`text-xs font-semibold ${selectedChat.isOnline ? 'bg-green-500 dark:bg-green-400 hover:bg-green-600 dark:hover:bg-green-500' : 'bg-red-500 dark:bg-red-400 hover:bg-red-600 dark:hover:bg-red-500'}`}
-                        >
-                          {selectedChat.isOnline ? 'Online' : 'Offline'}
-                        </Badge>
+                      >
+                        {selectedChat.isOnline ? 'Online' : 'Offline'}
+                      </Badge>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -1444,16 +1447,16 @@ export default function MessagesPage() {
                 <div className="relative p-6 border-t border-border/50 flex-shrink-0">
                   <div className="flex gap-3">
                     <div className="flex-1 relative">
-                      <Textarea
-                        placeholder="Type a message..."
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            handleSendMessage();
-                          }
-                        }}
+                  <Textarea
+                    placeholder="Type a message..."
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
                         className="min-h-[60px] max-h-[120px] resize-none bg-background/50 dark:bg-background/30 border-border/50 focus:border-primary/50 transition-all duration-300 rounded-xl"
                       />
                     </div>
@@ -1463,7 +1466,7 @@ export default function MessagesPage() {
                       className="h-[60px] w-[60px] p-0 bg-gradient-to-br from-primary to-primary/90 dark:from-primary/90 dark:to-primary/70 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 rounded-xl"
                     >
                       <Send className="h-5 w-5 text-primary-foreground" />
-                    </Button>
+                  </Button>
                   </div>
                 </div>
               </div>
@@ -1483,7 +1486,7 @@ export default function MessagesPage() {
             </div>
           )}
         </div>
-      </>
+        </div>
       )}
 
       {/* Enhanced New Chat Dialog - Always available */}
@@ -1505,7 +1508,12 @@ export default function MessagesPage() {
               </div>
               <div>
                 <DialogTitle className="text-xl font-bold text-foreground">Start New Conversation</DialogTitle>
-                <p className="text-sm text-muted-foreground mt-1">Connect with your team members</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {profile?.role === 'student' 
+                    ? 'Connect with your teachers and fellow students' 
+                    : 'Connect with your team members'
+                  }
+                </p>
               </div>
             </div>
           </DialogHeader>
@@ -1515,7 +1523,10 @@ export default function MessagesPage() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search users by name or email..."
+                placeholder={profile?.role === 'student' 
+                  ? "Search teachers and fellow students by name or email..." 
+                  : "Search users by name or email..."
+                }
                 value={userSearchQuery}
                 onChange={(e) => setUserSearchQuery(e.target.value)}
                 className="pl-10 h-11 bg-background/50 dark:bg-background/30 border-border/50 focus:border-primary/50 transition-all duration-300"
@@ -1524,7 +1535,7 @@ export default function MessagesPage() {
             
             <Select value={selectedUser} onValueChange={setSelectedUser}>
               <SelectTrigger>
-                <SelectValue placeholder="Select a user" />
+                <SelectValue placeholder={profile?.role === 'student' ? "Select a teacher or fellow student" : "Select a user"} />
               </SelectTrigger>
               <SelectContent>
                 <div 
@@ -1556,8 +1567,8 @@ export default function MessagesPage() {
                 ) : availableUsers.length === 0 && !usersLoading ? (
                   <div className="px-2 py-1.5 text-sm text-gray-600 dark:text-gray-300 text-center">
                     {userSearchQuery.trim() 
-                      ? `No ${profile?.role === 'admin' ? 'users' : profile?.role === 'teacher' ? 'students or admins' : 'teachers'} found matching "${userSearchQuery}"`
-                      : `No ${profile?.role === 'admin' ? 'users' : profile?.role === 'teacher' ? 'students or admins' : 'teachers'} available to message`
+                      ? `No ${profile?.role === 'admin' ? 'users' : profile?.role === 'teacher' ? 'students or admins' : 'teachers and fellow students'} found matching "${userSearchQuery}"`
+                      : `No ${profile?.role === 'admin' ? 'users' : profile?.role === 'teacher' ? 'students or admins' : 'teachers and fellow students'} available to message`
                     }
                   </div>
                 ) : (
@@ -1607,7 +1618,7 @@ export default function MessagesPage() {
                     )}
                     {!hasMoreUsers && availableUsers.length > 0 && (
                       <div className="px-2 py-1.5 text-sm text-gray-600 dark:text-gray-300">
-                        No more {profile?.role === 'admin' ? 'users' : profile?.role === 'teacher' ? 'students and admins' : 'teachers'}
+                        No more {profile?.role === 'admin' ? 'users' : profile?.role === 'teacher' ? 'students and admins' : 'teachers and fellow students'}
                       </div>
                     )}
                   </>

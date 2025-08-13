@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Mic, Bot, User, Play, Pause, RefreshCw, Loader2 } from 'lucide-react';
+import { ArrowLeft, Mic, Bot, User, Play, Pause, RefreshCw, Loader2, Target, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { 
   fetchCriticalThinkingTopics, 
@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useAuth } from '@/hooks/useAuth';
+import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
 
 interface ConversationMessage {
   id: string;
@@ -321,71 +322,86 @@ export default function CriticalThinkingDialogues() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4">
+    <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => {
-              if (currentTopic && !showTopicSelection) {
-                // If viewing a topic, go back to topic selection
-                selectNewTopic();
-              } else {
-                // If on topic selection, go back to Stage 5
-                navigate('/dashboard/practice/stage-5');
-              }
-            }}
-            className="shrink-0"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+        {/* Consistent Header Section */}
+        <div className="px-6 py-8">
+          {/* Breadcrumb Navigation */}
+          <PracticeBreadcrumb className="mb-6" />
           
-          <div className="text-center flex-1">
-            <h1 className="text-xl font-semibold text-green-600 dark:text-green-400">
-              Critical Thinking Dialogues
-            </h1>
-            {currentTopic && (
-              <p className="text-sm text-muted-foreground mt-1">
-                {currentTopic.topic_title}
+          {/* Header with Back Button and Title */}
+          <div className="relative flex items-center justify-center mb-8 text-center">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                if (currentTopic && !showTopicSelection) {
+                  // If viewing a topic, go back to topic selection
+                  selectNewTopic();
+                } else {
+                  // If on topic selection, go back to Stage 5
+                  navigate('/dashboard/practice/stage-5');
+                }
+              }}
+              className="absolute left-0 group w-12 h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+            >
+              <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-300" />
+            </Button>
+            
+            <div className="space-y-3">
+              <div className="inline-block p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
+                <Target className="h-10 w-10 text-primary" />
+              </div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                Critical Thinking Dialogues
+              </h1>
+              <p className="text-muted-foreground text-lg">
+                Engage in thoughtful discussions and develop analytical skills
               </p>
-            )}
+            </div>
           </div>
-          
-          <div className="w-10"></div>
         </div>
 
         {/* Loading State */}
         {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-green-600" />
-            <span className="ml-2 text-muted-foreground">Loading...</span>
+          <div className="flex items-center justify-center py-12 px-6">
+            <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
+              <CardContent className="p-6">
+                <div className="flex flex-col items-center justify-center space-y-4">
+                  <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                  <span className="text-muted-foreground text-lg">Loading...</span>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
 
         {/* Topic Selection */}
         {showTopicSelection && !isLoading && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold mb-4">Select a Critical Thinking Topic</h2>
-            <div className="grid gap-4 md:grid-cols-2">
+          <div className="px-6 pb-8 space-y-6">
+            <h2 className="text-2xl font-bold text-center bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent mb-6">
+              Select a Critical Thinking Topic
+            </h2>
+            <div className="grid gap-6 md:grid-cols-2">
               {topics.map((topic) => (
                 <Card 
                   key={topic.topic_id}
-                  className="cursor-pointer hover:shadow-md transition-shadow border-2 hover:border-green-200 dark:hover:border-green-800"
+                  className="cursor-pointer hover:shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden"
                   onClick={() => loadTopic(topic.topic_id)}
                 >
-                  <CardContent className="p-4">
+                  <CardContent className="p-6">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <h3 className="font-medium text-green-600 dark:text-green-400 mb-2">
+                        <h3 className="font-semibold text-primary mb-3 text-lg">
                           {topic.topic_title}
                         </h3>
-                        <p className="text-sm text-muted-foreground mb-3">
+                        <p className="text-sm text-muted-foreground mb-4">
                           {topic.topic_description}
                         </p>
                         <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                          <span>{topic.category}</span>
+                          <span className="px-3 py-1 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-full border border-primary/20">
+                            {topic.category}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -400,7 +416,7 @@ export default function CriticalThinkingDialogues() {
                 <Button 
                   variant="outline" 
                   onClick={loadTopics}
-                  className="mt-4"
+                  className="mt-4 px-6 py-2 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl hover:-translate-y-0.5 rounded-2xl"
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Retry
@@ -412,25 +428,25 @@ export default function CriticalThinkingDialogues() {
 
         {/* Topic Information */}
         {currentTopic && !showTopicSelection && (
-          <Card className="mb-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-blue-200 dark:border-blue-800">
-            <CardContent className="p-4">
+          <Card className="mb-6 border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
+            <CardContent className="p-6">
               <div className="text-center">
-                <h2 className="text-lg font-semibold text-blue-600 dark:text-blue-400 mb-2">
+                <h2 className="text-xl font-semibold text-primary mb-3">
                   Topic
                 </h2>
-                <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                <p className="text-sm text-muted-foreground mb-4">
                   {currentTopic.topic}
                 </p>
                 
                 {/* Expected Keywords */}
                 {currentTopic.expected_keywords && currentTopic.expected_keywords.length > 0 && (
-                  <div className="mb-3">
-                    <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-2">Expected Keywords:</p>
-                    <div className="flex flex-wrap justify-center gap-1">
+                  <div className="mb-4">
+                    <p className="text-xs font-medium text-primary mb-3">Expected Keywords:</p>
+                    <div className="flex flex-wrap justify-center gap-2">
                       {currentTopic.expected_keywords.map((keyword, index) => (
                         <span 
                           key={index}
-                          className="px-2 py-1 bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 text-xs rounded-full"
+                          className="px-3 py-1 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm text-primary text-xs rounded-full border border-primary/20"
                         >
                           {keyword}
                         </span>
@@ -439,8 +455,10 @@ export default function CriticalThinkingDialogues() {
                   </div>
                 )}
                 
-                <div className="flex items-center justify-center space-x-4 text-xs text-muted-foreground mb-3">
-                  <span>{currentTopic.category}</span>
+                <div className="flex items-center justify-center space-x-4 text-xs text-muted-foreground mb-4">
+                  <span className="px-3 py-1 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-full border border-primary/20">
+                    {currentTopic.category}
+                  </span>
                 </div>
                 
                 {/* Audio Play Button */}
@@ -448,15 +466,15 @@ export default function CriticalThinkingDialogues() {
                   <button
                     onClick={handlePlayAudio}
                     disabled={isLoadingAudio}
-                    className="w-12 h-12 bg-green-500 hover:bg-green-600 disabled:bg-green-300 rounded-full flex items-center justify-center shadow-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2"
+                    className="w-16 h-16 bg-gradient-to-r from-[#1582B4] to-[#1582B4]/90 hover:from-[#1582B4]/90 hover:to-[#1582B4] disabled:from-[#1582B4]/50 disabled:to-[#1582B4]/50 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#1582B4]/40 focus:ring-offset-2"
                     title={isLoadingAudio ? "Loading audio..." : audioState.isPlaying ? "Pause audio" : "Play audio"}
                   >
                     {isLoadingAudio ? (
-                      <Loader2 className="h-5 w-5 text-white animate-spin" />
+                      <Loader2 className="h-6 w-6 text-white animate-spin" />
                     ) : audioState.isPlaying ? (
-                      <Pause className="h-5 w-5 text-white ml-0" />
+                      <Pause className="h-6 w-6 text-white" />
                     ) : (
-                      <Play className="h-5 w-5 text-white ml-0.5" />
+                      <Play className="h-6 w-6 text-white ml-1" />
                     )}
                   </button>
                 </div>
@@ -467,39 +485,45 @@ export default function CriticalThinkingDialogues() {
 
         {/* Conversation */}
         {currentTopic && !showTopicSelection && (
-          <div className="space-y-4 mb-6">
+          <div className="px-6 pb-8 mt-8 space-y-4 mb-6">
             {conversation.map((message) => (
               <Card 
                 key={message.id} 
-                className={message.sender === 'user' ? 'bg-green-600 dark:bg-green-700' : 'border-dashed border-2 border-muted-foreground/20'}
+                className={`${
+                  message.sender === 'user' 
+                    ? 'border-0 bg-gradient-to-br from-primary/20 to-primary/30 rounded-3xl shadow-lg overflow-hidden' 
+                    : 'border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden'
+                }`}
               >
                 <CardContent className="p-6">
                   <div className="flex items-start space-x-4">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
                       message.sender === 'user' 
                         ? 'bg-white/20' 
-                        : 'bg-green-100 dark:bg-green-900/30'
+                        : 'bg-[#1582B4]/20'
                     }`}>
                       {message.sender === 'user' ? (
-                        <User className="h-5 w-5 text-white" />
+                        <User className="h-6 w-6 text-white" />
                       ) : (
-                        <Bot className="h-5 w-5 text-green-600 dark:text-green-400" />
+                        <Bot className="h-6 w-6 text-[#1582B4]" />
                       )}
                     </div>
                     <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <span className={`text-sm font-medium ${
+                      <div className="flex items-center space-x-3 mb-2">
+                        <span className={`text-sm font-semibold ${
                           message.sender === 'user' 
                             ? 'text-white' 
-                            : 'text-green-600 dark:text-green-400'
+                            : 'text-[#1582B4]'
                         }`}>
                           {message.sender === 'user' ? 'You' : 'AI Tutor'}
                         </span>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-muted-foreground bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm px-2 py-1 rounded-full">
                           {message.timestamp.toLocaleTimeString()}
                         </span>
                       </div>
-                      <p className={message.sender === 'user' ? 'text-white' : 'text-foreground'}>
+                      <p className={`${
+                        message.sender === 'user' ? 'text-white' : 'text-foreground'
+                      } text-base leading-relaxed`}>
                         {message.message}
                       </p>
                     </div>
@@ -512,16 +536,16 @@ export default function CriticalThinkingDialogues() {
 
         {/* Evaluation Loading State */}
         {isEvaluating && (
-          <div className="mb-6">
-            <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+          <div className="mb-6 px-6">
+            <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
               <CardContent className="p-6">
-                <div className="flex flex-col items-center justify-center space-y-3">
-                  <Loader2 className="h-8 w-8 animate-spin text-blue-600 dark:text-blue-400" />
+                <div className="flex flex-col items-center justify-center space-y-4">
+                  <Loader2 className="h-10 w-10 animate-spin text-[#1582B4]" />
                   <div className="text-center">
-                    <h3 className="text-lg font-semibold text-blue-600 dark:text-blue-400 mb-1">
+                    <h3 className="text-xl font-semibold text-[#1582B4] mb-2">
                       Evaluating Your Response
                     </h3>
-                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                    <p className="text-sm text-muted-foreground">
                       Please wait while we analyze your critical thinking skills...
                     </p>
                   </div>
@@ -533,15 +557,17 @@ export default function CriticalThinkingDialogues() {
 
         {/* Feedback Section */}
         {showFeedback && evaluation && (
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-4">Your Performance</h3>
+          <div className="mb-6 px-6">
+            <h3 className="text-2xl font-bold text-center bg-gradient-to-r from-[#1582B4] via-[#1582B4]/90 to-[#1582B4] bg-clip-text text-transparent mb-6">
+              Your Performance
+            </h3>
             
-            <div className="space-y-4">
+            <div className="space-y-6">
               {/* Overall Score */}
-              <Card className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20">
-                <CardContent className="p-4">
+              <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
+                <CardContent className="p-6">
                   <div className="text-center">
-                    <div className="text-3xl font-bold text-orange-600 dark:text-orange-400 mb-2">
+                    <div className="text-4xl font-bold bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent mb-3">
                       {evaluation?.evaluation?.evaluation?.overall_score || 0}%
                     </div>
                     <div className="text-sm text-muted-foreground">Overall Score</div>
@@ -550,31 +576,31 @@ export default function CriticalThinkingDialogues() {
               </Card>
 
               {/* Keywords Used */}
-              <Card className="bg-cyan-50 dark:bg-cyan-900/20 border-cyan-200 dark:border-cyan-800">
-                <CardContent className="p-4">
-                  <div className="flex items-start space-x-3">
-                    <div className="w-8 h-8 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg flex items-center justify-center mt-1">
-                      <Bot className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+              <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
+                <CardContent className="p-6">
+                  <div className="flex items-start space-x-4">
+                    <div className="w-10 h-10 bg-[#1582B4]/20 rounded-2xl flex items-center justify-center mt-1">
+                      <Bot className="h-5 w-5 text-[#1582B4]" />
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-medium text-cyan-600 dark:text-cyan-400 mb-2">
+                      <h4 className="font-semibold text-[#1582B4] mb-3 text-lg">
                         Keywords Used ({evaluation?.evaluation?.evaluation?.matched_keywords_count || 0} / {evaluation?.evaluation?.evaluation?.total_keywords || 0})
                       </h4>
                       {evaluation?.evaluation?.evaluation?.keyword_matches && 
                        Array.isArray(evaluation.evaluation.evaluation.keyword_matches) && 
                        evaluation.evaluation.evaluation.keyword_matches.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
+                        <div className="flex flex-wrap gap-2">
                           {evaluation.evaluation.evaluation.keyword_matches.map((keyword, index) => (
                             <span 
                               key={index}
-                              className="px-2 py-1 bg-cyan-200 dark:bg-cyan-800 text-cyan-800 dark:text-cyan-200 text-xs rounded-full"
+                              className="px-3 py-1 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm text-[#1582B4] text-xs rounded-full border border-[#1582B4]/20"
                             >
                               {keyword}
                             </span>
                           ))}
                         </div>
                       ) : (
-                        <p className="text-cyan-700 dark:text-cyan-300 text-sm">No keywords used</p>
+                        <p className="text-muted-foreground text-sm">No keywords used</p>
                       )}
                     </div>
                   </div>
@@ -585,18 +611,19 @@ export default function CriticalThinkingDialogues() {
               {evaluation?.evaluation?.evaluation?.suggested_improvements && 
                Array.isArray(evaluation.evaluation.evaluation.suggested_improvements) && 
                evaluation.evaluation.evaluation.suggested_improvements.length > 0 && (
-                <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
-                  <CardContent className="p-4">
-                    <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mt-1">
-                        <Bot className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
+                  <CardContent className="p-6">
+                    <div className="flex items-start space-x-4">
+                      <div className="w-10 h-10 bg-primary/20 rounded-2xl flex items-center justify-center mt-1">
+                        <Bot className="h-5 w-5 text-primary" />
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-medium text-blue-600 dark:text-blue-400 mb-2">Suggested Improvements</h4>
-                        <ul className="space-y-1">
+                        <h4 className="font-semibold text-primary mb-3 text-lg">Suggested Improvements</h4>
+                        <ul className="space-y-2">
                           {evaluation.evaluation.evaluation.suggested_improvements.map((suggestion, index) => (
-                            <li key={index} className="text-blue-700 dark:text-blue-300 text-sm">
-                              • {suggestion}
+                            <li key={index} className="text-muted-foreground text-sm flex items-start space-x-2">
+                              <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
+                              <span>{suggestion}</span>
                             </li>
                           ))}
                         </ul>
@@ -611,11 +638,11 @@ export default function CriticalThinkingDialogues() {
 
         {/* Action Buttons */}
         {currentTopic && !showTopicSelection && (
-          <div className="text-center">
+          <div className="text-center px-6 mb-6">
             {showFeedback ? (
               <Button
                 onClick={resetConversation}
-                className="bg-green-500 hover:bg-green-600 text-white px-8 py-3 rounded-full text-lg font-medium"
+                className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white px-8 py-3 rounded-full text-lg font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
                 size="lg"
                 disabled={isLoading || isEvaluating}
               >
@@ -625,7 +652,7 @@ export default function CriticalThinkingDialogues() {
             ) : !isRecording && !isEvaluating ? (
               <Button
                 onClick={handleStartRecording}
-                className="bg-green-500 hover:bg-green-600 text-white px-8 py-3 rounded-full text-lg font-medium"
+                className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white px-8 py-3 rounded-full text-lg font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
                 size="lg"
                 disabled={isLoading}
               >
@@ -635,7 +662,7 @@ export default function CriticalThinkingDialogues() {
             ) : isRecording ? (
               <Button
                 onClick={handleStopRecording}
-                className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-full text-lg font-medium animate-pulse"
+                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-8 py-3 rounded-full text-lg font-medium animate-pulse shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
                 size="lg"
               >
                 <Mic className="h-5 w-5 mr-2" />
@@ -647,18 +674,18 @@ export default function CriticalThinkingDialogues() {
 
         {/* Instructions */}
         {currentTopic && !showTopicSelection && (
-          <Card className="mt-6 bg-muted/50">
-            <CardContent className="p-4">
-              <div className="text-center space-y-2">
+          <Card className="border-0 bg-gradient-to-br from-muted/30 to-muted/50 rounded-2xl shadow-lg mx-6 mb-6">
+            <CardContent className="p-6">
+              <div className="text-center space-y-3">
                 <p className="text-sm text-muted-foreground">
                   Engage in thoughtful discussion with the AI tutor on complex topics
                 </p>
                 {currentTopic.keywords.length > 0 && (
-                  <div className="flex flex-wrap justify-center gap-2 mt-2">
+                  <div className="flex flex-wrap justify-center gap-2 mt-3">
                     {currentTopic.keywords.slice(0, 5).map((keyword, index) => (
                       <span 
                         key={index}
-                        className="px-2 py-1 bg-muted text-xs rounded-full"
+                        className="px-3 py-1 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm text-xs rounded-full border border-primary/20"
                       >
                         {keyword}
                       </span>

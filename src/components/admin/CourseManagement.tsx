@@ -94,7 +94,7 @@ const CourseCard = ({ course, onDelete }: { course: Course, onDelete: (course: C
             course.status === 'Published' ? 'default' :
             course.status === 'Rejected' ? 'destructive' :
             course.status === 'Under Review' ? 'warning' :
-            'secondary'
+            'blue'
           }
           className="absolute top-2 left-2"
         >
@@ -115,10 +115,10 @@ const CourseCard = ({ course, onDelete }: { course: Course, onDelete: (course: C
       </CardContent>
       <CardFooter className="p-4 pt-0">
         <Button 
-          variant="secondary" 
-          className="w-full" 
           onClick={() => navigate(`/dashboard/courses/builder/${course.id}`)}
+          className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-3 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:scale-105 rounded-xl"
         >
+          <Edit3 className="w-4 h-4 mr-2" />
           Edit Course
         </Button>
       </CardFooter>
@@ -356,28 +356,84 @@ const CourseManagement = () => {
   const handleDeleteConfirmed = async () => {
     if (!courseToDelete) return;
 
-    // Also delete the image from storage.
-    if (courseToDelete.imagePath) {
-        const { error: storageError } = await supabase.storage.from('dil-lms').remove([courseToDelete.imagePath]);
-        if (storageError) {
-            toast.error("Could not delete course image. The course was not deleted.", { description: storageError.message });
-            setCourseToDelete(null);
-            return;
+    try {
+      // First, check if the course can be safely deleted
+      const { data: safetyCheck, error: safetyError } = await supabase.rpc('can_delete_course', {
+        course_id_to_check: courseToDelete.id
+      });
+
+      if (safetyError) {
+        console.warn('Safety check failed, proceeding with deletion:', safetyError);
+      } else if (safetyCheck && safetyCheck.length > 0) {
+        const checkResult = safetyCheck[0];
+        if (!checkResult.can_delete) {
+          // Show warning but allow deletion
+          console.warn('Course has student data:', {
+            reason: checkResult.reason,
+            studentCount: Number(checkResult.student_count),
+            progressCount: Number(checkResult.progress_count),
+            submissionCount: Number(checkResult.submission_count)
+          });
         }
-    }
+      }
 
-    const { error } = await supabase.from('courses').delete().eq('id', courseToDelete.id);
+      // Also delete the image from storage.
+      if (courseToDelete.imagePath) {
+          const { error: storageError } = await supabase.storage.from('dil-lms').remove([courseToDelete.imagePath]);
+          if (storageError) {
+              toast.error("Could not delete course image. The course was not deleted.", { description: storageError.message });
+              setCourseToDelete(null);
+              return;
+          }
+      }
 
-    if (error) {
-      toast.error("Failed to delete course.", { description: error.message });
-    } else {
+      // Try the safe delete function first
+      let deleteSuccess = false;
+      try {
+        const { data: deleteResult, error } = await supabase.rpc('safe_delete_course', {
+          course_id_to_delete: courseToDelete.id
+        });
+        
+        if (error) {
+          console.warn('Safe delete failed, trying direct deletion:', error);
+          throw error; // This will trigger the fallback
+        }
+        
+        deleteSuccess = true;
+      } catch (deleteError) {
+        // If the safe delete function fails, try the direct approach as fallback
+        console.warn('Safe delete failed, trying direct deletion:', deleteError);
+        
+        try {
+          const { error: directError } = await supabase.from('courses').delete().eq('id', courseToDelete.id);
+          
+          if (directError) {
+            toast.error("Failed to delete course.", { description: directError.message });
+            return;
+          }
+          
+          deleteSuccess = true;
+        } catch (directDeleteError: any) {
+          toast.error("Failed to delete course.", { description: directDeleteError.message });
+          return;
+        }
+      }
+      
+      if (!deleteSuccess) {
+        toast.error("Failed to delete course.");
+        return;
+      }
+      
       toast.success(`Course "${courseToDelete.title}" deleted successfully.`);
       // Optimistically update the UI
       setCourses(prev => prev.filter(c => c.id !== courseToDelete.id));
       // You might want to re-calculate stats here as well
       fetchStats();
+    } catch (error: any) {
+      toast.error("Failed to delete course.", { description: error.message });
+    } finally {
+      setCourseToDelete(null);
     }
-    setCourseToDelete(null);
   };
 
   const { total, published, draft } = stats;
@@ -395,7 +451,7 @@ const CourseManagement = () => {
                 <BookOpen className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ lineHeight: '3rem' }}>
                   Course Management
                 </h1>
                 <p className="text-lg text-muted-foreground font-light">
@@ -483,12 +539,12 @@ const CourseManagement = () => {
               </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-1 h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800">
+                <Button variant="outline" className="gap-1 h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800">
                   <ListFilter className="h-3.5 w-3.5" />
                   <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                     {statusFilter === 'All' ? 'All Status' : statusFilter}
                   </span>
-                    </Button>
+                </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                 <DropdownMenuCheckboxItem
@@ -543,7 +599,7 @@ const CourseManagement = () => {
                   title="No Courses Found"
                   description="You haven't created any courses yet. Get started by creating a new one."
               />
-              <Button onClick={handleCreateCourse} className="mt-4">
+              <Button onClick={handleCreateCourse} className="mt-4 h-10 px-6 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
                   <PlusCircle className="h-4 w-4 mr-2" />
                   Create Course
               </Button>

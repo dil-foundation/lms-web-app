@@ -6,7 +6,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useState } from 'react';
+import { ContentLoader } from '@/components/ContentLoader';
+import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { 
   MessageCircle,
   TrendingUp,
@@ -20,8 +22,16 @@ import {
   UserX,
   Eye,
   GraduationCap,
-  X
+  X,
+  RefreshCw
 } from 'lucide-react';
+import { 
+  teacherDashboardService, 
+  TeacherDashboardOverviewData, 
+  TeacherEngagementData, 
+  TopLesson, 
+  BehaviorFlag 
+} from '@/services/teacherDashboardService';
 
 interface AITeacherDashboardProps {
   userProfile: {
@@ -33,83 +43,111 @@ interface AITeacherDashboardProps {
 }
 
 export const AITeacherDashboard = ({ userProfile }: AITeacherDashboardProps) => {
-  const [selectedFlag, setSelectedFlag] = useState<any>(null);
+  const [selectedFlag, setSelectedFlag] = useState<BehaviorFlag | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  // Mock data for Learn Feature Engagement
-  const mockEngagementData = {
-    totalStudentsEngaged: 47,
-    totalTimeSpent: 142.5, // hours
-    avgResponsesPerStudent: 28,
-    activeStudentsToday: 23
+  
+  // State for API data
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [timeRange, setTimeRange] = useState('all-time');
+  const [refreshing, setRefreshing] = useState(false);
+  
+  // API data states
+  const [overviewData, setOverviewData] = useState<TeacherDashboardOverviewData | null>(null);
+
+  // Map UI time range values to API values
+  const mapTimeRangeToApiValue = (uiValue: string): string => {
+    const mapping: Record<string, string> = {
+      'all-time': 'all_time',
+      'this-week': 'this_week',
+      'this-month': 'this_month',
+      'this-year': 'this_year'
+    };
+    return mapping[uiValue] || 'all_time';
   };
 
-  // Mock data for Top Used Practice Lessons
-  const mockTopLessons = [
-    { id: 1, name: "Daily Routine Conversations", stage: "Stage 1", accessCount: 156, trend: "up" },
-    { id: 2, name: "Job Interview Practice", stage: "Stage 4", accessCount: 134, trend: "up" },
-    { id: 3, name: "Academic Presentations", stage: "Stage 5", accessCount: 98, trend: "stable" },
-    { id: 4, name: "Quick Response Challenges", stage: "Stage 2", accessCount: 87, trend: "up" },
-    { id: 5, name: "Critical Thinking Dialogues", stage: "Stage 6", accessCount: 76, trend: "down" },
-  ];
+  // Fetch dashboard data
+  const fetchDashboardData = async (showRefreshIndicator = false, customTimeRange = 'all-time') => {
+    try {
+      if (showRefreshIndicator) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
 
-  // Mock data for Behavior Insights/Flags
-  const mockBehaviorFlags = [
-    { 
-      type: "excessive_retries", 
-      title: "High Retry Rate Detected", 
-      description: "8 students showing excessive retries on Stage 2 lessons", 
-      count: 8,
-      severity: "warning",
-      students: [
-        { name: "Emma Johnson", retries: 12, lesson: "Daily Routine Conversations" },
-        { name: "Alex Chen", retries: 9, lesson: "Quick Response Challenges" },
-        { name: "Maria Rodriguez", retries: 8, lesson: "Daily Routine Conversations" },
-        { name: "David Kim", retries: 7, lesson: "Listen and Reply" },
-        { name: "Sarah Wilson", retries: 6, lesson: "Quick Response Challenges" },
-        { name: "James Brown", retries: 6, lesson: "Daily Routine Conversations" },
-        { name: "Lisa Davis", retries: 5, lesson: "Listen and Reply" },
-        { name: "Michael Lee", retries: 5, lesson: "Quick Response Challenges" }
-      ]
-    },
-    { 
-      type: "stuck_stage", 
-      title: "Students Stuck at Stages", 
-      description: "8 students haven't progressed from their current stage in 7+ days", 
-      count: 8,
-      severity: "error",
-      students: [
-        { name: "Jennifer Garcia", daysStuck: 10, currentLesson: "Critical Thinking Dialogues", stage: "Stage 3" },
-        { name: "Robert Martinez", daysStuck: 9, currentLesson: "Abstract Topic Monologue", stage: "Stage 4" },
-        { name: "Amanda Taylor", daysStuck: 8, currentLesson: "Critical Thinking Dialogues", stage: "Stage 3" },
-        { name: "Kevin Anderson", daysStuck: 7, currentLesson: "Problem Solving Simulations", stage: "Stage 5" },
-        { name: "Rachel Thomas", daysStuck: 7, currentLesson: "Abstract Topic Monologue", stage: "Stage 4" },
-        { name: "Sarah Mitchell", daysStuck: 12, currentLesson: "Daily Routine Conversations", stage: "Stage 1" },
-        { name: "Michael Chen", daysStuck: 9, currentLesson: "Quick Response Practice", stage: "Stage 2" },
-        { name: "Emily Rodriguez", daysStuck: 8, currentLesson: "Academic Presentations", stage: "Stage 5" }
-      ]
-    },
-    { 
-      type: "no_progress", 
-      title: "Inactive Students", 
-      description: "12 students with no activity in the last 5 days", 
-      count: 12,
-      severity: "info",
-      students: [
-        { name: "Christopher Jackson", lastActive: "6 days ago", stage: "Stage 2" },
-        { name: "Ashley White", lastActive: "6 days ago", stage: "Stage 1" },
-        { name: "Matthew Harris", lastActive: "7 days ago", stage: "Stage 4" },
-        { name: "Jessica Martin", lastActive: "7 days ago", stage: "Stage 3" },
-        { name: "Daniel Thompson", lastActive: "8 days ago", stage: "Stage 2" },
-        { name: "Lauren Garcia", lastActive: "8 days ago", stage: "Stage 1" },
-        { name: "Ryan Lewis", lastActive: "9 days ago", stage: "Stage 3" },
-        { name: "Stephanie Robinson", lastActive: "9 days ago", stage: "Stage 2" },
-        { name: "Brandon Clark", lastActive: "10 days ago", stage: "Stage 1" },
-        { name: "Megan Rodriguez", lastActive: "10 days ago", stage: "Stage 4" },
-        { name: "Tyler Walker", lastActive: "11 days ago", stage: "Stage 2" },
-        { name: "Kayla Hall", lastActive: "12 days ago", stage: "Stage 1" }
-      ]
-    },
-  ];
+      const apiTimeRange = mapTimeRangeToApiValue(customTimeRange);
+      console.log('🔄 Fetching teacher dashboard data with timeRange:', apiTimeRange);
+      
+      const data = await teacherDashboardService.getOverviewData(apiTimeRange);
+      setOverviewData(data);
+      
+      console.log('✅ Successfully loaded teacher dashboard data');
+      
+    } catch (error: any) {
+      console.error('❌ Error fetching teacher dashboard data:', error);
+      setError(error.message || 'Failed to load dashboard data');
+      toast.error('Failed to load dashboard data');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  // Handle time range change
+  const handleTimeRangeChange = async (newTimeRange: string) => {
+    setTimeRange(newTimeRange);
+    await fetchDashboardData(true, newTimeRange);
+  };
+
+  // Handle refresh
+  const handleRefresh = async () => {
+    await fetchDashboardData(true, timeRange);
+  };
+
+  // Initial data fetch
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  // Show loading state
+  if (loading) {
+    return <ContentLoader />;
+  }
+
+  // Show error state
+  if (error && !overviewData) {
+    return (
+      <div className="space-y-6">
+        <Alert className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/30">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Failed to load teacher dashboard data: {error}
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="ml-2" 
+              onClick={() => fetchDashboardData()}
+            >
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  const engagementData = overviewData?.engagementSummary || {
+    totalStudentsEngaged: 0,
+    totalTimeSpent: 0,
+    avgResponsesPerStudent: 0,
+    activeStudentsToday: 0,
+    engagementRate: 0,
+    engagementTrend: 0
+  };
+
+  const topLessons = overviewData?.topUsedLessons || [];
+  const behaviorFlags = overviewData?.behaviorFlags || [];
 
   return (
     <div className="space-y-6">
@@ -134,7 +172,16 @@ export const AITeacherDashboard = ({ userProfile }: AITeacherDashboardProps) => 
             
             {/* Filter Controls */}
             <div className="flex items-center gap-3">
-              <Select defaultValue="all-time">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="h-8"
+              >
+                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              </Button>
+              <Select value={timeRange} onValueChange={handleTimeRangeChange}>
                 <SelectTrigger className="w-32">
                   <SelectValue />
                 </SelectTrigger>
@@ -166,9 +213,9 @@ export const AITeacherDashboard = ({ userProfile }: AITeacherDashboardProps) => 
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{mockEngagementData.totalStudentsEngaged}</div>
+              <div className="text-2xl font-bold">{engagementData.totalStudentsEngaged}</div>
               <p className="text-xs text-muted-foreground">
-                <span className="text-green-600 font-medium">{mockEngagementData.activeStudentsToday}</span> active today
+                <span className="text-green-600 font-medium">{engagementData.activeStudentsToday}</span> active today
               </p>
             </CardContent>
           </Card>
@@ -179,7 +226,7 @@ export const AITeacherDashboard = ({ userProfile }: AITeacherDashboardProps) => 
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{mockEngagementData.totalTimeSpent}h</div>
+              <div className="text-2xl font-bold">{engagementData.totalTimeSpent}h</div>
               <p className="text-xs text-muted-foreground">
                 This month
               </p>
@@ -192,7 +239,7 @@ export const AITeacherDashboard = ({ userProfile }: AITeacherDashboardProps) => 
               <MessageCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{mockEngagementData.avgResponsesPerStudent}</div>
+              <div className="text-2xl font-bold">{engagementData.avgResponsesPerStudent}</div>
               <p className="text-xs text-muted-foreground">
                 Per student this week
               </p>
@@ -205,9 +252,11 @@ export const AITeacherDashboard = ({ userProfile }: AITeacherDashboardProps) => 
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">84%</div>
+              <div className="text-2xl font-bold">{engagementData.engagementRate}%</div>
               <p className="text-xs text-muted-foreground">
-                <span className="text-green-600">+12%</span> from last week
+                <span className={engagementData.engagementTrend >= 0 ? "text-green-600" : "text-red-600"}>
+                  {engagementData.engagementTrend >= 0 ? '+' : ''}{engagementData.engagementTrend}%
+                </span> from last week
               </p>
             </CardContent>
           </Card>
@@ -234,7 +283,7 @@ export const AITeacherDashboard = ({ userProfile }: AITeacherDashboardProps) => 
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockTopLessons.map((lesson) => (
+                {topLessons.length > 0 ? topLessons.map((lesson) => (
                   <TableRow key={lesson.id} className="hover:bg-muted/50">
                     <TableCell className="font-medium">{lesson.name}</TableCell>
                     <TableCell>
@@ -252,7 +301,13 @@ export const AITeacherDashboard = ({ userProfile }: AITeacherDashboardProps) => 
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                )) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center text-muted-foreground py-6">
+                      No lesson data available
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </div>
@@ -267,19 +322,20 @@ export const AITeacherDashboard = ({ userProfile }: AITeacherDashboardProps) => 
         </div>
         
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
-          {mockBehaviorFlags.map((flag, index) => (
+          {behaviorFlags.length > 0 ? behaviorFlags.map((flag, index) => (
             <Alert key={index} className={`
               ${flag.severity === 'error' ? 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/30' : ''}
               ${flag.severity === 'warning' ? 'border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950/30' : ''}
-              ${flag.severity === 'info' ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30' : ''}
+              ${flag.severity === 'info' ? 'border-[#1582B4]/20 bg-[#1582B4]/10 dark:border-[#1582B4]/30 dark:bg-[#1582B4]/20' : ''}
             `}>
               <div className="flex items-start gap-3">
-                <div className={`
-                  p-1 rounded-full
-                  ${flag.severity === 'error' ? 'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-400' : ''}
-                  ${flag.severity === 'warning' ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900 dark:text-yellow-400' : ''}
-                  ${flag.severity === 'info' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400' : ''}
-                `}>
+                <div className={`p-2 rounded-lg ${
+                  flag.severity === 'error' ? 'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-400' : ''
+                } ${
+                  flag.severity === 'warning' ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900 dark:text-yellow-400' : ''
+                } ${
+                  flag.severity === 'info' ? 'bg-[#1582B4]/20 text-[#1582B4] dark:bg-[#1582B4]/20 dark:text-[#1582B4]/90' : ''
+                }`}>
                   {flag.type === 'excessive_retries' && <Repeat className="h-4 w-4" />}
                   {flag.type === 'stuck_stage' && <AlertTriangle className="h-4 w-4" />}
                   {flag.type === 'no_progress' && <UserX className="h-4 w-4" />}
@@ -308,7 +364,15 @@ export const AITeacherDashboard = ({ userProfile }: AITeacherDashboardProps) => 
                 </div>
               </div>
             </Alert>
-          ))}
+          )) : (
+            <div className="col-span-full text-center py-8">
+              <div className="text-muted-foreground">
+                <Eye className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>No behavior flags detected</p>
+                <p className="text-sm">All students are performing well!</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -319,7 +383,7 @@ export const AITeacherDashboard = ({ userProfile }: AITeacherDashboardProps) => 
             <DialogTitle className="flex items-center gap-2">
               {selectedFlag?.type === 'excessive_retries' && <Repeat className="h-5 w-5 text-yellow-600" />}
               {selectedFlag?.type === 'stuck_stage' && <AlertTriangle className="h-5 w-5 text-red-600" />}
-              {selectedFlag?.type === 'no_progress' && <UserX className="h-5 w-5 text-blue-600" />}
+              {selectedFlag?.type === 'no_progress' && <UserX className="h-5 w-5 text-[#1582B4]" />}
               {selectedFlag?.title}
             </DialogTitle>
             <DialogDescription>
@@ -356,55 +420,55 @@ export const AITeacherDashboard = ({ userProfile }: AITeacherDashboardProps) => 
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {selectedFlag?.students?.map((student: any, index: number) => (
-                    <TableRow key={index} className="hover:bg-muted/50">
-                      <TableCell className="font-medium">{student.name}</TableCell>
-                      {selectedFlag?.type === 'stuck_stage' ? (
+                  {selectedFlag?.students && selectedFlag.students.length > 0 ? (
+                    selectedFlag.students.map((student: any, index: number) => (
+                      <TableRow key={index} className="hover:bg-muted/50">
+                        <TableCell className="font-medium">{student.name}</TableCell>
+                        {selectedFlag?.type === 'stuck_stage' ? (
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">
+                              {student.stage}
+                            </Badge>
+                          </TableCell>
+                        ) : null}
                         <TableCell>
-                          <Badge variant="outline" className="text-xs">
-                            {student.stage}
-                          </Badge>
+                          {selectedFlag?.type === 'excessive_retries' && (
+                            <Badge variant="destructive" className="text-xs">
+                              {student.retries} retries
+                            </Badge>
+                          )}
+                          {selectedFlag?.type === 'stuck_stage' && (
+                            <Badge variant="destructive" className="text-xs">
+                              {student.daysStuck} days
+                            </Badge>
+                          )}
+                          {selectedFlag?.type === 'no_progress' && (
+                            <span className="text-muted-foreground text-sm">{student.lastActive}</span>
+                          )}
                         </TableCell>
-                      ) : null}
-                      <TableCell>
-                        {selectedFlag?.type === 'excessive_retries' && (
-                          <Badge variant="destructive" className="text-xs">
-                            {student.retries} retries
-                          </Badge>
-                        )}
-                        {selectedFlag?.type === 'stuck_stage' && (
-                          <Badge variant="destructive" className="text-xs">
-                            {student.daysStuck} days
-                          </Badge>
-                        )}
-                        {selectedFlag?.type === 'no_progress' && (
-                          <span className="text-muted-foreground text-sm">{student.lastActive}</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {selectedFlag?.type === 'excessive_retries' && student.lesson}
-                        {selectedFlag?.type === 'stuck_stage' && student.currentLesson}
-                        {selectedFlag?.type === 'no_progress' && (
-                          <Badge variant="outline" className="text-xs">
-                            {student.stage}
-                          </Badge>
-                        )}
+                        <TableCell className="text-sm text-muted-foreground">
+                          {selectedFlag?.type === 'excessive_retries' && student.lesson}
+                          {selectedFlag?.type === 'stuck_stage' && student.currentLesson}
+                          {selectedFlag?.type === 'no_progress' && (
+                            <Badge variant="outline" className="text-xs">
+                              {student.stage}
+                            </Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell 
+                        colSpan={selectedFlag?.type === 'stuck_stage' ? 4 : 3} 
+                        className="text-center text-muted-foreground py-6"
+                      >
+                        No detailed student information available
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
-            </div>
-            
-            <div className="flex justify-between items-center mt-4 pt-4 border-t">
-              <div className="text-sm text-muted-foreground">
-                Click on a student to view detailed progress
-              </div>
-              <div className="flex gap-2">
-                <Button size="sm">
-                  Send Reminder
-                </Button>
-              </div>
             </div>
           </div>
         </DialogContent>

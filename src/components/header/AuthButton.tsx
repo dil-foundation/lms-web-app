@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { LogIn, LogOut, User, Settings, ChevronDown, Home, Shield, GraduationCap } from 'lucide-react';
+import { LogIn, LogOut, User, ChevronDown, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -45,14 +45,7 @@ export const AuthButton = () => {
   // Get user role from profile data (more reliable than user metadata)
   const userRole = (profile?.role || user?.user_metadata?.role || 'student').toLowerCase();
 
-  // Debug: Log role detection for troubleshooting
-  console.log('AuthButton - Role Detection:', {
-    profileRole: profile?.role,
-    metadataRole: user?.user_metadata?.role,
-    finalRole: userRole,
-    profile: profile,
-    user: user
-  });
+
 
   if (user) {
     return (
@@ -63,7 +56,7 @@ export const AuthButton = () => {
             <Button
               variant="ghost"
               size="sm"
-              className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800 group"
+              className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800 group"
             >
               <Home className="h-4 w-4 mr-2 text-gray-600 dark:text-gray-400 group-hover:text-primary transition-colors duration-300" />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-primary transition-colors duration-300">
@@ -79,7 +72,7 @@ export const AuthButton = () => {
             variant="ghost"
             size="sm"
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800 group"
+            className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800 group"
           >
             <User className="h-4 w-4 mr-2 text-gray-600 dark:text-gray-400 group-hover:text-primary transition-colors duration-300" />
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-primary transition-colors duration-300 truncate max-w-[120px]">
@@ -120,27 +113,9 @@ export const AuthButton = () => {
                 </Link>
 
                 {/* Role-specific settings */}
-                {userRole === 'admin' && (
-                  <Link
-                    to="/dashboard/admin-settings"
-                    onClick={() => setIsDropdownOpen(false)}
-                    className="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:text-primary hover:bg-primary/5 rounded-lg transition-all duration-200 group"
-                  >
-                    <Shield className="h-4 w-4 mr-3 text-gray-500 dark:text-gray-400 group-hover:text-primary transition-colors duration-200" />
-                    Admin Settings
-                  </Link>
-                )}
+                {/* Admin Settings moved to left navigation under SYSTEM category */}
 
-                {userRole === 'teacher' && (
-                  <Link
-                    to="/dashboard/teacher-settings"
-                    onClick={() => setIsDropdownOpen(false)}
-                    className="flex items-center w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:text-primary hover:bg-primary/5 rounded-lg transition-all duration-200 group"
-                  >
-                    <GraduationCap className="h-4 w-4 mr-3 text-gray-500 dark:text-gray-400 group-hover:text-primary transition-colors duration-200" />
-                    Teacher Settings
-                  </Link>
-                )}
+                {/* Teacher Settings - route not implemented yet */}
 
                 <div className="border-t border-gray-200/50 dark:border-gray-700/50 my-1" />
 
@@ -164,7 +139,7 @@ export const AuthButton = () => {
       variant="ghost"
       size="sm"
       onClick={handleLoginClick}
-      className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800 group"
+      className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800 group"
     >
       <LogIn className="h-4 w-4 mr-2 text-gray-600 dark:text-gray-400 group-hover:text-primary transition-colors duration-300" />
       <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-primary transition-colors duration-300">

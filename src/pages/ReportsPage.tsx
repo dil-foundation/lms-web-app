@@ -227,7 +227,7 @@ export default function ReportsPage() {
   const getStatusColor = (status: string) => {
     const colors = {
       'active': 'bg-green-100 text-green-800',
-      'completed': 'bg-blue-100 text-blue-800',
+      'completed': 'bg-blue-100 text-white',
       'at-risk': 'bg-orange-100 text-orange-800',
       'inactive': 'bg-red-100 text-red-800'
     };
@@ -333,7 +333,7 @@ export default function ReportsPage() {
                 <BarChart3 className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
+                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text', lineHeight: '3rem' }}>
                   Reports & Analytics
                 </h1>
                 <p className="text-lg text-muted-foreground font-light">
@@ -767,7 +767,7 @@ export default function ReportsPage() {
                                   <Badge
                                     className={cn(
                                       "capitalize",
-                                      student.status.replace('_', ' ') === 'Completed' && 'bg-blue-100 text-blue-800',
+                                      student.status.replace('_', ' ') === 'Completed' && 'bg-blue-100 text-white',
                                       student.status.replace('_', ' ') === 'In Progress' && 'bg-green-100 text-green-800',
                                       student.status.replace('_', ' ') === 'Not Started' && 'bg-gray-100 text-gray-800',
                                       student.status.replace('_', ' ') === 'Behind' && 'bg-red-100 text-red-800'
@@ -816,9 +816,9 @@ export default function ReportsPage() {
                             </div>
                             
                             <div className="grid grid-cols-2 gap-4">
-                              <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800/30">
-                                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{course.completionRate}%</p>
-                                <p className="text-xs text-blue-600 dark:text-blue-400">Completion</p>
+                              <div className="text-center p-3 bg-[#1582B4]/10 rounded-lg">
+                                <p className="text-2xl font-bold text-[#1582B4]">{course.completionRate}%</p>
+                                <p className="text-xs text-[#1582B4]">Completion</p>
                               </div>
                               <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800/30">
                                 <p className="text-2xl font-bold text-green-600 dark:text-green-400">{course.averageScore}%</p>

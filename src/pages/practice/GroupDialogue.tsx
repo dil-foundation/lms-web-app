@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
-import { ArrowLeft, Users, Mic, Plus, GraduationCap, Heart, Play, Loader2, MicOff, Volume2 } from 'lucide-react';
+import { ArrowLeft, Users, Mic, Plus, GraduationCap, Heart, Play, Loader2, MicOff, Volume2, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -1087,44 +1087,45 @@ export default function GroupDialogue() {
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <Button
-                          variant="outline"
-            size="icon"
-            onClick={handleBackToScenarios}
-            className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+              variant="outline"
+              size="icon"
+              onClick={handleBackToScenarios}
+              className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20 hover:bg-primary/10 hover:border-primary/30 hover:text-primary bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
             
             <div className="text-center flex-1">
-              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-2">
-                <Users className="h-6 w-6 text-green-600 dark:text-green-400" />
+              <div className="w-16 h-16 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg border border-primary/30 dark:border-primary/40">
+                <Users className="h-8 w-8 text-primary" />
               </div>
-              <h1 className="text-2xl font-bold">Group Dialogue</h1>
-              <p className="text-muted-foreground">Solve Real-Life Situations</p>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent mb-2">Group Dialogue</h1>
+              <p className="text-lg text-muted-foreground">Master Interactive Group Conversations</p>
             </div>
             
             <div className="w-10"></div>
           </div>
 
           {/* Scenario Info */}
-          <Card className="mb-6 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-            <CardContent className="p-4">
+          <Card className="mb-6 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 dark:from-primary/10 dark:via-primary/20 dark:to-primary/10 border border-primary/20 dark:border-primary/30 rounded-2xl shadow-lg">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className={`w-8 h-8 ${getScenarioColor(scenario)} rounded-lg flex items-center justify-center`}>
-                    {React.createElement(getScenarioIcon(scenario), { className: "h-4 w-4 text-white" })}
+                <div className="flex items-center space-x-4">
+                  <div className={`w-12 h-12 ${getScenarioColor(scenario)} rounded-2xl flex items-center justify-center shadow-md`}>
+                    {React.createElement(getScenarioIcon(scenario), { className: "h-6 w-6 text-white" })}
                   </div>
                   <div>
-                    <h3 className="font-medium text-green-800 dark:text-green-200">{scenario.title}</h3>
-                    <p className="text-sm text-green-700 dark:text-green-300">{scenario.description}</p>
+                    <h3 className="font-semibold text-lg text-primary dark:text-primary/90 mb-1">{scenario.title}</h3>
+                    <p className="text-sm text-primary/80 dark:text-primary/70">{scenario.description}</p>
                   </div>
                 </div>
                 
                 {/* Participants */}
-                <div className="flex items-center space-x-1">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-primary/70 dark:text-primary/60 font-medium mr-2">Participants:</span>
                   {scenario.participants.map((participant, index) => (
-                    <div key={index} className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                      <span className="text-xs text-green-600 dark:text-green-400">
+                    <div key={index} className="w-8 h-8 bg-primary/20 dark:bg-primary/30 rounded-full flex items-center justify-center border border-primary/30 dark:border-primary/40 shadow-sm">
+                      <span className="text-xs text-primary font-medium">
                         {participant === 'You' ? 'Y' : participant[0]}
                       </span>
                     </div>
@@ -1135,11 +1136,11 @@ export default function GroupDialogue() {
           </Card>
 
           {/* Conversation */}
-          <Card className="mb-4">
-            <CardContent className="p-4">
+          <Card className="mb-4 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg">
+            <CardContent className="p-6">
               {isLoadingScenario ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-green-600 mr-2" />
+                  <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mr-3"></div>
                   <span className="text-muted-foreground">Loading conversation...</span>
                 </div>
               ) : (
@@ -1148,7 +1149,7 @@ export default function GroupDialogue() {
                   <div key={index}>
                     {msg.type === 'system' ? (
                       <div className="text-center">
-                        <div className="inline-block bg-muted px-3 py-1 rounded-full text-sm text-muted-foreground">
+                        <div className="inline-block bg-gradient-to-r from-primary/10 via-primary/20 to-primary/10 dark:from-primary/20 dark:via-primary/30 dark:to-primary/20 border border-primary/30 dark:border-primary/40 px-4 py-2 rounded-2xl text-sm text-primary dark:text-primary/90 font-medium">
                           {msg.message}
                         </div>
                       </div>
@@ -1156,56 +1157,58 @@ export default function GroupDialogue() {
                       <div className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
                         <div className="max-w-xs lg:max-w-md">
                           {msg.type === 'ai' && (
-                            <div className="flex items-center space-x-2 mb-1">
-                              <div className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                                <span className="text-xs">{msg.avatar}</span>
+                            <div className="flex items-center space-x-2 mb-2">
+                              <div className="w-6 h-6 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-full flex items-center justify-center border border-primary/30 dark:border-primary/40">
+                                <span className="text-xs text-primary font-medium">{msg.avatar}</span>
                               </div>
-                              <span className="text-xs text-muted-foreground">{msg.persona}</span>
+                              <span className="text-xs text-primary/70 dark:text-primary/60 font-medium">{msg.persona}</span>
                             </div>
                           )}
                           <div
-                            className={`px-4 py-2 rounded-lg ${
+                            className={`px-4 py-3 rounded-2xl shadow-sm ${
                               msg.type === 'user'
-                                ? 'bg-green-600 text-white'
+                                ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-lg'
                                 : msg.persona === 'System'
-                                ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200'
-                                : 'bg-gray-100 dark:bg-gray-800 text-foreground'
+                                ? 'bg-gradient-to-r from-primary/10 via-primary/20 to-primary/10 dark:from-primary/30 dark:via-primary/20 dark:to-primary/30 text-primary dark:text-primary border border-primary/20 dark:border-primary/30'
+                                : 'bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600'
                             }`}
                           >
-                            <p className="text-sm">{msg.message}</p>
+                            <p className="text-sm leading-relaxed">{msg.message}</p>
                           </div>
                         </div>
                       </div>
                     )}
                   </div>
                 ))}
-                  
-                  {conversation.length === 0 && !isLoadingScenario && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p>Start the conversation by typing a message below</p>
+                
+                {conversation.length === 0 && !isLoadingScenario && (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <div className="w-16 h-16 bg-gradient-to-br from-primary/10 via-primary/20 to-primary/10 dark:from-primary/20 dark:via-primary/30 dark:to-primary/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-primary/20 dark:border-primary/30">
+                      <MessageSquare className="h-8 w-8 text-primary/60" />
+                    </div>
+                    <p className="text-lg font-medium text-primary/80 dark:text-primary/70">Start the conversation by typing a message below</p>
+                  </div>
+                )}
               </div>
-                  )}
-                </div>
               )}
             </CardContent>
           </Card>
 
           {/* Recording Status */}
           {(isRecording || isEvaluating) && (
-            <Card className="mb-4 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-center space-x-2">
+            <Card className="mb-4 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 dark:from-primary/10 dark:via-primary/20 dark:to-primary/10 border border-primary/20 dark:border-primary/30 rounded-2xl shadow-lg">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-center space-x-3">
                   {isRecording ? (
                     <>
-                      <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-                      <span className="text-blue-800 dark:text-blue-200 font-medium">
-                        Recording... {recordingDuration}s (min 2s to stop)
-                      </span>
+                      <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse shadow-lg"></div>
+                      <span className="text-primary dark:text-primary/90 font-medium">Recording in progress...</span>
+                      <span className="text-primary/70 dark:text-primary/60 text-sm">({recordingDuration}s)</span>
                     </>
                   ) : (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-                      <span className="text-blue-800 dark:text-blue-200 font-medium">Evaluating your response...</span>
+                      <div className="w-4 h-4 bg-primary rounded-full animate-pulse shadow-lg"></div>
+                      <span className="text-primary dark:text-primary/90 font-medium">Evaluating your response...</span>
                     </>
                   )}
                 </div>
@@ -1213,9 +1216,71 @@ export default function GroupDialogue() {
             </Card>
           )}
 
+          {/* Input Area */}
+          <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg">
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                <div className="text-center p-4 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 dark:from-primary/10 dark:via-primary/20 dark:to-primary/10 border border-primary/20 dark:border-primary/30 rounded-2xl">
+                  <div className="w-12 h-12 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-md border border-primary/30 dark:border-primary/40">
+                    <Mic className="h-6 w-6 text-primary" />
+                  </div>
+                  <p className="text-primary dark:text-primary/90 font-medium text-lg mb-2">
+                    🎤 Click the microphone button to record your voice response
+                  </p>
+                  <p className="text-sm text-primary/70 dark:text-primary/60 mb-1">
+                    Text input is disabled for this audio-only practice
+                  </p>
+                  {isRecording && recordingDuration < 2 && (
+                    <p className="text-sm text-orange-600 dark:text-orange-400 animate-pulse font-medium">
+                      ⏱️ Please record for at least 2 seconds before stopping
+                    </p>
+                  )}
+                </div>
+                
+                <div className="flex gap-3">
+                  <Button
+                    onClick={handleSendMessage}
+                    className="flex-1 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 rounded-2xl border-0"
+                    disabled={true}
+                  >
+                    Send Response
+                  </Button>
+                  
+                  <Button
+                    onClick={handleMicrophoneClick}
+                    disabled={isEvaluating || isLoadingScenario}
+                    className={`${
+                      isRecording 
+                        ? 'bg-red-600 hover:bg-red-700 animate-pulse' 
+                        : isEvaluating
+                        ? 'bg-primary hover:bg-primary cursor-not-allowed'
+                        : 'bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary'
+                    } text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 rounded-2xl border-0`}
+                    size="icon"
+                    title={
+                      isRecording 
+                        ? `Recording ${recordingDuration}s - Click to stop (min 2s)` 
+                        : isEvaluating 
+                        ? 'Evaluating audio...' 
+                        : 'Click to start recording'
+                    }
+                  >
+                    {isEvaluating ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : isRecording ? (
+                      <MicOff className="h-4 w-4" />
+                    ) : (
+                      <Mic className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Feedback Section */}
           {feedback && (
-            <Card className="mb-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border-green-200 dark:border-green-800">
+            <Card className="mb-4 bg-gradient-to-r from-green-50 to-primary/5 dark:from-green-900/20 dark:to-primary/10 border-green-200 dark:border-green-800">
               <CardContent className="p-6">
                 <div className="flex items-center space-x-2 mb-4">
                   <Volume2 className="h-5 w-5 text-green-600" />
@@ -1225,7 +1290,7 @@ export default function GroupDialogue() {
                 </div>
                 
                 {/* Overall Score */}
-                <div className="mb-4 p-4 bg-white dark:bg-gray-800 rounded-md border">
+                <div className="mb-4 p-4 bg-gradient-to-br from-card to-card/50 dark:bg-card rounded-md border">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Overall Score</span>
                     <span className="text-lg font-bold text-green-600">
@@ -1242,7 +1307,7 @@ export default function GroupDialogue() {
 
                 {/* Feedback */}
                 {feedback.feedback && feedback.feedback !== 'No feedback available' && (
-                  <div className="mb-4 p-4 bg-white dark:bg-gray-800 rounded-md border">
+                  <div className="mb-4 p-4 bg-gradient-to-br from-card to-card/50 dark:bg-card rounded-md border">
                     <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       📝 Detailed Feedback
                     </h4>
@@ -1296,64 +1361,7 @@ export default function GroupDialogue() {
             </Card>
           )}
 
-          {/* Input */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="space-y-4">
-                <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                  <p className="text-sm text-green-700 dark:text-green-300 mb-2">
-                    🎤 Click the microphone button to record your voice response
-                  </p>
-                  <p className="text-xs text-green-600 dark:text-green-400 mb-1">
-                    Text input is disabled for this audio-only practice
-                  </p>
-                  {isRecording && recordingDuration < 2 && (
-                    <p className="text-xs text-orange-600 dark:text-orange-400 animate-pulse">
-                      ⏱️ Please record for at least 2 seconds before stopping
-                    </p>
-                  )}
-                </div>
-                
-                <div className="flex gap-2">
-                  <Button
-                    onClick={handleSendMessage}
-                    className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                    disabled={true}
-                  >
-                    Send Response
-                  </Button>
-                  
-                  <Button
-                    onClick={handleMicrophoneClick}
-                    disabled={isEvaluating || isLoadingScenario}
-                    className={`${
-                      isRecording 
-                        ? 'bg-red-600 hover:bg-red-700 animate-pulse' 
-                        : isEvaluating
-                        ? 'bg-blue-600 hover:bg-blue-600 cursor-not-allowed'
-                        : 'bg-green-600 hover:bg-green-700'
-                    } text-white border-green-600`}
-                    size="icon"
-                    title={
-                      isRecording 
-                        ? `Recording ${recordingDuration}s - Click to stop (min 2s)` 
-                        : isEvaluating 
-                        ? 'Evaluating audio...' 
-                        : 'Click to start recording'
-                    }
-                  >
-                    {isEvaluating ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : isRecording ? (
-                      <MicOff className="h-4 w-4" />
-                    ) : (
-                    <Mic className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+
         </div>
       </div>
     );
@@ -1373,52 +1381,57 @@ export default function GroupDialogue() {
             variant="outline"
             size="icon"
             onClick={() => navigate('/dashboard/practice/stage-3')}
-            className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
+            className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20 hover:bg-primary/10 hover:border-primary/30 hover:text-primary bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           
           <div className="text-center flex-1">
-            <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-2">
-              <Users className="h-6 w-6 text-green-600 dark:text-green-400" />
+            <div className="w-16 h-16 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg border border-primary/30 dark:border-primary/40">
+              <Users className="h-8 w-8 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold">Group Dialogue</h1>
-            <p className="text-muted-foreground">Solve Real-Life Situations</p>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent mb-2">Group Dialogue</h1>
+            <p className="text-lg text-muted-foreground">Master Interactive Group Conversations</p>
           </div>
           
           <div className="w-10"></div>
         </div>
 
         {/* Instructions */}
-        <Card className="mb-6 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-          <CardContent className="p-4">
-            <p className="text-center text-green-700 dark:text-green-300">
-              Practice group conversations with AI personas in real-world scenarios
-            </p>
+        <Card className="mb-6 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 dark:from-primary/10 dark:via-primary/20 dark:to-primary/10 border border-primary/20 dark:border-primary/30 rounded-2xl shadow-lg">
+          <CardContent className="p-6">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-md border border-primary/30 dark:border-primary/40">
+                <MessageSquare className="h-6 w-6 text-primary" />
+              </div>
+              <p className="text-primary dark:text-primary/90 font-medium text-lg">
+                Practice group conversations with AI personas in real-world scenarios
+              </p>
+            </div>
           </CardContent>
         </Card>
 
         {/* Loading State */}
         {isLoading && (
-          <Card className="mb-6">
-            <CardContent className="p-6 text-center">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-green-600" />
-              <p className="text-muted-foreground">Loading scenarios...</p>
+          <Card className="mb-6 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg">
+            <CardContent className="p-8 text-center">
+              <div className="w-12 h-12 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-muted-foreground text-lg">Loading scenarios...</p>
             </CardContent>
           </Card>
         )}
 
         {/* Error State */}
         {error && scenarios.length === 0 && !isLoading && (
-          <Card className="mb-6 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
+          <Card className="mb-6 bg-gradient-to-r from-red-50 via-red-100 to-red-50 dark:from-red-900/20 dark:via-red-800/20 dark:to-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl shadow-lg">
             <CardContent className="p-6 text-center">
-              <p className="text-red-800 dark:text-red-200 mb-4">
+              <p className="text-red-800 dark:text-red-200 mb-4 text-lg">
                 Unable to load scenarios: {error}
               </p>
               <Button 
                 onClick={() => window.location.reload()} 
                 variant="outline"
-                className="border-red-300 text-red-700 hover:bg-red-100"
+                className="border-red-300 text-red-700 hover:bg-red-100 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 rounded-2xl"
               >
                 Try Again
               </Button>
@@ -1428,9 +1441,9 @@ export default function GroupDialogue() {
 
         {/* Error banner if API failed but fallbacks loaded */}
         {error && scenarios.length > 0 && (
-          <Card className="mb-4 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
+          <Card className="mb-4 bg-gradient-to-r from-yellow-50 via-yellow-100 to-yellow-50 dark:from-yellow-900/20 dark:via-yellow-800/20 dark:to-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-2xl shadow-lg">
             <CardContent className="p-4">
-              <p className="text-yellow-800 dark:text-yellow-200 text-sm">
+              <p className="text-yellow-800 dark:text-yellow-200 text-sm font-medium">
                 ⚠️ Using offline content. Some features may be limited.
               </p>
             </CardContent>
@@ -1440,31 +1453,31 @@ export default function GroupDialogue() {
         {/* Scenario Selection */}
         {!isLoading && scenarios.length > 0 && (
         <div className="mb-4">
-          <h2 className="text-lg font-semibold mb-4">Choose a Scenario</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <h2 className="text-xl font-semibold mb-6 text-center bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent">Choose a Scenario</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {scenarios.map((scenario) => (
               <Card
                 key={scenario.id}
-                className="cursor-pointer hover:shadow-lg transition-shadow"
+                className="cursor-pointer bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group"
                 onClick={() => handleScenarioSelect(scenario.id)}
               >
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
-                    <div className={`w-12 h-12 ${getScenarioColor(scenario)} rounded-lg flex items-center justify-center`}>
+                    <div className={`w-12 h-12 ${getScenarioColor(scenario)} rounded-2xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300`}>
                       {React.createElement(getScenarioIcon(scenario), { className: "h-6 w-6 text-white" })}
                     </div>
                     <div className="flex items-center space-x-1">
                       {scenario.participants.map((participant, index) => (
-                        <div key={index} className="w-6 h-6 bg-muted rounded-full flex items-center justify-center">
-                          <span className="text-xs text-muted-foreground">
+                        <div key={index} className="w-6 h-6 bg-primary/20 dark:bg-primary/30 rounded-full flex items-center justify-center border border-primary/30 dark:border-primary/40">
+                          <span className="text-xs text-primary font-medium">
                             {participant === 'You' ? 'Y' : participant[0]}
                           </span>
                         </div>
                       ))}
                     </div>
                   </div>
-                  <h3 className="font-medium mb-2">{scenario.title}</h3>
-                  <p className="text-sm text-muted-foreground">{scenario.description}</p>
+                  <h3 className="font-semibold text-lg mb-2 text-gray-900 dark:text-gray-100 group-hover:text-primary transition-colors duration-300">{scenario.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{scenario.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -1476,4 +1489,4 @@ export default function GroupDialogue() {
       </div>
     </div>
   );
-} 
+}

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
-import { ArrowLeft, Mic, Building2, User, Star, TrendingUp, CheckCircle, Loader2, Play, Pause, Bot } from 'lucide-react';
+import { ArrowLeft, Mic, Building2, User, Star, TrendingUp, CheckCircle, Loader2, Play, Pause, Bot, Target, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
@@ -192,67 +192,76 @@ export default function InDepthInterviewSimulation() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background p-4 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading interview prompts...</p>
-        </div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
+          <CardContent className="p-8 text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+            <p className="text-primary font-medium">Loading interview prompts...</p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   if (!selectedPrompt) {
     return (
-      <div className="min-h-screen bg-background p-4">
+      <div className="min-h-screen bg-background">
         <div className="max-w-4xl mx-auto">
-          {/* Breadcrumb */}
-          <div className="mb-6">
-            <PracticeBreadcrumb />
-          </div>
-          
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => navigate('/dashboard/practice/stage-5')}
-              className="shrink-0"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
+          {/* Consistent Header Section */}
+          <div className="px-6 py-8">
+            {/* Breadcrumb Navigation */}
+            <PracticeBreadcrumb className="mb-6" />
             
-            <div className="text-center flex-1">
-              <h1 className="text-xl font-semibold text-green-600 dark:text-green-400">
-                In-Depth Interview
-              </h1>
+            {/* Header with Back Button and Title */}
+            <div className="relative flex items-center justify-center mb-8 text-center">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => navigate('/dashboard/practice/stage-5')}
+                className="absolute left-0 group w-12 h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+              >
+                <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-300" />
+              </Button>
+              
+              <div className="space-y-3">
+                <div className="inline-block p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
+                  <Building2 className="h-10 w-10 text-primary" />
+                </div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                  In-Depth Interview
+                </h1>
+                <p className="text-muted-foreground text-lg">
+                  Practice professional interview scenarios with detailed feedback
+                </p>
+              </div>
             </div>
-            
-            <div className="w-10"></div>
           </div>
 
           {/* Prompt Selection */}
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold text-center mb-6">Choose Your Interview Prompt</h2>
+          <div className="px-6 pb-8 space-y-4">
+            <h2 className="text-2xl font-bold text-center mb-6 bg-gradient-to-r from-primary to-[#1582B4] bg-clip-text text-transparent">
+              Choose Your Interview Prompt
+            </h2>
             
 
             {prompts.length > 0 ? (
               prompts.map((prompt) => (
               <Card 
                   key={prompt.id}
-                  className="cursor-pointer transition-all hover:shadow-md hover:bg-green-50 dark:hover:bg-green-900/20"
+                  className="cursor-pointer border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300"
                   onClick={() => handlePromptSelect(prompt)}
               >
                 <CardContent className="p-6">
                   <div className="flex items-start space-x-4">
-                    <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                      <Building2 className="h-6 w-6 text-green-600 dark:text-green-400" />
+                    <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center border border-primary/30">
+                      <Building2 className="h-6 w-6 text-primary" />
                     </div>
                     <div className="flex-1">
-                        <h3 className="text-lg font-semibold mb-2">{prompt.title || prompt.question}</h3>
+                        <h3 className="text-lg font-semibold mb-2 text-primary">{prompt.title || prompt.question}</h3>
                         <p className="text-muted-foreground text-sm">{prompt.description || prompt.category}</p>
                         {prompt.difficulty_level && (
                           <div className="mt-2">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200">
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-primary/20 text-primary">
                               {prompt.difficulty_level}
                             </span>
                           </div>
@@ -263,7 +272,7 @@ export default function InDepthInterviewSimulation() {
               </Card>
               ))
             ) : (
-              <Card className="bg-muted/50">
+              <Card className="border-0 bg-gradient-to-br from-muted/30 to-muted/50 rounded-2xl shadow-lg">
                 <CardContent className="p-8 text-center">
                   <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h4 className="text-lg font-semibold text-muted-foreground mb-2">No Prompts Available</h4>
@@ -281,56 +290,61 @@ export default function InDepthInterviewSimulation() {
 
   if (!hasStarted) {
     return (
-      <div className="min-h-screen bg-background p-4">
+      <div className="min-h-screen bg-background">
         <div className="max-w-4xl mx-auto">
-          {/* Breadcrumb */}
-          <div className="mb-6">
-            <PracticeBreadcrumb />
-          </div>
-          
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setSelectedPrompt(null)}
-              className="shrink-0"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
+          {/* Consistent Header Section */}
+          <div className="px-6 py-8">
+            {/* Breadcrumb Navigation */}
+            <PracticeBreadcrumb className="mb-6" />
             
-            <div className="text-center flex-1">
-              <h1 className="text-xl font-semibold text-green-600 dark:text-green-400">
-                In-Depth Interview
-              </h1>
+            {/* Header with Back Button and Title */}
+            <div className="relative flex items-center justify-center mb-8 text-center">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setSelectedPrompt(null)}
+                className="absolute left-0 group w-12 h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+              >
+                <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-300" />
+              </Button>
+              
+              <div className="space-y-3">
+                <div className="inline-block p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
+                  <Building2 className="h-10 w-10 text-primary" />
+                </div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                  In-Depth Interview
+                </h1>
+                <p className="text-muted-foreground text-lg">
+                  Practice professional interview scenarios with detailed feedback
+                </p>
+              </div>
             </div>
-            
-            <div className="w-10"></div>
           </div>
 
           {/* Selected Prompt */}
-          <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 mb-6">
+          <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden mb-6">
             <CardContent className="p-8">
               <div className="text-center">
-                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Building2 className="h-8 w-8 text-green-600 dark:text-green-400" />
+                <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-primary/30 rounded-full flex items-center justify-center mx-auto mb-4 border border-primary/30">
+                  <Building2 className="h-8 w-8 text-primary" />
                 </div>
-                <h3 className="text-xl font-semibold text-green-800 dark:text-green-200 mb-2">
+                <h3 className="text-xl font-semibold text-primary mb-2">
                   {selectedPrompt.title || selectedPrompt.question}
                 </h3>
-                <p className="text-green-700 dark:text-green-300 text-sm mb-4">
+                <p className="text-primary/80 text-sm mb-4">
                   {selectedPrompt.description || selectedPrompt.category}
                 </p>
                 
                 {/* Expected Keywords */}
                 {selectedPrompt.expected_keywords && selectedPrompt.expected_keywords.length > 0 && (
                   <div className="mt-4 mb-4">
-                    <h4 className="text-sm font-medium text-green-700 dark:text-green-300 mb-2">Expected Keywords:</h4>
+                    <h4 className="text-sm font-medium text-primary mb-2">Expected Keywords:</h4>
                     <div className="flex flex-wrap justify-center gap-2">
                       {selectedPrompt.expected_keywords.map((keyword, index) => (
                         <span 
                           key={index}
-                          className="px-2 py-1 bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200 text-xs rounded-full"
+                          className="px-3 py-1 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-primary/20 text-primary text-xs rounded-full"
                         >
                           {keyword}
                         </span>
@@ -344,15 +358,15 @@ export default function InDepthInterviewSimulation() {
                   <button
                     onClick={handlePlayAudio}
                     disabled={isLoadingAudio}
-                    className="w-12 h-12 bg-green-500 hover:bg-green-600 disabled:bg-green-300 rounded-full flex items-center justify-center shadow-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2"
+                    className="w-16 h-16 bg-gradient-to-r from-[#1582B4] to-[#1582B4]/90 hover:from-[#1582B4]/90 hover:to-[#1582B4] rounded-full flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#1582B4]/40 focus:ring-offset-2"
                     title={isLoadingAudio ? "Loading audio..." : audioState.isPlaying ? "Pause audio" : "Play audio"}
                   >
                     {isLoadingAudio ? (
-                      <Loader2 className="h-5 w-5 text-white animate-spin" />
+                      <Loader2 className="h-6 w-6 text-white animate-spin" />
                     ) : audioState.isPlaying ? (
-                      <Pause className="h-5 w-5 text-white ml-0" />
+                      <Pause className="h-6 w-6 text-white ml-0" />
                     ) : (
-                      <Play className="h-5 w-5 text-white ml-0.5" />
+                      <Play className="h-6 w-6 text-white ml-0.5" />
                     )}
                   </button>
                 </div>
@@ -362,7 +376,7 @@ export default function InDepthInterviewSimulation() {
                     variant="outline"
                     size="sm"
                     onClick={() => setSelectedPrompt(null)}
-                    className="text-green-600 border-green-300 hover:bg-green-100"
+                    className="border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 text-primary hover:bg-white/80 dark:hover:bg-gray-800/80 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
                   >
                     Change Prompt
                   </Button>
@@ -372,30 +386,30 @@ export default function InDepthInterviewSimulation() {
           </Card>
 
           {/* Interview Guidelines */}
-          <Card className="bg-muted/50 mb-6">
+          <Card className="border-0 bg-gradient-to-br from-muted/30 to-muted/50 rounded-2xl shadow-lg mb-6">
             <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Interview Guidelines</h3>
+              <h3 className="text-lg font-semibold mb-4 text-primary">Interview Guidelines</h3>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                  <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
                   <p className="text-muted-foreground text-sm">
                     Use the STAR method (Situation, Task, Action, Result) to structure your response
                   </p>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                  <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
                   <p className="text-muted-foreground text-sm">
                     Provide specific examples and concrete details
                   </p>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                  <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
                   <p className="text-muted-foreground text-sm">
                     Speak clearly and maintain professional tone
                   </p>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                  <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
                   <p className="text-muted-foreground text-sm">
                     Aim for 2-3 minutes of response time
                   </p>
@@ -406,14 +420,14 @@ export default function InDepthInterviewSimulation() {
 
           {/* Evaluation Loading */}
           {isEvaluating && (
-            <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+            <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
               <CardContent className="p-6">
                 <div className="text-center">
-                  <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
-                  <h3 className="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-2">
+                  <Loader2 className="h-10 w-10 animate-spin mx-auto mb-4 text-[#1582B4]" />
+                  <h3 className="text-lg font-semibold text-[#1582B4] mb-2">
                     Evaluating Your Response
                   </h3>
-                  <p className="text-blue-700 dark:text-blue-300 text-sm">
+                  <p className="text-[#1582B4]/80 text-sm">
                     Please wait while we analyze your interview response...
                   </p>
                 </div>
@@ -424,14 +438,16 @@ export default function InDepthInterviewSimulation() {
           {/* Evaluation Results */}
           {evaluation && evaluation.evaluation && !hasStarted && (
             <div className="mb-6">
-              <h3 className="text-lg font-semibold mb-4">Interview Feedback</h3>
+              <h3 className="text-xl font-semibold mb-6 bg-gradient-to-r from-primary to-[#1582B4] bg-clip-text text-transparent">
+                Interview Feedback
+              </h3>
 
               <div className="space-y-4">
                 {/* Overall Score */}
-                <Card className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20">
+                <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
                   <CardContent className="p-4">
                     <div className="text-center">
-                      <div className="text-3xl font-bold text-orange-600 dark:text-orange-400 mb-2">
+                      <div className="text-3xl font-bold bg-gradient-to-r from-primary to-[#1582B4] bg-clip-text text-transparent mb-2">
                         {evaluation?.evaluation?.evaluation?.overall_score || 0}%
                       </div>
                       <div className="text-sm text-muted-foreground">Overall Score</div>
@@ -441,15 +457,15 @@ export default function InDepthInterviewSimulation() {
 
                 {/* STAR Model Feedback */}
                 {evaluation?.evaluation?.evaluation?.star_feedback && (
-                  <Card className="bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
+                  <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
                     <CardContent className="p-4">
                       <div className="flex items-start space-x-3">
-                        <div className="w-8 h-8 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center mt-1">
-                          <Star className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                        <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center mt-1 border border-primary/30">
+                          <Star className="h-4 w-4 text-[#1582B4]" />
                         </div>
                         <div className="flex-1">
-                          <h4 className="font-medium text-yellow-600 dark:text-yellow-400 mb-2">STAR Model Usage</h4>
-                          <p className="text-yellow-700 dark:text-yellow-300 text-sm">
+                          <h4 className="font-medium text-[#1582B4] mb-2">STAR Model Usage</h4>
+                          <p className="text-[#1582B4]/80 text-sm">
                             {evaluation.evaluation.evaluation.star_feedback}
                           </p>
                         </div>
@@ -462,17 +478,17 @@ export default function InDepthInterviewSimulation() {
                 {evaluation?.evaluation?.evaluation?.suggested_improvements &&
                  Array.isArray(evaluation.evaluation.evaluation.suggested_improvements) &&
                  evaluation.evaluation.evaluation.suggested_improvements.length > 0 && (
-                  <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+                  <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
                     <CardContent className="p-4">
                       <div className="flex items-start space-x-3">
-                        <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mt-1">
-                          <Bot className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center mt-1 border border-primary/30">
+                          <Bot className="h-4 w-4 text-primary" />
                         </div>
                         <div className="flex-1">
-                          <h4 className="font-medium text-blue-600 dark:text-blue-400 mb-2">Suggested Improvements</h4>
+                          <h4 className="font-medium text-primary mb-2">Suggested Improvements</h4>
                           <ul className="space-y-1">
                             {evaluation.evaluation.evaluation.suggested_improvements.map((suggestion, index) => (
-                              <li key={index} className="text-blue-700 dark:text-blue-300 text-sm">
+                              <li key={index} className="text-primary/80 text-sm">
                                 • {suggestion}
                               </li>
                             ))}
@@ -485,15 +501,15 @@ export default function InDepthInterviewSimulation() {
 
                 {/* Encouragement */}
                 {evaluation?.evaluation?.evaluation?.encouragement && (
-                  <Card className="bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800">
+                  <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
                     <CardContent className="p-4">
                       <div className="flex items-start space-x-3">
-                        <div className="w-8 h-8 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center mt-1">
-                          <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                        <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center mt-1 border border-primary/30">
+                          <CheckCircle className="h-4 w-4 text-[#1582B4]" />
                         </div>
                         <div className="flex-1">
-                          <h4 className="font-medium text-emerald-600 dark:text-emerald-400 mb-2">Encouragement</h4>
-                          <p className="text-emerald-700 dark:text-emerald-300 text-sm">
+                          <h4 className="font-medium text-[#1582B4] mb-2">Encouragement</h4>
+                          <p className="text-[#1582B4]/80 text-sm">
                             {evaluation.evaluation.evaluation.encouragement}
                           </p>
                         </div>
@@ -510,7 +526,7 @@ export default function InDepthInterviewSimulation() {
               <Button
                 onClick={resetInterview}
                 variant="outline"
-                className="px-6 py-2"
+                className="px-6 py-2 border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 text-primary hover:bg-white/80 dark:hover:bg-gray-800/80 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
               >
                 Try Another Prompt
               </Button>
@@ -518,7 +534,7 @@ export default function InDepthInterviewSimulation() {
               <Button
                 onClick={handleStartRecording}
                 disabled={isEvaluating}
-                className="bg-green-500 hover:bg-green-600 text-white px-8 py-3 rounded-full text-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white px-8 py-3 rounded-full text-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
                 size="lg"
               >
                 <Mic className="h-5 w-5 mr-2" />
@@ -527,7 +543,7 @@ export default function InDepthInterviewSimulation() {
             ) : (
               <Button
                 onClick={handleStopRecording}
-                className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-full text-lg font-medium"
+                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-8 py-3 rounded-full text-lg font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
                 size="lg"
               >
                 <Mic className="h-5 w-5 mr-2" />
@@ -541,66 +557,71 @@ export default function InDepthInterviewSimulation() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
+    <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto">
-        {/* Breadcrumb */}
-        <div className="mb-6">
-          <PracticeBreadcrumb />
-        </div>
-        
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => {
-              if (evaluation) {
-                // If viewing evaluation, go back to prompt selection
-                setSelectedPrompt(null);
-                setHasStarted(false);
-                setEvaluation(null);
-                setStartTime(null);
-                setAudioUrl(null);
-                stopAudio();
-              } else {
-                // If in interview, go back to prompt selection
-                setSelectedPrompt(null);
-                setHasStarted(false);
-                setAudioUrl(null);
-                stopAudio();
-              }
-            }}
-            className="shrink-0"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+        {/* Consistent Header Section */}
+        <div className="px-6 py-8">
+          {/* Breadcrumb Navigation */}
+          <PracticeBreadcrumb className="mb-6" />
           
-          <div className="text-center flex-1">
-            <h1 className="text-xl font-semibold text-green-600 dark:text-green-400">
-              In-Depth Interview
-            </h1>
+          {/* Header with Back Button and Title */}
+          <div className="relative flex items-center justify-center mb-8 text-center">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                if (evaluation) {
+                  // If viewing evaluation, go back to prompt selection
+                  setSelectedPrompt(null);
+                  setHasStarted(false);
+                  setEvaluation(null);
+                  setStartTime(null);
+                  setAudioUrl(null);
+                  stopAudio();
+                } else {
+                  // If in interview, go back to prompt selection
+                  setSelectedPrompt(null);
+                  setHasStarted(false);
+                  setAudioUrl(null);
+                  stopAudio();
+                }
+              }}
+              className="absolute left-0 group w-12 h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+            >
+              <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-300" />
+            </Button>
+            
+            <div className="space-y-3">
+              <div className="inline-block p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
+                <Building2 className="h-10 w-10 text-primary" />
+              </div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                In-Depth Interview
+              </h1>
+              <p className="text-muted-foreground text-lg">
+                Practice professional interview scenarios with detailed feedback
+                </p>
+            </div>
           </div>
-          
-          <div className="w-10"></div>
         </div>
 
         {/* Current Prompt */}
-        <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 mb-6">
+        <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden mb-6">
               <CardContent className="p-6">
                 <div className="flex items-start space-x-4">
-              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                <Building2 className="h-6 w-6 text-green-600 dark:text-green-400" />
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center border border-primary/30">
+                <Building2 className="h-6 w-6 text-primary" />
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-green-800 dark:text-green-200 mb-2">
+                <h3 className="text-lg font-semibold text-primary mb-2">
                   {selectedPrompt.title || selectedPrompt.question}
                 </h3>
-                <p className="text-green-700 dark:text-green-300 text-sm">
+                <p className="text-primary/80 text-sm">
                   {selectedPrompt.description || selectedPrompt.category}
                 </p>
                 {selectedPrompt.prompt_text && (
-                  <div className="mt-3 p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                    <p className="text-green-800 dark:text-green-200 text-sm font-medium">
+                  <div className="mt-3 p-3 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl border border-primary/20">
+                    <p className="text-primary text-sm font-medium">
                       {selectedPrompt.prompt_text}
                     </p>
                   </div>
@@ -612,14 +633,14 @@ export default function InDepthInterviewSimulation() {
 
         {/* Evaluation Loading */}
         {isEvaluating && (
-          <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 mb-6">
+          <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden mb-6">
             <CardContent className="p-6">
               <div className="text-center">
-                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
-                <h3 className="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-2">
+                <Loader2 className="h-10 w-10 animate-spin mx-auto mb-4 text-[#1582B4]" />
+                <h3 className="text-lg font-semibold text-[#1582B4] mb-2">
                   Evaluating Your Response
                 </h3>
-                <p className="text-blue-700 dark:text-blue-300 text-sm">
+                <p className="text-[#1582B4]/80 text-sm">
                   Please wait while we analyze your interview response...
                 </p>
               </div>
@@ -630,14 +651,16 @@ export default function InDepthInterviewSimulation() {
         {/* Evaluation Results */}
         {evaluation && evaluation.evaluation && (
           <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-4">Interview Feedback</h3>
+            <h3 className="text-xl font-semibold mb-6 bg-gradient-to-r from-primary to-[#1582B4] bg-clip-text text-transparent">
+              Interview Feedback
+            </h3>
 
             <div className="space-y-4">
               {/* Overall Score */}
-              <Card className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20">
+              <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
                 <CardContent className="p-4">
                   <div className="text-center">
-                    <div className="text-3xl font-bold text-orange-600 dark:text-orange-400 mb-2">
+                    <div className="text-3xl font-bold bg-gradient-to-r from-primary to-[#1582B4] bg-clip-text text-transparent mb-2">
                       {evaluation?.evaluation?.evaluation?.overall_score || 0}%
                     </div>
                     <div className="text-sm text-muted-foreground">Overall Score</div>
@@ -647,15 +670,15 @@ export default function InDepthInterviewSimulation() {
 
               {/* STAR Model Feedback */}
               {evaluation?.evaluation?.evaluation?.star_feedback && (
-                <Card className="bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
+                <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
                   <CardContent className="p-4">
                     <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center mt-1">
-                        <Star className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                      <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center mt-1 border border-primary/30">
+                        <Star className="h-4 w-4 text-[#1582B4]" />
                   </div>
                   <div className="flex-1">
-                        <h4 className="font-medium text-yellow-600 dark:text-yellow-400 mb-2">STAR Model Usage</h4>
-                        <p className="text-yellow-700 dark:text-yellow-300 text-sm">
+                        <h4 className="font-medium text-[#1582B4] mb-2">STAR Model Usage</h4>
+                        <p className="text-[#1582B4]/80 text-sm">
                           {evaluation.evaluation.evaluation.star_feedback}
                         </p>
                       </div>
@@ -666,15 +689,15 @@ export default function InDepthInterviewSimulation() {
 
               {/* Vocabulary Suggestions */}
               {evaluation?.evaluation?.evaluation?.vocabulary_suggestions && (
-                <Card className="bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800">
+                <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
                   <CardContent className="p-4">
                     <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mt-1">
-                        <TrendingUp className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                      <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center mt-1 border border-primary/30">
+                        <TrendingUp className="h-4 w-4 text-primary" />
                     </div>
                       <div className="flex-1">
-                        <h4 className="font-medium text-purple-600 dark:text-purple-400 mb-2">Vocabulary Enhancement</h4>
-                        <p className="text-purple-700 dark:text-purple-300 text-sm">
+                        <h4 className="font-medium text-primary mb-2">Vocabulary Enhancement</h4>
+                        <p className="text-primary/80 text-sm">
                           {evaluation.evaluation.evaluation.vocabulary_suggestions}
                     </p>
                   </div>
@@ -685,15 +708,15 @@ export default function InDepthInterviewSimulation() {
 
               {/* Fluency Feedback */}
               {evaluation?.evaluation?.evaluation?.fluency_feedback && (
-                <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+                <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
                   <CardContent className="p-4">
                     <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mt-1">
-                        <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center mt-1 border border-primary/30">
+                        <CheckCircle className="h-4 w-4 text-[#1582B4]" />
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-medium text-green-600 dark:text-green-400 mb-2">Fluency & Precision</h4>
-                        <p className="text-green-700 dark:text-green-300 text-sm">
+                        <h4 className="font-medium text-[#1582B4] mb-2">Fluency & Precision</h4>
+                        <p className="text-[#1582B4]/80 text-sm">
                           {evaluation.evaluation.evaluation.fluency_feedback}
                         </p>
                       </div>
@@ -706,21 +729,21 @@ export default function InDepthInterviewSimulation() {
               {evaluation?.evaluation?.evaluation?.keyword_matches && 
                Array.isArray(evaluation.evaluation.evaluation.keyword_matches) &&
                evaluation.evaluation.evaluation.keyword_matches.length > 0 && (
-                <Card className="bg-cyan-50 dark:bg-cyan-900/20 border-cyan-200 dark:border-cyan-800">
+                <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
                   <CardContent className="p-4">
                     <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg flex items-center justify-center mt-1">
-                        <Bot className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                      <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center mt-1 border border-primary/30">
+                        <Bot className="h-4 w-4 text-primary" />
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-medium text-cyan-600 dark:text-cyan-400 mb-2">
+                        <h4 className="font-medium text-primary mb-2">
                           Keywords Used ({evaluation?.evaluation?.evaluation?.matched_keywords_count || 0} / {evaluation?.evaluation?.evaluation?.total_keywords || 0})
                         </h4>
                         <div className="flex flex-wrap gap-1">
                           {evaluation.evaluation.evaluation.keyword_matches.map((keyword, index) => (
                             <span
                               key={index}
-                              className="px-2 py-1 bg-cyan-200 dark:bg-cyan-800 text-cyan-800 dark:text-cyan-200 text-xs rounded-full"
+                              className="px-2 py-1 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-primary/20 text-primary text-xs rounded-full"
                             >
                               {keyword}
                             </span>
@@ -736,17 +759,17 @@ export default function InDepthInterviewSimulation() {
               {evaluation?.evaluation?.evaluation?.suggested_improvements &&
                Array.isArray(evaluation.evaluation.evaluation.suggested_improvements) &&
                evaluation.evaluation.evaluation.suggested_improvements.length > 0 && (
-                <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+                <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
                   <CardContent className="p-4">
                     <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mt-1">
-                        <Bot className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center mt-1 border border-primary/30">
+                        <Bot className="h-4 w-4 text-[#1582B4]" />
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-medium text-blue-600 dark:text-blue-400 mb-2">Suggested Improvements</h4>
+                        <h4 className="font-medium text-[#1582B4] mb-2">Suggested Improvements</h4>
                         <ul className="space-y-1">
                           {evaluation.evaluation.evaluation.suggested_improvements.map((suggestion, index) => (
-                            <li key={index} className="text-blue-700 dark:text-blue-300 text-sm">
+                            <li key={index} className="text-[#1582B4]/80 text-sm">
                               • {suggestion}
                             </li>
                           ))}
@@ -759,15 +782,15 @@ export default function InDepthInterviewSimulation() {
 
               {/* Next Steps */}
               {evaluation?.evaluation?.evaluation?.next_steps && (
-                <Card className="bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800">
+                <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
                   <CardContent className="p-4">
                     <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center mt-1">
-                        <TrendingUp className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                      <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center mt-1 border border-primary/30">
+                        <TrendingUp className="h-4 w-4 text-primary" />
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-medium text-indigo-600 dark:text-indigo-400 mb-2">Next Steps</h4>
-                        <p className="text-indigo-700 dark:text-indigo-300 text-sm">
+                        <h4 className="font-medium text-primary mb-2">Next Steps</h4>
+                        <p className="text-primary/80 text-sm">
                           {evaluation.evaluation.evaluation.next_steps}
                         </p>
                       </div>
@@ -778,15 +801,15 @@ export default function InDepthInterviewSimulation() {
 
               {/* Encouragement */}
               {evaluation?.evaluation?.evaluation?.encouragement && (
-                <Card className="bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800">
+                <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
                   <CardContent className="p-4">
                     <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center mt-1">
-                        <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                      <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center mt-1 border border-primary/30">
+                        <CheckCircle className="h-4 w-4 text-[#1582B4]" />
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-medium text-emerald-600 dark:text-emerald-400 mb-2">Encouragement</h4>
-                        <p className="text-emerald-700 dark:text-emerald-300 text-sm">
+                        <h4 className="font-medium text-[#1582B4] mb-2">Encouragement</h4>
+                        <p className="text-[#1582B4]/80 text-sm">
                           {evaluation.evaluation.evaluation.encouragement}
                         </p>
                       </div>
@@ -805,7 +828,7 @@ export default function InDepthInterviewSimulation() {
             <Button
               onClick={handleStartRecording}
                 disabled={isEvaluating}
-                className="bg-green-500 hover:bg-green-600 text-white px-8 py-3 rounded-full text-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white px-8 py-3 rounded-full text-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
               size="lg"
             >
               <Mic className="h-5 w-5 mr-2" />
@@ -814,7 +837,7 @@ export default function InDepthInterviewSimulation() {
           ) : (
             <Button
               onClick={handleStopRecording}
-              className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-full text-lg font-medium"
+              className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-8 py-3 rounded-full text-lg font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
               size="lg"
             >
               <Mic className="h-5 w-5 mr-2" />
@@ -826,7 +849,7 @@ export default function InDepthInterviewSimulation() {
               <Button
                 onClick={resetInterview}
                 variant="outline"
-                className="px-6 py-2"
+                className="px-6 py-2 border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 text-primary hover:bg-white/80 dark:hover:bg-gray-800/80 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
               >
                 Try Another Prompt
               </Button>

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
-import { ArrowLeft, Mic, Bot, User, Rocket, Clock, Zap, Loader2, Play, Pause } from 'lucide-react';
+import { ArrowLeft, Mic, Bot, User, Rocket, Clock, Zap, Loader2, Play, Pause, Target, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { 
@@ -291,10 +291,14 @@ export default function AIGuidedSpontaneousSpeech() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background p-4 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading spontaneous speech topics...</p>
+      <div className="min-h-screen bg-background">
+        <div className="max-w-4xl mx-auto px-6 pb-8 mt-8 space-y-6">
+          <div className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
+            <div className="p-8 text-center">
+              <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-primary" />
+              <p className="text-primary font-medium">Loading spontaneous speech topics...</p>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -302,38 +306,43 @@ export default function AIGuidedSpontaneousSpeech() {
 
   if (!sessionStarted) {
     return (
-      <div className="min-h-screen bg-background p-4">
+      <div className="min-h-screen bg-background">
         <div className="max-w-4xl mx-auto">
-          {/* Breadcrumb */}
-          <div className="mb-6">
-            <PracticeBreadcrumb />
-          </div>
-          
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => navigate('/dashboard/practice/stage-6')}
-              className="shrink-0"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
+          {/* Consistent Header Section */}
+          <div className="px-6 py-8">
+            {/* Breadcrumb Navigation */}
+            <PracticeBreadcrumb className="mb-6" />
             
-            <div className="text-center flex-1">
-              <h1 className="text-xl font-semibold text-green-600 dark:text-green-400">
-                Spontaneous Speech
-              </h1>
+            {/* Header with Back Button and Title */}
+            <div className="relative flex items-center justify-center mb-8 text-center">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => navigate('/dashboard/practice/stage-6')}
+                className="absolute left-0 group w-12 h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+              >
+                <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-300" />
+              </Button>
+              
+              <div className="space-y-3">
+                <div className="inline-block p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
+                  <MessageSquare className="h-10 w-10 text-primary" />
+                </div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                  Spontaneous Speech
+                </h1>
+                <p className="text-muted-foreground text-lg">
+                  Master the art of impromptu speaking with AI guidance
+                </p>
+              </div>
             </div>
-            
-            <div className="w-10"></div>
           </div>
 
-          {/* Topic Selection */}
-          <div className="space-y-6">
+          {/* Main Content Area */}
+          <div className="px-6 pb-8 space-y-6">
+            {/* Topic Selection */}
             <div className="text-center">
-              <h2 className="text-2xl font-bold mb-2">Choose Your Discussion Topic</h2>
-              <p className="text-muted-foreground">Click on a topic to start your conversation immediately</p>
+              <p className="text-muted-foreground text-lg">Click on a topic to start your conversation immediately</p>
             </div>
 
             {topics.length > 0 ? (
@@ -341,26 +350,26 @@ export default function AIGuidedSpontaneousSpeech() {
                 {topics.map((topic) => (
                   <Card 
                     key={topic.id}
-                    className="cursor-pointer transition-all hover:shadow-md hover:ring-2 hover:ring-green-500"
+                    className="cursor-pointer transition-all hover:shadow-xl hover:scale-[1.02] border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden"
                     onClick={() => handleTopicClick(topic)}
                   >
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between">
                         <div className="flex items-start space-x-4">
-                          <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                            <Rocket className="h-6 w-6 text-green-600 dark:text-green-400" />
+                          <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center border border-primary/30">
+                            <Rocket className="h-6 w-6 text-primary" />
                           </div>
                           <div className="flex-1">
-                            <h3 className="text-lg font-semibold mb-2">{topic.title}</h3>
+                            <h3 className="text-lg font-semibold mb-2 text-primary">{topic.title}</h3>
                             <p className="text-muted-foreground text-sm mb-2">{topic.description}</p>
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
                           {(topic.complexity || topic.difficulty_level) && (
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 ${
                               (topic.complexity === 'Expert' || topic.difficulty_level === 'Expert')
-                                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' 
-                                : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+                                ? 'text-red-700 dark:text-red-300' 
+                                : 'text-orange-700 dark:text-orange-300'
                             }`}>
                               {topic.complexity || topic.difficulty_level}
                             </span>
@@ -372,7 +381,7 @@ export default function AIGuidedSpontaneousSpeech() {
                 ))}
               </div>
             ) : (
-              <Card className="bg-muted/50">
+              <Card className="border-0 bg-gradient-to-br from-muted/30 to-muted/50 rounded-2xl shadow-lg">
                 <CardContent className="p-8 text-center">
                   <Rocket className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h4 className="text-lg font-semibold text-muted-foreground mb-2">No Topics Available</h4>
@@ -383,33 +392,31 @@ export default function AIGuidedSpontaneousSpeech() {
               </Card>
             )}
 
-
-
             {/* Session Guidelines */}
-            <Card className="bg-muted/50">
+            <Card className="border-0 bg-gradient-to-br from-muted/30 to-muted/50 rounded-2xl shadow-lg">
               <CardContent className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Session Guidelines</h3>
+                <h3 className="text-lg font-semibold mb-4 text-primary">Session Guidelines</h3>
                 <div className="space-y-3">
                   <div className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                    <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
                     <p className="text-muted-foreground text-sm">
                       Respond naturally and spontaneously - don't overthink your answers
                     </p>
                   </div>
                   <div className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                    <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
                     <p className="text-muted-foreground text-sm">
                       Focus on fluency and natural flow rather than perfect grammar
                     </p>
                   </div>
                   <div className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                    <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
                     <p className="text-muted-foreground text-sm">
                       Express your genuine thoughts and opinions on the topic
                     </p>
                   </div>
                   <div className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                    <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
                     <p className="text-muted-foreground text-sm">
                       The AI will adapt to your level and provide natural responses
                     </p>
@@ -424,304 +431,316 @@ export default function AIGuidedSpontaneousSpeech() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
+    <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto">
-        {/* Breadcrumb */}
-        <div className="mb-6">
-          <PracticeBreadcrumb />
-        </div>
-        
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={resetSession}
-            className="shrink-0"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+        {/* Consistent Header Section */}
+        <div className="px-6 py-8">
+          {/* Breadcrumb Navigation */}
+          <PracticeBreadcrumb className="mb-6" />
           
-          <div className="text-center flex-1">
-            <h1 className="text-xl font-semibold text-green-600 dark:text-green-400">
-              Spontaneous Speech
-            </h1>
-          </div>
-          
-          <div className="w-10"></div>
-        </div>
-
-        {/* Current Topic */}
-        {currentTopic && (
-          <Card className="mb-6 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-green-800 dark:text-green-200">{currentTopic.title}</h3>
-                  <p className="text-sm text-green-700 dark:text-green-300">{currentTopic.description}</p>
-                </div>
-                <div className="flex items-center space-x-3">
-                  {/* Audio Button */}
-                  <Button
-                    onClick={handlePlayAudio}
-                    disabled={isLoadingAudio}
-                    className={`w-12 h-12 rounded-full shadow-lg transition-all duration-200 ${
-                      isLoadingAudio
-                        ? 'bg-gray-600 cursor-not-allowed text-white border-2 border-gray-500'
-                        : isPlayingAudio
-                        ? 'bg-green-500 hover:bg-green-600 text-white'
-                        : 'bg-green-500 hover:bg-green-600 text-white hover:scale-105'
-                    }`}
-                    size="icon"
-                  >
-                    {isLoadingAudio ? (
-                      <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
-                    ) : isPlayingAudio ? (
-                      <Pause className="w-6 h-6" />
-                    ) : (
-                      <Play className="w-6 h-6" />
-                    )}
-                  </Button>
-                  
-                  {/* Difficulty Badge */}
-                  {(currentTopic.complexity || currentTopic.difficulty_level) && (
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      (currentTopic.complexity === 'Expert' || currentTopic.difficulty_level === 'Expert')
-                        ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' 
-                        : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
-                    }`}>
-                      {currentTopic.complexity || currentTopic.difficulty_level}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Conversation */}
-        <div className="space-y-4 mb-6">
-          {conversation.map((message) => (
-            <Card 
-              key={message.id} 
-              className={message.sender === 'user' ? 'bg-green-600 dark:bg-green-700' : 'border-dashed border-2 border-muted-foreground/20'}
+          {/* Header with Back Button and Title */}
+          <div className="relative flex items-center justify-center mb-8 text-center">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={resetSession}
+              className="absolute left-0 group w-12 h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
             >
+              <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-300" />
+            </Button>
+            
+            <div className="space-y-3">
+              <div className="inline-block p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
+                <MessageSquare className="h-10 w-10 text-primary" />
+              </div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                Spontaneous Speech
+              </h1>
+              <p className="text-muted-foreground text-lg">
+                Master the art of impromptu speaking with AI guidance
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content Area */}
+        <div className="px-6 pb-8 space-y-6">
+          {/* Current Topic */}
+          {currentTopic && (
+            <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
               <CardContent className="p-6">
-                <div className="flex items-start space-x-4">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                    message.sender === 'user' 
-                      ? 'bg-white/20' 
-                      : 'bg-green-100 dark:bg-green-900/30'
-                  }`}>
-                    {message.sender === 'user' ? (
-                      <User className="h-5 w-5 text-white" />
-                    ) : (
-                      <Bot className="h-5 w-5 text-green-600 dark:text-green-400" />
-                    )}
-                  </div>
+                <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <span className={`text-sm font-medium ${
-                        message.sender === 'user' 
-                          ? 'text-white' 
-                          : 'text-green-600 dark:text-green-400'
-                      }`}>
-                        {message.sender === 'user' ? 'You' : 'AI Guide'}
-                      </span>
-                      {message.responseTime && (
-                        <div className="flex items-center space-x-1">
-                          <Clock className="h-3 w-3 text-white/70" />
-                          <span className="text-xs text-white/70">{message.responseTime}s</span>
-                        </div>
+                    <h3 className="font-semibold text-primary text-lg mb-2">{currentTopic.title}</h3>
+                    <p className="text-sm text-muted-foreground">{currentTopic.description}</p>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    {/* Audio Button */}
+                    <Button
+                      onClick={handlePlayAudio}
+                      disabled={isLoadingAudio}
+                      className={`w-16 h-16 rounded-full shadow-lg transition-all duration-200 ${
+                        isLoadingAudio
+                          ? 'bg-gray-600 cursor-not-allowed text-white border-2 border-gray-500'
+                          : isPlayingAudio
+                          ? 'bg-[#1582B4] hover:bg-[#1582B4]/90 text-white hover:scale-105 hover:shadow-xl'
+                          : 'bg-[#1582B4] hover:bg-[#1582B4]/90 text-white hover:scale-105 hover:shadow-xl'
+                      }`}
+                      size="icon"
+                    >
+                      {isLoadingAudio ? (
+                        <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                      ) : isPlayingAudio ? (
+                        <Pause className="w-6 h-6" />
+                      ) : (
+                        <Play className="w-6 h-6" />
                       )}
-                    </div>
-                    <p className={message.sender === 'user' ? 'text-white' : 'text-foreground'}>
-                      {message.message}
-                    </p>
+                    </Button>
+                    
+                    {/* Difficulty Badge */}
+                    {(currentTopic.complexity || currentTopic.difficulty_level) && (
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 ${
+                        (currentTopic.complexity === 'Expert' || currentTopic.difficulty_level === 'Expert')
+                          ? 'text-red-700 dark:text-red-300' 
+                          : 'text-orange-700 dark:text-orange-300'
+                      }`}>
+                        {currentTopic.complexity || currentTopic.difficulty_level}
+                      </span>
+                    )}
                   </div>
                 </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
-
-        {/* Expected Keywords Section */}
-        {currentTopic && currentTopic.expected_keywords && currentTopic.expected_keywords.length > 0 && (
-          <div className="mb-6">
-            <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
-              <CardContent className="p-6">
-                <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mt-1">
-                    <Zap className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-medium text-blue-600 dark:text-blue-400 mb-3">Expected Keywords</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {currentTopic.expected_keywords.map((keyword, index) => (
-                        <span 
-                          key={index}
-                          className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm rounded-full border border-blue-200 dark:border-blue-800"
-                        >
-                          {keyword}
-                        </span>
-                      ))}
-                    </div>
-                    <p className="text-blue-700 dark:text-blue-300 text-sm mt-3">
-                      Try to incorporate these keywords naturally in your conversation.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Evaluation Loading State */}
-        {isEvaluating && (
-          <Card className="mb-6 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
-            <CardContent className="p-6 text-center">
-              <div className="flex items-center justify-center space-x-3">
-                <Loader2 className="h-6 w-6 animate-spin text-blue-600 dark:text-blue-400" />
-                <div>
-                  <h4 className="font-medium text-blue-600 dark:text-blue-400">Evaluating Your Response</h4>
-                  <p className="text-blue-700 dark:text-blue-300 text-sm">
-                    Please wait while we analyze your speech...
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Evaluation Results */}
-        {evaluationResult && !isEvaluating && (
-          <Card className="mb-6 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-            <CardContent className="p-6">
-              <h4 className="font-medium text-green-600 dark:text-green-400 mb-4">Evaluation Results</h4>
-              
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                    {evaluationResult.overall_score || 0}
-                  </div>
-                  <div className="text-xs text-muted-foreground">Overall</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                    {evaluationResult.fluency_score || 0}
-                  </div>
-                  <div className="text-xs text-muted-foreground">Fluency</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                    {evaluationResult.vocabulary_score || 0}
-                  </div>
-                  <div className="text-xs text-muted-foreground">Vocabulary</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                    {evaluationResult.content_relevance_score || 0}
-                  </div>
-                  <div className="text-xs text-muted-foreground">Relevance</div>
-                </div>
-              </div>
-
-              {evaluationResult.feedback && (
-                <div className="mb-4">
-                  <h5 className="font-medium text-green-600 dark:text-green-400 mb-2">Feedback</h5>
-                  <p className="text-sm text-muted-foreground">{evaluationResult.feedback}</p>
-                </div>
-              )}
-
-              {evaluationResult.strengths && evaluationResult.strengths.length > 0 && (
-                <div className="mb-4">
-                  <h5 className="font-medium text-green-600 dark:text-green-400 mb-2">Strengths</h5>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    {evaluationResult.strengths.map((strength: string, index: number) => (
-                      <li key={index} className="flex items-start space-x-2">
-                        <span className="text-green-500 mt-0.5">•</span>
-                        <span>{strength}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {evaluationResult.areas_for_improvement && evaluationResult.areas_for_improvement.length > 0 && (
-                <div className="mb-4">
-                  <h5 className="font-medium text-green-600 dark:text-green-400 mb-2">Areas for Improvement</h5>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    {evaluationResult.areas_for_improvement.map((area: string, index: number) => (
-                      <li key={index} className="flex items-start space-x-2">
-                        <span className="text-orange-500 mt-0.5">•</span>
-                        <span>{area}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              <div className="flex justify-center">
-                <Button
-                  onClick={() => setEvaluationResult(null)}
-                  variant="outline"
-                  className="hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
-                >
-                  Continue Practice
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Action Button */}
-        <div className="text-center">
-          {!isRecording && !isEvaluating ? (
-            <Button
-              onClick={handleStartRecording}
-              className="bg-green-500 hover:bg-green-600 text-white px-8 py-3 rounded-full text-lg font-medium"
-              size="lg"
-              disabled={!currentTopic}
-            >
-              <Mic className="h-5 w-5 mr-2" />
-              Speak Now
-            </Button>
-          ) : isRecording ? (
-            <Button
-              onClick={handleStopRecording}
-              className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-full text-lg font-medium"
-              size="lg"
-            >
-              <Mic className="h-5 w-5 mr-2" />
-              Stop Recording
-            </Button>
-          ) : (
-            <Button
-              disabled
-              className="bg-gray-500 text-white px-8 py-3 rounded-full text-lg font-medium cursor-not-allowed"
-              size="lg"
-            >
-              <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-              Evaluating...
-            </Button>
           )}
 
-          <div className="mt-4 space-y-3">
-            <div className="flex justify-center space-x-4">
-              <Button
-                onClick={resetSession}
-                variant="outline"
-                className="px-6 py-2"
+          {/* Conversation */}
+          <div className="space-y-4">
+            {conversation.map((message) => (
+              <Card 
+                key={message.id} 
+                className={`transition-all duration-300 ${
+                  message.sender === 'user' 
+                    ? 'border-0 bg-gradient-to-br from-primary/20 to-primary/30 rounded-3xl shadow-lg overflow-hidden' 
+                    : 'border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden'
+                }`}
               >
-                Choose Different Topic
-              </Button>
+                <CardContent className="p-6">
+                  <div className="flex items-start space-x-4">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                      message.sender === 'user' 
+                        ? 'bg-gradient-to-br from-primary/20 to-primary/30 border border-primary/30' 
+                        : 'bg-gradient-to-br from-primary/20 to-primary/30 border border-primary/30'
+                    }`}>
+                      {message.sender === 'user' ? (
+                        <User className="h-6 w-6 text-primary" />
+                      ) : (
+                        <Bot className="h-6 w-6 text-[#1582B4]" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <span className={`text-sm font-medium ${
+                          message.sender === 'user' 
+                            ? 'text-primary' 
+                            : 'text-[#1582B4]'
+                        }`}>
+                          {message.sender === 'user' ? 'You' : 'AI Guide'}
+                        </span>
+                        {message.responseTime && (
+                          <div className="flex items-center space-x-1">
+                            <Clock className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">{message.responseTime}s</span>
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-foreground">
+                        {message.message}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Expected Keywords Section */}
+          {currentTopic && currentTopic.expected_keywords && currentTopic.expected_keywords.length > 0 && (
+            <div>
+              <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
+                <CardContent className="p-6">
+                  <div className="flex items-start space-x-3">
+                    <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-primary/30 rounded-xl flex items-center justify-center border border-primary/30">
+                      <Zap className="h-4 w-4 text-[#1582B4]" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-[#1582B4] mb-3">Expected Keywords</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {currentTopic.expected_keywords.map((keyword, index) => (
+                          <span 
+                            key={index}
+                            className="px-3 py-1 border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm text-foreground text-sm rounded-full border border-gray-200/60 dark:border-gray-700/60"
+                          >
+                            {keyword}
+                          </span>
+                        ))}
+                      </div>
+                      <p className="text-muted-foreground text-sm mt-3">
+                        Try to incorporate these keywords naturally in your conversation.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Evaluation Loading State */}
+          {isEvaluating && (
+            <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
+              <CardContent className="p-6 text-center">
+                <div className="flex items-center justify-center space-x-3">
+                  <Loader2 className="h-10 w-10 animate-spin text-[#1582B4]" />
+                  <div>
+                    <h4 className="font-medium text-[#1582B4]">Evaluating Your Response</h4>
+                    <p className="text-muted-foreground text-sm">
+                      Please wait while we analyze your speech...
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Evaluation Results */}
+          {evaluationResult && !isEvaluating && (
+            <Card className="border-0 bg-gradient-to-br from-[#1582B4]/10 to-indigo-50 dark:from-[#1582B4]/20 dark:to-indigo-900/20 rounded-3xl shadow-lg overflow-hidden">
+              <CardContent className="p-6">
+                <h4 className="font-medium text-[#1582B4] mb-4 text-lg">Evaluation Results</h4>
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-[#1582B4]">
+                      {evaluationResult.overall_score || 0}
+                    </div>
+                    <div className="text-xs text-muted-foreground">Overall</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-[#1582B4]">
+                      {evaluationResult.fluency_score || 0}
+                    </div>
+                    <div className="text-xs text-muted-foreground">Fluency</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-[#1582B4]">
+                      {evaluationResult.vocabulary_score || 0}
+                    </div>
+                    <div className="text-xs text-muted-foreground">Vocabulary</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-[#1582B4]">
+                      {evaluationResult.content_relevance_score || 0}
+                    </div>
+                    <div className="text-xs text-muted-foreground">Relevance</div>
+                  </div>
+                </div>
+
+                {evaluationResult.feedback && (
+                  <div className="mb-4">
+                    <h5 className="font-medium text-[#1582B4] mb-2">Feedback</h5>
+                    <p className="text-sm text-muted-foreground">{evaluationResult.feedback}</p>
+                  </div>
+                )}
+
+                {evaluationResult.strengths && evaluationResult.strengths.length > 0 && (
+                  <div className="mb-4">
+                    <h5 className="font-medium text-[#1582B4] mb-2">Strengths</h5>
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      {evaluationResult.strengths.map((strength: string, index: number) => (
+                        <li key={index} className="flex items-start space-x-2">
+                          <span className="text-[#1582B4] mt-0.5">•</span>
+                          <span>{strength}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {evaluationResult.areas_for_improvement && evaluationResult.areas_for_improvement.length > 0 && (
+                  <div className="mb-4">
+                    <h5 className="font-medium text-[#1582B4] mb-2">Areas for Improvement</h5>
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      {evaluationResult.areas_for_improvement.map((area: string, index: number) => (
+                        <li key={index} className="flex items-start space-x-2">
+                          <span className="text-orange-500 mt-0.5">•</span>
+                          <span>{area}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <div className="flex justify-center">
+                  <Button
+                    onClick={() => setEvaluationResult(null)}
+                    variant="outline"
+                    className="hover:bg-accent hover:text-accent-foreground transition-colors duration-200 border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60"
+                  >
+                    Continue Practice
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Action Button */}
+          <div className="text-center">
+            {!isRecording && !isEvaluating ? (
               <Button
-                onClick={() => navigate('/dashboard/practice/stage-6')}
-                variant="outline"
-                className="px-6 py-2"
+                onClick={handleStartRecording}
+                className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white px-8 py-3 rounded-full text-lg font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+                size="lg"
+                disabled={!currentTopic}
               >
-                Back to Stage 6
+                <Mic className="h-5 w-5 mr-2" />
+                Speak Now
               </Button>
+            ) : isRecording ? (
+              <Button
+                onClick={handleStopRecording}
+                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-8 py-3 rounded-full text-lg font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+                size="lg"
+              >
+                <Mic className="h-5 w-5 mr-2" />
+                Stop Recording
+              </Button>
+            ) : (
+              <Button
+                disabled
+                className="bg-gray-500 text-white px-8 py-3 rounded-full text-lg font-medium cursor-not-allowed"
+                size="lg"
+              >
+                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                Evaluating...
+              </Button>
+            )}
+
+            <div className="mt-4 space-y-3">
+              <div className="flex justify-center space-x-4">
+                <Button
+                  onClick={resetSession}
+                  variant="outline"
+                  className="px-6 py-2 border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 hover:bg-white/80 dark:hover:bg-gray-800/80 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
+                >
+                  Choose Different Topic
+                </Button>
+                <Button
+                  onClick={() => navigate('/dashboard/practice/stage-6')}
+                  variant="outline"
+                  className="px-6 py-2 border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 hover:bg-white/80 dark:hover:bg-gray-800/80 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
+                >
+                  Back to Stage 6
+                </Button>
+              </div>
             </div>
           </div>
         </div>

@@ -116,7 +116,7 @@ const ConversationExample = () => {
                     type="text"
                     value={conversationConfig.conversationId}
                     onChange={(e) => updateConfig('conversationId', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-secondary focus:border-secondary"
                     placeholder="Enter conversation ID"
                   />
                 </div>
@@ -129,7 +129,7 @@ const ConversationExample = () => {
                     type="text"
                     value={conversationConfig.lessonId}
                     onChange={(e) => updateConfig('lessonId', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-secondary focus:border-secondary"
                     placeholder="Enter lesson ID"
                   />
                 </div>
@@ -142,7 +142,7 @@ const ConversationExample = () => {
                     type="text"
                     value={conversationConfig.stageId}
                     onChange={(e) => updateConfig('stageId', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-secondary focus:border-secondary"
                     placeholder="Enter stage ID"
                   />
                 </div>
@@ -155,7 +155,7 @@ const ConversationExample = () => {
                     value={conversationConfig.initialPrompt}
                     onChange={(e) => updateConfig('initialPrompt', e.target.value)}
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-secondary focus:border-secondary"
                     placeholder="Enter initial AI prompt"
                   />
                 </div>
@@ -179,7 +179,7 @@ const ConversationExample = () => {
             <div className="flex justify-center">
               <button
                 onClick={startConversation}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-lg font-medium text-lg transition-colors shadow-lg"
+                className="bg-secondary hover:bg-secondary/90 text-white dark:text-secondary-foreground px-8 py-3 rounded-lg font-medium text-lg transition-colors shadow-lg"
               >
                 Start Conversation
               </button>

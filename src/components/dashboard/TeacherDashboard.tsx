@@ -330,7 +330,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       
       // Use the dynamic SQL function
       const { data, error } = await supabase.rpc('get_course_performance_data', {
-        teacher_id: userProfile.id
+        p_teacher_id: userProfile.id
       });
 
 
@@ -346,10 +346,10 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       // Transform the data to match the expected format
       const coursePerformance = data.map((item: any) => ({
         course: item.course_title,
-        enrolled: item.enrolled_students,
-        completed: item.completed_students,
-        inProgress: item.in_progress_students,
-        avgRating: item.avg_rating
+        enrolled: item.total_students,
+        completed: Math.round((item.completion_rate / 100) * item.total_students),
+        inProgress: item.total_students - Math.round((item.completion_rate / 100) * item.total_students),
+        avgRating: item.average_score
       }));
 
 
@@ -504,7 +504,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       
       // Use the new SQL function
       const { data, error } = await supabase.rpc('get_student_status_counts', {
-        teacher_id: userProfile.id
+        p_teacher_id: userProfile.id
       });
 
       console.log('🔍 [DEBUG] get_student_status_counts response:', { data, error });
@@ -613,7 +613,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                   <DrawerTrigger asChild>
                     <Button
                       variant="outline"
-                      className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800"
                     >
                       <Filter className="h-4 w-4 mr-2" />
                       Filters

@@ -388,7 +388,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
           <div className="relative p-8 rounded-3xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
                   <BookOpen className="w-6 h-6 text-primary" />
                 </div>
                 <div>
@@ -437,12 +437,12 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
       {!isPreviewMode && (
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5"></div>
-          <div className="relative border-b border-border bg-card">
+          <div className="relative border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-br from-card to-card/50 dark:bg-card">
             <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 py-6">
               <Button 
-                variant="ghost" 
+                variant="outline" 
                 onClick={() => navigate('/dashboard/courses')}
-                className="mb-4 h-10 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="mb-4 h-10 px-4 rounded-xl font-semibold hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300 hover:-translate-y-0.5 shadow-lg hover:shadow-xl"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Courses
@@ -461,11 +461,11 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
             <div className="text-center space-y-8">
               <div>
                 {course.category && (
-                  <Badge className="bg-primary hover:bg-primary/90 text-primary-foreground mb-6 px-4 py-2 text-sm font-medium">
+                  <Badge className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground mb-6 px-4 py-2 text-sm font-medium shadow-lg">
                     {course.category}
                   </Badge>
                 )}
-                <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6 leading-tight">
+                <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-6 leading-tight">
                   {course.title}
                 </h1>
                 <p className="text-xl text-muted-foreground mb-8 max-w-4xl mx-auto leading-relaxed">
@@ -475,24 +475,24 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
 
               {/* Enhanced Course Stats */}
               <div className="flex flex-wrap items-center justify-center gap-8 text-sm">
-                <div className="flex items-center gap-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-border">
+                <div className="flex items-center gap-2 bg-gradient-to-br from-card/80 to-card/60 dark:bg-card/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
                   <Users className="w-5 h-5 text-primary" />
-                  <span className="font-medium">{course.stats.students.toLocaleString()} students</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{course.stats.students.toLocaleString()} students</span>
                 </div>
-                <div className="flex items-center gap-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-border">
+                <div className="flex items-center gap-2 bg-gradient-to-br from-card/80 to-card/60 dark:bg-card/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
                   <Clock className="w-5 h-5 text-primary" />
-                  <span className="font-medium">{course.stats.duration}</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{course.stats.duration}</span>
                 </div>
-                <div className="flex items-center gap-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-border">
+                <div className="flex items-center gap-2 bg-gradient-to-br from-card/80 to-card/60 dark:bg-card/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
                   <BookOpen className="w-5 h-5 text-primary" />
-                  <span className="font-medium">{course.stats.lessons} lessons</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{course.stats.lessons} lessons</span>
                 </div>
               </div>
             </div>
 
             {/* Premium Video Player */}
             <div className="mx-auto w-[90%]">
-              <Card className="bg-card border border-border backdrop-blur-sm shadow-xl">
+              <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm shadow-xl rounded-3xl overflow-hidden">
                 <CardContent className="p-0">
                   {/* Enhanced Video/Image Preview */}
                   <div className="relative aspect-video bg-gray-100 rounded-t-lg overflow-hidden min-h-[360px] md:min-h-[450px]">
@@ -516,7 +516,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                             <Button 
                               onClick={handlePreview}
                               size="lg"
-                              className="bg-white/95 hover:bg-white text-black px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                              className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white px-8 py-4 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
                             >
                               <Play className="w-6 h-6 mr-3" />
                               Preview Course
@@ -549,7 +549,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                       {/* Enhanced Progress Section */}
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                          <span className="text-lg font-semibold text-foreground">Course Progress</span>
+                          <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">Course Progress</span>
                           <span className="text-sm text-muted-foreground">
                             {course.progress.completed}/{course.progress.total} lessons
                           </span>
@@ -557,11 +557,11 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                         
                         <Progress 
                           value={course.progress.percentage} 
-                          className="h-3 bg-gray-200"
+                          className="h-3 bg-gray-200 dark:bg-gray-700"
                         />
                         
                         <div className="flex justify-between text-sm text-muted-foreground">
-                          <span className="font-medium">{course.progress.percentage}% Complete</span>
+                          <span className="font-medium text-primary">{course.progress.percentage}% Complete</span>
                           <span>Last accessed: {course.progress.lastAccessed}</span>
                         </div>
                       </div>
@@ -570,7 +570,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                       <div className="space-y-4">
                         <Button 
                           onClick={handleStartLearning}
-                          className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                          className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-4 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
                           size="lg"
                         >
                           {course.progress.percentage > 0 ? 'Continue Learning' : 'Start Learning'}
@@ -591,51 +591,82 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
         </div>
       </div>
 
-      {/* Enhanced Course Content */}
-      <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-12">
-          <div className="lg:col-span-3 space-y-12 order-2 lg:order-1">
-            {/* Enhanced What You'll Learn & Course Features */}
-            <Card className="bg-card border border-border backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-xl">
-                  <Award className="w-6 h-6 text-primary" />
-                  What you'll learn & course features
+      {/* Enhanced Course Content - McKinsey-Level Strategic Layout */}
+      <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 py-12">
+        {/* Strategic Information Grid - Balanced Layout */}
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+          
+          {/* Left Column - Main Content (Strategic Priority) */}
+          <div className="xl:col-span-8 space-y-8 order-2 xl:order-1">
+            
+            {/* What You'll Learn - Strategic Outcomes First */}
+            <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm rounded-2xl shadow-lg">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-3 text-xl text-gray-900 dark:text-gray-100">
+                  <Target className="w-6 h-6 text-primary" />
+                  Strategic Learning Outcomes
                 </CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Key competencies and skills you'll develop through this course
+                </p>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {course.whatYouLearn.map((item, index) => (
-                    <div key={`learn-${index}`} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border">
-                      <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                      <span className="text-sm font-medium">{item}</span>
-                    </div>
-                  ))}
-                  {course.features.map((feature, index) => (
-                    <div key={`feature-${index}`} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border">
-                      <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                      <span className="text-sm font-medium">{feature}</span>
+                    <div key={`learn-${index}`} className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-primary/5 to-primary/15 border border-primary/20 dark:border-primary/10 shadow-sm hover:shadow-md transition-all duration-300">
+                      <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span className="text-xs font-bold text-primary">{index + 1}</span>
+                      </div>
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-relaxed">{item}</span>
                     </div>
                   ))}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Enhanced Requirements */}
+            {/* Course Features - Value Proposition */}
+            <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm rounded-2xl shadow-lg">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-3 text-xl text-gray-900 dark:text-gray-100">
+                  <Sparkles className="w-6 h-6 text-primary" />
+                  Course Features & Benefits
+                </CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  What makes this course unique and valuable
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {course.features.map((feature, index) => (
+                    <div key={`feature-${index}`} className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/10 dark:to-green-800/10 border border-green-200/50 dark:border-green-700/30 shadow-sm hover:shadow-md transition-all duration-300">
+                      <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-relaxed">{feature}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Requirements - Prerequisites & Expectations */}
             {course.requirements && course.requirements.length > 0 && (
-              <Card className="bg-card border border-border backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-3 text-xl">
+              <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm rounded-2xl shadow-lg">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-3 text-xl text-gray-900 dark:text-gray-100">
                     <Target className="w-6 h-6 text-primary" />
-                    Requirements
+                    Prerequisites & Requirements
                   </CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    What you need to know before starting this course
+                  </p>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {course.requirements.map((req, index) => (
-                      <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border">
-                        <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
-                        <span className="text-sm font-medium">{req}</span>
+                      <div key={index} className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/10 dark:to-orange-800/10 border border-orange-200/50 dark:border-orange-700/30 shadow-sm hover:shadow-md transition-all duration-300">
+                        <div className="w-6 h-6 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <span className="text-xs font-semibold text-orange-700 dark:text-orange-300">{index + 1}</span>
+                        </div>
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-relaxed">{req}</span>
                       </div>
                     ))}
                   </div>
@@ -643,25 +674,28 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
               </Card>
             )}
 
-            {/* Enhanced Course Curriculum */}
-            <Card className="bg-card border border-border backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-xl">
+            {/* Course Curriculum - Strategic Learning Path */}
+            <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm rounded-2xl shadow-lg">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-3 text-xl text-gray-900 dark:text-gray-100">
                   <BookOpen className="w-6 h-6 text-primary" />
-                  Course Curriculum
+                  Strategic Learning Path
                 </CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Structured curriculum designed for optimal learning progression
+                </p>
               </CardHeader>
               <CardContent>
                 <Accordion type="multiple" className="w-full">
                   {course.curriculum.map((module, index) => (
-                    <AccordionItem key={module.id} value={module.id}>
-                      <AccordionTrigger className="hover:no-underline">
+                    <AccordionItem key={module.id} value={module.id} className="border border-gray-200/50 dark:border-gray-700/30 rounded-xl mb-3 last:mb-0">
+                      <AccordionTrigger className="hover:no-underline px-4 py-3 rounded-xl hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors">
                         <div className="flex items-center gap-4 w-full">
-                          <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/20 text-primary rounded-xl text-sm font-bold">
+                          <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/20 text-primary rounded-xl text-sm font-bold shadow-sm">
                             {index + 1}
                           </div>
                           <div className="flex-1 text-left">
-                            <h4 className="font-semibold text-foreground text-lg">{module.title}</h4>
+                            <h4 className="font-semibold text-gray-900 dark:text-gray-100 text-lg">{module.title}</h4>
                             <div className="flex items-center gap-6 text-sm text-muted-foreground mt-2">
                               <div className="flex items-center gap-2">
                                 <Clock className="w-4 h-4" />
@@ -675,21 +709,24 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                           </div>
                         </div>
                       </AccordionTrigger>
-                      <AccordionContent>
-                        <div className="space-y-6 pt-6">
+                      <AccordionContent className="px-4 pb-4">
+                        <div className="space-y-4 pt-4">
                           {module.overview && (
-                            <p className="text-sm text-muted-foreground leading-relaxed">
+                            <p className="text-sm text-muted-foreground leading-relaxed bg-gray-50/50 dark:bg-gray-800/30 p-3 rounded-lg">
                               {module.overview}
                             </p>
                           )}
                           
                           <div className="space-y-3">
-                            <h5 className="text-sm font-semibold text-foreground">Topics covered:</h5>
+                            <h5 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                              <PlayCircle className="w-4 h-4 text-primary" />
+                              Topics covered:
+                            </h5>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               {module.topics.map((topic, topicIndex) => (
-                                <div key={topicIndex} className="flex items-center gap-3 p-3 rounded-lg bg-muted/20 border border-border">
-                                  <PlayCircle className="w-4 h-4 text-primary" />
-                                  <span className="text-sm font-medium">{topic}</span>
+                                <div key={topicIndex} className="flex items-center gap-3 p-3 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 border border-gray-200/50 dark:border-gray-600/50 shadow-sm">
+                                  <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0"></div>
+                                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{topic}</span>
                                 </div>
                               ))}
                             </div>
@@ -702,36 +739,39 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
               </CardContent>
             </Card>
 
-            {/* Enhanced Instructor */}
-            <Card className="bg-card border border-border backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-xl">
+            {/* Instructor Profile - Credibility & Expertise */}
+            <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm rounded-2xl shadow-lg">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-3 text-xl text-gray-900 dark:text-gray-100">
                   <GraduationCap className="w-6 h-6 text-primary" />
-                  Teacher
+                  Expert Instructor
                 </CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Learn from industry professionals with proven expertise
+                </p>
               </CardHeader>
               <CardContent>
                 <div className="flex items-start gap-6">
-                  <Avatar className="h-20 w-20">
+                  <Avatar className="h-20 w-20 shadow-lg border-2 border-primary/20">
                     <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-2xl font-bold">
                       {course.instructor.avatar}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
-                    <h4 className="text-xl font-semibold text-foreground mb-2">
+                    <h4 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
                       {course.instructor.name}
                     </h4>
                     <p className="text-muted-foreground mb-4 leading-relaxed">
                       {course.instructor.title}
                     </p>
-                    <div className="flex flex-wrap gap-6 text-sm">
-                      <div className="flex items-center gap-2 bg-muted/30 px-4 py-2 rounded-lg border border-border">
+                    <div className="flex flex-wrap gap-4 text-sm">
+                      <div className="flex items-center gap-2 bg-gradient-to-br from-primary/10 to-primary/20 px-4 py-2 rounded-xl border border-primary/20 dark:border-primary/10 shadow-sm">
                         <Users className="w-4 h-4 text-primary" />
-                        <span className="font-medium">{course.instructor.students.toLocaleString()} Students</span>
+                        <span className="font-medium text-gray-900 dark:text-gray-100">{course.instructor.students.toLocaleString()} Students</span>
                       </div>
-                      <div className="flex items-center gap-2 bg-muted/30 px-4 py-2 rounded-lg border border-border">
+                      <div className="flex items-center gap-2 bg-gradient-to-br from-primary/10 to-primary/20 px-4 py-2 rounded-xl border border-primary/20 dark:border-primary/10 shadow-sm">
                         <BookOpen className="w-4 h-4 text-primary" />
-                        <span className="font-medium">{course.instructor.courses} Courses</span>
+                        <span className="font-medium text-gray-900 dark:text-gray-100">{course.instructor.courses} Courses</span>
                       </div>
                     </div>
                   </div>
@@ -740,73 +780,118 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
             </Card>
           </div>
 
-          {/* Enhanced Course Details Sidebar */}
-          <div className="lg:col-span-2 order-1 lg:order-2">
-            <Card className={`bg-card border border-border backdrop-blur-sm ${!isPreviewMode ? 'sticky top-8' : ''}`}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-xl">
-                  <BarChart3 className="w-6 h-6 text-primary" />
-                  Course Details
+          {/* Right Column - Strategic Sidebar (Supporting Information) */}
+          <div className="xl:col-span-4 space-y-6 order-1 xl:order-2">
+            
+            {/* Course Details - Key Metrics */}
+            <Card className={`bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm rounded-2xl shadow-lg ${!isPreviewMode ? 'xl:sticky xl:top-8' : ''}`}>
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-3 text-lg text-gray-900 dark:text-gray-100">
+                  <BarChart3 className="w-5 h-5 text-primary" />
+                  Course Metrics
                 </CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Key performance indicators and course statistics
+                </p>
               </CardHeader>
               <CardContent className="space-y-4">
-                {isPreviewMode ? (
-                  // 2x2 Grid layout for modal preview
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="flex flex-col items-center justify-center p-3 rounded-lg bg-muted/30 border border-border text-center min-h-[60px]">
-                        <span className="text-xs text-muted-foreground mb-1">Level</span>
-                        <span className="font-semibold text-sm truncate w-full">{course.stats.level}</span>
-                      </div>
-                      <div className="flex flex-col items-center justify-center p-3 rounded-lg bg-muted/30 border border-border text-center min-h-[60px]">
-                        <span className="text-xs text-muted-foreground mb-1">Duration</span>
-                        <span className="font-semibold text-sm truncate w-full">{course.stats.duration}</span>
-                      </div>
-                      <div className="flex flex-col items-center justify-center p-3 rounded-lg bg-muted/30 border border-border text-center min-h-[60px]">
-                        <span className="text-xs text-muted-foreground mb-1">Lessons</span>
-                        <span className="font-semibold text-sm truncate w-full">{course.stats.lessons}</span>
-                      </div>
-                      <div className="flex flex-col items-center justify-center p-3 rounded-lg bg-muted/30 border border-border text-center min-h-[60px]">
-                        <span className="text-xs text-muted-foreground mb-1">Language</span>
-                        <span className="font-semibold text-sm truncate w-full">{course.stats.language}</span>
-                      </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="text-center p-4 rounded-xl bg-gradient-to-br from-primary/5 to-primary/15 border border-primary/20 dark:border-primary/10 shadow-sm">
+                    <div className="text-2xl font-bold text-primary mb-1">{course.stats.level}</div>
+                    <div className="text-xs text-muted-foreground">Level</div>
                     </div>
-                    <Separator />
-                    <div className="flex justify-between items-center p-3 rounded-lg bg-muted/20 border border-border">
+                  <div className="text-center p-4 rounded-xl bg-gradient-to-br from-primary/5 to-primary/15 border border-primary/20 dark:border-primary/10 shadow-sm">
+                    <div className="text-2xl font-bold text-primary mb-1">{course.stats.lessons}</div>
+                    <div className="text-xs text-muted-foreground">Lessons</div>
+                    </div>
+                    </div>
+                
+                  <div className="space-y-3">
+                  <div className="flex justify-between items-center p-3 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 border border-gray-200/50 dark:border-gray-600/50 shadow-sm">
+                      <span className="text-sm text-muted-foreground">Duration</span>
+                      <span className="font-semibold text-gray-900 dark:text-gray-100">{course.stats.duration}</span>
+                    </div>
+                  <div className="flex justify-between items-center p-3 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 border border-gray-200/50 dark:border-gray-600/50 shadow-sm">
+                      <span className="text-sm text-muted-foreground">Language</span>
+                      <span className="font-semibold text-gray-900 dark:text-gray-100">{course.stats.language}</span>
+                    </div>
+                  <div className="flex justify-between items-center p-3 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 border border-gray-200/50 dark:border-gray-600/50 shadow-sm">
                       <span className="text-sm text-muted-foreground">Last updated</span>
-                      <span className="font-semibold text-sm truncate max-w-[60%]">{course.stats.lastUpdated}</span>
+                      <span className="font-semibold text-gray-900 dark:text-gray-100">{course.stats.lastUpdated}</span>
                     </div>
-                  </div>
-                ) : (
-                  // 2x2 Grid layout for full page view
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="flex flex-col items-center justify-center p-4 rounded-lg bg-muted/30 border border-border text-center min-h-[70px]">
-                        <span className="text-sm text-muted-foreground mb-2">Level</span>
-                        <span className="font-semibold truncate w-full">{course.stats.level}</span>
-                      </div>
-                      <div className="flex flex-col items-center justify-center p-4 rounded-lg bg-muted/30 border border-border text-center min-h-[70px]">
-                        <span className="text-sm text-muted-foreground mb-2">Duration</span>
-                        <span className="font-semibold truncate w-full">{course.stats.duration}</span>
-                      </div>
-                      <div className="flex flex-col items-center justify-center p-4 rounded-lg bg-muted/30 border border-border text-center min-h-[70px]">
-                        <span className="text-sm text-muted-foreground mb-2">Lessons</span>
-                        <span className="font-semibold truncate w-full">{course.stats.lessons}</span>
-                      </div>
-                      <div className="flex flex-col items-center justify-center p-4 rounded-lg bg-muted/30 border border-border text-center min-h-[70px]">
-                        <span className="text-sm text-muted-foreground mb-2">Language</span>
-                        <span className="font-semibold truncate w-full">{course.stats.language}</span>
-                      </div>
-                    </div>
-                    <Separator />
-                    <div className="flex justify-between items-center p-4 rounded-lg bg-muted/20 border border-border">
-                      <span className="text-sm text-muted-foreground">Last updated</span>
-                      <span className="font-semibold truncate max-w-[60%]">{course.stats.lastUpdated}</span>
-                    </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Quick Actions - Strategic Next Steps */}
+            {!isPreviewMode && (
+              <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm rounded-2xl shadow-lg">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-3 text-lg text-gray-900 dark:text-gray-100">
+                    <TrendingUp className="w-5 h-5 text-primary" />
+                    Next Steps
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Recommended actions to maximize your learning
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Button 
+                    onClick={handleStartLearning}
+                    className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-3 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                  >
+                    {course.progress.percentage > 0 ? 'Continue Learning' : 'Start Learning'}
+                  </Button>
+                  
+                  {course.progress.percentage > 0 && (
+                    <div className="text-center p-3 rounded-xl bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/10 dark:to-green-800/10 border border-green-200/50 dark:border-green-700/30">
+                      <p className="text-sm font-medium text-green-800 dark:text-green-200 mb-1">Next lesson:</p>
+                      <p className="text-xs text-green-700 dark:text-green-300">{course.progress.nextLesson}</p>
                   </div>
                 )}
               </CardContent>
             </Card>
+            )}
+
+            {/* Progress Overview - Performance Metrics */}
+            {!isPreviewMode && (
+              <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm rounded-2xl shadow-lg">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-3 text-lg text-gray-900 dark:text-gray-100">
+                    <BarChart3 className="w-5 h-5 text-primary" />
+                    Your Progress
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Track your learning journey and achievements
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Completion</span>
+                      <span className="text-sm text-muted-foreground">
+                        {course.progress.completed}/{course.progress.total} lessons
+                      </span>
+          </div>
+                    
+                    <Progress 
+                      value={course.progress.percentage} 
+                      className="h-2 bg-gray-200 dark:bg-gray-700"
+                    />
+                    
+                    <div className="text-center">
+                      <span className="text-lg font-bold text-primary">{course.progress.percentage}% Complete</span>
+                    </div>
+                  </div>
+                  
+                  <div className="text-center p-3 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/10 dark:to-blue-800/10 border border-blue-200/50 dark:border-blue-700/30">
+                    <p className="text-xs text-blue-700 dark:text-blue-300">
+                      Last accessed: {course.progress.lastAccessed}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>

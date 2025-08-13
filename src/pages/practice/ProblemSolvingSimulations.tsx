@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Lightbulb, Mic, Users, Monitor, Loader2, Square } from 'lucide-react';
+import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
+import { ArrowLeft, Lightbulb, Mic, Users, Monitor, Loader2, Square, MessageSquare, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
@@ -587,44 +588,49 @@ export default function ProblemSolvingSimulations() {
     return (
       <div className="min-h-screen bg-background p-4">
         <div className="max-w-4xl mx-auto">
+          {/* Breadcrumb */}
+          <div className="mb-6">
+            <PracticeBreadcrumb />
+          </div>
+          
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <Button
-                          variant="outline"
-            size="icon"
-            onClick={handleBackToScenarios}
-            className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+              variant="outline"
+              size="icon"
+              onClick={handleBackToScenarios}
+              className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20 hover:bg-primary/10 hover:border-primary/30 hover:text-primary bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
             
             <div className="text-center flex-1">
-              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-2">
-                <Lightbulb className="h-6 w-6 text-green-600 dark:text-green-400" />
+              <div className="w-16 h-16 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg border border-primary/30 dark:border-primary/40">
+                <Lightbulb className="h-8 w-8 text-primary" />
               </div>
-              <h1 className="text-2xl font-bold">Problem Solving</h1>
-              <p className="text-muted-foreground">Virtual Group Talk</p>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent mb-2">Problem Solving</h1>
+              <p className="text-lg text-muted-foreground">Master Critical Thinking & Solutions</p>
             </div>
             
             <div className="w-10"></div>
           </div>
 
           {/* Scenario Info */}
-          <Card className="mb-6 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+          <Card className="mb-6 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 dark:from-primary/10 dark:via-primary/20 dark:to-primary/10 border border-primary/20 dark:border-primary/30 rounded-2xl shadow-lg">
             <CardContent className="p-6">
               {isLoadingScenario ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-green-600 mr-2" />
-                  <span className="text-green-700 dark:text-green-300">Loading scenario details...</span>
+                  <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
+                  <span className="text-primary/80 dark:text-primary/70">Loading scenario details...</span>
                 </div>
               ) : (
                 <>
                   <div className="text-center mb-4">
-                    <h2 className="text-xl font-semibold text-green-800 dark:text-green-200 mb-2">
+                    <h2 className="text-xl font-semibold text-primary dark:text-primary/90 mb-2">
                       {scenario.title}
                     </h2>
                     {scenario.context && (
-                      <p className="text-green-700 dark:text-green-300 mb-4">
+                      <p className="text-primary/80 dark:text-primary/70 mb-4">
                         {scenario.context}
                       </p>
                     )}
@@ -634,12 +640,12 @@ export default function ProblemSolvingSimulations() {
                   <div className="flex justify-center items-center space-x-2">
                     {scenario.participants.map((participant, index) => (
                       <div key={index} className="flex flex-col items-center">
-                        <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-1">
-                          <span className="text-sm text-green-600 dark:text-green-400">
+                        <div className="w-10 h-10 bg-primary/20 dark:bg-primary/30 rounded-full flex items-center justify-center mb-1">
+                          <span className="text-sm text-primary">
                             {participant === 'You' ? '👤' : index === 0 ? '👨‍💻' : '👩‍🎓'}
                           </span>
                         </div>
-                        <span className="text-xs text-green-700 dark:text-green-300">
+                        <span className="text-xs text-primary/70 dark:text-primary/60">
                           {participant}
                         </span>
                       </div>
@@ -651,11 +657,11 @@ export default function ProblemSolvingSimulations() {
           </Card>
 
           {/* Conversation */}
-          <Card className="mb-4">
-            <CardContent className="p-4">
+          <Card className="mb-4 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg">
+            <CardContent className="p-6">
               {isLoadingScenario ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-green-600 mr-2" />
+                  <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
                   <span className="text-muted-foreground">Loading conversation...</span>
                 </div>
               ) : (
@@ -664,7 +670,7 @@ export default function ProblemSolvingSimulations() {
                   <div key={index}>
                     {msg.type === 'system' ? (
                       <div className="text-center">
-                        <div className="inline-block bg-muted px-3 py-1 rounded-full text-sm text-muted-foreground">
+                        <div className="inline-block bg-gradient-to-r from-primary/10 via-primary/20 to-primary/10 dark:from-primary/20 dark:via-primary/30 dark:to-primary/20 border border-primary/30 dark:border-primary/40 px-4 py-2 rounded-2xl text-sm text-primary dark:text-primary/90 font-medium">
                           {msg.message}
                         </div>
                       </div>
@@ -672,28 +678,28 @@ export default function ProblemSolvingSimulations() {
                       <div className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
                         <div className="max-w-xs lg:max-w-md">
                           {msg.type === 'ai' && (
-                            <div className="flex items-center space-x-2 mb-1">
-                              <div className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                                <span className="text-xs">{msg.avatar}</span>
+                            <div className="flex items-center space-x-2 mb-2">
+                              <div className="w-6 h-6 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-full flex items-center justify-center border border-primary/30 dark:border-primary/40">
+                                <span className="text-xs text-primary font-medium">{msg.avatar}</span>
                               </div>
-                              <span className="text-xs text-muted-foreground">{msg.persona}</span>
+                              <span className="text-xs text-primary/70 dark:text-primary/60 font-medium">{msg.persona}</span>
                             </div>
                           )}
                           <div
-                            className={`px-4 py-2 rounded-lg ${
+                            className={`px-4 py-3 rounded-2xl shadow-sm ${
                               msg.type === 'user'
-                                ? 'bg-green-600 text-white'
+                                ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-lg'
                                 : msg.persona === 'System'
-                                ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200'
-                                : 'bg-gray-100 dark:bg-gray-800 text-foreground'
+                                ? 'bg-gradient-to-r from-primary/10 via-primary/20 to-primary/10 dark:from-primary/30 dark:via-primary/20 dark:to-primary/30 text-primary dark:text-primary border border-primary/20 dark:border-primary/30'
+                                : 'bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600'
                             }`}
                           >
-                            <p className="text-sm">{msg.message}</p>
+                            <p className="text-sm leading-relaxed">{msg.message}</p>
                           </div>
                           {msg.type === 'user' && (
                             <div className="flex justify-end mt-1">
-                              <div className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                                <span className="text-xs">👤</span>
+                              <div className="w-6 h-6 bg-primary/20 dark:bg-primary/30 rounded-full flex items-center justify-center border border-primary/30 dark:border-primary/40">
+                                <span className="text-xs text-primary font-medium">👤</span>
                               </div>
                             </div>
                           )}
@@ -705,7 +711,10 @@ export default function ProblemSolvingSimulations() {
                   
                   {conversation.length === 0 && !isLoadingScenario && (
                     <div className="text-center py-8 text-muted-foreground">
-                      <p>Start the conversation by typing a message below</p>
+                      <div className="w-16 h-16 bg-gradient-to-br from-primary/10 via-primary/20 to-primary/10 dark:from-primary/20 dark:via-primary/30 dark:to-primary/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-primary/20 dark:border-primary/30">
+                        <MessageSquare className="h-8 w-8 text-primary/60" />
+                      </div>
+                      <p className="text-lg font-medium text-primary/80 dark:text-primary/70">Start the conversation by typing a message below</p>
                     </div>
                   )}
                 </div>
@@ -714,68 +723,64 @@ export default function ProblemSolvingSimulations() {
           </Card>
 
           {/* Audio Input */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="space-y-4">
-                {/* Recording Button */}
-                <div className="flex justify-center">
-                  {!isRecording ? (
-                    <Button
-                      onClick={handleStartRecording}
-                      size="lg"
-                      className="bg-green-600 hover:bg-green-700 text-white px-8 py-4"
-                      disabled={isLoadingScenario || isEvaluating}
-                    >
-                      <Mic className="h-6 w-6 mr-2" />
-                      Start Recording
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={handleStopRecording}
-                      size="lg"
-                      className="bg-red-600 hover:bg-red-700 text-white px-8 py-4"
-                    >
-                      <Square className="h-6 w-6 mr-2" />
-                      Stop Recording
-                    </Button>
-                  )}
+          <div className="space-y-4">
+            {/* Recording Button */}
+            <div className="flex justify-center">
+              {!isRecording ? (
+                <Button
+                  onClick={handleStartRecording}
+                  size="lg"
+                  className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white px-8 py-4 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 rounded-2xl"
+                  disabled={isLoadingScenario || isEvaluating}
+                >
+                  <Mic className="h-6 w-6 mr-2" />
+                  Start Recording
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleStopRecording}
+                  size="lg"
+                  className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-8 py-4 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 rounded-2xl"
+                >
+                  <Square className="h-6 w-6 mr-2" />
+                  Stop Recording
+                </Button>
+              )}
+            </div>
+
+            {/* Recording Status */}
+            {isRecording && (
+              <div className="text-center">
+                <div className="inline-flex items-center text-red-600">
+                  <div className="w-3 h-3 bg-red-600 rounded-full animate-pulse mr-2"></div>
+                  Recording in progress...
                 </div>
-
-                {/* Recording Status */}
-                {isRecording && (
-                  <div className="text-center">
-                    <div className="inline-flex items-center text-red-600">
-                      <div className="w-3 h-3 bg-red-600 rounded-full animate-pulse mr-2"></div>
-                      Recording in progress...
-                    </div>
-                  </div>
-                )}
-
-                {/* Evaluation Status */}
-                {isEvaluating && (
-                  <div className="text-center">
-                    <div className="inline-flex items-center text-blue-600">
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Evaluating your response...
-                    </div>
-                  </div>
-                )}
-
-                {/* Recording/Evaluation Error */}
-                {(recordingError || error) && (
-                  <div className="text-center text-red-600 text-sm">
-                    {recordingError || error}
-                  </div>
-                )}
               </div>
-            </CardContent>
-          </Card>
+            )}
+
+            {/* Evaluation Status */}
+            {isEvaluating && (
+              <div className="text-center">
+                <div className="inline-flex items-center text-primary">
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Evaluating your response...
+                </div>
+              </div>
+            )}
+
+            {/* Recording/Evaluation Error */}
+            {(recordingError || error) && (
+              <div className="text-center text-red-600 text-sm">
+                {recordingError || error}
+              </div>
+            )}
+          </div>
 
           {/* Evaluation Results */}
           {evaluation && evaluation.evaluation?.evaluation && (
-            <Card className="mt-4 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+            <Card className="mt-4 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 dark:from-primary/10 dark:via-primary/20 dark:to-primary/10 border border-primary/20 dark:border-primary/30 rounded-2xl shadow-lg">
               <CardContent className="p-6">
-                <h3 className="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-4">
+                <h3 className="text-lg font-semibold text-primary dark:text-primary/90 mb-4">
                   Performance Evaluation
                 </h3>
                 
@@ -783,7 +788,7 @@ export default function ProblemSolvingSimulations() {
                   {/* Overall Score */}
                   <div className="flex items-center justify-between">
                     <span className="font-medium">Overall Score:</span>
-                    <span className="text-xl font-bold text-blue-600">
+                    <span className="text-xl font-bold text-primary">
                       {evaluation.evaluation.evaluation.overall_score}%
                     </span>
                   </div>
@@ -791,11 +796,11 @@ export default function ProblemSolvingSimulations() {
                   {/* Key Scores */}
                   <div className="grid grid-cols-3 gap-4 text-sm bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
                     <div className="text-center">
-                      <div className="font-medium text-blue-600">{evaluation.evaluation.evaluation.clarity_score}/10</div>
+                      <div className="font-medium text-primary">{evaluation.evaluation.evaluation.clarity_score}/10</div>
                       <div className="text-xs text-gray-600">Clarity</div>
                     </div>
                     <div className="text-center">
-                      <div className="font-medium text-green-600">{evaluation.evaluation.evaluation.politeness_score}/10</div>
+                      <div className="font-medium text-primary">{evaluation.evaluation.evaluation.politeness_score}/10</div>
                       <div className="text-xs text-gray-600">Politeness</div>
                     </div>
                     <div className="text-center">
@@ -883,32 +888,37 @@ export default function ProblemSolvingSimulations() {
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-4xl mx-auto">
+        {/* Breadcrumb */}
+        <div className="mb-6">
+          <PracticeBreadcrumb />
+        </div>
+        
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <Button
             variant="outline"
             size="icon"
             onClick={() => navigate('/dashboard/practice/stage-3')}
-            className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
+            className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20 hover:bg-primary/10 hover:border-primary/30 hover:text-primary bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           
           <div className="text-center flex-1">
-            <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-2">
-              <Lightbulb className="h-6 w-6 text-green-600 dark:text-green-400" />
+            <div className="w-16 h-16 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg border border-primary/30 dark:border-primary/40">
+              <Lightbulb className="h-8 w-8 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold">Problem Solving</h1>
-            <p className="text-muted-foreground">Virtual Group Talk</p>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent mb-2">Problem Solving</h1>
+            <p className="text-lg text-muted-foreground">Master Critical Thinking & Solutions</p>
           </div>
           
           <div className="w-10"></div>
         </div>
 
         {/* Instructions */}
-        <Card className="mb-6 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-          <CardContent className="p-4">
-            <p className="text-center text-green-700 dark:text-green-300">
+        <Card className="mb-6 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 dark:from-primary/10 dark:via-primary/20 dark:to-primary/10 border border-primary/20 dark:border-primary/30 rounded-2xl shadow-lg">
+          <CardContent className="p-6">
+            <p className="text-center text-primary/80 dark:text-primary/70 text-lg">
               Practice problem-solving and decision-making in group scenarios
             </p>
           </CardContent>
@@ -916,25 +926,30 @@ export default function ProblemSolvingSimulations() {
 
         {/* Loading State */}
         {isLoading && (
-          <Card className="mb-6">
+          <Card className="mb-6 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg">
             <CardContent className="p-6 text-center">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-green-600" />
-              <p className="text-muted-foreground">Loading scenarios...</p>
+              <div className="w-16 h-16 bg-gradient-to-br from-primary/10 via-primary/20 to-primary/10 dark:from-primary/20 dark:via-primary/30 dark:to-primary/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-primary/20 dark:border-primary/30">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+              <p className="text-lg font-medium text-primary/80 dark:text-primary/70">Loading scenarios...</p>
             </CardContent>
           </Card>
         )}
 
         {/* Error State */}
         {error && scenarios.length === 0 && !isLoading && (
-          <Card className="mb-6 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
+          <Card className="mb-6 bg-gradient-to-r from-red-50 via-red-100 to-red-50 dark:from-red-900/20 dark:via-red-800/20 dark:to-red-900/20 border border-red-200 dark:border-red-700 rounded-2xl shadow-lg">
             <CardContent className="p-6 text-center">
-              <p className="text-red-800 dark:text-red-200 mb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-red-100 via-red-200 to-red-100 dark:from-red-800/30 dark:via-red-700/30 dark:to-red-800/30 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-red-200 dark:border-red-600">
+                <XCircle className="h-8 w-8 text-red-600" />
+              </div>
+              <p className="text-lg font-medium text-red-800 dark:text-red-200 mb-4">
                 Unable to load scenarios: {error}
               </p>
               <Button 
                 onClick={() => window.location.reload()} 
                 variant="outline"
-                className="border-red-300 text-red-700 hover:bg-red-100"
+                className="border-red-300 text-red-700 hover:bg-red-100 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm shadow-lg rounded-2xl"
               >
                 Try Again
               </Button>
@@ -944,9 +959,9 @@ export default function ProblemSolvingSimulations() {
 
         {/* Error banner if API failed but fallbacks loaded */}
         {error && scenarios.length > 0 && (
-          <Card className="mb-4 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
+          <Card className="mb-4 bg-gradient-to-r from-yellow-50 via-yellow-100 to-yellow-50 dark:from-yellow-900/20 dark:via-yellow-800/20 dark:to-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-2xl shadow-lg">
             <CardContent className="p-4">
-              <p className="text-yellow-800 dark:text-yellow-200 text-sm">
+              <p className="text-yellow-800 dark:text-yellow-200 text-sm font-medium">
                 ⚠️ Using offline content. Some features may be limited.
               </p>
             </CardContent>
@@ -956,22 +971,22 @@ export default function ProblemSolvingSimulations() {
         {/* Scenario Selection */}
         {!isLoading && scenarios.length > 0 && (
           <div className="mb-4">
-            <h2 className="text-lg font-semibold mb-4">Choose a Scenario</h2>
+            <h2 className="text-xl font-semibold mb-6 text-center text-primary dark:text-primary/90">Choose a Scenario</h2>
             <div className="space-y-4">
               {scenarios.map((scenario) => (
                 <Card
                   key={scenario.id}
-                  className="cursor-pointer hover:shadow-lg transition-shadow"
+                  className="cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all duration-300 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg"
                   onClick={() => handleScenarioSelect(scenario.id)}
                 >
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center space-x-4">
-                        <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
+                        <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/90 rounded-xl flex items-center justify-center shadow-lg">
                           <Monitor className="h-6 w-6 text-white" />
                         </div>
                         <div>
-                          <h3 className="font-semibold text-lg mb-1">{scenario.title}</h3>
+                          <h3 className="font-semibold text-lg mb-1 text-primary dark:text-primary/90">{scenario.title}</h3>
                           <p className="text-sm text-muted-foreground">{scenario.description}</p>
                         </div>
                       </div>
@@ -979,9 +994,9 @@ export default function ProblemSolvingSimulations() {
                       {/* Participants */}
                       <div className="flex items-center space-x-1">
                         {scenario.participants.map((participant, index) => (
-                          <div key={index} className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                            <span className="text-xs text-green-600 dark:text-green-400">
-                              {participant === 'You' ? 'Y' : participant.split(' ')[0][0]}
+                          <div key={index} className="w-8 h-8 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-full flex items-center justify-center border border-primary/30 dark:border-primary/40">
+                            <span className="text-xs text-primary font-medium">
+                              {participant === 'You' ? '👤' : participant.split(' ')[0][0]}
                             </span>
                           </div>
                         ))}

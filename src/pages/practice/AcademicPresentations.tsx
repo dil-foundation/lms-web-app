@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Mic, GraduationCap, Loader2, Play, Pause } from 'lucide-react';
+import { ArrowLeft, Mic, GraduationCap, Loader2, Play, Pause, Target, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { toast } from 'sonner';
+import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
 import { 
   academicPresentationService, 
   AcademicPresentationTopic,
@@ -187,83 +188,115 @@ export default function AcademicPresentations() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background p-4 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading presentation topics...</p>
-        </div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
+          <CardContent className="p-8 text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+            <p className="text-primary font-medium">Loading presentation topics...</p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
+    <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => {
-              if (selectedTopic) {
-                // If viewing a topic, go back to topic selection
-                setSelectedTopic(null);
-                setHasStarted(false);
-                setEvaluation(null);
-                setStartTime(null);
-                setAudioUrl(null);
-                stopAudio();
-              } else {
-                // If on topic selection, go back to Stage 5
-                navigate('/dashboard/practice/stage-5');
-              }
-            }}
-            className="shrink-0"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+        {/* Consistent Header Section */}
+        <div className="px-6 py-8">
+          {/* Breadcrumb Navigation */}
+          <PracticeBreadcrumb className="mb-6" />
           
-          <div className="text-center flex-1">
-            <h1 className="text-xl font-semibold text-green-600 dark:text-green-400">
-              Academic Presentation
-            </h1>
+          {/* Header with Back Button and Title */}
+          <div className="relative flex items-center justify-center mb-8 text-center">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                if (selectedTopic) {
+                  // If viewing a topic, go back to topic selection
+                  setSelectedTopic(null);
+                  setHasStarted(false);
+                  setEvaluation(null);
+                  setStartTime(null);
+                  setAudioUrl(null);
+                  stopAudio();
+                } else {
+                  // If on topic selection, go back to Stage 5
+                  navigate('/dashboard/practice/stage-5');
+                }
+              }}
+              className="absolute left-0 group w-12 h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+            >
+              <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-300" />
+            </Button>
+            
+            <div className="space-y-3">
+              <div className="inline-block p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
+                <GraduationCap className="h-10 w-10 text-primary" />
+              </div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                Academic Presentation
+              </h1>
+              <p className="text-muted-foreground text-lg">
+                Develop your presentation skills with academic topics
+              </p>
+            </div>
           </div>
-          
-          <div className="w-10"></div>
+
+          {/* Activity Stats */}
+          <div className="grid grid-cols-2 gap-4">
+            <Card className="border-0 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg">
+              <CardContent className="p-4 text-center">
+                <Target className="h-6 w-6 text-primary mx-auto mb-2" />
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Presentation Skills</p>
+              </CardContent>
+            </Card>
+            <Card className="border-0 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg">
+              <CardContent className="p-4 text-center">
+                <TrendingUp className="h-6 w-6 text-primary mx-auto mb-2" />
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Academic Growth</p>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Main Content */}
-        <div className="space-y-6">
+        <div className="px-6 pb-8 space-y-6">
           {/* Title */}
           <div className="text-center">
-            <h2 className="text-2xl font-bold mb-2">Presentation Challenge</h2>
+            <h2 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary to-primary/90 bg-clip-text text-transparent">
+              Presentation Challenge
+            </h2>
           </div>
 
           {/* Topic Selection */}
           {!selectedTopic && (
             <div>
-              <h3 className="text-lg font-semibold mb-4">Choose Your Presentation Topic</h3>
+              <h3 className="text-xl font-semibold mb-6 bg-gradient-to-r from-primary to-primary/90 bg-clip-text text-transparent">
+                Choose Your Presentation Topic
+              </h3>
 
               {topics.length > 0 ? (
                 <div className="grid grid-cols-1 gap-4">
                   {topics.map((topic) => (
                     <Card 
                       key={topic.id} 
-                      className="cursor-pointer hover:bg-green-50 dark:hover:bg-green-900/20 border-green-200 dark:border-green-800 transition-colors"
+                      className="cursor-pointer border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300"
                       onClick={() => setSelectedTopic(topic)}
                     >
                       <CardContent className="p-6">
                         <div className="flex items-start space-x-4">
-                          <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center shrink-0">
-                            <GraduationCap className="h-6 w-6 text-green-600 dark:text-green-400" />
+                          <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center shrink-0 border border-primary/30">
+                            <GraduationCap className="h-6 w-6 text-primary" />
                           </div>
                           <div className="flex-1">
-                            <h4 className="text-lg font-semibold text-green-800 dark:text-green-200 mb-2">
+                            <h4 className="text-lg font-semibold text-primary mb-2">
                               {topic.topic}
                             </h4>
                             {topic.difficulty_level && (
                               <div className="mt-2">
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200">
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-primary/20 text-primary">
                                   {topic.difficulty_level}
                                 </span>
                               </div>
@@ -275,7 +308,7 @@ export default function AcademicPresentations() {
                   ))}
                 </div>
               ) : (
-                <Card className="bg-muted/50">
+                <Card className="border-0 bg-gradient-to-br from-muted/30 to-muted/50 rounded-2xl shadow-lg">
                   <CardContent className="p-8 text-center">
                     <GraduationCap className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <h4 className="text-lg font-semibold text-muted-foreground mb-2">No Topics Available</h4>
@@ -290,25 +323,25 @@ export default function AcademicPresentations() {
 
           {/* Selected Presentation Topic */}
           {selectedTopic && (
-            <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+            <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
               <CardContent className="p-8">
                 <div className="text-center">
-                  <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <GraduationCap className="h-8 w-8 text-green-600 dark:text-green-400" />
+                  <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-primary/30 rounded-full flex items-center justify-center mx-auto mb-4 border border-primary/30">
+                    <GraduationCap className="h-8 w-8 text-primary" />
                   </div>
-                  <h3 className="text-xl font-semibold text-green-800 dark:text-green-200 mb-2">
+                  <h3 className="text-xl font-semibold text-primary mb-2">
                     {selectedTopic.topic}
                   </h3>
                   
                   {/* Expected Keywords */}
                   {selectedTopic.expected_keywords && selectedTopic.expected_keywords.length > 0 && (
                     <div className="mt-4 mb-4">
-                      <h4 className="text-sm font-medium text-green-700 dark:text-green-300 mb-2">Expected Keywords:</h4>
+                      <h4 className="text-sm font-medium text-primary mb-2">Expected Keywords:</h4>
                       <div className="flex flex-wrap justify-center gap-2">
                         {selectedTopic.expected_keywords.map((keyword, index) => (
                           <span 
                             key={index}
-                            className="px-2 py-1 bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200 text-xs rounded-full"
+                            className="px-3 py-1 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-primary/20 text-primary text-xs rounded-full"
                           >
                             {keyword}
                           </span>
@@ -322,15 +355,15 @@ export default function AcademicPresentations() {
                     <button
                       onClick={handlePlayAudio}
                       disabled={isLoadingAudio}
-                      className="w-12 h-12 bg-green-500 hover:bg-green-600 disabled:bg-green-300 rounded-full flex items-center justify-center shadow-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2"
+                      className="w-16 h-16 bg-gradient-to-r from-[#1582B4] to-[#1582B4]/90 hover:from-[#1582B4]/90 hover:to-[#1582B4] rounded-full flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#1582B4]/40 focus:ring-offset-2"
                       title={isLoadingAudio ? "Loading audio..." : audioState.isPlaying ? "Pause audio" : "Play audio"}
                     >
                       {isLoadingAudio ? (
-                        <Loader2 className="h-5 w-5 text-white animate-spin" />
+                        <Loader2 className="h-6 w-6 text-white animate-spin" />
                       ) : audioState.isPlaying ? (
-                        <Pause className="h-5 w-5 text-white ml-0" />
+                        <Pause className="h-6 w-6 text-white ml-0" />
                       ) : (
-                        <Play className="h-5 w-5 text-white ml-0.5" />
+                        <Play className="h-6 w-6 text-white ml-0.5" />
                       )}
                     </button>
                   </div>
@@ -340,7 +373,7 @@ export default function AcademicPresentations() {
                       variant="outline"
                       size="sm"
                       onClick={() => setSelectedTopic(null)}
-                      className="text-green-600 border-green-300 hover:bg-green-100"
+                      className="border-0 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 text-primary hover:bg-card/80 dark:hover:bg-card/80 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
                     >
                       Change Topic
                     </Button>
@@ -350,34 +383,32 @@ export default function AcademicPresentations() {
             </Card>
           )}
 
-
-
           {/* Presentation Guidelines - Only show when topic is selected and not started */}
           {selectedTopic && !hasStarted && (
-            <Card className="bg-muted/50">
+            <Card className="border-0 bg-gradient-to-br from-muted/30 to-muted/50 rounded-2xl shadow-lg">
               <CardContent className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Presentation Guidelines</h3>
+                <h3 className="text-lg font-semibold mb-4 text-primary">Presentation Guidelines</h3>
                 <div className="space-y-3">
                   <div className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                    <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
                     <p className="text-muted-foreground text-sm">
                       Structure your presentation with clear introduction, main points, and conclusion
                     </p>
                   </div>
                   <div className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                    <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
                     <p className="text-muted-foreground text-sm">
                       Support your arguments with relevant evidence and examples
                     </p>
                   </div>
                   <div className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                    <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
                     <p className="text-muted-foreground text-sm">
                       Maintain academic tone and use sophisticated vocabulary
                     </p>
                   </div>
                   <div className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                    <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
                     <p className="text-muted-foreground text-sm">
                       Aim for 5-7 minutes of presentation time
                     </p>
@@ -389,14 +420,14 @@ export default function AcademicPresentations() {
 
           {/* Evaluation Loading */}
           {isEvaluating && (
-            <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+            <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
               <CardContent className="p-6">
                 <div className="text-center">
-                  <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
-                  <h3 className="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-2">
+                  <Loader2 className="h-10 w-10 animate-spin mx-auto mb-4 text-primary" />
+                  <h3 className="text-lg font-semibold text-primary mb-2">
                     Evaluating Your Presentation
                   </h3>
-                  <p className="text-blue-700 dark:text-blue-300 text-sm">
+                  <p className="text-primary/80 text-sm">
                     Please wait while we analyze your presentation...
                   </p>
                 </div>
@@ -407,18 +438,20 @@ export default function AcademicPresentations() {
           {/* Evaluation Results */}
           {evaluation && evaluation.evaluation && (
             <div>
-              <h3 className="text-lg font-semibold mb-4">Presentation Evaluation</h3>
+              <h3 className="text-xl font-semibold mb-6 bg-gradient-to-r from-primary to-primary/90 bg-clip-text text-transparent">
+                Presentation Evaluation
+              </h3>
               
               {/* Overall Score */}
-              <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 mb-4">
+              <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden mb-4">
                 <CardContent className="p-6">
                   <div className="text-center">
-                    <h4 className="text-2xl font-bold text-green-600 dark:text-green-400 mb-2">
+                    <h4 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/90 bg-clip-text text-transparent mb-2">
                       Overall Score: {evaluation.evaluation.evaluation.overall_score}/100
                     </h4>
-                    <div className="w-full bg-green-200 dark:bg-green-800 rounded-full h-3 mb-4">
+                    <div className="w-full bg-gradient-to-br from-card to-card/50 dark:bg-card rounded-full h-3 mb-4">
                       <div 
-                        className="bg-green-600 h-3 rounded-full transition-all duration-500"
+                        className="bg-gradient-to-r from-primary to-primary/90 h-3 rounded-full transition-all duration-500"
                         style={{ width: `${evaluation.evaluation.evaluation.overall_score}%` }}
                       ></div>
                     </div>
@@ -426,14 +459,12 @@ export default function AcademicPresentations() {
                 </CardContent>
               </Card>
 
-
-
               {/* Next Steps */}
               {evaluation.evaluation.evaluation.next_steps && (
-                <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 mb-4">
+                <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg mb-4">
                   <CardContent className="p-4">
-                    <h4 className="font-medium text-blue-600 dark:text-blue-400 mb-2">Next Steps</h4>
-                    <p className="text-blue-700 dark:text-blue-300 text-sm">
+                    <h4 className="font-medium text-primary mb-2">Next Steps</h4>
+                    <p className="text-primary/80 text-sm">
                       {evaluation.evaluation.evaluation.next_steps}
                     </p>
                   </CardContent>
@@ -442,10 +473,10 @@ export default function AcademicPresentations() {
 
               {/* Encouragement */}
               {evaluation.evaluation.evaluation.encouragement && (
-                <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+                <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
                   <CardContent className="p-4">
-                    <h4 className="font-medium text-green-600 dark:text-green-400 mb-2">Encouragement</h4>
-                    <p className="text-green-700 dark:text-green-300 text-sm">
+                    <h4 className="font-medium text-primary mb-2">Encouragement</h4>
+                    <p className="text-primary/80 text-sm">
                       {evaluation.evaluation.evaluation.encouragement}
                     </p>
                   </CardContent>
@@ -461,7 +492,7 @@ export default function AcademicPresentations() {
                 <Button
                   onClick={handleStartPresenting}
                   disabled={loading}
-                  className="bg-green-500 hover:bg-green-600 text-white px-8 py-3 rounded-full text-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white px-8 py-3 rounded-full text-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
                   size="lg"
                 >
                   <Mic className="h-5 w-5 mr-2" />
@@ -470,7 +501,7 @@ export default function AcademicPresentations() {
               ) : isRecording ? (
                 <Button
                   onClick={handleStopPresenting}
-                  className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-full text-lg font-medium"
+                  className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-8 py-3 rounded-full text-lg font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
                   size="lg"
                 >
                   <Mic className="h-5 w-5 mr-2" />
@@ -481,7 +512,7 @@ export default function AcademicPresentations() {
                   <Button
                     onClick={resetPresentation}
                     variant="outline"
-                    className="px-6 py-2"
+                    className="px-6 py-2 border-0 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 text-primary hover:bg-card/80 dark:hover:bg-card/80 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
                   >
                     Try Again
                   </Button>

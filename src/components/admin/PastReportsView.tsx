@@ -85,7 +85,7 @@ const ReportCard = ({
 }: ReportCardProps) => {
   const statusColor = report.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
   const roleColor = {
-    'principal': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+    'principal': 'bg-blue-100 text-white dark:bg-blue-900 dark:text-blue-200',
     'ece': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
     'school-officer': 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
     'project-manager': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
@@ -149,7 +149,7 @@ const ReportCard = ({
               variant="outline" 
               size="sm" 
               onClick={onView}
-              className="h-9 w-9 p-0 rounded-xl border-2 hover:border-primary/40 hover:bg-primary/5 transition-all duration-300"
+              className="h-9 w-9 p-0 rounded-xl border-2 hover:border-accent/40 hover:bg-accent/5 transition-all duration-300"
             >
               <Eye className="w-4 h-4" />
             </Button>
@@ -158,7 +158,7 @@ const ReportCard = ({
               size="sm" 
               onClick={onDownload} 
               disabled={isDownloading}
-              className="h-9 w-9 p-0 rounded-xl border-2 hover:border-primary/40 hover:bg-primary/5 transition-all duration-300"
+              className="h-9 w-9 p-0 rounded-xl border-2 hover:border-accent/40 hover:bg-accent/5 transition-all duration-300"
             >
               {isDownloading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -539,7 +539,7 @@ export const PastReportsView = ({ onBack, onViewReport }: PastReportsViewProps) 
               <Button 
                 variant="outline" 
                 onClick={onBack}
-                className="h-10 px-6 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="h-10 px-6 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Reporting

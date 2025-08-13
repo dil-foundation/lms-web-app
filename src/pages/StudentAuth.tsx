@@ -251,7 +251,7 @@ const StudentAuth = () => {
         email: signupData.email,
         password: signupData.password,
         options: {
-          emailRedirectTo: `https://dil.lovable.app/dashboard`,
+          emailRedirectTo: `${window.location.origin}/dashboard`,
           data: {
             role: 'student',
             first_name: signupData.firstName,

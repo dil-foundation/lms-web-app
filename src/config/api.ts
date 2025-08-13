@@ -93,6 +93,21 @@ export const API_ENDPOINTS = {
   ACADEMIC_PRESENTATION_TOPIC_DETAIL: (topicId: string) => `/api/academic-presentation-topics/${topicId}`,
   ACADEMIC_PRESENTATION_AUDIO: (topicId: string) => `/api/academic-presentation/${topicId}`,
   EVALUATE_ACADEMIC_PRESENTATION: '/api/evaluate-academic-presentation',
+  // Admin Dashboard endpoints
+  ADMIN_DASHBOARD_OVERVIEW: '/admin/dashboard/overview',
+  ADMIN_DASHBOARD_KEY_METRICS: '/admin/dashboard/key-metrics',
+  ADMIN_DASHBOARD_LEARN_USAGE: '/admin/dashboard/learn-usage',
+  ADMIN_DASHBOARD_MOST_ACCESSED_LESSONS: '/admin/dashboard/most-accessed-lessons',
+  // Teacher Dashboard endpoints
+  TEACHER_DASHBOARD_OVERVIEW: '/teacher/dashboard/overview',
+  TEACHER_DASHBOARD_BEHAVIOR_INSIGHTS: '/teacher/dashboard/behavior-insights',
+  TEACHER_DASHBOARD_PROGRESS_OVERVIEW: '/teacher/dashboard/progress-overview',
+  // Admin Reports endpoints
+  ADMIN_REPORTS_PRACTICE_STAGE_PERFORMANCE: '/admin/reports/practice-stage-performance',
+  ADMIN_REPORTS_USER_ENGAGEMENT_OVERVIEW: '/admin/reports/user-engagement-overview',
+  ADMIN_REPORTS_TIME_USAGE_PATTERNS: '/admin/reports/time-usage-patterns',
+  ADMIN_REPORTS_TOP_CONTENT_ACCESSED: '/admin/reports/top-content-accessed',
+  ADMIN_REPORTS_ANALYTICS_OVERVIEW: '/admin/reports/analytics-overview',
 } as const;
 
 // Health check function

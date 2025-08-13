@@ -13,7 +13,8 @@ import {
   Plus,
   Trash2,
   Copy,
-  Shield
+  Shield,
+  Sparkles
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -148,7 +149,7 @@ const StageConfigurationCard = ({ stage }) => {
   const getDifficultyColor = (difficulty) => {
     const colors = {
       'Beginner': 'bg-green-100 text-green-700',
-      'Elementary': 'bg-blue-100 text-blue-700',
+      'Elementary': 'bg-[#1582B4]/20 text-[#1582B4]',
       'Intermediate': 'bg-yellow-100 text-yellow-700',
       'Upper Intermediate': 'bg-orange-100 text-orange-700',
       'Advanced': 'bg-red-100 text-red-700',
@@ -158,12 +159,15 @@ const StageConfigurationCard = ({ stage }) => {
   };
 
   return (
-    <Card className="overflow-hidden transition-transform duration-300 hover:scale-105 hover:shadow-xl">
+    <Card className="overflow-hidden transition-transform duration-300 hover:scale-105 hover:shadow-xl flex flex-col h-full">
       <div className="relative">
         <img src={stage.imageUrl} alt={stage.title} className="w-full h-32 object-cover" />
         <div className="absolute top-2 left-2 flex gap-2">
           {stage.isAITutor && (
-            <Badge className="bg-green-500 text-white">AI Tutor</Badge>
+            <Badge className="bg-gradient-to-r from-primary to-primary/90 text-white border-0 shadow-lg">
+              <Sparkles className="w-3 h-3 mr-1" />
+              AI Tutor
+            </Badge>
           )}
           <Badge className={getDifficultyColor(stage.difficulty)}>
             {stage.difficulty}
@@ -195,23 +199,25 @@ const StageConfigurationCard = ({ stage }) => {
         </div>
       </div>
       
-      <CardContent className="p-4">
-        <div className="mb-2">
-          <h3 className="text-lg font-semibold mb-1 leading-tight">{stage.title}</h3>
-          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{stage.description}</p>
-        </div>
+      <CardContent className="p-4 flex flex-col flex-1">
+        <div className="flex-1">
+          <div className="mb-2">
+            <h3 className="text-lg font-semibold mb-1 leading-tight line-clamp-2">{stage.title}</h3>
+            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{stage.description}</p>
+          </div>
 
-        <div className="flex items-center justify-between mb-4 text-sm text-muted-foreground">
-          <span>{stage.lessons} lessons</span>
-          <div className="flex items-center gap-2">
-            <div className={`h-2 w-2 rounded-full ${stage.isActive ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-            <span>{stage.isActive ? 'Active' : 'Inactive'}</span>
+          <div className="flex items-center justify-between mb-4 text-sm text-muted-foreground">
+            <span>{stage.lessons} lessons</span>
+            <div className="flex items-center gap-2">
+              <div className={`h-2 w-2 rounded-full ${stage.isActive ? 'bg-primary' : 'bg-gray-400'}`}></div>
+              <span>{stage.isActive ? 'Active' : 'Inactive'}</span>
+            </div>
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className="flex gap-2 mt-auto">
           <Button 
-            className="w-full bg-green-500 hover:bg-green-600" 
+            className="flex-1 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-semibold shadow-sm hover:shadow-md transition-all duration-300" 
             onClick={handleViewStage}
             size="sm"
           >
@@ -220,7 +226,7 @@ const StageConfigurationCard = ({ stage }) => {
           </Button>
           <Button 
             variant="outline" 
-            className="w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20 hover:bg-primary/5 hover:border-primary/50 hover:text-primary" 
+            className="flex-1 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800" 
             size="sm"
             onClick={() => setIsEditOpen(true)}
           >
@@ -307,7 +313,7 @@ export const AIAdminPractice = () => {
                 <PlayCircle className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ lineHeight: '3rem' }}>
                   Practice Management
                 </h1>
                 <p className="text-lg text-muted-foreground font-light">
@@ -318,7 +324,7 @@ export const AIAdminPractice = () => {
             
             {/* Action Controls */}
             <div className="flex items-center gap-3">
-              <Button className="bg-green-500 hover:bg-green-600">
+              <Button className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
                 <Plus className="mr-2 h-4 w-4" />
                 Add New Stage
               </Button>

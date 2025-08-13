@@ -1,127 +1,124 @@
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Flag, Play, Lightbulb, GraduationCap, Briefcase, ArrowRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, GraduationCap, MessageSquare, Zap, Users, Flag, ChevronRight, Target, Sparkles, TrendingUp } from 'lucide-react';
 
-export default function StageFive() {
+const practiceActivities = [
+  {
+    id: 'critical-thinking',
+    title: 'Critical Thinking Dialogues',
+    description: 'Engage in thought-provoking conversations',
+    icon: MessageSquare,
+    bgColor: 'bg-gradient-to-br from-primary to-primary/90',
+  },
+  {
+    id: 'academic-presentations',
+    title: 'Academic Presentations',
+    description: 'Deliver structured academic presentations',
+    icon: Zap,
+    bgColor: 'bg-gradient-to-br from-[#1582B4] to-[#1582B4]/90',
+  },
+  {
+    id: 'indepth-interview',
+    title: 'In-Depth Interview Simulation',
+    description: 'Practice comprehensive interview techniques',
+    icon: Users,
+    bgColor: 'bg-gradient-to-br from-primary to-primary/90',
+  },
+];
+
+const ActivityCard = ({ activity, index }) => {
+  const navigate = useNavigate();
+  
+  return (
+    <Card 
+      className="group overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl cursor-pointer shadow-lg hover:shadow-xl"
+      onClick={() => navigate(`/dashboard/practice/stage-5/${activity.id}`)}
+    >
+      <div className={`${activity.bgColor} p-6 text-white relative overflow-hidden`}>
+        <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
+        <div className="flex items-center justify-between relative z-10">
+          <div className="flex items-center space-x-3">
+            <div className="p-3 bg-white/20 rounded-xl shadow-sm">
+              <activity.icon className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold">{activity.title}</h3>
+            </div>
+          </div>
+          <ChevronRight className="w-6 h-6 opacity-70 group-hover:translate-x-1 transition-transform duration-300" />
+        </div>
+      </div>
+      <CardContent className="p-6">
+        <p className="text-muted-foreground text-sm leading-relaxed">
+          {activity.description}
+        </p>
+      </CardContent>
+    </Card>
+  );
+};
+
+export const StageFive: React.FC = () => {
   const navigate = useNavigate();
 
-  const practiceActivities = [
-    {
-      id: 'critical-thinking',
-      title: 'Abstract & Critical Thinking Dialogues',
-      description: 'Engage in thought-provoking conversations on complex topics',
-      icon: Lightbulb,
-      path: '/dashboard/practice/stage-5/critical-thinking',
-      color: 'bg-green-500'
-    },
-    {
-      id: 'academic-presentations',
-      title: 'Academic Presentations',
-      description: 'Practice delivering polished presentations on academic subjects',
-      icon: GraduationCap,
-      path: '/dashboard/practice/stage-5/academic-presentations',
-      color: 'bg-green-500'
-    },
-    {
-      id: 'indepth-interview',
-      title: 'In-Depth Interview Simulation',
-      description: 'Simulate challenging interviews to refine your communication skills',
-      icon: Briefcase,
-      path: '/dashboard/practice/stage-5/indepth-interview',
-      color: 'bg-green-500'
-    }
-  ];
-
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => navigate('/dashboard/ai-practice')}
-            className="shrink-0"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          
-          <div className="text-center flex-1">
-            <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-2">
-              <GraduationCap className="h-6 w-6 text-green-600 dark:text-green-400" />
-            </div>
-            <h1 className="text-2xl font-bold">Stage 5</h1>
-            <p className="text-muted-foreground">C1 Advanced Level</p>
-          </div>
-          
-          <div className="w-10"></div>
-        </div>
-
-        {/* Learning Goal */}
-        <Card className="mb-6 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-          <CardContent className="p-6">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Flag className="h-8 w-8 text-green-600 dark:text-green-400" />
-              </div>
-              <h2 className="text-xl font-bold mb-3">Your Learning Goal</h2>
-              <p className="text-muted-foreground leading-relaxed">
-                Understand and produce complex texts, and express ideas fluently and spontaneously
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Practice Activities Header */}
-        <div className="flex items-center space-x-2 mb-4">
-          <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-            <Play className="h-4 w-4 text-green-600 dark:text-green-400" />
-          </div>
-          <h2 className="text-lg font-semibold">Practice Activities</h2>
-        </div>
-
-        {/* Practice Activities */}
-        <div className="space-y-4">
-          {practiceActivities.map((activity) => (
-            <Card 
-              key={activity.id}
-              className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => navigate(activity.path)}
-            >
-              <CardContent className="p-0">
-                <div className={`${activity.color} p-6 text-white`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-                        <activity.icon className="h-6 w-6 text-white" />
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-semibold mb-1">{activity.title}</h3>
-                        <p className="text-green-100 text-sm leading-relaxed">
-                          {activity.description}
-                        </p>
-                      </div>
-                    </div>
-                    <ArrowRight className="h-6 w-6 text-white/80" />
-                  </div>
+    <div className="min-h-screen bg-background">
+      {/* Premium Header Section */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
+        <div className="relative p-8 md:p-10 rounded-3xl">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => navigate('/dashboard/ai-practice')}
+                className="hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center shadow-lg">
+                  <GraduationCap className="w-6 h-6 text-primary" />
                 </div>
-              </CardContent>
-            </Card>
+                <div>
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent">Stage 5 - C1 Advanced</h1>
+                  <p className="text-sm text-muted-foreground">C1 Advanced Level</p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Stage Stats */}
+            <div className="flex flex-wrap gap-4">
+              <div className="flex items-center gap-2 px-4 py-2 bg-white/60 dark:bg-gray-800/60 rounded-xl border border-gray-200/50 dark:border-gray-700/50 shadow-md">
+                <Target className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">3 Activities</span>
+              </div>
+              <div className="flex items-center gap-2 px-4 py-2 bg-white/60 dark:bg-gray-800/60 rounded-xl border border-gray-200/50 dark:border-gray-700/50 shadow-md">
+                <TrendingUp className="w-4 h-4 text-[#1582B4]" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Advanced</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Stage Description */}
+          <div className="mt-6 text-center md:text-left">
+            <p className="text-muted-foreground text-lg leading-relaxed max-w-2xl">
+              Master sophisticated language skills for academic and professional excellence
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Activity Cards */}
+      <div className="px-6 pb-8 mt-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {practiceActivities.map((activity, index) => (
+            <ActivityCard key={activity.id} activity={activity} index={index} />
           ))}
         </div>
-
-        {/* Progress Info */}
-        <Card className="mt-6 bg-muted/50">
-          <CardContent className="p-4">
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground">
-                Complete these activities to master advanced English communication skills
-              </p>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
-} 
+}; 

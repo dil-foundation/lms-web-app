@@ -32,7 +32,9 @@ import {
   ClipboardList,
   XCircle,
   FileText,
-  Timer
+  Timer,
+  Sparkles,
+  Calendar
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
@@ -41,11 +43,11 @@ interface CourseContentProps {
   courseId?: string;
 }
 
-const getBadgeVariant = (type: string): "default" | "destructive" | "outline" | "secondary" => {
+const getBadgeVariant = (type: string): "default" | "destructive" | "outline" | "secondary" | "blue" => {
     switch (type.toLowerCase()) {
         case 'video': return 'destructive';
         case 'quiz': return 'default';
-        case 'assignment': return 'secondary';
+        case 'assignment': return 'blue';
         case 'attachment': return 'outline';
         default: return 'secondary';
     }
@@ -64,8 +66,8 @@ const getContentItemIcon = (item: any, currentContentItemId: string | null) => {
     switch (item.content_type) {
       case 'video': return <PlayCircle className="w-5 h-5 text-red-500" />;
       case 'attachment': return <Paperclip className="w-5 h-5 text-gray-500" />;
-      case 'assignment': return <ClipboardList className="w-5 h-5 text-purple-500" />;
-      case 'quiz': return <HelpCircle className="w-5 h-5 text-purple-500" />;
+      case 'assignment': return <ClipboardList className="w-5 h-5 text-primary" />;
+      case 'quiz': return <HelpCircle className="w-5 h-5 text-primary" />;
       default: return <Circle className="w-5 h-5 text-gray-400" />;
     }
 };
@@ -73,15 +75,15 @@ const getContentItemIcon = (item: any, currentContentItemId: string | null) => {
 const CourseNavigationSidebar = ({ course, openSectionIds, setOpenSectionIds, currentContentItemId, onContentItemClick }: any) => {
     return (
         <>
-            <div className="p-4 space-y-4 border-b">
-                 <h2 className="text-xl font-bold">{course.title}</h2>
-                 <Card>
+            <div className="p-4 space-y-4 border-b border-gray-200/50 dark:border-gray-700/50">
+                 <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{course.title}</h2>
+                 <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg">
                     <CardContent className="pt-4">
                         <div className="flex justify-between items-center mb-2">
-                           <span className="text-sm font-semibold text-foreground">Course Progress</span>
-                           <span className="text-lg font-bold text-green-600">{course.totalProgress}%</span>
+                           <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Course Progress</span>
+                           <span className="text-lg font-bold text-primary">{course.totalProgress}%</span>
                         </div>
-                        <Progress value={course.totalProgress} className="h-2 bg-muted" />
+                        <Progress value={course.totalProgress} className="h-2 bg-gray-200 dark:bg-gray-700" />
                         <p className="text-xs text-muted-foreground font-medium mt-2">Keep up the great work!</p>
                     </CardContent>
                  </Card>
@@ -89,11 +91,11 @@ const CourseNavigationSidebar = ({ course, openSectionIds, setOpenSectionIds, cu
             <ScrollArea className="flex-1 p-2">
                 <Accordion type="multiple" value={openSectionIds} onValueChange={setOpenSectionIds} className="w-full">
                     {course.modules.map((module: any) => (
-                        <AccordionItem key={module.id} value={module.id} className="border-b">
-                            <AccordionTrigger className="hover:no-underline px-2 py-3 text-base font-semibold hover:bg-accent/50 rounded-md">
+                        <AccordionItem key={module.id} value={module.id} className="border-b border-gray-200/50 dark:border-gray-700/50">
+                            <AccordionTrigger className="hover:no-underline px-2 py-3 text-base font-semibold hover:bg-gray-50/50 dark:hover:bg-gray-800/50 rounded-xl transition-all duration-300">
                                 <div className="flex items-center gap-3">
-                                    <BookOpen className="w-5 h-5 text-muted-foreground" />
-                                    <span>{module.title}</span>
+                                    <BookOpen className="w-5 h-5 text-primary" />
+                                    <span className="text-gray-900 dark:text-gray-100">{module.title}</span>
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent className="pt-1 pb-0 pl-3">
@@ -101,31 +103,39 @@ const CourseNavigationSidebar = ({ course, openSectionIds, setOpenSectionIds, cu
                                 {module.lessons.map((lesson: any) => (
                                     <div key={lesson.id}>
                                         <h4 className="font-semibold text-sm text-muted-foreground px-2 py-2">{lesson.title}</h4>
-                                        <div className="space-y-1 pl-3 border-l-2 border-dashed ml-3">
+                                        <div className="space-y-1 pl-3 border-l-2 border-dashed border-gray-300/50 dark:border-gray-600/50 ml-3">
                                             {lesson.contentItems.map((item: any) => {
                                                 const isCurrent = item.id === currentContentItemId;
                                                 return (
                                                 <div
                                                     key={item.id}
                                                     className={cn(
-                                                    "relative flex items-center gap-4 py-3 px-3 rounded-lg cursor-pointer transition-all",
+                                                    "relative flex items-center gap-4 py-3 px-3 rounded-xl cursor-pointer transition-all duration-300 hover:shadow-md",
                                                     isCurrent 
-                                                        ? "bg-green-100 dark:bg-green-900/30" 
-                                                        : "hover:bg-accent/50",
+                                                        ? "bg-gradient-to-r from-primary/10 to-primary/20 border border-primary/30 dark:border-primary/20 shadow-lg" 
+                                                        : "hover:bg-gray-50/50 dark:hover:bg-gray-800/50",
                                                     )}
                                                     onClick={() => onContentItemClick(item.id)}
                                                 >
-                                                    {isCurrent && <div className="absolute left-0 top-1 bottom-1 w-1 bg-green-500 rounded-r-full"></div>}
+                                                    {isCurrent && <div className="absolute left-0 top-1 bottom-1 w-1 bg-primary rounded-r-full"></div>}
                                                     <div className="flex-shrink-0 ml-1">
                                                     {getContentItemIcon(item, currentContentItemId)}
                                                     </div>
                                                     <div className="flex-1 flex flex-col overflow-hidden">
                                                         <span className={cn(
                                                             "font-medium text-sm leading-tight truncate", 
-                                                            isCurrent ? "text-green-800 dark:text-green-200" : "text-foreground"
+                                                            isCurrent ? "text-primary" : "text-gray-900 dark:text-gray-100"
                                                         )}>
                                                             {item.title}
                                                         </span>
+                                                        {(item.content_type === 'assignment' || item.content_type === 'quiz') && item.due_date && (
+                                                            <div className="flex items-center gap-1 mt-1">
+                                                                <Calendar className="h-3 w-3 text-yellow-500" />
+                                                                <span className="text-xs text-yellow-600 dark:text-yellow-400 truncate">
+                                                                    {new Date(item.due_date).toLocaleDateString()}
+                                                                </span>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                     <Badge variant={getBadgeVariant(item.content_type)} className="capitalize text-xs h-6 px-2.5 flex-shrink-0">
                                                         {item.content_type === 'attachment' ? 'File' : item.content_type}
@@ -506,36 +516,44 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         return (
           <div className="space-y-6">
             {currentContentItem.signedUrl ? (
-              <div className="relative aspect-video bg-black rounded-xl overflow-hidden shadow-2xl">
+              <div className="relative aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl">
                  <video ref={videoRef} controls className="w-full h-full" key={currentContentItem.id} src={currentContentItem.signedUrl} onTimeUpdate={handleTimeUpdate} onLoadedMetadata={handleLoadedMetadata} />
               </div>
             ) : (
-              <div className="relative aspect-video bg-muted rounded-xl overflow-hidden flex items-center justify-center shadow-xl">
-                <div className="text-center p-8"><PlayCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4" /><p className="text-muted-foreground text-lg font-medium">No video content available</p></div>
+              <div className="relative aspect-video bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-3xl overflow-hidden flex items-center justify-center shadow-xl">
+                <div className="text-center p-8">
+                  <PlayCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground text-lg font-medium">No video content available</p>
+                </div>
               </div>
             )}
-            <Card><CardHeader><CardTitle>Overview</CardTitle></CardHeader><CardContent>{currentLesson?.overview}</CardContent></Card>
+            <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-gray-900 dark:text-gray-100">Overview</CardTitle>
+              </CardHeader>
+              <CardContent className="text-gray-700 dark:text-gray-300">{currentLesson?.overview}</CardContent>
+            </Card>
           </div>
         );
       case 'attachment':
         const handleAttachmentInteraction = () => { if (currentContentItem && !currentContentItem.completed && currentLesson) markContentAsComplete(currentContentItem.id, currentLesson.id, actualCourseId); };
         return (
-          <Card>
+          <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Paperclip className="w-5 h-5 text-muted-foreground" />
+              <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
+                <Paperclip className="w-5 h-5 text-primary" />
                 Attachment
               </CardTitle>
             </CardHeader>
             <CardContent>
               {currentContentItem.signedUrl ? (
-                <div className="flex items-center justify-between gap-4 p-4 border rounded-lg">
+                <div className="flex items-center justify-between gap-4 p-4 border border-gray-200/50 dark:border-gray-600/50 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50">
                   <div className="flex items-center gap-3">
-                    <FileText className="w-6 h-6 text-muted-foreground" />
-                    <span className="font-medium">{currentContentItem.content_path?.split('/').pop()}</span>
+                    <FileText className="w-6 h-6 text-primary" />
+                    <span className="font-medium text-gray-900 dark:text-gray-100">{currentContentItem.content_path?.split('/').pop()}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button asChild variant="outline">
+                    <Button asChild variant="outline" className="hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300">
                       <a href={currentContentItem.signedUrl} target="_blank" rel="noopener noreferrer" onClick={handleAttachmentInteraction}>
                         View
                       </a>
@@ -543,37 +561,50 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                     <Button onClick={() => {
                       handleAttachmentInteraction();
                       handleDownload(currentContentItem.signedUrl, currentContentItem.content_path?.split('/').pop() || 'download');
-                    }} disabled={isDownloading}>
+                    }} disabled={isDownloading} className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300">
                       {isDownloading ? 'Downloading...' : 'Download'}
                     </Button>
                   </div>
                 </div>
-              ) : <p>Attachment not available.</p>}
+              ) : <p className="text-muted-foreground">Attachment not available.</p>}
             </CardContent>
           </Card>
         );
       case 'assignment':
         return (
           <div className="space-y-6">
-            <Card>
-              <CardHeader><CardTitle>Assignment Details</CardTitle></CardHeader>
+            <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-gray-900 dark:text-gray-100">Assignment Details</CardTitle>
+                {currentContentItem.due_date && (
+                  <div className="flex items-center gap-2 text-sm text-yellow-600 dark:text-yellow-400">
+                    <Calendar className="h-4 w-4" />
+                    <span className="font-medium">Due:</span>
+                    <span>{new Date(currentContentItem.due_date).toLocaleString()}</span>
+                  </div>
+                )}
+              </CardHeader>
               <CardContent>
                 <div className="prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: mainContentHtml }} />
               </CardContent>
             </Card>
             {attachments.length > 0 && (
-              <Card>
-                <CardHeader><CardTitle>Attached Files</CardTitle></CardHeader>
+              <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
+                <CardHeader>
+                  <CardTitle className="text-gray-900 dark:text-gray-100">Attached Files</CardTitle>
+                </CardHeader>
                 <CardContent className="space-y-3">
                   {attachments.map((att, index) => (
-                    <div key={index} className="flex items-center justify-between gap-4 p-4 border rounded-lg">
+                    <div key={index} className="flex items-center justify-between gap-4 p-4 border border-gray-200/50 dark:border-gray-600/50 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50">
                       <div className="flex items-center gap-3">
-                        <FileText className="w-6 h-6 text-muted-foreground" />
-                        <span className="font-medium">{att.name}</span>
+                        <FileText className="w-6 h-6 text-primary" />
+                        <span className="font-medium text-gray-900 dark:text-gray-100">{att.name}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button asChild variant="outline"><a href={att.url} target="_blank" rel="noopener noreferrer">View</a></Button>
-                        <Button onClick={() => handleDownload(att.url, att.name)} disabled={isDownloading}>
+                        <Button asChild variant="outline" className="hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300">
+                          <a href={att.url} target="_blank" rel="noopener noreferrer">View</a>
+                        </Button>
+                        <Button onClick={() => handleDownload(att.url, att.name)} disabled={isDownloading} className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300">
                           {isDownloading ? 'Downloading...' : 'Download'}
                         </Button>
                       </div>
@@ -583,7 +614,9 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
               </Card>
             )}
             <div className="text-center">
-              <Button onClick={() => navigate('/dashboard/assignments')}>Go to Assignments</Button>
+              <Button onClick={() => navigate('/dashboard/assignments')} className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300">
+                Go to Assignments
+              </Button>
             </div>
           </div>
         );
@@ -591,14 +624,23 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         const questions = currentContentItem.quiz || [];
         const hasSubmitted = isQuizSubmitted || !!currentContentItem.submission;
         return (
-          <Card>
-            <CardHeader><CardTitle>Knowledge Check</CardTitle></CardHeader>
+          <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-gray-900 dark:text-gray-100">Knowledge Check</CardTitle>
+              {currentContentItem.due_date && (
+                <div className="flex items-center gap-2 text-sm text-yellow-600 dark:text-yellow-400">
+                  <Calendar className="h-4 w-4" />
+                  <span className="font-medium">Due:</span>
+                  <span>{new Date(currentContentItem.due_date).toLocaleString()}</span>
+                </div>
+              )}
+            </CardHeader>
             <CardContent className="space-y-6">
               {questions.map((q: any, index: number) => {
                 const correctOption = q.options.find((opt: any) => opt.is_correct);
                 return (
                   <div key={q.id} className="space-y-4">
-                    <h4 className="font-medium">{index + 1}. {q.question_text}</h4>
+                    <h4 className="font-medium text-gray-900 dark:text-gray-100">{index + 1}. {q.question_text}</h4>
                     <div className="space-y-2">
                       {q.options.sort((a:any,b:any) => a.position-b.position).map((option: any) => {
                         const isSelected = userAnswers[q.id] === option.id;
@@ -606,10 +648,15 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                         const showAsIncorrect = hasSubmitted && isSelected && !option.is_correct;
                         return (
                           <Button key={option.id} variant="outline" disabled={hasSubmitted} onClick={() => setUserAnswers(prev => ({...prev, [q.id]: option.id}))}
-                            className={cn("w-full justify-start", isSelected && "border-primary", showAsCorrect && "bg-green-100 border-green-500", showAsIncorrect && "bg-red-100 border-red-500")}>
+                            className={cn(
+                              "w-full justify-start transition-all duration-300 hover:shadow-md", 
+                              isSelected && "border-primary bg-primary/5", 
+                              showAsCorrect && "bg-green-100 border-green-500 dark:bg-green-900/20 dark:border-green-400", 
+                              showAsIncorrect && "bg-red-100 border-red-500 dark:bg-red-900/20 dark:border-red-400"
+                            )}>
                               {hasSubmitted && (showAsCorrect ? <CheckCircle className="mr-2 h-4 w-4 text-green-600"/> : showAsIncorrect ? <XCircle className="mr-2 h-4 w-4 text-red-600" /> : <Circle className="mr-2 h-4 w-4"/>)}
                               {!hasSubmitted && (isSelected ? <CheckCircle className="mr-2 h-4 w-4 text-primary" /> : <Circle className="mr-2 h-4 w-4" />)}
-                              {option.option_text}
+                              <span className="text-gray-900 dark:text-gray-100">{option.option_text}</span>
                           </Button>
                         )
                       })}
@@ -618,15 +665,20 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                 );
               })}
               {!hasSubmitted && (
-                <Button onClick={handleQuizSubmit} disabled={Object.keys(userAnswers).length !== questions.length}>Submit Quiz</Button>
+                <Button onClick={handleQuizSubmit} disabled={Object.keys(userAnswers).length !== questions.length} className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300">
+                  Submit Quiz
+                </Button>
               )}
               {hasSubmitted && (
-                 <div className="p-4 rounded-lg bg-muted border"><h4 className="font-semibold">Quiz Submitted</h4><p className="text-muted-foreground text-sm mt-1">You scored {currentContentItem.submission.score.toFixed(0)}%.</p></div>
+                 <div className="p-4 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/20 border border-primary/30 dark:border-primary/20 shadow-lg">
+                   <h4 className="font-semibold text-gray-900 dark:text-gray-100">Quiz Submitted</h4>
+                   <p className="text-muted-foreground text-sm mt-1">You scored {currentContentItem.submission.score.toFixed(0)}%.</p>
+                 </div>
               )}
             </CardContent>
           </Card>
         );
-      default: return <div>Unsupported content type.</div>;
+      default: return <div className="text-muted-foreground">Unsupported content type.</div>;
     }
   };
 
@@ -637,12 +689,28 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
   );
 
   if (isLoading) return <PageSkeleton />;
-  if (error) return <div className="flex flex-col items-center justify-center h-full text-center p-8"><h2 className="text-xl font-semibold text-destructive mb-2">Failed to load course</h2><p className="text-muted-foreground mb-4">{error}</p><Button onClick={() => navigate(-1)}>Go Back</Button></div>;
-  if (!course) return <div className="flex flex-col items-center justify-center h-full text-center p-8"><h2 className="text-xl font-semibold text-muted-foreground">Course not found</h2><p className="text-muted-foreground mb-4">The course you're looking for doesn't exist.</p><Button onClick={() => navigate(-1)}>Go Back</Button></div>;
+  if (error) return (
+    <div className="flex flex-col items-center justify-center h-full text-center p-8">
+      <h2 className="text-xl font-semibold text-destructive mb-2">Failed to load course</h2>
+      <p className="text-muted-foreground mb-4">{error}</p>
+      <Button onClick={() => navigate(-1)} className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300">
+        Go Back
+      </Button>
+    </div>
+  );
+  if (!course) return (
+    <div className="flex flex-col items-center justify-center h-full text-center p-8">
+      <h2 className="text-xl font-semibold text-muted-foreground">Course not found</h2>
+      <p className="text-muted-foreground mb-4">The course you're looking for doesn't exist.</p>
+      <Button onClick={() => navigate(-1)} className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300">
+        Go Back
+      </Button>
+    </div>
+  );
 
   return (
     <div className="flex h-full bg-background">
-      <div className="hidden lg:flex flex-col w-80 border-r bg-white dark:bg-gray-950">
+      <div className="hidden lg:flex flex-col w-80 border-r border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-br from-card to-card/50 dark:bg-card">
         <CourseNavigationSidebar
             course={course}
             openSectionIds={openSectionIds}
@@ -652,14 +720,16 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         />
        </div>
        <div className="flex-1 flex flex-col w-full">
-          <div className="relative border-b p-4">
+          <div className="relative border-b border-gray-200/50 dark:border-gray-700/50 p-4 bg-gradient-to-br from-card to-card/50 dark:bg-card">
               <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                         <SheetTrigger asChild>
-                            <Button variant="ghost" size="icon" className="lg:hidden"><Menu className="w-5 h-5" /></Button>
+                            <Button variant="outline" size="icon" className="lg:hidden hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300">
+                              <Menu className="w-5 h-5" />
+                            </Button>
                         </SheetTrigger>
-                        <SheetContent side="left" className="w-80 p-0 flex flex-col">
+                        <SheetContent side="left" className="w-80 p-0 flex flex-col bg-gradient-to-br from-card to-card/50 dark:bg-card">
                            <CourseNavigationSidebar
                                 course={course}
                                 openSectionIds={openSectionIds}
@@ -670,11 +740,13 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                         </SheetContent>
                       </Sheet>
                       <div>
-                          <h1 className="font-bold text-xl md:text-2xl">{currentContentItem?.title}</h1>
+                          <h1 className="font-bold text-xl md:text-2xl text-gray-900 dark:text-gray-100">{currentContentItem?.title}</h1>
                           <p className="text-muted-foreground text-sm mt-1">{currentLesson?.title}</p>
                       </div>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => navigate(`/dashboard/courses/${actualCourseId}`)}><ChevronLeft className="w-4 h-4 mr-2" />Back to Course</Button>
+                  <Button variant="outline" size="sm" onClick={() => navigate(`/dashboard/courses/${actualCourseId}`)} className="hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300">
+                    <ChevronLeft className="w-4 h-4 mr-2" />Back to Course
+                  </Button>
               </div>
           </div>
           <ScrollArea className="flex-1">
@@ -682,10 +754,18 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                 <div className="max-w-5xl mx-auto space-y-8">{renderContent()}</div>
             </div>
           </ScrollArea>
-          <div className="bg-background p-4 sticky bottom-0 border-t">
+          <div className="bg-gradient-to-br from-card to-card/50 dark:bg-card p-4 sticky bottom-0 border-t border-gray-200/50 dark:border-gray-700/50">
             <div className="flex items-center justify-between max-w-5xl mx-auto">
-              <div>{prevContentItem && (<Button variant="outline" onClick={() => handleNavigation(prevContentItem)}><ChevronLeft className="w-4 h-4 mr-2" />Previous</Button>)}</div>
-              <div>{nextContentItem && (<Button onClick={() => handleNavigation(nextContentItem)}>Next<ChevronRight className="w-4 h-4 ml-2" /></Button>)}</div>
+              <div>{prevContentItem && (
+                <Button variant="outline" onClick={() => handleNavigation(prevContentItem)} className="hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300">
+                  <ChevronLeft className="w-4 h-4 mr-2" />Previous
+                </Button>
+              )}</div>
+              <div>{nextContentItem && (
+                <Button onClick={() => handleNavigation(nextContentItem)} className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300">
+                  Next<ChevronRight className="w-4 h-4 ml-2" />
+                </Button>
+              )}</div>
             </div>
           </div>
         </div>
