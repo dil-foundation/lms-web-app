@@ -226,7 +226,7 @@ export const AIStudentProgress: React.FC = () => {
   // Helper function to get auth token from localStorage
   const getAuthToken = () => {
     try {
-      const authData = localStorage.getItem('sb-yfaiauooxwvekdimfeuu-auth-token');
+      const authData = localStorage.getItem(import.meta.env.VITE_AUTH_TOKEN);
       if (authData) {
         const parsed = JSON.parse(authData);
         return parsed.access_token;

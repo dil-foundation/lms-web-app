@@ -74,7 +74,7 @@ interface PracticeActivity {
   description: string;
   stage: number;
   type: 'practice' | 'assessment';
-  icon: React.ComponentType;
+  icon: React.ComponentType<{ className?: string }>;
   route: string;
   progress?: number;
   isUnlocked: boolean;
@@ -139,7 +139,7 @@ export const AIStudentDashboard = ({ userProfile }: AIStudentDashboardProps) => 
   // Helper function to get auth token from localStorage
   const getAuthToken = () => {
     try {
-      const authData = localStorage.getItem('sb-yfaiauooxwvekdimfeuu-auth-token');
+      const authData = localStorage.getItem(import.meta.env.VITE_AUTH_TOKEN);
       if (authData) {
         const parsed = JSON.parse(authData);
         return parsed.access_token;
