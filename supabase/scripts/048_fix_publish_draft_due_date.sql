@@ -1,3 +1,7 @@
+-- Migration: Fix publish_draft function due_date field references
+-- This fixes the error "record \"rec_lesson\" has no field \"due_date\""
+-- by updating the function to reflect the migration that moved due_date from course_lessons to course_lesson_content
+
 CREATE OR REPLACE FUNCTION public.publish_draft(draft_id_in uuid, published_id_in uuid)
 RETURNS void
 LANGUAGE plpgsql
