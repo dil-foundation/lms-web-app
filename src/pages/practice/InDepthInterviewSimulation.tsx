@@ -420,7 +420,7 @@ export default function InDepthInterviewSimulation() {
 
           {/* Evaluation Loading */}
           {isEvaluating && (
-            <Card className="border-0 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-3xl shadow-lg overflow-hidden">
+            <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
               <CardContent className="p-6">
                 <div className="text-center">
                   <Loader2 className="h-10 w-10 animate-spin mx-auto mb-4 text-[#1582B4]" />
@@ -457,10 +457,10 @@ export default function InDepthInterviewSimulation() {
 
                 {/* STAR Model Feedback */}
                 {evaluation?.evaluation?.evaluation?.star_feedback && (
-                  <Card className="border-0 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-2xl shadow-lg">
+                  <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
                     <CardContent className="p-4">
                       <div className="flex items-start space-x-3">
-                        <div className="w-8 h-8 bg-gradient-to-br from-[#1582B4]/20 to-[#1582B4]/30 rounded-2xl flex items-center justify-center mt-1 border border-[#1582B4]/30">
+                        <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center mt-1 border border-primary/30">
                           <Star className="h-4 w-4 text-[#1582B4]" />
                         </div>
                         <div className="flex-1">
@@ -501,10 +501,10 @@ export default function InDepthInterviewSimulation() {
 
                 {/* Encouragement */}
                 {evaluation?.evaluation?.evaluation?.encouragement && (
-                  <Card className="border-0 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-2xl shadow-lg">
+                  <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
                     <CardContent className="p-4">
                       <div className="flex items-start space-x-3">
-                        <div className="w-8 h-8 bg-gradient-to-br from-[#1582B4]/20 to-[#1582B4]/30 rounded-2xl flex items-center justify-center mt-1 border border-[#1582B4]/30">
+                        <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center mt-1 border border-primary/30">
                           <CheckCircle className="h-4 w-4 text-[#1582B4]" />
                         </div>
                         <div className="flex-1">
@@ -633,7 +633,7 @@ export default function InDepthInterviewSimulation() {
 
         {/* Evaluation Loading */}
         {isEvaluating && (
-          <Card className="border-0 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-3xl shadow-lg overflow-hidden mb-6">
+          <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden mb-6">
             <CardContent className="p-6">
               <div className="text-center">
                 <Loader2 className="h-10 w-10 animate-spin mx-auto mb-4 text-[#1582B4]" />
@@ -670,10 +670,10 @@ export default function InDepthInterviewSimulation() {
 
               {/* STAR Model Feedback */}
               {evaluation?.evaluation?.evaluation?.star_feedback && (
-                <Card className="border-0 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-2xl shadow-lg">
+                <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
                   <CardContent className="p-4">
                     <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 bg-gradient-to-br from-[#1582B4]/20 to-[#1582B4]/30 rounded-2xl flex items-center justify-center mt-1 border border-[#1582B4]/30">
+                      <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center mt-1 border border-primary/30">
                         <Star className="h-4 w-4 text-[#1582B4]" />
                   </div>
                   <div className="flex-1">
@@ -708,10 +708,10 @@ export default function InDepthInterviewSimulation() {
 
               {/* Fluency Feedback */}
               {evaluation?.evaluation?.evaluation?.fluency_feedback && (
-                <Card className="border-0 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-2xl shadow-lg">
+                <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
                   <CardContent className="p-4">
                     <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 bg-gradient-to-br from-[#1582B4]/20 to-[#1582B4]/30 rounded-2xl flex items-center justify-center mt-1 border border-[#1582B4]/30">
+                      <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center mt-1 border border-primary/30">
                         <CheckCircle className="h-4 w-4 text-[#1582B4]" />
                       </div>
                       <div className="flex-1">
@@ -759,10 +759,10 @@ export default function InDepthInterviewSimulation() {
               {evaluation?.evaluation?.evaluation?.suggested_improvements &&
                Array.isArray(evaluation.evaluation.evaluation.suggested_improvements) &&
                evaluation.evaluation.evaluation.suggested_improvements.length > 0 && (
-                <Card className="border-0 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-2xl shadow-lg">
+                <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
                   <CardContent className="p-4">
                     <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 bg-gradient-to-br from-[#1582B4]/20 to-[#1582B4]/30 rounded-2xl flex items-center justify-center mt-1 border border-[#1582B4]/30">
+                      <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center mt-1 border border-primary/30">
                         <Bot className="h-4 w-4 text-[#1582B4]" />
                       </div>
                       <div className="flex-1">
@@ -801,10 +801,10 @@ export default function InDepthInterviewSimulation() {
 
               {/* Encouragement */}
               {evaluation?.evaluation?.evaluation?.encouragement && (
-                <Card className="border-0 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-2xl shadow-lg">
+                <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
                   <CardContent className="p-4">
                     <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 bg-gradient-to-br from-[#1582B4]/20 to-[#1582B4]/30 rounded-2xl flex items-center justify-center mt-1 border border-[#1582B4]/30">
+                      <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center mt-1 border border-primary/30">
                         <CheckCircle className="h-4 w-4 text-[#1582B4]" />
                       </div>
                       <div className="flex-1">

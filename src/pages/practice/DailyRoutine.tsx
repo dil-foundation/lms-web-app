@@ -717,7 +717,7 @@ export default function DailyRoutine() {
           <Button 
             variant="outline" 
             size="icon" 
-            className="absolute left-4 sm:left-6 lg:left-8 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60" 
+            className="absolute left-4 sm:left-6 lg:left-8 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60" 
             onClick={() => navigate(-1)}
           >
             <ArrowLeft className="h-4 w-4" />
@@ -734,7 +734,7 @@ export default function DailyRoutine() {
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
-          <Card className="w-full max-w-md bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-xl">
+          <Card className="w-full max-w-md bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-xl">
             <CardContent className="p-8">
               <Alert variant="destructive" className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
                 <AlertCircle className="h-4 w-4" />
@@ -774,7 +774,7 @@ export default function DailyRoutine() {
         <Button 
           variant="outline" 
           size="icon" 
-          className="absolute left-4 sm:left-6 lg:left-8 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl hover:-translate-y-0.5" 
+          className="absolute left-4 sm:left-6 lg:left-8 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl hover:-translate-y-0.5" 
           onClick={() => navigate(-1)}
         >
           <ArrowLeft className="h-4 w-4" />
@@ -795,7 +795,7 @@ export default function DailyRoutine() {
 
       {/* Main Content */}
       <div className="flex-1 px-4 pb-4">
-        <Card className="max-w-md mx-auto bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300">
+        <Card className="max-w-md mx-auto bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300">
           <CardContent className="p-8 text-center">
             {/* Question */}
             <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">
@@ -811,15 +811,15 @@ export default function DailyRoutine() {
 
             {/* Example Response */}
             {currentPhrase.example_response && (
-              <div className="bg-gradient-to-br from-[#1582B4]/10 via-[#1582B4]/20 to-[#1582B4]/30 border border-[#1582B4]/30 dark:border-[#1582B4]/20 rounded-2xl p-4 mb-4 shadow-lg">
-                <p className="text-sm font-medium text-[#1582B4] dark:text-[#1582B4]/80 mb-2">
+              <div className="bg-gradient-to-br from-primary/10 via-primary/20 to-primary/30 border border-primary/30 dark:border-primary/20 rounded-2xl p-4 mb-4 shadow-lg">
+                <p className="text-sm font-medium text-primary dark:text-primary/80 mb-2">
                   Example Response:
                 </p>
-                <p className="text-[#1582B4] dark:text-[#1582B4]/90 font-medium mb-2">
+                <p className="text-primary dark:text-primary/90 font-medium mb-2">
                   {safeDisplay(currentPhrase.example_response)}
                 </p>
                 {currentPhrase.example_response_urdu && (
-                  <p className="text-[#1582B4] dark:text-[#1582B4]/90 text-sm" style={{ fontFamily: 'Noto Nastaliq Urdu, Arial, sans-serif' }}>
+                  <p className="text-primary dark:text-primary/90 text-sm" style={{ fontFamily: 'Noto Nastaliq Urdu, Arial, sans-serif' }}>
                     {safeDisplay(currentPhrase.example_response_urdu)}
                   </p>
                 )}
@@ -869,14 +869,14 @@ export default function DailyRoutine() {
             <Button
               onClick={handlePrevious}
               variant="outline"
-              className="flex-1 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+              className="flex-1 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
             >
               Previous
             </Button>
             <Button
               onClick={handleNext}
               variant="outline"
-              className="flex-1 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+              className="flex-1 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
             >
               Next
             </Button>
@@ -885,7 +885,7 @@ export default function DailyRoutine() {
 
         {/* Feedback Display */}
         {feedback && (
-          <Card className="w-full max-w-md mt-6 mx-auto bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300">
+          <Card className="w-full max-w-md mt-6 mx-auto bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300">
             <CardContent className="p-6">
               <div className="text-center">
                 {feedback.score !== undefined && (

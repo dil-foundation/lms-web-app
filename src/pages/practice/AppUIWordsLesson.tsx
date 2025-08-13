@@ -120,7 +120,7 @@ const AppUIWordsLesson = () => {
                 {appUIWords.map((item, index) => (
                     <Card 
                         key={index} 
-                        className="group p-6 flex items-center bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50 border-2 border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 hover:scale-[1.02]"
+                        className="group p-6 flex items-center bg-gradient-to-br from-card to-card/50 dark:bg-card border-2 border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 hover:scale-[1.02]"
                     >
                         <div className="flex-1 space-y-3">
                             <div className="flex items-center space-x-3">

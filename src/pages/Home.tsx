@@ -247,7 +247,7 @@ const Home = () => {
       {/* CTA Section */}
       <section className="py-12 sm:py-16 md:py-20 px-4">
         <div className="container mx-auto text-center">
-          <div className="max-w-4xl mx-auto bg-gradient-to-br from-primary via-primary to-[#1582B4] rounded-3xl p-6 sm:p-8 md:p-12 hover-scale transition-all duration-500 animate-scale-in">
+          <div className="max-w-4xl mx-auto bg-gradient-to-br from-primary via-primary to-primary/90 rounded-3xl p-6 sm:p-8 md:p-12 hover-scale transition-all duration-500 animate-scale-in">
             <div className="text-center space-y-6">
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6">
                 Ready to Transform Your English Skills?

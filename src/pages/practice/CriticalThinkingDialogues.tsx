@@ -492,7 +492,7 @@ export default function CriticalThinkingDialogues() {
                 className={`${
                   message.sender === 'user' 
                     ? 'border-0 bg-gradient-to-br from-primary/20 to-primary/30 rounded-3xl shadow-lg overflow-hidden' 
-                    : 'border-0 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-3xl shadow-lg overflow-hidden'
+                    : 'border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden'
                 }`}
               >
                 <CardContent className="p-6">
@@ -537,7 +537,7 @@ export default function CriticalThinkingDialogues() {
         {/* Evaluation Loading State */}
         {isEvaluating && (
           <div className="mb-6 px-6">
-            <Card className="border-0 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-3xl shadow-lg overflow-hidden">
+            <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
               <CardContent className="p-6">
                 <div className="flex flex-col items-center justify-center space-y-4">
                   <Loader2 className="h-10 w-10 animate-spin text-[#1582B4]" />
@@ -576,7 +576,7 @@ export default function CriticalThinkingDialogues() {
               </Card>
 
               {/* Keywords Used */}
-              <Card className="border-0 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-3xl shadow-lg overflow-hidden">
+              <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
                 <CardContent className="p-6">
                   <div className="flex items-start space-x-4">
                     <div className="w-10 h-10 bg-[#1582B4]/20 rounded-2xl flex items-center justify-center mt-1">

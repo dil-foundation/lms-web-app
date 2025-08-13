@@ -59,6 +59,7 @@ const CriticalOpinionBuilder = lazy(() => import('@/pages/practice/CriticalOpini
 const ReportsOverview = lazy(() => import('@/components/admin/ReportsOverview').then(module => ({ default: module.ReportsOverview })));
 const ObservationReports = lazy(() => import('@/components/admin/ObservationReports').then(module => ({ default: module.ObservationReports })));
 const GradeAssignments = lazy(() => import('@/components/admin/GradeAssignments').then(module => ({ default: module.GradeAssignments })));
+const AdminAssessments = lazy(() => import('@/components/admin/AdminAssessments').then(module => ({ default: module.AdminAssessments })));
 const AssignmentSubmissions = lazy(() => import('@/components/admin/AssignmentSubmissions').then(module => ({ default: module.AssignmentSubmissions })));
 const StudentSubmissionDetail = lazy(() => import('@/components/admin/StudentSubmissionDetail').then(module => ({ default: module.StudentSubmissionDetail })));
 const AdminSettings = lazy(() => import('@/components/admin/AdminSettings'));
@@ -314,7 +315,7 @@ const Dashboard = () => {
                           <Route path="/messages" element={<MessagesPage />} />
                           <Route path="/discussion" element={<DiscussionsPage />} />
                           <Route path="/discussion/:id" element={<DiscussionViewPage />} />
-                          <Route path="/grade-assignments" element={<GradeAssignments />} />
+                          <Route path="/grade-assignments" element={<AdminAssessments />} />
                           <Route path="/grade-assignments/:id" element={<AssignmentSubmissions />} />
                           <Route path="/grade-assignments/:assignmentId/student/:studentId" element={<StudentSubmissionDetail />} />
                           <Route path="/admin-settings" element={<AdminSettings />} />

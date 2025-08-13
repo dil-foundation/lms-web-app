@@ -304,7 +304,7 @@ export default function NewsSummaryChallenge() {
           </Card>
 
           {/* Audio Player */}
-          <Card className="border-0 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-3xl shadow-lg overflow-hidden">
+          <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex-1">
@@ -482,7 +482,7 @@ export default function NewsSummaryChallenge() {
                   )}
                   
                   {evaluationResult.areas_for_improvement && evaluationResult.areas_for_improvement.length > 0 && (
-                    <div className="bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-2xl p-4 border border-[#1582B4]/20">
+                    <div className="bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-2xl p-4 border border-primary/20">
                       <h4 className="font-semibold mb-2 text-[#1582B4]">Areas for Improvement</h4>
                       <ul className="text-sm space-y-1">
                         {evaluationResult.areas_for_improvement.map((area, index) => (

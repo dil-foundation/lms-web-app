@@ -1273,7 +1273,7 @@ export default function RoleplaySimulation() {
           <Button 
             variant="outline" 
             size="icon" 
-            className="absolute left-4 sm:left-6 lg:left-8 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60" 
+            className="absolute left-4 sm:left-6 lg:left-8 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60" 
             onClick={() => {
               stopAudio();
               navigate(-1);
@@ -1307,7 +1307,7 @@ export default function RoleplaySimulation() {
                 return (
                   <Card
                     key={scenario.id}
-                    className="cursor-pointer bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
+                    className="cursor-pointer bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
                   >
                     <div className="p-6">
                       <div className="w-12 h-12 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-2xl flex items-center justify-center mb-4 shadow-lg border border-primary/30 dark:border-primary/40">
@@ -1381,7 +1381,7 @@ export default function RoleplaySimulation() {
                   variant="outline"
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="px-3 py-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 hover:border-primary/30"
+                  className="px-3 py-2 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 hover:border-primary/30"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
@@ -1392,7 +1392,7 @@ export default function RoleplaySimulation() {
                   variant="outline"
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="px-3 py-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 hover:border-primary/30"
+                  className="px-3 py-2 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 hover:border-primary/30"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
@@ -1416,7 +1416,7 @@ export default function RoleplaySimulation() {
                 <Button
                   onClick={handleRetry}
                   variant="outline"
-                  className="mt-4 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 hover:border-primary/30"
+                  className="mt-4 w-full bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 hover:border-primary/30"
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Retry Loading Scenarios
@@ -1425,7 +1425,7 @@ export default function RoleplaySimulation() {
             )}
 
             {!loading && !error && allScenarios.length === 0 && (
-              <Alert className="mt-6 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 rounded-2xl shadow-md">
+              <Alert className="mt-6 bg-primary/5 dark:bg-primary/10 border-primary/20 dark:border-primary/30 rounded-2xl shadow-md">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
                   No scenarios found. Please try again later or check your internet connection.
@@ -1459,7 +1459,7 @@ export default function RoleplaySimulation() {
             variant="outline"
             size="icon"
             onClick={handleBackToScenarios}
-            className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-md hover:shadow-lg"
+            className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-md hover:shadow-lg"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -1515,7 +1515,7 @@ export default function RoleplaySimulation() {
 
         {/* Conversation Interface */}
         <div className="mx-6 mb-6">
-          <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-lg">
+          <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-lg">
             <CardContent className="p-6">
               {/* Conversation Header */}
               <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200/60 dark:border-gray-700/60">
@@ -1537,7 +1537,7 @@ export default function RoleplaySimulation() {
                     variant="outline"
                     size="sm"
                     onClick={handleRestart}
-                    className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 hover:border-primary/30"
+                    className="bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 hover:border-primary/30"
                   >
                     <RefreshCw className="h-4 w-4 mr-2" />
                     Reset
@@ -1546,7 +1546,7 @@ export default function RoleplaySimulation() {
                     variant="outline"
                     size="sm"
                     onClick={handleBackToScenarios}
-                    className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 hover:border-primary/30"
+                    className="bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 hover:border-primary/30"
                   >
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Back
@@ -1607,7 +1607,7 @@ export default function RoleplaySimulation() {
                       onChange={(e) => setUserInput(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
                       placeholder="Type your response..."
-                      className="w-full px-4 py-3 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/300 transition-all duration-300 placeholder:text-muted-foreground"
+                      className="w-full px-4 py-3 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/300 transition-all duration-300 placeholder:text-muted-foreground"
                       disabled={isRecording}
                     />
                   </div>
@@ -1642,7 +1642,7 @@ export default function RoleplaySimulation() {
                 )}
                 
                 {isRecording && (
-                  <Alert className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 rounded-2xl shadow-md">
+                  <Alert className="bg-primary/5 dark:bg-primary/10 border-primary/20 dark:border-primary/30 rounded-2xl shadow-md">
                     <Mic className="h-4 w-4" />
                     <AlertDescription>
                       🎤 Recording... Click the microphone button again to stop
@@ -1657,7 +1657,7 @@ export default function RoleplaySimulation() {
         {/* Evaluation Dialog */}
         {showEvaluationDialog && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <Card className="w-96 mx-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-2xl">
+            <Card className="w-96 mx-4 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-2xl">
               <CardContent className="p-6 text-center">
                 <div className="w-16 h-16 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg border border-primary/30 dark:border-primary/40">
                   <Users className="h-8 w-8 text-primary" />
@@ -1670,7 +1670,7 @@ export default function RoleplaySimulation() {
                   <Button 
                     variant="outline" 
                     onClick={() => setShowEvaluationDialog(false)}
-                    className="flex-1 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 hover:border-primary/30"
+                    className="flex-1 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 hover:border-primary/30"
                   >
                     Skip
                   </Button>
@@ -1689,7 +1689,7 @@ export default function RoleplaySimulation() {
         {/* Evaluation Loading */}
         {isEvaluating && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <Card className="w-96 mx-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-2xl">
+            <Card className="w-96 mx-4 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-2xl">
               <CardContent className="p-8 text-center">
                 <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
                 <h3 className="text-lg font-semibold mb-2">Evaluating Your Performance</h3>
@@ -1704,7 +1704,7 @@ export default function RoleplaySimulation() {
         {/* Evaluation Results */}
         {evaluationResult && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-2xl">
+            <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-2xl">
               <CardContent className="p-6">
                 <div className="text-center mb-6">
                   <div className="w-20 h-20 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg border border-primary/30 dark:border-primary/40">
@@ -1777,7 +1777,7 @@ export default function RoleplaySimulation() {
                   <Button 
                     variant="outline" 
                     onClick={() => setEvaluationResult(null)}
-                    className="flex-1 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 hover:border-primary/30"
+                    className="flex-1 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 hover:border-primary/30"
                   >
                     Close
                   </Button>
