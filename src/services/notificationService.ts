@@ -157,6 +157,59 @@ class NotificationService {
   }
 
   /**
+   * Mark all notifications related to a specific discussion as read
+   */
+  static async markDiscussionNotificationsAsRead(userId: string, discussionId: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from(this.TABLE_NAME)
+        .update({ 
+          read: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId)
+        .eq('read', false)
+        .or(`action_data->>'discussionId'.eq.${discussionId},action_data->>'discussion_id'.eq.${discussionId}`);
+
+      if (error) {
+        console.error('Database error marking discussion notifications as read:', error);
+        throw new Error(`Failed to mark discussion notifications as read: ${error.message}`);
+      }
+
+      return true;
+    } catch (error: any) {
+      console.error('Error marking discussion notifications as read:', error);
+      throw new Error(error.message || 'Failed to mark discussion notifications as read');
+    }
+  }
+
+  /**
+   * Check if a discussion exists
+   */
+  static async checkDiscussionExists(discussionId: string): Promise<boolean> {
+    try {
+      const { data, error } = await supabase
+        .from('discussions')
+        .select('id')
+        .eq('id', discussionId)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') { // No rows returned
+          return false;
+        }
+        console.error('Database error checking discussion existence:', error);
+        throw new Error(`Failed to check discussion existence: ${error.message}`);
+      }
+
+      return !!data;
+    } catch (error: any) {
+      console.error('Error checking discussion existence:', error);
+      throw new Error(error.message || 'Failed to check discussion existence');
+    }
+  }
+
+  /**
    * Clear all notifications for a user
    */
   static async clearAllNotifications(userId: string): Promise<boolean> {

@@ -79,16 +79,18 @@ export const NotificationDialog = ({ open, onOpenChange }: NotificationDialogPro
     clearAllNotifications 
   } = useNotifications();
 
-  const handleNotificationClick = (notification: any) => {
+  const handleNotificationClick = async (notification: any) => {
     if (!notification.read) {
       markAsRead(notification.id);
     }
     
     // Get the appropriate route for this notification
-    const route = getNotificationRoute(notification);
+    const route = await getNotificationRoute(notification);
+    console.log('Notification route:', route);
     
     if (route) {
       const url = buildNotificationUrl(route);
+      console.log('Navigating to:', url);
       navigate(url);
       onOpenChange(false);
     }
@@ -168,11 +170,11 @@ export const NotificationDialog = ({ open, onOpenChange }: NotificationDialogPro
                 {notifications.map((notification, index) => (
                   <div key={notification.id}>
                                          <div
-                       className={`group p-4 rounded-2xl transition-all duration-300 cursor-pointer hover:bg-gradient-to-r hover:from-gray-50/80 hover:to-white/60 dark:hover:from-gray-800/80 dark:hover:to-gray-700/60 hover:shadow-lg hover:-translate-y-0.5 ${
-                         !notification.read 
-                           ? 'bg-gradient-to-r from-blue-50/80 to-blue-100/40 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200/60 dark:border-blue-800/60' 
-                           : 'bg-white/60 dark:bg-gray-800/60 border border-gray-200/40 dark:border-gray-700/40'
-                       } ${getNotificationRoute(notification) ? 'hover:border-primary/40' : ''}`}
+                                               className={`group p-4 rounded-2xl transition-all duration-300 cursor-pointer hover:bg-gradient-to-r hover:from-gray-50/80 hover:to-white/60 dark:hover:from-gray-800/80 dark:hover:to-gray-700/60 hover:shadow-lg hover:-translate-y-0.5 ${
+                          !notification.read 
+                            ? 'bg-gradient-to-r from-blue-50/80 to-blue-100/40 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200/60 dark:border-blue-800/60' 
+                            : 'bg-white/60 dark:bg-gray-800/60 border border-gray-200/40 dark:border-gray-700/40'
+                        } hover:border-primary/40`}
                        onClick={() => handleNotificationClick(notification)}
                      >
                                              <div className="flex items-start gap-3">

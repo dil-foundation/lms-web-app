@@ -22,6 +22,7 @@ import {
   Loader2,
   ChevronDown,
   ChevronUp,
+  AlertCircle,
 } from 'lucide-react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -30,6 +31,7 @@ import { format } from 'date-fns';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { DiscussionDialog } from '@/components/discussions/DiscussionDialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import NotificationService from '@/services/notificationService';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -91,7 +93,7 @@ const fetchUserCourses = async () => {
 export const DiscussionViewPage = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const { profile } = useUserProfile();
+  const { profile, loading: isProfileLoading } = useUserProfile();
   const queryClient = useQueryClient();
   const [replyContent, setReplyContent] = useState('');
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -180,17 +182,17 @@ export const DiscussionViewPage = () => {
       if (user) {
         try {
           // Get discussion participants to exclude the updater
-          const { data: participants, error: participantsError } = await supabase
+          const { data: updateParticipants, error: updateParticipantsError } = await supabase
             .from('discussion_participants')
             .select('role')
             .eq('discussion_id', discussionToUpdate.id);
 
-          if (!participantsError && participants.length > 0) {
+          if (!updateParticipantsError && updateParticipants.length > 0) {
             // Get all users with these roles except the current user
             const { data: targetUsers, error: usersError } = await supabase
               .from('profiles')
               .select('id')
-              .in('role', participants.map(p => p.role))
+              .in('role', updateParticipants.map(p => p.role))
               .neq('id', user.id);
 
             if (!usersError && targetUsers && targetUsers.length > 0) {
@@ -245,6 +247,27 @@ export const DiscussionViewPage = () => {
 
       if (participantsError) {
         console.error('Failed to fetch participants for notification:', participantsError);
+      }
+
+      // Mark all notifications related to this discussion as read for all users
+      try {
+        // Get all users with these roles
+        const { data: targetUsers, error: usersError } = await supabase
+          .from('profiles')
+          .select('id')
+          .in('role', participants.map(p => p.role));
+
+        if (!usersError && targetUsers && targetUsers.length > 0) {
+          // Mark notifications as read for all users
+          await Promise.all(
+            targetUsers.map(user => 
+              NotificationService.markDiscussionNotificationsAsRead(user.id, discussionId)
+            )
+          );
+        }
+      } catch (markReadError) {
+        console.error('Failed to mark discussion notifications as read:', markReadError);
+        // Don't throw error here as the deletion was successfully completed
       }
 
       // Now delete the discussion
@@ -307,17 +330,17 @@ export const DiscussionViewPage = () => {
       if (user && replyData && discussion) {
         try {
           // Get discussion participants to exclude the deleter
-          const { data: participants, error: participantsError } = await supabase
+          const { data: replyDeleteParticipants, error: replyDeleteParticipantsError } = await supabase
             .from('discussion_participants')
             .select('role')
             .eq('discussion_id', id);
 
-          if (!participantsError && participants.length > 0) {
+          if (!replyDeleteParticipantsError && replyDeleteParticipants.length > 0) {
             // Get all users with these roles except the current user
             const { data: targetUsers, error: usersError } = await supabase
               .from('profiles')
               .select('id')
-              .in('role', participants.map(p => p.role))
+              .in('role', replyDeleteParticipants.map(p => p.role))
               .neq('id', user.id);
 
             if (!usersError && targetUsers && targetUsers.length > 0) {
@@ -361,17 +384,17 @@ export const DiscussionViewPage = () => {
       if (user && discussion) {
         try {
           // Get discussion participants to exclude the updater
-          const { data: participants, error: participantsError } = await supabase
+          const { data: replyUpdateParticipants, error: replyUpdateParticipantsError } = await supabase
             .from('discussion_participants')
             .select('role')
             .eq('discussion_id', id);
 
-          if (!participantsError && participants.length > 0) {
+          if (!replyUpdateParticipantsError && replyUpdateParticipants.length > 0) {
             // Get all users with these roles except the current user
             const { data: targetUsers, error: usersError } = await supabase
               .from('profiles')
               .select('id')
-              .in('role', participants.map(p => p.role))
+              .in('role', replyUpdateParticipants.map(p => p.role))
               .neq('id', user.id);
 
             if (!usersError && targetUsers && targetUsers.length > 0) {
@@ -423,17 +446,17 @@ export const DiscussionViewPage = () => {
       if (discussion && user) {
         try {
           // Get discussion participants to exclude the reply creator
-          const { data: participants, error: participantsError } = await supabase
+          const { data: replyCreateParticipants, error: replyCreateParticipantsError } = await supabase
             .from('discussion_participants')
             .select('role')
             .eq('discussion_id', id);
 
-          if (!participantsError && participants.length > 0) {
+          if (!replyCreateParticipantsError && replyCreateParticipants.length > 0) {
             // Get all users with these roles except the current user
             const { data: targetUsers, error: usersError } = await supabase
               .from('profiles')
               .select('id')
-              .in('role', participants.map(p => p.role))
+              .in('role', replyCreateParticipants.map(p => p.role))
               .neq('id', user.id);
 
             if (!usersError && targetUsers && targetUsers.length > 0) {
@@ -544,7 +567,26 @@ export const DiscussionViewPage = () => {
   }
 
   if (!discussion) {
-    return <p>Discussion not found.</p>;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/20 rounded-full flex items-center justify-center mx-auto">
+            <AlertCircle className="h-8 w-8 text-amber-600 dark:text-amber-500" />
+          </div>
+          <h2 className="text-2xl font-bold text-foreground">Discussion Not Found</h2>
+          <p className="text-muted-foreground max-w-md">
+            The discussion you're looking for has been deleted or doesn't exist. 
+            All related notifications have been marked as read.
+          </p>
+          <Button 
+            onClick={() => navigate('/dashboard/discussion')}
+            className="mt-4"
+          >
+            Back to Discussions
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -605,7 +647,7 @@ export const DiscussionViewPage = () => {
                         General Discussion
                       </Badge>
                     )}
-                    {(user?.id === discussion.creator_id || profile?.role === 'admin') && (
+                    {!isProfileLoading && (user?.id === discussion.creator_id || profile?.role === 'admin') && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" className="h-9 w-9 p-0 rounded-lg hover:bg-accent/50 transition-all duration-300">
@@ -767,7 +809,7 @@ export const DiscussionViewPage = () => {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          {(user?.id === reply.user_id || profile?.role === 'admin') && (
+                          {!isProfileLoading && (user?.id === reply.user_id || profile?.role === 'admin') && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" className="h-6 w-6 p-0 rounded-md hover:bg-accent/50 transition-all duration-300 opacity-0 group-hover:opacity-100">

@@ -1,4 +1,5 @@
 import { Notification } from '@/services/notificationService';
+import NotificationService from '@/services/notificationService';
 
 export interface NotificationRoute {
   path: string;
@@ -9,7 +10,7 @@ export interface NotificationRoute {
 /**
  * Get the appropriate route for a notification based on its type and action data
  */
-export function getNotificationRoute(notification: Notification): NotificationRoute | null {
+export async function getNotificationRoute(notification: Notification): Promise<NotificationRoute | null> {
   const { notificationType, actionData, actionUrl } = notification;
 
   // If there's a direct action URL, use it
@@ -23,6 +24,23 @@ export function getNotificationRoute(notification: Notification): NotificationRo
       // Handle both snake_case and camelCase naming conventions
       const discussionId = actionData?.discussion_id || actionData?.discussionId;
       if (discussionId) {
+        // Check if the discussion still exists
+        try {
+          const discussionExists = await NotificationService.checkDiscussionExists(discussionId);
+          console.log('Discussion exists check for', discussionId, ':', discussionExists);
+          if (!discussionExists) {
+            console.log('Discussion does not exist, redirecting to discussions with deleted=true');
+            // Discussion was deleted, mark notification as read and redirect to discussions list
+            return { 
+              path: '/dashboard/discussion',
+              query: { deleted: 'true' }
+            };
+          }
+        } catch (error) {
+          console.error('Error checking discussion existence:', error);
+          // If we can't check, assume it exists and try to redirect
+        }
+        
         return {
           path: `/dashboard/discussion/${discussionId}`,
           query: { highlight: 'new' }
@@ -36,6 +54,19 @@ export function getNotificationRoute(notification: Notification): NotificationRo
         const messageDiscussionId = actionData?.discussion_id || actionData?.discussionId;
         const messageId = actionData?.message_id || actionData?.messageId;
         if (messageDiscussionId) {
+          // Check if the discussion still exists
+          try {
+            const discussionExists = await NotificationService.checkDiscussionExists(messageDiscussionId);
+            if (!discussionExists) {
+              return { 
+                path: '/dashboard/discussion',
+                query: { deleted: 'true' }
+              };
+            }
+          } catch (error) {
+            console.error('Error checking discussion existence:', error);
+          }
+          
           return {
             path: `/dashboard/discussion/${messageDiscussionId}`,
             query: { 
@@ -51,6 +82,19 @@ export function getNotificationRoute(notification: Notification): NotificationRo
       const messageDiscussionId = actionData?.discussion_id || actionData?.discussionId;
       const messageId = actionData?.message_id || actionData?.messageId;
       if (messageDiscussionId) {
+        // Check if the discussion still exists
+        try {
+          const discussionExists = await NotificationService.checkDiscussionExists(messageDiscussionId);
+          if (!discussionExists) {
+            return { 
+              path: '/dashboard/discussion',
+              query: { deleted: 'true' }
+            };
+          }
+        } catch (error) {
+          console.error('Error checking discussion existence:', error);
+        }
+        
         return {
           path: `/dashboard/discussion/${messageDiscussionId}`,
           query: { 
@@ -87,6 +131,19 @@ export function getNotificationRoute(notification: Notification): NotificationRo
       if (actionData?.updateType === 'discussion_updated') {
         const discussionId = actionData?.discussion_id || actionData?.discussionId;
         if (discussionId) {
+          // Check if the discussion still exists
+          try {
+            const discussionExists = await NotificationService.checkDiscussionExists(discussionId);
+            if (!discussionExists) {
+              return { 
+                path: '/dashboard/discussion',
+                query: { deleted: 'true' }
+              };
+            }
+          } catch (error) {
+            console.error('Error checking discussion existence:', error);
+          }
+          
           return {
             path: `/dashboard/discussion/${discussionId}`,
             query: { highlight: 'updated' }
@@ -135,6 +192,19 @@ export function getNotificationRoute(notification: Notification): NotificationRo
       if (actionData?.deleteType === 'reply_deleted') {
         const discussionId = actionData?.discussion_id || actionData?.discussionId;
         if (discussionId) {
+          // Check if the discussion still exists
+          try {
+            const discussionExists = await NotificationService.checkDiscussionExists(discussionId);
+            if (!discussionExists) {
+              return { 
+                path: '/dashboard/discussion',
+                query: { deleted: 'true' }
+              };
+            }
+          } catch (error) {
+            console.error('Error checking discussion existence:', error);
+          }
+          
           return {
             path: `/dashboard/discussion/${discussionId}`,
             query: { highlight: 'deleted' }
@@ -166,6 +236,8 @@ export function getNotificationRoute(notification: Notification): NotificationRo
 export function buildNotificationUrl(route: NotificationRoute): string {
   let url = route.path;
   
+  console.log('Building URL for route:', route);
+  
   if (route.query && Object.keys(route.query).length > 0) {
     const queryParams = new URLSearchParams();
     Object.entries(route.query).forEach(([key, value]) => {
@@ -174,6 +246,9 @@ export function buildNotificationUrl(route: NotificationRoute): string {
       }
     });
     url += `?${queryParams.toString()}`;
+    console.log('Final URL with query params:', url);
+  } else {
+    console.log('No query params, final URL:', url);
   }
   
   return url;
