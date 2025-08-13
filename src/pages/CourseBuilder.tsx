@@ -1742,8 +1742,115 @@ const CourseBuilder = () => {
                 
                 // Handle quiz updates if needed
                 if (item.content_type === 'quiz' && item.quiz) {
-                  // For now, we'll skip quiz updates to preserve progress
-                  // In a full implementation, you might want to update quiz questions
+                  // Get existing quiz questions for this content item
+                  const { data: existingQuestions, error: questionsError } = await supabase
+                    .from('quiz_questions')
+                    .select(`
+                      id,
+                      question_text,
+                      position,
+                      question_options (
+                        id,
+                        option_text,
+                        is_correct,
+                        position
+                      )
+                    `)
+                    .eq('lesson_content_id', existingContent.id)
+                    .order('position');
+                  
+                  if (questionsError) throw questionsError;
+                  
+                  // Track which questions we've processed
+                  const processedQuestionIds = new Set<string>();
+                  
+                  // Update or create questions
+                  for (const [qIndex, question] of item.quiz.questions.entries()) {
+                    const existingQuestion = existingQuestions?.find(q => q.position === qIndex);
+                    
+                    if (existingQuestion) {
+                      processedQuestionIds.add(existingQuestion.id);
+                      
+                      // Update existing question
+                      await supabase
+                        .from('quiz_questions')
+                        .update({ question_text: question.question_text })
+                        .eq('id', existingQuestion.id);
+                      
+                      // Track which options we've processed
+                      const processedOptionIds = new Set<string>();
+                      
+                      // Update or create options
+                      for (const [oIndex, option] of question.options.entries()) {
+                        const existingOption = existingQuestion.question_options?.find(opt => opt.position === oIndex);
+                        
+                        if (existingOption) {
+                          processedOptionIds.add(existingOption.id);
+                          
+                          // Update existing option
+                          await supabase
+                            .from('question_options')
+                            .update({
+                              option_text: option.option_text,
+                              is_correct: option.is_correct
+                            })
+                            .eq('id', existingOption.id);
+                        } else {
+                          // Create new option
+                          await supabase.from('question_options').insert({
+                            question_id: existingQuestion.id,
+                            option_text: option.option_text,
+                            is_correct: option.is_correct,
+                            position: oIndex
+                          });
+                        }
+                      }
+                      
+                      // Clean up deleted options
+                      const optionsToDelete = existingQuestion.question_options?.filter(opt => !processedOptionIds.has(opt.id)) || [];
+                      if (optionsToDelete.length > 0) {
+                        const optionIdsToDelete = optionsToDelete.map(opt => opt.id);
+                        await supabase.from('question_options').delete().in('id', optionIdsToDelete);
+                      }
+                    } else {
+                      // Create new question
+                      const { data: newQuestion, error: qError } = await supabase
+                        .from('quiz_questions')
+                        .insert({
+                          lesson_content_id: existingContent.id,
+                          question_text: question.question_text,
+                          position: qIndex
+                        })
+                        .select('id')
+                        .single();
+                      
+                      if (qError) throw qError;
+                      
+                      // Create options for new question
+                      for (const [oIndex, option] of question.options.entries()) {
+                        await supabase.from('question_options').insert({
+                          question_id: newQuestion.id,
+                          option_text: option.option_text,
+                          is_correct: option.is_correct,
+                          position: oIndex
+                        });
+                      }
+                    }
+                  }
+                  
+                  // Clean up deleted questions
+                  const questionsToDelete = existingQuestions?.filter(q => !processedQuestionIds.has(q.id)) || [];
+                  if (questionsToDelete.length > 0) {
+                    const questionIdsToDelete = questionsToDelete.map(q => q.id);
+                    
+                    // Delete associated options first
+                    for (const questionId of questionIdsToDelete) {
+                      await supabase.from('question_options').delete().eq('question_id', questionId);
+                    }
+                    
+                    // Delete questions
+                    await supabase.from('quiz_questions').delete().in('id', questionIdsToDelete);
+                  }
                 }
               } else {
                 // Create new content item
