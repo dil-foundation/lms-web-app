@@ -455,7 +455,7 @@ export const AIStudentProgress: React.FC = () => {
       </Card>
 
       {/* Learning Path */}
-      <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300">
+      <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
             <div className="w-8 h-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
@@ -527,7 +527,7 @@ export const AIStudentProgress: React.FC = () => {
 
       <div className="grid md:grid-cols-2 gap-6">
         {/* Completion Overview */}
-        <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300">
+        <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
               <div className="w-8 h-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
@@ -538,7 +538,7 @@ export const AIStudentProgress: React.FC = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
                 <Target className="h-6 w-6 text-[#1582B4]" />
               </div>
               <div className="flex-1">
@@ -562,7 +562,7 @@ export const AIStudentProgress: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
                 <BookOpen className="h-6 w-6 text-[#1582B4]" />
               </div>
               <div className="flex-1">
@@ -576,7 +576,7 @@ export const AIStudentProgress: React.FC = () => {
         </Card>
 
         {/* Learning Statistics */}
-        <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300">
+        <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
               <div className="w-8 h-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
@@ -599,7 +599,7 @@ export const AIStudentProgress: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
                 <Flame className="h-6 w-6 text-[#1582B4]" />
               </div>
               <div className="flex-1">
@@ -623,7 +623,7 @@ export const AIStudentProgress: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
                 <Timer className="h-6 w-6 text-[#1582B4]" />
               </div>
               <div className="flex-1">
@@ -638,7 +638,7 @@ export const AIStudentProgress: React.FC = () => {
       </div>
 
       {/* Achievements */}
-      <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300">
+      <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
             <div className="w-8 h-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">

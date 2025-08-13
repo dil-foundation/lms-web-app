@@ -249,8 +249,8 @@ const SightWordsLesson = () => {
             </div>
             
             <div className="text-center mb-8">
-                 <div className="inline-block p-4 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-2xl mb-3 shadow-lg">
-                    <currentStepData.icon className="h-8 w-8 text-[#1582B4]" />
+                 <div className="inline-block p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl mb-3 shadow-lg">
+                    <currentStepData.icon className="h-8 w-8 text-primary" />
                 </div>
                 <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{currentStepData.title}</h2>
                 <p className="text-muted-foreground max-w-md mx-auto">{currentStepData.description}</p>
@@ -259,7 +259,7 @@ const SightWordsLesson = () => {
             <div className="space-y-4 mb-8">
                  {areExercises(currentPageContent) ? (
                     (currentPageContent as Exercise[]).map((exercise, index) => (
-                         <Card key={index} className="p-6 bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300">
+                         <Card key={index} className="p-6 bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300">
                             <div className="flex items-center gap-3 mb-3">
                                 <div className="p-2 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl"><Edit className="w-5 h-5 text-primary"/></div>
                                 <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{exercise.exercise}</h3>
@@ -289,7 +289,7 @@ const SightWordsLesson = () => {
                         </Card>
                     ))
                  ) : isExercise(currentPageContent) ? (
-                    <Card className="p-6 bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300">
+                    <Card className="p-6 bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300">
                         <div className="flex items-center gap-4 mb-4">
                             <div className="p-3 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl"><Edit className="w-6 h-6 text-primary"/></div>
                             <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">{currentPageContent.exercise}</h3>
@@ -319,7 +319,7 @@ const SightWordsLesson = () => {
                     </Card>
                 ) : (
                     (currentPageContent as Word[]).map((item, index) => (
-                        <Card key={index} className="p-6 flex items-center bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300">
+                        <Card key={index} className="p-6 flex items-center bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300">
                             <div className="flex-1">
                                 <h3 className="text-2xl font-bold flex items-center gap-3 text-gray-900 dark:text-gray-100">
                                     {item.word}

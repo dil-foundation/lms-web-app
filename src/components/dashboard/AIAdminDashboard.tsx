@@ -118,7 +118,7 @@ export const AIAdminDashboard = ({ userProfile }: AIAdminDashboardProps) => {
     return (
       <div className="space-y-8">
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/3 to-[#1582B4]/5 rounded-3xl"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
           <div className="relative p-8 md:p-10 rounded-3xl">
             <ContentLoader message="Loading AI Admin Dashboard..." />
           </div>
@@ -132,7 +132,7 @@ export const AIAdminDashboard = ({ userProfile }: AIAdminDashboardProps) => {
     return (
       <div className="space-y-8">
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/3 to-[#1582B4]/5 rounded-3xl"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
           <div className="relative p-8 md:p-10 rounded-3xl">
             <div className="text-center">
               <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -157,7 +157,7 @@ export const AIAdminDashboard = ({ userProfile }: AIAdminDashboardProps) => {
     <div className="space-y-8">
       {/* Premium Header Section */}
       <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/3 to-[#1582B4]/5 rounded-3xl"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
         <div className="relative p-8 md:p-10 rounded-3xl">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div className="flex items-center gap-4">
@@ -271,7 +271,7 @@ export const AIAdminDashboard = ({ userProfile }: AIAdminDashboardProps) => {
       </div>
 
       {/* Learn Feature Usage Summary */}
-      <Card className="group overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50">
+      <Card className="group overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-gradient-to-br from-card to-card/50 dark:bg-card">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -320,7 +320,7 @@ export const AIAdminDashboard = ({ userProfile }: AIAdminDashboardProps) => {
       </Card>
 
       {/* Most Accessed Content */}
-      <Card className="group overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50">
+      <Card className="group overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-gradient-to-br from-card to-card/50 dark:bg-card">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">

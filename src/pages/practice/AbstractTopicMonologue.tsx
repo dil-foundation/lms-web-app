@@ -480,7 +480,7 @@ export default function AbstractTopicMonologue() {
         </div>
 
         {/* Topic Card */}
-        <Card className="overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-lg hover:shadow-xl">
+        <Card className="overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-lg hover:shadow-xl">
           <div className="bg-gradient-to-br from-primary to-primary/90 p-6 text-white relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
             <div className="relative z-10 text-center">
@@ -566,15 +566,15 @@ export default function AbstractTopicMonologue() {
                 )}
                 
                 {currentTopic.vocabulary_focus && currentTopic.vocabulary_focus.length > 0 && (
-                  <div className="mt-4 p-4 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-2xl border border-[#1582B4]/20">
-                    <div className="text-sm font-medium text-[#1582B4] dark:text-[#1582B4]/80 mb-3">
+                  <div className="mt-4 p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl border border-primary/20">
+                    <div className="text-sm font-medium text-primary dark:text-primary/80 mb-3">
                       📚 Vocabulary Focus
                     </div>
                     <div className="flex flex-wrap gap-2 justify-center">
                       {currentTopic.vocabulary_focus.map((word, index) => (
                         <span 
                           key={index}
-                          className="px-3 py-1 bg-[#1582B4]/20 text-[#1582B4] dark:text-[#1582B4]/80 text-xs rounded-full border border-[#1582B4]/30"
+                          className="px-3 py-1 bg-primary/20 text-primary dark:text-primary/80 text-xs rounded-full border border-primary/30"
                         >
                           {word}
                         </span>
@@ -592,7 +592,7 @@ export default function AbstractTopicMonologue() {
         </Card>
 
         {/* Timer */}
-        <Card className="overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-lg hover:shadow-xl">
+        <Card className="overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-lg hover:shadow-xl">
           <CardContent className="p-8 text-center">
             <h3 className="text-xl font-semibold mb-6 text-foreground">Time Remaining</h3>
             <div className="inline-flex items-center space-x-12">
@@ -619,7 +619,7 @@ export default function AbstractTopicMonologue() {
             
             {/* Overall Score */}
             {feedback.score !== undefined && (
-              <Card className="overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-lg hover:shadow-xl">
+              <Card className="overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-lg hover:shadow-xl">
                 <CardContent className="p-6">
                   <div className="text-center mb-6">
                     <h4 className="text-xl font-semibold mb-4 text-foreground">Overall Score</h4>
@@ -752,7 +752,7 @@ export default function AbstractTopicMonologue() {
               }}
               disabled={currentTopicIndex === 0}
               variant="outline"
-              className="px-8 py-3 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl hover:-translate-y-0.5 rounded-2xl"
+              className="px-8 py-3 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl hover:-translate-y-0.5 rounded-2xl"
             >
               Previous
             </Button>
@@ -764,7 +764,7 @@ export default function AbstractTopicMonologue() {
               }}
               disabled={currentTopicIndex === topics.length - 1}
               variant="outline"
-              className="px-8 py-3 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl hover:-translate-y-0.5 rounded-2xl"
+              className="px-8 py-3 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl hover:-translate-y-0.5 rounded-2xl"
             >
               Next
             </Button>

@@ -700,7 +700,7 @@ export const QuickResponse: React.FC = () => {
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
-          <Card className="w-full max-w-md bg-gradient-to-br from-white/80 via-white/60 to-gray-50/80 dark:from-gray-900/80 dark:via-gray-900/60 dark:to-gray-800/80 border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-xl backdrop-blur-sm">
+          <Card className="w-full max-w-md bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-xl backdrop-blur-sm">
             <CardContent className="p-8">
               <Alert variant="destructive" className="border-red-200 dark:border-red-800 bg-red-50/80 dark:bg-red-900/20 rounded-2xl">
                 <AlertCircle className="h-5 w-5" />
@@ -761,7 +761,7 @@ export const QuickResponse: React.FC = () => {
 
       {/* Main Content */}
       <div className="flex-1 px-4 pb-4">
-        <Card className="max-w-md mx-auto bg-gradient-to-br from-white/90 via-white/80 to-gray-50/90 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-gray-800/90 border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-2xl backdrop-blur-sm">
+        <Card className="max-w-md mx-auto bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-2xl backdrop-blur-sm">
           <CardContent className="p-8 text-center">
             {/* Question */}
             <h2 className="text-4xl font-bold mb-6 text-gray-900 dark:text-gray-100 leading-tight">
@@ -834,7 +834,7 @@ export const QuickResponse: React.FC = () => {
 
         {/* Feedback Display */}
         {feedback && (
-          <Card className="w-full max-w-md mt-8 mx-auto bg-gradient-to-br from-white/90 via-white/80 to-gray-50/90 dark:from-gray-900/90 dark:via-gray-900/80 dark:to-gray-800/90 border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-2xl backdrop-blur-sm">
+          <Card className="w-full max-w-md mt-8 mx-auto bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-2xl backdrop-blur-sm">
             <CardContent className="p-8">
               <div className="text-center">
                 {feedback.score !== undefined && (

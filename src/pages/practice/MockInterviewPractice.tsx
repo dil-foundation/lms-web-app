@@ -641,7 +641,7 @@ export default function MockInterviewPractice() {
             {scenarios.map((scenario) => (
               <Card 
                 key={scenario.id}
-                className="cursor-pointer transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-lg hover:shadow-xl overflow-hidden"
+                className="cursor-pointer transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-lg hover:shadow-xl overflow-hidden"
                 onClick={() => handleStartInterview(scenario.id)}
               >
                 <CardContent className="p-0">
@@ -739,7 +739,7 @@ export default function MockInterviewPractice() {
           </Card>
 
           {/* Current Question */}
-          <Card className="border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-lg">
+          <Card className="border-0 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-lg">
             <CardContent className="p-8">
               {isLoadingQuestion ? (
                 <div className="text-center py-8">
@@ -804,7 +804,7 @@ export default function MockInterviewPractice() {
                 
                 {/* Tips Section - Inline */}
                 {currentQuestionDetail?.tips && currentQuestionDetail.tips.length > 0 && (
-                  <div className="bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-2xl border border-[#1582B4]/20 p-4">
+                  <div className="bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl border border-primary/20 p-4">
                     <div className="flex items-start space-x-3">
                       <div className="w-8 h-8 bg-[#1582B4]/20 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
                         <span className="text-[#1582B4] text-sm">💡</span>
@@ -831,7 +831,7 @@ export default function MockInterviewPractice() {
 
           {/* Expected Keywords */}
           {currentQuestionDetail?.expected_keywords && currentQuestionDetail.expected_keywords.length > 0 && (
-            <Card className="border-0 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-3xl shadow-lg">
+            <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg">
               <CardContent className="p-6">
                 <div className="flex items-start space-x-4">
                   <div className="w-12 h-12 bg-[#1582B4] rounded-2xl flex items-center justify-center shrink-0">
@@ -972,7 +972,7 @@ export default function MockInterviewPractice() {
                   onClick={handlePrevQuestion}
                   variant="outline"
                   disabled={currentQuestionIndex === 0}
-                  className="px-8 py-3 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl hover:-translate-y-0.5 rounded-2xl disabled:opacity-50"
+                  className="px-8 py-3 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl hover:-translate-y-0.5 rounded-2xl disabled:opacity-50"
                 >
                   Previous
                 </Button>
@@ -980,7 +980,7 @@ export default function MockInterviewPractice() {
                   onClick={handleNextQuestion}
                   variant="outline"
                   disabled={currentQuestionIndex === currentScenario.questions.length - 1}
-                  className="px-8 py-3 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl hover:-translate-y-0.5 rounded-2xl disabled:opacity-50"
+                  className="px-8 py-3 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl hover:-translate-y-0.5 rounded-2xl disabled:opacity-50"
                 >
                   Next Question
                 </Button>
@@ -1009,15 +1009,15 @@ export default function MockInterviewPractice() {
                 {(feedback.fluency_score || feedback.pronunciation_score || feedback.content_relevance_score || feedback.grammar_score) && (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {feedback.fluency_score && (
-                      <div className="text-center p-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl border border-gray-200/60 dark:border-gray-700/60 shadow-lg">
-                        <div className="text-2xl font-bold text-[#1582B4]">
+                      <div className="text-center p-4 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm rounded-2xl border border-gray-200/60 dark:border-gray-700/60 shadow-lg">
+                        <div className="text-2xl font-bold text-primary">
                           {feedback.fluency_score}
                         </div>
                         <div className="text-xs text-muted-foreground">Fluency</div>
                       </div>
                     )}
                     {feedback.pronunciation_score && (
-                      <div className="text-center p-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl border border-gray-200/60 dark:border-gray-700/60 shadow-lg">
+                      <div className="text-center p-4 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm rounded-2xl border border-gray-200/60 dark:border-gray-700/60 shadow-lg">
                         <div className="text-2xl font-bold text-primary">
                           {feedback.pronunciation_score}
                         </div>
@@ -1025,7 +1025,7 @@ export default function MockInterviewPractice() {
                       </div>
                     )}
                     {feedback.content_relevance_score && (
-                      <div className="text-center p-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl border border-gray-200/60 dark:border-gray-700/60 shadow-lg">
+                      <div className="text-center p-4 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm rounded-2xl border border-gray-200/60 dark:border-gray-700/60 shadow-lg">
                         <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                           {feedback.content_relevance_score}
                         </div>
@@ -1033,7 +1033,7 @@ export default function MockInterviewPractice() {
                       </div>
                     )}
                     {feedback.grammar_score && (
-                      <div className="text-center p-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl border border-gray-200/60 dark:border-gray-700/60 shadow-lg">
+                      <div className="text-center p-4 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm rounded-2xl border border-gray-200/60 dark:border-gray-700/60 shadow-lg">
                         <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                           {feedback.grammar_score}
                         </div>
@@ -1045,7 +1045,7 @@ export default function MockInterviewPractice() {
 
                 {/* Feedback Text */}
                 {feedback.feedback && (
-                  <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm p-4 rounded-2xl border border-gray-200/60 dark:border-gray-700/60 shadow-lg">
+                  <div className="bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm p-4 rounded-2xl border border-gray-200/60 dark:border-gray-700/60 shadow-lg">
                     <h4 className="text-sm font-semibold text-foreground mb-2">Feedback</h4>
                     <p className="text-sm text-muted-foreground">{feedback.feedback}</p>
                   </div>
@@ -1072,7 +1072,7 @@ export default function MockInterviewPractice() {
 
                 {/* Vocabulary Used */}
                 {feedback.vocabulary_used && feedback.vocabulary_used.length > 0 && (
-                  <div className="bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-2xl border border-[#1582B4]/20 p-4">
+                  <div className="bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl border border-primary/20 p-4">
                     <h4 className="text-sm font-semibold text-[#1582B4] mb-2">
                       Vocabulary Used
                     </h4>

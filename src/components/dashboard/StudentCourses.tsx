@@ -139,7 +139,7 @@ export const StudentCourses = ({ userProfile }: StudentCoursesProps) => {
           </div>
         </div>
 
-        <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg overflow-hidden">
+        <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg overflow-hidden">
           <CardContent className="py-16">
             <EmptyState
               title="No Courses Enrolled"
@@ -215,7 +215,7 @@ export const StudentCourses = ({ userProfile }: StudentCoursesProps) => {
       {/* Enhanced Course Grid - Apple Style Aesthetics */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {courses.map((course) => (
-          <Card key={course.id} className="group bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 hover:-translate-y-2 rounded-3xl overflow-hidden">
+          <Card key={course.id} className="group bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 hover:-translate-y-2 rounded-3xl overflow-hidden">
             <div className="relative overflow-hidden">
               <img 
                 src={course.image_url} 

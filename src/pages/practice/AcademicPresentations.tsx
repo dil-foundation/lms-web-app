@@ -246,15 +246,15 @@ export default function AcademicPresentations() {
 
           {/* Activity Stats */}
           <div className="grid grid-cols-2 gap-4">
-            <Card className="border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg">
+            <Card className="border-0 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg">
               <CardContent className="p-4 text-center">
                 <Target className="h-6 w-6 text-primary mx-auto mb-2" />
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Presentation Skills</p>
               </CardContent>
             </Card>
-            <Card className="border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg">
+            <Card className="border-0 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg">
               <CardContent className="p-4 text-center">
-                <TrendingUp className="h-6 w-6 text-[#1582B4] mx-auto mb-2" />
+                <TrendingUp className="h-6 w-6 text-primary mx-auto mb-2" />
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Academic Growth</p>
               </CardContent>
             </Card>
@@ -265,7 +265,7 @@ export default function AcademicPresentations() {
         <div className="px-6 pb-8 space-y-6">
           {/* Title */}
           <div className="text-center">
-            <h2 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary to-[#1582B4] bg-clip-text text-transparent">
+            <h2 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary to-primary/90 bg-clip-text text-transparent">
               Presentation Challenge
             </h2>
           </div>
@@ -273,7 +273,7 @@ export default function AcademicPresentations() {
           {/* Topic Selection */}
           {!selectedTopic && (
             <div>
-              <h3 className="text-xl font-semibold mb-6 bg-gradient-to-r from-primary to-[#1582B4] bg-clip-text text-transparent">
+              <h3 className="text-xl font-semibold mb-6 bg-gradient-to-r from-primary to-primary/90 bg-clip-text text-transparent">
                 Choose Your Presentation Topic
               </h3>
 
@@ -296,7 +296,7 @@ export default function AcademicPresentations() {
                             </h4>
                             {topic.difficulty_level && (
                               <div className="mt-2">
-                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-primary/20 text-primary">
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-primary/20 text-primary">
                                   {topic.difficulty_level}
                                 </span>
                               </div>
@@ -341,7 +341,7 @@ export default function AcademicPresentations() {
                         {selectedTopic.expected_keywords.map((keyword, index) => (
                           <span 
                             key={index}
-                            className="px-3 py-1 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-primary/20 text-primary text-xs rounded-full"
+                            className="px-3 py-1 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-primary/20 text-primary text-xs rounded-full"
                           >
                             {keyword}
                           </span>
@@ -373,7 +373,7 @@ export default function AcademicPresentations() {
                       variant="outline"
                       size="sm"
                       onClick={() => setSelectedTopic(null)}
-                      className="border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 text-primary hover:bg-white/80 dark:hover:bg-gray-800/80 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
+                      className="border-0 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 text-primary hover:bg-card/80 dark:hover:bg-card/80 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
                     >
                       Change Topic
                     </Button>
@@ -420,14 +420,14 @@ export default function AcademicPresentations() {
 
           {/* Evaluation Loading */}
           {isEvaluating && (
-            <Card className="border-0 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-3xl shadow-lg overflow-hidden">
+            <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
               <CardContent className="p-6">
                 <div className="text-center">
-                  <Loader2 className="h-10 w-10 animate-spin mx-auto mb-4 text-[#1582B4]" />
-                  <h3 className="text-lg font-semibold text-[#1582B4] mb-2">
+                  <Loader2 className="h-10 w-10 animate-spin mx-auto mb-4 text-primary" />
+                  <h3 className="text-lg font-semibold text-primary mb-2">
                     Evaluating Your Presentation
                   </h3>
-                  <p className="text-[#1582B4]/80 text-sm">
+                  <p className="text-primary/80 text-sm">
                     Please wait while we analyze your presentation...
                   </p>
                 </div>
@@ -438,7 +438,7 @@ export default function AcademicPresentations() {
           {/* Evaluation Results */}
           {evaluation && evaluation.evaluation && (
             <div>
-              <h3 className="text-xl font-semibold mb-6 bg-gradient-to-r from-primary to-[#1582B4] bg-clip-text text-transparent">
+              <h3 className="text-xl font-semibold mb-6 bg-gradient-to-r from-primary to-primary/90 bg-clip-text text-transparent">
                 Presentation Evaluation
               </h3>
               
@@ -446,12 +446,12 @@ export default function AcademicPresentations() {
               <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden mb-4">
                 <CardContent className="p-6">
                   <div className="text-center">
-                    <h4 className="text-2xl font-bold bg-gradient-to-r from-primary to-[#1582B4] bg-clip-text text-transparent mb-2">
+                    <h4 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/90 bg-clip-text text-transparent mb-2">
                       Overall Score: {evaluation.evaluation.evaluation.overall_score}/100
                     </h4>
-                    <div className="w-full bg-white/60 dark:bg-gray-800/60 rounded-full h-3 mb-4">
+                    <div className="w-full bg-gradient-to-br from-card to-card/50 dark:bg-card rounded-full h-3 mb-4">
                       <div 
-                        className="bg-gradient-to-r from-primary to-[#1582B4] h-3 rounded-full transition-all duration-500"
+                        className="bg-gradient-to-r from-primary to-primary/90 h-3 rounded-full transition-all duration-500"
                         style={{ width: `${evaluation.evaluation.evaluation.overall_score}%` }}
                       ></div>
                     </div>
@@ -461,10 +461,10 @@ export default function AcademicPresentations() {
 
               {/* Next Steps */}
               {evaluation.evaluation.evaluation.next_steps && (
-                <Card className="border-0 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-2xl shadow-lg mb-4">
+                <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg mb-4">
                   <CardContent className="p-4">
-                    <h4 className="font-medium text-[#1582B4] mb-2">Next Steps</h4>
-                    <p className="text-[#1582B4]/80 text-sm">
+                    <h4 className="font-medium text-primary mb-2">Next Steps</h4>
+                    <p className="text-primary/80 text-sm">
                       {evaluation.evaluation.evaluation.next_steps}
                     </p>
                   </CardContent>
@@ -512,7 +512,7 @@ export default function AcademicPresentations() {
                   <Button
                     onClick={resetPresentation}
                     variant="outline"
-                    className="px-6 py-2 border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 text-primary hover:bg-white/80 dark:hover:bg-gray-800/80 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
+                    className="px-6 py-2 border-0 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 text-primary hover:bg-card/80 dark:hover:bg-card/80 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
                   >
                     Try Again
                   </Button>

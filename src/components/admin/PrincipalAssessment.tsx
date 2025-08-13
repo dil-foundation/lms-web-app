@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Star } from 'lucide-react';
 
 export const PrincipalAssessment = ({ formData, updateFormData, formErrors }) => (
-  <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50">
+  <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-card to-card/50 dark:bg-card">
     <CardHeader className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 pb-6">
       <div className="flex items-center gap-4">
         <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
