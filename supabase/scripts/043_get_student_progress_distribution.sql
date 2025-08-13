@@ -1,10 +1,18 @@
+DROP FUNCTION IF EXISTS public.get_student_progress_distribution(uuid);
 
+CREATE OR REPLACE FUNCTION public.get_student_progress_distribution(
+    p_teacher_id uuid
+)
+RETURNS TABLE(category_name TEXT, student_count BIGINT, color_code TEXT)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
 BEGIN
   RETURN QUERY
   WITH teacher_courses AS (
     SELECT DISTINCT cm.course_id
     FROM public.course_members cm
-    WHERE cm.user_id = teacher_id AND cm.role = 'teacher'
+    WHERE cm.user_id = p_teacher_id AND cm.role = 'teacher'
   ),
   students_in_courses AS (
     SELECT DISTINCT cm.user_id, c.id as course_id
@@ -79,3 +87,4 @@ BEGIN
       ELSE 6
     END;
 END;
+$$;
