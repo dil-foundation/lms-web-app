@@ -346,10 +346,10 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       // Transform the data to match the expected format
       const coursePerformance = data.map((item: any) => ({
         course: item.course_title,
-        enrolled: item.enrolled_students,
-        completed: item.completed_students,
-        inProgress: item.in_progress_students,
-        avgRating: item.avg_rating
+        enrolled: item.total_students,
+        completed: Math.round((item.completion_rate / 100) * item.total_students),
+        inProgress: item.total_students - Math.round((item.completion_rate / 100) * item.total_students),
+        avgRating: item.average_score
       }));
 
 
