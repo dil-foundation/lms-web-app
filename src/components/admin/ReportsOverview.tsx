@@ -202,11 +202,25 @@ export const ReportsOverview = () => {
   // Fetch course performance data
   const fetchCoursePerformanceData = async () => {
     try {
+      console.log('🔍 [DEBUG] fetchCoursePerformanceData called');
+      
       const { data, error } = await supabase
-        .rpc('get_course_performance_data_admin');
+        .rpc('get_admin_course_analytics');
+
+      console.log('🔍 [DEBUG] get_admin_course_analytics response:', { data, error });
 
       if (error) throw error;
-      setCoursePerformanceData(data || []);
+      
+      // Transform the data to match the expected interface
+      const transformedData = data?.map((item: any) => ({
+        course_title: item.course_title,
+        enrollments: item.enrolled_students,
+        completion_rate: item.completion_rate,
+        avg_rating: item.average_score || 0
+      })) || [];
+
+      console.log('🔍 [DEBUG] Transformed course performance data:', transformedData);
+      setCoursePerformanceData(transformedData);
     } catch (err: any) {
       console.error('Error fetching course performance data:', err);
       setError(err.message);
