@@ -299,7 +299,7 @@ export default function CriticalOpinionBuilder() {
                 {topics.map((topic) => (
                   <Card 
                     key={topic.id}
-                    className="group cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 hover:scale-105 border-2 border-transparent hover:border-primary/20 bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900/50 dark:to-gray-800/50 rounded-2xl overflow-hidden"
+                    className="group cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 hover:scale-105 border-2 border-transparent hover:border-primary/20 bg-gradient-to-br from-card to-card/50 dark:bg-card rounded-2xl overflow-hidden"
                     onClick={() => handleTopicClick(topic)}
                   >
                     <CardContent className="p-6">

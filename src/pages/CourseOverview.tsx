@@ -437,7 +437,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
       {!isPreviewMode && (
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5"></div>
-          <div className="relative border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60">
+          <div className="relative border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-br from-card to-card/50 dark:bg-card">
             <div className="w-full max-w-none px-4 sm:px-6 lg:px-8 py-6">
               <Button 
                 variant="outline" 
@@ -475,15 +475,15 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
 
               {/* Enhanced Course Stats */}
               <div className="flex flex-wrap items-center justify-center gap-8 text-sm">
-                <div className="flex items-center gap-2 bg-gradient-to-br from-white/80 to-gray-50/80 dark:from-gray-800/80 dark:to-gray-700/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
+                <div className="flex items-center gap-2 bg-gradient-to-br from-card/80 to-card/60 dark:bg-card/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
                   <Users className="w-5 h-5 text-primary" />
                   <span className="font-medium text-gray-900 dark:text-gray-100">{course.stats.students.toLocaleString()} students</span>
                 </div>
-                <div className="flex items-center gap-2 bg-gradient-to-br from-white/80 to-gray-50/80 dark:from-gray-800/80 dark:to-gray-700/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
+                <div className="flex items-center gap-2 bg-gradient-to-br from-card/80 to-card/60 dark:bg-card/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
                   <Clock className="w-5 h-5 text-primary" />
                   <span className="font-medium text-gray-900 dark:text-gray-100">{course.stats.duration}</span>
                 </div>
-                <div className="flex items-center gap-2 bg-gradient-to-br from-white/80 to-gray-50/80 dark:from-gray-800/80 dark:to-gray-700/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
+                <div className="flex items-center gap-2 bg-gradient-to-br from-card/80 to-card/60 dark:bg-card/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
                   <BookOpen className="w-5 h-5 text-primary" />
                   <span className="font-medium text-gray-900 dark:text-gray-100">{course.stats.lessons} lessons</span>
                 </div>
@@ -492,7 +492,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
 
             {/* Premium Video Player */}
             <div className="mx-auto w-[90%]">
-              <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm shadow-xl rounded-3xl overflow-hidden">
+              <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm shadow-xl rounded-3xl overflow-hidden">
                 <CardContent className="p-0">
                   {/* Enhanced Video/Image Preview */}
                   <div className="relative aspect-video bg-gray-100 rounded-t-lg overflow-hidden min-h-[360px] md:min-h-[450px]">
@@ -600,7 +600,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
           <div className="xl:col-span-8 space-y-8 order-2 xl:order-1">
             
             {/* What You'll Learn - Strategic Outcomes First */}
-            <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm rounded-2xl shadow-lg">
+            <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm rounded-2xl shadow-lg">
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-3 text-xl text-gray-900 dark:text-gray-100">
                   <Target className="w-6 h-6 text-primary" />
@@ -625,7 +625,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
             </Card>
 
             {/* Course Features - Value Proposition */}
-            <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm rounded-2xl shadow-lg">
+            <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm rounded-2xl shadow-lg">
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-3 text-xl text-gray-900 dark:text-gray-100">
                   <Sparkles className="w-6 h-6 text-primary" />
@@ -649,7 +649,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
 
             {/* Requirements - Prerequisites & Expectations */}
             {course.requirements && course.requirements.length > 0 && (
-              <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm rounded-2xl shadow-lg">
+              <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm rounded-2xl shadow-lg">
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center gap-3 text-xl text-gray-900 dark:text-gray-100">
                     <Target className="w-6 h-6 text-primary" />
@@ -675,7 +675,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
             )}
 
             {/* Course Curriculum - Strategic Learning Path */}
-            <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm rounded-2xl shadow-lg">
+            <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm rounded-2xl shadow-lg">
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-3 text-xl text-gray-900 dark:text-gray-100">
                   <BookOpen className="w-6 h-6 text-primary" />
@@ -740,7 +740,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
             </Card>
 
             {/* Instructor Profile - Credibility & Expertise */}
-            <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm rounded-2xl shadow-lg">
+            <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm rounded-2xl shadow-lg">
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-3 text-xl text-gray-900 dark:text-gray-100">
                   <GraduationCap className="w-6 h-6 text-primary" />
@@ -784,7 +784,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
           <div className="xl:col-span-4 space-y-6 order-1 xl:order-2">
             
             {/* Course Details - Key Metrics */}
-            <Card className={`bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm rounded-2xl shadow-lg ${!isPreviewMode ? 'xl:sticky xl:top-8' : ''}`}>
+            <Card className={`bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm rounded-2xl shadow-lg ${!isPreviewMode ? 'xl:sticky xl:top-8' : ''}`}>
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-3 text-lg text-gray-900 dark:text-gray-100">
                   <BarChart3 className="w-5 h-5 text-primary" />
@@ -825,7 +825,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
 
             {/* Quick Actions - Strategic Next Steps */}
             {!isPreviewMode && (
-              <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm rounded-2xl shadow-lg">
+              <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm rounded-2xl shadow-lg">
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center gap-3 text-lg text-gray-900 dark:text-gray-100">
                     <TrendingUp className="w-5 h-5 text-primary" />
@@ -855,7 +855,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
 
             {/* Progress Overview - Performance Metrics */}
             {!isPreviewMode && (
-              <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm rounded-2xl shadow-lg">
+              <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm rounded-2xl shadow-lg">
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center gap-3 text-lg text-gray-900 dark:text-gray-100">
                     <BarChart3 className="w-5 h-5 text-primary" />

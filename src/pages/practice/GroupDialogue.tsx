@@ -1090,7 +1090,7 @@ export default function GroupDialogue() {
               variant="outline"
               size="icon"
               onClick={handleBackToScenarios}
-              className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20 hover:bg-primary/10 hover:border-primary/30 hover:text-primary bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg"
+              className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20 hover:bg-primary/10 hover:border-primary/30 hover:text-primary bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg"
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
@@ -1136,7 +1136,7 @@ export default function GroupDialogue() {
           </Card>
 
           {/* Conversation */}
-          <Card className="mb-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg">
+          <Card className="mb-4 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg">
             <CardContent className="p-6">
               {isLoadingScenario ? (
                 <div className="flex items-center justify-center py-8">
@@ -1169,7 +1169,7 @@ export default function GroupDialogue() {
                               msg.type === 'user'
                                 ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-lg'
                                 : msg.persona === 'System'
-                                ? 'bg-gradient-to-r from-blue-100 via-blue-200 to-blue-100 dark:from-blue-900/30 dark:via-blue-800/30 dark:to-blue-900/30 text-blue-900 dark:text-blue-100 border border-blue-200 dark:border-blue-700'
+                                ? 'bg-gradient-to-r from-primary/10 via-primary/20 to-primary/10 dark:from-primary/30 dark:via-primary/20 dark:to-primary/30 text-primary dark:text-primary border border-primary/20 dark:border-primary/30'
                                 : 'bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600'
                             }`}
                           >
@@ -1217,7 +1217,7 @@ export default function GroupDialogue() {
           )}
 
           {/* Input Area */}
-          <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg">
+          <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg">
             <CardContent className="p-6">
               <div className="space-y-4">
                 <div className="text-center p-4 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 dark:from-primary/10 dark:via-primary/20 dark:to-primary/10 border border-primary/20 dark:border-primary/30 rounded-2xl">
@@ -1280,7 +1280,7 @@ export default function GroupDialogue() {
 
           {/* Feedback Section */}
           {feedback && (
-            <Card className="mb-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border-green-200 dark:border-green-800">
+            <Card className="mb-4 bg-gradient-to-r from-green-50 to-primary/5 dark:from-green-900/20 dark:to-primary/10 border-green-200 dark:border-green-800">
               <CardContent className="p-6">
                 <div className="flex items-center space-x-2 mb-4">
                   <Volume2 className="h-5 w-5 text-green-600" />
@@ -1290,7 +1290,7 @@ export default function GroupDialogue() {
                 </div>
                 
                 {/* Overall Score */}
-                <div className="mb-4 p-4 bg-white dark:bg-gray-800 rounded-md border">
+                <div className="mb-4 p-4 bg-gradient-to-br from-card to-card/50 dark:bg-card rounded-md border">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Overall Score</span>
                     <span className="text-lg font-bold text-green-600">
@@ -1307,7 +1307,7 @@ export default function GroupDialogue() {
 
                 {/* Feedback */}
                 {feedback.feedback && feedback.feedback !== 'No feedback available' && (
-                  <div className="mb-4 p-4 bg-white dark:bg-gray-800 rounded-md border">
+                  <div className="mb-4 p-4 bg-gradient-to-br from-card to-card/50 dark:bg-card rounded-md border">
                     <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       📝 Detailed Feedback
                     </h4>
@@ -1381,7 +1381,7 @@ export default function GroupDialogue() {
             variant="outline"
             size="icon"
             onClick={() => navigate('/dashboard/practice/stage-3')}
-            className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20 hover:bg-primary/10 hover:border-primary/30 hover:text-primary bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg"
+            className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20 hover:bg-primary/10 hover:border-primary/30 hover:text-primary bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -1413,7 +1413,7 @@ export default function GroupDialogue() {
 
         {/* Loading State */}
         {isLoading && (
-          <Card className="mb-6 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg">
+          <Card className="mb-6 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg">
             <CardContent className="p-8 text-center">
               <div className="w-12 h-12 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
               <p className="text-muted-foreground text-lg">Loading scenarios...</p>
@@ -1431,7 +1431,7 @@ export default function GroupDialogue() {
               <Button 
                 onClick={() => window.location.reload()} 
                 variant="outline"
-                className="border-red-300 text-red-700 hover:bg-red-100 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 rounded-2xl"
+                className="border-red-300 text-red-700 hover:bg-red-100 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 rounded-2xl"
               >
                 Try Again
               </Button>
@@ -1458,7 +1458,7 @@ export default function GroupDialogue() {
             {scenarios.map((scenario) => (
               <Card
                 key={scenario.id}
-                className="cursor-pointer bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group"
+                className="cursor-pointer bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group"
                 onClick={() => handleScenarioSelect(scenario.id)}
               >
                 <CardContent className="p-6">

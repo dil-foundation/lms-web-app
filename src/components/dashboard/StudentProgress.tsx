@@ -28,7 +28,7 @@ const StatCard = ({ title, value, subtext, icon, progress }: { title: string, va
 );
 
 const CourseProgressDetails = ({ courses }: { courses: StudentCourseWithProgress[] }) => (
-  <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden">
+  <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden">
     <CardHeader className="pb-6">
       <CardTitle className="flex items-center gap-3 text-xl font-bold text-gray-900 dark:text-gray-100">
         <div className="w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
@@ -40,7 +40,7 @@ const CourseProgressDetails = ({ courses }: { courses: StudentCourseWithProgress
     <CardContent className="space-y-6">
       {courses.length > 0 ? (
         courses.map(course => (
-          <div key={course.course_id} className="group p-6 bg-gradient-to-br from-white/40 to-gray-50/40 dark:from-gray-800/40 dark:to-gray-700/40 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl hover:bg-gradient-to-br hover:from-white/60 hover:to-gray-50/60 dark:hover:from-gray-800/60 dark:hover:to-gray-700/60 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+          <div key={course.course_id} className="group p-6 bg-gradient-to-br from-card/40 to-card/20 dark:bg-card/40 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl hover:bg-gradient-to-br hover:from-card/60 hover:to-card/30 dark:hover:bg-card/60 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
             <div className="flex justify-between items-center mb-4">
               <p className="font-semibold text-gray-900 dark:text-gray-100 text-lg">{course.title}</p>
               <div className="text-sm">

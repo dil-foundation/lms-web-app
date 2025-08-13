@@ -521,7 +521,7 @@ export default function AIGuidedSpontaneousSpeech() {
                 className={`transition-all duration-300 ${
                   message.sender === 'user' 
                     ? 'border-0 bg-gradient-to-br from-primary/20 to-primary/30 rounded-3xl shadow-lg overflow-hidden' 
-                    : 'border-0 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-3xl shadow-lg overflow-hidden'
+                    : 'border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden'
                 }`}
               >
                 <CardContent className="p-6">
@@ -529,7 +529,7 @@ export default function AIGuidedSpontaneousSpeech() {
                     <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
                       message.sender === 'user' 
                         ? 'bg-gradient-to-br from-primary/20 to-primary/30 border border-primary/30' 
-                        : 'bg-gradient-to-br from-[#1582B4]/20 to-[#1582B4]/30 border border-[#1582B4]/30'
+                        : 'bg-gradient-to-br from-primary/20 to-primary/30 border border-primary/30'
                     }`}>
                       {message.sender === 'user' ? (
                         <User className="h-6 w-6 text-primary" />
@@ -566,10 +566,10 @@ export default function AIGuidedSpontaneousSpeech() {
           {/* Expected Keywords Section */}
           {currentTopic && currentTopic.expected_keywords && currentTopic.expected_keywords.length > 0 && (
             <div>
-              <Card className="border-0 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-3xl shadow-lg overflow-hidden">
+              <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
                 <CardContent className="p-6">
                   <div className="flex items-start space-x-3">
-                    <div className="w-8 h-8 bg-gradient-to-br from-[#1582B4]/20 to-[#1582B4]/30 rounded-xl flex items-center justify-center border border-[#1582B4]/30">
+                    <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-primary/30 rounded-xl flex items-center justify-center border border-primary/30">
                       <Zap className="h-4 w-4 text-[#1582B4]" />
                     </div>
                     <div className="flex-1">
@@ -596,7 +596,7 @@ export default function AIGuidedSpontaneousSpeech() {
 
           {/* Evaluation Loading State */}
           {isEvaluating && (
-            <Card className="border-0 bg-gradient-to-br from-[#1582B4]/10 to-[#1582B4]/20 rounded-3xl shadow-lg overflow-hidden">
+            <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
               <CardContent className="p-6 text-center">
                 <div className="flex items-center justify-center space-x-3">
                   <Loader2 className="h-10 w-10 animate-spin text-[#1582B4]" />

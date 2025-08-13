@@ -729,7 +729,7 @@ export default function StorytellingPractice() {
               variant="outline"
               size="icon"
               onClick={() => navigate('/dashboard/practice/stage-3')}
-              className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20 hover:bg-primary/10 hover:border-primary/30 hover:text-primary bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg"
+              className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20 hover:bg-primary/10 hover:border-primary/30 hover:text-primary bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg"
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
@@ -771,7 +771,7 @@ export default function StorytellingPractice() {
               variant="outline"
               size="icon"
               onClick={() => navigate('/dashboard/practice/stage-3')}
-              className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20 hover:bg-primary/10 hover:border-primary/30 hover:text-primary bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg"
+              className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20 hover:bg-primary/10 hover:border-primary/30 hover:text-primary bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg"
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
@@ -795,7 +795,7 @@ export default function StorytellingPractice() {
               <Button 
                 onClick={() => window.location.reload()} 
                 variant="outline"
-                className="border-red-300 text-red-700 hover:bg-red-100 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 rounded-2xl"
+                className="border-red-300 text-red-700 hover:bg-red-100 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 rounded-2xl"
               >
                 Try Again
               </Button>
@@ -821,7 +821,7 @@ export default function StorytellingPractice() {
               variant="outline"
               size="icon"
               onClick={() => navigate('/dashboard/practice/stage-3')}
-              className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20 hover:bg-primary/10 hover:border-primary/30 hover:text-primary bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg"
+              className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20 hover:bg-primary/10 hover:border-primary/30 hover:text-primary bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg"
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
@@ -837,7 +837,7 @@ export default function StorytellingPractice() {
             <div className="w-10"></div>
           </div>
 
-          <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg">
+          <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg">
             <CardContent className="p-6 text-center">
               <p className="text-muted-foreground">No storytelling prompts available.</p>
             </CardContent>
@@ -861,7 +861,7 @@ export default function StorytellingPractice() {
             variant="outline"
             size="icon"
             onClick={() => navigate('/dashboard/practice/stage-3')}
-            className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20 hover:bg-primary/10 hover:border-primary/30 hover:text-primary bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg"
+            className="shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20 hover:bg-primary/10 hover:border-primary/30 hover:text-primary bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -900,7 +900,7 @@ export default function StorytellingPractice() {
                 size="sm"
                 onClick={handlePreviousPrompt}
                 disabled={currentPrompt === 0}
-                className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl rounded-2xl"
+                className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl rounded-2xl"
               >
                 Previous
               </Button>
@@ -909,7 +909,7 @@ export default function StorytellingPractice() {
                 size="sm"
                 onClick={handleNextPrompt}
                 disabled={currentPrompt === storyPrompts.length - 1}
-                className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl rounded-2xl"
+                className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl rounded-2xl"
               >
                 Next
               </Button>
@@ -981,7 +981,7 @@ export default function StorytellingPractice() {
                   Example Story
                 </h3>
               </div>
-              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl p-4 border border-primary/20 dark:border-primary/30 shadow-md">
+              <div className="bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm rounded-2xl p-4 border border-primary/20 dark:border-primary/30 shadow-md">
                 <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
                   {currentStoryPrompt.model_answer}
                 </p>
@@ -1028,7 +1028,7 @@ export default function StorytellingPractice() {
         </div>
 
         {/* Recording Controls */}
-        <Card className="mb-6 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg">
+        <Card className="mb-6 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg">
           <CardContent className="p-6">
             <div className="text-center">
               <p className="text-muted-foreground mb-6">
@@ -1039,7 +1039,7 @@ export default function StorytellingPractice() {
                 <Button
                   variant="outline"
                   onClick={() => setShowExample(!showExample)}
-                  className="px-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl rounded-2xl"
+                  className="px-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl rounded-2xl"
                   disabled={isRecording || isEvaluating}
                 >
                   <Lightbulb className="h-4 w-4 mr-2" />

@@ -107,7 +107,7 @@ const CourseCard = ({ course }) => {
   };
 
   return (
-    <Card className="group overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50 rounded-2xl h-full flex flex-col">
+    <Card className="group overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-gradient-to-br from-card to-card/50 dark:bg-card rounded-2xl h-full flex flex-col">
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
         <img src={course.imageUrl} alt={course.title} className="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-105" />

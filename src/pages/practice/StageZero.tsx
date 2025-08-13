@@ -41,7 +41,7 @@ const LessonCard = ({ lesson, index }) => {
   const navigate = useNavigate();
   return (
     <Card 
-      className="group overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50 rounded-2xl cursor-pointer h-full flex flex-col"
+      className="group overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-gradient-to-br from-card to-card/50 dark:bg-card rounded-2xl cursor-pointer h-full flex flex-col"
       onClick={() => navigate(`/dashboard/practice/stage-0/lesson/${index + 1}`)}
     >
       <div className="bg-gradient-to-br from-primary to-primary/90 flex items-center justify-center p-8 h-40 relative overflow-hidden">
@@ -81,7 +81,7 @@ export const StageZero: React.FC = () => {
         <div className="min-h-screen bg-background">
             {/* Premium Header Section */}
             <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/3 to-[#1582B4]/5 rounded-3xl"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
                 <div className="relative p-8 md:p-10 rounded-3xl">
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
                         <div className="flex items-center gap-4">
@@ -111,7 +111,7 @@ export const StageZero: React.FC = () => {
                                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">5 Lessons</span>
                             </div>
                             <div className="flex items-center gap-2 px-4 py-2 bg-white/60 dark:bg-gray-800/60 rounded-xl border border-gray-200/50 dark:border-gray-700/50">
-                                <Sparkles className="w-4 h-4 text-[#1582B4]" />
+                                                                 <Sparkles className="w-4 h-4 text-primary" />
                                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">AI Guided</span>
                             </div>
                         </div>

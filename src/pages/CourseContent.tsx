@@ -65,8 +65,8 @@ const getContentItemIcon = (item: any, currentContentItemId: string | null) => {
     switch (item.content_type) {
       case 'video': return <PlayCircle className="w-5 h-5 text-red-500" />;
       case 'attachment': return <Paperclip className="w-5 h-5 text-gray-500" />;
-      case 'assignment': return <ClipboardList className="w-5 h-5 text-[#1582B4]" />;
-      case 'quiz': return <HelpCircle className="w-5 h-5 text-[#1582B4]" />;
+      case 'assignment': return <ClipboardList className="w-5 h-5 text-primary" />;
+      case 'quiz': return <HelpCircle className="w-5 h-5 text-primary" />;
       default: return <Circle className="w-5 h-5 text-gray-400" />;
     }
 };
@@ -76,7 +76,7 @@ const CourseNavigationSidebar = ({ course, openSectionIds, setOpenSectionIds, cu
         <>
             <div className="p-4 space-y-4 border-b border-gray-200/50 dark:border-gray-700/50">
                  <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{course.title}</h2>
-                 <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg">
+                 <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg">
                     <CardContent className="pt-4">
                         <div className="flex justify-between items-center mb-2">
                            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Course Progress</span>
@@ -518,7 +518,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                 </div>
               </div>
             )}
-            <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
+            <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
               <CardHeader>
                 <CardTitle className="text-gray-900 dark:text-gray-100">Overview</CardTitle>
               </CardHeader>
@@ -529,7 +529,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       case 'attachment':
         const handleAttachmentInteraction = () => { if (currentContentItem && !currentContentItem.completed && currentLesson) markContentAsComplete(currentContentItem.id, currentLesson.id, actualCourseId); };
         return (
-          <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
+          <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
                 <Paperclip className="w-5 h-5 text-primary" />
@@ -564,7 +564,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       case 'assignment':
         return (
           <div className="space-y-6">
-            <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
+            <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
               <CardHeader>
                 <CardTitle className="text-gray-900 dark:text-gray-100">Assignment Details</CardTitle>
               </CardHeader>
@@ -573,7 +573,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
               </CardContent>
             </Card>
             {attachments.length > 0 && (
-              <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
+              <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
                 <CardHeader>
                   <CardTitle className="text-gray-900 dark:text-gray-100">Attached Files</CardTitle>
                 </CardHeader>
@@ -608,7 +608,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         const questions = currentContentItem.quiz || [];
         const hasSubmitted = isQuizSubmitted || !!currentContentItem.submission;
         return (
-          <Card className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
+          <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
             <CardHeader>
               <CardTitle className="text-gray-900 dark:text-gray-100">Knowledge Check</CardTitle>
             </CardHeader>
@@ -687,7 +687,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
 
   return (
     <div className="flex h-full bg-background">
-      <div className="hidden lg:flex flex-col w-80 border-r border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60">
+      <div className="hidden lg:flex flex-col w-80 border-r border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-br from-card to-card/50 dark:bg-card">
         <CourseNavigationSidebar
             course={course}
             openSectionIds={openSectionIds}
@@ -697,7 +697,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         />
        </div>
        <div className="flex-1 flex flex-col w-full">
-          <div className="relative border-b border-gray-200/50 dark:border-gray-700/50 p-4 bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60">
+          <div className="relative border-b border-gray-200/50 dark:border-gray-700/50 p-4 bg-gradient-to-br from-card to-card/50 dark:bg-card">
               <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
@@ -706,7 +706,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                               <Menu className="w-5 h-5" />
                             </Button>
                         </SheetTrigger>
-                        <SheetContent side="left" className="w-80 p-0 flex flex-col bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60">
+                        <SheetContent side="left" className="w-80 p-0 flex flex-col bg-gradient-to-br from-card to-card/50 dark:bg-card">
                            <CourseNavigationSidebar
                                 course={course}
                                 openSectionIds={openSectionIds}
@@ -731,7 +731,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                 <div className="max-w-5xl mx-auto space-y-8">{renderContent()}</div>
             </div>
           </ScrollArea>
-          <div className="bg-gradient-to-br from-white/60 to-gray-50/60 dark:from-gray-900/60 dark:to-gray-800/60 p-4 sticky bottom-0 border-t border-gray-200/50 dark:border-gray-700/50">
+          <div className="bg-gradient-to-br from-card to-card/50 dark:bg-card p-4 sticky bottom-0 border-t border-gray-200/50 dark:border-gray-700/50">
             <div className="flex items-center justify-between max-w-5xl mx-auto">
               <div>{prevContentItem && (
                 <Button variant="outline" onClick={() => handleNavigation(prevContentItem)} className="hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300">

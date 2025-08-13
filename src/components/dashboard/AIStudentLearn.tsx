@@ -648,7 +648,7 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
     if (isListening) {
       return {
         bgColor: 'bg-[#1582B4]/20 border-[#1582B4]/30 shadow-lg shadow-[#1582B4]/20',
-        innerGlow: 'bg-gradient-to-br from-[#1582B4]/30 to-[#1582B4]/10',
+        innerGlow: 'bg-gradient-to-br from-primary/30 to-primary/10',
         pulseColor: 'border-[#1582B4]/40',
         pulseBorder: 'border-[#1582B4]/30',
         dotColor: 'bg-[#1582B4]'
@@ -698,7 +698,7 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
       <div className="space-y-8">
         {/* Premium Header Section */}
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/3 to-[#1582B4]/5 rounded-3xl"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
           <div className="relative p-8 md:p-10 rounded-3xl">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
               <div className="flex items-center gap-4">

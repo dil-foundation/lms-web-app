@@ -319,7 +319,7 @@ const ContentTypeSelector = ({ onSelect, onClose }: ContentTypeSelectorProps) =>
         </div>
 
         {/* Footer */}
-        <div className="p-3 border-t border-gray-100 dark:border-gray-800 bg-gradient-to-r from-gray-50/50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-900/50">
+        <div className="p-3 border-t border-gray-100 dark:border-gray-800 bg-gradient-to-r from-card/50 to-card/30 dark:bg-card/50">
           <p className="text-center text-gray-500 dark:text-gray-400 text-xs">
             Each content type is designed to enhance different learning styles and engagement levels
           </p>
@@ -696,7 +696,7 @@ const LessonContainer = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovab
 
   return (
     <>
-      <div className="p-6 rounded-2xl bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-900/50 border-2 border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl space-y-6 transition-all duration-300 group">
+      <div className="p-6 rounded-2xl bg-gradient-to-br from-card to-card/50 dark:bg-card border-2 border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl space-y-6 transition-all duration-300 group">
         {/* Lesson Header */}
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3 flex-1">
@@ -2238,7 +2238,7 @@ const CourseBuilder = () => {
           <div className="p-6">
             <TabsContent value="details" className="space-y-8">
               {/* Basic Information Card */}
-              <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50">
+              <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-card to-card/50 dark:bg-card">
                 <CardHeader className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 pb-6">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
@@ -2491,7 +2491,7 @@ const CourseBuilder = () => {
               </Card>
 
               {/* Course Image Card */}
-              <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50">
+              <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-card to-card/50 dark:bg-card">
                 <CardHeader className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 pb-6">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
@@ -2557,7 +2557,7 @@ const CourseBuilder = () => {
 
             <TabsContent value="curriculum" className="space-y-8">
               {/* Course Curriculum Card */}
-              <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50">
+              <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-card to-card/50 dark:bg-card">
                 <CardHeader className="flex flex-row items-center justify-between bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 pb-6">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
@@ -2599,8 +2599,8 @@ const CourseBuilder = () => {
                       {courseData.sections.map((section, sectionIndex) => (
                         <SortableItem key={section.id} id={section.id} type="section">
                           {(dragHandleProps) => (
-                            <Card className={`bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-900/50 border-2 border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300 ${activeId === section.id ? 'opacity-50 scale-95' : ''}`}>
-                              <CardHeader className="flex flex-row items-start justify-between p-6 gap-4 bg-gradient-to-r from-gray-50/50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-900/50 border-b border-gray-200/50 dark:border-gray-700/30">
+                            <Card className={`bg-gradient-to-br from-card to-card/50 dark:bg-card border-2 border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300 ${activeId === section.id ? 'opacity-50 scale-95' : ''}`}>
+                              <CardHeader className="flex flex-row items-start justify-between p-6 gap-4 bg-gradient-to-r from-card/50 to-card/30 dark:bg-card/50 border-b border-gray-200/50 dark:border-gray-700/30">
                                 <div className="flex items-start gap-3 flex-1">
                                   <div {...dragHandleProps} className="cursor-move pt-2.5 opacity-60 hover:opacity-100 transition-opacity hover:scale-110">
                                     <GripVertical className="text-primary w-6 h-6" />
@@ -2737,7 +2737,7 @@ const CourseBuilder = () => {
                     <DragOverlay>
                       {activeId ? (
                         activeId.startsWith('section-') ?
-                        <Card className="bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-900/50 border-2 border-primary/20 shadow-2xl scale-105">
+                        <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border-2 border-primary/20 shadow-2xl scale-105">
                           <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/20 p-4">
                             <CardTitle className="text-lg">
                               {courseData.sections.find(s => s.id === activeId)?.title || 'Section'}
@@ -2774,7 +2774,7 @@ const CourseBuilder = () => {
             
             <TabsContent value="landing" className="space-y-8">
               {/* Course Requirements & Outcomes Card */}
-              <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50">
+              <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-card to-card/50 dark:bg-card">
                 <CardHeader className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 pb-6">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
@@ -2938,7 +2938,7 @@ const CourseBuilder = () => {
 
             <TabsContent value="access" className="space-y-6">
               {/* Teachers Management Card */}
-              <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50">
+              <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-card to-card/50 dark:bg-card">
                 <CardHeader className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 pb-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -3037,7 +3037,7 @@ const CourseBuilder = () => {
               </Card>
 
               {/* Students Management Card */}
-              <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-white via-white to-gray-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/50">
+              <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-card to-card/50 dark:bg-card">
                 <CardHeader className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 pb-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
