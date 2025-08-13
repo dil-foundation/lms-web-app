@@ -504,7 +504,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       
       // Use the new SQL function
       const { data, error } = await supabase.rpc('get_student_status_counts', {
-        teacher_id: userProfile.id
+        p_teacher_id: userProfile.id
       });
 
       console.log('🔍 [DEBUG] get_student_status_counts response:', { data, error });
