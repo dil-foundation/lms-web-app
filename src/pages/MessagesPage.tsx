@@ -73,11 +73,16 @@ import {
   getMessages,
   sendMessage,
   deleteConversation,
+  deleteMessage,
   getUserStatus,
   updateUserStatus,
   markConversationAsRead,
   markMessageAsDelivered,
   markMessageAsRead,
+  sendMessageNotification,
+  sendConversationDeletedNotification,
+  sendMessageDeletedNotification,
+  getConversationParticipants,
 } from '@/services/messagingService';
 import { UserRole } from '@/config/roleNavigation';
 
@@ -267,6 +272,8 @@ export default function MessagesPage() {
   const [loadingMessagesForChat, setLoadingMessagesForChat] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deletingConversation, setDeletingConversation] = useState<string | null>(null);
+  const [showDeleteMessageConfirmDialog, setShowDeleteMessageConfirmDialog] = useState(false);
+  const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [archivingConversation, setArchivingConversation] = useState<string | null>(null);
   const [showStarDialog, setShowStarDialog] = useState(false);
@@ -330,6 +337,14 @@ export default function MessagesPage() {
       ));
       setSelectedChat(updatedChat);
       setNewMessage('');
+
+      // Send notification to other participants
+      try {
+        await sendMessageNotification(selectedChat.id, apiMessage.id, user.id);
+      } catch (notificationError) {
+        console.error('Error sending message notification:', notificationError);
+        // Don't show error to user as the message was sent successfully
+      }
 
       // Note: The backend should automatically broadcast the message via WebSocket
       // after it's saved to the database via the REST API
@@ -726,6 +741,37 @@ export default function MessagesPage() {
       }
     };
 
+    // Handle message deletion
+    const handleMessageDeleted = (data: any) => {
+      if (data.message_id && data.conversation_id) {
+        // Remove the message from the selected chat's messages list
+        setSelectedChat(prevSelected => {
+          if (prevSelected && prevSelected.id === data.conversation_id) {
+            return {
+              ...prevSelected,
+              messages: prevSelected.messages.filter(message => message.id !== data.message_id)
+            };
+          }
+          return prevSelected;
+        });
+        
+        // Update the conversation's last message if needed
+        setChats(prevChats => 
+          prevChats.map(chat => {
+            if (chat.id === data.conversation_id) {
+              // If the deleted message was the last message, we might need to update the last message
+              // This is a simplified approach - in a real implementation, you might want to fetch the actual last message
+              return {
+                ...chat,
+                lastMessage: chat.lastMessage === data.message_id ? '' : chat.lastMessage
+              };
+            }
+            return chat;
+          })
+        );
+      }
+    };
+
     // Handle user status changes
     const handleUserStatusChange = (data: any) => {
       // Handle different data formats
@@ -776,6 +822,7 @@ export default function MessagesPage() {
     wsManager.on('new_conversation', handleNewConversation);
     wsManager.on('new_message', handleNewMessage);
     wsManager.on('conversation_deleted', handleConversationDeleted);
+    wsManager.on('message_deleted', handleMessageDeleted);
     wsManager.on('user_status_change', handleUserStatusChange);
     wsManager.on('message_delivered', handleMessageDelivered);
     wsManager.on('message_read', handleMessageRead);
@@ -784,6 +831,7 @@ export default function MessagesPage() {
       wsManager.off('new_conversation', handleNewConversation);
       wsManager.off('new_message', handleNewMessage);
       wsManager.off('conversation_deleted', handleConversationDeleted);
+      wsManager.off('message_deleted', handleMessageDeleted);
       wsManager.off('user_status_change', handleUserStatusChange);
       wsManager.off('message_delivered', handleMessageDelivered);
       wsManager.off('message_read', handleMessageRead);
@@ -1014,7 +1062,28 @@ export default function MessagesPage() {
     
     setDeletingConversation(chatId);
     try {
+      // Get conversation participants BEFORE deletion for notification
+      let participants: any[] = [];
+      try {
+        participants = await getConversationParticipants(chatId);
+        console.log('Got participants before deletion:', participants);
+      } catch (participantsError) {
+        console.error('Error getting participants for notification:', participantsError);
+        // Continue with deletion even if we can't get participants
+      }
+      
+      // Delete the conversation
       await deleteConversation(chatId);
+      
+      // Send notification to other participants about conversation deletion
+      if (participants.length > 0) {
+        try {
+          await sendConversationDeletedNotification(chatId, user.id, participants);
+        } catch (notificationError) {
+          console.error('Error sending conversation deletion notification:', notificationError);
+          // Don't show error to user as the conversation was deleted successfully
+        }
+      }
       
       // Remove from local state immediately for better UX
       setChats(prevChats => prevChats.filter(chat => chat.id !== chatId));
@@ -1049,6 +1118,48 @@ export default function MessagesPage() {
     setChats(chats.filter(chat => chat.id !== chatId));
     if (selectedChat?.id === chatId) {
       setSelectedChat(null);
+    }
+  };
+
+  // Function to handle message deletion with notification
+  const handleDeleteMessage = async (messageId: string) => {
+    if (!user?.id || !selectedChat) return;
+    
+    setMessageToDelete(messageId);
+    setShowDeleteMessageConfirmDialog(true);
+  };
+
+  // Function to confirm message deletion
+  const confirmDeleteMessage = async () => {
+    if (!user?.id || !selectedChat || !messageToDelete) return;
+    
+    try {
+      await deleteMessage(messageToDelete);
+      
+      // Send notification to other participants about message deletion
+      try {
+        await sendMessageDeletedNotification(selectedChat.id, messageToDelete, user.id);
+      } catch (notificationError) {
+        console.error('Error sending message deletion notification:', notificationError);
+        // Don't show error to user as the message was deleted successfully
+      }
+      
+      // Remove message from local state
+      const updatedChat = {
+        ...selectedChat,
+        messages: selectedChat.messages.filter(msg => msg.id !== messageToDelete)
+      };
+      
+      setSelectedChat(updatedChat);
+      setChats(prevChats => 
+        prevChats.map(chat => chat.id === selectedChat.id ? updatedChat : chat)
+      );
+      
+      setShowDeleteMessageConfirmDialog(false);
+      setMessageToDelete(null);
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      // You might want to show a toast notification here
     }
   };
 
@@ -1409,7 +1520,7 @@ export default function MessagesPage() {
                           >
                             <div className="flex items-end gap-1">
                               <div
-                                className={` rounded-lg p-4 ${
+                                className={`group relative rounded-lg p-4 ${
                                   message.sender === 'me'
                                     ? 'bg-primary text-primary-foreground'
                                     : 'bg-muted'
@@ -1417,11 +1528,35 @@ export default function MessagesPage() {
                               >
                                 <div className="flex flex-col">
                                   <p className="text-sm leading-relaxed">{message.content}</p>
-                                  <p className={`text-xs mt-2 ${
-                                    message.sender === 'me' ? 'text-primary-foreground/70' : 'text-muted-foreground'
-                                  }`}>
-                                    {formatTime(message.timestamp)}
-                                  </p>
+                                  <div className="flex items-center justify-between mt-2">
+                                    <p className={`text-xs ${
+                                      message.sender === 'me' ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                                    }`}>
+                                      {formatTime(message.timestamp)}
+                                    </p>
+                                    {message.sender === 'me' && (
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-primary/20"
+                                          >
+                                            <MoreVertical className="h-3 w-3" />
+                                          </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                          <DropdownMenuItem
+                                            onClick={() => handleDeleteMessage(message.id)}
+                                            className="text-red-600 focus:text-red-600"
+                                          >
+                                            <Trash2 className="h-4 w-4 mr-2" />
+                                            Delete Message
+                                          </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                               {/* Temporarily hidden tick marks
@@ -1688,6 +1823,45 @@ export default function MessagesPage() {
                   Delete Conversation
                 </>
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Message Confirmation Dialog */}
+      <Dialog open={showDeleteMessageConfirmDialog} onOpenChange={setShowDeleteMessageConfirmDialog}>
+        <DialogContent className="bg-gradient-to-br from-background to-background/95 dark:from-background dark:to-background/90 border border-border/50">
+          <DialogHeader className="pb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-red-500/15 to-red-500/25 dark:from-red-500/20 dark:to-red-500/30 rounded-xl flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-red-500 dark:text-red-400" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-bold text-foreground">Delete Message</DialogTitle>
+                <DialogDescription className="text-sm text-muted-foreground mt-1">
+                  Are you sure you want to delete this message? This action cannot be undone and other participants will be notified.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowDeleteMessageConfirmDialog(false);
+                setMessageToDelete(null);
+              }}
+              className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={confirmDeleteMessage}
+              className="bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Message
             </Button>
           </DialogFooter>
         </DialogContent>

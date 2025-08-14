@@ -22,6 +22,7 @@ import {
   Loader2,
   ChevronDown,
   ChevronUp,
+  AlertCircle,
 } from 'lucide-react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -30,6 +31,7 @@ import { format } from 'date-fns';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { DiscussionDialog } from '@/components/discussions/DiscussionDialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import NotificationService from '@/services/notificationService';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -91,7 +93,7 @@ const fetchUserCourses = async () => {
 export const DiscussionViewPage = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const { profile } = useUserProfile();
+  const { profile, loading: isProfileLoading } = useUserProfile();
   const queryClient = useQueryClient();
   const [replyContent, setReplyContent] = useState('');
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -175,6 +177,45 @@ export const DiscussionViewPage = () => {
       }));
 
       await supabase.from('discussion_participants').insert(participantsToInsert);
+
+      // Send notification for discussion update
+      if (user) {
+        try {
+          // Get discussion participants to exclude the updater
+          const { data: updateParticipants, error: updateParticipantsError } = await supabase
+            .from('discussion_participants')
+            .select('role')
+            .eq('discussion_id', discussionToUpdate.id);
+
+          if (!updateParticipantsError && updateParticipants.length > 0) {
+            // Get all users with these roles except the current user
+            const { data: targetUsers, error: usersError } = await supabase
+              .from('profiles')
+              .select('id')
+              .in('role', updateParticipants.map(p => p.role))
+              .neq('id', user.id);
+
+            if (!usersError && targetUsers && targetUsers.length > 0) {
+              await supabase.functions.invoke('send-notification', {
+                body: {
+                  type: 'course_update',
+                  title: 'Discussion Updated',
+                  body: `${user.user_metadata?.first_name || user.email} updated the discussion "${discussionToUpdate.title}".`,
+                  data: {
+                    discussionId: discussionToUpdate.id,
+                    discussionTitle: discussionToUpdate.title,
+                    updateType: 'discussion_updated'
+                  },
+                  targetUsers: targetUsers.map(u => u.id)
+                },
+              });
+            }
+          }
+        } catch (notificationError) {
+          console.error('Failed to send notification:', notificationError);
+          // Don't throw error here as the update was successfully completed
+        }
+      }
       
       return data;
     },
@@ -187,8 +228,82 @@ export const DiscussionViewPage = () => {
 
   const deleteDiscussionMutation = useMutation({
     mutationFn: async (discussionId: string) => {
+      // Get discussion details and participants BEFORE deletion for notification
+      const { data: discussionData, error: fetchError } = await supabase
+        .from('discussions')
+        .select('title')
+        .eq('id', discussionId)
+        .single();
+
+      if (fetchError) {
+        console.error('Failed to fetch discussion for notification:', fetchError);
+      }
+
+      // Get discussion participants BEFORE deletion
+      const { data: participants, error: participantsError } = await supabase
+        .from('discussion_participants')
+        .select('role')
+        .eq('discussion_id', discussionId);
+
+      if (participantsError) {
+        console.error('Failed to fetch participants for notification:', participantsError);
+      }
+
+      // Mark all notifications related to this discussion as read for all users
+      try {
+        // Get all users with these roles
+        const { data: targetUsers, error: usersError } = await supabase
+          .from('profiles')
+          .select('id')
+          .in('role', participants.map(p => p.role));
+
+        if (!usersError && targetUsers && targetUsers.length > 0) {
+          // Mark notifications as read for all users
+          await Promise.all(
+            targetUsers.map(user => 
+              NotificationService.markDiscussionNotificationsAsRead(user.id, discussionId)
+            )
+          );
+        }
+      } catch (markReadError) {
+        console.error('Failed to mark discussion notifications as read:', markReadError);
+        // Don't throw error here as the deletion was successfully completed
+      }
+
+      // Now delete the discussion
       const { error } = await supabase.from('discussions').delete().eq('id', discussionId);
       if (error) throw new Error(error.message);
+
+      // Send notification for discussion deletion
+      if (user && discussionData && participants && participants.length > 0) {
+        try {
+          // Get all users with these roles except the current user
+          const { data: targetUsers, error: usersError } = await supabase
+            .from('profiles')
+            .select('id')
+            .in('role', participants.map(p => p.role))
+            .neq('id', user.id);
+
+          if (!usersError && targetUsers && targetUsers.length > 0) {
+            await supabase.functions.invoke('send-notification', {
+              body: {
+                type: 'system_maintenance',
+                title: 'Discussion Deleted',
+                body: `${user.user_metadata?.first_name || user.email} deleted the discussion "${discussionData.title}".`,
+                data: {
+                  discussionTitle: discussionData.title,
+                  deletedBy: user.user_metadata?.first_name || user.email,
+                  deleteType: 'discussion_deleted'
+                },
+                targetUsers: targetUsers.map(u => u.id)
+              },
+            });
+          }
+        } catch (notificationError) {
+          console.error('Failed to send notification:', notificationError);
+          // Don't throw error here as the deletion was successfully completed
+        }
+      }
     },
     onSuccess: () => {
       navigate('/dashboard/discussion');
@@ -197,8 +312,59 @@ export const DiscussionViewPage = () => {
 
   const deleteReplyMutation = useMutation({
     mutationFn: async (replyId: string) => {
+      // Get reply details before deletion for notification
+      const { data: replyData, error: fetchError } = await supabase
+        .from('discussion_replies')
+        .select('content, user_id')
+        .eq('id', replyId)
+        .single();
+
+      if (fetchError) {
+        console.error('Failed to fetch reply for notification:', fetchError);
+      }
+
       const { error } = await supabase.from('discussion_replies').delete().eq('id', replyId);
       if (error) throw new Error(error.message);
+
+      // Send notification for reply deletion
+      if (user && replyData && discussion) {
+        try {
+          // Get discussion participants to exclude the deleter
+          const { data: replyDeleteParticipants, error: replyDeleteParticipantsError } = await supabase
+            .from('discussion_participants')
+            .select('role')
+            .eq('discussion_id', id);
+
+          if (!replyDeleteParticipantsError && replyDeleteParticipants.length > 0) {
+            // Get all users with these roles except the current user
+            const { data: targetUsers, error: usersError } = await supabase
+              .from('profiles')
+              .select('id')
+              .in('role', replyDeleteParticipants.map(p => p.role))
+              .neq('id', user.id);
+
+            if (!usersError && targetUsers && targetUsers.length > 0) {
+              await supabase.functions.invoke('send-notification', {
+                body: {
+                  type: 'system_maintenance',
+                  title: 'Reply Deleted',
+                  body: `${user.user_metadata?.first_name || user.email} deleted a reply in "${discussion.title}".`,
+                  data: {
+                    discussionId: id,
+                    discussionTitle: discussion.title,
+                    deletedBy: user.user_metadata?.first_name || user.email,
+                    deleteType: 'reply_deleted'
+                  },
+                  targetUsers: targetUsers.map(u => u.id)
+                },
+              });
+            }
+          }
+        } catch (notificationError) {
+          console.error('Failed to send notification:', notificationError);
+          // Don't throw error here as the deletion was successfully completed
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['replies', id] });
@@ -213,6 +379,46 @@ export const DiscussionViewPage = () => {
         .update({ content: replyToUpdate.content })
         .eq('id', replyToUpdate.id);
       if (error) throw new Error(error.message);
+
+      // Send notification for reply update
+      if (user && discussion) {
+        try {
+          // Get discussion participants to exclude the updater
+          const { data: replyUpdateParticipants, error: replyUpdateParticipantsError } = await supabase
+            .from('discussion_participants')
+            .select('role')
+            .eq('discussion_id', id);
+
+          if (!replyUpdateParticipantsError && replyUpdateParticipants.length > 0) {
+            // Get all users with these roles except the current user
+            const { data: targetUsers, error: usersError } = await supabase
+              .from('profiles')
+              .select('id')
+              .in('role', replyUpdateParticipants.map(p => p.role))
+              .neq('id', user.id);
+
+            if (!usersError && targetUsers && targetUsers.length > 0) {
+              await supabase.functions.invoke('send-notification', {
+                body: {
+                  type: 'new_message',
+                  title: 'Reply Updated',
+                  body: `${user.user_metadata?.first_name || user.email} updated a reply in "${discussion.title}".`,
+                  data: {
+                    discussionId: id,
+                    discussionTitle: discussion.title,
+                    messageId: replyToUpdate.id,
+                    updateType: 'reply_updated'
+                  },
+                  targetUsers: targetUsers.map(u => u.id)
+                },
+              });
+            }
+          }
+        } catch (notificationError) {
+          console.error('Failed to send notification:', notificationError);
+          // Don't throw error here as the update was successfully completed
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['replies', id] });
@@ -230,9 +436,52 @@ export const DiscussionViewPage = () => {
           user_id: user?.id,
           content: newReply.content,
           parent_reply_id: newReply.parent_reply_id,
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw new Error(error.message);
+
+      // Send notification for new reply
+      if (discussion && user) {
+        try {
+          // Get discussion participants to exclude the reply creator
+          const { data: replyCreateParticipants, error: replyCreateParticipantsError } = await supabase
+            .from('discussion_participants')
+            .select('role')
+            .eq('discussion_id', id);
+
+          if (!replyCreateParticipantsError && replyCreateParticipants.length > 0) {
+            // Get all users with these roles except the current user
+            const { data: targetUsers, error: usersError } = await supabase
+              .from('profiles')
+              .select('id')
+              .in('role', replyCreateParticipants.map(p => p.role))
+              .neq('id', user.id);
+
+            if (!usersError && targetUsers && targetUsers.length > 0) {
+              await supabase.functions.invoke('send-notification', {
+                body: {
+                  type: 'new_message',
+                  title: 'New Reply in Discussion',
+                  body: `${user.user_metadata?.first_name || user.email} replied to "${discussion.title}".`,
+                  data: {
+                    discussionId: id,
+                    discussionTitle: discussion.title,
+                    messageId: data.id,
+                    replyContent: newReply.content.substring(0, 100) + (newReply.content.length > 100 ? '...' : '')
+                  },
+                  targetUsers: targetUsers.map(u => u.id)
+                },
+              });
+            }
+          }
+        } catch (notificationError) {
+          console.error('Failed to send notification:', notificationError);
+          // Don't throw error here as the reply was successfully created
+        }
+      }
+
       return data;
     },
     onSuccess: () => {
@@ -318,7 +567,26 @@ export const DiscussionViewPage = () => {
   }
 
   if (!discussion) {
-    return <p>Discussion not found.</p>;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/20 rounded-full flex items-center justify-center mx-auto">
+            <AlertCircle className="h-8 w-8 text-amber-600 dark:text-amber-500" />
+          </div>
+          <h2 className="text-2xl font-bold text-foreground">Discussion Not Found</h2>
+          <p className="text-muted-foreground max-w-md">
+            The discussion you're looking for has been deleted or doesn't exist. 
+            All related notifications have been marked as read.
+          </p>
+          <Button 
+            onClick={() => navigate('/dashboard/discussion')}
+            className="mt-4"
+          >
+            Back to Discussions
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -379,7 +647,7 @@ export const DiscussionViewPage = () => {
                         General Discussion
                       </Badge>
                     )}
-                    {(user?.id === discussion.creator_id || profile?.role === 'admin') && (
+                    {!isProfileLoading && (user?.id === discussion.creator_id || profile?.role === 'admin') && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" className="h-9 w-9 p-0 rounded-lg hover:bg-accent/50 transition-all duration-300">
@@ -541,7 +809,7 @@ export const DiscussionViewPage = () => {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          {(user?.id === reply.user_id || profile?.role === 'admin') && (
+                          {!isProfileLoading && (user?.id === reply.user_id || profile?.role === 'admin') && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" className="h-6 w-6 p-0 rounded-md hover:bg-accent/50 transition-all duration-300 opacity-0 group-hover:opacity-100">
