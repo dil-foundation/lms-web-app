@@ -166,11 +166,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
           setNotifications(prev => [transformedNotification, ...prev]);
           setUnreadCount(prev => prev + 1);
           
-          // Show toast for new notifications (optional)
-          if (transformedNotification.notificationType !== 'system_maintenance') {
-            const notificationType = transformedNotification.notificationType || transformedNotification.type;
-            toast.success(`New ${notificationType.replace('_', ' ')} notification`);
-          }
+          // Show toast for new notifications (optional) - DISABLED
+          // if (transformedNotification.notificationType !== 'system_maintenance') {
+          //   const notificationType = transformedNotification.notificationType || transformedNotification.type;
+          //   toast.success(`New ${notificationType.replace('_', ' ')} notification`);
+          // }
         }
         break;
 

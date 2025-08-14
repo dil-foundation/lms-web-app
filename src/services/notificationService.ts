@@ -35,7 +35,7 @@ class NotificationService {
     try {
       const { data, error } = await supabase
         .from(this.TABLE_NAME)
-        .select('*')
+        .select('id, title, message, type, notification_type, read, action_url, action_data, user_id, created_at, updated_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
@@ -59,7 +59,7 @@ class NotificationService {
     try {
       const { count, error } = await supabase
         .from(this.TABLE_NAME)
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('user_id', userId)
         .eq('read', false);
 
@@ -88,7 +88,7 @@ class NotificationService {
         })
         .eq('id', notificationId)
         .eq('user_id', userId)
-        .select()
+        .select('id, title, message, type, notification_type, read, action_url, action_data, user_id, created_at, updated_at')
         .single();
 
       if (error) {
@@ -236,14 +236,23 @@ class NotificationService {
    */
   static async createNotification(notificationData: NotificationInsert): Promise<Notification> {
     try {
+      // Transform the data to match database column names
+      const dbData = {
+        user_id: notificationData.userId,
+        title: notificationData.title,
+        message: notificationData.message,
+        type: notificationData.type,
+        notification_type: notificationData.notificationType,
+        action_url: notificationData.actionUrl,
+        action_data: notificationData.actionData, // Transform actionData to action_data
+        read: false,
+        created_at: new Date().toISOString(),
+      };
+
       const { data, error } = await supabase
         .from(this.TABLE_NAME)
-        .insert({
-          ...notificationData,
-          read: false,
-          created_at: new Date().toISOString(),
-        })
-        .select()
+        .insert(dbData)
+        .select('id, title, message, type, notification_type, read, action_url, action_data, user_id, created_at, updated_at')
         .single();
 
       if (error) {

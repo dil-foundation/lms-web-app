@@ -10,7 +10,9 @@ const corsHeaders = {
 // Notification types supported by this function
 type NotificationType = 
   | "new_discussion"
-  | "new_message";
+  | "new_message"
+  | "message_deleted"
+  | "conversation_deleted";
 
 interface NotificationPayload {
   type: NotificationType;

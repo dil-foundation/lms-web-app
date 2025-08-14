@@ -1320,4 +1320,288 @@ export const stopTokenRefreshInterval = () => {
   }
 };
 
+// Helper function to get conversation participants for notifications
+export const getConversationParticipants = async (conversationId: string): Promise<ConversationParticipant[]> => {
+  // Try direct database query first since the API endpoint might not exist
+  try {
+    const { data, error: dbError } = await supabase
+      .from('conversation_participants')
+      .select(`
+        id,
+        conversation_id,
+        user_id,
+        role,
+        joined_at,
+        left_at,
+        is_muted,
+        is_blocked,
+        last_read_at
+      `)
+      .eq('conversation_id', conversationId);
+
+    if (dbError) {
+      console.error('Database query failed:', dbError);
+      throw dbError;
+    }
+
+    return (data || []).map(participant => ({
+      id: participant.id,
+      conversation_id: participant.conversation_id,
+      user_id: participant.user_id,
+      role: participant.role,
+      joined_at: participant.joined_at,
+      left_at: participant.left_at,
+      is_muted: participant.is_muted,
+      is_blocked: participant.is_blocked,
+      last_read_at: participant.last_read_at
+    }));
+  } catch (dbError) {
+    console.error('Database fallback failed:', dbError);
+    
+    // If database fails, try API as last resort
+    try {
+      const token = await getValidToken();
+      
+      const response = await fetch(`${API_BASE_URL}/api/conversations/${conversationId}/participants`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Failed to fetch conversation participants');
+      }
+
+      return response.json();
+    } catch (apiError) {
+      console.error('API fallback also failed:', apiError);
+      // Return empty array instead of throwing to avoid breaking the notification flow
+      return [];
+    }
+  }
+};
+
+// Helper function to get user profile information
+export const getUserProfile = async (userId: string): Promise<{ first_name?: string; last_name?: string; email: string; role: string }> => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('first_name, last_name, email, role')
+      .eq('id', userId)
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    throw error;
+  }
+};
+
+// Function to send notification for new message
+export const sendMessageNotification = async (conversationId: string, messageId: string, senderId: string): Promise<void> => {
+  try {
+    console.log('Starting message notification for:', conversationId, 'message:', messageId, 'sender:', senderId);
+    
+    // Get conversation participants
+    const participants = await getConversationParticipants(conversationId);
+    console.log('Found participants:', participants);
+    
+    if (!participants || participants.length === 0) {
+      console.warn('No participants found for conversation:', conversationId);
+      return;
+    }
+    
+    // Get sender profile
+    let senderName = 'Unknown User';
+    try {
+      const senderProfile = await getUserProfile(senderId);
+      senderName = `${senderProfile.first_name || ''} ${senderProfile.last_name || ''}`.trim() || 'Unknown User';
+      console.log('Sender name:', senderName);
+    } catch (profileError) {
+      console.error('Error getting sender profile:', profileError);
+      // Continue with default name
+    }
+    
+    // Get target user IDs (all participants except sender and blocked users)
+    const targetUserIds = participants
+      .filter(participant => participant.user_id !== senderId && !participant.is_blocked)
+      .map(participant => participant.user_id);
+    
+    console.log('Target user IDs:', targetUserIds);
+    
+    if (targetUserIds.length === 0) {
+      console.warn('No valid recipients for notification');
+      return;
+    }
+    
+    // Call the edge function to send notifications
+    console.log('Calling edge function with payload:', {
+      type: 'new_message',
+      title: 'New Message',
+      body: `${senderName} sent you a message`,
+      data: {
+        conversationId: conversationId,
+        messageId: messageId,
+        url: '/dashboard/messages'
+      },
+      targetUsers: targetUserIds
+    });
+    
+    await supabase.functions.invoke('send-notification', {
+      body: {
+        type: 'new_message',
+        title: 'New Message',
+        body: `${senderName} sent you a message`,
+        data: {
+          conversationId: conversationId,
+          messageId: messageId,
+          url: '/dashboard/messages'
+        },
+        targetUsers: targetUserIds
+      },
+    });
+    
+    console.log(`Sent message notifications to ${targetUserIds.length} participants via edge function`);
+  } catch (error) {
+    console.error('Error sending message notification:', error);
+    // Don't throw error to avoid breaking the main message sending flow
+  }
+};
+
+// Function to send notification for conversation deletion
+export const sendConversationDeletedNotification = async (
+  conversationId: string, 
+  deletedByUserId: string, 
+  participants?: ConversationParticipant[]
+): Promise<void> => {
+  try {
+    console.log('Starting conversation deletion notification for:', conversationId, 'deleted by:', deletedByUserId);
+    
+    // Use provided participants or fetch them if not provided
+    let conversationParticipants = participants;
+    if (!conversationParticipants) {
+      console.log('No participants provided, fetching from database...');
+      conversationParticipants = await getConversationParticipants(conversationId);
+    }
+    
+    console.log('Found participants:', conversationParticipants);
+    
+    if (!conversationParticipants || conversationParticipants.length === 0) {
+      console.warn('No participants found for conversation:', conversationId);
+      return;
+    }
+    
+    // Get deleter profile
+    let deleterName = 'Unknown User';
+    try {
+      const deleterProfile = await getUserProfile(deletedByUserId);
+      deleterName = `${deleterProfile.first_name || ''} ${deleterProfile.last_name || ''}`.trim() || 'Unknown User';
+      console.log('Deleter name:', deleterName);
+    } catch (profileError) {
+      console.error('Error getting deleter profile:', profileError);
+      // Continue with default name
+    }
+    
+    // Get target user IDs (all participants except deleter and blocked users)
+    const targetUserIds = conversationParticipants
+      .filter(participant => participant.user_id !== deletedByUserId && !participant.is_blocked)
+      .map(participant => participant.user_id);
+    
+    console.log('Target user IDs:', targetUserIds);
+    
+    if (targetUserIds.length === 0) {
+      console.warn('No valid recipients for notification');
+      return;
+    }
+    
+    // Call the edge function to send notifications
+    console.log('Calling edge function with payload:', {
+      type: 'conversation_deleted',
+      title: 'Conversation Deleted',
+      body: `${deleterName} deleted a conversation you were part of`,
+      data: {
+        conversationId: conversationId,
+        deletedByUserId: deletedByUserId,
+        url: '/dashboard/messages'
+      },
+      targetUsers: targetUserIds
+    });
+    
+    await supabase.functions.invoke('send-notification', {
+      body: {
+        type: 'conversation_deleted',
+        title: 'Conversation Deleted',
+        body: `${deleterName} deleted a conversation you were part of`,
+        data: {
+          conversationId: conversationId,
+          deletedByUserId: deletedByUserId,
+          url: '/dashboard/messages'
+        },
+        targetUsers: targetUserIds
+      },
+    });
+    
+    console.log(`Sent conversation deletion notifications to ${targetUserIds.length} participants via edge function`);
+  } catch (error) {
+    console.error('Error sending conversation deletion notification:', error);
+    // Don't throw error to avoid breaking the main deletion flow
+  }
+};
+
+// Function to send notification for message deletion
+export const sendMessageDeletedNotification = async (conversationId: string, messageId: string, deletedByUserId: string): Promise<void> => {
+  try {
+    // Get conversation participants
+    const participants = await getConversationParticipants(conversationId);
+    
+    if (!participants || participants.length === 0) {
+      console.warn('No participants found for conversation:', conversationId);
+      return;
+    }
+    
+    // Get deleter profile
+    let deleterName = 'Unknown User';
+    try {
+      const deleterProfile = await getUserProfile(deletedByUserId);
+      deleterName = `${deleterProfile.first_name || ''} ${deleterProfile.last_name || ''}`.trim() || 'Unknown User';
+    } catch (profileError) {
+      console.error('Error getting deleter profile:', profileError);
+      // Continue with default name
+    }
+    
+    // Get target user IDs (all participants except deleter and blocked users)
+    const targetUserIds = participants
+      .filter(participant => participant.user_id !== deletedByUserId && !participant.is_blocked)
+      .map(participant => participant.user_id);
+    
+    if (targetUserIds.length === 0) {
+      console.warn('No valid recipients for notification');
+      return;
+    }
+    
+    // Call the edge function to send notifications
+    await supabase.functions.invoke('send-notification', {
+      body: {
+        type: 'message_deleted',
+        title: 'Message Deleted',
+        body: `${deleterName} deleted a message in your conversation`,
+        data: {
+          conversationId: conversationId,
+          messageId: messageId,
+          deletedByUserId: deletedByUserId,
+          url: '/dashboard/messages'
+        },
+        targetUsers: targetUserIds
+      },
+    });
+    
+    console.log(`Sent message deletion notifications to ${targetUserIds.length} participants via edge function`);
+  } catch (error) {
+    console.error('Error sending message deletion notification:', error);
+    // Don't throw error to avoid breaking the main deletion flow
+  }
+};
+
  
