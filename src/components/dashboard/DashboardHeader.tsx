@@ -1,6 +1,7 @@
 import { memo, useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { ThemeToggle } from '../header/ThemeToggle';
+import { NotificationToggle } from '../header/NotificationToggle';
 import { AuthButton } from '../header/AuthButton';
 import { Logo } from '../header/Logo';
 import { AILMSToggle } from '@/components/ui/AILMSToggle';
@@ -35,6 +36,7 @@ export const DashboardHeader = memo(({ onToggle }: DashboardHeaderProps) => {
 
       <div className="flex items-center space-x-4">
         <ThemeToggle />
+        <NotificationToggle />
         <AuthButton />
       </div>
     </div>

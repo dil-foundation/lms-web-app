@@ -41,7 +41,7 @@ export const DiscussionDialog = ({ isOpen, onOpenChange, editingDiscussion, onSa
         participants: ['admin'],
       });
     }
-  }, [editingDiscussion]);
+  }, [editingDiscussion, isOpen]); // Add isOpen dependency to reset when dialog opens
 
   const handleSave = () => {
     onSave(discussionData);
