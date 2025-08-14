@@ -99,6 +99,7 @@ interface QuizData {
 interface QuizQuestion {
   id: string;
   question_text: string;
+  question_type: 'single_choice' | 'multiple_choice';
   options: QuestionOption[];
   position: number;
 }
@@ -959,6 +960,7 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
     const newQuestion: QuizQuestion = {
       id: Date.now().toString(),
       question_text: '',
+      question_type: 'single_choice',
       options: [],
       position: (quiz.questions.length || 0) + 1
     };
@@ -967,6 +969,27 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
 
   const updateQuestion = (qIndex: number, text: string) => {
     const updatedQuestions = quiz.questions.map((q, i) => i === qIndex ? { ...q, question_text: text } : q);
+    onQuizChange({ ...quiz, questions: updatedQuestions });
+  };
+  
+  const updateQuestionType = (qIndex: number, type: 'single_choice' | 'multiple_choice') => {
+    const updatedQuestions = quiz.questions.map((q, i) => {
+      if (i === qIndex) {
+        // If switching to single choice and there are multiple correct answers, keep only the first one
+        let updatedOptions = q.options;
+        if (type === 'single_choice') {
+          const correctOptions = q.options.filter(opt => opt.is_correct);
+          if (correctOptions.length > 1) {
+            updatedOptions = q.options.map((opt, optIndex) => ({
+              ...opt,
+              is_correct: optIndex === q.options.findIndex(o => o.is_correct)
+            }));
+          }
+        }
+        return { ...q, question_type: type, options: updatedOptions };
+      }
+      return q;
+    });
     onQuizChange({ ...quiz, questions: updatedQuestions });
   };
   
@@ -1004,10 +1027,27 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
   };
 
   const setCorrectOption = (qIndex: number, optionId: string) => {
-    const updatedQuestions = quiz.questions.map((q, i) => i === qIndex ? { 
-      ...q, 
-      options: q.options.map(opt => ({...opt, is_correct: opt.id === optionId})) 
-    } : q);
+    const question = quiz.questions[qIndex];
+    const updatedQuestions = quiz.questions.map((q, i) => {
+      if (i === qIndex) {
+        if (q.question_type === 'single_choice') {
+          // For single choice, only one option can be correct
+          return { 
+            ...q, 
+            options: q.options.map(opt => ({...opt, is_correct: opt.id === optionId})) 
+          };
+        } else {
+          // For multiple choice, toggle the option
+          return { 
+            ...q, 
+            options: q.options.map(opt => 
+              opt.id === optionId ? {...opt, is_correct: !opt.is_correct} : opt
+            ) 
+          };
+        }
+      }
+      return q;
+    });
     onQuizChange({ ...quiz, questions: updatedQuestions });
   };
   
@@ -1037,6 +1077,61 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
                 <X className="w-5 h-5" />
               </Button>
             </div>
+            
+            {/* Question Type Selector */}
+            <div className="mt-4 flex items-center gap-4">
+              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Question Type:
+              </Label>
+              <Select
+                value={question.question_type}
+                onValueChange={(value: 'single_choice' | 'multiple_choice') => updateQuestionType(qIndex, value)}
+              >
+                <SelectTrigger className="w-48 h-9 border-2 border-purple-200 dark:border-purple-700 rounded-lg bg-white/60 dark:bg-gray-800/60">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl">
+                  <SelectItem value="single_choice" className="rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-purple-500 rounded-full"></div>
+                      Single Choice
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="multiple_choice" className="rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-purple-500 rounded"></div>
+                      Multiple Choice
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                {question.question_type === 'single_choice' ? (
+                  <>
+                    <div className="w-3 h-3 border-2 border-purple-500 rounded-full"></div>
+                    <span>One correct answer</span>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-3 h-3 border-2 border-purple-500 rounded"></div>
+                    <span>Multiple correct answers</span>
+                  </>
+                )}
+              </div>
+              
+              {/* Question Type Badge */}
+              <Badge 
+                variant={question.question_type === 'single_choice' ? 'secondary' : 'default'}
+                className={`text-xs ${
+                  question.question_type === 'single_choice' 
+                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-700' 
+                    : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-700'
+                }`}
+              >
+                {question.question_type === 'single_choice' ? 'Single Choice' : 'Multiple Choice'}
+              </Badge>
+            </div>
           </CardHeader>
           <CardContent className="p-6 space-y-4">
             {question.options.map((option, oIndex) => (
@@ -1057,7 +1152,7 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
                       : 'border-green-300 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'
                   }`}
                 >
-                  {option.is_correct ? '✓ Correct' : 'Mark Correct'}
+                  {option.is_correct ? '✓ Correct' : question.question_type === 'multiple_choice' ? 'Add Correct' : 'Mark Correct'}
                 </Button>
                 <Button 
                   variant="ghost" 
@@ -1323,6 +1418,7 @@ const CourseBuilder = () => {
                         if (ci.content_type === 'quiz' && ci.quiz && ci.quiz.length > 0) {
                           const quizQuestions = ci.quiz.map((q: any) => ({
                             ...q,
+                            question_type: q.question_type || 'single_choice', // Default for backward compatibility
                             options: q.options.sort((a: any, b: any) => a.position - b.position)
                           }));
                           quizData = { id: ci.id, questions: quizQuestions };
@@ -1481,6 +1577,7 @@ const CourseBuilder = () => {
                         .insert({
                             lesson_content_id: savedContent.id,
                             question_text: question.question_text,
+                            question_type: question.question_type,
                             position: qIndex,
                         })
                         .select('id').single();
@@ -1774,7 +1871,10 @@ const CourseBuilder = () => {
                       // Update existing question
                       await supabase
                         .from('quiz_questions')
-                        .update({ question_text: question.question_text })
+                        .update({ 
+                          question_text: question.question_text,
+                          question_type: question.question_type
+                        })
                         .eq('id', existingQuestion.id);
                       
                       // Track which options we've processed
@@ -1819,6 +1919,7 @@ const CourseBuilder = () => {
                         .insert({
                           lesson_content_id: existingContent.id,
                           question_text: question.question_text,
+                          question_type: question.question_type,
                           position: qIndex
                         })
                         .select('id')
@@ -1877,6 +1978,7 @@ const CourseBuilder = () => {
                       .insert({
                         lesson_content_id: newContent.id,
                         question_text: question.question_text,
+                        question_type: question.question_type,
                         position: qIndex
                       })
                       .select('id')
@@ -1961,6 +2063,7 @@ const CourseBuilder = () => {
                     .insert({
                       lesson_content_id: newContent.id,
                       question_text: question.question_text,
+                      question_type: question.question_type,
                       position: qIndex
                     })
                     .select('id')
@@ -2074,6 +2177,7 @@ const CourseBuilder = () => {
                   .insert({
                     lesson_content_id: newContent.id,
                     question_text: question.question_text,
+                    question_type: question.question_type,
                     position: qIndex
                   })
                   .select('id')
@@ -2251,6 +2355,7 @@ const CourseBuilder = () => {
                           .insert({
                               lesson_content_id: savedContent.id,
                               question_text: question.question_text,
+                              question_type: question.question_type,
                               position: qIndex,
                           })
                           .select('id').single();

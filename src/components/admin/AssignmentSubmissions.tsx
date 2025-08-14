@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, CheckCircle2, Clock, FileText, Search, Users, ChevronRight, Download, Eye } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Clock, FileText, Search, Users, ChevronRight, Download, Eye, CheckCircle, XCircle, Circle } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { ContentLoader } from '@/components/ContentLoader';
@@ -33,6 +33,19 @@ interface Submission {
   content?: string;
   answers?: any;
   results?: any;
+}
+
+interface QuizQuestion {
+  id: string;
+  question_text: string;
+  question_type: 'single_choice' | 'multiple_choice';
+  options: {
+    id: string;
+    option_text: string;
+    is_correct: boolean;
+    position: number;
+  }[];
+  position: number;
 }
 
 interface AssignmentDetails {
@@ -66,6 +79,8 @@ export const AssignmentSubmissions = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [signedFileUrl, setSignedFileUrl] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
+  const [isLoadingQuiz, setIsLoadingQuiz] = useState(false);
 
   // Data Fetching
   const fetchSubmissionData = useCallback(async () => {
@@ -123,6 +138,11 @@ export const AssignmentSubmissions = () => {
     setFeedback(submission.feedback || '');
     setSignedFileUrl(null);
 
+    // If it's a quiz, fetch the quiz questions
+    if (assignmentDetails?.type === 'quiz' && assignmentId) {
+      await fetchQuizQuestions(assignmentId);
+    }
+
     if (submission.content && /submission-files\/[^\s]+/.test(submission.content)) {
       try {
         const { data, error } = await supabase.storage
@@ -156,6 +176,42 @@ export const AssignmentSubmissions = () => {
       toast.error(err.message);
     } finally {
       setIsDownloading(false);
+    }
+  };
+
+  const fetchQuizQuestions = async (contentItemId: string) => {
+    setIsLoadingQuiz(true);
+    try {
+      const { data: questions, error } = await supabase
+        .from('quiz_questions')
+        .select(`
+          id,
+          question_text,
+          question_type,
+          position,
+          options:question_options(
+            id,
+            option_text,
+            is_correct,
+            position
+          )
+        `)
+        .eq('lesson_content_id', contentItemId)
+        .order('position');
+
+      if (error) throw error;
+
+      const processedQuestions = questions?.map(q => ({
+        ...q,
+        options: q.options.sort((a: any, b: any) => a.position - b.position)
+      })) || [];
+
+      setQuizQuestions(processedQuestions);
+    } catch (error) {
+      console.error('Error fetching quiz questions:', error);
+      toast.error('Failed to load quiz questions');
+    } finally {
+      setIsLoadingQuiz(false);
     }
   };
 
@@ -480,15 +536,156 @@ export const AssignmentSubmissions = () => {
             </DialogFooter>
           </DialogContent>
         ) : (
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
             <DialogHeader>
               <DialogTitle>Quiz Review: {selectedSubmission?.student.name}</DialogTitle>
               <DialogDescription>
                 Score: {selectedSubmission?.score?.toFixed(1)}%
               </DialogDescription>
             </DialogHeader>
-            <div className="py-4 space-y-6 max-h-[60vh] overflow-y-auto pr-6">
-                {/* This part needs to be adapted for the new quiz data structure */}
+            <div className="py-4 space-y-6 max-h-[70vh] overflow-y-auto pr-6">
+              {isLoadingQuiz ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Loading quiz questions...</p>
+                  </div>
+                </div>
+              ) : quizQuestions.length > 0 ? (
+                <div className="space-y-8">
+                  {quizQuestions.map((question, qIndex) => {
+                    const studentAnswer = selectedSubmission?.answers?.[question.id];
+                    const isCorrect = selectedSubmission?.results?.[question.id];
+                    const correctOptions = question.options.filter(opt => opt.is_correct);
+                    
+                    return (
+                      <Card key={question.id} className="border-2 border-gray-200 dark:border-gray-700">
+                        <CardHeader>
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <Badge variant="outline" className="text-sm">
+                                  Question {qIndex + 1}
+                                </Badge>
+                                <Badge 
+                                  variant={question.question_type === 'multiple_choice' ? 'secondary' : 'default'}
+                                  className="text-xs"
+                                >
+                                  {question.question_type === 'multiple_choice' ? 'Multiple Choice' : 'Single Choice'}
+                                </Badge>
+                              </div>
+                              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                                {question.question_text}
+                              </h3>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {isCorrect ? (
+                                <CheckCircle className="h-6 w-6 text-green-600" />
+                              ) : (
+                                <XCircle className="h-6 w-6 text-red-600" />
+                              )}
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            {question.options.map((option) => {
+                              const isSelected = Array.isArray(studentAnswer) 
+                                ? studentAnswer.includes(option.id)
+                                : studentAnswer === option.id;
+                              const isCorrectOption = option.is_correct;
+                              
+                              return (
+                                <div
+                                  key={option.id}
+                                  className={`p-4 rounded-lg border-2 transition-all ${
+                                    isCorrectOption
+                                      ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                                      : isSelected && !isCorrectOption
+                                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                                      : isSelected
+                                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                                      : 'border-gray-200 dark:border-gray-600'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex-shrink-0">
+                                      {question.question_type === 'multiple_choice' ? (
+                                        <div className={`w-5 h-5 border-2 rounded flex items-center justify-center ${
+                                          isSelected 
+                                            ? 'border-primary bg-primary' 
+                                            : 'border-gray-300 dark:border-gray-600'
+                                        }`}>
+                                          {isSelected && (
+                                            <CheckCircle className="h-3 w-3 text-white" />
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <div className={`w-5 h-5 border-2 rounded-full flex items-center justify-center ${
+                                          isSelected 
+                                            ? 'border-primary bg-primary' 
+                                            : 'border-gray-300 dark:border-gray-600'
+                                        }`}>
+                                          {isSelected && (
+                                            <div className="w-2 h-2 bg-white rounded-full"></div>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <span className="flex-1 text-gray-900 dark:text-gray-100">
+                                      {option.option_text}
+                                    </span>
+                                    <div className="flex items-center gap-2">
+                                      {isCorrectOption && (
+                                        <Badge variant="outline" className="text-green-600 border-green-600 text-xs">
+                                          Correct
+                                        </Badge>
+                                      )}
+                                      {isSelected && (
+                                        <Badge variant="outline" className="text-blue-600 border-blue-600 text-xs">
+                                          Selected
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          
+                          {/* Answer Summary */}
+                          <div className="mt-4 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Student's Answer:
+                              </span>
+                              <span className={`text-sm font-semibold ${
+                                isCorrect ? 'text-green-600' : 'text-red-600'
+                              }`}>
+                                {isCorrect ? 'Correct' : 'Incorrect'}
+                              </span>
+                            </div>
+                            <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                              {Array.isArray(studentAnswer) 
+                                ? studentAnswer.length > 0 
+                                  ? `Selected ${studentAnswer.length} option(s)`
+                                  : 'No answer selected'
+                                : studentAnswer 
+                                  ? 'Answered'
+                                  : 'No answer selected'
+                              }
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No quiz questions found.</p>
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button onClick={() => setIsGradingOpen(false)}>Close</Button>

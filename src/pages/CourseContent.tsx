@@ -171,7 +171,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
   const lastUpdateTimeRef = useRef(0);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-  const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
+  const [userAnswers, setUserAnswers] = useState<Record<string, string | string[]>>({});
   const [isQuizSubmitted, setIsQuizSubmitted] = useState(false);
   const [quizResults, setQuizResults] = useState<Record<string, boolean>>({});
 
@@ -224,7 +224,16 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     if (currentContentItem?.content_type === 'quiz') {
       const submission = currentContentItem.submission;
       if (submission) {
-        setUserAnswers(submission.answers || {});
+        // Convert old single-choice format to new format if needed
+        const answers: Record<string, string | string[]> = {};
+        if (submission.answers) {
+          Object.keys(submission.answers as Record<string, any>).forEach(questionId => {
+            const answer = (submission.answers as Record<string, any>)[questionId];
+            // If it's already an array, keep it; otherwise convert to array for backward compatibility
+            answers[questionId] = Array.isArray(answer) ? answer : [answer];
+          });
+        }
+        setUserAnswers(answers);
         setQuizResults(submission.results || {});
         setIsQuizSubmitted(true);
       } else {
@@ -247,8 +256,18 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
           const isCompleted = !!itemProgress?.completed_at;
           if (isCompleted) completedItems++;
           let submission = quizSubmissions.find(s => s.lesson_content_id === item.id) || null;
+          
+          // Handle quiz questions with question_type field
+          let processedItem = { ...item };
+          if (item.content_type === 'quiz' && item.quiz) {
+            processedItem.quiz = item.quiz.map((q: any) => ({
+              ...q,
+              question_type: q.question_type || 'single_choice' // Default for backward compatibility
+            }));
+          }
+          
           return {
-            ...item,
+            ...processedItem,
             completed: isCompleted,
             status: isCompleted ? 'completed' : (itemProgress ? 'in_progress' : 'not_started'),
             progressSeconds: itemProgress?.progress_data?.seconds || 0,
@@ -363,13 +382,30 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
   }, [user, actualCourseId, currentContentItem, currentLesson, markContentAsComplete]);
 
   const handleQuizSubmit = async () => {
-    if (!user || !currentContentItem || !currentLesson || !course || currentContentItem.submission) return;
+    if (!user || !currentContentItem || !currentLesson || !course || (currentContentItem.submission && currentContentItem.submission.id)) return;
     const questions = currentContentItem.quiz || [];
     const results: Record<string, boolean> = {};
     let correctAnswers = 0;
     questions.forEach((q: any) => {
-        const correctOption = q.options.find((opt: any) => opt.is_correct);
-        const isCorrect = userAnswers[q.id] === correctOption?.id;
+        const correctOptions = q.options.filter((opt: any) => opt.is_correct);
+        const userAnswer = userAnswers[q.id] as string | string[] | undefined;
+        
+        let isCorrect = false;
+        if (q.question_type === 'multiple_choice') {
+          // For multiple choice, check if all correct options are selected and no incorrect ones
+          if (Array.isArray(userAnswer)) {
+            const selectedOptionIds = new Set(userAnswer);
+            const correctOptionIds = new Set(correctOptions.map((opt: any) => opt.id as string));
+            isCorrect = correctOptions.length > 0 && 
+                       correctOptionIds.size === selectedOptionIds.size &&
+                       [...correctOptionIds].every((id: string) => selectedOptionIds.has(id));
+          }
+        } else {
+          // For single choice, check if the selected option is correct
+          const correctOption = correctOptions[0]; // Single choice has only one correct option
+          isCorrect = userAnswer === correctOption?.id;
+        }
+        
         results[q.id] = isCorrect;
         if (isCorrect) correctAnswers++;
     });
@@ -622,7 +658,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         );
       case 'quiz':
         const questions = currentContentItem.quiz || [];
-        const hasSubmitted = isQuizSubmitted || !!currentContentItem.submission;
+        const hasSubmitted = isQuizSubmitted || !!(currentContentItem.submission && currentContentItem.submission.id);
         return (
           <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
             <CardHeader>
@@ -637,26 +673,99 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
             </CardHeader>
             <CardContent className="space-y-6">
               {questions.map((q: any, index: number) => {
-                const correctOption = q.options.find((opt: any) => opt.is_correct);
+                const correctOptions = q.options.filter((opt: any) => opt.is_correct);
+                const questionType = q.question_type || 'single_choice'; // Default for backward compatibility
+                const userAnswer = userAnswers[q.id];
+                const isMultipleChoice = questionType === 'multiple_choice';
+                
                 return (
                   <div key={q.id} className="space-y-4">
-                    <h4 className="font-medium text-gray-900 dark:text-gray-100">{index + 1}. {q.question_text}</h4>
+                    <div className="flex items-center gap-3">
+                      <h4 className="font-medium text-gray-900 dark:text-gray-100">{index + 1}. {q.question_text}</h4>
+                      <Badge 
+                        variant={isMultipleChoice ? 'default' : 'secondary'}
+                        className={`text-xs ${
+                          isMultipleChoice 
+                            ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-700' 
+                            : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-700'
+                        }`}
+                      >
+                        {isMultipleChoice ? 'Multiple Choice' : 'Single Choice'}
+                      </Badge>
+                    </div>
                     <div className="space-y-2">
                       {q.options.sort((a:any,b:any) => a.position-b.position).map((option: any) => {
-                        const isSelected = userAnswers[q.id] === option.id;
+                        let isSelected = false;
+                        if (isMultipleChoice) {
+                          isSelected = Array.isArray(userAnswer) && userAnswer.includes(option.id);
+                        } else {
+                          isSelected = userAnswer === option.id;
+                        }
+                        
                         const showAsCorrect = hasSubmitted && option.is_correct;
                         const showAsIncorrect = hasSubmitted && isSelected && !option.is_correct;
+                        
+                        const handleOptionClick = () => {
+                          if (isMultipleChoice) {
+                            setUserAnswers(prev => {
+                              const currentAnswers = Array.isArray(prev[q.id]) ? prev[q.id] as string[] : [];
+                              const newAnswers = isSelected 
+                                ? currentAnswers.filter(id => id !== option.id)
+                                : [...currentAnswers, option.id];
+                              return { ...prev, [q.id]: newAnswers };
+                            });
+                          } else {
+                            setUserAnswers(prev => ({ ...prev, [q.id]: option.id }));
+                          }
+                        };
+                        
                         return (
-                          <Button key={option.id} variant="outline" disabled={hasSubmitted} onClick={() => setUserAnswers(prev => ({...prev, [q.id]: option.id}))}
+                          <Button 
+                            key={option.id} 
+                            variant="outline" 
+                            disabled={hasSubmitted} 
+                            onClick={handleOptionClick}
                             className={cn(
-                              "w-full justify-start transition-all duration-300 hover:shadow-md", 
-                              isSelected && "border-primary bg-primary/5", 
+                              "w-full justify-start p-4 h-auto text-left transition-all duration-300 hover:shadow-md", 
+                              isSelected && (isMultipleChoice ? "border-purple-300 bg-purple-50 dark:bg-purple-900/20 dark:border-purple-600" : "border-blue-300 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-600"), 
                               showAsCorrect && "bg-green-100 border-green-500 dark:bg-green-900/20 dark:border-green-400", 
                               showAsIncorrect && "bg-red-100 border-red-500 dark:bg-red-900/20 dark:border-red-400"
-                            )}>
-                              {hasSubmitted && (showAsCorrect ? <CheckCircle className="mr-2 h-4 w-4 text-green-600"/> : showAsIncorrect ? <XCircle className="mr-2 h-4 w-4 text-red-600" /> : <Circle className="mr-2 h-4 w-4"/>)}
-                              {!hasSubmitted && (isSelected ? <CheckCircle className="mr-2 h-4 w-4 text-primary" /> : <Circle className="mr-2 h-4 w-4" />)}
-                              <span className="text-gray-900 dark:text-gray-100">{option.option_text}</span>
+                            )}
+                          >
+                            <div className="flex items-center gap-3 w-full">
+                              {isMultipleChoice ? (
+                                // Checkbox for multiple choice
+                                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                                  isSelected 
+                                    ? 'bg-purple-600 border-purple-600'
+                                    : 'border-gray-300 dark:border-gray-600'
+                                }`}>
+                                  {isSelected && (
+                                    <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                    </svg>
+                                  )}
+                                </div>
+                              ) : (
+                                // Radio button for single choice
+                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                                  isSelected 
+                                    ? 'bg-blue-600 border-blue-600'
+                                    : 'border-gray-300 dark:border-gray-600'
+                                }`}>
+                                  {isSelected && (
+                                    <div className="w-2 h-2 rounded-full bg-white" />
+                                  )}
+                                </div>
+                              )}
+                              <span className="flex-1 text-gray-900 dark:text-gray-100">{option.option_text}</span>
+                              {hasSubmitted && option.is_correct && (
+                                <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                              )}
+                              {hasSubmitted && showAsIncorrect && (
+                                <XCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+                              )}
+                            </div>
                           </Button>
                         )
                       })}
@@ -665,14 +774,31 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                 );
               })}
               {!hasSubmitted && (
-                <Button onClick={handleQuizSubmit} disabled={Object.keys(userAnswers).length !== questions.length} className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300">
+                <Button 
+                  onClick={handleQuizSubmit} 
+                  disabled={questions.length === 0 || questions.some((q: any) => {
+                    const userAnswer = userAnswers[q.id];
+                    const questionType = q.question_type || 'single_choice';
+                    
+                    if (questionType === 'multiple_choice') {
+                      // For multiple choice, at least one option must be selected
+                      return !Array.isArray(userAnswer) || userAnswer.length === 0;
+                    } else {
+                      // For single choice, exactly one option must be selected
+                      return !userAnswer || userAnswer === '';
+                    }
+                  })} 
+                  className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300"
+                >
                   Submit Quiz
                 </Button>
               )}
-              {hasSubmitted && (
+              {hasSubmitted && currentContentItem.submission && (
                  <div className="p-4 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/20 border border-primary/30 dark:border-primary/20 shadow-lg">
                    <h4 className="font-semibold text-gray-900 dark:text-gray-100">Quiz Submitted</h4>
-                   <p className="text-muted-foreground text-sm mt-1">You scored {currentContentItem.submission.score.toFixed(0)}%.</p>
+                   <p className="text-muted-foreground text-sm mt-1">
+                     You scored {currentContentItem.submission.score ? currentContentItem.submission.score.toFixed(0) : '0'}%.
+                   </p>
                  </div>
               )}
             </CardContent>
