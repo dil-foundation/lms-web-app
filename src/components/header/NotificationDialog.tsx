@@ -20,6 +20,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useNotifications } from '@/contexts/NotificationContext';
 import { useNavigate } from 'react-router-dom';
 import { getNotificationRoute, buildNotificationUrl, getNotificationTypeIcon, getNotificationTypeColor } from '@/utils/notificationRouting';
+import { ConnectionStatus } from '@/components/ui/ConnectionStatus';
 
 interface NotificationDialogProps {
   open: boolean;
@@ -53,17 +54,28 @@ const getNotificationBadgeColor = (type: 'info' | 'success' | 'warning' | 'error
 };
 
 const formatTimestamp = (timestamp: string) => {
-  const date = new Date(timestamp);
-  const now = new Date();
-  const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-  
-  if (diffInHours < 1) {
-    return 'Just now';
-  } else if (diffInHours < 24) {
-    return `${diffInHours}h ago`;
-  } else {
-    const diffInDays = Math.floor(diffInHours / 24);
-    return `${diffInDays}d ago`;
+  try {
+    const date = new Date(timestamp);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return 'Recently';
+    }
+    
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) {
+      return 'Just now';
+    } else if (diffInHours < 24) {
+      return `${diffInHours}h ago`;
+    } else {
+      const diffInDays = Math.floor(diffInHours / 24);
+      return `${diffInDays}d ago`;
+    }
+  } catch (error) {
+    console.error('Error formatting timestamp:', error, timestamp);
+    return 'Recently';
   }
 };
 
@@ -73,10 +85,12 @@ export const NotificationDialog = ({ open, onOpenChange }: NotificationDialogPro
     notifications, 
     unreadCount, 
     loading, 
+    connectionStatus,
     markAsRead, 
     markAllAsRead, 
     deleteNotification, 
-    clearAllNotifications 
+    clearAllNotifications,
+    reconnect
   } = useNotifications();
 
   const handleNotificationClick = async (notification: any) => {
@@ -98,7 +112,7 @@ export const NotificationDialog = ({ open, onOpenChange }: NotificationDialogPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[80vh] p-0 bg-gradient-to-br from-white/95 via-white/90 to-gray-50/95 dark:from-gray-900/95 dark:via-gray-900/90 dark:to-gray-800/95 backdrop-blur-xl border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-2xl">
+             <DialogContent className="sm:max-w-lg max-h-[80vh] p-0 bg-gradient-to-br from-white/95 via-white/90 to-gray-50/95 dark:from-gray-900/95 dark:via-gray-900/90 dark:to-gray-800/95 backdrop-blur-xl border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-2xl">
         <DialogHeader className="px-6 py-4 border-b border-gray-200/60 dark:border-gray-700/60">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -118,6 +132,12 @@ export const NotificationDialog = ({ open, onOpenChange }: NotificationDialogPro
             </div>
             
             <div className="flex items-center gap-2">
+              <ConnectionStatus 
+                status={connectionStatus} 
+                onReconnect={reconnect}
+                showReconnectButton={true}
+              />
+              
               {unreadCount > 0 && (
                 <Button
                   variant="ghost"
@@ -152,7 +172,7 @@ export const NotificationDialog = ({ open, onOpenChange }: NotificationDialogPro
         </DialogHeader>
 
         <ScrollArea className="max-h-[60vh]">
-          <div className="p-2">
+                     <div className="p-3">
             {notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 px-6">
                 <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-3xl flex items-center justify-center mb-4">
@@ -166,29 +186,26 @@ export const NotificationDialog = ({ open, onOpenChange }: NotificationDialogPro
                 </p>
               </div>
             ) : (
-              <div className="space-y-1">
+              <div className="space-y-2">
                 {notifications.map((notification, index) => (
                   <div key={notification.id}>
                                          <div
-                                               className={`group p-4 rounded-2xl transition-all duration-300 cursor-pointer hover:bg-gradient-to-r hover:from-gray-50/80 hover:to-white/60 dark:hover:from-gray-800/80 dark:hover:to-gray-700/60 hover:shadow-lg hover:-translate-y-0.5 ${
-                          !notification.read 
-                            ? 'bg-gradient-to-r from-blue-50/80 to-blue-100/40 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200/60 dark:border-blue-800/60' 
-                            : 'bg-white/60 dark:bg-gray-800/60 border border-gray-200/40 dark:border-gray-700/40'
-                        } hover:border-primary/40`}
+                       className={`group p-3 rounded-xl transition-all duration-300 cursor-pointer hover:bg-gradient-to-r hover:from-gray-50/80 hover:to-white/60 dark:hover:from-gray-800/80 dark:hover:to-gray-700/60 hover:shadow-lg hover:-translate-y-0.5 ${
+                         !notification.read 
+                           ? 'bg-gradient-to-r from-blue-50/80 to-blue-100/40 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200/60 dark:border-blue-800/60' 
+                           : 'bg-white/60 dark:bg-gray-800/60 border border-gray-200/40 dark:border-gray-700/40'
+                       } hover:border-primary/40`}
                        onClick={() => handleNotificationClick(notification)}
                      >
-                                             <div className="flex items-start gap-3">
-                         <div className="flex-shrink-0 mt-1">
-                           <div className="flex items-center gap-2">
-                             <span className="text-lg">
-                               {getNotificationTypeIcon(notification.notificationType)}
-                             </span>
-                             {getNotificationIcon(notification.type)}
-                           </div>
-                         </div>
-                        
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 mt-1">
+                          <div className="w-8 h-8 bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900/30 dark:to-purple-800/30 rounded-full flex items-center justify-center">
+                            {getNotificationTypeIcon(notification.notificationType)}
+                          </div>
+                        </div>
+                       
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2 mb-2">
+                                                     <div className="flex items-start justify-between gap-2 mb-2">
                             <h4 className={`font-semibold text-sm leading-tight ${
                               !notification.read 
                                 ? 'text-gray-900 dark:text-gray-100' 
@@ -197,13 +214,13 @@ export const NotificationDialog = ({ open, onOpenChange }: NotificationDialogPro
                               {notification.title}
                             </h4>
                             
-                            <div className="flex items-center gap-2">
-                              <Badge 
-                                variant="secondary" 
-                                className={`text-xs px-2 py-1 rounded-lg ${getNotificationBadgeColor(notification.type)}`}
-                              >
-                                {notification.type}
-                              </Badge>
+                                                         <div className="flex items-center gap-2">
+                               <Badge 
+                                 variant="secondary" 
+                                 className={`text-xs px-2 py-1 rounded-lg ${getNotificationBadgeColor(notification.type)}`}
+                               >
+                                 {notification.type}
+                               </Badge>
                               
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -252,7 +269,7 @@ export const NotificationDialog = ({ open, onOpenChange }: NotificationDialogPro
                             </div>
                             
                             {!notification.read && (
-                              <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
                             )}
                           </div>
                         </div>
