@@ -48,7 +48,7 @@ const App = () => {
               <ObservationReportsProvider>
                 <SecureLinksProvider>
                   <NotificationProvider>
-                    <Suspense fallback={<div>Loading...</div>}>
+                    <Suspense fallback={null}>
                       <Routes>
                         <Route path="/" element={<Home />} />
                         <Route path="/home-layout-2" element={<HomeLayout2 />} />

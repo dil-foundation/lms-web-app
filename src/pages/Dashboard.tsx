@@ -120,13 +120,7 @@ const Dashboard = () => {
   const isLoading = authLoading || (user && profileLoading);
 
   const DashboardContent = () => {
-    if (isLoading) {
-      return (
-        <div className="flex items-center justify-center h-full">
-            <ContentLoader message={authLoading ? 'Authenticating...' : 'Loading user profile...'} />
-        </div>
-      );
-    }
+    // Removed loading state to prevent flash
 
     if (profileError) {
     return (
