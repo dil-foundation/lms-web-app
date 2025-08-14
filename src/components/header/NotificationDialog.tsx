@@ -20,7 +20,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useNotifications } from '@/contexts/NotificationContext';
 import { useNavigate } from 'react-router-dom';
 import { getNotificationRoute, buildNotificationUrl, getNotificationTypeIcon, getNotificationTypeColor } from '@/utils/notificationRouting';
-import { ConnectionStatus } from '@/components/ui/ConnectionStatus';
 
 interface NotificationDialogProps {
   open: boolean;
@@ -36,7 +35,7 @@ const getNotificationIcon = (type: 'info' | 'success' | 'warning' | 'error') => 
     case 'error':
       return <AlertCircle className="h-5 w-5 text-red-500" />;
     default:
-      return <Info className="h-5 w-5 text-blue-500" />;
+      return <Info className="h-5 w-5 text-green-500" />;
   }
 };
 
@@ -49,7 +48,7 @@ const getNotificationBadgeColor = (type: 'info' | 'success' | 'warning' | 'error
     case 'error':
       return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
     default:
-      return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
+      return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
   }
 };
 
@@ -85,12 +84,10 @@ export const NotificationDialog = ({ open, onOpenChange }: NotificationDialogPro
     notifications, 
     unreadCount, 
     loading, 
-    connectionStatus,
     markAsRead, 
     markAllAsRead, 
     deleteNotification, 
-    clearAllNotifications,
-    reconnect
+    clearAllNotifications
   } = useNotifications();
 
   const handleNotificationClick = async (notification: any) => {
@@ -112,19 +109,19 @@ export const NotificationDialog = ({ open, onOpenChange }: NotificationDialogPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-             <DialogContent className="sm:max-w-lg max-h-[80vh] p-0 bg-gradient-to-br from-white/95 via-white/90 to-gray-50/95 dark:from-gray-900/95 dark:via-gray-900/90 dark:to-gray-800/95 backdrop-blur-xl border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-2xl">
-        <DialogHeader className="px-6 py-4 border-b border-gray-200/60 dark:border-gray-700/60">
+             <DialogContent className="sm:max-w-lg max-h-[80vh] p-0 bg-gradient-to-br from-white/98 via-white/95 to-green-50/30 dark:from-gray-900/98 dark:via-gray-900/95 dark:to-green-950/20 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-xl">
+        <DialogHeader className="px-6 py-5 border-b border-gray-200/40 dark:border-gray-700/40 bg-gradient-to-r from-transparent via-green-50/20 to-transparent dark:via-green-950/10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
-                <Bell className="h-5 w-5 text-primary" />
+              <div className="w-10 h-10 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/40 dark:to-green-800/40 rounded-2xl flex items-center justify-center shadow-sm border border-green-200/50 dark:border-green-800/50">
+                <Bell className="h-5 w-5 text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <DialogTitle className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                <DialogTitle className="text-xl font-bold bg-gradient-to-r from-gray-900 to-green-800 dark:from-gray-100 dark:to-green-300 bg-clip-text text-transparent">
                   Notifications
                 </DialogTitle>
                 {unreadCount > 0 && (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-green-600 dark:text-green-400 font-medium">
                     {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
                   </p>
                 )}
@@ -132,18 +129,12 @@ export const NotificationDialog = ({ open, onOpenChange }: NotificationDialogPro
             </div>
             
             <div className="flex items-center gap-2">
-              <ConnectionStatus 
-                status={connectionStatus} 
-                onReconnect={reconnect}
-                showReconnectButton={true}
-              />
-              
               {unreadCount > 0 && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={markAllAsRead}
-                  className="h-8 px-3 text-xs bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 rounded-xl transition-all duration-300"
+                  className="h-8 px-3 text-xs bg-green-50 hover:bg-green-100 dark:bg-green-900/30 dark:hover:bg-green-900/40 text-green-700 dark:text-green-300 border border-green-200/60 dark:border-green-700/60 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md"
                 >
                   <Check className="h-3 w-3 mr-1" />
                   Mark all read
@@ -155,9 +146,9 @@ export const NotificationDialog = ({ open, onOpenChange }: NotificationDialogPro
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800"
+                    className="h-8 w-8 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-800/80 transition-colors duration-200 border border-transparent hover:border-gray-300 dark:hover:border-gray-700"
                   >
-                    <MoreHorizontal className="h-4 w-4" />
+                    <MoreHorizontal className="h-4 w-4 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
@@ -175,8 +166,8 @@ export const NotificationDialog = ({ open, onOpenChange }: NotificationDialogPro
                      <div className="p-3">
             {notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 px-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-3xl flex items-center justify-center mb-4">
-                  <Bell className="h-8 w-8 text-gray-400" />
+                <div className="w-16 h-16 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-3xl flex items-center justify-center mb-4 border border-green-200/30 dark:border-green-800/30">
+                  <Bell className="h-8 w-8 text-green-400 dark:text-green-500" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
                   No notifications
@@ -190,16 +181,16 @@ export const NotificationDialog = ({ open, onOpenChange }: NotificationDialogPro
                 {notifications.map((notification, index) => (
                   <div key={notification.id}>
                                          <div
-                       className={`group p-3 rounded-xl transition-all duration-300 cursor-pointer hover:bg-gradient-to-r hover:from-gray-50/80 hover:to-white/60 dark:hover:from-gray-800/80 dark:hover:to-gray-700/60 hover:shadow-lg hover:-translate-y-0.5 ${
-                         !notification.read 
-                           ? 'bg-gradient-to-r from-blue-50/80 to-blue-100/40 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200/60 dark:border-blue-800/60' 
-                           : 'bg-white/60 dark:bg-gray-800/60 border border-gray-200/40 dark:border-gray-700/40'
-                       } hover:border-primary/40`}
+                                              className={`group p-4 rounded-xl transition-all duration-300 cursor-pointer hover:bg-gradient-to-r hover:from-green-50/30 hover:to-white/80 dark:hover:from-green-900/10 dark:hover:to-gray-800/80 hover:shadow-md hover:-translate-y-0.5 ${
+                        !notification.read 
+                          ? 'bg-gradient-to-r from-green-50/60 to-green-100/30 dark:from-green-900/15 dark:to-green-800/15 border border-green-200/50 dark:border-green-800/40 shadow-sm' 
+                          : 'bg-white/80 dark:bg-gray-800/60 border border-gray-200/30 dark:border-gray-700/30'
+                       } hover:border-green-300/50 dark:hover:border-green-700/50`}
                        onClick={() => handleNotificationClick(notification)}
                      >
                       <div className="flex items-start gap-3">
                         <div className="flex-shrink-0 mt-1">
-                          <div className="w-8 h-8 bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900/30 dark:to-purple-800/30 rounded-full flex items-center justify-center">
+                          <div className="w-8 h-8 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/40 dark:to-green-800/40 rounded-full flex items-center justify-center border border-green-200/40 dark:border-green-800/40">
                             {getNotificationTypeIcon(notification.notificationType)}
                           </div>
                         </div>
@@ -227,10 +218,10 @@ export const NotificationDialog = ({ open, onOpenChange }: NotificationDialogPro
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md"
                                     onClick={(e) => e.stopPropagation()}
                                   >
-                                    <MoreHorizontal className="h-3 w-3" />
+                                    <MoreHorizontal className="h-3 w-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200" />
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-32">
@@ -269,7 +260,7 @@ export const NotificationDialog = ({ open, onOpenChange }: NotificationDialogPro
                             </div>
                             
                             {!notification.read && (
-                              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                              <div className="w-2 h-2 bg-green-500 dark:bg-green-400 rounded-full animate-pulse shadow-sm" />
                             )}
                           </div>
                         </div>
@@ -277,7 +268,7 @@ export const NotificationDialog = ({ open, onOpenChange }: NotificationDialogPro
                     </div>
                     
                     {index < notifications.length - 1 && (
-                      <Separator className="my-2 bg-gray-200/60 dark:bg-gray-700/60" />
+                      <Separator className="my-2 bg-gray-200/40 dark:bg-gray-700/40" />
                     )}
                   </div>
                 ))}

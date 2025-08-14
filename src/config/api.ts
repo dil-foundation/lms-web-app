@@ -102,6 +102,8 @@ export const API_ENDPOINTS = {
   TEACHER_DASHBOARD_OVERVIEW: '/teacher/dashboard/overview',
   TEACHER_DASHBOARD_BEHAVIOR_INSIGHTS: '/teacher/dashboard/behavior-insights',
   TEACHER_DASHBOARD_PROGRESS_OVERVIEW: '/teacher/dashboard/progress-overview',
+  TEACHER_DASHBOARD_EXPORT_PROGRESS: '/teacher/dashboard/export-progress',
+  TEACHER_DASHBOARD_STUDENT_DETAIL: (userId: string) => `/teacher/dashboard/student/${userId}`,
   // Admin Reports endpoints
   ADMIN_REPORTS_PRACTICE_STAGE_PERFORMANCE: '/admin/reports/practice-stage-performance',
   ADMIN_REPORTS_USER_ENGAGEMENT_OVERVIEW: '/admin/reports/user-engagement-overview',
