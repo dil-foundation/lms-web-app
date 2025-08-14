@@ -38,8 +38,10 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const isConnectingRef = useRef(false);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const maxReconnectAttempts = 3; // Reduced attempts
   const baseReconnectDelay = 5000; // Increased delay to 5 seconds
+  const pollingInterval = 30000; // 30 seconds polling interval
 
   // Load initial data when user changes
   useEffect(() => {
@@ -76,6 +78,10 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
       reconnectTimeoutRef.current = null;
+    }
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
     }
     reconnectAttemptsRef.current = 0;
     isConnectingRef.current = false;
@@ -141,13 +147,28 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       case 'INSERT':
         // New notification created
         if (newRecord) {
-          const newNotification = newRecord as Notification;
-          setNotifications(prev => [newNotification, ...prev]);
+          // Transform the database record to match our interface
+          const transformedNotification: Notification = {
+            id: newRecord.id,
+            title: newRecord.title,
+            message: newRecord.message,
+            type: newRecord.type,
+            notificationType: newRecord.notification_type,
+            timestamp: newRecord.created_at,
+            read: newRecord.read,
+            actionUrl: newRecord.action_url,
+            actionData: newRecord.action_data,
+            userId: newRecord.user_id,
+            created_at: newRecord.created_at,
+            updated_at: newRecord.updated_at,
+          };
+          
+          setNotifications(prev => [transformedNotification, ...prev]);
           setUnreadCount(prev => prev + 1);
           
           // Show toast for new notifications (optional)
-          if (newNotification.notificationType !== 'system_maintenance') {
-            const notificationType = newNotification.notificationType || newNotification.type;
+          if (transformedNotification.notificationType !== 'system_maintenance') {
+            const notificationType = transformedNotification.notificationType || transformedNotification.type;
             toast.success(`New ${notificationType.replace('_', ' ')} notification`);
           }
         }
@@ -156,8 +177,36 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       case 'UPDATE':
         // Notification updated (e.g., marked as read)
         if (newRecord && oldRecord) {
-          const updatedNotification = newRecord as Notification;
-          const oldNotification = oldRecord as Notification;
+          // Transform the database record to match our interface
+          const updatedNotification: Notification = {
+            id: newRecord.id,
+            title: newRecord.title,
+            message: newRecord.message,
+            type: newRecord.type,
+            notificationType: newRecord.notification_type,
+            timestamp: newRecord.created_at,
+            read: newRecord.read,
+            actionUrl: newRecord.action_url,
+            actionData: newRecord.action_data,
+            userId: newRecord.user_id,
+            created_at: newRecord.created_at,
+            updated_at: newRecord.updated_at,
+          };
+          
+          const oldNotification: Notification = {
+            id: oldRecord.id,
+            title: oldRecord.title,
+            message: oldRecord.message,
+            type: oldRecord.type,
+            notificationType: oldRecord.notification_type,
+            timestamp: oldRecord.created_at,
+            read: oldRecord.read,
+            actionUrl: oldRecord.action_url,
+            actionData: oldRecord.action_data,
+            userId: oldRecord.user_id,
+            created_at: oldRecord.created_at,
+            updated_at: oldRecord.updated_at,
+          };
           
           setNotifications(prev => 
             prev.map(n => n.id === updatedNotification.id ? updatedNotification : n)
@@ -175,7 +224,22 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       case 'DELETE':
         // Notification deleted
         if (oldRecord) {
-          const deletedNotification = oldRecord as Notification;
+          // Transform the database record to match our interface
+          const deletedNotification: Notification = {
+            id: oldRecord.id,
+            title: oldRecord.title,
+            message: oldRecord.message,
+            type: oldRecord.type,
+            notificationType: oldRecord.notification_type,
+            timestamp: oldRecord.created_at,
+            read: oldRecord.read,
+            actionUrl: oldRecord.action_url,
+            actionData: oldRecord.action_data,
+            userId: oldRecord.user_id,
+            created_at: oldRecord.created_at,
+            updated_at: oldRecord.updated_at,
+          };
+          
           setNotifications(prev => 
             prev.filter(n => n.id !== deletedNotification.id)
           );
@@ -189,6 +253,31 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
       default:
         console.log('Unknown event type:', eventType);
+    }
+  }, []);
+
+  const startPolling = useCallback(() => {
+    if (!user?.id || pollingIntervalRef.current) return;
+
+    console.log('Starting polling fallback for notifications');
+    setConnectionStatus('connected'); // Show as connected to user
+    
+    // Initial load
+    loadNotifications();
+    loadUnreadCount();
+    
+    // Set up polling interval
+    pollingIntervalRef.current = setInterval(() => {
+      loadNotifications();
+      loadUnreadCount();
+    }, pollingInterval);
+  }, [user?.id, pollingInterval]);
+
+  const stopPolling = useCallback(() => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+      console.log('Stopped polling fallback');
     }
   }, []);
 
@@ -209,25 +298,12 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         setupRealtimeSubscription();
       }, delay);
     } else {
-      console.error('Max reconnection attempts reached');
-      setError('Connection lost. Please refresh the page to reconnect.');
-      toast.error('Notification connection lost. Please refresh the page.');
+      console.log('Max reconnection attempts reached, falling back to polling');
+      setConnectionStatus('connected'); // Show as connected to user
+      setError(null); // Clear any error state
+      startPolling(); // Silently start polling
     }
-  }, [setupRealtimeSubscription]);
-
-  const reconnect = useCallback(async () => {
-    console.log('Manual reconnection requested');
-    reconnectAttemptsRef.current = 0;
-    setError(null);
-    
-    // Clear any existing reconnection timeout
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
-    }
-    
-    await setupRealtimeSubscription();
-  }, [setupRealtimeSubscription]);
+  }, [setupRealtimeSubscription, startPolling]);
 
   const loadNotifications = async () => {
     if (!user?.id) return;
@@ -256,6 +332,23 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       console.error('Failed to load unread count:', err);
     }
   };
+
+  const reconnect = useCallback(async () => {
+    console.log('Manual reconnection requested');
+    reconnectAttemptsRef.current = 0;
+    setError(null);
+    
+    // Stop polling if it's running
+    stopPolling();
+    
+    // Clear any existing reconnection timeout
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+    
+    await setupRealtimeSubscription();
+  }, [setupRealtimeSubscription, stopPolling]);
 
   const markAsRead = async (id: string) => {
     if (!user?.id) return;
