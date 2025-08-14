@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Accordion,
@@ -171,7 +172,8 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
   const lastUpdateTimeRef = useRef(0);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-  const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
+  const [userAnswers, setUserAnswers] = useState<Record<string, string | string[]>>({});
+  const [textAnswers, setTextAnswers] = useState<Record<string, string>>({});
   const [isQuizSubmitted, setIsQuizSubmitted] = useState(false);
   const [quizResults, setQuizResults] = useState<Record<string, boolean>>({});
 
@@ -224,12 +226,35 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     if (currentContentItem?.content_type === 'quiz') {
       const submission = currentContentItem.submission;
       if (submission) {
-        setUserAnswers(submission.answers || {});
+        // Convert old single-choice format to new format if needed
+        const answers: Record<string, string | string[]> = {};
+        const textAnswersData: Record<string, string> = {};
+        
+        if (submission.answers) {
+          Object.keys(submission.answers as Record<string, any>).forEach(questionId => {
+            const answer = (submission.answers as Record<string, any>)[questionId];
+            
+            // Check if this is a text answer by looking at the question type
+            const question = currentContentItem.quiz?.find((q: any) => q.id === questionId);
+            if (question?.question_type === 'text_answer') {
+              // This is a text answer
+              textAnswersData[questionId] = answer;
+            } else {
+              // This is a multiple choice/single choice answer
+              // If it's already an array, keep it; otherwise convert to array for backward compatibility
+              answers[questionId] = Array.isArray(answer) ? answer : [answer];
+            }
+          });
+        }
+        
+        setUserAnswers(answers);
+        setTextAnswers(textAnswersData);
         setQuizResults(submission.results || {});
         setIsQuizSubmitted(true);
       } else {
         setIsQuizSubmitted(false);
         setUserAnswers({});
+        setTextAnswers({});
         setQuizResults({});
       }
     }
@@ -247,8 +272,18 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
           const isCompleted = !!itemProgress?.completed_at;
           if (isCompleted) completedItems++;
           let submission = quizSubmissions.find(s => s.lesson_content_id === item.id) || null;
+          
+          // Handle quiz questions with question_type field
+          let processedItem = { ...item };
+          if (item.content_type === 'quiz' && item.quiz) {
+            processedItem.quiz = item.quiz.map((q: any) => ({
+              ...q,
+              question_type: q.question_type || 'single_choice' // Default for backward compatibility
+            }));
+          }
+          
           return {
-            ...item,
+            ...processedItem,
             completed: isCompleted,
             status: isCompleted ? 'completed' : (itemProgress ? 'in_progress' : 'not_started'),
             progressSeconds: itemProgress?.progress_data?.seconds || 0,
@@ -363,32 +398,76 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
   }, [user, actualCourseId, currentContentItem, currentLesson, markContentAsComplete]);
 
   const handleQuizSubmit = async () => {
-    if (!user || !currentContentItem || !currentLesson || !course || currentContentItem.submission) return;
+    if (!user || !currentContentItem || !currentLesson || !course || (currentContentItem.submission && currentContentItem.submission.id)) return;
     const questions = currentContentItem.quiz || [];
     const results: Record<string, boolean> = {};
     let correctAnswers = 0;
+    let hasTextAnswers = false;
+    
     questions.forEach((q: any) => {
-        const correctOption = q.options.find((opt: any) => opt.is_correct);
-        const isCorrect = userAnswers[q.id] === correctOption?.id;
-        results[q.id] = isCorrect;
-        if (isCorrect) correctAnswers++;
+        if (q.question_type === 'text_answer') {
+          // For text answers, we can't auto-grade, so mark as requiring manual grading
+          results[q.id] = false; // Will be updated by teacher
+          hasTextAnswers = true;
+        } else {
+          const correctOptions = q.options.filter((opt: any) => opt.is_correct);
+          const userAnswer = userAnswers[q.id] as string | string[] | undefined;
+          
+          let isCorrect = false;
+          if (q.question_type === 'multiple_choice') {
+            // For multiple choice, check if all correct options are selected and no incorrect ones
+            if (Array.isArray(userAnswer)) {
+              const selectedOptionIds = new Set(userAnswer);
+              const correctOptionIds = new Set(correctOptions.map((opt: any) => opt.id as string));
+              isCorrect = correctOptions.length > 0 && 
+                         correctOptionIds.size === selectedOptionIds.size &&
+                         [...correctOptionIds].every((id: string) => selectedOptionIds.has(id));
+            }
+          } else {
+            // For single choice, check if the selected option is correct
+            const correctOption = correctOptions[0]; // Single choice has only one correct option
+            isCorrect = userAnswer === correctOption?.id;
+          }
+          
+          results[q.id] = isCorrect;
+          if (isCorrect) correctAnswers++;
+        }
     });
-    const score = questions.length > 0 ? (correctAnswers / questions.length) * 100 : 0;
+    
+    // Calculate score only for auto-graded questions
+    const autoGradedQuestions = questions.filter((q: any) => q.question_type !== 'text_answer');
+    const score = autoGradedQuestions.length > 0 ? (correctAnswers / autoGradedQuestions.length) * 100 : 0;
+    
+    // Combine multiple choice/single choice answers with text answers
+    const allAnswers = { ...userAnswers, ...textAnswers };
+    
+    // For quizzes with text answers, we'll let the database trigger handle the score
+    // For regular quizzes, we can provide an immediate score
+    const finalScore = hasTextAnswers ? null : score;
+    
     const { data: newSubmission, error } = await supabase.from('quiz_submissions').insert({
         user_id: user.id,
         lesson_content_id: currentContentItem.id,
         lesson_id: currentLesson.id,
         course_id: course.id,
-        answers: userAnswers,
+        answers: allAnswers,
         results: results,
-        score: score,
+        score: finalScore,
     }).select().single();
+    
     if (error) {
         toast.error("Failed to submit quiz.", { description: error.message });
         return;
     }
+    
     setQuizResults(results);
     setIsQuizSubmitted(true);
+    // Add empty text_answer_grades array to new submission
+    const submissionWithGrades = {
+      ...newSubmission,
+      text_answer_grades: []
+    };
+    
     setCourse((prevCourse: any) => {
         if (!prevCourse) return null;
         const updatedModules = prevCourse.modules.map((module: any) => ({
@@ -396,14 +475,26 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
             lessons: module.lessons.map((lesson: any) => ({
                 ...lesson,
                 contentItems: lesson.contentItems.map((item: any) => 
-                    item.id === currentContentItem.id ? { ...item, submission: newSubmission } : item
+                    item.id === currentContentItem.id ? { ...item, submission: submissionWithGrades } : item
                 ),
             })),
         }));
         return { ...prevCourse, modules: updatedModules };
     });
     await markContentAsComplete(currentContentItem.id, currentLesson.id, course.id);
-    toast.success(`Quiz submitted! Your score: ${score.toFixed(0)}%`);
+    
+    if (hasTextAnswers) {
+      const autoGradedCount = autoGradedQuestions.length;
+      const textAnswerCount = questions.length - autoGradedCount;
+      
+      if (autoGradedCount > 0) {
+        toast.success(`Quiz submitted! Auto-graded questions: ${score.toFixed(0)}%. ${textAnswerCount} question(s) require manual grading.`);
+      } else {
+        toast.success(`Quiz submitted! All ${textAnswerCount} question(s) require manual grading by your teacher.`);
+      }
+    } else {
+      toast.success(`Quiz submitted! Your score: ${score.toFixed(0)}%`);
+    }
   };
 
   useEffect(() => {
@@ -435,6 +526,14 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
               const { data: progressData } = await supabase.from('user_content_item_progress').select('*').eq('user_id', user.id).in('lesson_content_id', contentItemIds);
               userProgress = progressData || [];
               const { data: submissionsData } = await supabase.from('quiz_submissions').select('*').eq('user_id', user.id).in('lesson_content_id', contentItemIds.filter((id: string) => data.sections.flatMap((s: any) => s.lessons.flatMap((l: any) => l.contentItems.filter((ci: any) => ci.content_type === 'quiz').map((ci: any) => ci.id))).includes(id)));
+              
+              // Fetch individual text answer grades for each submission
+              if (submissionsData && submissionsData.length > 0) {
+                for (const submission of submissionsData) {
+                  const { data: gradesData } = await supabase.rpc('get_text_answer_grades', { submission_id: submission.id });
+                  submission.text_answer_grades = gradesData || [];
+                }
+              }
               quizSubmissions = submissionsData || [];
             }
           }
@@ -622,7 +721,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         );
       case 'quiz':
         const questions = currentContentItem.quiz || [];
-        const hasSubmitted = isQuizSubmitted || !!currentContentItem.submission;
+        const hasSubmitted = isQuizSubmitted || !!(currentContentItem.submission && currentContentItem.submission.id);
         return (
           <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
             <CardHeader>
@@ -637,42 +736,201 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
             </CardHeader>
             <CardContent className="space-y-6">
               {questions.map((q: any, index: number) => {
-                const correctOption = q.options.find((opt: any) => opt.is_correct);
+                const correctOptions = q.options.filter((opt: any) => opt.is_correct);
+                const questionType = q.question_type || 'single_choice'; // Default for backward compatibility
+                const userAnswer = userAnswers[q.id];
+                const textAnswer = textAnswers[q.id];
+                const isMultipleChoice = questionType === 'multiple_choice';
+                const isTextAnswer = questionType === 'text_answer';
+                
                 return (
                   <div key={q.id} className="space-y-4">
-                    <h4 className="font-medium text-gray-900 dark:text-gray-100">{index + 1}. {q.question_text}</h4>
-                    <div className="space-y-2">
-                      {q.options.sort((a:any,b:any) => a.position-b.position).map((option: any) => {
-                        const isSelected = userAnswers[q.id] === option.id;
-                        const showAsCorrect = hasSubmitted && option.is_correct;
-                        const showAsIncorrect = hasSubmitted && isSelected && !option.is_correct;
-                        return (
-                          <Button key={option.id} variant="outline" disabled={hasSubmitted} onClick={() => setUserAnswers(prev => ({...prev, [q.id]: option.id}))}
-                            className={cn(
-                              "w-full justify-start transition-all duration-300 hover:shadow-md", 
-                              isSelected && "border-primary bg-primary/5", 
-                              showAsCorrect && "bg-green-100 border-green-500 dark:bg-green-900/20 dark:border-green-400", 
-                              showAsIncorrect && "bg-red-100 border-red-500 dark:bg-red-900/20 dark:border-red-400"
-                            )}>
-                              {hasSubmitted && (showAsCorrect ? <CheckCircle className="mr-2 h-4 w-4 text-green-600"/> : showAsIncorrect ? <XCircle className="mr-2 h-4 w-4 text-red-600" /> : <Circle className="mr-2 h-4 w-4"/>)}
-                              {!hasSubmitted && (isSelected ? <CheckCircle className="mr-2 h-4 w-4 text-primary" /> : <Circle className="mr-2 h-4 w-4" />)}
-                              <span className="text-gray-900 dark:text-gray-100">{option.option_text}</span>
-                          </Button>
-                        )
-                      })}
+                    <div className="flex items-center gap-3">
+                      <h4 className="font-medium text-gray-900 dark:text-gray-100">{index + 1}. {q.question_text}</h4>
+                      <Badge 
+                        variant={isMultipleChoice ? 'default' : isTextAnswer ? 'outline' : 'secondary'}
+                        className={`text-xs ${
+                          isMultipleChoice 
+                            ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-700' 
+                            : isTextAnswer
+                            ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 border-orange-200 dark:border-orange-700'
+                            : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-700'
+                        }`}
+                      >
+                        {isMultipleChoice ? 'Multiple Choice' : isTextAnswer ? 'Text Answer' : 'Single Choice'}
+                      </Badge>
                     </div>
+                    
+                    {isTextAnswer ? (
+                      <div className="space-y-3">
+                        <Textarea
+                          value={textAnswer || ''}
+                          onChange={(e) => setTextAnswers(prev => ({ ...prev, [q.id]: e.target.value }))}
+                          placeholder="Type your answer here..."
+                          className="min-h-[120px] border-2 border-gray-200 dark:border-gray-700 focus:border-orange-500 focus:ring-orange-500/20"
+                          disabled={hasSubmitted}
+                        />
+                        {hasSubmitted && !currentContentItem.submission?.manual_grading_completed && (
+                          <div className="p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-lg">
+                            <div className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
+                              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                              <span className="text-sm font-medium">This answer requires manual grading by your teacher</span>
+                            </div>
+                          </div>
+                        )}
+                        {hasSubmitted && currentContentItem.submission?.manual_grading_completed && (
+                          <div className="space-y-3">
+                            <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg">
+                              <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
+                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                <span className="text-sm font-medium">✓ This answer has been graded by your teacher</span>
+                              </div>
+                            </div>
+                            
+                            {/* Show individual grade and feedback if available */}
+                            {currentContentItem.submission?.text_answer_grades && 
+                             currentContentItem.submission.text_answer_grades.length > 0 &&
+                             currentContentItem.submission.text_answer_grades.find((grade: any) => grade.question_id === q.id) && (
+                              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Your Grade for the above question</span>
+                                    <span className="text-lg font-bold text-blue-700 dark:text-blue-300">
+                                      {currentContentItem.submission.text_answer_grades.find((grade: any) => grade.question_id === q.id)?.grade || 0}%
+                                    </span>
+                                  </div>
+                                  {currentContentItem.submission.text_answer_grades.find((grade: any) => grade.question_id === q.id)?.feedback && 
+                                   currentContentItem.submission.text_answer_grades.find((grade: any) => grade.question_id === q.id)?.feedback.trim() && (
+                                    <div className="mt-3 p-3 bg-white dark:bg-gray-800 border border-blue-200 dark:border-blue-600 rounded-md">
+                                      <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teacher's Feedback:</div>
+                                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                                        {currentContentItem.submission.text_answer_grades.find((grade: any) => grade.question_id === q.id)?.feedback}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {q.options.sort((a:any,b:any) => a.position-b.position).map((option: any) => {
+                          let isSelected = false;
+                          if (isMultipleChoice) {
+                            isSelected = Array.isArray(userAnswer) && userAnswer.includes(option.id);
+                          } else {
+                            isSelected = userAnswer === option.id;
+                          }
+                          
+                          const showAsCorrect = hasSubmitted && option.is_correct;
+                          const showAsIncorrect = hasSubmitted && isSelected && !option.is_correct;
+                          
+                          const handleOptionClick = () => {
+                            if (isMultipleChoice) {
+                              setUserAnswers(prev => {
+                                const currentAnswers = Array.isArray(prev[q.id]) ? prev[q.id] as string[] : [];
+                                const newAnswers = isSelected 
+                                  ? currentAnswers.filter(id => id !== option.id)
+                                  : [...currentAnswers, option.id];
+                                return { ...prev, [q.id]: newAnswers };
+                              });
+                            } else {
+                              setUserAnswers(prev => ({ ...prev, [q.id]: option.id }));
+                            }
+                          };
+                          
+                          return (
+                            <Button 
+                              key={option.id} 
+                              variant="outline" 
+                              disabled={hasSubmitted} 
+                              onClick={handleOptionClick}
+                              className={cn(
+                                "w-full justify-start p-4 h-auto text-left transition-all duration-300 hover:shadow-md", 
+                                isSelected && (isMultipleChoice ? "border-purple-300 bg-purple-50 dark:bg-purple-900/20 dark:border-purple-600" : "border-blue-300 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-600"), 
+                                showAsCorrect && "bg-green-100 border-green-500 dark:bg-green-900/20 dark:border-green-400", 
+                                showAsIncorrect && "bg-red-100 border-red-500 dark:bg-red-900/20 dark:border-red-400"
+                              )}
+                            >
+                              <div className="flex items-center gap-3 w-full">
+                                {isMultipleChoice ? (
+                                  // Checkbox for multiple choice
+                                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                                    isSelected 
+                                      ? 'bg-purple-600 border-purple-600'
+                                      : 'border-gray-300 dark:border-gray-600'
+                                  }`}>
+                                    {isSelected && (
+                                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                      </svg>
+                                    )}
+                                  </div>
+                                ) : (
+                                  // Radio button for single choice
+                                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                                    isSelected 
+                                      ? 'bg-blue-600 border-blue-600'
+                                      : 'border-gray-300 dark:border-gray-600'
+                                  }`}>
+                                    {isSelected && (
+                                      <div className="w-2 h-2 rounded-full bg-white" />
+                                    )}
+                                  </div>
+                                )}
+                                <span className="flex-1 text-gray-900 dark:text-gray-100">{option.option_text}</span>
+                                {hasSubmitted && option.is_correct && (
+                                  <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                                )}
+                                {hasSubmitted && showAsIncorrect && (
+                                  <XCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+                                )}
+                              </div>
+                            </Button>
+                          )
+                        })}
+                      </div>
+                    )}
                   </div>
                 );
               })}
               {!hasSubmitted && (
-                <Button onClick={handleQuizSubmit} disabled={Object.keys(userAnswers).length !== questions.length} className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300">
+                <Button 
+                  onClick={handleQuizSubmit} 
+                  disabled={questions.length === 0 || questions.some((q: any) => {
+                    const userAnswer = userAnswers[q.id];
+                    const textAnswer = textAnswers[q.id];
+                    const questionType = q.question_type || 'single_choice';
+                    
+                    if (questionType === 'text_answer') {
+                      // For text answer, the answer must not be empty
+                      return !textAnswer || textAnswer.trim() === '';
+                    } else if (questionType === 'multiple_choice') {
+                      // For multiple choice, at least one option must be selected
+                      return !Array.isArray(userAnswer) || userAnswer.length === 0;
+                    } else {
+                      // For single choice, exactly one option must be selected
+                      return !userAnswer || userAnswer === '';
+                    }
+                  })} 
+                  className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300"
+                >
                   Submit Quiz
                 </Button>
               )}
-              {hasSubmitted && (
+              {hasSubmitted && currentContentItem.submission && (
                  <div className="p-4 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/20 border border-primary/30 dark:border-primary/20 shadow-lg">
                    <h4 className="font-semibold text-gray-900 dark:text-gray-100">Quiz Submitted</h4>
-                   <p className="text-muted-foreground text-sm mt-1">You scored {currentContentItem.submission.score.toFixed(0)}%.</p>
+                   <p className="text-muted-foreground text-sm mt-1">
+                     {(currentContentItem.submission.score !== null || 
+                       (currentContentItem.submission.manual_grading_completed && currentContentItem.submission.manual_grading_score !== null)) ? (
+                       `You scored ${(currentContentItem.submission.manual_grading_score || currentContentItem.submission.score).toFixed(0)}%.`
+                     ) : (
+                       'Your score will be available after manual grading by your teacher.'
+                     )}
+                   </p>
                  </div>
               )}
             </CardContent>
