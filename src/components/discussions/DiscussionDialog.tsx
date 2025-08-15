@@ -5,13 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { MultiSelect } from '@/components/ui/MultiSelect';
-import { MessageSquare } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { MessageSquare, Users, GraduationCap, UserCheck } from 'lucide-react';
 
 const roles = [
-  { value: 'student', label: 'Students' },
-  { value: 'teacher', label: 'Teachers' },
-  { value: 'admin', label: 'Admins', disabled: true },
+  { value: 'student', label: 'Students', icon: GraduationCap, description: 'All students can participate' },
+  { value: 'teacher', label: 'Teachers', icon: Users, description: 'All teachers can participate' },
+  { value: 'admin', label: 'Admins', icon: UserCheck, description: 'All administrators can participate' },
 ];
 
 export const DiscussionDialog = ({ isOpen, onOpenChange, editingDiscussion, onSave, isSaving, courses, isLoadingCourses }: any) => {
@@ -95,18 +95,61 @@ export const DiscussionDialog = ({ isOpen, onOpenChange, editingDiscussion, onSa
             <Label htmlFor="content">Content</Label>
             <Textarea id="content" value={discussionData.content} onChange={(e) => setDiscussionData(prev => ({...prev, content: e.target.value}))} />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="participants">Participants</Label>
-            <MultiSelect
-              options={roles}
-              value={discussionData.participants}
-              onValueChange={(selected) => setDiscussionData(prev => ({...prev, participants: selected}))}
-              className="w-full"
-            />
+          <div className="space-y-3">
+            <Label>Participants</Label>
+            <div className="space-y-3 border rounded-lg p-4 bg-gray-50/50 dark:bg-gray-900/50">
+              {roles.map((role) => {
+                const Icon = role.icon;
+                const isChecked = discussionData.participants.includes(role.value);
+                
+                return (
+                  <div key={role.value} className="flex items-start space-x-3">
+                    <Checkbox
+                      id={`participant-${role.value}`}
+                      checked={isChecked}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setDiscussionData(prev => ({
+                            ...prev,
+                            participants: [...prev.participants, role.value]
+                          }));
+                        } else {
+                          setDiscussionData(prev => ({
+                            ...prev,
+                            participants: prev.participants.filter(p => p !== role.value)
+                          }));
+                        }
+                      }}
+                      className="mt-1"
+                    />
+                    <div className="flex items-center space-x-2 flex-1">
+                      <Icon className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex-1">
+                        <label
+                          htmlFor={`participant-${role.value}`}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        >
+                          {role.label}
+                        </label>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {role.description}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
         <div className="flex justify-end space-x-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">Cancel</Button>
+          <Button 
+            variant="outline" 
+            onClick={() => onOpenChange(false)} 
+            className="hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-100 transition-colors"
+          >
+            Cancel
+          </Button>
           <Button onClick={handleSave} disabled={isSaving}>
             {isSaving ? 'Saving...' : (editingDiscussion ? 'Save Changes' : 'Create Discussion')}
           </Button>
