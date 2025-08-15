@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ContentLoader } from '@/components/ContentLoader';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { 
   MessageCircle,
@@ -26,12 +26,11 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { 
-  teacherDashboardService, 
-  TeacherDashboardOverviewData, 
   TeacherEngagementData, 
   TopLesson, 
   BehaviorFlag 
 } from '@/services/teacherDashboardService';
+import { useTeacherDashboard } from '@/hooks/useTeacherDashboard';
 
 interface AITeacherDashboardProps {
   userProfile: {
@@ -46,69 +45,19 @@ export const AITeacherDashboard = ({ userProfile }: AITeacherDashboardProps) => 
   const [selectedFlag, setSelectedFlag] = useState<BehaviorFlag | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
-  // State for API data
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [timeRange, setTimeRange] = useState('all-time');
-  const [refreshing, setRefreshing] = useState(false);
-  
-  // API data states
-  const [overviewData, setOverviewData] = useState<TeacherDashboardOverviewData | null>(null);
-
-  // Map UI time range values to API values
-  const mapTimeRangeToApiValue = (uiValue: string): string => {
-    const mapping: Record<string, string> = {
-      'all-time': 'all_time',
-      'this-week': 'this_week',
-      'this-month': 'this_month',
-      'this-year': 'this_year'
-    };
-    return mapping[uiValue] || 'all_time';
-  };
-
-  // Fetch dashboard data
-  const fetchDashboardData = async (showRefreshIndicator = false, customTimeRange = 'all-time') => {
-    try {
-      if (showRefreshIndicator) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
-      setError(null);
-
-      const apiTimeRange = mapTimeRangeToApiValue(customTimeRange);
-      console.log('🔄 Fetching teacher dashboard data with timeRange:', apiTimeRange);
-      
-      const data = await teacherDashboardService.getOverviewData(apiTimeRange);
-      setOverviewData(data);
-      
-      console.log('✅ Successfully loaded teacher dashboard data');
-      
-    } catch (error: any) {
-      console.error('❌ Error fetching teacher dashboard data:', error);
-      setError(error.message || 'Failed to load dashboard data');
-      toast.error('Failed to load dashboard data');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  // Handle time range change
-  const handleTimeRangeChange = async (newTimeRange: string) => {
-    setTimeRange(newTimeRange);
-    await fetchDashboardData(true, newTimeRange);
-  };
-
-  // Handle refresh
-  const handleRefresh = async () => {
-    await fetchDashboardData(true, timeRange);
-  };
-
-  // Initial data fetch
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
+  // Use the custom hook for dashboard data management
+  const {
+    data: overviewData,
+    loading,
+    error,
+    refreshing,
+    timeRange,
+    handleTimeRangeChange,
+    handleRefresh
+  } = useTeacherDashboard({
+    initialTimeRange: 'all-time',
+    enableAutoRefresh: false // Disable auto-refresh for now
+  });
 
   // Show loading state
   if (loading) {
@@ -127,7 +76,7 @@ export const AITeacherDashboard = ({ userProfile }: AITeacherDashboardProps) => 
               size="sm" 
               variant="outline" 
               className="ml-2" 
-              onClick={() => fetchDashboardData()}
+              onClick={handleRefresh}
             >
               Retry
             </Button>

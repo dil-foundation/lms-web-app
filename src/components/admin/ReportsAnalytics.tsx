@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -25,7 +25,6 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { 
-  reportsService, 
   PracticeStagePerformanceData,
   UserEngagementData,
   TimeUsagePatternsData,
@@ -33,94 +32,34 @@ import {
   AnalyticsOverview
 } from '@/services/reportsService';
 import { 
-  adminDashboardService,
   KeyMetricsData
 } from '@/services/adminDashboardService';
+import { useReportsData } from '@/hooks/useReportsData';
 
 export const ReportsAnalytics = () => {
-  const [dateRange, setDateRange] = useState('thismonth');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
+  // Use the custom hook for reports data management
+  const {
+    data,
+    loading,
+    error,
+    refreshing,
+    timeRange: dateRange,
+    handleTimeRangeChange,
+    handleRefresh
+  } = useReportsData({
+    initialTimeRange: 'thismonth',
+    enableAutoRefresh: false // Disable auto-refresh for now
+  });
 
-  // API data states
-  const [practiceStageData, setPracticeStageData] = useState<PracticeStagePerformanceData | null>(null);
-  const [userEngagementData, setUserEngagementData] = useState<UserEngagementData | null>(null);
-  const [timeUsageData, setTimeUsageData] = useState<TimeUsagePatternsData | null>(null);
-  const [topContentData, setTopContentData] = useState<TopContentData | null>(null);
-  const [analyticsOverview, setAnalyticsOverview] = useState<AnalyticsOverview | null>(null);
-  const [keyMetrics, setKeyMetrics] = useState<KeyMetricsData | null>(null);
+  // Extract data from hook
+  const practiceStageData = data?.practiceStagePerformance || null;
+  const userEngagementData = data?.userEngagement || null;
+  const timeUsageData = data?.timeUsagePatterns || null;
+  const topContentData = data?.topContentAccessed || null;
+  const analyticsOverview = data?.analyticsOverview || null;
+  const keyMetrics = data?.keyMetrics || null;
 
-  // Map UI time range values to API values
-  const mapTimeRangeToApiValue = (uiValue: string): string => {
-    const mapping: Record<string, string> = {
-      'today': 'today',
-      'thisweek': 'this_week',
-      'thismonth': 'this_month',
-      '7days': 'this_week',
-      '30days': 'this_month',
-      '3months': 'this_month', // fallback to month for 3 months
-      'alltime': 'all_time'
-    };
-    return mapping[uiValue] || 'all_time';
-  };
 
-  // Fetch all reports data
-  const fetchReportsData = async (showRefreshIndicator = false, customTimeRange = dateRange) => {
-    try {
-      if (showRefreshIndicator) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
-      setError(null);
-
-      const apiTimeRange = mapTimeRangeToApiValue(customTimeRange);
-      
-      // Fetch reports data and key metrics in parallel
-      const [reportsData, dashboardData] = await Promise.all([
-        reportsService.getAllReportsData(apiTimeRange),
-        adminDashboardService.getAllOverviewData(apiTimeRange)
-      ]);
-      
-      setPracticeStageData(reportsData.practiceStagePerformance);
-      setUserEngagementData(reportsData.userEngagement);
-      setTimeUsageData(reportsData.timeUsagePatterns);
-      setTopContentData(reportsData.topContentAccessed);
-      setAnalyticsOverview(reportsData.analyticsOverview);
-      setKeyMetrics(dashboardData.keyMetrics);
-
-      if (showRefreshIndicator) {
-        toast.success('Reports data refreshed successfully');
-      }
-    } catch (err: any) {
-      console.error('Error fetching reports data:', err);
-      setError(err.message || 'Failed to load reports data');
-      toast.error('Failed to load reports data', {
-        description: err.message || 'Please try refreshing the page'
-      });
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  // Load data on component mount
-  useEffect(() => {
-    fetchReportsData();
-  }, []);
-
-  // Handle time range change and fetch new data
-  const handleTimeRangeChange = (newTimeRange: string) => {
-    setDateRange(newTimeRange);
-    console.log('Time range changed to:', newTimeRange);
-    fetchReportsData(true, newTimeRange);
-  };
-
-  // Handle manual refresh
-  const handleRefresh = () => {
-    fetchReportsData(true, dateRange);
-  };
 
 
 
@@ -698,9 +637,12 @@ export const ReportsAnalytics = () => {
                         {content.title}
                       </h3>
                       <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="secondary" className="text-xs font-medium px-2 py-1">
-                        {content.type}
-                      </Badge>
+                        <Badge 
+                          variant="outline" 
+                          className="text-xs font-medium px-2 py-1 bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 transition-colors"
+                        >
+                          {content.type}
+                        </Badge>
                         <span className="text-xs text-muted-foreground font-medium">
                           {content.stage}
                         </span>
