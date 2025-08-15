@@ -485,7 +485,7 @@ export default function DiscussionsPage() {
             {!isProfileLoading && profile?.role !== 'student' && (
               <Button 
                 onClick={() => setIsNewDiscussionOpen(true)}
-                className="h-10 px-6 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                className="h-10 px-6 rounded-xl bg-gradient-to-r from-brand-green-500 to-brand-green-600 hover:from-brand-green-600 hover:to-brand-green-500 text-white shadow-lg hover:shadow-xl hover:shadow-brand-green-500/25 transition-all duration-300 hover:-translate-y-0.5"
               >
                 <Plus className="mr-2 h-4 w-4" />
                 New Discussion
@@ -615,7 +615,7 @@ export default function DiscussionsPage() {
               {!isProfileLoading && profile?.role !== 'student' && (
               <Button 
                 onClick={() => setIsNewDiscussionOpen(true)}
-                className="bg-green-600 hover:bg-green-700 text-white"
+                className="bg-gradient-to-r from-brand-green-500 to-brand-green-600 hover:from-brand-green-600 hover:to-brand-green-500 text-white shadow-lg hover:shadow-xl hover:shadow-brand-green-500/25 transition-all duration-300 hover:-translate-y-0.5 rounded-xl px-6 py-2"
               >
                 <Plus className="mr-2 h-4 w-4" />
                 New Discussion
@@ -711,7 +711,7 @@ export default function DiscussionsPage() {
                             <Button 
                               variant="ghost" 
                               size="sm"
-                              className="h-9 w-9 p-0 rounded-xl hover:bg-gray-100/80 dark:hover:bg-gray-800/80 hover:shadow-lg transition-all duration-300"
+                              className="h-9 w-9 p-0 rounded-xl hover:bg-gray-100/80 hover:text-gray-900 dark:hover:bg-gray-800/80 dark:hover:text-gray-100 hover:shadow-lg transition-all duration-300"
                               onClick={(e) => {
                                 e.stopPropagation();
                               }}

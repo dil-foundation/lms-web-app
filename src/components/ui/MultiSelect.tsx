@@ -185,6 +185,7 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
 
     const filteredOptions = options.filter(
       (option) =>
+        !option.disabled &&
         !value.includes(option.value) &&
         (option.label.toLowerCase().includes(inputValue.toLowerCase()) ||
           option.subLabel?.toLowerCase().includes(inputValue.toLowerCase()))
