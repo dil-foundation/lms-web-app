@@ -800,7 +800,7 @@ export const AssignmentSubmissions = () => {
                 )}
               </DialogDescription>
             </DialogHeader>
-            <div className="py-4 space-y-6 max-h-[70vh] overflow-y-auto pr-6">
+            <div className="py-4 space-y-6 max-h-[60vh] overflow-y-auto pr-6">
               {isLoadingQuiz ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="text-center">
