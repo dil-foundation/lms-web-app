@@ -515,31 +515,31 @@ export default function CriticalOpinionBuilder() {
                       Overall Score
                     </h4>
                     <span className="text-3xl font-bold text-primary">
-                      {evaluationResult.overall_score}/100
+                      {evaluationResult.evaluation.score}/100
                     </span>
                   </div>
-                  {evaluationResult.feedback && (
+                  {evaluationResult.evaluation.suggested_improvement && (
                     <p className="text-primary-700 dark:text-primary-300 text-base leading-relaxed">
-                      {evaluationResult.feedback}
+                      {evaluationResult.evaluation.suggested_improvement}
                     </p>
                   )}
                 </CardContent>
               </Card>
 
               {/* Strengths */}
-              {evaluationResult.strengths && evaluationResult.strengths.length > 0 && (
-                <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-2 border-primary/20 rounded-2xl shadow-xl overflow-hidden">
+              {evaluationResult.evaluation.strengths && evaluationResult.evaluation.strengths.length > 0 && (
+                <Card className="bg-gradient-to-br from-green/5 to-green/10 border-2 border-green/20 rounded-2xl shadow-xl overflow-hidden">
                   <CardContent className="p-6">
                     <div className="flex items-start space-x-4">
-                      <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center mt-1 shadow-lg">
+                      <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mt-1 shadow-lg">
                         <Target className="h-5 w-5 text-white" />
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-semibold text-lg text-primary mb-3">Key Strengths</h4>
+                        <h4 className="font-semibold text-lg text-green-700 dark:text-green-300 mb-3">Key Strengths</h4>
                         <div className="space-y-2">
-                          {evaluationResult.strengths.map((strength, index) => (
-                            <p key={index} className="text-primary-700 dark:text-primary-300 text-base leading-relaxed flex items-start">
-                              <span className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                          {evaluationResult.evaluation.strengths.map((strength, index) => (
+                            <p key={index} className="text-green-700 dark:text-green-300 text-base leading-relaxed flex items-start">
+                              <span className="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
                               {strength}
                             </p>
                           ))}
@@ -551,7 +551,7 @@ export default function CriticalOpinionBuilder() {
               )}
 
               {/* Areas for Improvement */}
-              {evaluationResult.areas_for_improvement && evaluationResult.areas_for_improvement.length > 0 && (
+              {evaluationResult.evaluation.areas_for_improvement && evaluationResult.evaluation.areas_for_improvement.length > 0 && (
                 <Card className="bg-gradient-to-br from-orange/5 to-orange/10 border-2 border-orange/20 rounded-2xl shadow-xl overflow-hidden">
                   <CardContent className="p-6">
                     <div className="flex items-start space-x-4">
@@ -561,7 +561,7 @@ export default function CriticalOpinionBuilder() {
                       <div className="flex-1">
                         <h4 className="font-semibold text-lg text-orange-600 mb-3">Areas for Improvement</h4>
                         <div className="space-y-2">
-                          {evaluationResult.areas_for_improvement.map((area, index) => (
+                          {evaluationResult.evaluation.areas_for_improvement.map((area, index) => (
                             <p key={index} className="text-orange-700 dark:text-orange-300 text-base leading-relaxed flex items-start">
                               <span className="w-2 h-2 bg-orange-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
                               {area}
@@ -581,18 +581,7 @@ export default function CriticalOpinionBuilder() {
         <div className="text-center space-y-8">
           {/* Primary Action Button */}
           <div className="flex justify-center">
-          {isEvaluating ? (
-            <Button
-              disabled
-                className="bg-gradient-to-r from-slate-400 to-slate-500 text-white px-16 py-5 rounded-2xl text-xl font-semibold shadow-xl cursor-not-allowed"
-              size="lg"
-            >
-                <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center mr-4">
-                  <Loader2 className="h-5 w-5 text-white animate-spin" />
-                </div>
-              Evaluating...
-            </Button>
-          ) : !isRecording ? (
+          {!isRecording && !isEvaluating ? (
             <Button
               onClick={handleStartRecording}
                 className="group bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white px-16 py-5 rounded-2xl text-xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:scale-105"
@@ -603,7 +592,7 @@ export default function CriticalOpinionBuilder() {
                 </div>
               Start Recording Your Opinion
             </Button>
-          ) : (
+          ) : isRecording ? (
             <Button
               onClick={handleStopRecording}
                 className="group bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-16 py-5 rounded-2xl text-xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:scale-105"
@@ -614,7 +603,7 @@ export default function CriticalOpinionBuilder() {
                 </div>
               Stop Recording
             </Button>
-          )}
+          ) : null}
           </div>
 
           {/* Secondary Action Buttons */}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -22,12 +22,12 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { 
-  adminDashboardService, 
   DashboardOverviewData, 
   KeyMetricsData, 
   LearnUsageData, 
   MostAccessedLessonsData 
 } from '@/services/adminDashboardService';
+import { useAdminDashboard } from '@/hooks/useAdminDashboard';
 
 interface AIAdminDashboardProps {
   userProfile: {
@@ -39,79 +39,27 @@ interface AIAdminDashboardProps {
 }
 
 export const AIAdminDashboard = ({ userProfile }: AIAdminDashboardProps) => {
-  // State for API data
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [timeRange, setTimeRange] = useState('alltime');
-  const [refreshing, setRefreshing] = useState(false);
-  
-  // API data states
-  const [overviewData, setOverviewData] = useState<DashboardOverviewData | null>(null);
-  const [keyMetrics, setKeyMetrics] = useState<KeyMetricsData | null>(null);
-  const [learnUsage, setLearnUsage] = useState<LearnUsageData | null>(null);
-  const [mostAccessedLessons, setMostAccessedLessons] = useState<MostAccessedLessonsData | null>(null);
+  // Use the custom hook for dashboard data management
+  const {
+    data,
+    loading,
+    error,
+    refreshing,
+    timeRange,
+    handleTimeRangeChange,
+    handleRefresh
+  } = useAdminDashboard({
+    initialTimeRange: 'alltime',
+    enableAutoRefresh: false // Disable auto-refresh for now
+  });
 
-  // Map UI time range values to API values
-  const mapTimeRangeToApiValue = (uiValue: string): string => {
-    const mapping: Record<string, string> = {
-      'today': 'today',
-      'thisweek': 'this_week',
-      'thismonth': 'this_month',
-      'alltime': 'all_time'
-    };
-    return mapping[uiValue] || 'all_time';
-  };
+  // Extract data from hook
+  const overviewData = data?.overview || null;
+  const keyMetrics = data?.keyMetrics || null;
+  const learnUsage = data?.learnUsage || null;
+  const mostAccessedLessons = data?.mostAccessedLessons || null;
 
-  // Fetch all dashboard data
-  const fetchDashboardData = async (showRefreshIndicator = false, customTimeRange = 'alltime') => {
-    try {
-      if (showRefreshIndicator) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
-      setError(null);
 
-      const apiTimeRange = mapTimeRangeToApiValue(customTimeRange);
-      const data = await adminDashboardService.getAllOverviewData(apiTimeRange);
-      
-      setOverviewData(data.overview);
-      setKeyMetrics(data.keyMetrics);
-      setLearnUsage(data.learnUsage);
-      setMostAccessedLessons(data.mostAccessedLessons);
-
-      if (showRefreshIndicator) {
-        toast.success('Dashboard data refreshed successfully');
-      }
-    } catch (err: any) {
-      console.error('Error fetching dashboard data:', err);
-      setError(err.message || 'Failed to load dashboard data');
-      toast.error('Failed to load dashboard data', {
-        description: err.message || 'Please try refreshing the page'
-      });
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  // Load data on component mount
-  useEffect(() => {
-    fetchDashboardData(); // Will use default 'alltime' parameter
-  }, []);
-
-  // Handle time range change and fetch new data
-  const handleTimeRangeChange = (newTimeRange: string) => {
-    setTimeRange(newTimeRange);
-    console.log('Time range changed to:', newTimeRange);
-    // Fetch new data with the updated time range
-    fetchDashboardData(true, newTimeRange);
-  };
-
-  // Handle manual refresh
-  const handleRefresh = () => {
-    fetchDashboardData(true, timeRange);
-  };
 
   // Show loading state
   if (loading && !overviewData) {

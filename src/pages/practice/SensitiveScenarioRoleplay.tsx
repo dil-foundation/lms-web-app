@@ -725,18 +725,7 @@ export default function SensitiveScenarioRoleplay() {
                   </div>
                 Stop Recording
               </Button>
-            ) : (
-              <Button
-                disabled
-                  className="bg-gradient-to-r from-slate-400 to-slate-500 text-white px-12 py-4 rounded-2xl text-lg font-semibold shadow-lg cursor-not-allowed"
-                size="lg"
-              >
-                  <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center mr-3">
-                    <Loader2 className="h-4 w-4 text-white animate-spin" />
-                  </div>
-                Evaluating...
-              </Button>
-            )}
+            ) : null}
             </div>
 
             {/* Secondary Action Buttons */}

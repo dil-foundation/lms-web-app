@@ -262,7 +262,7 @@ export const GradeAssignments = () => {
                               <div className="col-span-2 md:col-span-2">
                                 <div className="flex items-center gap-2">
                                   <p className="font-semibold text-base">{assignment.title}</p>
-                                  <Badge variant={assignment.type === 'quiz' ? 'default' : 'secondary'} className="capitalize">{assignment.type}</Badge>
+                                  <Badge variant={assignment.type === 'quiz' ? 'default' : assignment.type === 'assignment' ? 'blue' : 'secondary'} className="capitalize">{assignment.type}</Badge>
                                 </div>
                                 <p className="text-sm text-muted-foreground">{assignment.course}</p>
                               </div>

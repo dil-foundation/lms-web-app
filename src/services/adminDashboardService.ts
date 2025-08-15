@@ -45,6 +45,27 @@ export interface MostAccessedLessonsData {
 
 // Admin Dashboard Service class for managing all API calls
 class AdminDashboardService {
+  private currentController: AbortController | null = null;
+  private requestCache = new Map<string, { data: any; timestamp: number }>();
+  private readonly CACHE_DURATION = 60000; // 60 seconds cache
+
+  private getCacheKey(endpoint: string, params: Record<string, any>): string {
+    return `${endpoint}_${JSON.stringify(params)}`;
+  }
+
+  private getCachedData(cacheKey: string): any | null {
+    const cached = this.requestCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
+      console.log('📦 Using cached data for:', cacheKey);
+      return cached.data;
+    }
+    return null;
+  }
+
+  private setCachedData(cacheKey: string, data: any): void {
+    this.requestCache.set(cacheKey, { data, timestamp: Date.now() });
+  }
+
   async getAllOverviewData(timeRange: string = 'all_time'): Promise<{
     overview: DashboardOverviewData;
     keyMetrics: KeyMetricsData;
@@ -54,33 +75,70 @@ class AdminDashboardService {
     try {
       console.log('🔄 Fetching all admin dashboard data with timeRange:', timeRange);
       
+      // Check cache first
+      const cacheKey = this.getCacheKey('admin_overview', { timeRange });
+      const cachedData = this.getCachedData(cacheKey);
+      if (cachedData) {
+        return cachedData;
+      }
+
+      // Cancel any existing request
+      if (this.currentController) {
+        this.currentController.abort();
+        // Small delay to ensure proper cleanup
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+
+      // Create single controller for all requests
+      this.currentController = new AbortController();
+      
       // Fetch all data in parallel for better performance
       const [overview, keyMetrics, learnUsage, mostAccessedLessons] = await Promise.all([
-        this.fetchDashboardOverview(timeRange),
-        this.fetchKeyMetrics(timeRange),
-        this.fetchLearnUsage(timeRange),
-        this.fetchMostAccessedLessons(timeRange),
+        this.fetchDashboardOverview(timeRange, this.currentController.signal),
+        this.fetchKeyMetrics(timeRange, this.currentController.signal),
+        this.fetchLearnUsage(timeRange, this.currentController.signal),
+        this.fetchMostAccessedLessons(timeRange, this.currentController.signal),
       ]);
 
-      console.log('✅ Successfully fetched all admin dashboard data');
-      
-      return {
+      const result = {
         overview,
         keyMetrics,
         learnUsage,
         mostAccessedLessons,
       };
+
+      // Cache the result
+      this.setCachedData(cacheKey, result);
+
+      console.log('✅ Successfully fetched all admin dashboard data');
+      
+      return result;
     } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('🚫 Admin dashboard request was cancelled');
+        // Re-throw the original AbortError to preserve the error type
+        throw error;
+      }
       console.error('❌ Error fetching admin dashboard data:', error);
       throw new Error(`Failed to fetch admin dashboard data: ${error.message}`);
+    } finally {
+      // Clean up controller
+      this.currentController = null;
     }
   }
 
   // Implement fetch functions directly in the class to avoid closure issues
-  private async fetchDashboardOverview(timeRange: string): Promise<DashboardOverviewData> {
+  private async fetchDashboardOverview(timeRange: string, signal?: AbortSignal): Promise<DashboardOverviewData> {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      // Use provided signal or create a new one
+      const controller = signal ? null : new AbortController();
+      const requestSignal = signal || controller?.signal;
+      const timeoutId = setTimeout(() => {
+        if (controller) controller.abort();
+        else if (signal && !signal.aborted) {
+          console.warn('⚠️ Cannot abort external signal, request may continue');
+        }
+      }, 15000); // Increased timeout to 15 seconds
 
       console.log('🔍 Fetching dashboard overview data with timeRange:', timeRange);
 
@@ -90,7 +148,7 @@ class AdminDashboardService {
       const response = await fetch(url.toString(), {
         method: 'GET',
         headers: getAuthHeadersWithAccept(),
-        signal: controller.signal,
+        signal: requestSignal,
       });
 
       clearTimeout(timeoutId);
@@ -142,10 +200,17 @@ class AdminDashboardService {
     }
   }
 
-  private async fetchKeyMetrics(timeRange: string): Promise<KeyMetricsData> {
+  private async fetchKeyMetrics(timeRange: string, signal?: AbortSignal): Promise<KeyMetricsData> {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      // Use provided signal or create a new one
+      const controller = signal ? null : new AbortController();
+      const requestSignal = signal || controller?.signal;
+      const timeoutId = setTimeout(() => {
+        if (controller) controller.abort();
+        else if (signal && !signal.aborted) {
+          console.warn('⚠️ Cannot abort external signal, request may continue');
+        }
+      }, 15000); // Increased timeout to 15 seconds
 
       console.log('🔍 Fetching key metrics data with timeRange:', timeRange);
 
@@ -155,7 +220,7 @@ class AdminDashboardService {
       const response = await fetch(url.toString(), {
         method: 'GET',
         headers: getAuthHeadersWithAccept(),
-        signal: controller.signal,
+        signal: requestSignal,
       });
 
       clearTimeout(timeoutId);
@@ -205,10 +270,17 @@ class AdminDashboardService {
     }
   }
 
-  private async fetchLearnUsage(timeRange: string): Promise<LearnUsageData> {
+  private async fetchLearnUsage(timeRange: string, signal?: AbortSignal): Promise<LearnUsageData> {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      // Use provided signal or create a new one
+      const controller = signal ? null : new AbortController();
+      const requestSignal = signal || controller?.signal;
+      const timeoutId = setTimeout(() => {
+        if (controller) controller.abort();
+        else if (signal && !signal.aborted) {
+          console.warn('⚠️ Cannot abort external signal, request may continue');
+        }
+      }, 15000); // Increased timeout to 15 seconds
 
       console.log('🔍 Fetching learn usage data with timeRange:', timeRange);
 
@@ -218,7 +290,7 @@ class AdminDashboardService {
       const response = await fetch(url.toString(), {
         method: 'GET',
         headers: getAuthHeadersWithAccept(),
-        signal: controller.signal,
+        signal: requestSignal,
       });
 
       clearTimeout(timeoutId);
@@ -269,10 +341,17 @@ class AdminDashboardService {
     }
   }
 
-  private async fetchMostAccessedLessons(timeRange: string): Promise<MostAccessedLessonsData> {
+  private async fetchMostAccessedLessons(timeRange: string, signal?: AbortSignal): Promise<MostAccessedLessonsData> {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      // Use provided signal or create a new one
+      const controller = signal ? null : new AbortController();
+      const requestSignal = signal || controller?.signal;
+      const timeoutId = setTimeout(() => {
+        if (controller) controller.abort();
+        else if (signal && !signal.aborted) {
+          console.warn('⚠️ Cannot abort external signal, request may continue');
+        }
+      }, 15000); // Increased timeout to 15 seconds
 
       console.log('🔍 Fetching most accessed lessons data with timeRange:', timeRange);
 
@@ -282,7 +361,7 @@ class AdminDashboardService {
       const response = await fetch(url.toString(), {
         method: 'GET',
         headers: getAuthHeadersWithAccept(),
-        signal: controller.signal,
+        signal: requestSignal,
       });
 
       clearTimeout(timeoutId);
@@ -411,6 +490,25 @@ class AdminDashboardService {
     if (titleLower.includes('abstract') || titleLower.includes('topic')) return '🌍';
     
     return '📚'; // Default icon
+  }
+
+  // Cleanup method to cancel all ongoing requests
+  public cleanup(): void {
+    console.log('🧹 Cleaning up admin dashboard service requests');
+    
+    if (this.currentController) {
+      this.currentController.abort();
+      this.currentController = null;
+    }
+
+    // Clear cache
+    this.requestCache.clear();
+  }
+
+  // Clear cache method
+  public clearCache(): void {
+    console.log('🗑️ Clearing admin dashboard service cache');
+    this.requestCache.clear();
   }
 }
 

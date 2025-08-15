@@ -662,7 +662,7 @@ export default function CriticalThinkingDialogues() {
             ) : isRecording ? (
               <Button
                 onClick={handleStopRecording}
-                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-8 py-3 rounded-full text-lg font-medium animate-pulse shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-8 py-3 rounded-full text-lg font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
                 size="lg"
               >
                 <Mic className="h-5 w-5 mr-2" />
