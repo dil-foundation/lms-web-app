@@ -374,7 +374,7 @@ export default function NewsSummaryChallenge() {
                   onClick={handleRecordToggle}
                   className={`px-8 py-3 rounded-full text-lg font-medium transition-all ${
                     isRecording 
-                      ? 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white animate-pulse shadow-lg hover:shadow-xl hover:scale-105' 
+                      ? 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg hover:shadow-xl hover:scale-105' 
                       : 'bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl hover:scale-105'
                   }`}
                   size="lg"
