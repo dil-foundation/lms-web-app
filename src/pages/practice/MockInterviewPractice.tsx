@@ -511,49 +511,81 @@ export default function MockInterviewPractice() {
       return;
     }
 
+    // Validate required data
     if (!audioBlob || !currentQuestionDetail?.id || !user?.id || !recordingStartTime) {
-      console.error('❌ Missing required data for evaluation:', {
-        hasAudioBlob: !!audioBlob,
-        hasQuestionId: !!currentQuestionDetail?.id,
-        hasUserId: !!user?.id,
-        hasStartTime: !!recordingStartTime
-      });
+      console.error('❌ Missing required data for evaluation');
+      setEvaluationError('Missing required data for evaluation');
       return;
     }
 
+    const evaluationId = Date.now();
+    console.log(`🎯 Starting evaluation ${evaluationId}`);
+
+    setIsEvaluating(true);
+    setEvaluationError(null);
+
     try {
-      setIsEvaluating(true);
-      setEvaluationError(null);
+      // Convert audio using FileReader (more reliable than arrayBuffer)
+      const base64Audio = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        
+        reader.onload = () => {
+          try {
+            const result = reader.result as string;
+            // Extract base64 data (remove data:audio/wav;base64, prefix)
+            const base64Data = result.split(',')[1];
+            resolve(base64Data);
+          } catch (err) {
+            reject(new Error('Failed to process audio data'));
+          }
+        };
+        
+        reader.onerror = () => {
+          reject(new Error('Failed to read audio file'));
+        };
+        
+        // Set timeout for file reading
+        setTimeout(() => {
+          reject(new Error('Audio conversion timed out'));
+        }, 15000);
+        
+        reader.readAsDataURL(audioBlob);
+      });
 
-      console.log('🎯 Converting audio blob to base64...');
-      const arrayBuffer = await audioBlob.arrayBuffer();
-      const base64Audio = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      console.log(`✅ Audio converted successfully for evaluation ${evaluationId}`);
 
+      // Prepare evaluation request
       const timeSpentSeconds = Math.floor((Date.now() - recordingStartTime.getTime()) / 1000);
-      const filename = `mock_interview_${currentQuestionDetail.id}_${Date.now()}.wav`;
-
       const evaluationRequest = {
         audio_base64: base64Audio,
         question_id: parseInt(currentQuestionDetail.id),
-        filename: filename,
+        filename: `mock_interview_${currentQuestionDetail.id}_${evaluationId}.wav`,
         user_id: user.id,
         time_spent_seconds: timeSpentSeconds,
         urdu_used: false
       };
 
-      console.log('🚀 Sending mock interview evaluation request...');
-      
+      console.log(`🚀 Sending evaluation request ${evaluationId}`);
+
+      // Use the MockInterviewService which already has proper auth and error handling
       const evaluationResult = await MockInterviewService.evaluate(evaluationRequest);
+      console.log(`✅ Evaluation completed ${evaluationId}:`, evaluationResult);
       
-      console.log('✅ Mock interview evaluation completed:', evaluationResult);
-      setFeedback(evaluationResult as any);
+      setFeedback(evaluationResult);
 
     } catch (error) {
-      console.error('❌ Failed to evaluate mock interview:', error);
-      setEvaluationError(error instanceof Error ? error.message : 'Failed to evaluate response');
+      console.error(`❌ Evaluation failed ${evaluationId}:`, error);
+      
+      let errorMessage = 'Failed to evaluate response';
+      if (error instanceof Error) {
+        // MockInterviewService already provides user-friendly error messages
+        errorMessage = error.message;
+      }
+      
+      setEvaluationError(errorMessage);
     } finally {
       setIsEvaluating(false);
-      console.log('🔄 Evaluation state reset - isEvaluating set to false');
+      console.log(`🔄 Evaluation completed ${evaluationId}`);
     }
   }, [audioBlob, currentQuestionDetail?.id, user?.id, recordingStartTime]);
 
@@ -942,11 +974,12 @@ export default function MockInterviewPractice() {
                   </p>
                   <Button
                     onClick={handleEvaluateRecording}
-                    className="bg-gradient-to-r from-[#1582B4] to-[#1582B4]/90 hover:from-[#1582B4]/90 hover:to-[#1582B4] text-white px-8 py-3 rounded-full text-lg font-medium transition-all duration-300 hover:scale-105 hover:shadow-2xl shadow-lg"
+                    disabled={isEvaluating}
+                    className="bg-gradient-to-r from-[#1582B4] to-[#1582B4]/90 hover:from-[#1582B4]/90 hover:to-[#1582B4] text-white px-8 py-3 rounded-full text-lg font-medium transition-all duration-300 hover:scale-105 hover:shadow-2xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                     size="lg"
                   >
                     <Mic className="h-5 w-5 mr-2" />
-                    Evaluate Response
+                    {isEvaluating ? 'Evaluating...' : 'Evaluate Response'}
                   </Button>
                 </div>
               )}

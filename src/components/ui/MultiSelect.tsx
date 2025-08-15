@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { createPortal } from 'react-dom';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { X } from 'lucide-react';
 
@@ -59,7 +60,58 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
     const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
     const [isFocused, setIsFocused] = React.useState(false);
     const [inputValue, setInputValue] = React.useState('');
+    const [dropdownPosition, setDropdownPosition] = React.useState<'bottom' | 'top'>('bottom');
+    const [maxHeight, setMaxHeight] = React.useState(240); // 15rem = 240px
+    const [dropdownStyle, setDropdownStyle] = React.useState<React.CSSProperties>({});
     const inputRef = React.useRef<HTMLInputElement>(null);
+    const containerRef = React.useRef<HTMLDivElement>(null);
+
+    const calculateDropdownPosition = React.useCallback(() => {
+      if (!containerRef.current) return;
+
+      const rect = containerRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const spaceBelow = viewportHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      const dropdownMinHeight = 120; // Minimum height needed for dropdown
+      const dropdownMaxHeight = 240; // Maximum height we want
+
+      let position: 'bottom' | 'top' = 'bottom';
+      let height = dropdownMaxHeight;
+      let top = rect.bottom + 8; // 8px gap below
+
+      // Check if there's enough space below
+      if (spaceBelow >= dropdownMinHeight) {
+        position = 'bottom';
+        height = Math.min(dropdownMaxHeight, spaceBelow - 20); // 20px buffer
+        top = rect.bottom + 8;
+      } else if (spaceAbove >= dropdownMinHeight) {
+        position = 'top';
+        height = Math.min(dropdownMaxHeight, spaceAbove - 20); // 20px buffer
+        top = rect.top - height - 8; // 8px gap above
+      } else {
+        // Not enough space in either direction, use the larger space
+        if (spaceBelow >= spaceAbove) {
+          position = 'bottom';
+          height = Math.max(100, spaceBelow - 20);
+          top = rect.bottom + 8;
+        } else {
+          position = 'top';
+          height = Math.max(100, spaceAbove - 20);
+          top = rect.top - height - 8;
+        }
+      }
+
+      setDropdownPosition(position);
+      setMaxHeight(height);
+      setDropdownStyle({
+        position: 'fixed',
+        top: `${top}px`,
+        left: `${rect.left}px`,
+        width: `${rect.width}px`,
+        zIndex: 9999,
+      });
+    }, []);
 
     const handleInputKeyDown = (
       event: React.KeyboardEvent<HTMLInputElement>
@@ -90,6 +142,7 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
     };
 
     const handleFocus = () => {
+      calculateDropdownPosition();
       setIsPopoverOpen(true);
       setIsFocused(true);
     };
@@ -104,6 +157,32 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
       setIsFocused(false);
     };
 
+    // Add scroll listener to recalculate position and click outside handler
+    React.useEffect(() => {
+      const handleScroll = () => {
+        if (isPopoverOpen) {
+          calculateDropdownPosition();
+        }
+      };
+
+      const handleClickOutside = (event: MouseEvent) => {
+        if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+          setIsPopoverOpen(false);
+        }
+      };
+
+      if (isPopoverOpen) {
+        window.addEventListener('scroll', handleScroll, true);
+        window.addEventListener('resize', handleScroll);
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+          window.removeEventListener('scroll', handleScroll, true);
+          window.removeEventListener('resize', handleScroll);
+          document.removeEventListener('mousedown', handleClickOutside);
+        };
+      }
+    }, [isPopoverOpen, calculateDropdownPosition]);
+
     const filteredOptions = options.filter(
       (option) =>
         !value.includes(option.value) &&
@@ -111,8 +190,18 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
           option.subLabel?.toLowerCase().includes(inputValue.toLowerCase()))
     );
 
+    // Combine refs
+    const combinedRef = React.useCallback((node: HTMLDivElement) => {
+      containerRef.current = node;
+      if (typeof ref === 'function') {
+        ref(node);
+      } else if (ref) {
+        ref.current = node;
+      }
+    }, [ref]);
+
     return (
-      <div ref={ref} className="relative w-full" {...props}>
+      <div ref={combinedRef} className="relative w-full" {...props}>
         <div
           className={cn(
             'flex flex-wrap gap-1 rounded-md border border-input p-1',
@@ -159,9 +248,15 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
             className="ml-2 flex-1 bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none"
           />
         </div>
-        {isPopoverOpen && filteredOptions.length > 0 && (
-          <div className="absolute z-10 mt-2 w-full rounded-md border bg-popover text-popover-foreground shadow-md">
-            <ul className="max-h-60 overflow-auto p-1">
+        {isPopoverOpen && filteredOptions.length > 0 && createPortal(
+          <div 
+            className="rounded-md border bg-popover text-popover-foreground shadow-lg"
+            style={dropdownStyle}
+          >
+            <ul 
+              className="overflow-auto p-1"
+              style={{ maxHeight: `${maxHeight}px` }}
+            >
               {filteredOptions.map((option) => (
                 <li
                   key={option.value}
@@ -184,7 +279,8 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                 </li>
               ))}
             </ul>
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     );
