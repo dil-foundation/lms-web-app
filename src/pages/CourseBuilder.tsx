@@ -1158,21 +1158,11 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
                   </div>
                   <div>
                     <h4 className="font-semibold text-orange-900 dark:text-orange-100">Text Answer Question</h4>
-                    <p className="text-sm text-orange-700 dark:text-orange-300">Students will provide written answers that require manual grading</p>
+                    <p className="text-sm text-orange-700 dark:text-orange-300">Students will provide written answers that require manual grading by teachers</p>
                   </div>
                 </div>
-                <div className="space-y-3">
-                  <div className="p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg border border-orange-200 dark:border-orange-700">
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Grading Instructions (Optional):</p>
-                    <Textarea
-                      placeholder="Provide guidelines for grading this question (e.g., 'Look for key concepts: X, Y, Z. Award points for clarity and completeness.')"
-                      className="min-h-[80px] border-0 bg-transparent text-sm"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-orange-600 dark:text-orange-400">
-                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                    <span>This question will appear in the manual grading queue for teachers</span>
-                  </div>
+                <div className="text-xs text-orange-600 dark:text-orange-400">
+                  This question will appear in the manual grading queue for teachers
                 </div>
               </div>
             ) : (

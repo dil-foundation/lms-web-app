@@ -151,17 +151,30 @@ export const AssignmentSubmissions = () => {
     fetchSubmissionData();
   }, [fetchSubmissionData]);
 
-  // Effect to prevent text selection in grade inputs when modal opens
+  // Effect to focus grade input and prevent text selection when modal opens
   useEffect(() => {
-    if (isGradingOpen && Object.keys(manualGrades).length > 0) {
+    if (isGradingOpen) {
       const timer = setTimeout(() => {
-        const inputs = document.querySelectorAll('input[type="text"]');
-        inputs.forEach(input => {
-          if (input instanceof HTMLInputElement && input.value) {
-            // Clear any selection by moving cursor to end
-            input.setSelectionRange(input.value.length, input.value.length);
+        // Focus the grade input field
+        const gradeInput = document.getElementById('grade') as HTMLInputElement;
+        if (gradeInput) {
+          gradeInput.focus();
+          // Move cursor to end without selecting text
+          if (gradeInput.value) {
+            gradeInput.setSelectionRange(gradeInput.value.length, gradeInput.value.length);
           }
-        });
+        }
+        
+        // For quiz grading, handle text answer grade inputs
+        if (Object.keys(manualGrades).length > 0) {
+          const inputs = document.querySelectorAll('input[type="text"]');
+          inputs.forEach(input => {
+            if (input instanceof HTMLInputElement && input.value) {
+              // Clear any selection by moving cursor to end
+              input.setSelectionRange(input.value.length, input.value.length);
+            }
+          });
+        }
       }, 100);
       
       return () => clearTimeout(timer);
@@ -361,7 +374,7 @@ export const AssignmentSubmissions = () => {
     const { error: updateError } = await supabase
       .from('assignment_submissions')
       .update({
-        grade: parseFloat(grade),
+        grade: grade ? parseFloat(grade) : 0,
         feedback,
         status: 'graded'
       })
@@ -444,7 +457,7 @@ export const AssignmentSubmissions = () => {
           const { error } = await supabase
             .from('quiz_submissions')
             .update({
-              score: parseFloat(grade),
+              score: grade ? parseFloat(grade) : 0,
               feedback: feedback
             })
             .eq('id', selectedSubmission.id);
@@ -726,12 +739,22 @@ export const AssignmentSubmissions = () => {
                 <Label htmlFor="grade" className="text-right">
                   Grade
                 </Label>
-                <Input
+                <input
                   id="grade"
-                  type="number"
+                  type="text"
                   value={grade}
-                  onChange={(e) => setGrade(e.target.value)}
-                  className="col-span-3"
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Only allow numbers and empty string
+                    if (value === '' || /^\d+$/.test(value)) {
+                      const numValue = value === '' ? 0 : parseInt(value);
+                      // Ensure value is between 0 and 100
+                      if (numValue >= 0 && numValue <= 100) {
+                        setGrade(value);
+                      }
+                    }
+                  }}
+                  className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   placeholder="Enter score (0-100)"
                 />
               </div>
@@ -750,7 +773,9 @@ export const AssignmentSubmissions = () => {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsGradingOpen(false)}>Cancel</Button>
-              <Button onClick={handleSaveGrade}>Save Grade</Button>
+              <Button onClick={handleSaveGrade}>
+                {selectedSubmission?.status === 'graded' ? 'Update Grade' : 'Save Grade'}
+              </Button>
             </DialogFooter>
           </DialogContent>
         ) : (
