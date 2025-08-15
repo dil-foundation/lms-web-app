@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -48,10 +48,10 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { 
-  teacherDashboardService, 
   TeacherProgressOverviewData, 
   StudentProgressData 
 } from '@/services/teacherDashboardService';
+import { useTeacherProgress } from '@/hooks/useTeacherProgress';
 
 interface StudentProgress {
   id: string;
@@ -109,101 +109,75 @@ interface StudentDetailData {
 export const AITeacherProgress = () => {
   const { user } = useAuth();
   const { profile } = useUserProfile();
-  const [students, setStudents] = useState<StudentProgressData[]>([]);
-  const [filteredStudents, setFilteredStudents] = useState<StudentProgressData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [stageFilter, setStageFilter] = useState('all');
+  
+  // Use the custom hook for progress data management
+  const {
+    data: progressOverviewData,
+    loading,
+    error,
+    refreshing,
+    timeRange,
+    searchQuery,
+    stageFilter,
+    handleTimeRangeChange,
+    handleSearchChange,
+    handleStageFilterChange,
+    handleRefresh
+  } = useTeacherProgress({
+    initialTimeRange: 'all_time',
+    initialSearchQuery: '',
+    initialStageFilter: 'all'
+  });
 
+  // Local state for UI components
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [selectedStudent, setSelectedStudent] = useState<StudentProgressData | null>(null);
   const [studentDetailData, setStudentDetailData] = useState<StudentDetailData | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [progressOverviewData, setProgressOverviewData] = useState<TeacherProgressOverviewData | null>(null);
-  const [timeRange, setTimeRange] = useState('all_time');
-  const [refreshing, setRefreshing] = useState(false);
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
-  // Fetch progress overview data
-  const fetchProgressData = async (
-    showRefreshIndicator = false, 
-    customTimeRange = 'all_time',
-    customSearchQuery?: string,
-    customStageFilter?: string
-  ) => {
-    try {
-      if (showRefreshIndicator) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
-      setError(null);
-
-      console.log('🔄 Fetching teacher progress data with filters:', {
-        timeRange: customTimeRange,
-        searchQuery: customSearchQuery,
-        stageFilter: customStageFilter
-      });
-      
-      const data = await teacherDashboardService.getProgressOverviewData(
-        customTimeRange,
-        customSearchQuery,
-        customStageFilter
+  // Derived state from hook data
+  const students = progressOverviewData?.students || [];
+  const filteredStudents = useMemo(() => {
+    let filtered = students;
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(student => 
+        student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        student.email.toLowerCase().includes(searchQuery.toLowerCase())
       );
-      setProgressOverviewData(data);
-      setStudents(data.students);
-      setFilteredStudents(data.students);
-      
-      console.log('✅ Successfully loaded teacher progress data');
-      
-    } catch (error: any) {
-      console.error('❌ Error fetching teacher progress data:', error);
-      setError(error.message || 'Failed to load progress data');
-      toast.error('Failed to load progress data');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
     }
+    
+    // Apply stage filter
+    if (stageFilter !== 'all') {
+      filtered = filtered.filter(student => student.stage === stageFilter);
+    }
+    
+    return filtered;
+  }, [students, searchQuery, stageFilter]);
+
+  // Handle search term change (local state for immediate UI update)
+  const handleSearchTermChange = (newSearchTerm: string) => {
+    handleSearchChange(newSearchTerm);
+    setCurrentPage(1); // Reset pagination when searching
   };
 
-  // Handle time range change
-  const handleTimeRangeChange = async (newTimeRange: string) => {
-    setTimeRange(newTimeRange);
-    await fetchProgressData(true, newTimeRange, searchTerm, stageFilter);
-  };
-
-  // Handle refresh
-  const handleRefresh = async () => {
-    await fetchProgressData(true, timeRange, searchTerm, stageFilter);
+  // Handle stage filter change (local state for immediate UI update)
+  const handleStageFilterChangeLocal = (newStageFilter: string) => {
+    handleStageFilterChange(newStageFilter);
+    setCurrentPage(1); // Reset pagination when filtering
   };
 
   const stages = ['Stage 1', 'Stage 2', 'Stage 3', 'Stage 4', 'Stage 5', 'Stage 6'];
 
-  // Initial data fetch
-  useEffect(() => {
-    fetchProgressData();
-  }, []);
-
-  // Handle filter changes by calling API
-  useEffect(() => {
-    // Debounce search to avoid too many API calls
-    const timeoutId = setTimeout(() => {
-      if (students.length > 0) { // Only call API if we have initial data
-        fetchProgressData(true, timeRange, searchTerm, stageFilter);
-      }
-    }, 500); // 500ms debounce
-
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm, stageFilter]);
-
-  // Reset to first page when filters change
+  // Reset pagination when filtered data changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, stageFilter]);
+  }, [filteredStudents.length]);
 
   // Pagination calculations
   const totalPages = Math.ceil(filteredStudents.length / itemsPerPage);
@@ -577,8 +551,8 @@ export const AITeacherProgress = () => {
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search by name or email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  value={searchQuery}
+                  onChange={(e) => handleSearchTermChange(e.target.value)}
                   className="pl-9 h-11 rounded-xl border-2 focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
                 />
               </div>
@@ -586,7 +560,7 @@ export const AITeacherProgress = () => {
             
             <div className="space-y-3">
               <label className="text-sm font-medium text-muted-foreground">Stage Filter</label>
-              <Select value={stageFilter} onValueChange={setStageFilter}>
+              <Select value={stageFilter} onValueChange={handleStageFilterChangeLocal}>
                 <SelectTrigger className="h-11 rounded-xl border-2 focus:border-primary/50 focus:ring-2 focus:ring-primary/20">
                   <SelectValue placeholder="All Stages" />
                 </SelectTrigger>
@@ -603,11 +577,9 @@ export const AITeacherProgress = () => {
               <Button 
                 variant="outline" 
                 className="w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
-                onClick={async () => {
-                  setSearchTerm('');
-                  setStageFilter('all');
-                  // Immediately fetch data with cleared filters
-                  await fetchProgressData(true, timeRange, '', 'all');
+                onClick={() => {
+                  handleSearchTermChange('');
+                  handleStageFilterChangeLocal('all');
                 }}
               >
                 Clear Filters

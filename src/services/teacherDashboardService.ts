@@ -84,39 +84,98 @@ export interface TeacherProgressOverviewData {
 
 // Teacher Dashboard Service class for managing all API calls
 class TeacherDashboardService {
+  private currentOverviewController: AbortController | null = null;
+  private currentProgressController: AbortController | null = null;
+  private requestCache = new Map<string, { data: any; timestamp: number }>();
+  private readonly CACHE_DURATION = 60000; // 60 seconds cache (increased for better UX)
+
+  private getCacheKey(endpoint: string, params: Record<string, any>): string {
+    return `${endpoint}_${JSON.stringify(params)}`;
+  }
+
+  private getCachedData(cacheKey: string): any | null {
+    const cached = this.requestCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
+      console.log('📦 Using cached data for:', cacheKey);
+      return cached.data;
+    }
+    return null;
+  }
+
+  private setCachedData(cacheKey: string, data: any): void {
+    this.requestCache.set(cacheKey, { data, timestamp: Date.now() });
+  }
+
   async getOverviewData(timeRange: string = 'all_time'): Promise<TeacherDashboardOverviewData> {
     try {
       console.log('🔄 Fetching teacher dashboard data with timeRange:', timeRange);
       
+      // Check cache first
+      const cacheKey = this.getCacheKey('overview', { timeRange });
+      const cachedData = this.getCachedData(cacheKey);
+      if (cachedData) {
+        return cachedData;
+      }
+
+      // Cancel any existing overview request
+      if (this.currentOverviewController) {
+        this.currentOverviewController.abort();
+        // Small delay to ensure proper cleanup
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+
+      // Create single controller for the entire overview operation
+      this.currentOverviewController = new AbortController();
+      
       // Fetch overview and behavior insights data in parallel for better performance
       const [overviewData, behaviorInsightsData] = await Promise.all([
-        this.fetchBasicOverviewData(timeRange),
-        this.fetchBehaviorInsights(timeRange),
+        this.fetchBasicOverviewData(timeRange, this.currentOverviewController.signal),
+        this.fetchBehaviorInsights(timeRange, this.currentOverviewController.signal),
       ]);
 
-      console.log('✅ Successfully processed teacher dashboard overview data');
-      
-      return {
+      const result = {
         engagementSummary: overviewData.engagementSummary,
         topUsedLessons: overviewData.topUsedLessons,
         behaviorFlags: behaviorInsightsData,
       };
 
+      // Cache the result
+      this.setCachedData(cacheKey, result);
+
+      console.log('✅ Successfully processed teacher dashboard overview data');
+      
+      return result;
+
     } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('🚫 Teacher dashboard overview request was cancelled');
+        // Re-throw the original AbortError to preserve the error type
+        throw error;
+      }
       console.error('❌ Error fetching teacher dashboard overview:', error);
       throw new Error(`Failed to fetch teacher dashboard overview: ${error.message}`);
+    } finally {
+      // Clean up controller
+      this.currentOverviewController = null;
     }
   }
 
-  private async fetchBasicOverviewData(timeRange: string = 'all_time'): Promise<{
+  private async fetchBasicOverviewData(timeRange: string = 'all_time', signal?: AbortSignal): Promise<{
     engagementSummary: TeacherEngagementData;
     topUsedLessons: TopLesson[];
   }> {
     try {
       console.log('🔄 Fetching teacher dashboard overview data with timeRange:', timeRange);
       
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      // Use provided signal or create a new one
+      const controller = signal ? null : new AbortController();
+      const requestSignal = signal || controller?.signal;
+      const timeoutId = setTimeout(() => {
+        if (controller) controller.abort();
+        else if (signal && !signal.aborted) {
+          console.warn('⚠️ Cannot abort external signal, request may continue');
+        }
+      }, 15000); // Increased timeout to 15 seconds
 
       const url = new URL(`${BASE_API_URL}${API_ENDPOINTS.TEACHER_DASHBOARD_OVERVIEW}`);
       url.searchParams.append('time_range', timeRange);
@@ -124,7 +183,7 @@ class TeacherDashboardService {
       const response = await fetch(url.toString(), {
         method: 'GET',
         headers: getAuthHeadersWithAccept(),
-        signal: controller.signal,
+        signal: requestSignal,
       });
 
       clearTimeout(timeoutId);
@@ -193,12 +252,19 @@ class TeacherDashboardService {
     }
   }
 
-  private async fetchBehaviorInsights(timeRange: string = 'all_time'): Promise<BehaviorFlag[]> {
+  private async fetchBehaviorInsights(timeRange: string = 'all_time', signal?: AbortSignal): Promise<BehaviorFlag[]> {
     try {
       console.log('🔄 Fetching teacher dashboard behavior insights with timeRange:', timeRange);
       
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      // Use provided signal or create a new one
+      const controller = signal ? null : new AbortController();
+      const requestSignal = signal || controller?.signal;
+      const timeoutId = setTimeout(() => {
+        if (controller) controller.abort();
+        else if (signal && !signal.aborted) {
+          console.warn('⚠️ Cannot abort external signal, request may continue');
+        }
+      }, 15000); // Increased timeout to 15 seconds
 
       const url = new URL(`${BASE_API_URL}${API_ENDPOINTS.TEACHER_DASHBOARD_BEHAVIOR_INSIGHTS}`);
       url.searchParams.append('time_range', timeRange);
@@ -206,7 +272,7 @@ class TeacherDashboardService {
       const response = await fetch(url.toString(), {
         method: 'GET',
         headers: getAuthHeadersWithAccept(),
-        signal: controller.signal,
+        signal: requestSignal,
       });
 
       clearTimeout(timeoutId);
@@ -368,8 +434,27 @@ class TeacherDashboardService {
         stageFilter 
       });
       
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      // Check cache first
+      const cacheKey = this.getCacheKey('progress', { timeRange, searchQuery, stageFilter });
+      const cachedData = this.getCachedData(cacheKey);
+      if (cachedData) {
+        return cachedData;
+      }
+
+      // Cancel any existing progress request
+      if (this.currentProgressController) {
+        this.currentProgressController.abort();
+        // Small delay to ensure proper cleanup
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+
+      // Create new controller
+      this.currentProgressController = new AbortController();
+      const timeoutId = setTimeout(() => {
+        if (this.currentProgressController) {
+          this.currentProgressController.abort();
+        }
+      }, 15000); // Increased timeout to 15 seconds
 
       const url = new URL(`${BASE_API_URL}${API_ENDPOINTS.TEACHER_DASHBOARD_PROGRESS_OVERVIEW}`);
       url.searchParams.append('time_range', timeRange);
@@ -387,7 +472,7 @@ class TeacherDashboardService {
       const response = await fetch(url.toString(), {
         method: 'GET',
         headers: getAuthHeadersWithAccept(),
-        signal: controller.signal,
+        signal: this.currentProgressController.signal,
       });
 
       clearTimeout(timeoutId);
@@ -466,9 +551,7 @@ class TeacherDashboardService {
         ? data.students_at_risk_count
         : students.filter((s: any) => Object.keys(s.flags).some(key => s.flags[key] > 0)).length;
 
-      console.log('✅ Successfully processed teacher dashboard progress overview');
-      
-      return {
+      const progressResult = {
         totalStudents,
         averageCompletion,
         averageScore,
@@ -476,9 +559,24 @@ class TeacherDashboardService {
         students
       };
 
+      // Cache the result
+      this.setCachedData(cacheKey, progressResult);
+
+      console.log('✅ Successfully processed teacher dashboard progress overview');
+      
+      return progressResult;
+
     } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('🚫 Teacher dashboard progress overview request was cancelled');
+        // Re-throw the original AbortError to preserve the error type
+        throw error;
+      }
       console.error('❌ Error fetching teacher dashboard progress overview:', error);
       throw new Error(`Failed to fetch teacher dashboard progress overview: ${error.message}`);
+    } finally {
+      // Clean up controller
+      this.currentProgressController = null;
     }
   }
 
@@ -598,6 +696,30 @@ class TeacherDashboardService {
       console.error('❌ Error exporting teacher dashboard progress data:', error);
       throw new Error(`Failed to export progress data: ${error.message}`);
     }
+  }
+
+  // Cleanup method to cancel all ongoing requests
+  public cleanup(): void {
+    console.log('🧹 Cleaning up teacher dashboard service requests');
+    
+    if (this.currentOverviewController) {
+      this.currentOverviewController.abort();
+      this.currentOverviewController = null;
+    }
+    
+    if (this.currentProgressController) {
+      this.currentProgressController.abort();
+      this.currentProgressController = null;
+    }
+
+    // Clear cache
+    this.requestCache.clear();
+  }
+
+  // Clear cache method
+  public clearCache(): void {
+    console.log('🗑️ Clearing teacher dashboard service cache');
+    this.requestCache.clear();
   }
 }
 
