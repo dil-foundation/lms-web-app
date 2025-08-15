@@ -528,7 +528,7 @@ const getStatusColor = (status: string) => {
   switch (status) {
     case 'pending': return 'destructive';
     case 'submitted': return 'secondary';
-    case 'graded': return 'default';
+    case 'graded': return 'success';
     default: return 'outline';
   }
 };

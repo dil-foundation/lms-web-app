@@ -739,10 +739,10 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl">
-              <SelectItem value="video" className="rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">🎥 Video</SelectItem>
-              <SelectItem value="attachment" className="rounded-xl hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors">📎 Attachment</SelectItem>
-              <SelectItem value="assignment" className="rounded-xl hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors">📝 Assignment</SelectItem>
-              <SelectItem value="quiz" className="rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors">❓ Quiz</SelectItem>
+              <SelectItem value="video" className="rounded-xl hover:bg-blue-50 hover:text-gray-900 dark:hover:bg-blue-900/20 dark:hover:text-white transition-colors">🎥 Video</SelectItem>
+              <SelectItem value="attachment" className="rounded-xl hover:bg-green-50 hover:text-gray-900 dark:hover:bg-green-900/20 dark:hover:text-white transition-colors">📎 Attachment</SelectItem>
+              <SelectItem value="assignment" className="rounded-xl hover:bg-orange-50 hover:text-gray-900 dark:hover:bg-orange-900/20 dark:hover:text-white transition-colors">📝 Assignment</SelectItem>
+              <SelectItem value="quiz" className="rounded-xl hover:bg-purple-50 hover:text-gray-900 dark:hover:bg-purple-900/20 dark:hover:text-white transition-colors">❓ Quiz</SelectItem>
             </SelectContent>
           </Select>
           {isRemovable && (
@@ -1094,19 +1094,19 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl">
-                  <SelectItem value="single_choice" className="rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors">
+                  <SelectItem value="single_choice" className="rounded-lg hover:bg-purple-50 hover:text-gray-900 dark:hover:bg-purple-900/20 dark:hover:text-white transition-colors">
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 border-2 border-purple-500 rounded-full"></div>
                       Single Choice
                     </div>
                   </SelectItem>
-                  <SelectItem value="multiple_choice" className="rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors">
+                  <SelectItem value="multiple_choice" className="rounded-lg hover:bg-purple-50 hover:text-gray-900 dark:hover:bg-purple-900/20 dark:hover:text-white transition-colors">
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 border-2 border-purple-500 rounded"></div>
                       Multiple Choice
                     </div>
                   </SelectItem>
-                  <SelectItem value="text_answer" className="rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors">
+                  <SelectItem value="text_answer" className="rounded-lg hover:bg-purple-50 hover:text-gray-900 dark:hover:bg-purple-900/20 dark:hover:text-white transition-colors">
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 border-2 border-purple-500 bg-purple-500"></div>
                       Text Answer
@@ -1211,7 +1211,7 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
                   variant="outline" 
                   size="sm" 
                   onClick={() => addOption(qIndex)}
-                  className="w-full h-10 border-2 border-dashed border-purple-300 dark:border-purple-600 rounded-xl text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/10 hover:border-purple-400 dark:hover:border-purple-500 transition-all duration-300 group hover:scale-105"
+                  className="w-full h-10 border-2 border-dashed border-purple-300 dark:border-purple-600 rounded-xl text-purple-600 dark:text-purple-400 hover:bg-purple-50 hover:text-purple-700 dark:hover:bg-purple-900/10 dark:hover:text-purple-300 hover:border-purple-400 dark:hover:border-purple-500 transition-all duration-300 group hover:scale-105"
                 >
                   <Plus className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-300" />
                   Add Option
@@ -1223,7 +1223,7 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
       ))}
       <Button 
         onClick={addQuestion}
-        className="w-full h-12 border-2 border-dashed border-purple-300 dark:border-purple-600 rounded-2xl text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/10 hover:border-purple-400 dark:hover:border-purple-500 transition-all duration-300 group hover:scale-105"
+        className="w-full h-12 border-2 border-dashed border-purple-300 dark:border-purple-600 rounded-2xl text-purple-600 dark:text-purple-400 hover:bg-purple-50 hover:text-purple-700 dark:hover:bg-purple-900/10 dark:hover:text-purple-300 hover:border-purple-400 dark:hover:border-purple-500 transition-all duration-300 group hover:scale-105"
       >
         <Plus className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-300" />
         Add Question
@@ -3273,7 +3273,7 @@ const CourseBuilder = () => {
             <Button
               variant="outline"
               onClick={() => setIsPreviewOpen(true)}
-              className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800"
+              className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-white"
             >
               <Eye className="w-4 h-4 mr-2" />
               Preview
@@ -3588,7 +3588,7 @@ const CourseBuilder = () => {
                             <SelectItem 
                               key={category.id} 
                               value={category.name}
-                              className="rounded-xl hover:bg-primary/5 focus:bg-primary/10 transition-colors"
+                              className="rounded-xl hover:bg-primary/5 hover:text-gray-900 dark:hover:text-white focus:bg-primary/10 focus:text-gray-900 dark:focus:text-white transition-colors"
                             >
                               {category.name}
                             </SelectItem>
@@ -3631,7 +3631,7 @@ const CourseBuilder = () => {
                             <SelectItem 
                               key={language.id} 
                               value={language.name}
-                              className="rounded-xl hover:bg-primary/5 focus:bg-primary/10 transition-colors"
+                              className="rounded-xl hover:bg-primary/5 hover:text-gray-900 dark:hover:text-white focus:bg-primary/10 focus:text-gray-900 dark:focus:text-white transition-colors"
                             >
                               {language.name}
                             </SelectItem>
@@ -3674,7 +3674,7 @@ const CourseBuilder = () => {
                             <SelectItem 
                               key={level.id} 
                               value={level.name}
-                              className="rounded-xl hover:bg-primary/5 focus:bg-primary/10 transition-colors"
+                              className="rounded-xl hover:bg-primary/5 hover:text-gray-900 dark:hover:text-white focus:bg-primary/10 focus:text-gray-900 dark:focus:text-white transition-colors"
                             >
                               {level.name}
                             </SelectItem>
@@ -4055,7 +4055,7 @@ const CourseBuilder = () => {
                       variant="outline" 
                       size="sm" 
                       onClick={() => addArrayField('requirements')}
-                        className="w-full h-12 border-2 border-dashed border-orange-300 dark:border-orange-600 rounded-2xl text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/10 hover:border-orange-400 dark:hover:border-orange-500 transition-all duration-300 group"
+                        className="w-full h-12 border-2 border-dashed border-orange-300 dark:border-orange-600 rounded-2xl text-orange-600 dark:text-orange-400 hover:bg-orange-50 hover:text-orange-700 dark:hover:bg-orange-900/10 dark:hover:text-orange-300 hover:border-orange-400 dark:hover:border-orange-500 transition-all duration-300 group"
                     >
                         <Plus className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-300" />
                       Add Requirement
@@ -4116,7 +4116,7 @@ const CourseBuilder = () => {
                       variant="outline" 
                       size="sm" 
                       onClick={() => addArrayField('learningOutcomes')}
-                        className="w-full h-12 border-2 border-dashed border-green-300 dark:border-green-600 rounded-2xl text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/10 hover:border-green-400 dark:hover:border-green-500 transition-all duration-300 group"
+                        className="w-full h-12 border-2 border-dashed border-green-300 dark:border-green-600 rounded-2xl text-green-600 dark:text-green-400 hover:bg-green-50 hover:text-green-700 dark:hover:bg-green-900/10 dark:hover:text-green-300 hover:border-green-400 dark:hover:border-green-500 transition-all duration-300 group"
                     >
                         <Plus className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-300" />
                         Add Learning Outcome
@@ -4208,7 +4208,7 @@ const CourseBuilder = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleMembersChange('teachers', [])}
-                          className="h-8 px-3 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                          className="h-8 px-3 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/20 dark:hover:text-red-300 rounded-lg"
                         >
                           Clear All
                         </Button>
@@ -4309,7 +4309,7 @@ const CourseBuilder = () => {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleMembersChange('students', [])}
-                            className="h-8 px-3 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                            className="h-8 px-3 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/20 dark:hover:text-red-300 rounded-lg"
                           >
                             Clear All
                           </Button>

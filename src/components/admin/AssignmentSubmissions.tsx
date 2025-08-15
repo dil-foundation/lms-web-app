@@ -592,9 +592,9 @@ export const AssignmentSubmissions = () => {
                           <div className="text-right">
                             <Badge 
                               variant={
-                                sub.manual_grading_completed ? 'secondary' :
+                                sub.manual_grading_completed ? 'success' :
                                 sub.status === 'submitted' ? 'default' : 
-                                sub.status === 'graded' ? 'secondary' : 
+                                sub.status === 'graded' ? 'success' : 
                                 'destructive'
                               }
                               className="capitalize"
@@ -754,18 +754,24 @@ export const AssignmentSubmissions = () => {
             </DialogFooter>
           </DialogContent>
         ) : (
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
-            <DialogHeader>
-              <DialogTitle>Quiz Review: {selectedSubmission?.student.name}</DialogTitle>
-              <DialogDescription>
-                Score: {selectedSubmission?.manual_grading_completed && selectedSubmission?.manual_grading_score !== null 
-                  ? `${selectedSubmission.manual_grading_score.toFixed(1)}%` 
-                  : selectedSubmission?.score 
-                    ? `${selectedSubmission.score.toFixed(1)}%` 
-                    : 'Not graded'
-                }
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden bg-background">
+            <DialogHeader className="pb-4 border-b border-gray-200 dark:border-gray-700">
+              <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                Quiz Review: {selectedSubmission?.student.name}
+              </DialogTitle>
+              <DialogDescription className="flex items-center gap-3 mt-2">
+                <span className="text-gray-600 dark:text-gray-300">
+                  Score: {selectedSubmission?.manual_grading_completed && selectedSubmission?.manual_grading_score !== null 
+                    ? `${selectedSubmission.manual_grading_score.toFixed(1)}%` 
+                    : selectedSubmission?.score 
+                      ? `${selectedSubmission.score.toFixed(1)}%` 
+                      : 'Not graded'
+                  }
+                </span>
                 {selectedSubmission?.manual_grading_completed && (
-                  <span className="ml-2 text-green-600 font-medium">(Previously Graded)</span>
+                  <Badge variant="success" className="text-xs">
+                    Previously Graded
+                  </Badge>
                 )}
               </DialogDescription>
             </DialogHeader>
@@ -785,7 +791,7 @@ export const AssignmentSubmissions = () => {
                     const correctOptions = question.options.filter(opt => opt.is_correct);
                     
                     return (
-                      <Card key={question.id} className="border-2 border-gray-200 dark:border-gray-700">
+                      <Card key={question.id} className="border-2 border-gray-200 dark:border-gray-700 bg-gradient-to-br from-card to-card/50 dark:bg-card shadow-sm hover:shadow-md transition-shadow">
                         <CardHeader>
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
@@ -794,7 +800,7 @@ export const AssignmentSubmissions = () => {
                                   Question {qIndex + 1}
                                 </Badge>
                                 <Badge 
-                                  variant={question.question_type === 'multiple_choice' ? 'secondary' : question.question_type === 'text_answer' ? 'outline' : 'default'}
+                                  variant={question.question_type === 'multiple_choice' ? 'blue' : question.question_type === 'text_answer' ? 'warning' : 'default'}
                                   className="text-xs"
                                 >
                                   {question.question_type === 'multiple_choice' ? 'Multiple Choice' : question.question_type === 'text_answer' ? 'Text Answer' : 'Single Choice'}
@@ -821,22 +827,31 @@ export const AssignmentSubmissions = () => {
                           <div className="space-y-3">
                             {question.question_type === 'text_answer' ? (
                               <div className="space-y-4">
-                                <div className="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-lg">
-                                  <h4 className="font-semibold text-orange-900 dark:text-orange-100 mb-2">Student's Answer:</h4>
-                                  <p className="text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
-                                    {studentAnswer || 'No answer provided'}
-                                  </p>
+                                <div className="p-4 bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-800/10 border-2 border-orange-200 dark:border-orange-700/50 rounded-xl shadow-sm">
+                                  <h4 className="font-semibold text-orange-900 dark:text-orange-100 mb-3 flex items-center gap-2">
+                                    <Circle className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                                    Student's Answer:
+                                  </h4>
+                                  <div className="p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg border border-orange-200/50 dark:border-orange-700/30">
+                                    <p className="text-gray-900 dark:text-gray-100 whitespace-pre-wrap leading-relaxed">
+                                      {studentAnswer || (
+                                        <span className="text-gray-500 dark:text-gray-400 italic">No answer provided</span>
+                                      )}
+                                    </p>
+                                  </div>
                                 </div>
                                 
-                                <div className="space-y-3">
+                                <div className="space-y-4">
                                   <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <Label className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-2">
                                       Grade (0-100):
                                       {manualGrades[question.id] !== undefined && manualGrades[question.id] !== null && (
-                                        <span className="ml-2 text-green-600 text-xs font-medium">(Grade: {manualGrades[question.id]}%)</span>
+                                        <Badge variant="success" className="text-xs">
+                                          Grade: {manualGrades[question.id]}%
+                                        </Badge>
                                       )}
-                                    </label>
-                                                                        <input
+                                    </Label>
+                                    <Input
                                       type="text"
                                       value={manualGrades[question.id] ?? ''}
                                       onChange={(e) => {
@@ -853,29 +868,29 @@ export const AssignmentSubmissions = () => {
                                           }
                                         }
                                       }}
-
-                                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                                      className="bg-background border-2 border-gray-200 dark:border-gray-700 focus:border-orange-500 focus-visible:ring-2 focus-visible:ring-orange-500/20 focus-visible:ring-offset-0 focus-visible:outline-none text-gray-900 dark:text-gray-100"
                                       placeholder="Enter grade (0-100)"
                                     />
                                   </div>
                                   
                                   <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <Label className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-2">
                                       Feedback (Optional):
                                       {manualFeedback[question.id] && (
-                                        <span className="ml-2 text-green-600 text-xs font-medium">(Feedback provided)</span>
+                                        <Badge variant="info" className="text-xs">
+                                          Feedback provided
+                                        </Badge>
                                       )}
-                                    </label>
-                                    <textarea
+                                    </Label>
+                                    <Textarea
                                       value={manualFeedback[question.id] || ''}
                                       onChange={(e) => setManualFeedback(prev => ({
                                         ...prev,
                                         [question.id]: e.target.value
                                       }))}
-                                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500 min-h-[80px]"
+                                      className="bg-background border-2 border-gray-200 dark:border-gray-700 focus:border-orange-500 focus-visible:ring-2 focus-visible:ring-orange-500/20 focus-visible:ring-offset-0 focus-visible:outline-none text-gray-900 dark:text-gray-100 min-h-[100px]"
                                       placeholder="Provide feedback for this answer..."
                                     />
-
                                   </div>
                                 </div>
                               </div>
@@ -992,14 +1007,18 @@ export const AssignmentSubmissions = () => {
                     <Button 
                       onClick={handleSaveGrade}
                       disabled={!allGraded}
-                      className="bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
+                      className="bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
                     >
                       {isAlreadyGraded ? 'Update Grade' : 'Save Grade'}
                     </Button>
                   );
                 })()
               )}
-              <Button onClick={() => setIsGradingOpen(false)} variant="outline">
+              <Button 
+                onClick={() => setIsGradingOpen(false)} 
+                variant="outline"
+                className="border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100 transition-all duration-300"
+              >
                 Close
               </Button>
             </DialogFooter>

@@ -58,21 +58,44 @@ export interface CriticalOpinionTopic {
 }
 
 export interface CriticalOpinionEvaluation {
-  overall_score: number;
-  fluency_score: number;
-  coherence_score: number;
-  vocabulary_score: number;
-  grammar_score: number;
-  pronunciation_score: number;
-  feedback: string;
-  strengths: string[];
-  areas_for_improvement: string[];
-  detailed_feedback?: {
-    argument_clarity?: string;
-    evidence_quality?: string;
-    critical_thinking?: string;
-    language_sophistication?: string;
+  success: boolean;
+  topic: string;
+  expected_keywords: string[];
+  vocabulary_focus: string[];
+  academic_expressions: string[];
+  user_text: string;
+  evaluation: {
+    score: number;
+    is_correct: boolean;
+    completed: boolean;
+    keyword_matches: number;
+    total_keywords: number;
+    academic_expressions_used: number;
+    total_academic_expressions: number;
+    detailed_feedback: {
+      argument_structure: string;
+      logical_flow: string;
+      academic_expressions: string;
+      critical_thinking: string;
+      vocabulary_usage: string;
+    };
+    suggested_improvement: string;
+    strengths: string[];
+    areas_for_improvement: string[];
+    structure_analysis: {
+      thesis_present: boolean;
+      supporting_arguments: number;
+      counterpoint_addressed: boolean;
+      conclusion_present: boolean;
+    };
   };
+  suggested_improvement: string;
+  progress_recorded: boolean;
+  unlocked_content: any[];
+  keyword_matches: number;
+  total_keywords: number;
+  academic_expressions_used: number;
+  total_academic_expressions: number;
 }
 
 class CriticalOpinionService {
