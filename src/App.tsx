@@ -10,6 +10,13 @@ import { ObservationReportsProvider } from "@/contexts/ObservationReportsContext
 import { SecureLinksProvider } from "@/contexts/SecureLinksContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import ScrollToTop from "@/components/ScrollToTop";
+import { useSessionActivity } from "@/hooks/useSessionActivity";
+
+// Component to handle session activity tracking
+const SessionActivityTracker = () => {
+  useSessionActivity();
+  return null;
+};
 
 const Home = lazy(() => import("./pages/Home"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -35,7 +42,7 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => {
+const AppContent = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -44,10 +51,11 @@ const App = () => {
         <BrowserRouter>
           <ScrollToTop />
           <AuthProvider>
+            <SessionActivityTracker />
             <AILMSProvider>
               <ObservationReportsProvider>
                 <SecureLinksProvider>
-                  <NotificationProvider>
+                <NotificationProvider>
                     <Suspense fallback={null}>
                       <Routes>
                         <Route path="/" element={<Home />} />
@@ -75,6 +83,10 @@ const App = () => {
       </TooltipProvider>
     </QueryClientProvider>
   );
+};
+
+const App = () => {
+  return <AppContent />;
 };
 
 export default App;

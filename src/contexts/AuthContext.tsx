@@ -2,6 +2,7 @@ import { createContext, useState, useEffect, useMemo, useCallback, ReactNode, us
 import { useNavigate } from 'react-router-dom';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import SessionService from '@/services/sessionService';
 
 // Define the shape of the context state
 interface AuthContextType {
@@ -63,11 +64,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         // Prevent re-renders on tab focus, etc. by only updating state if the user ID is different.
         if (event === 'USER_UPDATED' || session?.user?.id !== userRef.current?.id) {
           setSession(session);
           setUser(session?.user ?? null);
+          
+          // Track session in database when user signs in
+          if (event === 'SIGNED_IN' && session?.user) {
+            try {
+              await SessionService.createSession(
+                session.user.id,
+                session.access_token,
+                undefined, // IP address (can be added later)
+                navigator.userAgent,
+                undefined // Location (can be added later)
+              );
+            } catch (error) {
+              console.error('Error creating session:', error);
+            }
+          }
         }
 
         const currentPath = window.location.pathname;
@@ -90,6 +106,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = useCallback(async () => {
     try {
+      // Deactivate session in database before signing out
+      if (session?.access_token) {
+        try {
+          await SessionService.deactivateSession(session.access_token);
+        } catch (error) {
+          console.error('Error deactivating session:', error);
+        }
+      }
+      
       cleanupAuthState();
       await supabase.auth.signOut({ scope: 'global' });
       setSession(null);
@@ -99,7 +124,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error('🔐 Sign out error:', error);
     }
-  }, [navigate]);
+  }, [navigate, session]);
 
   const value = useMemo(() => ({
     user,
