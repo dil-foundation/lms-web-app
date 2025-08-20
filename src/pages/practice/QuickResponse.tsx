@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Zap, Play, Mic, AlertCircle, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, Zap, Play, Mic, AlertCircle, RefreshCw, CheckCircle, XCircle, Trophy, RotateCcw } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ContentLoader } from '@/components/ContentLoader';
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
 import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
@@ -153,6 +154,8 @@ export const QuickResponse: React.FC = () => {
   const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
   const [progressInitialized, setProgressInitialized] = useState(false);
   const [resumeDataLoaded, setResumeDataLoaded] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -534,6 +537,35 @@ export const QuickResponse: React.FC = () => {
     }
   };
 
+  // Mark exercise as completed
+  const markExerciseCompleted = async () => {
+    if (user?.id) {
+      try {
+        // Update progress to mark as completed
+        await updateCurrentProgress(
+          user.id,
+          1, // Stage 1
+          2  // Exercise 2 (QuickResponse)
+        );
+        console.log('Exercise marked as completed: Stage 1, Exercise 2 (QuickResponse)');
+      } catch (error) {
+        console.warn('Failed to mark exercise as completed:', error);
+      }
+    }
+  };
+
+  // Restart the exercise (redo functionality)
+  const handleRedo = () => {
+    setCurrentPromptIndex(0);
+    setFeedback(null);
+    setIsCompleted(false);
+    setShowCompletionDialog(false);
+    // Save progress for restart
+    if (user?.id) {
+      saveProgress(0);
+    }
+  };
+
   const handlePlayAudio = async () => {
     if (!currentPrompt) return;
 
@@ -551,15 +583,17 @@ export const QuickResponse: React.FC = () => {
   };
 
   const handleNext = () => {
-    let newIndex;
-    if (currentPromptIndex < prompts.length - 1) {
-      newIndex = currentPromptIndex + 1;
+    if (currentPromptIndex === prompts.length - 1) {
+      // User is on the last prompt, mark as completed
+      setIsCompleted(true);
+      setShowCompletionDialog(true);
+      markExerciseCompleted();
     } else {
-      newIndex = 0;
+      const newIndex = currentPromptIndex + 1;
+      setCurrentPromptIndex(newIndex);
+      setFeedback(null); // Clear feedback when navigating
+      saveProgress(newIndex); // Save progress when navigating
     }
-    setCurrentPromptIndex(newIndex);
-    setFeedback(null); // Clear feedback when navigating
-    saveProgress(newIndex); // Save progress when navigating
   };
 
   const handlePrevious = () => {
@@ -827,7 +861,7 @@ export const QuickResponse: React.FC = () => {
               variant="outline"
               className="flex-1 px-8 py-3 bg-white/80 dark:bg-gray-800/80 hover:bg-primary/5 hover:border-primary/30 hover:text-primary transition-all duration-300 hover:-translate-y-0.5 border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg backdrop-blur-sm font-medium"
             >
-              Next
+              {currentPromptIndex === prompts.length - 1 ? 'Complete' : 'Next'}
             </Button>
           </div>
         )}
@@ -909,6 +943,51 @@ export const QuickResponse: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Completion Dialog */}
+      <Dialog open={showCompletionDialog} onOpenChange={setShowCompletionDialog}>
+        <DialogContent className="sm:max-w-lg p-0 bg-gradient-to-br from-white/98 via-white/95 to-[#8DC63F]/5 dark:from-gray-900/98 dark:via-gray-900/95 dark:to-[#8DC63F]/10 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-xl">
+          <DialogHeader className="px-6 py-5 border-b border-gray-200/40 dark:border-gray-700/40 bg-gradient-to-r from-transparent via-[#8DC63F]/5 to-transparent dark:via-[#8DC63F]/10">
+            <div className="flex items-center justify-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-[#8DC63F]/20 to-[#8DC63F]/30 dark:from-[#8DC63F]/20 dark:to-[#8DC63F]/30 rounded-3xl flex items-center justify-center shadow-sm border border-[#8DC63F]/30 dark:border-[#8DC63F]/40 mb-4">
+                <Trophy className="h-8 w-8 text-[#8DC63F] dark:text-[#8DC63F]" />
+              </div>
+            </div>
+            <DialogTitle className="text-center text-2xl font-bold bg-gradient-to-r from-gray-900 to-[#8DC63F] dark:from-gray-100 dark:to-[#8DC63F] bg-clip-text text-transparent">
+              Congratulations!
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="p-6">
+            <div className="text-center space-y-4">
+              <p className="text-lg text-gray-700 dark:text-gray-300 font-medium">
+                🎉 You've completed all {prompts.length} questions!
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Great job on your quick response practice. You can redo the exercise to practice more or continue to other exercises.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-3 mt-6">
+                <Button
+                  onClick={handleRedo}
+                  variant="outline"
+                  className="flex-1 h-12 px-6 bg-[#8DC63F]/10 hover:bg-[#8DC63F]/20 dark:bg-[#8DC63F]/20 dark:hover:bg-[#8DC63F]/30 text-[#8DC63F] dark:text-[#8DC63F] border border-[#8DC63F]/30 dark:border-[#8DC63F]/40 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md font-medium"
+                >
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  Redo Exercise
+                </Button>
+                
+                <Button
+                  onClick={() => navigate('/dashboard/practice')}
+                  className="flex-1 h-12 px-6 bg-gradient-to-r from-[#8DC63F] to-[#8DC63F]/90 hover:from-[#8DC63F]/90 hover:to-[#8DC63F] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 border-0 rounded-xl"
+                >
+                  Continue Learning
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }; 

@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Mic, Building2, User, Loader2, Play, Pause, VolumeX, Square, RotateCcw, Target, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Mic, Building2, User, Loader2, Play, Pause, VolumeX, Square, RotateCcw, Target, TrendingUp, Trophy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MockInterviewService, { MockInterviewScenario, MockInterviewQuestion, MockInterviewEvaluationResponse } from '@/services/mockInterviewService';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useAuth } from '@/hooks/useAuth';
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export default function MockInterviewPractice() {
   const navigate = useNavigate();
@@ -15,6 +16,8 @@ export default function MockInterviewPractice() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [hasStarted, setHasStarted] = useState(false);
   const [userResponses, setUserResponses] = useState<string[]>([]);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
 
   // API state
   const [scenarios, setScenarios] = useState<MockInterviewScenario[]>([]);
@@ -416,6 +419,38 @@ export default function MockInterviewPractice() {
     console.log('🔄 Mock interview session reset');
   }, [resetRecording]);
 
+  const markExerciseCompleted = async () => {
+    if (user?.id) {
+      try {
+        // Import the progress update function
+        const { updateCurrentProgress } = await import('@/utils/progressTracker');
+        
+        // Update progress to mark as completed
+        await updateCurrentProgress(
+          user.id,
+          4, // Stage 4
+          2  // Exercise 2 (MockInterviewPractice)
+        );
+        console.log('Exercise marked as completed: Stage 4, Exercise 2 (MockInterviewPractice)');
+      } catch (error) {
+        console.warn('Failed to mark exercise as completed:', error);
+      }
+    }
+  };
+
+  const handleRedo = () => {
+    setHasStarted(false);
+    setCurrentQuestionIndex(0);
+    setUserResponses([]);
+    setCurrentQuestionDetail(null);
+    setQuestionError(null);
+    setIsCompleted(false);
+    setShowCompletionDialog(false);
+    stopAudio();
+    resetSession();
+    console.log('✅ Mock interview exercise reset complete');
+  };
+
   const forceReset = useCallback(() => {
     console.log('🚨 Force resetting evaluation state...');
     setIsEvaluating(false);
@@ -572,6 +607,13 @@ export default function MockInterviewPractice() {
       console.log(`✅ Evaluation completed ${evaluationId}:`, evaluationResult);
       
       setFeedback(evaluationResult);
+      
+      // Mark exercise as completed after receiving feedback
+      if (!isCompleted) {
+        setIsCompleted(true);
+        setShowCompletionDialog(true);
+        markExerciseCompleted();
+      }
 
     } catch (error) {
       console.error(`❌ Evaluation failed ${evaluationId}:`, error);
@@ -1210,6 +1252,48 @@ export default function MockInterviewPractice() {
               </CardContent>
             </Card>
           )}
+
+          {/* Completion Dialog */}
+          <Dialog open={showCompletionDialog} onOpenChange={setShowCompletionDialog}>
+            <DialogContent className="sm:max-w-lg p-0 bg-gradient-to-br from-white/98 via-white/95 to-[#8DC63F]/5 dark:from-gray-900/98 dark:via-gray-900/95 dark:to-[#8DC63F]/10 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-xl">
+              <DialogHeader className="px-6 py-5 border-b border-gray-200/40 dark:border-gray-700/40 bg-gradient-to-r from-transparent via-[#8DC63F]/5 to-transparent dark:via-[#8DC63F]/10">
+                <div className="flex items-center justify-center">
+                  <div className="w-16 h-16 bg-gradient-to-br from-[#8DC63F]/20 to-[#8DC63F]/30 dark:from-[#8DC63F]/20 dark:to-[#8DC63F]/30 rounded-3xl flex items-center justify-center shadow-sm border border-[#8DC63F]/30 dark:border-[#8DC63F]/40 mb-4">
+                    <Trophy className="h-8 w-8 text-[#8DC63F] dark:text-[#8DC63F]" />
+                  </div>
+                </div>
+                <DialogTitle className="text-center text-2xl font-bold bg-gradient-to-r from-gray-900 to-[#8DC63F] dark:from-gray-100 dark:to-[#8DC63F] bg-clip-text text-transparent">
+                  Congratulations!
+                </DialogTitle>
+              </DialogHeader>
+              <div className="p-6">
+                <div className="text-center space-y-4">
+                  <p className="text-lg text-gray-700 dark:text-gray-300 font-medium">
+                    🎉 You've completed the Mock Interview Practice!
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Great job on mastering your interview skills with AI-powered feedback. You can redo the exercise to practice more or continue to other exercises.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 mt-6">
+                    <Button
+                      onClick={handleRedo}
+                      variant="outline"
+                      className="flex-1 h-12 px-6 bg-[#8DC63F]/10 hover:bg-[#8DC63F]/20 dark:bg-[#8DC63F]/20 dark:hover:bg-[#8DC63F]/30 text-[#8DC63F] dark:text-[#8DC63F] border border-[#8DC63F]/30 dark:border-[#8DC63F]/40 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md font-medium"
+                    >
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Redo Exercise
+                    </Button>
+                    <Button
+                      onClick={() => navigate('/dashboard/practice')}
+                      className="flex-1 h-12 px-6 bg-gradient-to-r from-[#8DC63F] to-[#8DC63F]/90 hover:from-[#8DC63F]/90 hover:to-[#8DC63F] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 border-0 rounded-xl"
+                    >
+                      Continue Learning
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </div>
