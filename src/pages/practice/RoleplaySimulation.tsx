@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Users, Mic, Send, Play, Utensils, Stethoscope, ChevronLeft, ChevronRight, AlertCircle, RefreshCw, MicOff, ArrowRight } from 'lucide-react';
+import { ArrowLeft, Users, Mic, Send, Play, Utensils, Stethoscope, ChevronLeft, ChevronRight, AlertCircle, RefreshCw, MicOff, ArrowRight, Trophy, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ContentLoader } from '@/components/ContentLoader';
@@ -13,6 +13,7 @@ import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { initializeUserProgress, getCurrentTopicProgress, updateCurrentProgress } from '@/utils/progressTracker';
 import { getAuthHeadersWithAccept, getAuthHeaders } from '@/utils/authUtils';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface Message {
   type: 'ai' | 'user';
@@ -692,6 +693,8 @@ export default function RoleplaySimulation() {
   const [conversationCompleted, setConversationCompleted] = useState(false);
   const [progressInitialized, setProgressInitialized] = useState(false);
   const [resumeDataLoaded, setResumeDataLoaded] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const conversationContainerRef = useRef<HTMLDivElement>(null);
 
   const itemsPerPage = 6;
@@ -813,6 +816,45 @@ export default function RoleplaySimulation() {
     }
   };
 
+  // Mark exercise as completed
+  const markExerciseCompleted = async () => {
+    if (user?.id) {
+      try {
+        // Update progress to mark as completed
+        await updateCurrentProgress(
+          user.id,
+          2, // Stage 2
+          3  // Exercise 3 (RoleplaySimulation)
+        );
+        console.log('Exercise marked as completed: Stage 2, Exercise 3 (RoleplaySimulation)');
+      } catch (error) {
+        console.warn('Failed to mark exercise as completed:', error);
+      }
+    }
+  };
+
+  // Restart the exercise (redo functionality)
+  const handleRedo = () => {
+    setCurrentPage(1);
+    setSelectedScenario(null);
+    setCurrentStep(0);
+    setUserInput('');
+    setConversation([]);
+    setSessionId(null);
+    setIsConversationActive(false);
+    setShowEvaluationDialog(false);
+    setIsEvaluating(false);
+    setEvaluationResult(null);
+    setConversationCompleted(false);
+    setIsCompleted(false);
+    setShowCompletionDialog(false);
+    resetRecording();
+    // Save progress for restart
+    if (user?.id) {
+      saveProgress(1);
+    }
+  };
+
   // Calculate pagination values
   const totalPages = Math.ceil(allScenarios.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -823,6 +865,14 @@ export default function RoleplaySimulation() {
     if (newPage < 1 || newPage > totalPages || newPage === currentPage) {
       return;
     }
+    
+    // Check if user is going to the last page and mark as completed
+    if (newPage === totalPages) {
+      setIsCompleted(true);
+      setShowCompletionDialog(true);
+      markExerciseCompleted();
+    }
+    
     setCurrentPage(newPage);
     saveProgress(newPage); // Save progress when navigating pages
   };
@@ -860,6 +910,13 @@ export default function RoleplaySimulation() {
 
   const handleStartScenario = async (scenario: Scenario) => {
     setLoadingScenario(true);
+    
+    // Check if user is starting a scenario on the last page and hasn't completed yet
+    if (currentPage === totalPages && !isCompleted) {
+      setIsCompleted(true);
+      setShowCompletionDialog(true);
+      markExerciseCompleted();
+    }
     
     try {
       // First, fetch detailed scenario data from API
@@ -1792,6 +1849,51 @@ export default function RoleplaySimulation() {
             </Card>
           </div>
         )}
+
+        {/* Completion Dialog */}
+        <Dialog open={showCompletionDialog} onOpenChange={setShowCompletionDialog}>
+          <DialogContent className="sm:max-w-lg p-0 bg-gradient-to-br from-white/98 via-white/95 to-[#8DC63F]/5 dark:from-gray-900/98 dark:via-gray-900/95 dark:to-[#8DC63F]/10 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-xl">
+            <DialogHeader className="px-6 py-5 border-b border-gray-200/40 dark:border-gray-700/40 bg-gradient-to-r from-transparent via-[#8DC63F]/5 to-transparent dark:via-[#8DC63F]/10">
+              <div className="flex items-center justify-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-[#8DC63F]/20 to-[#8DC63F]/30 dark:from-[#8DC63F]/20 dark:to-[#8DC63F]/30 rounded-3xl flex items-center justify-center shadow-sm border border-[#8DC63F]/30 dark:border-[#8DC63F]/40 mb-4">
+                  <Trophy className="h-8 w-8 text-[#8DC63F] dark:text-[#8DC63F]" />
+                </div>
+              </div>
+              <DialogTitle className="text-center text-2xl font-bold bg-gradient-to-r from-gray-900 to-[#8DC63F] dark:from-gray-100 dark:to-[#8DC63F] bg-clip-text text-transparent">
+                Congratulations!
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="p-6">
+              <div className="text-center space-y-4">
+                <p className="text-lg text-gray-700 dark:text-gray-300 font-medium">
+                  🎉 You've explored all {allScenarios.length} roleplay scenarios!
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Great job on practicing real conversations. You can restart to explore more scenarios or continue to other exercises.
+                </p>
+                
+                <div className="flex flex-col sm:flex-row gap-3 mt-6">
+                  <Button
+                    onClick={handleRedo}
+                    variant="outline"
+                    className="flex-1 h-12 px-6 bg-[#8DC63F]/10 hover:bg-[#8DC63F]/20 dark:bg-[#8DC63F]/20 dark:hover:bg-[#8DC63F]/30 text-[#8DC63F] dark:text-[#8DC63F] border border-[#8DC63F]/30 dark:border-[#8DC63F]/40 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md font-medium"
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Restart Exercise
+                  </Button>
+                  
+                  <Button
+                    onClick={() => navigate('/dashboard/practice')}
+                    className="flex-1 h-12 px-6 bg-gradient-to-r from-[#8DC63F] to-[#8DC63F]/90 hover:from-[#8DC63F]/90 hover:to-[#8DC63F] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 border-0 rounded-xl"
+                  >
+                    Continue Learning
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
