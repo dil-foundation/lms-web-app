@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -78,6 +78,14 @@ export default function ProfileSettings() {
   const { profile, loading, error } = useUserProfile();
   const [searchParams] = useSearchParams();
   
+  // Debug: Log component mount
+  useEffect(() => {
+    console.log('🔍 [DEBUG] ProfileSettings component mounted:', Math.random().toString(36).substr(2, 9));
+    return () => {
+      console.log('🔍 [DEBUG] ProfileSettings component unmounted');
+    };
+  }, []);
+  
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -95,7 +103,7 @@ export default function ProfileSettings() {
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [showResetNewPassword, setShowResetNewPassword] = useState(false);
   const [showResetConfirmPassword, setShowResetConfirmPassword] = useState(false);
-  const [hasShownResetDialog, setHasShownResetDialog] = useState(false);
+  const hasProcessedResetRef = useRef(false);
 
   const profileForm = useForm<ProfileFormData>({
     resolver: zodResolver(profileFormSchema),
@@ -127,16 +135,23 @@ export default function ProfileSettings() {
   // Check for reset source parameter on component mount
   useEffect(() => {
     const source = searchParams.get('source');
+    console.log('🔍 [DEBUG] ProfileSettings useEffect triggered:', {
+      source,
+      hasProcessedReset: hasProcessedResetRef.current,
+      showResetDialog,
+      componentId: Math.random().toString(36).substr(2, 9)
+    });
     
-    if (source === 'reset' && !hasShownResetDialog) {
+    if (source === 'reset' && !hasProcessedResetRef.current) {
+      console.log('🔍 [DEBUG] Setting dialog to show');
       setShowResetDialog(true);
-      setHasShownResetDialog(true);
+      hasProcessedResetRef.current = true;
       // Clear the URL parameter to prevent showing dialog on refresh
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete('source');
       window.history.replaceState({}, '', newUrl.toString());
     }
-  }, [searchParams, hasShownResetDialog]);
+  }, [searchParams]);
 
   useEffect(() => {
     if (profile) {
@@ -228,6 +243,7 @@ export default function ProfileSettings() {
   };
 
   const onResetPassword = async (data: ResetPasswordFormData) => {
+    console.log('🔍 [DEBUG] onResetPassword called');
     setIsResettingPassword(true);
     try {
       const { error } = await supabase.auth.updateUser({
@@ -236,13 +252,15 @@ export default function ProfileSettings() {
 
       if (error) throw error;
 
+      console.log('🔍 [DEBUG] Password reset successful, closing dialog');
       toast.success('Password updated successfully', {
         description: 'Your password has been reset.'
       });
       setShowResetDialog(false);
-      setHasShownResetDialog(false); // Reset the flag so it can show again if needed
+      hasProcessedResetRef.current = false; // Reset the flag so it can show again if needed
       resetPasswordForm.reset();
     } catch (error: any) {
+      console.log('🔍 [DEBUG] Password reset failed:', error);
       toast.error('Failed to reset password', { description: error.message });
     } finally {
       setIsResettingPassword(false);
@@ -308,6 +326,7 @@ export default function ProfileSettings() {
       <Dialog 
         open={showResetDialog} 
         onOpenChange={(open) => {
+          console.log('🔍 [DEBUG] Dialog onOpenChange:', { open, currentState: showResetDialog });
           setShowResetDialog(open);
           if (!open) {
             // Reset the form when dialog is closed
