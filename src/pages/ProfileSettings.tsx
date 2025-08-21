@@ -81,9 +81,6 @@ export default function ProfileSettings() {
   // Debug: Log component mount
   useEffect(() => {
     console.log('🔍 [DEBUG] ProfileSettings component mounted:', Math.random().toString(36).substr(2, 9));
-    // Clear localStorage on mount for testing
-    localStorage.removeItem('profileSettings_resetProcessed');
-    console.log('🔍 [DEBUG] localStorage cleared on mount');
     return () => {
       console.log('🔍 [DEBUG] ProfileSettings component unmounted');
     };
@@ -140,14 +137,16 @@ export default function ProfileSettings() {
     const sourceFromSearchParams = searchParams.get('source');
     const urlParams = new URLSearchParams(window.location.search);
     const sourceFromUrl = urlParams.get('source');
-    const hasProcessedReset = localStorage.getItem('profileSettings_resetProcessed');
+    
+    // Use sessionStorage instead of localStorage to prevent persistence across remounts
+    const hasProcessedReset = sessionStorage.getItem('profileSettings_resetProcessed');
     
     console.log('🔍 [DEBUG] ProfileSettings useEffect triggered:', {
       sourceFromSearchParams,
       sourceFromUrl,
       hasProcessedReset,
       showResetDialog,
-      localStorageValue: localStorage.getItem('profileSettings_resetProcessed'),
+      sessionStorageValue: sessionStorage.getItem('profileSettings_resetProcessed'),
       currentUrl: window.location.href,
       componentId: Math.random().toString(36).substr(2, 9)
     });
@@ -158,8 +157,8 @@ export default function ProfileSettings() {
     if (source === 'reset' && !hasProcessedReset) {
       console.log('🔍 [DEBUG] Setting dialog to show');
       setShowResetDialog(true);
-      localStorage.setItem('profileSettings_resetProcessed', 'true');
-      console.log('🔍 [DEBUG] localStorage set to true');
+      sessionStorage.setItem('profileSettings_resetProcessed', 'true');
+      console.log('🔍 [DEBUG] sessionStorage set to true');
       // Clear the URL parameter to prevent showing dialog on refresh
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete('source');
@@ -167,7 +166,7 @@ export default function ProfileSettings() {
     } else if (source === 'reset' && hasProcessedReset) {
       console.log('🔍 [DEBUG] Reset already processed, skipping dialog');
       console.log('🔍 [DEBUG] hasProcessedReset value:', hasProcessedReset);
-      console.log('🔍 [DEBUG] localStorage.getItem result:', localStorage.getItem('profileSettings_resetProcessed'));
+      console.log('🔍 [DEBUG] sessionStorage.getItem result:', sessionStorage.getItem('profileSettings_resetProcessed'));
     } else if (!source) {
       console.log('🔍 [DEBUG] No source parameter found');
     }
@@ -277,7 +276,7 @@ export default function ProfileSettings() {
         description: 'Your password has been reset.'
       });
       setShowResetDialog(false);
-      localStorage.removeItem('profileSettings_resetProcessed'); // Clear the flag so it can show again if needed
+      sessionStorage.removeItem('profileSettings_resetProcessed'); // Clear the flag so it can show again if needed
       resetPasswordForm.reset();
     } catch (error: any) {
       console.log('🔍 [DEBUG] Password reset failed:', error);
@@ -353,8 +352,8 @@ export default function ProfileSettings() {
             resetPasswordForm.reset();
             setShowResetNewPassword(false);
             setShowResetConfirmPassword(false);
-            // Clear localStorage when dialog is closed manually
-            localStorage.removeItem('profileSettings_resetProcessed');
+            // Clear sessionStorage when dialog is closed manually
+            sessionStorage.removeItem('profileSettings_resetProcessed');
           }
         }}
       >
@@ -458,15 +457,15 @@ export default function ProfileSettings() {
         </Button>
         <Button
           onClick={() => {
-            console.log('🔍 [DEBUG] Clear localStorage clicked');
-            localStorage.removeItem('profileSettings_resetProcessed');
-            console.log('🔍 [DEBUG] localStorage cleared');
+            console.log('🔍 [DEBUG] Clear sessionStorage clicked');
+            sessionStorage.removeItem('profileSettings_resetProcessed');
+            console.log('🔍 [DEBUG] sessionStorage cleared');
           }}
           variant="outline"
           size="sm"
           className="bg-blue-500 text-white hover:bg-blue-600"
         >
-          Clear localStorage
+          Clear sessionStorage
         </Button>
         <Button
           onClick={() => {
