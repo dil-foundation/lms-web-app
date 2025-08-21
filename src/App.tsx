@@ -50,12 +50,12 @@ const RoleSelection = lazy(() => import('./pages/RoleSelection'));
 const StudentAuth = lazy(() => import('./pages/StudentAuth'));
 const TeacherAuth = lazy(() => import('./pages/TeacherAuth'));
 const AdminAuth = lazy(() => import('./pages/AdminAuth'));
-const ProfileSettings = lazy(() => import('./pages/ProfileSettings'));
 const SecureObserverFormPage = lazy(() => import('./pages/SecureObserverFormPage'));
 // Layout Pages
 import HomeLayout2 from './pages/HomeLayout2';
 import HomeLayout3 from './pages/HomeLayout3';
 import HomeLayout4 from './pages/HomeLayout4';
+import ProfileSettings from "./pages/ProfileSettings";
 
 const queryClient = new QueryClient({
   defaultOptions: {

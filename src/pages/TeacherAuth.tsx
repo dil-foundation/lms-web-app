@@ -373,7 +373,7 @@ const TeacherAuth = () => {
           <Button
             variant="ghost"
             onClick={() => navigate('/auth')}
-            className="mb-8 p-3 hover:bg-primary/5 rounded-xl transition-all duration-300 group"
+            className="mb-8 p-3 hover:bg-primary/10 hover:text-primary rounded-xl transition-all duration-300 group border border-transparent hover:border-primary/20"
           >
             <ArrowLeft className="w-5 h-5 mr-3 group-hover:-translate-x-1 transition-transform duration-300" />
             Back to role selection

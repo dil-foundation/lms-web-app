@@ -2,8 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
-import { ArrowLeft, BookOpen, Mic, Lightbulb, Play, Pause, Loader2, CheckCircle, XCircle, MessageSquare } from 'lucide-react';
+import { ArrowLeft, BookOpen, Mic, Lightbulb, Play, Pause, Loader2, CheckCircle, XCircle, MessageSquare, Trophy, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
 import { useAuth } from '@/hooks/useAuth';
 import { getAuthHeadersWithAccept, getAuthHeaders } from '@/utils/authUtils';
@@ -247,6 +248,8 @@ export default function StorytellingPractice() {
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
   const [showExample, setShowExample] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const hasFetchedData = useRef(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -630,6 +633,49 @@ export default function StorytellingPractice() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const markExerciseCompleted = async () => {
+    if (user?.id) {
+      try {
+        // Import the progress update function
+        const { updateCurrentProgress } = await import('@/utils/progressTracker');
+        
+        // Update progress to mark as completed
+        await updateCurrentProgress(
+          user.id,
+          3, // Stage 3
+          1  // Exercise 1 (StorytellingPractice)
+        );
+        console.log('Exercise marked as completed: Stage 3, Exercise 1 (StorytellingPractice)');
+      } catch (error) {
+        console.warn('Failed to mark exercise as completed:', error);
+      }
+    }
+  };
+
+  const handleRedo = () => {
+    setCurrentPrompt(0);
+    setFeedback(null);
+    setIsCompleted(false);
+    setShowCompletionDialog(false);
+    setShowExample(false);
+    setRecordingTime(0);
+    setIsRecording(false);
+    setIsEvaluating(false);
+    setRecordingStartTime(null);
+    
+    // Clear any active recording
+    if (recordingTimeoutRef.current) {
+      clearTimeout(recordingTimeoutRef.current);
+      recordingTimeoutRef.current = null;
+    }
+    if (mediaRecorderRef.current?.state === 'recording') {
+      mediaRecorderRef.current.stop();
+      if (mediaRecorderRef.current.stream) {
+        mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      }
+    }
+  };
+
   const handleStartRecording = async () => {
     if (!currentStoryPrompt) return;
     
@@ -669,7 +715,12 @@ export default function StorytellingPractice() {
   };
 
   const handleNextPrompt = () => {
-    if (currentPrompt < storyPrompts.length - 1) {
+    if (currentPrompt === storyPrompts.length - 1) {
+      // User is on the last prompt, mark as completed
+      setIsCompleted(true);
+      setShowCompletionDialog(true);
+      markExerciseCompleted();
+    } else {
       setCurrentPrompt(currentPrompt + 1);
       setFeedback(null);
       setRecordingTime(0);
@@ -908,10 +959,10 @@ export default function StorytellingPractice() {
                 variant="outline"
                 size="sm"
                 onClick={handleNextPrompt}
-                disabled={currentPrompt === storyPrompts.length - 1}
+                disabled={false}
                 className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl rounded-2xl"
               >
-                Next
+                {currentPrompt === storyPrompts.length - 1 ? 'Complete' : 'Next'}
               </Button>
             </div>
           </div>
@@ -1143,6 +1194,48 @@ export default function StorytellingPractice() {
             </CardContent>
           </Card>
         )}
+
+        {/* Completion Dialog */}
+        <Dialog open={showCompletionDialog} onOpenChange={setShowCompletionDialog}>
+          <DialogContent className="sm:max-w-lg p-0 bg-gradient-to-br from-white/98 via-white/95 to-[#8DC63F]/5 dark:from-gray-900/98 dark:via-gray-900/95 dark:to-[#8DC63F]/10 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-xl">
+            <DialogHeader className="px-6 py-5 border-b border-gray-200/40 dark:border-gray-700/40 bg-gradient-to-r from-transparent via-[#8DC63F]/5 to-transparent dark:via-[#8DC63F]/10">
+              <div className="flex items-center justify-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-[#8DC63F]/20 to-[#8DC63F]/30 dark:from-[#8DC63F]/20 dark:to-[#8DC63F]/30 rounded-3xl flex items-center justify-center shadow-sm border border-[#8DC63F]/30 dark:border-[#8DC63F]/40 mb-4">
+                  <Trophy className="h-8 w-8 text-[#8DC63F] dark:text-[#8DC63F]" />
+                </div>
+              </div>
+              <DialogTitle className="text-center text-2xl font-bold bg-gradient-to-r from-gray-900 to-[#8DC63F] dark:from-gray-100 dark:to-[#8DC63F] bg-clip-text text-transparent">
+                Congratulations!
+              </DialogTitle>
+            </DialogHeader>
+            <div className="p-6">
+              <div className="text-center space-y-4">
+                <p className="text-lg text-gray-700 dark:text-gray-300 font-medium">
+                  🎉 You've completed all {storyPrompts.length} storytelling prompts!
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Excellent work on practicing your storytelling skills. You can redo the exercise to practice more or continue to other exercises.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 mt-6">
+                  <Button
+                    onClick={handleRedo}
+                    variant="outline"
+                    className="flex-1 h-12 px-6 bg-[#8DC63F]/10 hover:bg-[#8DC63F]/20 dark:bg-[#8DC63F]/20 dark:hover:bg-[#8DC63F]/30 text-[#8DC63F] dark:text-[#8DC63F] border border-[#8DC63F]/30 dark:border-[#8DC63F]/40 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md font-medium"
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Redo Exercise
+                  </Button>
+                  <Button
+                    onClick={() => navigate('/dashboard/practice')}
+                    className="flex-1 h-12 px-6 bg-gradient-to-r from-[#8DC63F] to-[#8DC63F]/90 hover:from-[#8DC63F]/90 hover:to-[#8DC63F] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 border-0 rounded-xl"
+                  >
+                    Continue Learning
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

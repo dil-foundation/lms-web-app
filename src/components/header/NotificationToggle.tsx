@@ -14,11 +14,11 @@ export const NotificationToggle = memo(() => {
         variant="ghost"
         size="icon"
         onClick={() => setIsOpen(true)}
-        className="relative h-10 w-10 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800 group"
+        className="relative h-10 w-10 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-[#8DC63F]/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800 group"
       >
-        <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[#8DC63F]/5 to-[#8DC63F]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         <div className="relative z-10">
-          <Bell className="h-5 w-5 text-gray-600 dark:text-gray-400 transition-all duration-300 group-hover:scale-110 group-hover:text-primary" />
+          <Bell className="h-5 w-5 text-gray-600 dark:text-gray-400 transition-all duration-300 group-hover:scale-110 group-hover:text-[#8DC63F]" />
         </div>
         {/* Notification badge */}
         {unreadCount > 0 && (
