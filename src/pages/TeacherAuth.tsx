@@ -17,9 +17,13 @@ import {
   validateConfirmPassword,
   validateTeacherId
 } from '@/utils/validation';
+import { SupabaseMFAVerification } from '@/components/auth/SupabaseMFAVerification';
+import SupabaseMFAService from '@/services/supabaseMFAService';
+import { useAuth } from '@/contexts/AuthContext';
 
 const TeacherAuth = () => {
   const navigate = useNavigate();
+  const { setPendingMFAUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   
   // Password visibility states
@@ -41,6 +45,12 @@ const TeacherAuth = () => {
 
   // Auth error state
   const [authError, setAuthError] = useState('');
+  
+  // MFA verification states
+  const [showMFAVerification, setShowMFAVerification] = useState(false);
+  const [pendingUser, setPendingUser] = useState<any>(null);
+  
+
   
   const [signupData, setSignupData] = useState({ 
     firstName: '',
@@ -119,18 +129,21 @@ const TeacherAuth = () => {
 
     try {
       console.log('🔐 Attempting teacher login...');
-      const { data, error } = await supabase.auth.signInWithPassword({
+      
+      // Sign in and get user data
+      const { data: { user }, error: signInError } = await supabase.auth.signInWithPassword({
         email: loginData.email,
         password: loginData.password,
       });
 
-      if (error) throw error;
+      if (signInError) throw signInError;
       
-      if (data.user) {
+      if (user) {
+        // Get profile data while authenticated
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('role')
-          .eq('id', data.user.id)
+          .eq('id', user.id)
           .single();
 
         if (profileError || !profile) {
@@ -144,9 +157,35 @@ const TeacherAuth = () => {
           return;
         }
 
-        console.log('🔐 Teacher login successful:', data.user.email);
+        // Check if MFA is required and if user has MFA set up
+        const isMFARequired = await SupabaseMFAService.isMFARequired();
+        
+        // Get MFA status while authenticated
+        const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();
+        if (factorsError) throw factorsError;
+        
+        const totpFactor = factors.totp?.[0];
+        const mfaStatus = {
+          isEnabled: totpFactor?.status === 'verified',
+          isSetupComplete: totpFactor?.status === 'verified',
+          factors: factors.totp || []
+        };
+        
+        console.log('MFA Required:', isMFARequired, 'MFA Status:', mfaStatus);
+
+        if (isMFARequired && mfaStatus.isSetupComplete) {
+          // MFA is required and user has it set up, show verification dialog
+          console.log('🔐 MFA verification required for teacher login');
+          setPendingUser(user);
+          setPendingMFAUser(user); // Set in auth context
+          setShowMFAVerification(true);
+          setIsLoading(false);
+          return;
+        }
+
+        // No MFA required, proceed with normal login
+        console.log('🔐 Teacher login successful (no MFA required):', user.email);
         toast.success('Welcome back!');
-        // Force page refresh to ensure clean state
         window.location.href = '/dashboard';
       }
     } catch (error: any) {
@@ -624,6 +663,36 @@ const TeacherAuth = () => {
           </Card>
         </div>
       </div>
+
+      {/* MFA Verification Dialog */}
+      <SupabaseMFAVerification
+        isOpen={showMFAVerification}
+        onClose={() => {
+          setShowMFAVerification(false);
+          setPendingUser(null);
+          setPendingMFAUser(null);
+          // Sign out the user if they cancel MFA verification
+          supabase.auth.signOut();
+        }}
+        onSuccess={async () => {
+          setShowMFAVerification(false);
+          setPendingUser(null);
+          setPendingMFAUser(null);
+          
+          console.log('🔐 MFA verification successful, redirecting to dashboard...');
+          toast.success('Welcome back!');
+          window.location.href = '/dashboard';
+        }}
+        onBack={() => {
+          setShowMFAVerification(false);
+          setPendingUser(null);
+          setPendingMFAUser(null);
+          // Sign out the user if they go back from MFA verification
+          supabase.auth.signOut();
+        }}
+        userEmail={pendingUser?.email || ''}
+      />
+
     </div>
   );
 };

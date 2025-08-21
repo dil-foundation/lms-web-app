@@ -145,16 +145,23 @@ const SecurityService = {
         console.error('Error getting failed attempts count:', failedError);
       }
 
-      // Get 2FA enabled percentage from security settings
-      const { data: twoFASetting, error: twoFAError } = await supabase
+      // Get 2FA enabled percentage from role-based security settings
+      const { data: twoFASettings, error: twoFAError } = await supabase
         .from('security_settings')
         .select('setting_value')
-        .eq('setting_key', 'two_factor_auth_enabled')
-        .single();
+        .in('setting_key', ['two_factor_auth_enabled_admin', 'two_factor_auth_enabled_teachers', 'two_factor_auth_enabled_students']);
 
       if (twoFAError) {
-        console.error('Error getting 2FA setting:', twoFAError);
+        console.error('Error getting 2FA settings:', twoFAError);
       }
+
+      // Calculate 2FA enabled percentage based on role-based settings
+      let twoFAEnabledCount = 0;
+      if (twoFASettings && twoFASettings.length > 0) {
+        twoFAEnabledCount = twoFASettings.filter(setting => setting.setting_value === 'true').length;
+      }
+      const twoFAEnabledPercentage = twoFASettings && twoFASettings.length > 0 ? 
+        Math.round((twoFAEnabledCount / twoFASettings.length) * 100) : 0;
 
       // Mock last backup time (you can implement actual backup tracking)
       const lastBackup = '2h ago';
@@ -162,7 +169,7 @@ const SecurityService = {
       return {
         active_sessions: activeSessionsCount || 0,
         failed_attempts: failedAttempts?.length || 0,
-        two_fa_enabled_percentage: twoFASetting?.setting_value === 'true' ? 85 : 0,
+        two_fa_enabled_percentage: twoFAEnabledPercentage,
         last_backup: lastBackup
       };
     } catch (error) {
@@ -192,7 +199,9 @@ const SecurityService = {
   // Convert setting value to string for storage
   stringifySettingValue: (value: boolean | number | string): string => {
     return String(value);
-  }
+  },
+
+
 };
 
 export default SecurityService;

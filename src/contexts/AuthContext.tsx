@@ -10,6 +10,9 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  pendingMFAUser: User | null;
+  setPendingMFAUser: (user: User | null) => void;
+  isMFAVerificationPending: boolean;
 }
 
 // Create the context with a default undefined value
@@ -47,6 +50,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(getInitialUser());
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pendingMFAUser, setPendingMFAUser] = useState<User | null>(null);
 
   // This ref holds the latest user object to avoid stale closures in the subscription,
   // without making the useEffect below dependent on the `user` object itself.
@@ -91,7 +95,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const isDashboardPage = currentPath.startsWith('/dashboard');
         const isSecureFormPage = currentPath.startsWith('/secure-form');
 
-        if (event === 'SIGNED_IN' && !isAuthPage && !isDashboardPage && !isSecureFormPage) {
+        // Only navigate to dashboard if user is fully authenticated (not pending MFA)
+        if (event === 'SIGNED_IN' && !isAuthPage && !isDashboardPage && !isSecureFormPage && !pendingMFAUser) {
           navigate('/dashboard', { replace: true });
         }
 
@@ -119,6 +124,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await supabase.auth.signOut({ scope: 'global' });
       setSession(null);
       setUser(null);
+      setPendingMFAUser(null);
       navigate('/', { replace: true });
       localStorage.removeItem('cameFromDashboard');
     } catch (error) {
@@ -130,8 +136,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     user,
     session,
     loading,
-    signOut
-  }), [user, session, loading, signOut]);
+    signOut,
+    pendingMFAUser,
+    setPendingMFAUser,
+    isMFAVerificationPending: !!pendingMFAUser
+  }), [user, session, loading, signOut, pendingMFAUser]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
