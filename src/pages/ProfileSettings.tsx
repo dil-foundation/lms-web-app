@@ -95,6 +95,7 @@ export default function ProfileSettings() {
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [showResetNewPassword, setShowResetNewPassword] = useState(false);
   const [showResetConfirmPassword, setShowResetConfirmPassword] = useState(false);
+  const [hasShownResetDialog, setHasShownResetDialog] = useState(false);
 
   const profileForm = useForm<ProfileFormData>({
     resolver: zodResolver(profileFormSchema),
@@ -127,14 +128,15 @@ export default function ProfileSettings() {
   useEffect(() => {
     const source = searchParams.get('source');
     
-    if (source === 'reset') {
+    if (source === 'reset' && !hasShownResetDialog) {
       setShowResetDialog(true);
+      setHasShownResetDialog(true);
       // Clear the URL parameter to prevent showing dialog on refresh
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete('source');
       window.history.replaceState({}, '', newUrl.toString());
     }
-  }, [searchParams]);
+  }, [searchParams, hasShownResetDialog]);
 
   useEffect(() => {
     if (profile) {
@@ -238,6 +240,7 @@ export default function ProfileSettings() {
         description: 'Your password has been reset.'
       });
       setShowResetDialog(false);
+      setHasShownResetDialog(false); // Reset the flag so it can show again if needed
       resetPasswordForm.reset();
     } catch (error: any) {
       toast.error('Failed to reset password', { description: error.message });
@@ -302,7 +305,18 @@ export default function ProfileSettings() {
   return (
     <div className="min-h-full bg-background">
       {/* Password Reset Dialog */}
-      <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+      <Dialog 
+        open={showResetDialog} 
+        onOpenChange={(open) => {
+          setShowResetDialog(open);
+          if (!open) {
+            // Reset the form when dialog is closed
+            resetPasswordForm.reset();
+            setShowResetNewPassword(false);
+            setShowResetConfirmPassword(false);
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
