@@ -135,24 +135,38 @@ export default function ProfileSettings() {
 
   // Check for reset source parameter on component mount
   useEffect(() => {
-    const source = searchParams.get('source');
+    // Try multiple ways to get the source parameter
+    const sourceFromSearchParams = searchParams.get('source');
+    const urlParams = new URLSearchParams(window.location.search);
+    const sourceFromUrl = urlParams.get('source');
     const hasProcessedReset = localStorage.getItem('profileSettings_resetProcessed');
     
     console.log('🔍 [DEBUG] ProfileSettings useEffect triggered:', {
-      source,
+      sourceFromSearchParams,
+      sourceFromUrl,
       hasProcessedReset,
       showResetDialog,
+      localStorageValue: localStorage.getItem('profileSettings_resetProcessed'),
+      currentUrl: window.location.href,
       componentId: Math.random().toString(36).substr(2, 9)
     });
+    
+    // Use either method to detect the source parameter
+    const source = sourceFromSearchParams || sourceFromUrl;
     
     if (source === 'reset' && !hasProcessedReset) {
       console.log('🔍 [DEBUG] Setting dialog to show');
       setShowResetDialog(true);
       localStorage.setItem('profileSettings_resetProcessed', 'true');
+      console.log('🔍 [DEBUG] localStorage set to true');
       // Clear the URL parameter to prevent showing dialog on refresh
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete('source');
       window.history.replaceState({}, '', newUrl.toString());
+    } else if (source === 'reset' && hasProcessedReset) {
+      console.log('🔍 [DEBUG] Reset already processed, skipping dialog');
+    } else if (!source) {
+      console.log('🔍 [DEBUG] No source parameter found');
     }
   }, [searchParams]);
 
@@ -312,7 +326,7 @@ export default function ProfileSettings() {
   }
 
   if (error) {
-    return (
+  return (
       <div className="flex flex-col items-center justify-center p-8 h-screen text-center">
         <h2 className="text-xl font-semibold text-destructive mb-2">Error loading profile</h2>
         <p className="text-muted-foreground mb-4">{error}</p>
@@ -426,7 +440,51 @@ export default function ProfileSettings() {
         </DialogContent>
       </Dialog>
 
-
+      {/* Debug: Manual trigger buttons for testing */}
+      <div className="fixed top-4 right-4 z-50 space-y-2">
+        <Button
+          onClick={() => {
+            console.log('🔍 [DEBUG] Manual trigger clicked');
+            setShowResetDialog(true);
+          }}
+          variant="outline"
+          size="sm"
+          className="bg-red-500 text-white hover:bg-red-600"
+        >
+          Test Reset Dialog
+        </Button>
+        <Button
+          onClick={() => {
+            console.log('🔍 [DEBUG] Clear localStorage clicked');
+            localStorage.removeItem('profileSettings_resetProcessed');
+            console.log('🔍 [DEBUG] localStorage cleared');
+          }}
+          variant="outline"
+          size="sm"
+          className="bg-blue-500 text-white hover:bg-blue-600"
+        >
+          Clear localStorage
+        </Button>
+        <Button
+          onClick={() => {
+            console.log('🔍 [DEBUG] Check URL params clicked');
+            const sourceFromSearchParams = searchParams.get('source');
+            const urlParams = new URLSearchParams(window.location.search);
+            const sourceFromUrl = urlParams.get('source');
+            console.log('🔍 [DEBUG] URL params check:', {
+              sourceFromSearchParams,
+              sourceFromUrl,
+              currentUrl: window.location.href,
+              searchParamsString: searchParams.toString()
+            });
+          }}
+          variant="outline"
+          size="sm"
+          className="bg-green-500 text-white hover:bg-green-600"
+        >
+          Check URL Params
+        </Button>
+      </div>
 
       {/* Premium Header */}
       <div className="relative">
