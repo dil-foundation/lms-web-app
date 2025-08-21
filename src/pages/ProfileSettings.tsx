@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -83,6 +83,8 @@ export default function ProfileSettings() {
     console.log('🔍 [DEBUG] ProfileSettings component mounted:', Math.random().toString(36).substr(2, 9));
     return () => {
       console.log('🔍 [DEBUG] ProfileSettings component unmounted');
+      // Clean up localStorage when component unmounts
+      localStorage.removeItem('profileSettings_resetProcessed');
     };
   }, []);
   
@@ -103,7 +105,6 @@ export default function ProfileSettings() {
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [showResetNewPassword, setShowResetNewPassword] = useState(false);
   const [showResetConfirmPassword, setShowResetConfirmPassword] = useState(false);
-  const hasProcessedResetRef = useRef(false);
 
   const profileForm = useForm<ProfileFormData>({
     resolver: zodResolver(profileFormSchema),
@@ -135,17 +136,19 @@ export default function ProfileSettings() {
   // Check for reset source parameter on component mount
   useEffect(() => {
     const source = searchParams.get('source');
+    const hasProcessedReset = localStorage.getItem('profileSettings_resetProcessed');
+    
     console.log('🔍 [DEBUG] ProfileSettings useEffect triggered:', {
       source,
-      hasProcessedReset: hasProcessedResetRef.current,
+      hasProcessedReset,
       showResetDialog,
       componentId: Math.random().toString(36).substr(2, 9)
     });
     
-    if (source === 'reset' && !hasProcessedResetRef.current) {
+    if (source === 'reset' && !hasProcessedReset) {
       console.log('🔍 [DEBUG] Setting dialog to show');
       setShowResetDialog(true);
-      hasProcessedResetRef.current = true;
+      localStorage.setItem('profileSettings_resetProcessed', 'true');
       // Clear the URL parameter to prevent showing dialog on refresh
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete('source');
@@ -257,7 +260,7 @@ export default function ProfileSettings() {
         description: 'Your password has been reset.'
       });
       setShowResetDialog(false);
-      hasProcessedResetRef.current = false; // Reset the flag so it can show again if needed
+      localStorage.removeItem('profileSettings_resetProcessed'); // Clear the flag so it can show again if needed
       resetPasswordForm.reset();
     } catch (error: any) {
       console.log('🔍 [DEBUG] Password reset failed:', error);
@@ -333,6 +336,8 @@ export default function ProfileSettings() {
             resetPasswordForm.reset();
             setShowResetNewPassword(false);
             setShowResetConfirmPassword(false);
+            // Clear localStorage when dialog is closed manually
+            localStorage.removeItem('profileSettings_resetProcessed');
           }
         }}
       >
