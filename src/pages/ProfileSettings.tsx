@@ -59,7 +59,16 @@ const passwordSchema = z.object({
 type PasswordFormData = z.infer<typeof passwordSchema>;
 
 const resetPasswordSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
+  newPassword: z.string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number')
+    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
+  confirmPassword: z.string().min(1, 'Please confirm your password'),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
 });
 
 type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
@@ -84,6 +93,8 @@ export default function ProfileSettings() {
   // Password reset dialog state
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [showResetNewPassword, setShowResetNewPassword] = useState(false);
+  const [showResetConfirmPassword, setShowResetConfirmPassword] = useState(false);
 
   const profileForm = useForm<ProfileFormData>({
     resolver: zodResolver(profileFormSchema),
@@ -107,13 +118,15 @@ export default function ProfileSettings() {
   const resetPasswordForm = useForm<ResetPasswordFormData>({
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: {
-      email: user?.email || '',
+      newPassword: '',
+      confirmPassword: '',
     },
   });
 
   // Check for reset source parameter on component mount
   useEffect(() => {
     const source = searchParams.get('source');
+    
     if (source === 'reset') {
       setShowResetDialog(true);
       // Clear the URL parameter to prevent showing dialog on refresh
@@ -215,19 +228,19 @@ export default function ProfileSettings() {
   const onResetPassword = async (data: ResetPasswordFormData) => {
     setIsResettingPassword(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-        redirectTo: `${window.location.origin}/dashboard/profile-settings?source=reset`,
+      const { error } = await supabase.auth.updateUser({
+        password: data.newPassword,
       });
 
       if (error) throw error;
 
-      toast.success('Password reset email sent successfully', {
-        description: 'Please check your email for the reset link'
+      toast.success('Password updated successfully', {
+        description: 'Your password has been reset.'
       });
       setShowResetDialog(false);
       resetPasswordForm.reset();
     } catch (error: any) {
-      toast.error('Failed to send reset email', { description: error.message });
+      toast.error('Failed to reset password', { description: error.message });
     } finally {
       setIsResettingPassword(false);
     }
@@ -294,27 +307,64 @@ export default function ProfileSettings() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Key className="w-5 h-5 text-primary" />
-              Reset Password
+              Set New Password
             </DialogTitle>
             <DialogDescription>
-              Enter your email address and we'll send you a link to reset your password.
+              Enter your new password below. Make sure it's secure and easy to remember.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={resetPasswordForm.handleSubmit(onResetPassword)} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="reset-email">Email Address</Label>
+              <Label htmlFor="reset-newPassword">New Password</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
-                  id="reset-email"
-                  type="email"
-                  {...resetPasswordForm.register('email')}
-                  className="pl-10"
-                  placeholder="Enter your email address"
+                  id="reset-newPassword"
+                  type={showResetNewPassword ? 'text' : 'password'}
+                  {...resetPasswordForm.register('newPassword')}
+                  className="pl-10 pr-10"
+                  placeholder="Enter your new password"
                 />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowResetNewPassword(!showResetNewPassword)}
+                >
+                  {showResetNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </Button>
               </div>
-              {resetPasswordForm.formState.errors.email && (
-                <p className="text-sm text-destructive">{resetPasswordForm.formState.errors.email.message}</p>
+              {resetPasswordForm.formState.errors.newPassword && (
+                <p className="text-sm text-destructive">{resetPasswordForm.formState.errors.newPassword.message}</p>
+              )}
+              <div className="text-xs text-muted-foreground">
+                Password must be at least 8 characters and contain uppercase, lowercase, number, and special character.
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="reset-confirmPassword">Confirm New Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="reset-confirmPassword"
+                  type={showResetConfirmPassword ? 'text' : 'password'}
+                  {...resetPasswordForm.register('confirmPassword')}
+                  className="pl-10 pr-10"
+                  placeholder="Confirm your new password"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowResetConfirmPassword(!showResetConfirmPassword)}
+                >
+                  {showResetConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </Button>
+              </div>
+              {resetPasswordForm.formState.errors.confirmPassword && (
+                <p className="text-sm text-destructive">{resetPasswordForm.formState.errors.confirmPassword.message}</p>
               )}
             </div>
             <div className="flex gap-3">
@@ -331,12 +381,14 @@ export default function ProfileSettings() {
                 disabled={isResettingPassword}
                 className="flex-1 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary"
               >
-                {isResettingPassword ? 'Sending...' : 'Send Reset Link'}
+                {isResettingPassword ? 'Updating...' : 'Update Password'}
               </Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
+
+
 
       {/* Premium Header */}
       <div className="relative">
@@ -452,11 +504,11 @@ export default function ProfileSettings() {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="phoneNumber">Phone Number</Label>
+                    <Label htmlFor="profile-phoneNumber">Phone Number</Label>
                     <div className="relative">
                       <Smartphone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input
-                        id="phoneNumber"
+                        id="profile-phoneNumber"
                         {...profileForm.register('phoneNumber')}
                         className="bg-background border-border pl-10"
                         placeholder="+1 (555) 123-4567"
@@ -464,11 +516,11 @@ export default function ProfileSettings() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="timezone">Timezone</Label>
+                    <Label htmlFor="profile-timezone">Timezone</Label>
                     <div className="relative">
                       <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input
-                        id="timezone"
+                        id="profile-timezone"
                         {...profileForm.register('timezone')}
                         className="bg-background border-border pl-10"
                         placeholder="UTC"
