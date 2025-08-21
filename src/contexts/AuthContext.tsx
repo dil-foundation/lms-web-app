@@ -91,6 +91,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = useCallback(async () => {
     try {
       cleanupAuthState();
+      // Clear custom sessionStorage items
+      sessionStorage.removeItem('profileSettings_resetProcessed');
       await supabase.auth.signOut({ scope: 'global' });
       setSession(null);
       setUser(null);
