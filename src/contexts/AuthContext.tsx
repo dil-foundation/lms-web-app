@@ -2,6 +2,7 @@ import { createContext, useState, useEffect, useMemo, useCallback, ReactNode, us
 import { useNavigate } from 'react-router-dom';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import SessionService from '@/services/sessionService';
 
 // Define the shape of the context state
 interface AuthContextType {
@@ -9,6 +10,9 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  pendingMFAUser: User | null;
+  setPendingMFAUser: (user: User | null) => void;
+  isMFAVerificationPending: boolean;
 }
 
 // Create the context with a default undefined value
@@ -46,6 +50,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(getInitialUser());
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pendingMFAUser, setPendingMFAUser] = useState<User | null>(null);
 
   // This ref holds the latest user object to avoid stale closures in the subscription,
   // without making the useEffect below dependent on the `user` object itself.
@@ -63,11 +68,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         // Prevent re-renders on tab focus, etc. by only updating state if the user ID is different.
         if (event === 'USER_UPDATED' || session?.user?.id !== userRef.current?.id) {
           setSession(session);
           setUser(session?.user ?? null);
+          
+          // Track session in database when user signs in
+          if (event === 'SIGNED_IN' && session?.user) {
+            try {
+              await SessionService.createSession(
+                session.user.id,
+                session.access_token,
+                undefined, // IP address (can be added later)
+                navigator.userAgent,
+                undefined // Location (can be added later)
+              );
+            } catch (error) {
+              console.error('Error creating session:', error);
+            }
+          }
         }
 
         const currentPath = window.location.pathname;
@@ -75,7 +95,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const isDashboardPage = currentPath.startsWith('/dashboard');
         const isSecureFormPage = currentPath.startsWith('/secure-form');
 
-        if (event === 'SIGNED_IN' && !isAuthPage && !isDashboardPage && !isSecureFormPage) {
+        // Only navigate to dashboard if user is fully authenticated (not pending MFA)
+        if (event === 'SIGNED_IN' && !isAuthPage && !isDashboardPage && !isSecureFormPage && !pendingMFAUser) {
           navigate('/dashboard', { replace: true });
         }
 
@@ -90,6 +111,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = useCallback(async () => {
     try {
+      // Deactivate session in database before signing out
+      if (session?.access_token) {
+        try {
+          await SessionService.deactivateSession(session.access_token);
+        } catch (error) {
+          console.error('Error deactivating session:', error);
+        }
+      }
+      
       cleanupAuthState();
       // Clear custom sessionStorage items
       sessionStorage.removeItem('profileSettings_resetProcessed');
@@ -97,19 +127,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await supabase.auth.signOut({ scope: 'global' });
       setSession(null);
       setUser(null);
+      setPendingMFAUser(null);
       navigate('/', { replace: true });
       localStorage.removeItem('cameFromDashboard');
     } catch (error) {
       console.error('🔐 Sign out error:', error);
     }
-  }, [navigate]);
+  }, [navigate, session]);
 
   const value = useMemo(() => ({
     user,
     session,
     loading,
-    signOut
-  }), [user, session, loading, signOut]);
+    signOut,
+    pendingMFAUser,
+    setPendingMFAUser,
+    isMFAVerificationPending: !!pendingMFAUser
+  }), [user, session, loading, signOut, pendingMFAUser]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
