@@ -20,7 +20,6 @@ const RoleSelection = lazy(() => import('./pages/RoleSelection'));
 const StudentAuth = lazy(() => import('./pages/StudentAuth'));
 const TeacherAuth = lazy(() => import('./pages/TeacherAuth'));
 const AdminAuth = lazy(() => import('./pages/AdminAuth'));
-const ProfileSettings = lazy(() => import('./pages/ProfileSettings'));
 const SecureObserverFormPage = lazy(() => import('./pages/SecureObserverFormPage'));
 // Layout Pages
 import HomeLayout2 from './pages/HomeLayout2';
@@ -61,7 +60,6 @@ const App = () => {
                         <Route path="/forgot-password" element={<ForgotPassword />} />
                         <Route path="/dashboard/*" element={<Dashboard />} />
                         <Route path="/course-builder/:courseId" element={<CourseBuilder />} />
-                        <Route path="/profile-settings" element={<ProfileSettings />} />
                         <Route path="/secure-form/:token" element={<SecureObserverFormPage />} />
                         <Route path="*" element={<NotFound />} />
                       </Routes>
