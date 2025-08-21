@@ -78,13 +78,7 @@ export default function ProfileSettings() {
   const { profile, loading, error } = useUserProfile();
   const [searchParams] = useSearchParams();
   
-  // Debug: Log component mount
-  useEffect(() => {
-    console.log('🔍 [DEBUG] ProfileSettings component mounted:', Math.random().toString(36).substr(2, 9));
-    return () => {
-      console.log('🔍 [DEBUG] ProfileSettings component unmounted');
-    };
-  }, []);
+
   
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -133,42 +127,16 @@ export default function ProfileSettings() {
 
   // Check for reset source parameter on component mount
   useEffect(() => {
-    // Try multiple ways to get the source parameter
-    const sourceFromSearchParams = searchParams.get('source');
-    const urlParams = new URLSearchParams(window.location.search);
-    const sourceFromUrl = urlParams.get('source');
-    
-    // Use sessionStorage instead of localStorage to prevent persistence across remounts
+    const source = searchParams.get('source');
     const hasProcessedReset = sessionStorage.getItem('profileSettings_resetProcessed');
     
-    console.log('🔍 [DEBUG] ProfileSettings useEffect triggered:', {
-      sourceFromSearchParams,
-      sourceFromUrl,
-      hasProcessedReset,
-      showResetDialog,
-      sessionStorageValue: sessionStorage.getItem('profileSettings_resetProcessed'),
-      currentUrl: window.location.href,
-      componentId: Math.random().toString(36).substr(2, 9)
-    });
-    
-    // Use either method to detect the source parameter
-    const source = sourceFromSearchParams || sourceFromUrl;
-    
     if (source === 'reset' && !hasProcessedReset) {
-      console.log('🔍 [DEBUG] Setting dialog to show');
       setShowResetDialog(true);
       sessionStorage.setItem('profileSettings_resetProcessed', 'true');
-      console.log('🔍 [DEBUG] sessionStorage set to true');
       // Clear the URL parameter to prevent showing dialog on refresh
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete('source');
       window.history.replaceState({}, '', newUrl.toString());
-    } else if (source === 'reset' && hasProcessedReset) {
-      console.log('🔍 [DEBUG] Reset already processed, skipping dialog');
-      console.log('🔍 [DEBUG] hasProcessedReset value:', hasProcessedReset);
-      console.log('🔍 [DEBUG] sessionStorage.getItem result:', sessionStorage.getItem('profileSettings_resetProcessed'));
-    } else if (!source) {
-      console.log('🔍 [DEBUG] No source parameter found');
     }
   }, [searchParams]);
 
@@ -262,7 +230,6 @@ export default function ProfileSettings() {
   };
 
   const onResetPassword = async (data: ResetPasswordFormData) => {
-    console.log('🔍 [DEBUG] onResetPassword called');
     setIsResettingPassword(true);
     try {
       const { error } = await supabase.auth.updateUser({
@@ -271,7 +238,6 @@ export default function ProfileSettings() {
 
       if (error) throw error;
 
-      console.log('🔍 [DEBUG] Password reset successful, closing dialog');
       toast.success('Password updated successfully', {
         description: 'Your password has been reset.'
       });
@@ -279,7 +245,6 @@ export default function ProfileSettings() {
       sessionStorage.removeItem('profileSettings_resetProcessed'); // Clear the flag so it can show again if needed
       resetPasswordForm.reset();
     } catch (error: any) {
-      console.log('🔍 [DEBUG] Password reset failed:', error);
       toast.error('Failed to reset password', { description: error.message });
     } finally {
       setIsResettingPassword(false);
@@ -345,7 +310,6 @@ export default function ProfileSettings() {
       <Dialog 
         open={showResetDialog} 
         onOpenChange={(open) => {
-          console.log('🔍 [DEBUG] Dialog onOpenChange:', { open, currentState: showResetDialog });
           setShowResetDialog(open);
           if (!open) {
             // Reset the form when dialog is closed
@@ -442,51 +406,7 @@ export default function ProfileSettings() {
         </DialogContent>
       </Dialog>
 
-      {/* Debug: Manual trigger buttons for testing */}
-      <div className="fixed top-4 right-4 z-50 space-y-2">
-        <Button
-          onClick={() => {
-            console.log('🔍 [DEBUG] Manual trigger clicked');
-            setShowResetDialog(true);
-          }}
-          variant="outline"
-          size="sm"
-          className="bg-red-500 text-white hover:bg-red-600"
-        >
-          Test Reset Dialog
-        </Button>
-        <Button
-          onClick={() => {
-            console.log('🔍 [DEBUG] Clear sessionStorage clicked');
-            sessionStorage.removeItem('profileSettings_resetProcessed');
-            console.log('🔍 [DEBUG] sessionStorage cleared');
-          }}
-          variant="outline"
-          size="sm"
-          className="bg-blue-500 text-white hover:bg-blue-600"
-        >
-          Clear sessionStorage
-        </Button>
-        <Button
-          onClick={() => {
-            console.log('🔍 [DEBUG] Check URL params clicked');
-            const sourceFromSearchParams = searchParams.get('source');
-            const urlParams = new URLSearchParams(window.location.search);
-            const sourceFromUrl = urlParams.get('source');
-            console.log('🔍 [DEBUG] URL params check:', {
-              sourceFromSearchParams,
-              sourceFromUrl,
-              currentUrl: window.location.href,
-              searchParamsString: searchParams.toString()
-            });
-          }}
-          variant="outline"
-          size="sm"
-          className="bg-green-500 text-white hover:bg-green-600"
-        >
-          Check URL Params
-        </Button>
-      </div>
+
 
       {/* Premium Header */}
       <div className="relative">
