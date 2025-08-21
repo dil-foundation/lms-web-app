@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   User, 
   Shield, 
@@ -27,12 +28,15 @@ import {
   Calendar,
   CheckCircle,
   AlertCircle,
-  BookOpen
+  BookOpen,
+  Key,
+  Mail
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useSearchParams } from 'react-router-dom';
 
 const profileFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -54,9 +58,16 @@ const passwordSchema = z.object({
 
 type PasswordFormData = z.infer<typeof passwordSchema>;
 
+const resetPasswordSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+});
+
+type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
+
 export default function ProfileSettings() {
   const { user, signOut } = useAuth();
   const { profile, loading, error } = useUserProfile();
+  const [searchParams] = useSearchParams();
   
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -69,6 +80,10 @@ export default function ProfileSettings() {
     push: false,
     inApp: true,
   });
+
+  // Password reset dialog state
+  const [showResetDialog, setShowResetDialog] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
 
   const profileForm = useForm<ProfileFormData>({
     resolver: zodResolver(profileFormSchema),
@@ -88,6 +103,25 @@ export default function ProfileSettings() {
       confirmPassword: '',
     },
   });
+
+  const resetPasswordForm = useForm<ResetPasswordFormData>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: {
+      email: user?.email || '',
+    },
+  });
+
+  // Check for reset source parameter on component mount
+  useEffect(() => {
+    const source = searchParams.get('source');
+    if (source === 'reset') {
+      setShowResetDialog(true);
+      // Clear the URL parameter to prevent showing dialog on refresh
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('source');
+      window.history.replaceState({}, '', newUrl.toString());
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (profile) {
@@ -178,6 +212,27 @@ export default function ProfileSettings() {
     }
   };
 
+  const onResetPassword = async (data: ResetPasswordFormData) => {
+    setIsResettingPassword(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
+        redirectTo: `${window.location.origin}/dashboard/profile-settings?source=reset`,
+      });
+
+      if (error) throw error;
+
+      toast.success('Password reset email sent successfully', {
+        description: 'Please check your email for the reset link'
+      });
+      setShowResetDialog(false);
+      resetPasswordForm.reset();
+    } catch (error: any) {
+      toast.error('Failed to send reset email', { description: error.message });
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
   const handleThemeChange = (newTheme: 'light' | 'dark' | 'auto') => {
     setTheme(newTheme);
     // Here you would implement the actual theme change logic
@@ -233,6 +288,56 @@ export default function ProfileSettings() {
 
   return (
     <div className="min-h-full bg-background">
+      {/* Password Reset Dialog */}
+      <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Key className="w-5 h-5 text-primary" />
+              Reset Password
+            </DialogTitle>
+            <DialogDescription>
+              Enter your email address and we'll send you a link to reset your password.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={resetPasswordForm.handleSubmit(onResetPassword)} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="reset-email">Email Address</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="reset-email"
+                  type="email"
+                  {...resetPasswordForm.register('email')}
+                  className="pl-10"
+                  placeholder="Enter your email address"
+                />
+              </div>
+              {resetPasswordForm.formState.errors.email && (
+                <p className="text-sm text-destructive">{resetPasswordForm.formState.errors.email.message}</p>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowResetDialog(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isResettingPassword}
+                className="flex-1 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary"
+              >
+                {isResettingPassword ? 'Sending...' : 'Send Reset Link'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       {/* Premium Header */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5"></div>
