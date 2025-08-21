@@ -81,10 +81,11 @@ export default function ProfileSettings() {
   // Debug: Log component mount
   useEffect(() => {
     console.log('🔍 [DEBUG] ProfileSettings component mounted:', Math.random().toString(36).substr(2, 9));
+    // Clear localStorage on mount for testing
+    localStorage.removeItem('profileSettings_resetProcessed');
+    console.log('🔍 [DEBUG] localStorage cleared on mount');
     return () => {
       console.log('🔍 [DEBUG] ProfileSettings component unmounted');
-      // Clean up localStorage when component unmounts
-      localStorage.removeItem('profileSettings_resetProcessed');
     };
   }, []);
   
@@ -165,6 +166,8 @@ export default function ProfileSettings() {
       window.history.replaceState({}, '', newUrl.toString());
     } else if (source === 'reset' && hasProcessedReset) {
       console.log('🔍 [DEBUG] Reset already processed, skipping dialog');
+      console.log('🔍 [DEBUG] hasProcessedReset value:', hasProcessedReset);
+      console.log('🔍 [DEBUG] localStorage.getItem result:', localStorage.getItem('profileSettings_resetProcessed'));
     } else if (!source) {
       console.log('🔍 [DEBUG] No source parameter found');
     }
