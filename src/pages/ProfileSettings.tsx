@@ -125,18 +125,9 @@ export default function ProfileSettings() {
 
   // Check for reset source parameter on component mount
   useEffect(() => {
-    // Check both searchParams and direct URL parsing
-    const sourceFromParams = searchParams.get('source');
-    const urlParams = new URLSearchParams(window.location.search);
-    const sourceFromUrl = urlParams.get('source');
+    const source = searchParams.get('source');
     
-    console.log('🔍 [DEBUG] URL source parameter (searchParams):', sourceFromParams);
-    console.log('🔍 [DEBUG] URL source parameter (direct):', sourceFromUrl);
-    console.log('🔍 [DEBUG] Current URL:', window.location.href);
-    console.log('🔍 [DEBUG] Search params object:', searchParams.toString());
-    
-    if (sourceFromParams === 'reset' || sourceFromUrl === 'reset') {
-      console.log('🔍 [DEBUG] Showing reset dialog');
+    if (source === 'reset') {
       setShowResetDialog(true);
       // Clear the URL parameter to prevent showing dialog on refresh
       const newUrl = new URL(window.location.href);
@@ -144,11 +135,6 @@ export default function ProfileSettings() {
       window.history.replaceState({}, '', newUrl.toString());
     }
   }, [searchParams]);
-
-  // Debug effect to log dialog state
-  useEffect(() => {
-    console.log('🔍 [DEBUG] Dialog state changed:', showResetDialog);
-  }, [showResetDialog]);
 
   useEffect(() => {
     if (profile) {
@@ -402,20 +388,7 @@ export default function ProfileSettings() {
         </DialogContent>
       </Dialog>
 
-      {/* Debug: Manual trigger button for testing */}
-      <div className="fixed top-4 right-4 z-50">
-        <Button
-          onClick={() => {
-            console.log('🔍 [DEBUG] Manual trigger clicked');
-            setShowResetDialog(true);
-          }}
-          variant="outline"
-          size="sm"
-          className="bg-red-500 text-white hover:bg-red-600"
-        >
-          Test Reset Dialog
-        </Button>
-      </div>
+
 
       {/* Premium Header */}
       <div className="relative">
