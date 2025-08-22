@@ -78,13 +78,7 @@ export default function ProfileSettings() {
   const { profile, loading, error } = useUserProfile();
   const [searchParams] = useSearchParams();
   
-  // Production debugging - component mount
-  useEffect(() => {
-    console.log('🔍 [PROD] ProfileSettings component mounted');
-    return () => {
-      console.log('🔍 [PROD] ProfileSettings component unmounted');
-    };
-  }, []);
+
   
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -136,35 +130,20 @@ export default function ProfileSettings() {
     const source = searchParams.get('source');
     const hasProcessedReset = sessionStorage.getItem('profileSettings_resetProcessed');
     
-    // Production debugging
-    console.log('🔍 [PROD] ProfileSettings useEffect:', {
-      source,
-      hasProcessedReset,
-      showResetDialog,
-      currentUrl: window.location.href,
-      searchParams: searchParams.toString()
-    });
-    
     if (source === 'reset' && !hasProcessedReset) {
-      console.log('🔍 [PROD] Setting dialog to show');
       setShowResetDialog(true);
       sessionStorage.setItem('profileSettings_shouldShowDialog', 'true');
-      console.log('🔍 [PROD] Dialog state set to true, shouldShowDialog flag set');
       // Clear the URL parameter to prevent showing dialog on refresh
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete('source');
       window.history.replaceState({}, '', newUrl.toString());
     } else if (source === 'reset' && hasProcessedReset) {
-      console.log('🔍 [PROD] Reset already processed, skipping dialog');
       // Check if we should still show the dialog (in case of remount)
       const shouldShowDialog = sessionStorage.getItem('profileSettings_shouldShowDialog');
       if (shouldShowDialog === 'true') {
-        console.log('🔍 [PROD] Showing dialog after remount');
         setShowResetDialog(true);
         sessionStorage.removeItem('profileSettings_shouldShowDialog');
       }
-    } else if (!source) {
-      console.log('🔍 [PROD] No source parameter found');
     }
   }, [searchParams]);
 
@@ -339,7 +318,6 @@ export default function ProfileSettings() {
       <Dialog 
         open={showResetDialog} 
         onOpenChange={(open) => {
-          console.log('🔍 [PROD] Dialog onOpenChange:', { open, currentState: showResetDialog });
           setShowResetDialog(open);
           if (!open) {
             // Reset the form when dialog is closed
@@ -436,22 +414,7 @@ export default function ProfileSettings() {
         </DialogContent>
       </Dialog>
 
-      {/* Production debug button */}
-      <div className="fixed top-4 right-4 z-50">
-        <Button
-          onClick={() => {
-            console.log('🔍 [PROD] Manual dialog trigger clicked');
-            console.log('🔍 [PROD] Current showResetDialog state:', showResetDialog);
-            setShowResetDialog(true);
-            console.log('🔍 [PROD] Dialog state set to true');
-          }}
-          variant="outline"
-          size="sm"
-          className="bg-red-500 text-white hover:bg-red-600"
-        >
-          Test Dialog (Prod)
-        </Button>
-      </div>
+
 
       {/* Premium Header */}
       <div className="relative">
