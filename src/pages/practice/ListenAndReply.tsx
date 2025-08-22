@@ -35,6 +35,35 @@ interface EvaluationFeedback {
   message?: string;
 }
 
+interface ExerciseCompletion {
+  exercise_completed: boolean;
+  progress_percentage: number;
+  completed_topics: number;
+  total_topics: number;
+  current_topic_id: number;
+  stage_id: number;
+  exercise_id: number;
+  exercise_name: string;
+  stage_name: string;
+  completion_date: string | null;
+}
+
+interface EvaluationResponse {
+  success: boolean;
+  expected_phrase: string;
+  user_text: string;
+  evaluation: {
+    feedback: string;
+    score: number;
+    is_correct: boolean;
+    urdu_used: boolean;
+    completed: boolean;
+  };
+  progress_recorded: boolean;
+  unlocked_content: string[];
+  exercise_completion: ExerciseCompletion;
+}
+
 // API Functions
 const fetchDialogues = async (): Promise<Dialogue[]> => {
   try {
@@ -396,7 +425,7 @@ export const ListenAndReply: React.FC = () => {
   };
 
   // Evaluate recorded audio
-  const evaluateAudio = async (audioBase64: string, timeSpentSeconds: number): Promise<EvaluationFeedback> => {
+  const evaluateAudio = async (audioBase64: string, timeSpentSeconds: number): Promise<{feedback: EvaluationFeedback, evaluationResponse: EvaluationResponse | null}> => {
     try {
       const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.EVALUATE_LISTEN_REPLY}`, {
         method: 'POST',
@@ -427,11 +456,11 @@ export const ListenAndReply: React.FC = () => {
           score: 0,
           feedback: errorMessage,
           suggestions: result.expected_keywords ? 
-            [`Try using keywords: ${result.expected_keywords.join(', ')}`] : 
-            ['Please speak more clearly and try again']
+            [`Try using keywords: ${result.expected_keywords.join(', ')}`, 'Please speak more clearly and try again', 'Make sure you are in a quiet environment'] : 
+            ['Please speak more clearly and try again', 'Make sure you are in a quiet environment', 'Speak directly into the microphone']
         };
         
-        return feedback;
+        return { feedback, evaluationResponse: result };
       }
       
       // Handle successful evaluation responses
@@ -446,7 +475,7 @@ export const ListenAndReply: React.FC = () => {
         message: evaluation.message || evaluation.feedback
       };
       
-      return feedback;
+      return { feedback, evaluationResponse: result as EvaluationResponse };
     } catch (error) {
       console.error('Error evaluating audio:', error);
       throw error;
@@ -470,11 +499,19 @@ export const ListenAndReply: React.FC = () => {
       const audioBase64 = await blobToBase64(audioBlob);
       const timeSpentSeconds = Math.round((Date.now() - recordingStartTime) / 1000);
       
-      const evaluationResult = await evaluateAudio(audioBase64, timeSpentSeconds);
-      setFeedback(evaluationResult);
+      const { feedback, evaluationResponse } = await evaluateAudio(audioBase64, timeSpentSeconds);
+      setFeedback(feedback);
       
-      // Save progress after successful evaluation
-      saveProgress(currentDialogueIndex);
+      // Check if exercise is completed based on evaluation response
+      if (evaluationResponse && evaluationResponse.exercise_completion && evaluationResponse.exercise_completion.exercise_completed) {
+        console.log('Exercise completed based on evaluation response:', evaluationResponse.exercise_completion);
+        setIsCompleted(true);
+        setShowCompletionDialog(true);
+        markExerciseCompleted();
+      } else {
+        // Save progress after successful evaluation
+        saveProgress(currentDialogueIndex);
+      }
       
     } catch (error: any) {
       console.error('Processing error:', error);
@@ -615,17 +652,10 @@ export const ListenAndReply: React.FC = () => {
   };
 
   const handleNext = () => {
-    if (currentDialogueIndex === dialogues.length - 1) {
-      // User is on the last dialogue, mark as completed
-      setIsCompleted(true);
-      setShowCompletionDialog(true);
-      markExerciseCompleted();
-    } else {
-      const newIndex = currentDialogueIndex + 1;
-      setCurrentDialogueIndex(newIndex);
-      setFeedback(null); // Clear feedback when navigating
-      saveProgress(newIndex); // Save progress when navigating
-    }
+    const newIndex = Math.min(dialogues.length - 1, currentDialogueIndex + 1);
+    setCurrentDialogueIndex(newIndex);
+    setFeedback(null); // Clear feedback when navigating
+    saveProgress(newIndex); // Save progress when navigating
   };
 
   const handlePrevious = () => {
@@ -899,10 +929,11 @@ export const ListenAndReply: React.FC = () => {
             </Button>
             <Button
               onClick={handleNext}
+              disabled={currentDialogueIndex === dialogues.length - 1}
               variant="outline"
-              className="flex-1 px-8 py-3 bg-white/80 dark:bg-gray-800/80 hover:bg-primary/5 hover:border-primary/30 hover:text-primary transition-all duration-300 hover:-translate-y-0.5 border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg backdrop-blur-sm font-medium"
+              className="flex-1 px-8 py-3 bg-white/80 dark:bg-gray-800/80 hover:bg-primary/5 hover:border-primary/30 hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:-translate-y-0.5 border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg backdrop-blur-sm font-medium"
             >
-              {currentDialogueIndex === dialogues.length - 1 ? 'Complete' : 'Next'}
+              Next
             </Button>
           </div>
         )}
@@ -912,7 +943,7 @@ export const ListenAndReply: React.FC = () => {
           <Card className="w-full max-w-md mt-8 mx-auto bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-2xl backdrop-blur-sm">
             <CardContent className="p-8">
               <div className="text-center">
-                {feedback.score !== undefined && (
+                {feedback.score !== undefined && feedback.score > 0 ? (
                   <div className="flex items-center justify-center mb-6">
                     {feedback.score >= 80 ? (
                       <div className="p-3 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/30 rounded-2xl mr-4 shadow-lg">
@@ -931,17 +962,28 @@ export const ListenAndReply: React.FC = () => {
                       {Math.round(feedback.score)}%
                     </span>
                   </div>
+                ) : feedback.score === 0 && (
+                  <div className="flex items-center justify-center mb-6">
+                    <div className="p-3 bg-gradient-to-br from-red-100 to-red-200 dark:from-red-900/30 dark:to-red-800/30 rounded-2xl mr-4 shadow-lg">
+                      <XCircle className="w-10 h-10 text-red-600 dark:text-red-400" />
+                    </div>
+                    <span className="text-2xl font-bold text-red-600 dark:text-red-400">
+                      Speech Not Detected
+                    </span>
+                  </div>
                 )}
                 
                 {feedback.feedback && (
-                  <p className="text-muted-foreground mb-6 text-lg leading-relaxed">
+                  <p className={`mb-6 text-lg leading-relaxed ${feedback.score === 0 ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-muted-foreground'}`}>
                     {safeDisplay(feedback.feedback)}
                   </p>
                 )}
                 
                 {feedback.suggestions && feedback.suggestions.length > 0 && (
                   <div className="text-left">
-                    <h4 className="font-semibold mb-3 text-lg text-gray-900 dark:text-gray-100">Suggestions:</h4>
+                    <h4 className="font-semibold mb-3 text-lg text-gray-900 dark:text-gray-100">
+                      {feedback.score === 0 ? 'Try These Tips:' : 'Suggestions:'}
+                    </h4>
                     <ul className="list-disc list-inside text-base text-muted-foreground space-y-2">
                       {feedback.suggestions.map((suggestion, index) => (
                         <li key={index} className="leading-relaxed">{safeDisplay(suggestion)}</li>

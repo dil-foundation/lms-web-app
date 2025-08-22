@@ -32,6 +32,19 @@ interface ProblemSolvingScenarioResponse {
   total: number;
 }
 
+interface ExerciseCompletion {
+  exercise_completed: boolean;
+  progress_percentage: number;
+  completed_topics: number;
+  total_topics: number;
+  current_topic_id: number;
+  stage_id: number;
+  exercise_id: number;
+  exercise_name: string;
+  stage_name: string;
+  completion_date?: string | null;
+}
+
 interface EvaluationResponse {
   success: boolean;
   user_text?: string;
@@ -72,6 +85,8 @@ interface EvaluationResponse {
   scenario_title?: string;
   scenario_context?: string;
   error?: string;
+  message?: string;
+  exercise_completion?: ExerciseCompletion;
 }
 
 // API Functions
@@ -520,10 +535,49 @@ export default function ProblemSolvingSimulations() {
 
       const result: EvaluationResponse = await response.json();
       console.log('Evaluation result:', result);
+      
+      // Handle API error responses (like no_speech_detected)
+      if (result.success === false || result.error) {
+        const errorMessage = result.message || result.error || 'Speech evaluation failed';
+        
+        // Update result to show error
+        result.evaluation = {
+          success: false,
+          evaluation: {
+            overall_score: 0,
+            clarity_score: 0,
+            politeness_score: 0,
+            request_structure_score: 0,
+            specificity_score: 0,
+            solution_orientation_score: 0,
+            keyword_matches: [],
+            total_keywords: 0,
+            matched_keywords_count: 0,
+            response_type_detected: 'error',
+            detailed_feedback: {
+              clarity_feedback: errorMessage,
+              politeness_feedback: '',
+              request_structure_feedback: '',
+              specificity_feedback: '',
+              solution_orientation_feedback: ''
+            },
+            suggested_improvements: ['Please speak more clearly and try again'],
+            encouragement: '',
+            next_steps: 'Record your response again with clear speech'
+          }
+        };
+      }
+      
       setEvaluation(result);
 
-      // Mark exercise as completed after receiving evaluation
-      if (!isCompleted) {
+      // Check if the exercise is completed based on API response
+      if (result.exercise_completion?.exercise_completed) {
+        // Exercise is completed according to the API
+        setIsCompleted(true);
+        setShowCompletionDialog(true);
+        markExerciseCompleted();
+      } else if (!isCompleted) {
+        // Mark exercise as completed after receiving evaluation (fallback logic)
         setIsCompleted(true);
         setShowCompletionDialog(true);
         markExerciseCompleted();

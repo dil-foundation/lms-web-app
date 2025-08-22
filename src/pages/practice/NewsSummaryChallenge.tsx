@@ -5,6 +5,19 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, Play, Pause, Mic, RefreshCw, AlertCircle, Loader2, Square, CheckCircle, X, TrendingUp, Target, MessageSquare, Trophy, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import NewsSummaryService, { NewsSummaryItem, NewsSummaryEvaluationResponse } from '@/services/newsSummaryService';
+
+interface ExerciseCompletion {
+  exercise_completed: boolean;
+  progress_percentage: number;
+  completed_topics: number;
+  total_topics: number;
+  current_topic_id: number;
+  stage_id: number;
+  exercise_id: number;
+  exercise_name: string;
+  stage_name: string;
+  completion_date?: string | null;
+}
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useAuth } from '@/hooks/useAuth';
@@ -135,15 +148,42 @@ export default function NewsSummaryChallenge() {
         urdu_used: false, // You can add UI to let user specify this
       };
 
-      const result = await NewsSummaryService.evaluate(evaluationRequest);
+      const result = await NewsSummaryService.evaluate(evaluationRequest) as any;
+      
+      // Handle API error responses (like no_speech_detected)
+      if (result.success === false || result.error) {
+        const errorMessage = result.message || result.error || 'Speech evaluation failed';
+        
+        // Create modified feedback object for error cases
+        const errorFeedback = {
+          ...result,
+          score: 0,
+          feedback: errorMessage,
+          suggestions: ['Please speak more clearly and try again'],
+          success: false
+        };
+        
+        setEvaluationResult(errorFeedback);
+        toast.error('Speech not detected. Please try again.');
+        return;
+      }
+      
       setEvaluationResult(result);
       toast.success('Evaluation completed!');
       
-      // Mark exercise as completed after receiving evaluation
-      if (!isCompleted) {
+      // Check if the exercise is completed based on API response
+      if (result.exercise_completion?.exercise_completed) {
+        // Exercise is completed according to the API
         setIsCompleted(true);
         setShowCompletionDialog(true);
         markExerciseCompleted();
+        console.log('✅ Exercise completed according to API response');
+      } else if (!isCompleted) {
+        // Fallback: mark as completed after receiving evaluation (existing behavior)
+        setIsCompleted(true);
+        setShowCompletionDialog(true);
+        markExerciseCompleted();
+        console.log('✅ Exercise marked as completed (fallback logic)');
       }
       
     } catch (error) {
@@ -476,10 +516,14 @@ export default function NewsSummaryChallenge() {
                   </Button>
                 </div>
                 
-                {evaluationResult.score && (
+                {evaluationResult.score !== undefined && (
                   <div className="mb-4 p-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl border border-gray-200/60 dark:border-gray-700/60 shadow-lg">
                     <div className="text-center">
-                      <div className="text-4xl font-bold bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent mb-2">
+                      <div className={`text-4xl font-bold mb-2 ${
+                        evaluationResult.score === 0 
+                          ? 'text-red-600 dark:text-red-400' 
+                          : 'bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent'
+                      }`}>
                         {evaluationResult.score}/100
                       </div>
                       <div className="text-sm text-muted-foreground">Overall Score</div>
