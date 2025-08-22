@@ -148,9 +148,8 @@ export default function ProfileSettings() {
     if (source === 'reset' && !hasProcessedReset) {
       console.log('🔍 [PROD] Setting dialog to show');
       setShowResetDialog(true);
-      sessionStorage.setItem('profileSettings_resetProcessed', 'true');
       sessionStorage.setItem('profileSettings_shouldShowDialog', 'true');
-      console.log('🔍 [PROD] Dialog state set to true, sessionStorage updated');
+      console.log('🔍 [PROD] Dialog state set to true, shouldShowDialog flag set');
       // Clear the URL parameter to prevent showing dialog on refresh
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete('source');
@@ -271,7 +270,7 @@ export default function ProfileSettings() {
         description: 'Your password has been reset.'
       });
       setShowResetDialog(false);
-      sessionStorage.removeItem('profileSettings_resetProcessed'); // Clear the flag so it can show again if needed
+      sessionStorage.setItem('profileSettings_resetProcessed', 'true'); // Set flag only after successful reset
       sessionStorage.removeItem('profileSettings_shouldShowDialog');
       resetPasswordForm.reset();
     } catch (error: any) {
@@ -348,7 +347,6 @@ export default function ProfileSettings() {
             setShowResetNewPassword(false);
             setShowResetConfirmPassword(false);
             // Clear sessionStorage when dialog is closed manually
-            sessionStorage.removeItem('profileSettings_resetProcessed');
             sessionStorage.removeItem('profileSettings_shouldShowDialog');
           }
         }}
