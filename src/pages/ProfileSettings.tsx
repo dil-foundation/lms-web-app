@@ -132,11 +132,18 @@ export default function ProfileSettings() {
     
     if (source === 'reset' && !hasProcessedReset) {
       setShowResetDialog(true);
-      sessionStorage.setItem('profileSettings_resetProcessed', 'true');
+      sessionStorage.setItem('profileSettings_shouldShowDialog', 'true');
       // Clear the URL parameter to prevent showing dialog on refresh
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete('source');
       window.history.replaceState({}, '', newUrl.toString());
+    } else if (source === 'reset' && hasProcessedReset) {
+      // Check if we should still show the dialog (in case of remount)
+      const shouldShowDialog = sessionStorage.getItem('profileSettings_shouldShowDialog');
+      if (shouldShowDialog === 'true') {
+        setShowResetDialog(true);
+        sessionStorage.removeItem('profileSettings_shouldShowDialog');
+      }
     }
   }, [searchParams]);
 
@@ -242,7 +249,8 @@ export default function ProfileSettings() {
         description: 'Your password has been reset.'
       });
       setShowResetDialog(false);
-      sessionStorage.removeItem('profileSettings_resetProcessed'); // Clear the flag so it can show again if needed
+      sessionStorage.setItem('profileSettings_resetProcessed', 'true'); // Set flag only after successful reset
+      sessionStorage.removeItem('profileSettings_shouldShowDialog');
       resetPasswordForm.reset();
     } catch (error: any) {
       toast.error('Failed to reset password', { description: error.message });
@@ -317,7 +325,7 @@ export default function ProfileSettings() {
             setShowResetNewPassword(false);
             setShowResetConfirmPassword(false);
             // Clear sessionStorage when dialog is closed manually
-            sessionStorage.removeItem('profileSettings_resetProcessed');
+            sessionStorage.removeItem('profileSettings_shouldShowDialog');
           }
         }}
       >
