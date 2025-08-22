@@ -99,6 +99,28 @@
     animation: fadeInUp 0.8s ease-out forwards;
   }
 
+  /* 3D Flip Animation Classes */
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+
+  .transform-style-preserve-3d {
+    transform-style: preserve-3d;
+  }
+
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
+
+  .rotate-y-180 {
+    transform: rotateY(180deg);
+  }
+
+  /* Smooth 3D transitions */
+  .transition-3d {
+    transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
   /* Hide scrollbar for time picker */
   .scrollbar-hide {
     -ms-overflow-style: none;
