@@ -16,7 +16,6 @@ const SupabaseMFAService = {
   // Get MFA status for current user
   getMFAStatus: async (): Promise<MFAStatus> => {
     try {
-      console.log('🔐 Getting MFA status...');
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         throw new Error('User not authenticated');
@@ -24,16 +23,10 @@ const SupabaseMFAService = {
 
       const { data: factors, error } = await supabase.auth.mfa.listFactors();
       if (error) throw error;
-
-      console.log('🔐 MFA factors:', factors);
       
       const totpFactor = factors.totp?.[0];
-      console.log('🔐 TOTP factor:', totpFactor);
-      
       const isEnabled = totpFactor?.status === 'verified';
       const isSetupComplete = isEnabled;
-      
-      console.log('🔐 MFA status - isEnabled:', isEnabled, 'isSetupComplete:', isSetupComplete);
 
       return {
         isEnabled,
@@ -72,7 +65,6 @@ const SupabaseMFAService = {
       
       // If there's an existing unverified factor, use it
       if (existingTotpFactor && existingTotpFactor.status === 'unverified') {
-        console.log('Found existing unverified factor:', existingTotpFactor.id);
         sessionStorage.setItem('mfa_factor_id', existingTotpFactor.id);
         
         // Get the QR code and secret for the existing factor
@@ -92,7 +84,6 @@ const SupabaseMFAService = {
 
       // If there are other factors, remove them first
       if (existingTotpFactor) {
-        console.log('Removing existing factor before creating new one');
         const { error: unenrollError } = await supabase.auth.mfa.unenroll({
           factorId: existingTotpFactor.id
         });
@@ -106,18 +97,14 @@ const SupabaseMFAService = {
       
       if (error) throw error;
 
-      console.log('Enrollment response:', data);
-
       // The enrollment response structure is different - it returns the factor directly
       const factorId = data.id;
       if (!factorId) {
-        console.error('No factor ID received from enrollment');
         throw new Error('Failed to get factor ID from enrollment');
       }
 
       // Store the factor ID for later use
       sessionStorage.setItem('mfa_factor_id', factorId);
-      console.log('Stored factor ID:', factorId);
 
       // Generate QR code from the URI if qr_code is not properly formatted
       let qrCodeUrl = data.totp?.qr_code || '';
@@ -147,66 +134,62 @@ const SupabaseMFAService = {
     }
   },
 
-  // Verify and complete MFA setup
-  completeMFASetup: async (code: string): Promise<boolean> => {
+  // Complete MFA setup after verification
+  completeMFASetup: async (): Promise<boolean> => {
     try {
-      let factorId = sessionStorage.getItem('mfa_factor_id');
-      console.log('Retrieved factor ID from sessionStorage:', factorId);
-      
-      // Fallback: if no factor ID in sessionStorage, try to get it from current factors
-      if (!factorId) {
-        console.log('No factor ID in sessionStorage, trying to get from current factors...');
-        const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();
-        if (factorsError) throw factorsError;
-
-        const totpFactor = factors.totp?.[0];
-        if (totpFactor && totpFactor.status === 'unverified') {
-          factorId = totpFactor.id;
-          console.log('Found unverified factor ID:', factorId);
-        } else {
-          throw new Error('No factor ID found. Please restart the MFA setup process.');
-        }
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        return false;
       }
 
-      console.log('Starting challenge with factor ID:', factorId);
-      const { data, error } = await supabase.auth.mfa.challenge({
-        factorId: factorId
-      });
-      
-      if (error) throw error;
+      // Check if there's a verified factor
+      const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();
+      if (factorsError) {
+        return false;
+      }
 
-      console.log('Challenge successful, verifying with code:', code);
-      const { error: verifyError } = await supabase.auth.mfa.verify({
-        factorId: factorId,
-        challengeId: data.id,
-        code
-      });
-
-      if (verifyError) throw verifyError;
-
-      // Clear the stored factor ID
-      sessionStorage.removeItem('mfa_factor_id');
-      console.log('MFA setup completed successfully');
+      const totpFactor = factors.totp?.[0];
+      if (!totpFactor || totpFactor.status !== 'verified') {
+        return false;
+      }
 
       // Update user metadata to indicate MFA is enabled
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { error: updateError } = await supabase.auth.updateUser({
-          data: { mfa_enabled: 'true' }
-        });
-        
-        if (updateError) {
-          console.error('Error updating user metadata:', updateError);
+      const { error: metadataError } = await supabase.auth.updateUser({
+        data: { 
+          mfa_enabled: 'true',
+          mfa_setup_completed_at: new Date().toISOString()
         }
+      });
+
+      if (metadataError) {
+        return false;
       }
 
-      // Save backup codes to user profile
-      await SupabaseMFAService.saveBackupCodes();
+      // Update profile to mark MFA setup as completed and clear reset flag
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ 
+          two_factor_setup_completed_at: new Date().toISOString(),
+          mfa_reset_required: false,
+          mfa_reset_requested_at: null
+        })
+        .eq('id', user.id);
+
+      if (profileError) {
+        return false;
+      }
+
+      // Save backup codes to database
+      try {
+        await SupabaseMFAService.saveBackupCodes();
+      } catch (backupError) {
+        // Don't fail the setup if backup codes can't be saved
+      }
 
       return true;
     } catch (error) {
       console.error('Error completing MFA setup:', error);
-      throw error;
+      return false;
     }
   },
 
@@ -275,6 +258,30 @@ const SupabaseMFAService = {
     }
   },
 
+  // Remove MFA for a specific user (admin function)
+  disableMFAForUser: async (userId: string): Promise<boolean> => {
+    try {
+      // Call the edge function to remove MFA
+      const { data, error } = await supabase.functions.invoke('admin-disable-mfa', {
+        body: { targetUserId: userId }
+      });
+  
+      if (error) {
+        throw error;
+      }
+      
+      if (data && data.success) {
+        return true;
+      } else {
+        const errorMessage = data?.error || 'Unknown error occurred';
+        throw new Error(errorMessage);
+      }
+    } catch (error) {
+      console.error('Error removing MFA for user:', error);
+      throw error;
+    }
+  },
+
   // Get backup codes for current user
   getBackupCodes: async (): Promise<string[]> => {
     try {
@@ -307,9 +314,13 @@ const SupabaseMFAService = {
   verifyBackupCode: async (code: string): Promise<boolean> => {
     try {
       // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) {
+        throw new Error('Session error. Please try logging in again.');
+      }
+      
       if (!user) {
-        throw new Error('User not authenticated');
+        throw new Error('User not authenticated. Please log in again.');
       }
 
       // Get user's backup codes from profile
@@ -319,9 +330,12 @@ const SupabaseMFAService = {
         .eq('id', user.id)
         .single();
 
-      if (profileError || !profile) {
-        console.error('Error fetching profile or no profile found:', profileError);
-        return false;
+      if (profileError) {
+        throw new Error('Unable to fetch user profile. Please try again.');
+      }
+      
+      if (!profile) {
+        throw new Error('User profile not found. Please contact support.');
       }
 
       const backupCodes = profile.two_factor_backup_codes || [];
@@ -330,71 +344,120 @@ const SupabaseMFAService = {
       const isValidCode = backupCodes.includes(code);
       
       if (isValidCode) {
+        
         // Remove the used backup code
         const updatedBackupCodes = backupCodes.filter(backupCode => backupCode !== code);
         
-        // Update the profile with the remaining backup codes
+        // Update the profile with the remaining backup codes and mark for MFA reset
         const { error: updateError } = await supabase
           .from('profiles')
-          .update({ two_factor_backup_codes: updatedBackupCodes })
+          .update({ 
+            two_factor_backup_codes: updatedBackupCodes,
+            mfa_reset_required: true,
+            mfa_reset_requested_at: new Date().toISOString()
+          })
           .eq('id', user.id);
 
         if (updateError) {
-          console.error('Error updating backup codes after use:', updateError);
+          throw new Error('Failed to process backup code. Please try again.');
         }
+
+        // Update user metadata to indicate MFA reset is required
+        const { error: metadataError } = await supabase.auth.updateUser({
+          data: { 
+            mfa_reset_required: 'true',
+            mfa_reset_requested_at: new Date().toISOString()
+          }
+        });
       }
 
       return isValidCode;
     } catch (error) {
-      console.error('Error verifying backup code:', error);
+      console.error('Error in verifyBackupCode:', error);
+      
+      // Check if it's a session-related error
+      if (error.message && error.message.includes('session')) {
+        throw new Error('Session expired. Please log in again.');
+      }
+      
       throw error;
     }
   },
 
-  // Check if MFA is required for the application based on user role
-  isMFARequired: async (): Promise<boolean> => {
+  // Refresh user session
+  refreshSession: async (): Promise<boolean> => {
     try {
-      console.log('🔐 Checking MFA requirement...');
+      const { data, error } = await supabase.auth.refreshSession();
       
-      // Get current user to determine their role
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.log('🔐 No user found, MFA not required');
+      if (error) {
+        return false;
+      }
+      
+      return !!data.session;
+    } catch (error) {
+      return false;
+    }
+  },
+
+  // Verify backup code with session refresh
+  verifyBackupCodeWithSessionRefresh: async (code: string): Promise<boolean> => {
+    try {
+      // First try to refresh the session
+      await SupabaseMFAService.refreshSession();
+      
+      // Now verify the backup code
+      return await SupabaseMFAService.verifyBackupCode(code);
+    } catch (error) {
+      console.error('Error in verifyBackupCodeWithSessionRefresh:', error);
+      throw error;
+    }
+  },
+
+  // Check if MFA is required for the current user
+  checkMFARequirement: async (): Promise<boolean> => {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
         return false;
       }
 
-      console.log('🔐 User ID:', user.id);
-
-      // Get user's role from profiles table
+      // Get user profile to check role and MFA reset status
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, mfa_reset_required')
         .eq('id', user.id)
         .single();
 
-      if (profileError || !profile) {
-        console.log('🔐 Profile error or no profile found:', profileError);
+      if (profileError) {
         return false;
       }
 
-      console.log('🔐 User role:', profile.role);
+      // If MFA reset is required, force factor removal and MFA setup
+      if (profile.mfa_reset_required) {
+        // Call the database function to remove factors
+        const { data: resetResult, error: resetError } = await supabase
+          .rpc('force_mfa_reset_for_user', { target_user_id: user.id });
 
-      // Use the database function to check MFA requirement
-      console.log('🔐 Using database function to check MFA requirement...');
-      const { data, error } = await supabase.rpc('check_mfa_requirement', {
-        user_role: profile.role
-      });
+        if (resetError) {
+          // Even if reset fails, still force MFA setup
+          return true;
+        }
 
-      if (error) {
-        console.log('🔐 Error calling check_mfa_requirement function:', error);
+        // Force MFA setup regardless of the reset result
+        return true;
+      }
+
+      // Use database function to check MFA requirement based on role
+      const { data: mfaRequired, error: functionError } = await supabase
+        .rpc('check_mfa_requirement', { user_role: profile.role });
+
+      if (functionError) {
         return false;
       }
-      
-      const isRequired = data === true;
-      console.log('🔐 MFA required for role', profile.role, ':', isRequired);
-      return isRequired;
+
+      return mfaRequired;
     } catch (error) {
-      console.error('🔐 Error checking MFA requirement:', error);
+      console.error('Error in checkMFARequirement:', error);
       return false;
     }
   },
@@ -409,69 +472,58 @@ const SupabaseMFAService = {
   saveBackupCodes: async (): Promise<boolean> => {
     try {
       const backupCodesJson = sessionStorage.getItem('mfa_backup_codes');
+      
       if (!backupCodesJson) {
-        console.log('No backup codes found in sessionStorage');
-        return false;
+        throw new Error('No backup codes found in session storage');
       }
 
       const backupCodes = JSON.parse(backupCodesJson);
       
+      if (!Array.isArray(backupCodes) || backupCodes.length === 0) {
+        throw new Error('Invalid backup codes format');
+      }
+      
       // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) {
+        throw userError;
+      }
+      
       if (!user) {
         throw new Error('User not authenticated');
       }
 
       // Save backup codes to user profile
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .update({ 
           two_factor_backup_codes: backupCodes,
           two_factor_setup_completed_at: new Date().toISOString()
         })
-        .eq('id', user.id);
+        .eq('id', user.id)
+        .select();
 
       if (error) {
-        console.error('Error saving backup codes:', error);
-        return false;
+        throw error;
       }
-
-      console.log('Backup codes saved to profile');
+      
+      // Clear from sessionStorage after successful save
+      sessionStorage.removeItem('mfa_backup_codes');
+      
       return true;
     } catch (error) {
-      console.error('Error saving backup codes:', error);
-      return false;
+      console.error('Error in saveBackupCodes:', error);
+      throw error; // Re-throw to make the error visible
     }
   },
 
-  // Debug function to check MFA state
-  debugMFAState: async (): Promise<void> => {
-    try {
-      console.log('=== MFA Debug Info ===');
-      console.log('SessionStorage factor ID:', sessionStorage.getItem('mfa_factor_id'));
-      
-      const { data: factors, error } = await supabase.auth.mfa.listFactors();
-      if (error) {
-        console.error('Error listing factors:', error);
-        return;
-      }
-      
-      console.log('Current factors:', factors);
-      console.log('TOTP factors:', factors.totp);
-      console.log('=====================');
-    } catch (error) {
-      console.error('Debug error:', error);
-    }
-  },
+
 
   // Handle existing unverified factor
   handleExistingFactor: async (): Promise<{ hasExisting: boolean; factorId?: string }> => {
     try {
-      console.log('handleExistingFactor: Starting check...');
       const { data: factors, error } = await supabase.auth.mfa.listFactors();
       if (error) throw error;
-
-      console.log('handleExistingFactor: All factors:', factors);
       
       // Check both totp array and all array for TOTP factors
       let existingTotpFactor = factors.totp?.[0];
@@ -479,29 +531,20 @@ const SupabaseMFAService = {
       // If no TOTP factor found in totp array, check the all array
       if (!existingTotpFactor && factors.all && factors.all.length > 0) {
         existingTotpFactor = factors.all.find(factor => factor.factor_type === 'totp');
-        console.log('handleExistingFactor: Found TOTP factor in all array:', existingTotpFactor);
       }
       
-      console.log('handleExistingFactor: Final TOTP factor:', existingTotpFactor);
-      
       if (existingTotpFactor) {
-        console.log('handleExistingFactor: Found factor with status:', existingTotpFactor.status);
-        
         if (existingTotpFactor.status === 'unverified') {
-          console.log('handleExistingFactor: Found unverified factor:', existingTotpFactor.id);
           sessionStorage.setItem('mfa_factor_id', existingTotpFactor.id);
           return { hasExisting: true, factorId: existingTotpFactor.id };
         } else if (existingTotpFactor.status === 'verified') {
-          console.log('handleExistingFactor: Found verified factor - MFA already enabled');
           throw new Error('MFA is already enabled for this account');
         } else {
-          console.log('handleExistingFactor: Found factor with unknown status:', existingTotpFactor.status);
           // For any other status, we should remove it and start fresh
           return { hasExisting: false };
         }
       }
       
-      console.log('handleExistingFactor: No factors found');
       return { hasExisting: false };
     } catch (error) {
       console.error('Error checking existing factors:', error);
@@ -521,7 +564,6 @@ const SupabaseMFAService = {
       // If no TOTP factor found in totp array, check the all array
       if (!existingTotpFactor && factors.all && factors.all.length > 0) {
         existingTotpFactor = factors.all.find(factor => factor.factor_type === 'totp');
-        console.log('removeExistingFactor: Found TOTP factor in all array:', existingTotpFactor);
       }
       
       if (existingTotpFactor) {
@@ -529,7 +571,6 @@ const SupabaseMFAService = {
           factorId: existingTotpFactor.id
         });
         if (unenrollError) throw unenrollError;
-        console.log('Removed existing factor:', existingTotpFactor.id);
       }
 
       return true;

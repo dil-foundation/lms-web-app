@@ -32,7 +32,7 @@ export const useSupabaseMFA = () => {
   // Check if MFA is required globally
   const checkMFARequirement = useCallback(async () => {
     try {
-      const required = await SupabaseMFAService.isMFARequired();
+      const required = await SupabaseMFAService.checkMFARequirement();
       setIsMFARequired(required);
     } catch (error) {
       console.error('Error checking MFA requirement:', error);
@@ -58,12 +58,12 @@ export const useSupabaseMFA = () => {
   }, [user]);
 
   // Complete MFA setup
-  const completeMFASetup = useCallback(async (code: string) => {
+  const completeMFASetup = useCallback(async () => {
     if (!user) return;
 
     try {
       setLoading(true);
-      await SupabaseMFAService.completeMFASetup(code);
+      await SupabaseMFAService.completeMFASetup();
       setSetupData(null);
       await loadMFAStatus();
       toast.success('MFA setup completed successfully');
@@ -91,6 +91,45 @@ export const useSupabaseMFA = () => {
     } catch (error: any) {
       console.error('Error verifying MFA code:', error);
       toast.error(error.message || 'Failed to verify MFA code');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  // Verify backup code
+  const verifyBackupCode = useCallback(async (code: string) => {
+    if (!user) {
+      console.error('🔐 No user found for backup code verification');
+      return false;
+    }
+
+    try {
+      console.log('🔐 Starting backup code verification in hook');
+      setLoading(true);
+      
+      const success = await SupabaseMFAService.verifyBackupCode(code);
+      
+      if (success) {
+        console.log('🔐 Backup code verification successful in hook');
+        toast.success('Backup code verification successful');
+      } else {
+        console.log('🔐 Backup code verification failed in hook');
+      }
+      
+      return success;
+    } catch (error: any) {
+      console.error('🔐 Error verifying backup code in hook:', error);
+      
+      // Handle session-related errors
+      if (error.message && error.message.includes('session')) {
+        toast.error('Session expired. Please log in again.');
+      } else if (error.message && error.message.includes('authenticated')) {
+        toast.error('Authentication error. Please log in again.');
+      } else {
+        toast.error(error.message || 'Failed to verify backup code');
+      }
+      
       return false;
     } finally {
       setLoading(false);
@@ -158,6 +197,7 @@ export const useSupabaseMFA = () => {
     startMFASetup,
     completeMFASetup,
     verifyMFACode,
+    verifyBackupCode,
     disableMFA,
     handleExistingFactor,
     removeExistingFactor,

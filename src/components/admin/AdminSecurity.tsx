@@ -20,10 +20,12 @@ import {
   RefreshCw,
   ChevronLeft,
   ChevronRight,
-  Search
+  Search,
+  XCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
 import SecurityService, { SecuritySetting, AccessLog, SecurityAlert, SecurityStats } from '@/services/securityService';
+import SupabaseMFAService from '@/services/supabaseMFAService';
 import { ContentLoader } from '@/components/ContentLoader';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -162,24 +164,23 @@ const UserMFAManagement = () => {
     try {
       setDisablingMFA(userId);
       
-      const { data, error } = await supabase.rpc('disable_mfa_for_user', {
-        user_id: userId
-      });
-
-      if (error) throw error;
-
-      toast.success('MFA disabled successfully');
-      // Refresh the list using the appropriate loading function
-      if (searchTerm) {
-        loadUsersWithSearch();
-      } else if (currentPage > 1) {
-        loadUsersWithPagination();
-      } else {
-        loadUsers();
+      // Use the service function instead of direct RPC call
+      const success = await SupabaseMFAService.disableMFAForUser(userId);
+  
+      if (success) {
+        toast.success('MFA factors removed successfully. User will be prompted to set up MFA again if required for their role.');
+        // Refresh the list using the appropriate loading function
+        if (searchTerm) {
+          loadUsersWithSearch();
+        } else if (currentPage > 1) {
+          loadUsersWithPagination();
+        } else {
+          loadUsers();
+        }
       }
     } catch (error) {
-      console.error('Error disabling MFA:', error);
-      toast.error('Failed to disable MFA');
+      console.error('Error removing MFA:', error);
+      toast.error('Failed to remove MFA');
     } finally {
       setDisablingMFA(null);
     }
@@ -271,7 +272,7 @@ const UserMFAManagement = () => {
                     ) : (
                       <>
                         <AlertTriangle className="w-4 h-4 text-gray-400" />
-                        <Badge variant="secondary">
+                        <Badge variant="outline" className="capitalize">
                           Disabled
                         </Badge>
                       </>
@@ -288,12 +289,17 @@ const UserMFAManagement = () => {
                     {disablingMFA === user.id ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Disabling...
+                        Removing...
+                      </>
+                    ) : !user.mfa_enabled ? (
+                      <>
+                        <XCircle className="w-4 h-4 mr-2" />
+                        MFA Disabled
                       </>
                     ) : (
                       <>
-                        <Key className="w-4 h-4 mr-2" />
-                        Disable MFA
+                        <XCircle className="w-4 h-4 mr-2" />
+                        Remove MFA
                       </>
                     )}
                   </Button>
