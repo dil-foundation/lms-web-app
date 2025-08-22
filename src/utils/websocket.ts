@@ -38,7 +38,7 @@ export const connectEnglishOnlySocket = (
 
   try {
     // Always connect to staging production server
-    const wsUrl = 'wss://api.dil.lms-staging.com/api/ws/english-only';
+    const wsUrl = 'wss://api-prod.dil.lms-staging.com/api/ws/english-only';
     
     console.log(`🔌 Connecting to English-only WebSocket: ${wsUrl}`);
     englishOnlySocket = new WebSocket(wsUrl);

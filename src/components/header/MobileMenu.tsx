@@ -1,27 +1,19 @@
 import { useState, memo, useCallback } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
-import { Menu, X, LogOut, Settings, Home, Layout, Bell } from 'lucide-react';
+import { Menu, X, LogOut, Settings, Home } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { NotificationToggle } from './NotificationToggle';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-const layouts = [
-  { id: '/', name: 'Classic Layout', description: 'Traditional hero-first design' },
-  { id: '/home-layout-2', name: 'Modern Grid', description: 'Feature-focused grid layout' },
-  { id: '/home-layout-3', name: 'Story Flow', description: 'Narrative-driven experience' },
-  { id: '/home-layout-4', name: 'Interactive', description: 'Dynamic animated layout' }
-];
-
 export const MobileMenu = memo(() => {
   const [isOpen, setIsOpen] = useState(false);
   const { user, session } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -38,9 +30,6 @@ export const MobileMenu = memo(() => {
   const handleLinkClick = useCallback(() => {
     setIsOpen(false);
   }, []);
-
-  const isOnHomePage = layouts.some(layout => layout.id === location.pathname);
-  const currentLayout = layouts.find(layout => layout.id === location.pathname) || layouts[0];
 
   return (
     <div className="md:hidden">
@@ -145,38 +134,6 @@ export const MobileMenu = memo(() => {
                     <span className="font-medium">Home</span>
                   </Link>
                 </div>
-
-                {/* Layout Switcher for Home Pages */}
-                {isOnHomePage && (
-                  <>
-                    <Separator />
-                    <div className="space-y-3">
-                      <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                        <Layout className="h-4 w-4" />
-                        Page Layouts
-                      </h3>
-                      <div className="space-y-1">
-                        {layouts.map((layout) => (
-                          <button
-                            key={layout.id}
-                            onClick={() => {
-                              navigate(layout.id);
-                              handleLinkClick();
-                            }}
-                            className={`w-full text-left px-3 py-3 rounded-lg hover:bg-accent transition-colors ${
-                              location.pathname === layout.id ? 'bg-primary/10 border border-primary/20' : ''
-                            }`}
-                          >
-                            <div className="flex flex-col">
-                              <span className="font-medium text-sm">{layout.name}</span>
-                              <span className="text-xs text-muted-foreground">{layout.description}</span>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
 
                 <Separator />
 

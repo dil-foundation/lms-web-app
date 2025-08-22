@@ -193,9 +193,9 @@ const ObservationDetails = ({
   updateFormData: (field: string, value: any) => void; 
   formErrors: FormErrors; 
 }) => (
-  <Card className="bg-green-50/20 border-green-200 dark:bg-green-900/10 dark:border-green-800/50">
+  <Card className="bg-brand-green-500/10 border-brand-green-500/30 dark:bg-brand-green-500/5 dark:border-brand-green-500/20">
     <CardHeader className="flex flex-row items-center gap-4">
-      <ClipboardList className="w-6 h-6 text-green-600" />
+      <ClipboardList className="w-6 h-6 text-brand-green-600" />
       <div>
         <CardTitle className="text-xl">Observation Details</CardTitle>
         <CardDescription>Basic information about the observation session</CardDescription>
@@ -369,10 +369,10 @@ const PrincipalAssessment = ({
   updateFormData: (field: string, value: any) => void; 
   formErrors: FormErrors; 
 }) => (
-  <Card className="bg-green-50/20 border-green-200 dark:bg-green-900/10 dark:border-green-800/50">
+  <Card className="bg-brand-green-500/10 border-brand-green-500/30 dark:bg-brand-green-500/5 dark:border-brand-green-500/20">
     <CardHeader>
       <div className="flex items-center gap-4">
-        <Star className="w-6 h-6 text-green-600" />
+        <Star className="w-6 h-6 text-brand-green-600" />
         <div>
           <CardTitle className="text-xl">Principal Assessment</CardTitle>
           <CardDescription>Evaluate teaching effectiveness and classroom environment</CardDescription>
@@ -492,10 +492,10 @@ const EceObserverAssessment = ({
   updateFormData: (field: string, value: any) => void; 
   formErrors: FormErrors; 
 }) => (
-  <Card className="bg-green-50/20 border-green-200 dark:bg-green-900/10 dark:border-green-800/50">
+  <Card className="bg-brand-green-500/10 border-brand-green-500/30 dark:bg-brand-green-500/5 dark:border-brand-green-500/20">
     <CardHeader>
       <div className="flex items-center gap-4">
-        <Users className="w-6 h-6 text-green-600" />
+        <Users className="w-6 h-6 text-brand-green-600" />
         <div>
           <CardTitle className="text-xl">ECE Observer Assessment</CardTitle>
           <CardDescription>Early childhood education specific evaluations</CardDescription>
@@ -624,10 +624,10 @@ const SchoolOfficerAssessment = ({
   updateFormData: (field: string, value: any) => void; 
   formErrors: FormErrors; 
 }) => (
-  <Card className="bg-green-50/20 border-green-200 dark:bg-green-900/10 dark:border-green-800/50">
+  <Card className="bg-brand-green-500/10 border-brand-green-500/30 dark:bg-brand-green-500/5 dark:border-brand-green-500/20">
     <CardHeader>
       <div className="flex items-center gap-4">
-        <Shield className="w-6 h-6 text-green-600" />
+        <Shield className="w-6 h-6 text-brand-green-600" />
         <div>
           <CardTitle className="text-xl">School Officer Assessment</CardTitle>
           <CardDescription>Administrative compliance and logistical evaluations</CardDescription>
@@ -1200,10 +1200,10 @@ export const SecureObserverForm = ({ token }: SecureObserverFormProps) => {
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-6">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 rounded-full bg-green-100 dark:bg-green-900/20">
-              <Shield className="w-6 h-6 text-green-600" />
+            <div className="p-2 rounded-full bg-brand-green-500/20 dark:bg-brand-green-500/10">
+              <Shield className="w-6 h-6 text-brand-green-600" />
             </div>
-            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-700">
+            <Badge variant="outline" className="bg-brand-green-500/10 text-brand-green-600 border-brand-green-500/30 dark:bg-brand-green-500/5 dark:text-brand-green-500 dark:border-brand-green-500/20">
               <Lock className="w-3 h-3 mr-1" />
               Secure Form
             </Badge>

@@ -366,6 +366,7 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
       if (webAudioSourceRef.current) {
         try {
           webAudioSourceRef.current.stop();
+          webAudioSourceRef.current.disconnect();
         } catch (error) {
           // AudioBufferSourceNode can only be stopped once
           console.log('Web audio source already stopped');
@@ -402,6 +403,18 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
     console.log('🎵 Received audio data:', audioBuffer.byteLength, 'bytes');
     
     try {
+      // Stop any currently playing WebAudio source before starting new one
+      if (webAudioSourceRef.current) {
+        try {
+          console.log('⏸️ Stopping previous audio source to prevent overlap');
+          webAudioSourceRef.current.stop();
+          webAudioSourceRef.current.disconnect();
+        } catch (error) {
+          console.log('Previous audio source already stopped');
+        }
+        webAudioSourceRef.current = null;
+      }
+
       // Create audio context and play the received audio
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       
@@ -447,6 +460,8 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
             console.log('🤖 AI response audio completed');
             setIsAIResponsePlaying(false);
           }
+          // Clear the reference when audio finishes
+          webAudioSourceRef.current = null;
         };
         
       }, (error) => {
@@ -459,6 +474,7 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
         }
         setIsProcessing(false);
         setExpectingGreeting(false);
+        webAudioSourceRef.current = null;
       });
       
     } catch (error) {
@@ -471,6 +487,7 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
       }
       setIsProcessing(false);
       setExpectingGreeting(false);
+      webAudioSourceRef.current = null;
     }
   };
 
@@ -581,10 +598,12 @@ export const AIStudentLearn: React.FC<AIStudentLearnProps> = () => {
       try {
         console.log('⏸️ Stopping Web Audio source due to close button click');
         webAudioSourceRef.current.stop();
+        webAudioSourceRef.current.disconnect();
         webAudioSourceRef.current = null;
       } catch (error) {
         // AudioBufferSourceNode can only be stopped once
         console.log('Web audio source already stopped');
+        webAudioSourceRef.current = null;
       }
     }
     
