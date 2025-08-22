@@ -99,6 +99,7 @@ interface QuizData {
 interface QuizQuestion {
   id: string;
   question_text: string;
+  question_type: 'single_choice' | 'multiple_choice' | 'text_answer';
   options: QuestionOption[];
   position: number;
 }
@@ -738,10 +739,10 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl">
-              <SelectItem value="video" className="rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">🎥 Video</SelectItem>
-              <SelectItem value="attachment" className="rounded-xl hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors">📎 Attachment</SelectItem>
-              <SelectItem value="assignment" className="rounded-xl hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors">📝 Assignment</SelectItem>
-              <SelectItem value="quiz" className="rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors">❓ Quiz</SelectItem>
+              <SelectItem value="video" className="rounded-xl hover:bg-blue-50 hover:text-gray-900 dark:hover:bg-blue-900/20 dark:hover:text-white transition-colors">🎥 Video</SelectItem>
+              <SelectItem value="attachment" className="rounded-xl hover:bg-green-50 hover:text-gray-900 dark:hover:bg-green-900/20 dark:hover:text-white transition-colors">📎 Attachment</SelectItem>
+              <SelectItem value="assignment" className="rounded-xl hover:bg-orange-50 hover:text-gray-900 dark:hover:bg-orange-900/20 dark:hover:text-white transition-colors">📝 Assignment</SelectItem>
+              <SelectItem value="quiz" className="rounded-xl hover:bg-purple-50 hover:text-gray-900 dark:hover:bg-purple-900/20 dark:hover:text-white transition-colors">❓ Quiz</SelectItem>
             </SelectContent>
           </Select>
           {isRemovable && (
@@ -959,6 +960,7 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
     const newQuestion: QuizQuestion = {
       id: Date.now().toString(),
       question_text: '',
+      question_type: 'single_choice',
       options: [],
       position: (quiz.questions.length || 0) + 1
     };
@@ -967,6 +969,30 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
 
   const updateQuestion = (qIndex: number, text: string) => {
     const updatedQuestions = quiz.questions.map((q, i) => i === qIndex ? { ...q, question_text: text } : q);
+    onQuizChange({ ...quiz, questions: updatedQuestions });
+  };
+  
+  const updateQuestionType = (qIndex: number, type: 'single_choice' | 'multiple_choice' | 'text_answer') => {
+    const updatedQuestions = quiz.questions.map((q, i) => {
+      if (i === qIndex) {
+        // If switching to single choice and there are multiple correct answers, keep only the first one
+        let updatedOptions = q.options;
+        if (type === 'single_choice') {
+          const correctOptions = q.options.filter(opt => opt.is_correct);
+          if (correctOptions.length > 1) {
+            updatedOptions = q.options.map((opt, optIndex) => ({
+              ...opt,
+              is_correct: optIndex === q.options.findIndex(o => o.is_correct)
+            }));
+          }
+        } else if (type === 'text_answer') {
+          // For text answer questions, we don't need options
+          updatedOptions = [];
+        }
+        return { ...q, question_type: type, options: updatedOptions };
+      }
+      return q;
+    });
     onQuizChange({ ...quiz, questions: updatedQuestions });
   };
   
@@ -1004,10 +1030,27 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
   };
 
   const setCorrectOption = (qIndex: number, optionId: string) => {
-    const updatedQuestions = quiz.questions.map((q, i) => i === qIndex ? { 
-      ...q, 
-      options: q.options.map(opt => ({...opt, is_correct: opt.id === optionId})) 
-    } : q);
+    const question = quiz.questions[qIndex];
+    const updatedQuestions = quiz.questions.map((q, i) => {
+      if (i === qIndex) {
+        if (q.question_type === 'single_choice') {
+          // For single choice, only one option can be correct
+          return { 
+            ...q, 
+            options: q.options.map(opt => ({...opt, is_correct: opt.id === optionId})) 
+          };
+        } else {
+          // For multiple choice, toggle the option
+          return { 
+            ...q, 
+            options: q.options.map(opt => 
+              opt.id === optionId ? {...opt, is_correct: !opt.is_correct} : opt
+            ) 
+          };
+        }
+      }
+      return q;
+    });
     onQuizChange({ ...quiz, questions: updatedQuestions });
   };
   
@@ -1037,53 +1080,140 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
                 <X className="w-5 h-5" />
               </Button>
             </div>
+            
+            {/* Question Type Selector */}
+            <div className="mt-4 flex items-center gap-4">
+              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Question Type:
+              </Label>
+              <Select
+                value={question.question_type}
+                onValueChange={(value: 'single_choice' | 'multiple_choice') => updateQuestionType(qIndex, value)}
+              >
+                <SelectTrigger className="w-48 h-9 border-2 border-purple-200 dark:border-purple-700 rounded-lg bg-white/60 dark:bg-gray-800/60">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl">
+                  <SelectItem value="single_choice" className="rounded-lg hover:bg-purple-50 hover:text-gray-900 dark:hover:bg-purple-900/20 dark:hover:text-white transition-colors">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-purple-500 rounded-full"></div>
+                      Single Choice
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="multiple_choice" className="rounded-lg hover:bg-purple-50 hover:text-gray-900 dark:hover:bg-purple-900/20 dark:hover:text-white transition-colors">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-purple-500 rounded"></div>
+                      Multiple Choice
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="text_answer" className="rounded-lg hover:bg-purple-50 hover:text-gray-900 dark:hover:bg-purple-900/20 dark:hover:text-white transition-colors">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-purple-500 bg-purple-500"></div>
+                      Text Answer
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                {question.question_type === 'single_choice' ? (
+                  <>
+                    <div className="w-3 h-3 border-2 border-purple-500 rounded-full"></div>
+                    <span>One correct answer</span>
+                  </>
+                ) : question.question_type === 'multiple_choice' ? (
+                  <>
+                    <div className="w-3 h-3 border-2 border-purple-500 rounded"></div>
+                    <span>Multiple correct answers</span>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-3 h-3 border-2 border-purple-500 bg-purple-500"></div>
+                    <span>Manual grading required</span>
+                  </>
+                )}
+              </div>
+              
+              {/* Question Type Badge */}
+              <Badge 
+                variant={question.question_type === 'single_choice' ? 'secondary' : question.question_type === 'multiple_choice' ? 'default' : 'outline'}
+                className={`text-xs ${
+                  question.question_type === 'single_choice' 
+                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-700' 
+                    : question.question_type === 'multiple_choice'
+                    ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-700'
+                    : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 border-orange-200 dark:border-orange-700'
+                }`}
+              >
+                {question.question_type === 'single_choice' ? 'Single Choice' : question.question_type === 'multiple_choice' ? 'Multiple Choice' : 'Text Answer'}
+              </Badge>
+            </div>
           </CardHeader>
           <CardContent className="p-6 space-y-4">
-            {question.options.map((option, oIndex) => (
-              <div key={option.id} className="flex items-center gap-3 p-4 bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 rounded-xl border border-gray-200/50 dark:border-gray-600/30 hover:border-gray-300 dark:hover:border-gray-500 transition-all duration-300">
-                <Input
-                  value={option.option_text}
-                  onChange={(e) => updateOption(qIndex, oIndex, e.target.value)}
-                  placeholder={`Option ${oIndex + 1}`}
-                  className="flex-1 border-0 bg-white/60 dark:bg-gray-800/60 rounded-xl px-4 py-3 focus-visible:ring-2 focus-visible:ring-purple-500/20 text-gray-900 dark:text-white"
-                />
-                <Button
-                  variant={option.is_correct ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setCorrectOption(qIndex, option.id)}
-                  className={`h-9 px-4 rounded-xl transition-all duration-300 hover:scale-105 ${
-                    option.is_correct 
-                      ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg' 
-                      : 'border-green-300 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'
-                  }`}
-                >
-                  {option.is_correct ? '✓ Correct' : 'Mark Correct'}
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => removeOption(qIndex, oIndex)}
-                  className="h-9 w-9 hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 rounded-xl transition-all duration-300 hover:scale-105"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
+            {question.question_type === 'text_answer' ? (
+              <div className="p-6 bg-gradient-to-r from-orange-50 to-orange-100/50 dark:from-orange-900/10 dark:to-orange-800/10 rounded-xl border border-orange-200/50 dark:border-orange-700/30">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center">
+                    <span className="text-sm font-semibold text-orange-700 dark:text-orange-300">📝</span>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-orange-900 dark:text-orange-100">Text Answer Question</h4>
+                    <p className="text-sm text-orange-700 dark:text-orange-300">Students will provide written answers that require manual grading by teachers</p>
+                  </div>
+                </div>
+                <div className="text-xs text-orange-600 dark:text-orange-400">
+                  This question will appear in the manual grading queue for teachers
+                </div>
               </div>
-            ))}
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => addOption(qIndex)}
-              className="w-full h-10 border-2 border-dashed border-purple-300 dark:border-purple-600 rounded-xl text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/10 hover:border-purple-400 dark:hover:border-purple-500 transition-all duration-300 group hover:scale-105"
-            >
-              <Plus className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-300" />
-              Add Option
-            </Button>
+            ) : (
+              <>
+                {question.options.map((option, oIndex) => (
+                  <div key={option.id} className="flex items-center gap-3 p-4 bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 rounded-xl border border-gray-200/50 dark:border-gray-600/30 hover:border-gray-300 dark:hover:border-gray-500 transition-all duration-300">
+                    <Input
+                      value={option.option_text}
+                      onChange={(e) => updateOption(qIndex, oIndex, e.target.value)}
+                      placeholder={`Option ${oIndex + 1}`}
+                      className="flex-1 border-0 bg-white/60 dark:bg-gray-800/60 rounded-xl px-4 py-3 focus-visible:ring-2 focus-visible:ring-purple-500/20 text-gray-900 dark:text-white"
+                    />
+                    <Button
+                      variant={option.is_correct ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setCorrectOption(qIndex, option.id)}
+                      className={`h-9 px-4 rounded-xl transition-all duration-300 hover:scale-105 ${
+                        option.is_correct 
+                          ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg' 
+                          : 'border-green-300 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'
+                      }`}
+                    >
+                      {option.is_correct ? '✓ Correct' : question.question_type === 'multiple_choice' ? 'Add Correct' : 'Mark Correct'}
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => removeOption(qIndex, oIndex)}
+                      className="h-9 w-9 hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 rounded-xl transition-all duration-300 hover:scale-105"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => addOption(qIndex)}
+                  className="w-full h-10 border-2 border-dashed border-purple-300 dark:border-purple-600 rounded-xl text-purple-600 dark:text-purple-400 hover:bg-purple-50 hover:text-purple-700 dark:hover:bg-purple-900/10 dark:hover:text-purple-300 hover:border-purple-400 dark:hover:border-purple-500 transition-all duration-300 group hover:scale-105"
+                >
+                  <Plus className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-300" />
+                  Add Option
+                </Button>
+              </>
+            )}
           </CardContent>
         </Card>
       ))}
       <Button 
         onClick={addQuestion}
-        className="w-full h-12 border-2 border-dashed border-purple-300 dark:border-purple-600 rounded-2xl text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/10 hover:border-purple-400 dark:hover:border-purple-500 transition-all duration-300 group hover:scale-105"
+        className="w-full h-12 border-2 border-dashed border-purple-300 dark:border-purple-600 rounded-2xl text-purple-600 dark:text-purple-400 hover:bg-purple-50 hover:text-purple-700 dark:hover:bg-purple-900/10 dark:hover:text-purple-300 hover:border-purple-400 dark:hover:border-purple-500 transition-all duration-300 group hover:scale-105"
       >
         <Plus className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-300" />
         Add Question
@@ -1323,6 +1453,7 @@ const CourseBuilder = () => {
                         if (ci.content_type === 'quiz' && ci.quiz && ci.quiz.length > 0) {
                           const quizQuestions = ci.quiz.map((q: any) => ({
                             ...q,
+                            question_type: q.question_type || 'single_choice', // Default for backward compatibility
                             options: q.options.sort((a: any, b: any) => a.position - b.position)
                           }));
                           quizData = { id: ci.id, questions: quizQuestions };
@@ -1481,6 +1612,7 @@ const CourseBuilder = () => {
                         .insert({
                             lesson_content_id: savedContent.id,
                             question_text: question.question_text,
+                            question_type: question.question_type,
                             position: qIndex,
                         })
                         .select('id').single();
@@ -1774,7 +1906,10 @@ const CourseBuilder = () => {
                       // Update existing question
                       await supabase
                         .from('quiz_questions')
-                        .update({ question_text: question.question_text })
+                        .update({ 
+                          question_text: question.question_text,
+                          question_type: question.question_type
+                        })
                         .eq('id', existingQuestion.id);
                       
                       // Track which options we've processed
@@ -1819,6 +1954,7 @@ const CourseBuilder = () => {
                         .insert({
                           lesson_content_id: existingContent.id,
                           question_text: question.question_text,
+                          question_type: question.question_type,
                           position: qIndex
                         })
                         .select('id')
@@ -1877,6 +2013,7 @@ const CourseBuilder = () => {
                       .insert({
                         lesson_content_id: newContent.id,
                         question_text: question.question_text,
+                        question_type: question.question_type,
                         position: qIndex
                       })
                       .select('id')
@@ -1961,6 +2098,7 @@ const CourseBuilder = () => {
                     .insert({
                       lesson_content_id: newContent.id,
                       question_text: question.question_text,
+                      question_type: question.question_type,
                       position: qIndex
                     })
                     .select('id')
@@ -2074,6 +2212,7 @@ const CourseBuilder = () => {
                   .insert({
                     lesson_content_id: newContent.id,
                     question_text: question.question_text,
+                    question_type: question.question_type,
                     position: qIndex
                   })
                   .select('id')
@@ -2251,6 +2390,7 @@ const CourseBuilder = () => {
                           .insert({
                               lesson_content_id: savedContent.id,
                               question_text: question.question_text,
+                              question_type: question.question_type,
                               position: qIndex,
                           })
                           .select('id').single();
@@ -3123,7 +3263,7 @@ const CourseBuilder = () => {
             <Button
               variant="outline"
               onClick={() => setIsPreviewOpen(true)}
-              className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:hover:bg-gray-800"
+              className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-white"
             >
               <Eye className="w-4 h-4 mr-2" />
               Preview
@@ -3438,7 +3578,7 @@ const CourseBuilder = () => {
                             <SelectItem 
                               key={category.id} 
                               value={category.name}
-                              className="rounded-xl hover:bg-primary/5 focus:bg-primary/10 transition-colors"
+                              className="rounded-xl hover:bg-primary/5 hover:text-gray-900 dark:hover:text-white focus:bg-primary/10 focus:text-gray-900 dark:focus:text-white transition-colors"
                             >
                               {category.name}
                             </SelectItem>
@@ -3481,7 +3621,7 @@ const CourseBuilder = () => {
                             <SelectItem 
                               key={language.id} 
                               value={language.name}
-                              className="rounded-xl hover:bg-primary/5 focus:bg-primary/10 transition-colors"
+                              className="rounded-xl hover:bg-primary/5 hover:text-gray-900 dark:hover:text-white focus:bg-primary/10 focus:text-gray-900 dark:focus:text-white transition-colors"
                             >
                               {language.name}
                             </SelectItem>
@@ -3524,7 +3664,7 @@ const CourseBuilder = () => {
                             <SelectItem 
                               key={level.id} 
                               value={level.name}
-                              className="rounded-xl hover:bg-primary/5 focus:bg-primary/10 transition-colors"
+                              className="rounded-xl hover:bg-primary/5 hover:text-gray-900 dark:hover:text-white focus:bg-primary/10 focus:text-gray-900 dark:focus:text-white transition-colors"
                             >
                               {level.name}
                             </SelectItem>
@@ -3905,7 +4045,7 @@ const CourseBuilder = () => {
                       variant="outline" 
                       size="sm" 
                       onClick={() => addArrayField('requirements')}
-                        className="w-full h-12 border-2 border-dashed border-orange-300 dark:border-orange-600 rounded-2xl text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/10 hover:border-orange-400 dark:hover:border-orange-500 transition-all duration-300 group"
+                        className="w-full h-12 border-2 border-dashed border-orange-300 dark:border-orange-600 rounded-2xl text-orange-600 dark:text-orange-400 hover:bg-orange-50 hover:text-orange-700 dark:hover:bg-orange-900/10 dark:hover:text-orange-300 hover:border-orange-400 dark:hover:border-orange-500 transition-all duration-300 group"
                     >
                         <Plus className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-300" />
                       Add Requirement
@@ -3966,7 +4106,7 @@ const CourseBuilder = () => {
                       variant="outline" 
                       size="sm" 
                       onClick={() => addArrayField('learningOutcomes')}
-                        className="w-full h-12 border-2 border-dashed border-green-300 dark:border-green-600 rounded-2xl text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/10 hover:border-green-400 dark:hover:border-green-500 transition-all duration-300 group"
+                        className="w-full h-12 border-2 border-dashed border-green-300 dark:border-green-600 rounded-2xl text-green-600 dark:text-green-400 hover:bg-green-50 hover:text-green-700 dark:hover:bg-green-900/10 dark:hover:text-green-300 hover:border-green-400 dark:hover:border-green-500 transition-all duration-300 group"
                     >
                         <Plus className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-300" />
                         Add Learning Outcome
@@ -4058,7 +4198,7 @@ const CourseBuilder = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleMembersChange('teachers', [])}
-                          className="h-8 px-3 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                          className="h-8 px-3 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/20 dark:hover:text-red-300 rounded-lg"
                         >
                           Clear All
                         </Button>
@@ -4159,7 +4299,7 @@ const CourseBuilder = () => {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleMembersChange('students', [])}
-                            className="h-8 px-3 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                            className="h-8 px-3 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/20 dark:hover:text-red-300 rounded-lg"
                           >
                             Clear All
                           </Button>

@@ -2,8 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
-import { ArrowLeft, Lightbulb, Mic, Users, Monitor, Loader2, Square, MessageSquare, XCircle } from 'lucide-react';
+import { ArrowLeft, Lightbulb, Mic, Users, Monitor, Loader2, Square, MessageSquare, XCircle, Trophy, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useAuth } from '@/hooks/useAuth';
@@ -29,6 +30,19 @@ interface Scenario {
 interface ProblemSolvingScenarioResponse {
   scenarios: Scenario[];
   total: number;
+}
+
+interface ExerciseCompletion {
+  exercise_completed: boolean;
+  progress_percentage: number;
+  completed_topics: number;
+  total_topics: number;
+  current_topic_id: number;
+  stage_id: number;
+  exercise_id: number;
+  exercise_name: string;
+  stage_name: string;
+  completion_date?: string | null;
 }
 
 interface EvaluationResponse {
@@ -71,6 +85,8 @@ interface EvaluationResponse {
   scenario_title?: string;
   scenario_context?: string;
   error?: string;
+  message?: string;
+  exercise_completion?: ExerciseCompletion;
 }
 
 // API Functions
@@ -218,6 +234,8 @@ export default function ProblemSolvingSimulations() {
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [evaluation, setEvaluation] = useState<EvaluationResponse | null>(null);
   const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   
   const hasFetchedData = useRef(false);
 
@@ -517,7 +535,53 @@ export default function ProblemSolvingSimulations() {
 
       const result: EvaluationResponse = await response.json();
       console.log('Evaluation result:', result);
+      
+      // Handle API error responses (like no_speech_detected)
+      if (result.success === false || result.error) {
+        const errorMessage = result.message || result.error || 'Speech evaluation failed';
+        
+        // Update result to show error
+        result.evaluation = {
+          success: false,
+          evaluation: {
+            overall_score: 0,
+            clarity_score: 0,
+            politeness_score: 0,
+            request_structure_score: 0,
+            specificity_score: 0,
+            solution_orientation_score: 0,
+            keyword_matches: [],
+            total_keywords: 0,
+            matched_keywords_count: 0,
+            response_type_detected: 'error',
+            detailed_feedback: {
+              clarity_feedback: errorMessage,
+              politeness_feedback: '',
+              request_structure_feedback: '',
+              specificity_feedback: '',
+              solution_orientation_feedback: ''
+            },
+            suggested_improvements: ['Please speak more clearly and try again'],
+            encouragement: '',
+            next_steps: 'Record your response again with clear speech'
+          }
+        };
+      }
+      
       setEvaluation(result);
+
+      // Check if the exercise is completed based on API response
+      if (result.exercise_completion?.exercise_completed) {
+        // Exercise is completed according to the API
+        setIsCompleted(true);
+        setShowCompletionDialog(true);
+        markExerciseCompleted();
+      } else if (!isCompleted) {
+        // Mark exercise as completed after receiving evaluation (fallback logic)
+        setIsCompleted(true);
+        setShowCompletionDialog(true);
+        markExerciseCompleted();
+      }
 
       // Add transcription and feedback to conversation
       if (result.user_text) {
@@ -548,6 +612,36 @@ export default function ProblemSolvingSimulations() {
     } finally {
       setIsEvaluating(false);
     }
+  };
+
+  const markExerciseCompleted = async () => {
+    if (user?.id) {
+      try {
+        // Import the progress update function
+        const { updateCurrentProgress } = await import('@/utils/progressTracker');
+        
+        // Update progress to mark as completed
+        await updateCurrentProgress(
+          user.id,
+          3, // Stage 3
+          3  // Exercise 3 (ProblemSolvingSimulations)
+        );
+        console.log('Exercise marked as completed: Stage 3, Exercise 3 (ProblemSolvingSimulations)');
+      } catch (error) {
+        console.warn('Failed to mark exercise as completed:', error);
+      }
+    }
+  };
+
+  const handleRedo = () => {
+    setSelectedScenario(null);
+    setCurrentScenarioData(null);
+    setConversation([]);
+    setIsLoadingScenario(false);
+    setEvaluation(null);
+    setIsCompleted(false);
+    setShowCompletionDialog(false);
+    resetRecording();
   };
 
   const handleBackToScenarios = () => {
@@ -880,6 +974,48 @@ export default function ProblemSolvingSimulations() {
               </CardContent>
             </Card>
           )}
+
+          {/* Completion Dialog */}
+          <Dialog open={showCompletionDialog} onOpenChange={setShowCompletionDialog}>
+            <DialogContent className="sm:max-w-lg p-0 bg-gradient-to-br from-white/98 via-white/95 to-[#8DC63F]/5 dark:from-gray-900/98 dark:via-gray-900/95 dark:to-[#8DC63F]/10 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-xl">
+              <DialogHeader className="px-6 py-5 border-b border-gray-200/40 dark:border-gray-700/40 bg-gradient-to-r from-transparent via-[#8DC63F]/5 to-transparent dark:via-[#8DC63F]/10">
+                <div className="flex items-center justify-center">
+                  <div className="w-16 h-16 bg-gradient-to-br from-[#8DC63F]/20 to-[#8DC63F]/30 dark:from-[#8DC63F]/20 dark:to-[#8DC63F]/30 rounded-3xl flex items-center justify-center shadow-sm border border-[#8DC63F]/30 dark:border-[#8DC63F]/40 mb-4">
+                    <Trophy className="h-8 w-8 text-[#8DC63F] dark:text-[#8DC63F]" />
+                  </div>
+                </div>
+                <DialogTitle className="text-center text-2xl font-bold bg-gradient-to-r from-gray-900 to-[#8DC63F] dark:from-gray-100 dark:to-[#8DC63F] bg-clip-text text-transparent">
+                  Congratulations!
+                </DialogTitle>
+              </DialogHeader>
+              <div className="p-6">
+                <div className="text-center space-y-4">
+                  <p className="text-lg text-gray-700 dark:text-gray-300 font-medium">
+                    🎉 You've completed the problem-solving scenario!
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Excellent work on practicing your critical thinking and problem-solving skills. You can try another scenario or redo this one for more practice.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 mt-6">
+                    <Button
+                      onClick={handleRedo}
+                      variant="outline"
+                      className="flex-1 h-12 px-6 bg-[#8DC63F]/10 hover:bg-[#8DC63F]/20 dark:bg-[#8DC63F]/20 dark:hover:bg-[#8DC63F]/30 text-[#8DC63F] dark:text-[#8DC63F] border border-[#8DC63F]/30 dark:border-[#8DC63F]/40 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md font-medium"
+                    >
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Try Another Scenario
+                    </Button>
+                    <Button
+                      onClick={() => navigate('/dashboard/practice')}
+                      className="flex-1 h-12 px-6 bg-gradient-to-r from-[#8DC63F] to-[#8DC63F]/90 hover:from-[#8DC63F]/90 hover:to-[#8DC63F] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 border-0 rounded-xl"
+                    >
+                      Continue Learning
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     );

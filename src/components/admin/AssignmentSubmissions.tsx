@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, CheckCircle2, Clock, FileText, Search, Users, ChevronRight, Download, Eye } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Clock, FileText, Search, Users, ChevronRight, Download, Eye, CheckCircle, XCircle, Circle } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { ContentLoader } from '@/components/ContentLoader';
@@ -33,6 +33,36 @@ interface Submission {
   content?: string;
   answers?: any;
   results?: any;
+  // Manual grading fields for quiz submissions
+  manual_grading_required?: boolean;
+  manual_grading_completed?: boolean;
+  manual_grading_score?: number | null;
+  manual_grading_feedback?: string | null;
+  manual_grading_completed_at?: string;
+  manual_grading_completed_by?: string;
+  // Individual text answer grades
+  text_answer_grades?: Array<{
+    question_id: string;
+    question_text: string;
+    question_position: number;
+    grade: number;
+    feedback?: string;
+    graded_by: string;
+    graded_at: string;
+  }>;
+}
+
+interface QuizQuestion {
+  id: string;
+  question_text: string;
+  question_type: 'single_choice' | 'multiple_choice' | 'text_answer';
+  options: {
+    id: string;
+    option_text: string;
+    is_correct: boolean;
+    position: number;
+  }[];
+  position: number;
 }
 
 interface AssignmentDetails {
@@ -66,6 +96,11 @@ export const AssignmentSubmissions = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [signedFileUrl, setSignedFileUrl] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
+  const [isLoadingQuiz, setIsLoadingQuiz] = useState(false);
+  const [manualGrades, setManualGrades] = useState<Record<string, number>>({});
+  const [manualFeedback, setManualFeedback] = useState<Record<string, string>>({});
+
 
   // Data Fetching
   const fetchSubmissionData = useCallback(async () => {
@@ -116,12 +151,59 @@ export const AssignmentSubmissions = () => {
     fetchSubmissionData();
   }, [fetchSubmissionData]);
 
+  // Effect to focus grade input and prevent text selection when modal opens
+  useEffect(() => {
+    if (isGradingOpen) {
+      const timer = setTimeout(() => {
+        // Focus the grade input field
+        const gradeInput = document.getElementById('grade') as HTMLInputElement;
+        if (gradeInput) {
+          gradeInput.focus();
+          // Move cursor to end without selecting text
+          if (gradeInput.value) {
+            gradeInput.setSelectionRange(gradeInput.value.length, gradeInput.value.length);
+          }
+        }
+        
+        // For quiz grading, handle text answer grade inputs
+        if (Object.keys(manualGrades).length > 0) {
+          const inputs = document.querySelectorAll('input[type="text"]');
+          inputs.forEach(input => {
+            if (input instanceof HTMLInputElement && input.value) {
+              // Clear any selection by moving cursor to end
+              input.setSelectionRange(input.value.length, input.value.length);
+            }
+          });
+        }
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isGradingOpen, manualGrades]);
+
+
+
+
+
+
+
+
+
   // Event Handlers
   const handleOpenGrader = async (submission: Submission) => {
     setSelectedSubmission(submission);
     setGrade(submission.score?.toString() || '');
     setFeedback(submission.feedback || '');
     setSignedFileUrl(null);
+    
+    // Reset manual grading state
+    setManualGrades({});
+    setManualFeedback({});
+
+    // If it's a quiz, fetch the quiz questions
+    if (assignmentDetails?.type === 'quiz' && assignmentId) {
+      await fetchQuizQuestions(assignmentId, submission);
+    }
 
     if (submission.content && /submission-files\/[^\s]+/.test(submission.content)) {
       try {
@@ -159,13 +241,140 @@ export const AssignmentSubmissions = () => {
     }
   };
 
-  const handleSaveGrade = async () => {
-    if (!selectedSubmission || !assignmentDetails || assignmentDetails.type !== 'assignment') return;
+  const fetchQuizQuestions = async (contentItemId: string, submission?: Submission) => {
+    setIsLoadingQuiz(true);
+    try {
+      const { data: questions, error } = await supabase
+        .from('quiz_questions')
+        .select(`
+          id,
+          question_text,
+          question_type,
+          position,
+          options:question_options(
+            id,
+            option_text,
+            is_correct,
+            position
+          )
+        `)
+        .eq('lesson_content_id', contentItemId)
+        .order('position');
 
+      if (error) throw error;
+
+      const processedQuestions = questions?.map(q => ({
+        ...q,
+        options: q.options.sort((a: any, b: any) => a.position - b.position)
+      })) || [];
+
+      setQuizQuestions(processedQuestions);
+      
+      // After questions are loaded, populate manual grading data if submission exists
+      const submissionToUse = submission || selectedSubmission;
+      if (submissionToUse && submissionToUse.manual_grading_completed) {
+        // Set overall grade and feedback
+        if (submissionToUse.manual_grading_score !== null && submissionToUse.manual_grading_score !== undefined) {
+          console.log('Setting grade:', submissionToUse.manual_grading_score);
+          setGrade(submissionToUse.manual_grading_score.toString());
+        }
+        if (submissionToUse.manual_grading_feedback) {
+          console.log('Setting feedback:', submissionToUse.manual_grading_feedback);
+          setFeedback(submissionToUse.manual_grading_feedback);
+        }
+        
+        // Populate individual question grades and feedback from the new text_answer_grades table
+        const textAnswerQuestions = processedQuestions.filter(q => q.question_type === 'text_answer');
+        
+        if (textAnswerQuestions.length > 0) {
+          // Check if we have individual grades in the submission data
+          if (submissionToUse.text_answer_grades && submissionToUse.text_answer_grades.length > 0) {
+            console.log('Using individual grades from submission data:', submissionToUse.text_answer_grades);
+            
+            // Populate grades and feedback from the submission data
+            const grades: Record<string, number> = {};
+            const feedbackMap: Record<string, string> = {};
+            
+            submissionToUse.text_answer_grades.forEach((gradeData: any) => {
+              grades[gradeData.question_id] = gradeData.grade;
+              if (gradeData.feedback) {
+                feedbackMap[gradeData.question_id] = gradeData.feedback;
+              }
+              console.log('Loaded grade for question:', gradeData.question_id, '=', gradeData.grade);
+              console.log('Loaded feedback for question:', gradeData.question_id, '=', gradeData.feedback);
+            });
+            
+            setManualGrades(grades);
+            setManualFeedback(feedbackMap);
+          } else {
+            // Fallback: Fetch individual grades from the database
+            const { data: individualGrades, error: gradesError } = await supabase
+              .rpc('get_text_answer_grades', { submission_id: submissionToUse.id });
+            
+            if (gradesError) {
+              console.error('Error fetching individual grades:', gradesError);
+            } else {
+              console.log('Fetched individual grades from database:', individualGrades);
+              
+              // Populate grades and feedback from the database
+              const grades: Record<string, number> = {};
+              const feedbackMap: Record<string, string> = {};
+              
+              individualGrades?.forEach((gradeData: any) => {
+                grades[gradeData.question_id] = gradeData.grade;
+                if (gradeData.feedback) {
+                  feedbackMap[gradeData.question_id] = gradeData.feedback;
+                }
+                console.log('Loaded grade for question:', gradeData.question_id, '=', gradeData.grade);
+                console.log('Loaded feedback for question:', gradeData.question_id, '=', gradeData.feedback);
+              });
+              
+              setManualGrades(grades);
+              setManualFeedback(feedbackMap);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching quiz questions:', error);
+      toast.error('Failed to load quiz questions');
+    } finally {
+      setIsLoadingQuiz(false);
+    }
+  };
+
+  const handleSaveGrade = async () => {
+    if (!selectedSubmission) return;
+
+    // For quiz submissions with text answers, validate that all questions are graded
+    if (assignmentDetails?.type === 'quiz' && quizQuestions) {
+      const textAnswerQuestions = quizQuestions.filter(q => q.question_type === 'text_answer');
+      const ungradedQuestions = textAnswerQuestions.filter(q => !manualGrades[q.id] && manualGrades[q.id] !== 0);
+      
+      if (ungradedQuestions.length > 0) {
+        toast.error(`Please grade all ${textAnswerQuestions.length} text answer question(s) before saving.`);
+        return;
+      }
+      
+      // Validate that all grades are valid numbers between 0 and 100
+      const invalidGrades = textAnswerQuestions.filter(q => {
+        const grade = manualGrades[q.id];
+        return typeof grade !== 'number' || grade < 0 || grade > 100;
+      });
+      
+      if (invalidGrades.length > 0) {
+        toast.error('Please ensure all grades are valid numbers between 0 and 100.');
+        return;
+      }
+    }
+
+    try {
+      if (assignmentDetails?.type === 'assignment') {
+        // Handle assignment grading
     const { error: updateError } = await supabase
       .from('assignment_submissions')
       .update({
-        grade: parseFloat(grade),
+        grade: grade ? parseFloat(grade) : 0,
         feedback,
         status: 'graded'
       })
@@ -188,10 +397,82 @@ export const AssignmentSubmissions = () => {
         toast.error("Failed to mark assignment as complete for the student.", { description: rpcError.message });
     } else {
         toast.success('Grade saved and assignment marked as complete!');
+        }
+      } else if (assignmentDetails?.type === 'quiz') {
+        // Handle quiz grading
+        const hasTextAnswers = quizQuestions.some(q => q.question_type === 'text_answer');
+        
+        if (hasTextAnswers) {
+          // Calculate final score by combining auto-graded and manually graded questions
+          const textAnswerQuestions = quizQuestions.filter(q => q.question_type === 'text_answer');
+          const autoGradedQuestions = quizQuestions.filter(q => q.question_type !== 'text_answer');
+          
+          let finalScore = 0;
+          let totalQuestions = quizQuestions.length;
+          
+          // Calculate score from auto-graded questions
+          if (autoGradedQuestions.length > 0 && selectedSubmission.results) {
+            const autoGradedScore = autoGradedQuestions.reduce((sum, q) => {
+              const isCorrect = selectedSubmission.results[q.id];
+              return sum + (isCorrect ? 100 : 0);
+            }, 0);
+            finalScore += autoGradedScore;
+          }
+          
+          // Calculate score from manually graded text answer questions
+          if (textAnswerQuestions.length > 0) {
+            const textAnswerScore = textAnswerQuestions.reduce((sum, q) => sum + (manualGrades[q.id] || 0), 0);
+            finalScore += textAnswerScore;
+          }
+          
+          // Calculate final percentage
+          const finalPercentage = Math.round(finalScore / totalQuestions);
+          
+          // Prepare grades data for the new structure
+          const gradesData = textAnswerQuestions.map(q => ({
+            question_id: q.id,
+            grade: manualGrades[q.id] || 0,
+            feedback: manualFeedback[q.id] || ''
+          }));
+          
+          // Complete manual grading using the new structure
+          const { error } = await supabase.rpc('complete_manual_grading_v2', {
+            submission_id: selectedSubmission.id,
+            teacher_id: user?.id,
+            grades_data: gradesData
+          });
+          
+          if (error) throw error;
+          
+          const autoGradedCount = autoGradedQuestions.length;
+          const textAnswerCount = textAnswerQuestions.length;
+          
+          if (autoGradedCount > 0 && textAnswerCount > 0) {
+            toast.success(`Grading completed! Final score: ${finalPercentage}% (Auto-graded: ${autoGradedCount} questions, Manual: ${textAnswerCount} questions)`);
+          } else if (textAnswerCount > 0) {
+            toast.success(`Manual grading completed! Final score: ${finalPercentage}%`);
+          }
+        } else {
+          // Regular quiz grading (for non-text answer quizzes)
+          const { error } = await supabase
+            .from('quiz_submissions')
+            .update({
+              score: grade ? parseFloat(grade) : 0,
+              feedback: feedback
+            })
+            .eq('id', selectedSubmission.id);
+          
+          if (error) throw error;
+          
+          toast.success('Grade saved successfully!');
+        }
     }
     
     fetchSubmissionData();
     setIsGradingOpen(false);
+    } catch (error: any) {
+      toast.error('Failed to save grade.', { description: error.message });
+    }
   };
 
   // Utility Functions
@@ -324,16 +605,22 @@ export const AssignmentSubmissions = () => {
                           <div className="text-right">
                             <Badge 
                               variant={
+                                sub.manual_grading_completed ? 'success' :
                                 sub.status === 'submitted' ? 'default' : 
-                                sub.status === 'graded' ? 'secondary' : 
+                                sub.status === 'graded' ? 'success' : 
                                 'destructive'
                               }
                               className="capitalize"
                             >
-                              {sub.status}
+                              {sub.manual_grading_completed ? 'graded' : sub.status}
                             </Badge>
                             <p className="text-sm text-muted-foreground mt-1">
-                              {sub.score ? `${sub.score.toFixed(1)}%` : 'Not graded'}
+                              {sub.manual_grading_completed && sub.manual_grading_score !== null 
+                                ? `${sub.manual_grading_score.toFixed(1)}%` 
+                                : sub.score 
+                                  ? `${sub.score.toFixed(1)}%` 
+                                  : 'Not graded'
+                              }
                             </p>
                           </div>
                           <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -452,12 +739,22 @@ export const AssignmentSubmissions = () => {
                 <Label htmlFor="grade" className="text-right">
                   Grade
                 </Label>
-                <Input
+                <input
                   id="grade"
-                  type="number"
+                  type="text"
                   value={grade}
-                  onChange={(e) => setGrade(e.target.value)}
-                  className="col-span-3"
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Only allow numbers and empty string
+                    if (value === '' || /^\d+$/.test(value)) {
+                      const numValue = value === '' ? 0 : parseInt(value);
+                      // Ensure value is between 0 and 100
+                      if (numValue >= 0 && numValue <= 100) {
+                        setGrade(value);
+                      }
+                    }
+                  }}
+                  className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   placeholder="Enter score (0-100)"
                 />
               </div>
@@ -476,22 +773,279 @@ export const AssignmentSubmissions = () => {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsGradingOpen(false)}>Cancel</Button>
-              <Button onClick={handleSaveGrade}>Save Grade</Button>
+              <Button onClick={handleSaveGrade}>
+                {selectedSubmission?.status === 'graded' ? 'Update Grade' : 'Save Grade'}
+              </Button>
             </DialogFooter>
           </DialogContent>
         ) : (
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Quiz Review: {selectedSubmission?.student.name}</DialogTitle>
-              <DialogDescription>
-                Score: {selectedSubmission?.score?.toFixed(1)}%
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden bg-background">
+            <DialogHeader className="pb-4 border-b border-gray-200 dark:border-gray-700">
+              <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                Quiz Review: {selectedSubmission?.student.name}
+              </DialogTitle>
+              <DialogDescription className="flex items-center gap-3 mt-2">
+                <span className="text-gray-600 dark:text-gray-300">
+                  Score: {selectedSubmission?.manual_grading_completed && selectedSubmission?.manual_grading_score !== null 
+                    ? `${selectedSubmission.manual_grading_score.toFixed(1)}%` 
+                    : selectedSubmission?.score 
+                      ? `${selectedSubmission.score.toFixed(1)}%` 
+                      : 'Not graded'
+                  }
+                </span>
+                {selectedSubmission?.manual_grading_completed && (
+                  <Badge variant="success" className="text-xs">
+                    Previously Graded
+                  </Badge>
+                )}
               </DialogDescription>
             </DialogHeader>
             <div className="py-4 space-y-6 max-h-[60vh] overflow-y-auto pr-6">
-                {/* This part needs to be adapted for the new quiz data structure */}
+              {isLoadingQuiz ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Loading quiz questions...</p>
+                  </div>
+                </div>
+              ) : quizQuestions.length > 0 ? (
+                <div className="space-y-8">
+                  {quizQuestions.map((question, qIndex) => {
+                    const studentAnswer = selectedSubmission?.answers?.[question.id];
+                    const isCorrect = selectedSubmission?.results?.[question.id];
+                    const correctOptions = question.options.filter(opt => opt.is_correct);
+                    
+                    return (
+                      <Card key={question.id} className="border-2 border-gray-200 dark:border-gray-700 bg-gradient-to-br from-card to-card/50 dark:bg-card shadow-sm hover:shadow-md transition-shadow">
+                        <CardHeader>
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <Badge variant="outline" className="text-sm">
+                                  Question {qIndex + 1}
+                                </Badge>
+                                <Badge 
+                                  variant={question.question_type === 'multiple_choice' ? 'blue' : question.question_type === 'text_answer' ? 'warning' : 'default'}
+                                  className="text-xs"
+                                >
+                                  {question.question_type === 'multiple_choice' ? 'Multiple Choice' : question.question_type === 'text_answer' ? 'Text Answer' : 'Single Choice'}
+                                </Badge>
+                              </div>
+                              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                                {question.question_text}
+                              </h3>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {question.question_type === 'text_answer' ? (
+                                <Badge variant="outline" className="text-orange-600 border-orange-600 text-xs">
+                                  Manual Grading Required
+                                </Badge>
+                              ) : isCorrect ? (
+                                <CheckCircle className="h-6 w-6 text-green-600" />
+                              ) : (
+                                <XCircle className="h-6 w-6 text-red-600" />
+                              )}
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            {question.question_type === 'text_answer' ? (
+                              <div className="space-y-4">
+                                <div className="p-4 bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-800/10 border-2 border-orange-200 dark:border-orange-700/50 rounded-xl shadow-sm">
+                                  <h4 className="font-semibold text-orange-900 dark:text-orange-100 mb-3 flex items-center gap-2">
+                                    <Circle className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                                    Student's Answer:
+                                  </h4>
+                                  <div className="p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg border border-orange-200/50 dark:border-orange-700/30">
+                                    <p className="text-gray-900 dark:text-gray-100 whitespace-pre-wrap leading-relaxed">
+                                      {studentAnswer || (
+                                        <span className="text-gray-500 dark:text-gray-400 italic">No answer provided</span>
+                                      )}
+                                    </p>
+                                  </div>
+                                </div>
+                                
+                                <div className="space-y-4">
+                                  <div>
+                                    <Label className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-2">
+                                      Grade (0-100):
+                                      {manualGrades[question.id] !== undefined && manualGrades[question.id] !== null && (
+                                        <Badge variant="success" className="text-xs">
+                                          Grade: {manualGrades[question.id]}%
+                                        </Badge>
+                                      )}
+                                    </Label>
+                                    <Input
+                                      type="text"
+                                      value={manualGrades[question.id] ?? ''}
+                                      onChange={(e) => {
+                                        const value = e.target.value;
+                                        // Only allow numbers and empty string
+                                        if (value === '' || /^\d+$/.test(value)) {
+                                          const numValue = value === '' ? 0 : parseInt(value);
+                                          // Ensure value is between 0 and 100
+                                          if (numValue >= 0 && numValue <= 100) {
+                                            setManualGrades(prev => ({
+                                              ...prev,
+                                              [question.id]: numValue
+                                            }));
+                                          }
+                                        }
+                                      }}
+                                      className="bg-background border-2 border-gray-200 dark:border-gray-700 focus:border-orange-500 focus-visible:ring-2 focus-visible:ring-orange-500/20 focus-visible:ring-offset-0 focus-visible:outline-none text-gray-900 dark:text-gray-100"
+                                      placeholder="Enter grade (0-100)"
+                                    />
+                                  </div>
+                                  
+                                  <div>
+                                    <Label className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-2">
+                                      Feedback (Optional):
+                                      {manualFeedback[question.id] && (
+                                        <Badge variant="info" className="text-xs">
+                                          Feedback provided
+                                        </Badge>
+                                      )}
+                                    </Label>
+                                    <Textarea
+                                      value={manualFeedback[question.id] || ''}
+                                      onChange={(e) => setManualFeedback(prev => ({
+                                        ...prev,
+                                        [question.id]: e.target.value
+                                      }))}
+                                      className="bg-background border-2 border-gray-200 dark:border-gray-700 focus:border-orange-500 focus-visible:ring-2 focus-visible:ring-orange-500/20 focus-visible:ring-offset-0 focus-visible:outline-none text-gray-900 dark:text-gray-100 min-h-[100px]"
+                                      placeholder="Provide feedback for this answer..."
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              question.options.map((option) => {
+                                const isSelected = Array.isArray(studentAnswer) 
+                                  ? studentAnswer.includes(option.id)
+                                  : studentAnswer === option.id;
+                                const isCorrectOption = option.is_correct;
+                                
+                                return (
+                                  <div
+                                    key={option.id}
+                                    className={`p-4 rounded-lg border-2 transition-all ${
+                                      isCorrectOption
+                                        ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                                        : isSelected && !isCorrectOption
+                                        ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                                        : isSelected
+                                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                                        : 'border-gray-200 dark:border-gray-600'
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      <div className="flex-shrink-0">
+                                        {question.question_type === 'multiple_choice' ? (
+                                          <div className={`w-5 h-5 border-2 rounded flex items-center justify-center ${
+                                            isSelected 
+                                              ? 'border-primary bg-primary' 
+                                              : 'border-gray-300 dark:border-gray-600'
+                                          }`}>
+                                            {isSelected && (
+                                              <CheckCircle className="h-3 w-3 text-white" />
+                                            )}
+                                          </div>
+                                        ) : (
+                                          <div className={`w-5 h-5 border-2 rounded-full flex items-center justify-center ${
+                                            isSelected 
+                                              ? 'border-primary bg-primary' 
+                                              : 'border-gray-300 dark:border-gray-600'
+                                          }`}>
+                                            {isSelected && (
+                                              <div className="w-2 h-2 bg-white rounded-full"></div>
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                      <span className="flex-1 text-gray-900 dark:text-gray-100">
+                                        {option.option_text}
+                                      </span>
+                                      <div className="flex items-center gap-2">
+                                        {isCorrectOption && (
+                                          <Badge variant="outline" className="text-green-600 border-green-600 text-xs">
+                                            Correct
+                                          </Badge>
+                                        )}
+                                        {isSelected && (
+                                          <Badge variant="outline" className="text-blue-600 border-blue-600 text-xs">
+                                            Selected
+                                          </Badge>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })
+                              )}
+                            </div>
+                          
+                          {/* Answer Summary - Only show for auto-graded questions */}
+                          {question.question_type !== 'text_answer' && (
+                            <div className="mt-4 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                  Student's Answer:
+                                </span>
+                                <span className={`text-sm font-semibold ${
+                                  isCorrect ? 'text-green-600' : 'text-red-600'
+                                }`}>
+                                  {isCorrect ? 'Correct' : 'Incorrect'}
+                                </span>
+                              </div>
+                              <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                                {Array.isArray(studentAnswer) 
+                                  ? studentAnswer.length > 0 
+                                    ? `Selected ${studentAnswer.length} option(s)`
+                                    : 'No answer selected'
+                                  : studentAnswer 
+                                    ? 'Answered'
+                                    : 'No answer selected'
+                                }
+                              </div>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No quiz questions found.</p>
+                </div>
+              )}
             </div>
             <DialogFooter>
-              <Button onClick={() => setIsGradingOpen(false)}>Close</Button>
+              {assignmentDetails?.type === 'quiz' && quizQuestions && quizQuestions.some((q: QuizQuestion) => q.question_type === 'text_answer') && (
+                (() => {
+                  const textAnswerQuestions = quizQuestions.filter(q => q.question_type === 'text_answer');
+                  const allGraded = textAnswerQuestions.every(q => manualGrades[q.id] !== undefined && manualGrades[q.id] !== null);
+                  const isAlreadyGraded = selectedSubmission?.manual_grading_completed;
+                  
+                  return (
+                    <Button 
+                      onClick={handleSaveGrade}
+                      disabled={!allGraded}
+                      className="bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                    >
+                      {isAlreadyGraded ? 'Update Grade' : 'Save Grade'}
+                    </Button>
+                  );
+                })()
+              )}
+              <Button 
+                onClick={() => setIsGradingOpen(false)} 
+                variant="outline"
+                className="border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100 transition-all duration-300"
+              >
+                Close
+              </Button>
             </DialogFooter>
           </DialogContent>
         )}

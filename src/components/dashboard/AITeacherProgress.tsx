@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +10,16 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { 
+  Pagination, 
+  PaginationContent, 
+  PaginationItem, 
+  PaginationLink, 
+  PaginationNext, 
+  PaginationPrevious, 
+  PaginationEllipsis 
+} from '@/components/ui/pagination';
 import { 
   Users, 
   Search, 
@@ -38,10 +48,10 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { 
-  teacherDashboardService, 
   TeacherProgressOverviewData, 
   StudentProgressData 
 } from '@/services/teacherDashboardService';
+import { useTeacherProgress } from '@/hooks/useTeacherProgress';
 
 interface StudentProgress {
   id: string;
@@ -99,242 +109,221 @@ interface StudentDetailData {
 export const AITeacherProgress = () => {
   const { user } = useAuth();
   const { profile } = useUserProfile();
-  const [students, setStudents] = useState<StudentProgressData[]>([]);
-  const [filteredStudents, setFilteredStudents] = useState<StudentProgressData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [stageFilter, setStageFilter] = useState('all');
-  const [lessonFilter, setLessonFilter] = useState('all');
+  
+  // Use the custom hook for progress data management
+  const {
+    data: progressOverviewData,
+    loading,
+    error,
+    refreshing,
+    timeRange,
+    searchQuery,
+    stageFilter,
+    handleTimeRangeChange,
+    handleSearchChange,
+    handleStageFilterChange,
+    handleRefresh
+  } = useTeacherProgress({
+    initialTimeRange: 'all_time',
+    initialSearchQuery: '',
+    initialStageFilter: 'all'
+  });
+
+  // Local state for UI components
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [selectedStudent, setSelectedStudent] = useState<StudentProgressData | null>(null);
   const [studentDetailData, setStudentDetailData] = useState<StudentDetailData | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [progressOverviewData, setProgressOverviewData] = useState<TeacherProgressOverviewData | null>(null);
-  const [timeRange, setTimeRange] = useState('all_time');
-  const [refreshing, setRefreshing] = useState(false);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
 
-  // Fetch progress overview data
-  const fetchProgressData = async (showRefreshIndicator = false, customTimeRange = 'all_time') => {
-    try {
-      if (showRefreshIndicator) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
-      setError(null);
-
-      console.log('🔄 Fetching teacher progress data with timeRange:', customTimeRange);
-      
-      const data = await teacherDashboardService.getProgressOverviewData(customTimeRange);
-      setProgressOverviewData(data);
-      setStudents(data.students);
-      setFilteredStudents(data.students);
-      
-      console.log('✅ Successfully loaded teacher progress data');
-      
-    } catch (error: any) {
-      console.error('❌ Error fetching teacher progress data:', error);
-      setError(error.message || 'Failed to load progress data');
-      toast.error('Failed to load progress data');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  // Handle time range change
-  const handleTimeRangeChange = async (newTimeRange: string) => {
-    setTimeRange(newTimeRange);
-    await fetchProgressData(true, newTimeRange);
-  };
-
-  // Handle refresh
-  const handleRefresh = async () => {
-    await fetchProgressData(true, timeRange);
-  };
-
-  const stages = ['Stage 1', 'Stage 2', 'Stage 3', 'Stage 4', 'Stage 5', 'Stage 6'];
-  const lessons = [
-    'Daily Routine Conversations',
-    'Quick Response Practice',
-    'Critical Thinking Dialogues',
-    'Mock Interview Practice',
-    'Academic Presentations',
-    'Abstract Topic Monologue'
-  ];
-
-  // Initial data fetch
-  useEffect(() => {
-    fetchProgressData();
-  }, []);
-
-  useEffect(() => {
+  // Derived state from hook data
+  const students = progressOverviewData?.students || [];
+  const filteredStudents = useMemo(() => {
     let filtered = students;
-
-    // Search filter
-    if (searchTerm) {
-      filtered = filtered.filter(student =>
-        student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.email.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(student => 
+        student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        student.email.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
-
-    // Stage filter
+    
+    // Apply stage filter
     if (stageFilter !== 'all') {
       filtered = filtered.filter(student => student.stage === stageFilter);
     }
-
-    // Lesson filter (in real implementation, this would filter by current/last lesson)
-    if (lessonFilter !== 'all') {
-      // Mock implementation - would need lesson data
-      filtered = filtered;
-    }
-
-    setFilteredStudents(filtered);
-  }, [students, searchTerm, stageFilter, lessonFilter]);
-
-  const handleViewStudentDetail = async (student: StudentProgress) => {
-    setSelectedStudent(student);
-    setLoading(true);
     
-    // Mock detailed data - Replace with actual API call
-    const mockDetailData: StudentDetailData = {
-      student,
-      lessonHistory: [
-        // Stage 1 lessons
-        {
-          lessonId: '1',
-          lessonName: 'Basic Greetings',
-          stage: 'Stage 1',
-          completedAt: '2024-01-08',
-          score: 92,
-          attempts: 1,
-          timeSpent: 25,
-          aiScore: 90,
-          feedback: 'Excellent pronunciation! Keep up the good work.',
-          status: 'completed'
-        },
-        {
-          lessonId: '2',
-          lessonName: 'Daily Routine Conversations',
-          stage: 'Stage 1',
-          completedAt: '2024-01-10',
-          score: 85,
-          attempts: 2,
-          timeSpent: 45,
-          aiScore: 87,
-          feedback: 'Good use of vocabulary! Work on pronunciation.',
-          status: 'completed'
-        },
-        {
-          lessonId: '3',
-          lessonName: 'Numbers and Time',
-          stage: 'Stage 1',
-          completedAt: '2024-01-11',
-          score: 88,
-          attempts: 1,
-          timeSpent: 30,
-          aiScore: 89,
-          feedback: 'Great understanding of time expressions.',
-          status: 'completed'
-        },
-        // Stage 2 lessons
-        {
-          lessonId: '4',
-          lessonName: 'Quick Response Practice',
-          stage: 'Stage 2',
-          completedAt: '2024-01-12',
-          score: 78,
-          attempts: 3,
-          timeSpent: 38,
-          aiScore: 80,
-          feedback: 'Response time improved. Keep practicing fluency.',
-          status: 'completed'
-        },
-        {
-          lessonId: '5',
-          lessonName: 'Listen and Reply',
-          stage: 'Stage 2',
-          completedAt: '2024-01-14',
-          score: 82,
-          attempts: 2,
-          timeSpent: 35,
-          aiScore: 83,
-          feedback: 'Good listening comprehension skills.',
-          status: 'completed'
-        },
-        {
-          lessonId: '6',
-          lessonName: 'Vocabulary Building',
-          stage: 'Stage 2',
-          completedAt: '',
-          score: 0,
-          attempts: 0,
-          timeSpent: 0,
-          aiScore: 0,
-          feedback: 'Not started yet.',
-          status: 'not_started'
-        },
-        // Stage 3 lessons
-        {
-          lessonId: '7',
-          lessonName: 'Critical Thinking Dialogues',
-          stage: 'Stage 3',
-          completedAt: '',
-          score: 0,
-          attempts: 1,
-          timeSpent: 15,
-          aiScore: 0,
-          feedback: 'In progress - shows potential for complex reasoning.',
-          status: 'in_progress'
-        },
-        {
-          lessonId: '8',
-          lessonName: 'Problem Solving Discussions',
-          stage: 'Stage 3',
-          completedAt: '',
-          score: 0,
-          attempts: 0,
-          timeSpent: 0,
-          aiScore: 0,
-          feedback: 'Not started yet.',
-          status: 'not_started'
-        }
-      ],
-      scoreHistory: [
-        { date: '2024-01-10', score: 85, lesson: 'Daily Routine Conversations' },
-        { date: '2024-01-12', score: 78, lesson: 'Quick Response Practice' },
-        { date: '2024-01-14', score: 82, lesson: 'Listen and Reply' }
-      ],
-      feedbackTrail: [
-        { date: '2024-01-10', feedback: 'Good use of vocabulary! Work on pronunciation.', lesson: 'Daily Routine Conversations' },
-        { date: '2024-01-12', feedback: 'Response time improved. Keep practicing fluency.', lesson: 'Quick Response Practice' },
-        { date: '2024-01-14', feedback: 'Great improvement in confidence level!', lesson: 'Listen and Reply' }
-      ],
-      insights: {
-        strengths: ['Vocabulary usage', 'Listening comprehension', 'Consistent practice'],
-        improvements: ['Pronunciation clarity', 'Grammar accuracy', 'Speaking confidence'],
-        recommendations: ['Practice pronunciation exercises daily', 'Focus on grammar drills', 'Join speaking practice groups']
-      }
-    };
+    return filtered;
+  }, [students, searchQuery, stageFilter]);
 
-    setTimeout(() => {
-      setStudentDetailData(mockDetailData);
-      setLoading(false);
-      setIsDetailModalOpen(true);
-    }, 500);
+  // Handle search term change (local state for immediate UI update)
+  const handleSearchTermChange = (newSearchTerm: string) => {
+    handleSearchChange(newSearchTerm);
+    setCurrentPage(1); // Reset pagination when searching
   };
 
-  const handleExportData = (format: 'csv' | 'pdf', scope: 'all' | 'individual', studentId?: string) => {
-    // Mock export functionality
-    const fileName = scope === 'all' 
-      ? `ai-student-progress-report.${format}`
-      : `student-${studentId}-progress.${format}`;
-    
-    toast.success(`Exporting ${fileName}...`, {
-      description: `${format.toUpperCase()} report will be downloaded shortly.`
-    });
+  // Handle stage filter change (local state for immediate UI update)
+  const handleStageFilterChangeLocal = (newStageFilter: string) => {
+    handleStageFilterChange(newStageFilter);
+    setCurrentPage(1); // Reset pagination when filtering
+  };
+
+  const stages = ['Stage 1', 'Stage 2', 'Stage 3', 'Stage 4', 'Stage 5', 'Stage 6'];
+
+  // Reset pagination when filtered data changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filteredStudents.length]);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredStudents.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedStudents = filteredStudents.slice(startIndex, endIndex);
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    // Scroll to top of table for better UX
+    document.querySelector('.student-progress-table')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleViewStudentDetail = async (student: StudentProgressData) => {
+    try {
+      setSelectedStudent(student);
+      setLoading(true);
+      
+      console.log('🔄 Fetching detailed data for student:', student.id);
+      
+      // Call the real API to get student detail data
+      const apiData = await teacherDashboardService.getStudentDetail(student.id);
+      
+      // Transform API data to match our component structure
+      const detailData: StudentDetailData = {
+        student: {
+          ...student,
+          // Update student data with API response
+          completionPercentage: apiData.progress_overview?.overall_progress_percentage || student.completionPercentage,
+          enrolledDate: apiData.basic_info?.first_activity_date || student.enrolledDate,
+          lastActive: apiData.basic_info?.last_activity_date || student.lastActive,
+          totalLessons: apiData.exercise_progress?.length || student.totalLessons,
+          completedLessons: apiData.progress_overview?.total_exercises_completed || student.completedLessons,
+          totalTimeMinutes: apiData.progress_overview?.total_time_spent_minutes || 0,
+          streakDays: apiData.progress_overview?.streak_days || 0,
+          longestStreak: apiData.progress_overview?.longest_streak || 0,
+          performanceLevel: apiData.performance_insights?.performance_level || 'Beginner',
+          learningPace: apiData.performance_insights?.learning_pace || 'Steady',
+          consistency: apiData.performance_insights?.consistency || 'Regular',
+          performance: {
+            trend: student.performance.trend,
+            strugglingAreas: apiData.performance_insights?.improvement_areas || [],
+            strongAreas: apiData.performance_insights?.strength_areas || []
+          }
+        },
+        lessonHistory: (apiData.exercise_progress || []).map((exercise: any) => ({
+          lessonId: `${exercise.stage_id}-${exercise.exercise_id}`,
+          lessonName: exercise.exercise_name,
+          stage: `Stage ${exercise.stage_id}`,
+          completedAt: exercise.completed_at || '',
+          score: Math.round(exercise.average_score * 10) / 10,
+          attempts: exercise.attempts,
+          timeSpent: exercise.time_spent_minutes,
+          aiScore: Math.round(exercise.best_score * 10) / 10,
+          feedback: exercise.mature ? 'Exercise mastered!' : 'Keep practicing to improve',
+          status: exercise.completed_at ? 'completed' : (exercise.attempts > 0 ? 'in_progress' : 'not_started')
+        })),
+        scoreHistory: (apiData.topic_progress || [])
+          .filter((topic: any) => topic.score !== null && topic.completed)
+          .slice(-10) // Show last 10 completed topics
+          .map((topic: any) => ({
+            date: topic.started_at?.split('T')[0] || '',
+            score: topic.score,
+            lesson: `Stage ${topic.stage_id} - Exercise ${topic.exercise_id}`
+          })),
+        feedbackTrail: (apiData.exercise_progress || [])
+          .filter((exercise: any) => exercise.attempts > 0)
+          .slice(-5) // Show last 5 exercises with attempts
+          .map((exercise: any) => ({
+            date: exercise.last_attempt_at?.split('T')[0] || '',
+            feedback: exercise.mature 
+              ? `Excellent work! You've mastered ${exercise.exercise_name} with an average score of ${exercise.average_score}.`
+              : `Continue practicing ${exercise.exercise_name}. Current average: ${exercise.average_score}. Best score: ${exercise.best_score}.`,
+            lesson: exercise.exercise_name
+          })),
+        insights: {
+          strengths: apiData.performance_insights?.strength_areas || [],
+          improvements: apiData.performance_insights?.improvement_areas || [],
+          recommendations: apiData.performance_insights?.recommendations || []
+        }
+      };
+
+      setStudentDetailData(detailData);
+      setIsDetailModalOpen(true);
+      
+      console.log('✅ Successfully loaded student detail data');
+      
+    } catch (error: any) {
+      console.error('❌ Error fetching student detail:', error);
+      toast.error('Failed to load student details', {
+        description: error.message || 'Unable to fetch detailed student information.'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExportData = async (format: 'csv' | 'pdf', scope: 'all' | 'individual', studentId?: string) => {
+    try {
+      const fileName = scope === 'all' 
+        ? `ai-student-progress-report-${new Date().toISOString().split('T')[0]}.${format}`
+        : `student-${studentId}-progress-${new Date().toISOString().split('T')[0]}.${format}`;
+      
+      // Show loading toast
+      toast.loading(`Preparing ${format.toUpperCase()} export...`, {
+        description: 'This may take a few moments.'
+      });
+
+      if (format === 'csv' && scope === 'all') {
+        // Use the API for CSV export with current filters
+        const blob = await teacherDashboardService.exportProgressData(
+          timeRange, 
+          'csv', 
+          searchTerm, 
+          stageFilter
+        );
+        
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+
+        toast.dismiss();
+        toast.success(`${fileName} downloaded successfully!`, {
+          description: 'Your progress report is ready.'
+        });
+      } else {
+        // For individual student exports or PDF (not implemented yet)
+        toast.dismiss();
+        toast.info('Export feature coming soon', {
+          description: `${format.toUpperCase()} export for ${scope === 'individual' ? 'individual students' : 'all data'} will be available in a future update.`
+        });
+      }
+    } catch (error: any) {
+      console.error('Export failed:', error);
+      toast.dismiss();
+      toast.error('Export failed', {
+        description: error.message || 'Unable to export data. Please try again.'
+      });
+    }
   };
 
   const getTrendIcon = (trend: string) => {
@@ -485,15 +474,7 @@ export const AITeacherProgress = () => {
                 <Download className="h-4 w-4" />
                 Export CSV
               </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="h-9 px-4 rounded-xl gap-2 bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800"
-                onClick={() => handleExportData('pdf', 'all')}
-              >
-                <FileText className="h-4 w-4" />
-                Export PDF
-              </Button>
+
             </div>
           </div>
         </div>
@@ -563,15 +544,15 @@ export const AITeacherProgress = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             <div className="space-y-3">
               <label className="text-sm font-medium text-muted-foreground">Search Students</label>
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search by name or email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  value={searchQuery}
+                  onChange={(e) => handleSearchTermChange(e.target.value)}
                   className="pl-9 h-11 rounded-xl border-2 focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
                 />
               </div>
@@ -579,7 +560,7 @@ export const AITeacherProgress = () => {
             
             <div className="space-y-3">
               <label className="text-sm font-medium text-muted-foreground">Stage Filter</label>
-              <Select value={stageFilter} onValueChange={setStageFilter}>
+              <Select value={stageFilter} onValueChange={handleStageFilterChangeLocal}>
                 <SelectTrigger className="h-11 rounded-xl border-2 focus:border-primary/50 focus:ring-2 focus:ring-primary/20">
                   <SelectValue placeholder="All Stages" />
                 </SelectTrigger>
@@ -592,29 +573,13 @@ export const AITeacherProgress = () => {
               </Select>
             </div>
             
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Lesson Filter</label>
-              <Select value={lessonFilter} onValueChange={setLessonFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Lessons" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Lessons</SelectItem>
-                  {lessons.map(lesson => (
-                    <SelectItem key={lesson} value={lesson}>{lesson}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
             <div className="flex items-end">
               <Button 
                 variant="outline" 
                 className="w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
                 onClick={() => {
-                  setSearchTerm('');
-                  setStageFilter('all');
-                  setLessonFilter('all');
+                  handleSearchTermChange('');
+                  handleStageFilterChangeLocal('all');
                 }}
               >
                 Clear Filters
@@ -626,9 +591,21 @@ export const AITeacherProgress = () => {
 
       {/* Student Data */}
       {viewMode === 'table' ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Student Progress Overview</CardTitle>
+        <Card className="student-progress-table">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+            <CardTitle className="flex items-center gap-2">
+              Student Progress Overview
+              {refreshing && (
+                <RefreshCw className="h-4 w-4 animate-spin text-primary" />
+              )}
+            </CardTitle>
+            <div className="text-sm text-muted-foreground">
+              {refreshing ? (
+                "Loading..."
+              ) : (
+                `Showing ${startIndex + 1}-${Math.min(endIndex, filteredStudents.length)} of ${filteredStudents.length} students`
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
@@ -644,62 +621,202 @@ export const AITeacherProgress = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredStudents.map((student) => (
-                    <TableRow key={student.id} className="hover:bg-muted/50">
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10">
-                            <AvatarFallback>
-                              {student.name.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium">{student.name}</div>
-                            <div className="text-sm text-muted-foreground">{student.email}</div>
+                  {refreshing ? (
+                    // Loading skeleton rows
+                    [...Array(itemsPerPage)].map((_, index) => (
+                      <TableRow key={`skeleton-${index}`} className="animate-pulse">
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 bg-muted rounded-full"></div>
+                            <div>
+                              <div className="h-4 bg-muted rounded w-24 mb-1"></div>
+                              <div className="h-3 bg-muted rounded w-32"></div>
+                            </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{student.stage}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className="text-lg font-semibold">{student.averageScore}</div>
-                          <Star className="h-4 w-4 text-yellow-500" />
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className={`text-sm ${getSentimentColor(student.aiTutorFeedback.sentiment)}`}>
-                          {student.aiTutorFeedback.summary.substring(0, 50)}...
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          {new Date(student.lastActive).toLocaleDateString()}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center gap-2 justify-end">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleViewStudentDetail(student)}
-                            className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        </TableCell>
+                        <TableCell>
+                          <div className="h-6 bg-muted rounded w-16"></div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="h-6 bg-muted rounded w-12"></div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="h-4 bg-muted rounded w-40"></div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="h-4 bg-muted rounded w-20"></div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="h-8 bg-muted rounded w-10 ml-auto"></div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    paginatedStudents.map((student) => (
+                      <TableRow key={student.id} className="hover:bg-muted/50">
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10">
+                              <AvatarFallback>
+                                {student.name.split(' ').map(n => n[0]).join('')}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="font-medium">{student.name}</div>
+                              <div className="text-sm text-muted-foreground">{student.email}</div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{student.stage}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div className="text-lg font-semibold">{student.averageScore}</div>
+                            <Star className="h-4 w-4 text-yellow-500" />
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className={`text-sm ${getSentimentColor(student.aiTutorFeedback.sentiment)}`}>
+                            {student.aiTutorFeedback.summary.substring(0, 50)}...
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            {new Date(student.lastActive).toLocaleDateString()}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center gap-2 justify-end">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewStudentDetail(student)}
+                              className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </div>
+            
+            {/* Pagination for Table View */}
+            {totalPages > 1 && (
+              <div className="flex justify-center pt-4 border-t">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
+                        className={currentPage <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                      />
+                    </PaginationItem>
+                    
+                    {/* Page Numbers */}
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                      // Show first page, last page, current page, and pages around current
+                      const showPage = page === 1 || 
+                                      page === totalPages || 
+                                      Math.abs(page - currentPage) <= 1;
+                      
+                      if (!showPage) {
+                        // Show ellipsis for gaps
+                        if (page === 2 && currentPage > 4) {
+                          return (
+                            <PaginationItem key={`ellipsis-${page}`}>
+                              <PaginationEllipsis />
+                            </PaginationItem>
+                          );
+                        }
+                        if (page === totalPages - 1 && currentPage < totalPages - 3) {
+                          return (
+                            <PaginationItem key={`ellipsis-${page}`}>
+                              <PaginationEllipsis />
+                            </PaginationItem>
+                          );
+                        }
+                        return null;
+                      }
+                      
+                      return (
+                        <PaginationItem key={page}>
+                          <PaginationLink
+                            onClick={() => handlePageChange(page)}
+                            isActive={currentPage === page}
+                            className="cursor-pointer"
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      );
+                    })}
+                    
+                    <PaginationItem>
+                      <PaginationNext 
+                        onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
+                        className={currentPage >= totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filteredStudents.map((student) => (
+        <div className="space-y-6">
+          {/* Cards View Header */}
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              Student Progress Overview
+              {refreshing && (
+                <RefreshCw className="h-4 w-4 animate-spin text-primary" />
+              )}
+            </h3>
+            <div className="text-sm text-muted-foreground">
+              {refreshing ? (
+                "Loading..."
+              ) : (
+                `Showing ${startIndex + 1}-${Math.min(endIndex, filteredStudents.length)} of ${filteredStudents.length} students`
+              )}
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {refreshing ? (
+              // Loading skeleton cards
+              [...Array(itemsPerPage)].map((_, index) => (
+                <Card key={`skeleton-card-${index}`} className="animate-pulse">
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <div className="h-12 w-12 bg-muted rounded-full"></div>
+                      <div className="flex-1">
+                        <div className="h-4 bg-muted rounded w-24 mb-2"></div>
+                        <div className="h-3 bg-muted rounded w-32"></div>
+                      </div>
+                      <div className="h-6 bg-muted rounded w-16"></div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="h-4 bg-muted rounded w-20"></div>
+                    <div className="space-y-2">
+                      <div className="h-3 bg-muted rounded w-16"></div>
+                      <div className="h-4 bg-muted rounded w-full"></div>
+                    </div>
+                    <div className="flex items-center justify-between pt-2">
+                      <div className="h-3 bg-muted rounded w-24"></div>
+                      <div className="h-8 bg-muted rounded w-10"></div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              paginatedStudents.map((student) => (
             <Card key={student.id} className="hover:shadow-md transition-shadow">
               <CardHeader>
                 <div className="flex items-center gap-3">
@@ -768,7 +885,71 @@ export const AITeacherProgress = () => {
                 </div>
               </CardContent>
             </Card>
-          ))}
+              ))
+            )}
+          </div>
+          
+          {/* Pagination for Cards View */}
+          {totalPages > 1 && (
+            <div className="flex justify-center pt-6">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
+                      className={currentPage <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                    />
+                  </PaginationItem>
+                  
+                  {/* Page Numbers */}
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                    // Show first page, last page, current page, and pages around current
+                    const showPage = page === 1 || 
+                                    page === totalPages || 
+                                    Math.abs(page - currentPage) <= 1;
+                    
+                    if (!showPage) {
+                      // Show ellipsis for gaps
+                      if (page === 2 && currentPage > 4) {
+                        return (
+                          <PaginationItem key={`ellipsis-${page}`}>
+                            <PaginationEllipsis />
+                          </PaginationItem>
+                        );
+                      }
+                      if (page === totalPages - 1 && currentPage < totalPages - 3) {
+                        return (
+                          <PaginationItem key={`ellipsis-${page}`}>
+                            <PaginationEllipsis />
+                          </PaginationItem>
+                        );
+                      }
+                      return null;
+                    }
+                    
+                    return (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          onClick={() => handlePageChange(page)}
+                          isActive={currentPage === page}
+                          className="cursor-pointer"
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  })}
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
+                      className={currentPage >= totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </div>
       )}
 
@@ -804,57 +985,102 @@ export const AITeacherProgress = () => {
                   <TabsTrigger value="insights">Insights</TabsTrigger>
                 </TabsList>
                 
-                <TabsContent value="overview" className="space-y-4">
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-lg">Current Progress</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <span>Overall Completion</span>
-                            <span className="font-semibold">{selectedStudent?.completionPercentage}%</span>
-                          </div>
-                          <Progress value={selectedStudent?.completionPercentage} className="h-3" />
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span>Current Stage</span>
-                          <Badge variant="outline">{selectedStudent?.stage}</Badge>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span>Average Score</span>
-                          <div className="flex items-center gap-1">
-                            <Star className="h-4 w-4 text-yellow-500" />
-                            <span className="font-semibold">{selectedStudent?.averageScore}</span>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-lg">Recent Activity</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span>Last Active</span>
-                          <span>{new Date(selectedStudent?.lastActive || '').toLocaleDateString()}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span>Enrolled Since</span>
-                          <span>{new Date(selectedStudent?.enrolledDate || '').toLocaleDateString()}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span>Performance Trend</span>
-                          <div className="flex items-center gap-1">
-                            {getTrendIcon(selectedStudent?.performance.trend || 'stable')}
-                            <span className="capitalize">{selectedStudent?.performance.trend}</span>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
+                                 <TabsContent value="overview" className="space-y-4">
+                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                     <Card>
+                       <CardHeader>
+                         <CardTitle className="text-lg">Current Progress</CardTitle>
+                       </CardHeader>
+                       <CardContent className="space-y-4">
+                         <div>
+                           <div className="flex items-center justify-between mb-2">
+                             <span>Overall Completion</span>
+                             <span className="font-semibold">{selectedStudent?.completionPercentage}%</span>
+                           </div>
+                           <Progress value={selectedStudent?.completionPercentage} className="h-3 bg-muted" />
+                         </div>
+                         <div className="flex items-center justify-between">
+                           <span>Current Stage</span>
+                           <Badge variant="outline">{selectedStudent?.stage}</Badge>
+                         </div>
+                         <div className="flex items-center justify-between">
+                           <span>Average Score</span>
+                           <div className="flex items-center gap-1">
+                             <Star className="h-4 w-4 text-yellow-500" />
+                             <span className="font-semibold">{selectedStudent?.averageScore}</span>
+                           </div>
+                         </div>
+                         <div className="flex items-center justify-between">
+                           <span>Exercises Completed</span>
+                           <span className="font-semibold">{selectedStudent?.completedLessons}</span>
+                         </div>
+                       </CardContent>
+                     </Card>
+                     
+                     <Card>
+                       <CardHeader>
+                         <CardTitle className="text-lg">Learning Activity</CardTitle>
+                       </CardHeader>
+                       <CardContent className="space-y-3">
+                         <div className="flex items-center justify-between">
+                           <span>Last Active</span>
+                           <span>{new Date(selectedStudent?.lastActive || '').toLocaleDateString()}</span>
+                         </div>
+                         <div className="flex items-center justify-between">
+                           <span>Started Learning</span>
+                           <span>{new Date(selectedStudent?.enrolledDate || '').toLocaleDateString()}</span>
+                         </div>
+                         <div className="flex items-center justify-between">
+                           <span>Total Time</span>
+                           <span className="font-semibold">
+                             {studentDetailData?.student ? 
+                               `${Math.floor((studentDetailData.student as any).totalTimeMinutes / 60)}h ${(studentDetailData.student as any).totalTimeMinutes % 60}m` 
+                               : '0h 0m'
+                             }
+                           </span>
+                         </div>
+                         <div className="flex items-center justify-between">
+                           <span>Learning Streak</span>
+                           <span className="font-semibold">
+                             {(studentDetailData?.student as any)?.streakDays || 0} days
+                           </span>
+                         </div>
+                       </CardContent>
+                     </Card>
+
+                     <Card>
+                       <CardHeader>
+                         <CardTitle className="text-lg">Performance Level</CardTitle>
+                       </CardHeader>
+                       <CardContent className="space-y-3">
+                         <div className="flex items-center justify-between">
+                           <span>Current Level</span>
+                           <Badge variant="secondary">
+                             {(studentDetailData?.student as any)?.performanceLevel || 'Beginner'}
+                           </Badge>
+                         </div>
+                         <div className="flex items-center justify-between">
+                           <span>Learning Pace</span>
+                           <span className="text-sm">
+                             {(studentDetailData?.student as any)?.learningPace || 'Steady'}
+                           </span>
+                         </div>
+                         <div className="flex items-center justify-between">
+                           <span>Consistency</span>
+                           <span className="text-sm">
+                             {(studentDetailData?.student as any)?.consistency || 'Regular'}
+                           </span>
+                         </div>
+                         <div className="flex items-center justify-between">
+                           <span>Performance Trend</span>
+                           <div className="flex items-center gap-1">
+                             {getTrendIcon(selectedStudent?.performance.trend || 'stable')}
+                             <span className="capitalize">{selectedStudent?.performance.trend}</span>
+                           </div>
+                         </div>
+                       </CardContent>
+                     </Card>
+                   </div>
                   
                   <Card>
                     <CardHeader>
@@ -921,9 +1147,9 @@ export const AITeacherProgress = () => {
                                             <div className="text-sm text-muted-foreground">Avg: {averageScore}</div>
                                           )}
                                         </div>
-                                        <div className="w-24">
-                                          <Progress value={stageProgress} className="h-2" />
-                                        </div>
+                                                                                 <div className="w-24">
+                                           <Progress value={stageProgress} className="h-2 bg-muted" />
+                                         </div>
                                       </div>
                                     </div>
                                   </AccordionTrigger>
@@ -1099,24 +1325,16 @@ export const AITeacherProgress = () => {
             </div>
           )}
           
-          <div className="flex justify-between items-center pt-4 border-t">
-            <div className="text-sm text-muted-foreground">
-              Last updated: {new Date().toLocaleDateString()}
-            </div>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                onClick={() => selectedStudent && handleExportData('pdf', 'individual', selectedStudent.id)}
-                className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export Report
-              </Button>
-              <Button onClick={() => setIsDetailModalOpen(false)}>
-                Close
-              </Button>
-            </div>
-          </div>
+                     <div className="flex justify-between items-center pt-4 border-t">
+             <div className="text-sm text-muted-foreground">
+               Last updated: {new Date().toLocaleDateString()}
+             </div>
+             <div className="flex gap-2">
+               <Button onClick={() => setIsDetailModalOpen(false)}>
+                 Close
+               </Button>
+             </div>
+           </div>
         </DialogContent>
       </Dialog>
     </div>

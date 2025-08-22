@@ -79,10 +79,38 @@ export interface TopContentData {
 
 // Reports Service class for managing all API calls
 class ReportsService {
-  async getPracticeStagePerformance(timeRange: string = 'all_time'): Promise<PracticeStagePerformanceData> {
+  private currentController: AbortController | null = null;
+  private requestCache = new Map<string, { data: any; timestamp: number }>();
+  private readonly CACHE_DURATION = 60000; // 60 seconds cache
+
+  private getCacheKey(endpoint: string, params: Record<string, any>): string {
+    return `${endpoint}_${JSON.stringify(params)}`;
+  }
+
+  private getCachedData(cacheKey: string): any | null {
+    const cached = this.requestCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
+      console.log('📦 Using cached data for:', cacheKey);
+      return cached.data;
+    }
+    return null;
+  }
+
+  private setCachedData(cacheKey: string, data: any): void {
+    this.requestCache.set(cacheKey, { data, timestamp: Date.now() });
+  }
+
+  async getPracticeStagePerformance(timeRange: string = 'all_time', signal?: AbortSignal): Promise<PracticeStagePerformanceData> {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      // Use provided signal or create a new one
+      const controller = signal ? null : new AbortController();
+      const requestSignal = signal || controller?.signal;
+      const timeoutId = setTimeout(() => {
+        if (controller) controller.abort();
+        else if (signal && !signal.aborted) {
+          console.warn('⚠️ Cannot abort external signal, request may continue');
+        }
+      }, 15000); // Increased timeout to 15 seconds
 
       console.log('🔍 Fetching practice stage performance data with timeRange:', timeRange);
 
@@ -92,7 +120,7 @@ class ReportsService {
       const response = await fetch(url.toString(), {
         method: 'GET',
         headers: getAuthHeadersWithAccept(),
-        signal: controller.signal,
+        signal: requestSignal,
       });
 
       clearTimeout(timeoutId);
@@ -475,27 +503,57 @@ class ReportsService {
     try {
       console.log('🔄 Fetching all reports data with timeRange:', timeRange);
       
+      // Check cache first
+      const cacheKey = this.getCacheKey('reports_overview', { timeRange });
+      const cachedData = this.getCachedData(cacheKey);
+      if (cachedData) {
+        return cachedData;
+      }
+
+      // Cancel any existing request
+      if (this.currentController) {
+        this.currentController.abort();
+        // Small delay to ensure proper cleanup
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+
+      // Create single controller for all requests
+      this.currentController = new AbortController();
+      
       // Fetch all data in parallel for better performance
       const [practiceStagePerformance, userEngagement, timeUsagePatterns, topContentAccessed, analyticsOverview] = await Promise.all([
-        this.getPracticeStagePerformance(timeRange),
-        this.getUserEngagementOverview(timeRange),
-        this.getTimeUsagePatterns(timeRange),
-        this.getTopContentAccessed(timeRange),
-        this.getAnalyticsOverview(timeRange),
+        this.getPracticeStagePerformance(timeRange, this.currentController.signal),
+        this.getUserEngagementOverview(timeRange, this.currentController.signal),
+        this.getTimeUsagePatterns(timeRange, this.currentController.signal),
+        this.getTopContentAccessed(timeRange, this.currentController.signal),
+        this.getAnalyticsOverview(timeRange, this.currentController.signal),
       ]);
 
-      console.log('✅ Successfully fetched all reports data');
-      
-      return {
+      const result = {
         practiceStagePerformance,
         userEngagement,
         timeUsagePatterns,
         topContentAccessed,
         analyticsOverview,
       };
+
+      // Cache the result
+      this.setCachedData(cacheKey, result);
+
+      console.log('✅ Successfully fetched all reports data');
+      
+      return result;
     } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('🚫 Reports data request was cancelled');
+        // Re-throw the original AbortError to preserve the error type
+        throw error;
+      }
       console.error('❌ Error fetching reports data:', error);
       throw new Error(`Failed to fetch reports data: ${error.message}`);
+    } finally {
+      // Clean up controller
+      this.currentController = null;
     }
   }
 
@@ -510,6 +568,25 @@ class ReportsService {
   private getEngagementColor(index: number): string {
     const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#F97316'];
     return colors[index % colors.length];
+  }
+
+  // Cleanup method to cancel all ongoing requests
+  public cleanup(): void {
+    console.log('🧹 Cleaning up reports service requests');
+    
+    if (this.currentController) {
+      this.currentController.abort();
+      this.currentController = null;
+    }
+
+    // Clear cache
+    this.requestCache.clear();
+  }
+
+  // Clear cache method
+  public clearCache(): void {
+    console.log('🗑️ Clearing reports service cache');
+    this.requestCache.clear();
   }
 }
 

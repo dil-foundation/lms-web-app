@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
-import { ArrowLeft, Mic, Lightbulb, FileText, Brain, Target, Loader2, Play, Pause } from 'lucide-react';
+import { CompletionDialog } from '@/components/practice/CompletionDialog';
+import { ArrowLeft, Mic, Lightbulb, FileText, Brain, Target, Loader2, Play, Pause, CheckCircle, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,7 +14,18 @@ import {
   CriticalOpinionEvaluation
 } from '@/services/criticalOpinionService';
 
-
+interface ExerciseCompletion {
+  exercise_completed: boolean;
+  progress_percentage: number;
+  completed_topics: number;
+  total_topics: number;
+  current_topic_id: number;
+  stage_id: number;
+  exercise_id: number;
+  exercise_name: string;
+  stage_name: string;
+  completion_date?: string | null;
+}
 
 export default function CriticalOpinionBuilder() {
   const navigate = useNavigate();
@@ -38,6 +50,8 @@ export default function CriticalOpinionBuilder() {
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [evaluationResult, setEvaluationResult] = useState<CriticalOpinionEvaluation | null>(null);
   const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
 
 
   // Load topics on component mount
@@ -209,11 +223,40 @@ export default function CriticalOpinionBuilder() {
         user.id,
         timeSpent,
         false
-      );
+      ) as any;
       
       console.log('✅ Evaluation result:', result);
+      
+      // Handle API error responses (like no_speech_detected)
+      if (result.success === false || result.error) {
+        const errorMessage = result.message || result.error || 'Speech evaluation failed';
+        
+        // Create modified feedback object for error cases
+        const errorFeedback = {
+          ...result,
+          evaluation: {
+            ...result.evaluation,
+            score: 0,
+            feedback: errorMessage,
+            areas_for_improvement: ['Please speak more clearly and try again']
+          }
+        };
+        
+        setEvaluationResult(errorFeedback);
+        setShowFeedback(true);
+        toast.error('Speech evaluation failed: ' + errorMessage);
+        return;
+      }
+      
       setEvaluationResult(result);
       setShowFeedback(true);
+      
+      // Check if the exercise is completed based on API response
+      if (result?.exercise_completion?.exercise_completed) {
+        // Exercise is completed according to the API
+        setIsCompleted(true);
+        setShowCompletionDialog(true);
+      }
       
     } catch (error) {
       console.error('❌ Error evaluating recording:', error);
@@ -231,6 +274,8 @@ export default function CriticalOpinionBuilder() {
     setIsEvaluating(false);
     setRecordedChunks([]);
     setRecordingStartTime(null);
+    setIsCompleted(false);
+    setShowCompletionDialog(false);
     cleanupCurrentAudio();
     
     // Stop any ongoing recording
@@ -239,6 +284,18 @@ export default function CriticalOpinionBuilder() {
       mediaRecorder.stream.getTracks().forEach(track => track.stop());
     }
     setMediaRecorder(null);
+  };
+
+  const handleRedo = () => {
+    setShowCompletionDialog(false);
+    setIsCompleted(false);
+    setEvaluationResult(null);
+    setShowFeedback(false);
+  };
+
+  const handleContinue = () => {
+    setShowCompletionDialog(false);
+    resetBuilder();
   };
 
 
@@ -514,32 +571,36 @@ export default function CriticalOpinionBuilder() {
                       <Target className="h-5 w-5 mr-2" />
                       Overall Score
                     </h4>
-                    <span className="text-3xl font-bold text-primary">
-                      {evaluationResult.overall_score}/100
+                    <span className={`text-3xl font-bold ${
+                      (evaluationResult.evaluation.score || 0) === 0 
+                        ? 'text-red-600 dark:text-red-400' 
+                        : 'text-primary'
+                    }`}>
+                      {evaluationResult.evaluation.score}/100
                     </span>
                   </div>
-                  {evaluationResult.feedback && (
+                  {evaluationResult.evaluation.suggested_improvement && (
                     <p className="text-primary-700 dark:text-primary-300 text-base leading-relaxed">
-                      {evaluationResult.feedback}
+                      {evaluationResult.evaluation.suggested_improvement}
                     </p>
                   )}
                 </CardContent>
               </Card>
 
               {/* Strengths */}
-              {evaluationResult.strengths && evaluationResult.strengths.length > 0 && (
-                <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-2 border-primary/20 rounded-2xl shadow-xl overflow-hidden">
+              {evaluationResult.evaluation.strengths && evaluationResult.evaluation.strengths.length > 0 && (
+                <Card className="bg-gradient-to-br from-green/5 to-green/10 border-2 border-green/20 rounded-2xl shadow-xl overflow-hidden">
                   <CardContent className="p-6">
                     <div className="flex items-start space-x-4">
-                      <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center mt-1 shadow-lg">
+                      <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mt-1 shadow-lg">
                         <Target className="h-5 w-5 text-white" />
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-semibold text-lg text-primary mb-3">Key Strengths</h4>
+                        <h4 className="font-semibold text-lg text-green-700 dark:text-green-300 mb-3">Key Strengths</h4>
                         <div className="space-y-2">
-                          {evaluationResult.strengths.map((strength, index) => (
-                            <p key={index} className="text-primary-700 dark:text-primary-300 text-base leading-relaxed flex items-start">
-                              <span className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                          {evaluationResult.evaluation.strengths.map((strength, index) => (
+                            <p key={index} className="text-green-700 dark:text-green-300 text-base leading-relaxed flex items-start">
+                              <span className="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
                               {strength}
                             </p>
                           ))}
@@ -551,7 +612,7 @@ export default function CriticalOpinionBuilder() {
               )}
 
               {/* Areas for Improvement */}
-              {evaluationResult.areas_for_improvement && evaluationResult.areas_for_improvement.length > 0 && (
+              {evaluationResult.evaluation.areas_for_improvement && evaluationResult.evaluation.areas_for_improvement.length > 0 && (
                 <Card className="bg-gradient-to-br from-orange/5 to-orange/10 border-2 border-orange/20 rounded-2xl shadow-xl overflow-hidden">
                   <CardContent className="p-6">
                     <div className="flex items-start space-x-4">
@@ -561,7 +622,7 @@ export default function CriticalOpinionBuilder() {
                       <div className="flex-1">
                         <h4 className="font-semibold text-lg text-orange-600 mb-3">Areas for Improvement</h4>
                         <div className="space-y-2">
-                          {evaluationResult.areas_for_improvement.map((area, index) => (
+                          {evaluationResult.evaluation.areas_for_improvement.map((area, index) => (
                             <p key={index} className="text-orange-700 dark:text-orange-300 text-base leading-relaxed flex items-start">
                               <span className="w-2 h-2 bg-orange-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
                               {area}
@@ -581,18 +642,7 @@ export default function CriticalOpinionBuilder() {
         <div className="text-center space-y-8">
           {/* Primary Action Button */}
           <div className="flex justify-center">
-          {isEvaluating ? (
-            <Button
-              disabled
-                className="bg-gradient-to-r from-slate-400 to-slate-500 text-white px-16 py-5 rounded-2xl text-xl font-semibold shadow-xl cursor-not-allowed"
-              size="lg"
-            >
-                <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center mr-4">
-                  <Loader2 className="h-5 w-5 text-white animate-spin" />
-                </div>
-              Evaluating...
-            </Button>
-          ) : !isRecording ? (
+          {!isRecording && !isEvaluating ? (
             <Button
               onClick={handleStartRecording}
                 className="group bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white px-16 py-5 rounded-2xl text-xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:scale-105"
@@ -603,7 +653,7 @@ export default function CriticalOpinionBuilder() {
                 </div>
               Start Recording Your Opinion
             </Button>
-          ) : (
+          ) : isRecording ? (
             <Button
               onClick={handleStopRecording}
                 className="group bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-16 py-5 rounded-2xl text-xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:scale-105"
@@ -614,7 +664,7 @@ export default function CriticalOpinionBuilder() {
                 </div>
               Stop Recording
             </Button>
-          )}
+          ) : null}
           </div>
 
           {/* Secondary Action Buttons */}
@@ -638,6 +688,16 @@ export default function CriticalOpinionBuilder() {
           </div>
         </div>
       </div>
+
+      {/* Completion Dialog */}
+      <CompletionDialog
+        isOpen={showCompletionDialog}
+        onClose={() => setShowCompletionDialog(false)}
+        exerciseName="Critical Opinion Builder"
+        score={evaluationResult?.evaluation?.score || 0}
+        onRedo={handleRedo}
+        onContinue={handleContinue}
+      />
     </div>
   );
 } 

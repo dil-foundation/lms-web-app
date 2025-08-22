@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -58,15 +58,17 @@ import {
   BookOpen,
   AlertCircle,
   Edit,
-  Trash
+  Trash,
+  X
 } from 'lucide-react';
 import { MultiSelect } from '@/components/ui/MultiSelect';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useDebounce } from '@/hooks/useDebounce';
+import NotificationService from '@/services/notificationService';
 
 import { ContentLoader } from '@/components/ContentLoader';
 import { DiscussionDialog } from '@/components/discussions/DiscussionDialog';
@@ -135,10 +137,13 @@ export default function DiscussionsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 10;
   const [discussionToDelete, setDiscussionToDelete] = useState<any | null>(null);
+  const [showDeletedMessage, setShowDeletedMessage] = useState(false);
+  const hasShownDeletedMessage = useRef(false);
   const { user } = useAuth();
   const { profile, loading: isProfileLoading } = useUserProfile();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { data: discussionsCount = 0 } = useQuery({
     queryKey: ['discussionsCount', debouncedSearchTerm, selectedCourse, selectedType],
@@ -153,6 +158,19 @@ export default function DiscussionsPage() {
   useEffect(() => {
     setCurrentPage(1);
   }, [debouncedSearchTerm, selectedCourse, selectedType]);
+
+  // Check if user was redirected due to deleted discussion
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    if (searchParams.get('deleted') === 'true' && !hasShownDeletedMessage.current) {
+      hasShownDeletedMessage.current = true;
+      setShowDeletedMessage(true);
+      // Don't clear the query parameter immediately - let the user see the message
+      // The message will be dismissed when they click the X button
+    }
+  }, [location.search]);
+
+
 
   const { data: courses = [], isLoading: isLoadingCourses } = useQuery({
     queryKey: ['userCourses'],
@@ -180,16 +198,48 @@ export default function DiscussionsPage() {
         role,
       }));
 
-      const { error: participantsError } = await supabase
+      const { error: insertParticipantsError } = await supabase
         .from('discussion_participants')
         .insert(participantsToInsert);
 
-      if (participantsError) throw new Error(participantsError.message);
+      if (insertParticipantsError) throw new Error(insertParticipantsError.message);
+
+      // After successful creation, invoke the unified notification function
+      // Get discussion participants to exclude the creator
+      const { data: creationParticipants, error: creationParticipantsError } = await supabase
+        .from('discussion_participants')
+        .select('role')
+        .eq('discussion_id', discussionData.id);
+
+      if (!creationParticipantsError && creationParticipants.length > 0) {
+        // Get all users with these roles except the current user (creator)
+        const { data: targetUsers, error: usersError } = await supabase
+          .from('profiles')
+          .select('id')
+          .in('role', creationParticipants.map(p => p.role))
+          .neq('id', user.id);
+
+        if (!usersError && targetUsers && targetUsers.length > 0) {
+          await supabase.functions.invoke('send-notification', {
+            body: {
+              type: 'new_discussion',
+              title: 'New Discussion Created',
+              body: `A new discussion "${discussionData.title}" has been started.`,
+              data: {
+                discussionId: discussionData.id,
+                discussionTitle: discussionData.title
+              },
+              targetUsers: targetUsers.map(u => u.id)
+            },
+          });
+        }
+      }
 
       return discussionData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['discussions'] });
+      queryClient.invalidateQueries({ queryKey: ['discussionsCount'] });
       closeAndResetDialog();
     },
   });
@@ -219,19 +269,133 @@ export default function DiscussionsPage() {
       }));
 
       await supabase.from('discussion_participants').insert(participantsToInsert);
+
+      // Send notification for discussion update
+      if (user) {
+        try {
+          // Get discussion participants to exclude the updater
+          const { data: updateParticipants, error: updateParticipantsError } = await supabase
+            .from('discussion_participants')
+            .select('role')
+            .eq('discussion_id', discussionToUpdate.id);
+
+          if (!updateParticipantsError && updateParticipants.length > 0) {
+            // Get all users with these roles except the current user
+            const { data: targetUsers, error: usersError } = await supabase
+              .from('profiles')
+              .select('id')
+              .in('role', updateParticipants.map(p => p.role))
+              .neq('id', user.id);
+
+            if (!usersError && targetUsers && targetUsers.length > 0) {
+              await supabase.functions.invoke('send-notification', {
+                body: {
+                  type: 'course_update',
+                  title: 'Discussion Updated',
+                  body: `${user.user_metadata?.first_name || user.email} updated the discussion "${discussionToUpdate.title}".`,
+                  data: {
+                    discussionId: discussionToUpdate.id,
+                    discussionTitle: discussionToUpdate.title,
+                    updateType: 'discussion_updated'
+                  },
+                  targetUsers: targetUsers.map(u => u.id)
+                },
+              });
+            }
+          }
+        } catch (notificationError) {
+          console.error('Failed to send notification:', notificationError);
+          // Don't throw error here as the update was successfully completed
+        }
+      }
       
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['discussions'] });
+      queryClient.invalidateQueries({ queryKey: ['discussionsCount'] });
       closeAndResetDialog();
     },
   });
 
   const deleteDiscussionMutation = useMutation({
     mutationFn: async (discussionId: string) => {
+      // Get discussion details and participants BEFORE deletion for notification
+      const { data: discussionData, error: fetchError } = await supabase
+        .from('discussions')
+        .select('title')
+        .eq('id', discussionId)
+        .single();
+
+      if (fetchError) {
+        console.error('Failed to fetch discussion for notification:', fetchError);
+      }
+
+      // Get discussion participants BEFORE deletion
+      const { data: participants, error: participantsError } = await supabase
+        .from('discussion_participants')
+        .select('role')
+        .eq('discussion_id', discussionId);
+
+      if (participantsError) {
+        console.error('Failed to fetch participants for notification:', participantsError);
+      }
+
+      // Now delete the discussion
       const { error } = await supabase.from('discussions').delete().eq('id', discussionId);
       if (error) throw new Error(error.message);
+
+      // Mark all notifications related to this discussion as read for all users
+      try {
+        // Get all users with these roles
+        const { data: targetUsers, error: usersError } = await supabase
+          .from('profiles')
+          .select('id')
+          .in('role', participants.map(p => p.role));
+
+        if (!usersError && targetUsers && targetUsers.length > 0) {
+          // Mark notifications as read for all users
+          await Promise.all(
+            targetUsers.map(user => 
+              NotificationService.markDiscussionNotificationsAsRead(user.id, discussionId)
+            )
+          );
+        }
+      } catch (markReadError) {
+        console.error('Failed to mark discussion notifications as read:', markReadError);
+        // Don't throw error here as the deletion was successfully completed
+      }
+
+      // Send notification for discussion deletion
+      if (user && discussionData && participants && participants.length > 0) {
+        try {
+          // Get all users with these roles except the current user
+          const { data: targetUsers, error: usersError } = await supabase
+            .from('profiles')
+            .select('id')
+            .in('role', participants.map(p => p.role))
+            .neq('id', user.id);
+
+          if (!usersError && targetUsers && targetUsers.length > 0) {
+            await supabase.functions.invoke('send-notification', {
+              body: {
+                type: 'system_maintenance',
+                title: 'Discussion Deleted',
+                body: `${user.user_metadata?.first_name || user.email} deleted the discussion "${discussionData.title}".`,
+                data: {
+                  discussionTitle: discussionData.title,
+                  deletedBy: user.user_metadata?.first_name || user.email,
+                  deleteType: 'discussion_deleted'
+                },
+                targetUsers: targetUsers.map(u => u.id)
+              },
+            });
+          }
+        } catch (notificationError) {
+          console.error('Failed to send notification:', notificationError);
+          // Don't throw error here as the deletion was successfully completed
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['discussions'] });
@@ -263,6 +427,42 @@ export default function DiscussionsPage() {
 
   return (
     <div className="space-y-8">
+      {/* Deleted Discussion Message */}
+      {showDeletedMessage && (
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border-2 border-amber-300 dark:border-amber-700 rounded-2xl p-6 mb-6 shadow-lg">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/50 rounded-full flex items-center justify-center">
+                <AlertCircle className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+              </div>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-bold text-amber-800 dark:text-amber-200 mb-2">
+                Discussion Not Found
+              </h3>
+              <p className="text-base text-amber-700 dark:text-amber-300 leading-relaxed">
+                The discussion you were looking for has been deleted. All related notifications have been automatically marked as read.
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setShowDeletedMessage(false);
+                hasShownDeletedMessage.current = false;
+                // Clear the query parameter when dismissing
+                navigate(location.pathname, { replace: true });
+              }}
+              className="flex-shrink-0 h-10 w-10 p-0 text-amber-600 dark:text-amber-500 hover:bg-amber-100 dark:hover:bg-amber-900/20 rounded-full"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+      )}
+      
+
+
       {/* Premium Header Section */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
@@ -282,10 +482,10 @@ export default function DiscussionsPage() {
               </div>
             </div>
             
-            {profile?.role !== 'student' && (
+            {!isProfileLoading && profile?.role !== 'student' && (
               <Button 
                 onClick={() => setIsNewDiscussionOpen(true)}
-                className="h-10 px-6 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                className="h-10 px-6 rounded-xl bg-gradient-to-r from-brand-green-500 to-brand-green-600 hover:from-brand-green-600 hover:to-brand-green-500 text-white shadow-lg hover:shadow-xl hover:shadow-brand-green-500/25 transition-all duration-300 hover:-translate-y-0.5"
               >
                 <Plus className="mr-2 h-4 w-4" />
                 New Discussion
@@ -410,12 +610,12 @@ export default function DiscussionsPage() {
               <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium mb-2">No discussions found</h3>
               <p className="text-muted-foreground mb-4">
-                {searchTerm ? 'Try adjusting your search or filters' : (profile?.role !== 'student' ? 'Start the conversation by creating a new discussion' : 'No discussions available to view.')}
+                {searchTerm ? 'Try adjusting your search or filters' : (!isProfileLoading && profile?.role !== 'student' ? 'Start the conversation by creating a new discussion' : 'No discussions available to view.')}
               </p>
-              {profile?.role !== 'student' && (
+              {!isProfileLoading && profile?.role !== 'student' && (
               <Button 
                 onClick={() => setIsNewDiscussionOpen(true)}
-                className="bg-green-600 hover:bg-green-700 text-white"
+                className="bg-gradient-to-r from-brand-green-500 to-brand-green-600 hover:from-brand-green-600 hover:to-brand-green-500 text-white shadow-lg hover:shadow-xl hover:shadow-brand-green-500/25 transition-all duration-300 hover:-translate-y-0.5 rounded-xl px-6 py-2"
               >
                 <Plus className="mr-2 h-4 w-4" />
                 New Discussion
@@ -505,13 +705,13 @@ export default function DiscussionsPage() {
                       </div>
                       
                       {/* Action Menu */}
-                      {(user?.id === discussion.creator_id || profile?.role === 'admin') && (
+                      {!isProfileLoading && (user?.id === discussion.creator_id || profile?.role === 'admin') && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button 
                               variant="ghost" 
                               size="sm"
-                              className="h-9 w-9 p-0 rounded-xl hover:bg-gray-100/80 dark:hover:bg-gray-800/80 hover:shadow-lg transition-all duration-300"
+                              className="h-9 w-9 p-0 rounded-xl hover:bg-gray-100/80 hover:text-gray-900 dark:hover:bg-gray-800/80 dark:hover:text-gray-100 hover:shadow-lg transition-all duration-300"
                               onClick={(e) => {
                                 e.stopPropagation();
                               }}
@@ -601,6 +801,7 @@ export default function DiscussionsPage() {
             </div>
 
       <DiscussionDialog
+        key={isNewDiscussionOpen ? 'new' : 'edit'} // Force re-render when dialog opens
         isOpen={isNewDiscussionOpen}
         onOpenChange={closeAndResetDialog}
         editingDiscussion={editingDiscussion}

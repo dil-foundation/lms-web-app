@@ -9,6 +9,7 @@ import { BookOpen } from 'lucide-react';
 import { type UserRole } from '@/config/roleNavigation';
 import { ContentLoader } from '@/components/ContentLoader';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { requestNotificationPermission } from '@/utils/fcm';
 
 const AIStudentLearn = lazy(() => import('@/components/dashboard/AIStudentLearn').then(module => ({ default: module.AIStudentLearn })));
 const StudentDashboard = lazy(() => import('@/components/dashboard/StudentDashboard').then(module => ({ default: module.StudentDashboard })));
@@ -63,7 +64,7 @@ const AdminAssessments = lazy(() => import('@/components/admin/AdminAssessments'
 const AssignmentSubmissions = lazy(() => import('@/components/admin/AssignmentSubmissions').then(module => ({ default: module.AssignmentSubmissions })));
 const StudentSubmissionDetail = lazy(() => import('@/components/admin/StudentSubmissionDetail').then(module => ({ default: module.StudentSubmissionDetail })));
 const AdminSettings = lazy(() => import('@/components/admin/AdminSettings'));
-const AdminSecurity = lazy(() => import('@/components/admin/AdminSecurity').then(module => ({ default: module.AdminSecurity })));
+const AdminSecurity = lazy(() => import('@/components/admin/AdminSecurity'));
 const AITutorSettings = lazy(() => import('@/components/admin/AITutorSettings').then(module => ({ default: module.AITutorSettings })));
 const AISafetyEthicsSettings = lazy(() => import('@/components/admin/AISafetyEthicsSettings').then(module => ({ default: module.AISafetyEthicsSettings })));
 const IntegrationAPIs = lazy(() => import('@/components/admin/IntegrationAPIs').then(module => ({ default: module.IntegrationAPIs })));
@@ -96,6 +97,12 @@ const Dashboard = () => {
     }
   }, [authLoading, user, navigate]);
 
+  useEffect(() => {
+    if (profile) {
+      requestNotificationPermission();
+    }
+  }, [profile]);
+
   const currentRole = profile?.role as UserRole | undefined
   ;
   
@@ -113,13 +120,7 @@ const Dashboard = () => {
   const isLoading = authLoading || (user && profileLoading);
 
   const DashboardContent = () => {
-    if (isLoading) {
-      return (
-        <div className="flex items-center justify-center h-full">
-            <ContentLoader message={authLoading ? 'Authenticating...' : 'Loading user profile...'} />
-        </div>
-      );
-    }
+    // Removed loading state to prevent flash
 
     if (profileError) {
     return (
