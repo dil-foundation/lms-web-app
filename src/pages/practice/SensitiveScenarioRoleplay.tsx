@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
-import { ArrowLeft, Mic, Users, User, Heart, Shield, AlertTriangle, Loader2, Zap, Play, Pause, Target, MessageSquare } from 'lucide-react';
+import { CompletionDialog } from '@/components/practice/CompletionDialog';
+import { ArrowLeft, Mic, Users, User, Heart, Shield, AlertTriangle, Loader2, Zap, Play, Pause, Target, MessageSquare, CheckCircle, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { 
@@ -11,6 +12,19 @@ import {
   SensitiveScenarioEvaluation
 } from '@/services/sensitiveScenarioService';
 import { useAuth } from '@/contexts/AuthContext';
+
+interface ExerciseCompletion {
+  exercise_completed: boolean;
+  progress_percentage: number;
+  completed_topics: number;
+  total_topics: number;
+  current_topic_id: number;
+  stage_id: number;
+  exercise_id: number;
+  exercise_name: string;
+  stage_name: string;
+  completion_date?: string | null;
+}
 
 interface RoleplayMessage {
   id: string;
@@ -40,6 +54,8 @@ export default function SensitiveScenarioRoleplay() {
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [evaluationResult, setEvaluationResult] = useState<SensitiveScenarioEvaluation | null>(null);
   const [recordingStartTime, setRecordingStartTime] = useState<number>(0);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
 
   // Load scenarios on component mount
   useEffect(() => {
@@ -156,7 +172,21 @@ export default function SensitiveScenarioRoleplay() {
     setConversation([]);
     setEvaluationResult(null);
     setIsEvaluating(false);
+    setIsCompleted(false);
+    setShowCompletionDialog(false);
     cleanupCurrentAudio();
+  };
+
+  const handleRedo = () => {
+    setShowCompletionDialog(false);
+    setIsCompleted(false);
+    setEvaluationResult(null);
+    setConversation([]);
+  };
+
+  const handleContinue = () => {
+    setShowCompletionDialog(false);
+    resetRoleplay();
   };
 
   const cleanupCurrentAudio = () => {
@@ -265,11 +295,39 @@ export default function SensitiveScenarioRoleplay() {
         user.id,
         timeSpentSeconds,
         false // urdu_used - you can modify this based on your needs
-      );
+      ) as any;
       
       console.log('Evaluation result:', evaluation);
+      
+      // Handle API error responses (like no_speech_detected)
+      if (evaluation.success === false || evaluation.error) {
+        const errorMessage = evaluation.message || evaluation.error || 'Speech evaluation failed';
+        
+        // Create modified feedback object for error cases
+        const errorFeedback = {
+          ...evaluation,
+          overall_score: 0,
+          fluency_score: 0,
+          vocabulary_score: 0,
+          content_relevance_score: 0,
+          feedback: errorMessage,
+          areas_for_improvement: ['Please speak more clearly and try again']
+        };
+        
+        setEvaluationResult(errorFeedback);
+        toast.error('Speech evaluation failed: ' + errorMessage);
+        return;
+      }
+      
       setEvaluationResult(evaluation);
       toast.success('Evaluation completed!');
+      
+      // Check if the exercise is completed based on API response
+      if (evaluation?.exercise_completion?.exercise_completed) {
+        // Exercise is completed according to the API
+        setIsCompleted(true);
+        setShowCompletionDialog(true);
+      }
       
     } catch (error) {
       console.error('Error evaluating recording:', error);
@@ -632,25 +690,41 @@ export default function SensitiveScenarioRoleplay() {
                 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    <div className={`text-2xl font-bold ${
+                      (evaluationResult.overall_score || 0) === 0 
+                        ? 'text-red-600 dark:text-red-400' 
+                        : 'text-green-600 dark:text-green-400'
+                    }`}>
                       {evaluationResult.overall_score || 0}
                     </div>
                     <div className="text-xs text-muted-foreground">Overall</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    <div className={`text-2xl font-bold ${
+                      (evaluationResult.fluency_score || 0) === 0 
+                        ? 'text-red-600 dark:text-red-400' 
+                        : 'text-green-600 dark:text-green-400'
+                    }`}>
                       {evaluationResult.fluency_score || 0}
                     </div>
                     <div className="text-xs text-muted-foreground">Fluency</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    <div className={`text-2xl font-bold ${
+                      (evaluationResult.vocabulary_score || 0) === 0 
+                        ? 'text-red-600 dark:text-red-400' 
+                        : 'text-green-600 dark:text-green-400'
+                    }`}>
                       {evaluationResult.vocabulary_score || 0}
                     </div>
                     <div className="text-xs text-muted-foreground">Vocabulary</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    <div className={`text-2xl font-bold ${
+                      (evaluationResult.content_relevance_score || 0) === 0 
+                        ? 'text-red-600 dark:text-red-400' 
+                        : 'text-green-600 dark:text-green-400'
+                    }`}>
                       {evaluationResult.content_relevance_score || 0}
                     </div>
                     <div className="text-xs text-muted-foreground">Relevance</div>
@@ -750,6 +824,16 @@ export default function SensitiveScenarioRoleplay() {
           </div>
         </div>
       </div>
+
+      {/* Completion Dialog */}
+      <CompletionDialog
+        isOpen={showCompletionDialog}
+        onClose={() => setShowCompletionDialog(false)}
+        exerciseName="Sensitive Scenario Roleplay"
+        score={evaluationResult?.overall_score || 0}
+        onRedo={handleRedo}
+        onContinue={handleContinue}
+      />
     </div>
   );
 } 

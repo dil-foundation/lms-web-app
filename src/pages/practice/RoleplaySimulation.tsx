@@ -1314,8 +1314,6 @@ export default function RoleplaySimulation() {
     ]);
   };
 
-  const isCompleted = selectedScenario && selectedScenario.conversation_flow && currentStep >= selectedScenario.conversation_flow.length - 1;
-
   // Scenario Selection Screen
     if (!selectedScenario) {  
   return (

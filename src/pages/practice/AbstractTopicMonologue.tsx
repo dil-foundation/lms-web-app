@@ -4,6 +4,19 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, Mic, BookOpen, GitBranch, Loader2, Play, Pause, Volume2, VolumeX, MicOff, CheckCircle, AlertCircle, XCircle, GraduationCap, Target, TrendingUp, MessageSquare, Trophy, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AbstractTopicsService, { AbstractTopic, AbstractTopicEvaluationResponse, CurrentTopicResponse } from '@/services/abstractTopicsService';
+
+interface ExerciseCompletion {
+  exercise_completed: boolean;
+  progress_percentage: number;
+  completed_topics: number;
+  total_topics: number;
+  current_topic_id: number;
+  stage_id: number;
+  exercise_id: number;
+  exercise_name: string;
+  stage_name: string;
+  completion_date?: string | null;
+}
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useAuth } from '@/hooks/useAuth';
@@ -117,14 +130,43 @@ export default function AbstractTopicMonologue() {
         audio_size: audioBase64.length
       });
 
-      const evaluationResult = await AbstractTopicsService.evaluate(evaluationData);
+      const evaluationResult = await AbstractTopicsService.evaluate(evaluationData) as any;
       console.log('📥 Received evaluation result:', evaluationResult);
       
+      // Handle API error responses (like no_speech_detected)
+      if (evaluationResult.success === false || evaluationResult.error) {
+        const errorMessage = evaluationResult.message || evaluationResult.error || 'Speech evaluation failed';
+        
+        // Create modified feedback object for error cases
+        const errorFeedback = {
+          ...evaluationResult,
+          score: 0,
+          feedback: errorMessage,
+          suggestions: ['Please speak more clearly and try again'],
+          success: false
+        };
+        
+        setFeedback(errorFeedback);
+        console.log('⚠️ Evaluation completed with speech recognition error');
+        return;
+      }
+      
       setFeedback(evaluationResult);
-      setIsCompleted(true);
-      setShowCompletionDialog(true);
-      markExerciseCompleted();
-      console.log('✅ Evaluation completed successfully');
+      
+      // Check if the exercise is completed based on API response
+      if (evaluationResult.exercise_completion?.exercise_completed) {
+        // Exercise is completed according to the API
+        setIsCompleted(true);
+        setShowCompletionDialog(true);
+        markExerciseCompleted();
+        console.log('✅ Exercise completed according to API response');
+      } else {
+        // Fallback: mark as completed after receiving feedback (existing behavior)
+        setIsCompleted(true);
+        setShowCompletionDialog(true);
+        markExerciseCompleted();
+        console.log('✅ Exercise marked as completed (fallback logic)');
+      }
       
     } catch (error: any) {
       console.error('❌ Failed to evaluate recording:', error);
@@ -661,7 +703,9 @@ export default function AbstractTopicMonologue() {
                   <div className="text-center mb-6">
                     <h4 className="text-xl font-semibold mb-4 text-foreground">Overall Score</h4>
                     <div className="flex items-center justify-center mb-4">
-                      {feedback.score >= 80 ? (
+                      {feedback.score === 0 ? (
+                        <XCircle className="w-10 h-10 text-red-500 mr-3" />
+                      ) : feedback.score >= 80 ? (
                         <CheckCircle className="w-10 h-10 text-green-500 mr-3" />
                       ) : feedback.score >= 60 ? (
                         <AlertCircle className="w-10 h-10 text-yellow-500 mr-3" />

@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
-import { ArrowLeft, Mic, Lightbulb, FileText, Brain, Target, Loader2, Play, Pause } from 'lucide-react';
+import { CompletionDialog } from '@/components/practice/CompletionDialog';
+import { ArrowLeft, Mic, Lightbulb, FileText, Brain, Target, Loader2, Play, Pause, CheckCircle, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,7 +14,18 @@ import {
   CriticalOpinionEvaluation
 } from '@/services/criticalOpinionService';
 
-
+interface ExerciseCompletion {
+  exercise_completed: boolean;
+  progress_percentage: number;
+  completed_topics: number;
+  total_topics: number;
+  current_topic_id: number;
+  stage_id: number;
+  exercise_id: number;
+  exercise_name: string;
+  stage_name: string;
+  completion_date?: string | null;
+}
 
 export default function CriticalOpinionBuilder() {
   const navigate = useNavigate();
@@ -38,6 +50,8 @@ export default function CriticalOpinionBuilder() {
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [evaluationResult, setEvaluationResult] = useState<CriticalOpinionEvaluation | null>(null);
   const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
 
 
   // Load topics on component mount
@@ -209,11 +223,40 @@ export default function CriticalOpinionBuilder() {
         user.id,
         timeSpent,
         false
-      );
+      ) as any;
       
       console.log('✅ Evaluation result:', result);
+      
+      // Handle API error responses (like no_speech_detected)
+      if (result.success === false || result.error) {
+        const errorMessage = result.message || result.error || 'Speech evaluation failed';
+        
+        // Create modified feedback object for error cases
+        const errorFeedback = {
+          ...result,
+          evaluation: {
+            ...result.evaluation,
+            score: 0,
+            feedback: errorMessage,
+            areas_for_improvement: ['Please speak more clearly and try again']
+          }
+        };
+        
+        setEvaluationResult(errorFeedback);
+        setShowFeedback(true);
+        toast.error('Speech evaluation failed: ' + errorMessage);
+        return;
+      }
+      
       setEvaluationResult(result);
       setShowFeedback(true);
+      
+      // Check if the exercise is completed based on API response
+      if (result?.exercise_completion?.exercise_completed) {
+        // Exercise is completed according to the API
+        setIsCompleted(true);
+        setShowCompletionDialog(true);
+      }
       
     } catch (error) {
       console.error('❌ Error evaluating recording:', error);
@@ -231,6 +274,8 @@ export default function CriticalOpinionBuilder() {
     setIsEvaluating(false);
     setRecordedChunks([]);
     setRecordingStartTime(null);
+    setIsCompleted(false);
+    setShowCompletionDialog(false);
     cleanupCurrentAudio();
     
     // Stop any ongoing recording
@@ -239,6 +284,18 @@ export default function CriticalOpinionBuilder() {
       mediaRecorder.stream.getTracks().forEach(track => track.stop());
     }
     setMediaRecorder(null);
+  };
+
+  const handleRedo = () => {
+    setShowCompletionDialog(false);
+    setIsCompleted(false);
+    setEvaluationResult(null);
+    setShowFeedback(false);
+  };
+
+  const handleContinue = () => {
+    setShowCompletionDialog(false);
+    resetBuilder();
   };
 
 
@@ -514,7 +571,11 @@ export default function CriticalOpinionBuilder() {
                       <Target className="h-5 w-5 mr-2" />
                       Overall Score
                     </h4>
-                    <span className="text-3xl font-bold text-primary">
+                    <span className={`text-3xl font-bold ${
+                      (evaluationResult.evaluation.score || 0) === 0 
+                        ? 'text-red-600 dark:text-red-400' 
+                        : 'text-primary'
+                    }`}>
                       {evaluationResult.evaluation.score}/100
                     </span>
                   </div>
@@ -627,6 +688,16 @@ export default function CriticalOpinionBuilder() {
           </div>
         </div>
       </div>
+
+      {/* Completion Dialog */}
+      <CompletionDialog
+        isOpen={showCompletionDialog}
+        onClose={() => setShowCompletionDialog(false)}
+        exerciseName="Critical Opinion Builder"
+        score={evaluationResult?.evaluation?.score || 0}
+        onRedo={handleRedo}
+        onContinue={handleContinue}
+      />
     </div>
   );
 } 

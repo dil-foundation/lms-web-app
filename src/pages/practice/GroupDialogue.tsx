@@ -49,6 +49,31 @@ interface EvaluationFeedback {
   strengths?: string[];
 }
 
+interface ExerciseCompletion {
+  exercise_completed: boolean;
+  progress_percentage: number;
+  completed_topics: number;
+  total_topics: number;
+  current_topic_id: number;
+  stage_id: number;
+  exercise_id: number;
+  exercise_name: string;
+  stage_name: string;
+  completion_date?: string | null;
+}
+
+interface EvaluationResponse {
+  success: boolean;
+  expected_phrase?: string;
+  user_text?: string;
+  evaluation: any;
+  progress_recorded: boolean;
+  unlocked_content: any[];
+  exercise_completion: ExerciseCompletion;
+  error?: string;
+  message?: string;
+}
+
 // API Functions
 const fetchGroupDialogueScenarios = async (): Promise<Scenario[]> => {
   try {
@@ -246,7 +271,7 @@ const fetchGroupDialogueScenarioAudio = async (scenarioId: string): Promise<stri
 };
 
 // Evaluate group dialogue audio
-const evaluateGroupDialogueAudio = async (audioBase64: string, scenarioId: string, timeSpentSeconds: number, userId: string): Promise<EvaluationFeedback> => {
+const evaluateGroupDialogueAudio = async (audioBase64: string, scenarioId: string, timeSpentSeconds: number, userId: string): Promise<{feedback: EvaluationFeedback, evaluationResponse: EvaluationResponse | null}> => {
   try {
     const payload = {
       audio_base64: audioBase64,
@@ -283,6 +308,20 @@ const evaluateGroupDialogueAudio = async (audioBase64: string, scenarioId: strin
       throw new Error('Invalid JSON response from server');
     }
     
+    // Handle API error responses (like no_speech_detected)
+    if (result.success === false || result.error) {
+      const errorMessage = result.message || result.error || 'Speech evaluation failed';
+      
+      // Create feedback object for error cases
+      const feedback: EvaluationFeedback = {
+        overall_score: 0,
+        feedback: errorMessage,
+        suggested_improvement: 'Please speak more clearly and try again'
+      };
+      
+      return { feedback, evaluationResponse: null };
+    }
+    
     // Handle nested evaluation structure
     let evaluationData = result;
     if (result.evaluation && typeof result.evaluation === 'object') {
@@ -300,7 +339,7 @@ const evaluateGroupDialogueAudio = async (audioBase64: string, scenarioId: strin
                  (evaluationData.strengths ? [evaluationData.strengths] : [])
     };
     
-    return feedback;
+    return { feedback, evaluationResponse: result };
     
   } catch (error: any) {
     console.error('Error evaluating group dialogue audio:', error);
@@ -742,17 +781,23 @@ export default function GroupDialogue() {
       
       const timeSpentSeconds = Math.floor((Date.now() - actualStartTime) / 1000);
       
-      const evaluationResult = await evaluateGroupDialogueAudio(
+      const { feedback, evaluationResponse } = await evaluateGroupDialogueAudio(
         base64Audio,
         selectedScenario,
         timeSpentSeconds,
         user?.id || 'anonymous'
       );
       
-      setFeedback(evaluationResult);
+      setFeedback(feedback);
       
-      // Mark exercise as completed after receiving feedback
-      if (!isCompleted) {
+      // Check if the exercise is completed based on API response
+      if (evaluationResponse?.exercise_completion?.exercise_completed) {
+        // Exercise is completed according to the API
+        setIsCompleted(true);
+        setShowCompletionDialog(true);
+        markExerciseCompleted();
+      } else if (!isCompleted) {
+        // Mark exercise as completed after receiving feedback (fallback logic)
         setIsCompleted(true);
         setShowCompletionDialog(true);
         markExerciseCompleted();
@@ -1343,13 +1388,13 @@ export default function GroupDialogue() {
                 <div className="mb-4 p-4 bg-gradient-to-br from-card to-card/50 dark:bg-card rounded-md border">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Overall Score</span>
-                    <span className="text-lg font-bold text-green-600">
+                    <span className={`text-lg font-bold ${feedback.overall_score === 0 ? 'text-red-600' : 'text-green-600'}`}>
                       {feedback.overall_score}/100
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div 
-                      className="h-2 rounded-full bg-green-600"
+                      className={`h-2 rounded-full ${feedback.overall_score === 0 ? 'bg-red-600' : 'bg-green-600'}`}
                       style={{ width: `${feedback.overall_score}%` }}
                     ></div>
                   </div>
