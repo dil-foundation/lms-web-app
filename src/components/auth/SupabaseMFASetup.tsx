@@ -19,6 +19,7 @@ import {
 import { toast } from 'sonner';
 import { useSupabaseMFA } from '@/hooks/useSupabaseMFA';
 import SupabaseMFAService from '@/services/supabaseMFAService';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SupabaseMFASetupProps {
   isOpen: boolean;
@@ -48,19 +49,15 @@ export const SupabaseMFASetup: React.FC<SupabaseMFASetupProps> = ({
       setError(null);
       
       // Check for existing factors first
-      console.log('Checking for existing factors...');
       const { hasExisting, factorId } = await handleExistingFactor();
-      console.log('Existing factor check result:', { hasExisting, factorId });
       
       if (hasExisting) {
         // If there's an existing unverified factor, go directly to verification
-        console.log('Found existing unverified factor, proceeding to verification');
         setStep('verification');
         return;
       }
       
       // Otherwise, start fresh setup
-      console.log('No existing factors found, starting fresh setup...');
       await startMFASetup();
       setStep('qr');
     } catch (error: any) {
@@ -79,7 +76,35 @@ export const SupabaseMFASetup: React.FC<SupabaseMFASetupProps> = ({
 
     try {
       setError(null);
-      const success = await completeMFASetup(verificationCode.trim());
+      
+      // First verify the factor with the code
+      const factorId = sessionStorage.getItem('mfa_factor_id');
+      if (!factorId) {
+        throw new Error('No factor ID found. Please restart the setup process.');
+      }
+      
+      // Challenge the factor
+      const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
+        factorId: factorId
+      });
+      
+      if (challengeError) {
+        throw challengeError;
+      }
+
+      // Verify the challenge with the code
+      const { error: verifyError } = await supabase.auth.mfa.verify({
+        factorId: factorId,
+        challengeId: challengeData.id,
+        code: verificationCode.trim()
+      });
+
+      if (verifyError) {
+        throw verifyError;
+      }
+
+      // Now complete the MFA setup
+      const success = await completeMFASetup();
       if (success) {
         setStep('complete');
         setTimeout(() => {
@@ -87,6 +112,7 @@ export const SupabaseMFASetup: React.FC<SupabaseMFASetupProps> = ({
         }, 2000);
       }
     } catch (error: any) {
+      console.error('Verification error:', error);
       setError(error.message || 'Failed to verify code');
       // Clean up on error
       SupabaseMFAService.cleanupMFAData();
@@ -177,55 +203,31 @@ export const SupabaseMFASetup: React.FC<SupabaseMFASetupProps> = ({
                  )}
                </Button>
                
-               <Button 
-                 variant="outline"
-                 onClick={async () => {
-                   try {
-                     setError(null);
-                     console.log('Starting fresh setup...');
-                     await removeExistingFactor();
-                     console.log('Existing factor removed');
-                     const setupData = await startMFASetup();
-                     console.log('Setup data received:', setupData);
-                     setStep('qr');
-                     console.log('Step set to QR');
-                   } catch (error: any) {
-                     console.error('Fresh setup error:', error);
-                     setError(error.message || 'Failed to start fresh setup');
-                   }
-                 }}
-                 disabled={loading}
-                 className="w-full h-10"
-                 size="default"
-               >
-                 Start Fresh Setup
-               </Button>
-               
-               <Button 
-                 variant="outline"
-                 onClick={async () => {
-                   try {
-                     console.log('=== Debug: Checking MFA State ===');
-                     await SupabaseMFAService.debugMFAState();
-                     const { hasExisting, factorId } = await handleExistingFactor();
-                     console.log('Debug: handleExistingFactor result:', { hasExisting, factorId });
-                     console.log('=== Debug: End ===');
-                   } catch (error: any) {
-                     console.error('Debug error:', error);
-                   }
-                 }}
-                 className="w-full h-10"
-                 size="default"
-               >
-                 Debug MFA State
-               </Button>
+                               <Button 
+                  variant="outline"
+                  onClick={async () => {
+                    try {
+                      setError(null);
+                      await removeExistingFactor();
+                      const setupData = await startMFASetup();
+                      setStep('qr');
+                    } catch (error: any) {
+                      console.error('Fresh setup error:', error);
+                      setError(error.message || 'Failed to start fresh setup');
+                    }
+                  }}
+                  disabled={loading}
+                  className="w-full h-10"
+                  size="default"
+                >
+                  Start Fresh Setup
+                </Button>
              </div>
            </div>
          );
 
-             case 'qr':
-         console.log('QR step - setupData:', setupData);
-         return (
+                           case 'qr':
+          return (
            <div className="space-y-8">
              <div className="text-center">
                <h3 className="text-2xl font-semibold mb-3">Scan QR Code</h3>
@@ -380,38 +382,27 @@ export const SupabaseMFASetup: React.FC<SupabaseMFASetupProps> = ({
                    )}
                  </Button>
                  
-                 <Button 
-                   variant="outline"
-                   onClick={async () => {
-                     try {
-                       setError(null);
-                       console.log('Starting fresh setup from verification step...');
-                       await removeExistingFactor();
-                       console.log('Existing factor removed');
-                       const setupData = await startMFASetup();
-                       console.log('Setup data received:', setupData);
-                       setStep('qr');
-                       console.log('Step set to QR');
-                     } catch (error: any) {
-                       console.error('Fresh setup error:', error);
-                       setError(error.message || 'Failed to start fresh setup');
-                     }
-                   }}
-                   disabled={loading}
-                   className="w-full h-10"
-                   size="default"
-                 >
-                   Start Fresh Setup
-                 </Button>
+                                   <Button 
+                    variant="outline"
+                    onClick={async () => {
+                      try {
+                        setError(null);
+                        await removeExistingFactor();
+                        const setupData = await startMFASetup();
+                        setStep('qr');
+                      } catch (error: any) {
+                        console.error('Fresh setup error:', error);
+                        setError(error.message || 'Failed to start fresh setup');
+                      }
+                    }}
+                    disabled={loading}
+                    className="w-full h-10"
+                    size="default"
+                  >
+                    Start Fresh Setup
+                  </Button>
                  
-                 <Button 
-                   variant="outline"
-                   onClick={() => SupabaseMFAService.debugMFAState()}
-                   className="w-full h-10"
-                   size="default"
-                 >
-                   Debug MFA State
-                 </Button>
+                 
                </div>
              </div>
            </div>

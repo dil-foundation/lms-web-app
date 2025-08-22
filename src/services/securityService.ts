@@ -145,23 +145,17 @@ const SecurityService = {
         console.error('Error getting failed attempts count:', failedError);
       }
 
-      // Get 2FA enabled percentage from role-based security settings
-      const { data: twoFASettings, error: twoFAError } = await supabase
-        .from('security_settings')
-        .select('setting_value')
-        .in('setting_key', ['two_factor_auth_enabled_admin', 'two_factor_auth_enabled_teachers', 'two_factor_auth_enabled_students']);
+      // Get actual 2FA adoption statistics from user profiles
+      const { data: twoFAStats, error: twoFAError } = await supabase
+        .rpc('get_2fa_statistics');
 
       if (twoFAError) {
-        console.error('Error getting 2FA settings:', twoFAError);
+        console.error('Error getting 2FA statistics:', twoFAError);
       }
 
-      // Calculate 2FA enabled percentage based on role-based settings
-      let twoFAEnabledCount = 0;
-      if (twoFASettings && twoFASettings.length > 0) {
-        twoFAEnabledCount = twoFASettings.filter(setting => setting.setting_value === 'true').length;
-      }
-      const twoFAEnabledPercentage = twoFASettings && twoFASettings.length > 0 ? 
-        Math.round((twoFAEnabledCount / twoFASettings.length) * 100) : 0;
+      // Use actual user 2FA adoption percentage
+      const twoFAEnabledPercentage = twoFAStats && twoFAStats.length > 0 ? 
+        Math.round(twoFAStats[0].two_fa_percentage) : 0;
 
       // Mock last backup time (you can implement actual backup tracking)
       const lastBackup = '2h ago';

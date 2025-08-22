@@ -159,7 +159,7 @@ const StudentAuth = () => {
         }
 
         // Check if MFA is required and if user has MFA set up
-        const isMFARequired = await SupabaseMFAService.isMFARequired();
+        const isMFARequired = await SupabaseMFAService.checkMFARequirement();
         
         // Get MFA status while authenticated
         const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();

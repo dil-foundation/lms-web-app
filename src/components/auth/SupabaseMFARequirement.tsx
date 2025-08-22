@@ -18,27 +18,8 @@ export const SupabaseMFARequirement: React.FC<SupabaseMFARequirementProps> = ({ 
   useEffect(() => {
     const checkRequirements = async () => {
       if (user) {
-        console.log('🔐 MFA Requirement Check - User found:', user.id);
         setIsChecking(true);
         try {
-          // Additional debugging: Check user profile
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', user.id)
-            .single();
-          
-          console.log('🔐 User profile:', profile, 'Profile error:', profileError);
-          
-          // Profile should be created by database trigger
-          if (profileError) {
-            console.log('🔐 Profile error (should be created by trigger):', profileError);
-          }
-          
-          // Additional debugging: Check MFA factors directly
-          const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();
-          console.log('🔐 MFA factors:', factors, 'Factors error:', factorsError);
-          
           await checkMFARequirement();
         } catch (error) {
           console.error('Error checking MFA requirement:', error);
@@ -46,8 +27,6 @@ export const SupabaseMFARequirement: React.FC<SupabaseMFARequirementProps> = ({ 
           setIsChecking(false);
         }
       } else {
-        // If no user, don't check MFA requirements
-        console.log('🔐 MFA Requirement Check - No user found');
         setIsChecking(false);
       }
     };
@@ -55,35 +34,20 @@ export const SupabaseMFARequirement: React.FC<SupabaseMFARequirementProps> = ({ 
     checkRequirements();
   }, [user, checkMFARequirement]);
 
-  // Debug logging
-  console.log('🔐 MFA Requirement Component State:', {
-    user: !!user,
-    userId: user?.id,
-    isChecking,
-    loading,
-    isMFARequired,
-    mfaStatus: {
-      isEnabled: mfaStatus.isEnabled,
-      isSetupComplete: mfaStatus.isSetupComplete,
-      factors: mfaStatus.factors
-    }
-  });
+
 
   // Show loading while checking MFA status
   if (isChecking || loading) {
-    console.log('🔐 MFA Requirement - Showing loading');
     return <ContentLoader />;
   }
 
   // If MFA is not required globally, show children
   if (!isMFARequired) {
-    console.log('🔐 MFA Requirement - MFA not required, showing children');
     return <>{children}</>;
   }
 
   // If user doesn't have MFA set up and it's required, show setup dialog
   if (isMFARequired && !mfaStatus.isSetupComplete) {
-    console.log('🔐 MFA Requirement - MFA required but not set up, showing setup screen');
     return (
       <>
         {/* Blocking overlay */}
