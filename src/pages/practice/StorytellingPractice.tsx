@@ -38,6 +38,31 @@ interface EvaluationFeedback {
   message?: string;
 }
 
+interface ExerciseCompletion {
+  exercise_completed: boolean;
+  progress_percentage: number;
+  completed_topics: number;
+  total_topics: number;
+  current_topic_id: number;
+  stage_id: number;
+  exercise_id: number;
+  exercise_name: string;
+  stage_name: string;
+  completion_date?: string | null;
+}
+
+interface EvaluationResponse {
+  success: boolean;
+  expected_phrase?: string;
+  user_text?: string;
+  evaluation: any;
+  progress_recorded: boolean;
+  unlocked_content: any[];
+  exercise_completion: ExerciseCompletion;
+  error?: string;
+  message?: string;
+}
+
 // API Functions
 const fetchStorytellingPrompts = async (): Promise<StorytellingPrompt[]> => {
   try {
@@ -556,7 +581,7 @@ export default function StorytellingPractice() {
   };
 
   // Evaluate recorded audio
-  const evaluateAudio = async (audioBase64: string, timeSpentSeconds: number): Promise<EvaluationFeedback> => {
+  const evaluateAudio = async (audioBase64: string, timeSpentSeconds: number): Promise<{feedback: EvaluationFeedback, evaluationResponse: EvaluationResponse | null}> => {
     try {
       const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.EVALUATE_STORYTELLING}`, {
         method: 'POST',
@@ -578,6 +603,20 @@ export default function StorytellingPractice() {
 
       const result = await response.json();
       
+      // Handle API error responses (like no_speech_detected)
+      if (result.success === false || result.error) {
+        const errorMessage = result.message || result.error || 'Speech evaluation failed';
+        
+        // Create feedback object for error cases
+        const feedback: EvaluationFeedback = {
+          score: 0,
+          feedback: errorMessage,
+          suggestions: ['Please speak more clearly and try again']
+        };
+        
+        return { feedback, evaluationResponse: null };
+      }
+      
       // Handle successful evaluation responses
       const evaluation = result.evaluation || result;
       
@@ -591,7 +630,7 @@ export default function StorytellingPractice() {
         message: evaluation.message || evaluation.feedback
       };
       
-      return feedback;
+      return { feedback, evaluationResponse: result };
     } catch (error) {
       console.error('Error evaluating audio:', error);
       throw error;
@@ -615,8 +654,16 @@ export default function StorytellingPractice() {
       const audioBase64 = await blobToBase64(audioBlob);
       const timeSpentSeconds = Math.round((Date.now() - recordingStartTime) / 1000);
       
-      const evaluationResult = await evaluateAudio(audioBase64, timeSpentSeconds);
-      setFeedback(evaluationResult);
+      const { feedback, evaluationResponse } = await evaluateAudio(audioBase64, timeSpentSeconds);
+      setFeedback(feedback);
+      
+      // Check if the exercise is completed based on API response
+      if (evaluationResponse?.exercise_completion?.exercise_completed) {
+        // Exercise is completed according to the API
+        setIsCompleted(true);
+        setShowCompletionDialog(true);
+        markExerciseCompleted();
+      }
       
     } catch (error: any) {
       console.error('Processing error:', error);
@@ -715,29 +762,23 @@ export default function StorytellingPractice() {
   };
 
   const handleNextPrompt = () => {
-    if (currentPrompt === storyPrompts.length - 1) {
-      // User is on the last prompt, mark as completed
-      setIsCompleted(true);
-      setShowCompletionDialog(true);
-      markExerciseCompleted();
-    } else {
-      setCurrentPrompt(currentPrompt + 1);
-      setFeedback(null);
-      setRecordingTime(0);
-      setIsRecording(false);
-      setIsEvaluating(false);
-      setRecordingStartTime(null);
-      setShowExample(false);
-      // Clear any active recording
-      if (recordingTimeoutRef.current) {
-        clearTimeout(recordingTimeoutRef.current);
-        recordingTimeoutRef.current = null;
-      }
-      if (mediaRecorderRef.current?.state === 'recording') {
-        mediaRecorderRef.current.stop();
-        if (mediaRecorderRef.current.stream) {
-          mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-        }
+    const newIndex = Math.min(storyPrompts.length - 1, currentPrompt + 1);
+    setCurrentPrompt(newIndex);
+    setFeedback(null);
+    setRecordingTime(0);
+    setIsRecording(false);
+    setIsEvaluating(false);
+    setRecordingStartTime(null);
+    setShowExample(false);
+    // Clear any active recording
+    if (recordingTimeoutRef.current) {
+      clearTimeout(recordingTimeoutRef.current);
+      recordingTimeoutRef.current = null;
+    }
+    if (mediaRecorderRef.current?.state === 'recording') {
+      mediaRecorderRef.current.stop();
+      if (mediaRecorderRef.current.stream) {
+        mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
       }
     }
   };
@@ -959,10 +1000,10 @@ export default function StorytellingPractice() {
                 variant="outline"
                 size="sm"
                 onClick={handleNextPrompt}
-                disabled={false}
-                className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl rounded-2xl"
+                disabled={currentPrompt === storyPrompts.length - 1}
+                className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl rounded-2xl"
               >
-                {currentPrompt === storyPrompts.length - 1 ? 'Complete' : 'Next'}
+                Next
               </Button>
             </div>
           </div>
@@ -1128,10 +1169,14 @@ export default function StorytellingPractice() {
             <CardContent className="p-6">
               <div className="flex items-start space-x-3 mb-4">
                 <div className="w-8 h-8 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-2xl flex items-center justify-center shadow-md border border-primary/30 dark:border-primary/40">
-                  {feedback.score && feedback.score >= 70 ? (
-                    <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  {feedback.score !== undefined && feedback.score > 0 ? (
+                    feedback.score >= 70 ? (
+                      <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    ) : (
+                      <XCircle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                    )
                   ) : (
-                    <XCircle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                    <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
                   )}
                 </div>
                 <div className="flex-1">

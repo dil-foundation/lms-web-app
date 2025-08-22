@@ -4,6 +4,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Mic, Building2, User, Loader2, Play, Pause, VolumeX, Square, RotateCcw, Target, TrendingUp, Trophy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MockInterviewService, { MockInterviewScenario, MockInterviewQuestion, MockInterviewEvaluationResponse } from '@/services/mockInterviewService';
+
+interface ExerciseCompletion {
+  exercise_completed: boolean;
+  progress_percentage: number;
+  completed_topics: number;
+  total_topics: number;
+  current_topic_id: number;
+  stage_id: number;
+  exercise_id: number;
+  exercise_name: string;
+  stage_name: string;
+  completion_date?: string | null;
+}
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useAuth } from '@/hooks/useAuth';
@@ -603,16 +616,42 @@ export default function MockInterviewPractice() {
       console.log(`🚀 Sending evaluation request ${evaluationId}`);
 
       // Use the MockInterviewService which already has proper auth and error handling
-      const evaluationResult = await MockInterviewService.evaluate(evaluationRequest);
+      const evaluationResult = await MockInterviewService.evaluate(evaluationRequest) as any;
       console.log(`✅ Evaluation completed ${evaluationId}:`, evaluationResult);
+      
+      // Handle API error responses (like no_speech_detected)
+      if (evaluationResult.success === false || evaluationResult.error) {
+        const errorMessage = evaluationResult.message || evaluationResult.error || 'Speech evaluation failed';
+        
+        // Create modified feedback object for error cases
+        const errorFeedback = {
+          ...evaluationResult,
+          score: 0,
+          feedback: errorMessage,
+          suggestions: ['Please speak more clearly and try again'],
+          success: false
+        };
+        
+        setFeedback(errorFeedback);
+        console.log(`⚠️ Evaluation ${evaluationId} completed with speech recognition error`);
+        return;
+      }
       
       setFeedback(evaluationResult);
       
-      // Mark exercise as completed after receiving feedback
-      if (!isCompleted) {
+      // Check if the exercise is completed based on API response
+      if (evaluationResult.exercise_completion?.exercise_completed) {
+        // Exercise is completed according to the API
         setIsCompleted(true);
         setShowCompletionDialog(true);
         markExerciseCompleted();
+        console.log(`✅ Exercise completed according to API response ${evaluationId}`);
+      } else if (!isCompleted) {
+        // Fallback: mark as completed after receiving feedback (existing behavior)
+        setIsCompleted(true);
+        setShowCompletionDialog(true);
+        markExerciseCompleted();
+        console.log(`✅ Exercise marked as completed (fallback logic) ${evaluationId}`);
       }
 
     } catch (error) {
@@ -1075,7 +1114,11 @@ export default function MockInterviewPractice() {
                 {/* Overall Score */}
                 <div className="text-center">
                   <h3 className="text-lg font-semibold text-foreground mb-2">Overall</h3>
-                  <div className="text-4xl font-bold bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent mb-4">
+                  <div className={`text-4xl font-bold mb-4 ${
+                    feedback.score === 0 
+                      ? 'text-red-600 dark:text-red-400' 
+                      : 'bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent'
+                  }`}>
                     {feedback.score}/100
                   </div>
                 </div>

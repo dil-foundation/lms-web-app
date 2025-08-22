@@ -35,6 +35,31 @@ interface EvaluationFeedback {
   message?: string;
 }
 
+interface ExerciseCompletion {
+  exercise_completed: boolean;
+  progress_percentage: number;
+  completed_topics: number;
+  total_topics: number;
+  current_topic_id: number;
+  stage_id: number;
+  exercise_id: number;
+  exercise_name: string;
+  stage_name: string;
+  completion_date?: string | null;
+}
+
+interface EvaluationResponse {
+  success: boolean;
+  expected_phrase?: string;
+  user_text?: string;
+  evaluation: any;
+  progress_recorded: boolean;
+  unlocked_content: any[];
+  exercise_completion: ExerciseCompletion;
+  error?: string;
+  message?: string;
+}
+
 // API Functions
 const fetchQuickAnswerQuestions = async (): Promise<QuickAnswerQuestion[]> => {
   try {
@@ -397,7 +422,7 @@ export default function QuickAnswer() {
   };
 
   // Evaluate recorded audio
-  const evaluateAudio = async (audioBase64: string, timeSpentSeconds: number): Promise<EvaluationFeedback> => {
+  const evaluateAudio = async (audioBase64: string, timeSpentSeconds: number): Promise<{feedback: EvaluationFeedback, evaluationResponse: EvaluationResponse | null}> => {
     try {
       const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.EVALUATE_QUICK_ANSWER}`, {
         method: 'POST',
@@ -432,7 +457,7 @@ export default function QuickAnswer() {
             ['Please speak more clearly and try again']
         };
         
-        return feedback;
+        return { feedback, evaluationResponse: null };
       }
       
       // Handle successful evaluation responses
@@ -447,7 +472,7 @@ export default function QuickAnswer() {
         message: evaluation.message || evaluation.feedback
       };
       
-      return feedback;
+      return { feedback, evaluationResponse: result };
     } catch (error) {
       console.error('Error evaluating audio:', error);
       throw error;
@@ -471,11 +496,19 @@ export default function QuickAnswer() {
       const audioBase64 = await blobToBase64(audioBlob);
       const timeSpentSeconds = Math.round((Date.now() - recordingStartTime) / 1000);
       
-      const evaluationResult = await evaluateAudio(audioBase64, timeSpentSeconds);
-      setFeedback(evaluationResult);
+      const { feedback, evaluationResponse } = await evaluateAudio(audioBase64, timeSpentSeconds);
+      setFeedback(feedback);
       
-      // Save progress after successful evaluation
-      saveProgress(currentQuestionIndex);
+      // Check if the exercise is completed based on API response
+      if (evaluationResponse?.exercise_completion?.exercise_completed) {
+        // Exercise is completed according to the API
+        setIsCompleted(true);
+        setShowCompletionDialog(true);
+        markExerciseCompleted();
+      } else {
+        // Save progress after successful evaluation
+        saveProgress(currentQuestionIndex);
+      }
       
     } catch (error: any) {
       console.error('Processing error:', error);
@@ -617,18 +650,11 @@ export default function QuickAnswer() {
   };
 
   const handleNext = () => {
-    if (currentQuestionIndex === questions.length - 1) {
-      // User is on the last question, mark as completed
-      setIsCompleted(true);
-      setShowCompletionDialog(true);
-      markExerciseCompleted();
-    } else {
-      const newIndex = currentQuestionIndex + 1;
-      setCurrentQuestionIndex(newIndex);
-      setFeedback(null); // Clear feedback when navigating
-      setShowExpectedAnswers(false); // Reset toggle when changing questions
-      saveProgress(newIndex); // Save progress when navigating
-    }
+    const newIndex = Math.min(questions.length - 1, currentQuestionIndex + 1);
+    setCurrentQuestionIndex(newIndex);
+    setFeedback(null); // Clear feedback when navigating
+    setShowExpectedAnswers(false); // Reset toggle when changing questions
+    saveProgress(newIndex); // Save progress when navigating
   };
 
   const handlePrevious = () => {
@@ -932,10 +958,11 @@ export default function QuickAnswer() {
             </Button>
             <Button
               onClick={handleNext}
+              disabled={currentQuestionIndex === questions.length - 1}
               variant="outline"
-              className="flex-1 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+              className="flex-1 hover:bg-primary/10 hover:border-primary/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
             >
-              {currentQuestionIndex === questions.length - 1 ? 'Complete' : 'Next'}
+              Next
             </Button>
           </div>
         )}
