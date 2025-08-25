@@ -28,6 +28,7 @@ import SecurityService, { SecuritySetting, AccessLog, SecurityAlert, SecuritySta
 import SupabaseMFAService from '@/services/supabaseMFAService';
 import { ContentLoader } from '@/components/ContentLoader';
 import { supabase } from '@/integrations/supabase/client';
+import { formatTimestampWithTimezone } from '@/utils/dateUtils';
 
 interface User {
   id: string;
@@ -199,7 +200,7 @@ const UserMFAManagement = () => {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-muted-foreground">
-            Total users: {totalUsers} | Users with MFA: {users.filter(u => u.mfa_enabled).length}
+            Total users: {totalUsers}
           </p>
         </div>
         <Button
@@ -566,7 +567,7 @@ const AdminSecurity = () => {
   }, [loadAccessLogs, accessLogsHasMore, accessLogsLoading, loadSecurityAlerts, securityAlertsHasMore, securityAlertsLoading]);
 
   const formatTimestamp = (timestamp: string) => {
-    return new Date(timestamp).toLocaleString();
+    return formatTimestampWithTimezone(timestamp);
   };
 
   const getStatusIcon = (status: string) => {
@@ -848,8 +849,6 @@ const AdminSecurity = () => {
                     <TableRow>
                       <TableHead>User</TableHead>
                       <TableHead>Action</TableHead>
-                      <TableHead>IP Address</TableHead>
-                      <TableHead>Location</TableHead>
                       <TableHead>Timestamp</TableHead>
                       <TableHead>Status</TableHead>
                     </TableRow>
@@ -859,8 +858,6 @@ const AdminSecurity = () => {
                       <TableRow key={log.id}>
                         <TableCell className="font-medium">{log.user_email}</TableCell>
                         <TableCell>{log.action}</TableCell>
-                        <TableCell>{log.ip_address}</TableCell>
-                        <TableCell>{log.location}</TableCell>
                         <TableCell>{formatTimestamp(log.created_at)}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">

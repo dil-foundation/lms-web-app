@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import SessionService from '@/services/sessionService';
+import AccessLogService from '@/services/accessLogService';
 
 // Define the shape of the context state
 interface AuthContextType {
@@ -77,6 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // Track session in database when user signs in
           if (event === 'SIGNED_IN' && session?.user) {
             try {
+              // Create session record
               await SessionService.createSession(
                 session.user.id,
                 session.access_token,
@@ -84,8 +86,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 navigator.userAgent,
                 undefined // Location (can be added later)
               );
+
+              // Log successful login with human-readable information
+              await AccessLogService.logUserLogin({
+                user_id: session.user.id,
+                user_email: session.user.email || 'unknown@email.com',
+                ip_address: undefined, // Will be undefined for now, can be enhanced later
+                user_agent: navigator.userAgent,
+                location: 'Unknown location', // Can be enhanced with geolocation later
+                login_method: 'email' // Default to email, can be enhanced based on auth method
+              });
             } catch (error) {
-              console.error('Error creating session:', error);
+              console.error('Error creating session or logging access:', error);
             }
           }
         }
@@ -111,6 +123,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = useCallback(async () => {
     try {
+      // Log user logout before signing out
+      if (user) {
+        try {
+          await AccessLogService.logUserLogout(
+            user.id,
+            user.email || 'unknown@email.com',
+            undefined, // IP address (can be enhanced later)
+            navigator.userAgent
+          );
+        } catch (error) {
+          console.error('Error logging user logout:', error);
+        }
+      }
+
       // Deactivate session in database before signing out
       if (session?.access_token) {
         try {
@@ -133,7 +159,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error('🔐 Sign out error:', error);
     }
-  }, [navigate, session]);
+  }, [navigate, session, user]);
 
   const value = useMemo(() => ({
     user,

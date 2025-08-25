@@ -21,6 +21,7 @@ import {
 import { SupabaseMFAVerification } from '@/components/auth/SupabaseMFAVerification';
 import SupabaseMFAService from '@/services/supabaseMFAService';
 import { useAuth } from '@/contexts/AuthContext';
+import AccessLogService from '@/services/accessLogService';
 
 const StudentAuth = () => {
   const navigate = useNavigate();
@@ -191,6 +192,28 @@ const StudentAuth = () => {
       }
     } catch (error: any) {
       console.error('🔐 Student login error:', error);
+      
+      // Log failed login attempt
+      try {
+        let reason = 'Invalid credentials';
+        if (error.message === 'Email not confirmed') {
+          reason = 'Email not confirmed';
+        } else if (error.message.includes('Invalid login credentials')) {
+          reason = 'Invalid email or password';
+        } else if (error.message.includes('Too many requests')) {
+          reason = 'Too many login attempts';
+        }
+        
+        await AccessLogService.logFailedLogin(
+          loginData.email,
+          reason,
+          undefined, // IP address (can be enhanced later)
+          navigator.userAgent
+        );
+      } catch (logError) {
+        console.error('Error logging failed login attempt:', logError);
+      }
+      
       if (error.message === 'Email not confirmed') {
         try {
           await supabase.auth.resend({

@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import AccessLogService from '@/services/accessLogService';
 
 export interface MFASetupData {
   qr_code: string;
@@ -165,13 +166,17 @@ const SupabaseMFAService = {
         return false;
       }
 
-      // Update profile to mark MFA setup as completed and clear reset flag
+      // Update profile to mark MFA setup as completed and sync metadata
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ 
           two_factor_setup_completed_at: new Date().toISOString(),
           mfa_reset_required: false,
-          mfa_reset_requested_at: null
+          mfa_reset_requested_at: null,
+          metadata: {
+            mfa_enabled: true,
+            mfa_setup_completed_at: new Date().toISOString()
+          }
         })
         .eq('id', user.id);
 
@@ -196,6 +201,11 @@ const SupabaseMFAService = {
   // Verify MFA code during login
   verifyMFACode: async (code: string): Promise<boolean> => {
     try {
+      // Get current user for logging
+      const { data: { user } } = await supabase.auth.getUser();
+      const userEmail = user?.email || 'unknown@email.com';
+      const userId = user?.id || '';
+
       // Get the user's MFA factors
       const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();
       if (factorsError) throw factorsError;
@@ -217,7 +227,26 @@ const SupabaseMFAService = {
         code
       });
 
-      if (verifyError) throw verifyError;
+      if (verifyError) {
+        // Log failed MFA verification
+        await AccessLogService.logMFAVerification(
+          userId,
+          userEmail,
+          'failed',
+          'totp',
+          undefined // IP address
+        );
+        throw verifyError;
+      }
+
+      // Log successful MFA verification
+      await AccessLogService.logMFAVerification(
+        userId,
+        userEmail,
+        'success',
+        'totp',
+        undefined // IP address
+      );
 
       return true;
     } catch (error) {
@@ -249,6 +278,21 @@ const SupabaseMFAService = {
       
       if (updateError) {
         console.error('Error updating user metadata:', updateError);
+      }
+
+      // Also update profiles metadata to sync MFA status
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ 
+            metadata: `{"mfa_enabled": false, "mfa_disabled_at": "${new Date().toISOString()}"}`
+          })
+          .eq('id', user.id);
+        
+        if (profileError) {
+          console.error('Error updating profile metadata:', profileError);
+        }
       }
 
       return true;
@@ -323,6 +367,9 @@ const SupabaseMFAService = {
         throw new Error('User not authenticated. Please log in again.');
       }
 
+      const userEmail = user.email || 'unknown@email.com';
+      const userId = user.id;
+
       // Get user's backup codes from profile
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
@@ -369,6 +416,24 @@ const SupabaseMFAService = {
             mfa_reset_requested_at: new Date().toISOString()
           }
         });
+
+        // Log successful backup code verification
+        await AccessLogService.logMFAVerification(
+          userId,
+          userEmail,
+          'success',
+          'backup_code',
+          undefined // IP address
+        );
+      } else {
+        // Log failed backup code verification
+        await AccessLogService.logMFAVerification(
+          userId,
+          userEmail,
+          'failed',
+          'backup_code',
+          undefined // IP address
+        );
       }
 
       return isValidCode;

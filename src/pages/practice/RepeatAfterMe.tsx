@@ -11,6 +11,7 @@ import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
 import { useAuth } from '@/hooks/useAuth';
 import { initializeUserProgress, getCurrentTopicProgress, updateCurrentProgress } from '@/utils/progressTracker';
 import { getAuthHeadersWithAccept, getAuthHeaders } from '@/utils/authUtils';
+import AccessLogService from '@/services/accessLogService';
 
 // Types
 interface Phrase {
@@ -465,6 +466,19 @@ export const RepeatAfterMe: React.FC = () => {
         setIsCompleted(true);
         setShowCompletionDialog(true);
         markExerciseCompleted();
+        
+        // Log practice session completion
+        if (user?.id) {
+          await AccessLogService.logPracticeSession(
+            user.id,
+            user.email || 'unknown@email.com',
+            1, // Stage 1
+            1, // Exercise 1 (RepeatAfterMe)
+            'Repeat After Me',
+            feedback.score,
+            'completed'
+          );
+        }
       } else {
         // Save progress after successful evaluation
         saveProgress(currentPhraseIndex);
@@ -473,6 +487,19 @@ export const RepeatAfterMe: React.FC = () => {
     } catch (error: any) {
       console.error('Processing error:', error);
       setError(error.message || 'Failed to process recording');
+      
+      // Log practice session failure
+      if (user?.id) {
+        await AccessLogService.logPracticeSession(
+          user.id,
+          user.email || 'unknown@email.com',
+          1, // Stage 1
+          1, // Exercise 1 (RepeatAfterMe)
+          'Repeat After Me',
+          undefined,
+          'failed'
+        );
+      }
     } finally {
       setIsEvaluating(false);
       setRecordingStartTime(null);
@@ -549,6 +576,17 @@ export const RepeatAfterMe: React.FC = () => {
         // If user is authenticated, handle progress and resume
         if (user?.id && !resumeDataLoaded) {
           console.log('Loading user progress for Stage 1 practice...');
+          
+          // Log practice session start
+          await AccessLogService.logPracticeSession(
+            user.id,
+            user.email || 'unknown@email.com',
+            1, // Stage 1
+            1, // Exercise 1 (RepeatAfterMe)
+            'Repeat After Me',
+            undefined,
+            'started'
+          );
           
           // Try to get current progress to resume from where user left off
           const currentProgress = await getCurrentTopicProgress(user.id, 1, 1); // Stage 1, Exercise 1
