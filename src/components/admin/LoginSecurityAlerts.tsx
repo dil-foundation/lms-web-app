@@ -202,11 +202,10 @@ const LoginSecurityAlerts = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="animate-pulse space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="h-20 bg-gray-200 rounded-lg" />
-                ))}
+            <div className="flex items-center justify-center py-8">
+              <div className="flex flex-col items-center space-y-2">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <p className="text-sm text-muted-foreground">Loading security data...</p>
               </div>
             </div>
           </CardContent>
@@ -234,10 +233,15 @@ const LoginSecurityAlerts = () => {
               variant="outline"
               size="sm"
               onClick={loadSecurityData}
+              disabled={loading}
               className="flex items-center gap-2"
             >
-              <RefreshCw className="w-4 h-4" />
-              Refresh
+              {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4" />
+              )}
+              {loading ? 'Refreshing...' : 'Refresh'}
             </Button>
           </div>
         </CardHeader>

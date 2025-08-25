@@ -214,7 +214,11 @@ const UserMFAManagement = () => {
           onClick={loadUsersWithSearch}
           disabled={loading || searchLoading || paginationLoading}
         >
-          <RefreshCw className="w-4 h-4 mr-2" />
+          {(searchLoading || paginationLoading) ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <RefreshCw className="w-4 h-4 mr-2" />
+          )}
           Refresh
         </Button>
       </div>
@@ -244,8 +248,8 @@ const UserMFAManagement = () => {
         {(searchLoading || paginationLoading) && (
           <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
             <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-sm text-green-600 font-medium">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              <span className="text-sm text-primary font-medium">
                 {searchLoading ? 'Searching...' : 'Loading page...'}
               </span>
             </div>
