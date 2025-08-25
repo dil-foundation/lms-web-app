@@ -219,7 +219,7 @@ class AccessLogService {
   }
 
   // Log practice session completion
-  static async logPracticeSession(user_id: string, user_email: string, stage_id: number, exercise_id: number, exercise_name: string, score?: number, status: 'started' | 'completed' | 'failed'): Promise<void> {
+  static async logPracticeSession(user_id: string, user_email: string, stage_id: number, exercise_id: number, exercise_name: string, status: 'started' | 'completed' | 'failed', score?: number): Promise<void> {
     try {
       const metadata = {
         stage_id: stage_id,

@@ -22,6 +22,7 @@ import { SupabaseMFAVerification } from '@/components/auth/SupabaseMFAVerificati
 import SupabaseMFAService from '@/services/supabaseMFAService';
 import { useAuth } from '@/contexts/AuthContext';
 import AccessLogService from '@/services/accessLogService';
+import LoginSecurityService from '@/services/loginSecurityService';
 
 const StudentAuth = () => {
   const navigate = useNavigate();
@@ -132,6 +133,23 @@ const StudentAuth = () => {
     try {
       console.log('🔐 Attempting student login...');
       
+      // Check if user is already blocked before attempting authentication
+      const securityStatus = await LoginSecurityService.checkLoginSecurity(
+        loginData.email,
+        undefined, // IP address (can be enhanced later)
+        navigator.userAgent
+      );
+
+      if (securityStatus.isBlocked) {
+        const blockMessage = securityStatus.blockReason === 'Too many failed login attempts' 
+          ? `Account temporarily blocked due to too many failed login attempts. Please try again after 24 hours.`
+          : `Account temporarily blocked: ${securityStatus.blockReason}`;
+        
+        setAuthError(blockMessage);
+        setIsLoading(false);
+        return;
+      }
+
       // Sign in and get user data
       const { data: { user }, error: signInError } = await supabase.auth.signInWithPassword({
         email: loginData.email,
@@ -187,13 +205,21 @@ const StudentAuth = () => {
 
         // No MFA required, proceed with normal login
         console.log('🔐 Student login successful (no MFA required):', user.email);
+        
+        // Handle successful login security
+        await LoginSecurityService.handleSuccessfulLogin(
+          user.email || loginData.email,
+          undefined, // IP address (can be enhanced later)
+          navigator.userAgent
+        );
+        
         toast.success('Welcome back!');
         window.location.href = '/dashboard';
       }
     } catch (error: any) {
       console.error('🔐 Student login error:', error);
       
-      // Log failed login attempt
+      // Handle failed login security
       try {
         let reason = 'Invalid credentials';
         if (error.message === 'Email not confirmed') {
@@ -204,14 +230,39 @@ const StudentAuth = () => {
           reason = 'Too many login attempts';
         }
         
-        await AccessLogService.logFailedLogin(
+        console.log(`🔒 Processing failed login for ${loginData.email}: ${reason}`);
+        
+        const failedLoginResult = await LoginSecurityService.handleFailedLogin(
           loginData.email,
           reason,
           undefined, // IP address (can be enhanced later)
           navigator.userAgent
         );
+
+        console.log(`🔒 Failed login result:`, failedLoginResult);
+
+        // Update error message based on security status
+        if (failedLoginResult.blocked) {
+          const blockMessage = failedLoginResult.blockReason === 'Too many failed login attempts' 
+            ? `Account temporarily blocked due to too many failed login attempts. Please try again after 24 hours.`
+            : `Account temporarily blocked: ${failedLoginResult.blockReason}`;
+          
+          console.log(`🔒 User blocked: ${blockMessage}`);
+          setAuthError(blockMessage);
+        } else {
+          const remainingAttempts = failedLoginResult.remainingAttempts;
+          if (remainingAttempts <= 2) {
+            const warningMessage = `Invalid credentials. Warning: ${remainingAttempts} login attempt${remainingAttempts !== 1 ? 's' : ''} remaining before account is blocked.`;
+            console.log(`🔒 Warning: ${warningMessage}`);
+            setAuthError(warningMessage);
+          } else {
+            console.log(`🔒 Normal failed login, ${remainingAttempts} attempts remaining`);
+            setAuthError('Invalid credentials.');
+          }
+        }
       } catch (logError) {
-        console.error('Error logging failed login attempt:', logError);
+        console.error('Error handling failed login security:', logError);
+        setAuthError('Invalid credentials.');
       }
       
       if (error.message === 'Email not confirmed') {
