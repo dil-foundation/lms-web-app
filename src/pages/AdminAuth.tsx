@@ -12,6 +12,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { SupabaseMFAVerification } from '@/components/auth/SupabaseMFAVerification';
 import SupabaseMFAService from '@/services/supabaseMFAService';
 import { useAuth } from '@/contexts/AuthContext';
+import AccessLogService from '@/services/accessLogService';
 
 const AdminAuth = () => {
   const navigate = useNavigate();
@@ -114,6 +115,30 @@ const AdminAuth = () => {
       }
     } catch (error: any) {
       console.error('🔐 Admin login error:', error);
+      
+      // Log failed login attempt
+      try {
+        let reason = 'Invalid credentials';
+        if (error.message.includes('Email not confirmed')) {
+          reason = 'Email not confirmed';
+        } else if (error.message.includes('Invalid login credentials')) {
+          reason = 'Invalid email or password';
+        } else if (error.message.includes('Too many requests')) {
+          reason = 'Too many login attempts';
+        } else if (error.message.includes('Access denied')) {
+          reason = 'Access denied - insufficient permissions';
+        }
+        
+        await AccessLogService.logFailedLogin(
+          loginData.email,
+          reason,
+          undefined, // IP address (can be enhanced later)
+          navigator.userAgent
+        );
+      } catch (logError) {
+        console.error('Error logging failed login attempt:', logError);
+      }
+      
       if (error.message.includes('Email not confirmed')) {
         setAuthError('Please verify your email address before logging in.');
       } else {

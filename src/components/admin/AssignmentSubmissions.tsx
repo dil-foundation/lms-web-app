@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ContentLoader } from '@/components/ContentLoader';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import AccessLogService from '@/services/accessLogService';
 
 // Types
 type SubmissionStatus = 'graded' | 'submitted' | 'not submitted';
@@ -397,6 +398,17 @@ export const AssignmentSubmissions = () => {
         toast.error("Failed to mark assignment as complete for the student.", { description: rpcError.message });
     } else {
         toast.success('Grade saved and assignment marked as complete!');
+        
+        // Log assignment grading
+        if (user && selectedSubmission) {
+          await AccessLogService.logAssignmentSubmission(
+            selectedSubmission.student.id,
+            selectedSubmission.student.name,
+            assignmentId || 'unknown',
+            assignmentDetails.title,
+            'success'
+          );
+        }
         }
       } else if (assignmentDetails?.type === 'quiz') {
         // Handle quiz grading
@@ -452,6 +464,17 @@ export const AssignmentSubmissions = () => {
           } else if (textAnswerCount > 0) {
             toast.success(`Manual grading completed! Final score: ${finalPercentage}%`);
           }
+          
+          // Log quiz grading
+          if (user && selectedSubmission) {
+            await AccessLogService.logAssignmentSubmission(
+              selectedSubmission.student.id,
+              selectedSubmission.student.name,
+              assignmentId || 'unknown',
+              assignmentDetails.title,
+              'success'
+            );
+          }
         } else {
           // Regular quiz grading (for non-text answer quizzes)
           const { error } = await supabase
@@ -465,6 +488,17 @@ export const AssignmentSubmissions = () => {
           if (error) throw error;
           
           toast.success('Grade saved successfully!');
+          
+          // Log quiz grading
+          if (user && selectedSubmission) {
+            await AccessLogService.logAssignmentSubmission(
+              selectedSubmission.student.id,
+              selectedSubmission.student.name,
+              assignmentId || 'unknown',
+              assignmentDetails.title,
+              'success'
+            );
+          }
         }
     }
     

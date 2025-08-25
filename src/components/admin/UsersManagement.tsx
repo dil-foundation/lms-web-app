@@ -40,6 +40,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import AccessLogService from '@/services/accessLogService';
+import { useAuth } from '@/hooks/useAuth';
 
 interface User {
   id: string;
@@ -73,6 +75,7 @@ const initialValidationErrors = {
 };
 
 export const UsersManagement = () => {
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -272,6 +275,21 @@ export const UsersManagement = () => {
       if (error) throw error;
 
       toast.success("Invitation sent successfully!", { description: `An invitation email has been sent to ${newUser.email}.` });
+      
+      // Log user creation
+      if (currentUser) {
+        await AccessLogService.logAdminAction(
+          currentUser.id,
+          currentUser.email || 'unknown@email.com',
+          'User Invitation Sent',
+          {
+            invited_user_email: newUser.email,
+            invited_user_role: newUser.role,
+            invited_user_name: `${newUser.firstName} ${newUser.lastName}`.trim()
+          }
+        );
+      }
+      
       setIsCreateModalOpen(false);
       setNewUser(initialNewUserState);
       setValidationErrors(initialValidationErrors);
@@ -297,6 +315,23 @@ export const UsersManagement = () => {
       if (error) throw error;
 
       toast.success("User deleted successfully!", { description: `${userToDelete.name} has been removed from the system.` });
+      
+      // Log user deletion
+      if (currentUser) {
+        await AccessLogService.logAdminAction(
+          currentUser.id,
+          currentUser.email || 'unknown@email.com',
+          'User Deleted',
+          {
+            deleted_user_email: userToDelete.email,
+            deleted_user_name: userToDelete.name,
+            deleted_user_role: userToDelete.role
+          },
+          userToDelete.id,
+          userToDelete.email
+        );
+      }
+      
       setUserToDelete(null);
       fetchUsers(); // Refresh the list
       fetchStats(); // Refresh the stats
@@ -329,6 +364,23 @@ export const UsersManagement = () => {
       if (error) throw error;
       
       toast.success("User updated successfully!");
+      
+      // Log user update
+      if (currentUser && userToEdit) {
+        await AccessLogService.logAdminAction(
+          currentUser.id,
+          currentUser.email || 'unknown@email.com',
+          'User Updated',
+          {
+            updated_user_email: userToEdit.email,
+            updated_user_name: userToEdit.name,
+            updated_user_role: userToEdit.role
+          },
+          userToEdit.id,
+          userToEdit.email
+        );
+      }
+      
       setUserToEdit(null);
       fetchUsers();
     } catch (error: any) {
@@ -347,6 +399,21 @@ export const UsersManagement = () => {
       if (error) throw error;
 
       toast.success("Password reset email sent!", { description: `A reset link has been sent to ${user.name}.` });
+      
+      // Log password reset
+      if (currentUser) {
+        await AccessLogService.logAdminAction(
+          currentUser.id,
+          currentUser.email || 'unknown@email.com',
+          'Password Reset Sent',
+          {
+            target_user_email: user.email,
+            target_user_name: user.name
+          },
+          user.id,
+          user.email
+        );
+      }
     } catch (error: any) {
       toast.error("Failed to send reset link.", { description: error.message });
       console.error("Error sending reset link:", error);

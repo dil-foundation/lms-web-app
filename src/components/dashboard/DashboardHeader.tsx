@@ -36,7 +36,7 @@ export const DashboardHeader = memo(({ onToggle }: DashboardHeaderProps) => {
 
       <div className="flex items-center space-x-4">
         <ThemeToggle />
-        <NotificationToggle />
+        {user && <NotificationToggle />}
         <AuthButton />
       </div>
     </div>
