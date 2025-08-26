@@ -582,20 +582,13 @@ const AdminSecurity = () => {
             Current security status and key metrics
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex items-center justify-between p-4 border rounded-lg">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Active Sessions</p>
               <p className="text-2xl font-bold">{securityStats?.active_sessions || 0}</p>
             </div>
             <Activity className="w-8 h-8 text-blue-500" />
-          </div>
-          <div className="flex items-center justify-between p-4 border rounded-lg">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Failed Attempts</p>
-              <p className="text-2xl font-bold text-red-600">{securityStats?.failed_attempts || 0}</p>
-            </div>
-            <AlertTriangle className="w-8 h-8 text-red-500" />
           </div>
           <div className="flex items-center justify-between p-4 border rounded-lg">
             <div>
