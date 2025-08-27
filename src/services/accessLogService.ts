@@ -35,8 +35,12 @@ class AccessLogService {
       const location = loginData.location || 'Unknown location';
       
       const metadata = {
-        login_method: loginData.login_method || 'email',
-        device_info: deviceInfo,
+        details: {
+          action: 'User Login',
+          login_method: loginData.login_method || 'email',
+          device_info: deviceInfo,
+          location: location
+        },
         timestamp: new Date().toISOString(),
         session_id: crypto.randomUUID()
       };
@@ -70,8 +74,11 @@ class AccessLogService {
       const deviceInfo = this.parseUserAgent(user_agent);
       
       const metadata = {
-        failure_reason: reason,
-        device_info: deviceInfo,
+        details: {
+          action: 'Failed Login',
+          failure_reason: reason,
+          device_info: deviceInfo
+        },
         timestamp: new Date().toISOString()
       };
 
@@ -102,7 +109,11 @@ class AccessLogService {
       const deviceInfo = this.parseUserAgent(user_agent);
       
       const metadata = {
-        device_info: deviceInfo,
+        details: {
+          action: 'User Logout',
+          logout_method: 'manual',
+          device_info: deviceInfo
+        },
         timestamp: new Date().toISOString()
       };
 
@@ -191,9 +202,17 @@ class AccessLogService {
   // Log assignment submission
   static async logAssignmentSubmission(user_id: string, user_email: string, assignment_id: string, assignment_title: string, status: 'success' | 'failed'): Promise<void> {
     try {
+      const statusText = status === 'success' ? 'successfully submitted' : 'failed to submit';
+      const actionDescription = `${statusText} assignment: "${assignment_title}"`;
+
       const metadata = {
-        assignment_id: assignment_id,
-        assignment_title: assignment_title,
+        details: {
+          action: 'submission',
+          assignment_id: assignment_id,
+          assignment_title: assignment_title,
+          description: actionDescription,
+          status: status
+        },
         timestamp: new Date().toISOString()
       };
 
@@ -210,7 +229,6 @@ class AccessLogService {
       if (error) {
         console.error('Error logging assignment submission:', error);
       } else {
-        const statusText = status === 'success' ? 'successfully submitted' : 'failed to submit';
         console.log(`📝 Access Log: User ${user_email} ${statusText} assignment: ${assignment_title}`);
       }
     } catch (error) {
@@ -310,11 +328,46 @@ class AccessLogService {
   }
 
   // Log course creation/modification
-  static async logCourseAction(user_id: string, user_email: string, action: 'created' | 'updated' | 'deleted' | 'published', course_id: string, course_title: string): Promise<void> {
+  static async logCourseAction(user_id: string, user_email: string, action: 'created' | 'updated' | 'deleted' | 'published' | 'unpublished' | 'submitted_for_review' | 'approved' | 'rejected', course_id: string, course_title: string): Promise<void> {
     try {
+      // Create descriptive action text
+      let actionDescription = '';
+      switch (action) {
+        case 'submitted_for_review':
+          actionDescription = `Course "${course_title}" submitted for admin review`;
+          break;
+        case 'approved':
+          actionDescription = `Course "${course_title}" approved and published`;
+          break;
+        case 'rejected':
+          actionDescription = `Course "${course_title}" rejected by admin`;
+          break;
+        case 'created':
+          actionDescription = `Course "${course_title}" created`;
+          break;
+        case 'updated':
+          actionDescription = `Course "${course_title}" updated`;
+          break;
+        case 'deleted':
+          actionDescription = `Course "${course_title}" deleted`;
+          break;
+        case 'published':
+          actionDescription = `Course "${course_title}" published`;
+          break;
+        case 'unpublished':
+          actionDescription = `Course "${course_title}" unpublished and saved as draft`;
+          break;
+        default:
+          actionDescription = `Course "${course_title}" ${action}`;
+      }
+
       const metadata = {
-        course_id: course_id,
-        course_title: course_title,
+        details: {
+          action: action,
+          course_id: course_id,
+          course_title: course_title,
+          description: actionDescription
+        },
         timestamp: new Date().toISOString()
       };
 
@@ -323,7 +376,7 @@ class AccessLogService {
         .insert({
           user_id: user_id,
           user_email: user_email,
-          action: `Course ${action.charAt(0).toUpperCase() + action.slice(1)}`,
+          action: `Course: ${action.charAt(0).toUpperCase() + action.slice(1).replace('_', ' ')}`,
           status: 'success',
           metadata: metadata
         });
@@ -341,11 +394,33 @@ class AccessLogService {
   // Log student course action
   static async logStudentCourseAction(user_id: string, user_email: string, action: 'content_completed' | 'quiz_submitted' | 'course_started' | 'course_completed', course_id: string, content_title: string, details?: Record<string, any>): Promise<void> {
     try {
+      // Create descriptive action text
+      let actionDescription = '';
+      switch (action) {
+        case 'content_completed':
+          actionDescription = `Completed content: "${content_title}"`;
+          break;
+        case 'quiz_submitted':
+          actionDescription = `Submitted quiz: "${content_title}"`;
+          break;
+        case 'course_started':
+          actionDescription = `Started course: "${content_title}"`;
+          break;
+        case 'course_completed':
+          actionDescription = `Completed course: "${content_title}"`;
+          break;
+        default:
+          actionDescription = `${(action as string).replace('_', ' ')}: "${content_title}"`;
+      }
+
       const metadata = {
-        course_id: course_id,
-        content_title: content_title,
-        action_type: action,
-        details: details || {},
+        details: {
+          action: action,
+          course_id: course_id,
+          content_title: content_title,
+          description: actionDescription,
+          additional_details: details || {}
+        },
         timestamp: new Date().toISOString()
       };
 
@@ -372,11 +447,39 @@ class AccessLogService {
   // Log discussion action
   static async logDiscussionAction(user_id: string, user_email: string, action: 'created' | 'updated' | 'deleted' | 'reply_created' | 'reply_updated' | 'reply_deleted', discussion_id: string, discussion_title: string, details?: Record<string, any>): Promise<void> {
     try {
+      // Create descriptive action text
+      let actionDescription = '';
+      switch (action) {
+        case 'created':
+          actionDescription = `Created discussion: "${discussion_title}"`;
+          break;
+        case 'updated':
+          actionDescription = `Updated discussion: "${discussion_title}"`;
+          break;
+        case 'deleted':
+          actionDescription = `Deleted discussion: "${discussion_title}"`;
+          break;
+        case 'reply_created':
+          actionDescription = `Created reply in discussion: "${discussion_title}"`;
+          break;
+        case 'reply_updated':
+          actionDescription = `Updated reply in discussion: "${discussion_title}"`;
+          break;
+        case 'reply_deleted':
+          actionDescription = `Deleted reply in discussion: "${discussion_title}"`;
+          break;
+        default:
+          actionDescription = `${(action as string).replace('_', ' ')} discussion: "${discussion_title}"`;
+      }
+
       const metadata = {
-        discussion_id: discussion_id,
-        discussion_title: discussion_title,
-        action_type: action,
-        details: details || {},
+        details: {
+          action: action,
+          discussion_id: discussion_id,
+          discussion_title: discussion_title,
+          description: actionDescription,
+          additional_details: details || {}
+        },
         timestamp: new Date().toISOString()
       };
 
@@ -404,9 +507,12 @@ class AccessLogService {
   static async logAdminSettingsAction(user_id: string, user_email: string, action: 'updated' | 'reset', settings_type: 'admin_settings' | 'security_settings' | 'ai_safety_ethics_settings', details?: Record<string, any>): Promise<void> {
     try {
       const metadata = {
-        settings_type: settings_type,
-        action_type: action,
-        details: details || {},
+        details: {
+          action: action,
+          settings_type: settings_type,
+          description: `${action.charAt(0).toUpperCase() + action.slice(1)} ${settings_type.replace('_', ' ')}`,
+          additional_details: details || {}
+        },
         timestamp: new Date().toISOString()
       };
 
@@ -415,7 +521,7 @@ class AccessLogService {
         .insert({
           user_id: user_id,
           user_email: user_email,
-          action: `Admin Settings: ${action.charAt(0).toUpperCase() + action.slice(1)} ${settings_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}`,
+          action: `Admin Settings: ${action.charAt(0).toUpperCase() + action.slice(1)}`,
           status: 'success',
           metadata: metadata
         });
@@ -527,9 +633,11 @@ class AccessLogService {
   static async logSecurityEvent(user_id: string, user_email: string, event_type: string, severity: 'low' | 'medium' | 'high', details: string): Promise<void> {
     try {
       const metadata = {
-        event_type: event_type,
-        details: details,
-        severity: severity,
+        details: {
+          action: event_type,
+          severity: severity,
+          description: details
+        },
         timestamp: new Date().toISOString()
       };
 
@@ -606,6 +714,237 @@ class AccessLogService {
     return { browser, os, device };
   }
 
+  // Log quiz actions
+  static async logQuizAction(
+    user_id: string, 
+    user_email: string, 
+    action: string, 
+    quiz_id: string, 
+    quiz_name: string,
+    course_id?: string,
+    course_name?: string
+  ): Promise<void> {
+    try {
+      const metadata = {
+        details: {
+          action: action,
+          quiz_id: quiz_id,
+          quiz_name: quiz_name,
+          course_id: course_id,
+          course_name: course_name
+        },
+        timestamp: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('access_logs')
+        .insert({
+          user_id: user_id,
+          user_email: user_email,
+          action: `Quiz: ${action}`,
+          status: 'success',
+          metadata: metadata
+        });
+
+      if (error) {
+        console.error('Error logging quiz action:', error);
+      } else {
+        console.log(`📝 Quiz Log: ${action} for quiz "${quiz_name}" (${quiz_id}) by ${user_email}`);
+      }
+    } catch (error) {
+      console.error('Error logging quiz action:', error);
+    }
+  }
+
+  // Log assignment actions
+  static async logAssignmentAction(
+    user_id: string, 
+    user_email: string, 
+    action: string, 
+    assignment_id: string, 
+    assignment_name: string,
+    course_id?: string,
+    course_name?: string
+  ): Promise<void> {
+    try {
+      const metadata = {
+        details: {
+          action: action,
+          assignment_id: assignment_id,
+          assignment_name: assignment_name,
+          course_id: course_id,
+          course_name: course_name
+        },
+        timestamp: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('access_logs')
+        .insert({
+          user_id: user_id,
+          user_email: user_email,
+          action: `Assignment: ${action}`,
+          status: 'success',
+          metadata: metadata
+        });
+
+      if (error) {
+        console.error('Error logging assignment action:', error);
+      } else {
+        console.log(`📋 Assignment Log: ${action} for assignment "${assignment_name}" (${assignment_id}) by ${user_email}`);
+      }
+    } catch (error) {
+      console.error('Error logging assignment action:', error);
+    }
+  }
+
+  // Log assignment grading
+  static async logAssignmentGrading(
+    teacher_id: string,
+    teacher_email: string,
+    student_id: string,
+    student_email: string,
+    assignment_id: string,
+    assignment_title: string,
+    grade: number,
+    feedback?: string
+  ): Promise<void> {
+    try {
+      const actionDescription = `Graded assignment "${assignment_title}" for student ${student_email} with score ${grade}%`;
+
+      const metadata = {
+        details: {
+          action: 'grading',
+          teacher_id: teacher_id,
+          teacher_email: teacher_email,
+          student_id: student_id,
+          student_email: student_email,
+          assignment_id: assignment_id,
+          assignment_title: assignment_title,
+          grade: grade,
+          feedback: feedback || '',
+          description: actionDescription
+        },
+        timestamp: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('access_logs')
+        .insert({
+          user_id: teacher_id,
+          user_email: teacher_email,
+          action: 'Assignment Grading',
+          status: 'success',
+          metadata: metadata
+        });
+
+      if (error) {
+        console.error('Error logging assignment grading:', error);
+      } else {
+        console.log(`📊 Access Log: Teacher ${teacher_email} graded assignment "${assignment_title}" for student ${student_email} with score ${grade}%`);
+      }
+    } catch (error) {
+      console.error('Error logging assignment grading:', error);
+    }
+  }
+
+  // Log quiz submission
+  static async logQuizSubmission(
+    user_id: string,
+    user_email: string,
+    quiz_id: string,
+    quiz_title: string,
+    course_id?: string,
+    course_name?: string,
+    score?: number
+  ): Promise<void> {
+    try {
+      const scoreText = score !== undefined ? ` with score ${score}%` : '';
+      const actionDescription = `Submitted quiz "${quiz_title}"${scoreText}`;
+
+      const metadata = {
+        details: {
+          action: 'submission',
+          quiz_id: quiz_id,
+          quiz_title: quiz_title,
+          course_id: course_id,
+          course_name: course_name,
+          score: score,
+          description: actionDescription
+        },
+        timestamp: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('access_logs')
+        .insert({
+          user_id: user_id,
+          user_email: user_email,
+          action: 'Quiz Submission',
+          status: 'success',
+          metadata: metadata
+        });
+
+      if (error) {
+        console.error('Error logging quiz submission:', error);
+      } else {
+        console.log(`📝 Access Log: User ${user_email} submitted quiz "${quiz_title}"${scoreText}`);
+      }
+    } catch (error) {
+      console.error('Error logging quiz submission:', error);
+    }
+  }
+
+  // Log quiz grading
+  static async logQuizGrading(
+    teacher_id: string,
+    teacher_email: string,
+    student_id: string,
+    student_email: string,
+    quiz_id: string,
+    quiz_title: string,
+    grade: number,
+    feedback?: string
+  ): Promise<void> {
+    try {
+      const actionDescription = `Graded quiz "${quiz_title}" for student ${student_email} with score ${grade}%`;
+
+      const metadata = {
+        details: {
+          action: 'grading',
+          teacher_id: teacher_id,
+          teacher_email: teacher_email,
+          student_id: student_id,
+          student_email: student_email,
+          quiz_id: quiz_id,
+          quiz_title: quiz_title,
+          grade: grade,
+          feedback: feedback || '',
+          description: actionDescription
+        },
+        timestamp: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('access_logs')
+        .insert({
+          user_id: teacher_id,
+          user_email: teacher_email,
+          action: 'Quiz Grading',
+          status: 'success',
+          metadata: metadata
+        });
+
+      if (error) {
+        console.error('Error logging quiz grading:', error);
+      } else {
+        console.log(`📊 Access Log: Teacher ${teacher_email} graded quiz "${quiz_title}" for student ${student_email} with score ${grade}%`);
+      }
+    } catch (error) {
+      console.error('Error logging quiz grading:', error);
+    }
+  }
+
   // Get client IP address (this would need to be implemented based on your setup)
   static async getClientIP(): Promise<string | undefined> {
     try {
@@ -617,6 +956,8 @@ class AccessLogService {
       return undefined;
     }
   }
+
+
 }
 
 export default AccessLogService;

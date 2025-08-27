@@ -350,12 +350,23 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     
     // Log content completion
     try {
+      // Get content title from database if currentContentItem is not available
+      let contentTitle = currentContentItem?.title;
+      if (!contentTitle) {
+        const { data: contentData } = await supabase
+          .from('course_lesson_content')
+          .select('title, content_type')
+          .eq('id', contentId)
+          .single();
+        contentTitle = contentData?.title || 'Unknown Content';
+      }
+
       await AccessLogService.logStudentCourseAction(
         user.id,
         user.email || 'unknown@email.com',
         'content_completed',
         courseId,
-        currentContentItem?.title || 'Unknown Content',
+        contentTitle,
         {
           content_id: contentId,
           lesson_id: lessonId,
@@ -506,6 +517,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     
     // Log quiz submission
     try {
+      // Log as student course action (existing)
       await AccessLogService.logStudentCourseAction(
         user.id,
         user.email || 'unknown@email.com',
@@ -521,6 +533,17 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
           correct_answers: correctAnswers,
           total_questions: questions.length
         }
+      );
+      
+      // Also log as quiz submission (new)
+      await AccessLogService.logQuizSubmission(
+        user.id,
+        user.email || 'unknown@email.com',
+        currentContentItem.id,
+        currentContentItem?.title || 'Unknown Quiz',
+        course.id,
+        course.title,
+        finalScore
       );
     } catch (logError) {
       console.error('Error logging quiz submission:', logError);

@@ -46,6 +46,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ContentLoader } from '../ContentLoader';
 import { useAuth } from '@/hooks/useAuth';
+import AccessLogService from '@/services/accessLogService';
 
 type Profile = {
   id: string;
@@ -750,10 +751,36 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
     if (error) {
         toast.error('Failed to submit assignment.', { description: error.message });
         console.error("Submission error:", error);
+        
+        // Log failed submission
+        try {
+          await AccessLogService.logAssignmentSubmission(
+            user.id,
+            user.email || 'unknown@email.com',
+            lessonContentId,
+            selectedAssignment.title,
+            'failed'
+          );
+        } catch (logError) {
+          console.error('Error logging failed assignment submission:', logError);
+        }
     } else {
         toast.success("Assignment submitted successfully!");
         setIsSubmissionModalOpen(false);
         fetchAssignments();
+        
+        // Log successful submission
+        try {
+          await AccessLogService.logAssignmentSubmission(
+            user.id,
+            user.email || 'unknown@email.com',
+            lessonContentId,
+            selectedAssignment.title,
+            'success'
+          );
+        } catch (logError) {
+          console.error('Error logging successful assignment submission:', logError);
+        }
     }
   };
 

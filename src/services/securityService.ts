@@ -14,6 +14,7 @@ export interface AccessLog {
   ip_address: string;
   location: string;
   status: 'success' | 'failed' | 'pending';
+  metadata?: Record<string, any>;
   created_at: string;
 }
 

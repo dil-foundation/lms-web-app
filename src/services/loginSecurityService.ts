@@ -153,15 +153,6 @@ class LoginSecurityService {
 
       if (error) throw error;
 
-      // Log security event
-      await AccessLogService.logSecurityEvent(
-        'system',
-        'system@dil.com',
-        'User Unblocked',
-        'medium',
-        `User ${email} has been unblocked`
-      );
-
       return data;
     } catch (error) {
       console.error('Error unblocking user:', error);

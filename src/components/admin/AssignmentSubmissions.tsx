@@ -401,13 +401,20 @@ export const AssignmentSubmissions = () => {
         
         // Log assignment grading
         if (user && selectedSubmission) {
-          await AccessLogService.logAssignmentSubmission(
-            selectedSubmission.student.id,
-            selectedSubmission.student.name,
-            assignmentId || 'unknown',
-            assignmentDetails.title,
-            'success'
-          );
+          try {
+            await AccessLogService.logAssignmentGrading(
+              user.id,
+              user.email || 'unknown@email.com',
+              selectedSubmission.student.id,
+              selectedSubmission.student.name,
+              assignmentId || 'unknown',
+              assignmentDetails.title,
+              parseFloat(grade) || 0,
+              feedback
+            );
+          } catch (logError) {
+            console.error('Error logging assignment grading:', logError);
+          }
         }
         }
       } else if (assignmentDetails?.type === 'quiz') {
@@ -467,13 +474,20 @@ export const AssignmentSubmissions = () => {
           
           // Log quiz grading
           if (user && selectedSubmission) {
-            await AccessLogService.logAssignmentSubmission(
-              selectedSubmission.student.id,
-              selectedSubmission.student.name,
-              assignmentId || 'unknown',
-              assignmentDetails.title,
-              'success'
-            );
+            try {
+              await AccessLogService.logQuizGrading(
+                user.id,
+                user.email || 'unknown@email.com',
+                selectedSubmission.student.id,
+                selectedSubmission.student.name,
+                assignmentId || 'unknown',
+                assignmentDetails.title,
+                finalPercentage,
+                feedback
+              );
+            } catch (logError) {
+              console.error('Error logging quiz grading:', logError);
+            }
           }
         } else {
           // Regular quiz grading (for non-text answer quizzes)
@@ -491,13 +505,20 @@ export const AssignmentSubmissions = () => {
           
           // Log quiz grading
           if (user && selectedSubmission) {
-            await AccessLogService.logAssignmentSubmission(
-              selectedSubmission.student.id,
-              selectedSubmission.student.name,
-              assignmentId || 'unknown',
-              assignmentDetails.title,
-              'success'
-            );
+            try {
+              await AccessLogService.logQuizGrading(
+                user.id,
+                user.email || 'unknown@email.com',
+                selectedSubmission.student.id,
+                selectedSubmission.student.name,
+                assignmentId || 'unknown',
+                assignmentDetails.title,
+                parseFloat(grade) || 0,
+                feedback
+              );
+            } catch (logError) {
+              console.error('Error logging quiz grading:', logError);
+            }
           }
         }
     }
