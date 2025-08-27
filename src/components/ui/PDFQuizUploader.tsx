@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,11 +9,10 @@ import {
   Upload, 
   FileText, 
   CheckCircle, 
-  AlertCircle, 
-  Brain, 
   X,
   Edit3,
-  Trash2
+  Trash2,
+  Zap
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { 
@@ -40,6 +39,35 @@ export const PDFQuizUploader: React.FC<PDFQuizUploaderProps> = ({
   const [previewQuestions, setPreviewQuestions] = useState<ExtractedQuestion[]>([]);
   const [step, setStep] = useState<'upload' | 'processing' | 'preview' | 'complete'>('upload');
 
+  // Refs to track timers for cleanup
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const confirmTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup function to prevent memory leaks
+  const cleanup = useCallback(() => {
+    // Clear any running intervals
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = null;
+    }
+    
+    // Clear any running timeouts
+    if (confirmTimeoutRef.current) {
+      clearTimeout(confirmTimeoutRef.current);
+      confirmTimeoutRef.current = null;
+    }
+    
+    // Clear file references
+    setSelectedFile(null);
+    setParseResult(null);
+    setPreviewQuestions([]);
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return cleanup;
+  }, [cleanup]);
+
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (!file) return;
@@ -54,14 +82,22 @@ export const PDFQuizUploader: React.FC<PDFQuizUploaderProps> = ({
       return;
     }
 
+    // Clear any previous state and timers before starting new upload
+    cleanup();
+
     setSelectedFile(file);
     setStep('processing');
     setIsProcessing(true);
     setProgress(0);
 
     try {
+      // Clear any existing interval before starting new one
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+
       // Simulate progress for better UX
-      const progressInterval = setInterval(() => {
+      progressIntervalRef.current = setInterval(() => {
         setProgress(prev => {
           if (prev < 80) return prev + 15;
           return prev;
@@ -70,7 +106,11 @@ export const PDFQuizUploader: React.FC<PDFQuizUploaderProps> = ({
 
       const result = await parseQuizFromPDF(file);
       
-      clearInterval(progressInterval);
+      // Clear the interval
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
       setProgress(100);
       setParseResult(result);
       
@@ -84,12 +124,17 @@ export const PDFQuizUploader: React.FC<PDFQuizUploaderProps> = ({
       }
       
     } catch (error) {
+      // Clear the interval in case of error
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
       toast.error('Failed to process PDF file');
       setStep('upload');
     } finally {
       setIsProcessing(false);
     }
-  }, []);
+  }, [cleanup]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -99,17 +144,24 @@ export const PDFQuizUploader: React.FC<PDFQuizUploaderProps> = ({
     multiple: false
   });
 
-  const handleConfirmExtraction = () => {
+  const handleConfirmExtraction = useCallback(() => {
     if (parseResult && previewQuestions.length > 0) {
       const quizData = convertToQuizFormat(previewQuestions);
       onQuizExtracted(quizData);
       setStep('complete');
       toast.success('Quiz questions added successfully!');
-      setTimeout(() => {
+      
+      // Clear any existing timeout before setting new one
+      if (confirmTimeoutRef.current) {
+        clearTimeout(confirmTimeoutRef.current);
+      }
+      
+      confirmTimeoutRef.current = setTimeout(() => {
         onClose();
+        confirmTimeoutRef.current = null;
       }, 1500);
     }
-  };
+  }, [parseResult, previewQuestions, onQuizExtracted, onClose]);
 
   const handleEditQuestion = (index: number, field: keyof ExtractedQuestion, value: any) => {
     setPreviewQuestions(prev => prev.map((q, i) => 
@@ -172,15 +224,23 @@ export const PDFQuizUploader: React.FC<PDFQuizUploaderProps> = ({
       </div>
 
       <Alert>
-        <Brain className="h-4 w-4" />
+        <Zap className="h-4 w-4" />
         <AlertDescription>
-          <strong>Supported formats:</strong>
-          <ul className="mt-2 ml-4 list-disc text-sm space-y-1">
-            <li>Multiple choice questions (A, B, C, D format)</li>
-            <li>Numbered questions (1, 2, 3, 4 format)</li>
-            <li>True/False questions</li>
-            <li>Short answer questions</li>
-          </ul>
+          <div className="flex items-start">
+            <div className="flex-1">
+              <strong>AI-Powered PDF Processing</strong>
+              <ul className="mt-2 ml-4 list-disc text-sm space-y-1">
+                <li>Multiple choice questions (A, B, C, D format)</li>
+                <li>Numbered questions (1, 2, 3, 4 format)</li>
+                <li>Mixed inline and separate-line options</li>
+                <li>Mathematical expressions and fractions</li>
+                <li>Complex layouts and formatting variations</li>
+              </ul>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            🚀 Using advanced AI to extract quiz questions with high accuracy
+          </p>
         </AlertDescription>
       </Alert>
     </div>
@@ -222,8 +282,12 @@ export const PDFQuizUploader: React.FC<PDFQuizUploaderProps> = ({
         </div>
         {parseResult && (
           <div className="flex items-center space-x-2">
-            <Badge variant="secondary" className="capitalize">
-              {parseResult.method}
+            <Badge 
+              variant="default" 
+              className="flex items-center space-x-1"
+            >
+              <Zap className="w-3 h-3" />
+              <span>AI Powered</span>
             </Badge>
             <Badge variant={parseResult.confidence > 0.7 ? 'default' : 'secondary'}>
               {Math.round(parseResult.confidence * 100)}% confidence
@@ -328,11 +392,17 @@ export const PDFQuizUploader: React.FC<PDFQuizUploaderProps> = ({
       </div>
 
       <div className="flex justify-between">
-        <Button variant="outline" onClick={() => setStep('upload')}>
+        <Button variant="outline" onClick={() => {
+          cleanup();
+          setStep('upload');
+        }}>
           Upload Different PDF
         </Button>
         <div className="space-x-2">
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={() => {
+            cleanup();
+            onClose();
+          }}>
             Cancel
           </Button>
           <Button 
@@ -363,6 +433,10 @@ export const PDFQuizUploader: React.FC<PDFQuizUploaderProps> = ({
         <CardTitle className="flex items-center space-x-2">
           <FileText className="w-5 h-5 text-purple-600" />
           <span>Import Quiz from PDF</span>
+          <Badge variant="outline" className="ml-2">
+            <Zap className="w-3 h-3 mr-1" />
+            AI Powered
+          </Badge>
         </CardTitle>
       </CardHeader>
       <CardContent>
