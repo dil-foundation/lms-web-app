@@ -39,7 +39,7 @@ export const Header = memo(() => {
           {/* Desktop Navigation - Right Aligned */}
           <div className="hidden md:flex items-center space-x-6">
             <ThemeToggle />
-            <NotificationToggle />
+            {user && <NotificationToggle />}
             <AuthButton />
           </div>
 

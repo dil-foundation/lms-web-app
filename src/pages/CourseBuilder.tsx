@@ -59,6 +59,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { ContentLoader } from '@/components/ContentLoader';
+import AccessLogService from '@/services/accessLogService';
 import { CourseOverview } from './CourseOverview';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
@@ -1648,6 +1649,21 @@ const CourseBuilder = () => {
 
     const currentCourseId = savedCourse.id;
 
+    // Log course action
+    if (user) {
+      try {
+        await AccessLogService.logCourseAction(
+          user.id,
+          user.email || 'unknown@email.com',
+          isUpdate ? 'updated' : 'created',
+          currentCourseId,
+          courseToSave.title
+        );
+      } catch (logError) {
+        console.error('Error logging course action:', logError);
+      }
+    }
+
     // A. Delete existing curriculum for this course to handle reordering/deletions
     await supabase.from('course_sections').delete().eq('course_id', currentCourseId);
 
@@ -1815,6 +1831,21 @@ const CourseBuilder = () => {
     if (!savedCourse) throw new Error("Failed to save course and retrieve its ID.");
 
     const currentCourseId = savedCourse.id;
+
+    // Log course action
+    if (user) {
+      try {
+        await AccessLogService.logCourseAction(
+          user.id,
+          user.email || 'unknown@email.com',
+          isUpdate ? 'updated' : 'created',
+          currentCourseId,
+          courseToSave.title
+        );
+      } catch (logError) {
+        console.error('Error logging course action:', logError);
+      }
+    }
 
     // Sync the members (this doesn't affect curriculum)
     const membersMap = new Map<string, { role: 'teacher' | 'student' }>();
@@ -2749,12 +2780,42 @@ const CourseBuilder = () => {
           }
         }
         
+        // Log course publishing
+        if (user) {
+          try {
+            await AccessLogService.logCourseAction(
+              user.id,
+              user.email || 'unknown@email.com',
+              'published',
+              courseData.id,
+              courseData.title
+            );
+          } catch (logError) {
+            console.error('Error logging course publish:', logError);
+          }
+        }
+        
         toast.success("Course published successfully!");
         navigate('/dashboard/courses');
       } else {
         // This is a new course, safe to save everything
         const savedId = await saveCourseData({ ...courseData, status: 'Published' });
         if(savedId) {
+          // Log course publishing for new course
+          if (user) {
+            try {
+              await AccessLogService.logCourseAction(
+                user.id,
+                user.email || 'unknown@email.com',
+                'published',
+                savedId,
+                courseData.title
+              );
+            } catch (logError) {
+              console.error('Error logging course publish:', logError);
+            }
+          }
+          
           toast.success("Course published successfully!");
           navigate('/dashboard/courses');
         }
@@ -2784,6 +2845,21 @@ const CourseBuilder = () => {
 
       if (error) {
         throw error;
+      }
+      
+      // Log course unpublishing
+      if (user) {
+        try {
+          await AccessLogService.logCourseAction(
+            user.id,
+            user.email || 'unknown@email.com',
+            'updated', // Using 'updated' since unpublishing changes status
+            courseData.id,
+            courseData.title
+          );
+        } catch (logError) {
+          console.error('Error logging course unpublish:', logError);
+        }
       }
       
       toast.success("Course unpublished and saved as a draft.");
@@ -2895,6 +2971,20 @@ const CourseBuilder = () => {
       const { error } = await supabase.rpc('submit_for_review', { course_id_in: savedId });
       if (error) throw error;
       
+      // Log course submission for review
+      if (user) {
+        try {
+          await AccessLogService.logCourseAction(
+            user.id,
+            user.email || 'unknown@email.com',
+            'updated', // Using 'updated' since submission changes status
+            savedId,
+            courseData.title
+          );
+        } catch (logError) {
+          console.error('Error logging course submission:', logError);
+        }
+      }
       
       toast.success("Course submitted for review successfully!");
       // Update the local state to reflect the new status and ID if it was a new course
@@ -2913,6 +3003,20 @@ const CourseBuilder = () => {
             const { error } = await supabase.rpc('approve_submission', { course_id_in: courseData.id });
       if (error) throw error;
       
+      // Log course approval
+      if (user) {
+        try {
+          await AccessLogService.logCourseAction(
+            user.id,
+            user.email || 'unknown@email.com',
+            'published', // Using 'published' since approval publishes the course
+            courseData.id,
+            courseData.title
+          );
+        } catch (logError) {
+          console.error('Error logging course approval:', logError);
+        }
+      }
       
       setPersistentFeedback(null);
       toast.success("Course approved and published successfully!");
@@ -2937,8 +3041,22 @@ const CourseBuilder = () => {
       });
       if (error) throw error;
       
+      // Log course rejection
+      if (user) {
+        try {
+          await AccessLogService.logCourseAction(
+            user.id,
+            user.email || 'unknown@email.com',
+            'updated', // Using 'updated' since rejection changes status
+            courseData.id,
+            courseData.title
+          );
+        } catch (logError) {
+          console.error('Error logging course rejection:', logError);
+        }
+      }
       
-            setPersistentFeedback(rejectionFeedback);
+      setPersistentFeedback(rejectionFeedback);
       toast.success("Submission rejected.");
       setCourseData(prev => ({ ...prev, status: 'Rejected', review_feedback: rejectionFeedback }));
       setIsRejectionDialogOpen(false);

@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import AccessLogService from '@/services/accessLogService';
 
 export interface MFASetupData {
   qr_code: string;
@@ -165,13 +166,17 @@ const SupabaseMFAService = {
         return false;
       }
 
-      // Update profile to mark MFA setup as completed and clear reset flag
+      // Update profile to mark MFA setup as completed and sync metadata
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ 
           two_factor_setup_completed_at: new Date().toISOString(),
           mfa_reset_required: false,
-          mfa_reset_requested_at: null
+          mfa_reset_requested_at: null,
+          metadata: {
+            mfa_enabled: true,
+            mfa_setup_completed_at: new Date().toISOString()
+          }
         })
         .eq('id', user.id);
 
@@ -196,6 +201,11 @@ const SupabaseMFAService = {
   // Verify MFA code during login
   verifyMFACode: async (code: string): Promise<boolean> => {
     try {
+      // Get current user for logging
+      const { data: { user } } = await supabase.auth.getUser();
+      const userEmail = user?.email || 'unknown@email.com';
+      const userId = user?.id || '';
+
       // Get the user's MFA factors
       const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();
       if (factorsError) throw factorsError;
@@ -217,7 +227,26 @@ const SupabaseMFAService = {
         code
       });
 
-      if (verifyError) throw verifyError;
+      if (verifyError) {
+        // Log failed MFA verification
+        await AccessLogService.logMFAVerification(
+          userId,
+          userEmail,
+          'failed',
+          'totp',
+          undefined // IP address
+        );
+        throw verifyError;
+      }
+
+      // Log successful MFA verification
+      await AccessLogService.logMFAVerification(
+        userId,
+        userEmail,
+        'success',
+        'totp',
+        undefined // IP address
+      );
 
       return true;
     } catch (error) {
@@ -251,6 +280,21 @@ const SupabaseMFAService = {
         console.error('Error updating user metadata:', updateError);
       }
 
+      // Also update profiles metadata to sync MFA status
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ 
+            metadata: `{"mfa_enabled": false, "mfa_disabled_at": "${new Date().toISOString()}"}`
+          })
+          .eq('id', user.id);
+        
+        if (profileError) {
+          console.error('Error updating profile metadata:', profileError);
+        }
+      }
+
       return true;
     } catch (error) {
       console.error('Error disabling MFA:', error);
@@ -261,6 +305,9 @@ const SupabaseMFAService = {
   // Remove MFA for a specific user (admin function)
   disableMFAForUser: async (userId: string): Promise<boolean> => {
     try {
+      // Get current admin user for logging
+      const { data: { user: adminUser } } = await supabase.auth.getUser();
+      
       // Call the edge function to remove MFA
       const { data, error } = await supabase.functions.invoke('admin-disable-mfa', {
         body: { targetUserId: userId }
@@ -271,6 +318,26 @@ const SupabaseMFAService = {
       }
       
       if (data && data.success) {
+        // Log the MFA disable action
+        if (adminUser) {
+          try {
+            await AccessLogService.logUserManagementAction(
+              adminUser.id,
+              adminUser.email || 'unknown@email.com',
+              'user_deactivated', // Using deactivated as MFA is a security feature
+              userId,
+              data.target_user_email || 'unknown@email.com',
+              {
+                action: 'MFA Disabled',
+                target_user_email: data.target_user_email,
+                target_user_name: data.target_user_name
+              }
+            );
+          } catch (logError) {
+            console.error('Error logging MFA disable action:', logError);
+          }
+        }
+        
         return true;
       } else {
         const errorMessage = data?.error || 'Unknown error occurred';
@@ -323,6 +390,9 @@ const SupabaseMFAService = {
         throw new Error('User not authenticated. Please log in again.');
       }
 
+      const userEmail = user.email || 'unknown@email.com';
+      const userId = user.id;
+
       // Get user's backup codes from profile
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
@@ -369,6 +439,24 @@ const SupabaseMFAService = {
             mfa_reset_requested_at: new Date().toISOString()
           }
         });
+
+        // Log successful backup code verification
+        await AccessLogService.logMFAVerification(
+          userId,
+          userEmail,
+          'success',
+          'backup_code',
+          undefined // IP address
+        );
+      } else {
+        // Log failed backup code verification
+        await AccessLogService.logMFAVerification(
+          userId,
+          userEmail,
+          'failed',
+          'backup_code',
+          undefined // IP address
+        );
       }
 
       return isValidCode;

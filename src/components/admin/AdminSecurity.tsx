@@ -21,13 +21,17 @@ import {
   ChevronLeft,
   ChevronRight,
   Search,
-  XCircle
+  XCircle,
+  X
 } from 'lucide-react';
 import { toast } from 'sonner';
-import SecurityService, { SecuritySetting, AccessLog, SecurityAlert, SecurityStats } from '@/services/securityService';
+import SecurityService, { SecuritySetting, AccessLog, SecurityStats } from '@/services/securityService';
 import SupabaseMFAService from '@/services/supabaseMFAService';
+import AccessLogService from '@/services/accessLogService';
 import { ContentLoader } from '@/components/ContentLoader';
 import { supabase } from '@/integrations/supabase/client';
+import { formatTimestampWithTimezone } from '@/utils/dateUtils';
+import LoginSecurityAlerts from './LoginSecurityAlerts';
 
 interface User {
   id: string;
@@ -59,14 +63,17 @@ const UserMFAManagement = () => {
 
   // Debounce search term to avoid too many API calls
   useEffect(() => {
-    if (searchTerm !== '') {
-      const timer = setTimeout(() => {
-        setCurrentPage(1); // Reset to first page when searching
+    const timer = setTimeout(() => {
+      setCurrentPage(1); // Reset to first page when searching
+      if (searchTerm !== '') {
         loadUsersWithSearch();
-      }, 500);
+      } else {
+        // When search is cleared, load all users
+        loadUsers();
+      }
+    }, 500);
 
-      return () => clearTimeout(timer);
-    }
+    return () => clearTimeout(timer);
   }, [searchTerm]);
 
   // Load users when page changes (but not on initial load)
@@ -199,7 +206,7 @@ const UserMFAManagement = () => {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-muted-foreground">
-            Total users: {totalUsers} | Users with MFA: {users.filter(u => u.mfa_enabled).length}
+            Total users: {totalUsers}
           </p>
         </div>
         <Button
@@ -208,7 +215,11 @@ const UserMFAManagement = () => {
           onClick={loadUsersWithSearch}
           disabled={loading || searchLoading || paginationLoading}
         >
-          <RefreshCw className="w-4 h-4 mr-2" />
+          {(searchLoading || paginationLoading) ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <RefreshCw className="w-4 h-4 mr-2" />
+          )}
           Refresh
         </Button>
       </div>
@@ -221,8 +232,16 @@ const UserMFAManagement = () => {
             placeholder="Search by name or email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-10 pr-10"
           />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -230,8 +249,8 @@ const UserMFAManagement = () => {
         {(searchLoading || paginationLoading) && (
           <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
             <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-sm text-green-600 font-medium">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              <span className="text-sm text-primary font-medium">
                 {searchLoading ? 'Searching...' : 'Loading page...'}
               </span>
             </div>
@@ -373,12 +392,7 @@ const AdminSecurity = () => {
   const [accessLogsOffset, setAccessLogsOffset] = useState(0);
   const accessLogsRef = useRef<HTMLDivElement>(null);
 
-  // Security alerts states
-  const [securityAlerts, setSecurityAlerts] = useState<SecurityAlert[]>([]);
-  const [securityAlertsLoading, setSecurityAlertsLoading] = useState(false);
-  const [securityAlertsHasMore, setSecurityAlertsHasMore] = useState(true);
-  const [securityAlertsOffset, setSecurityAlertsOffset] = useState(0);
-  const securityAlertsRef = useRef<HTMLDivElement>(null);
+
 
   // Load all data on component mount
   useEffect(() => {
@@ -423,11 +437,8 @@ const AdminSecurity = () => {
       setLocalSettings(initialLocalSettings);
       setHasUnsavedChanges(false);
 
-      // Load initial data for logs and alerts
-      await Promise.all([
-        loadAccessLogs(true),
-        loadSecurityAlerts(true)
-      ]);
+      // Load initial data for logs
+      await loadAccessLogs(true);
     } catch (error) {
       console.error('Error loading security data:', error);
       toast.error('Failed to load security data');
@@ -461,30 +472,7 @@ const AdminSecurity = () => {
     }
   };
 
-  const loadSecurityAlerts = async (reset: boolean = false) => {
-    if (securityAlertsLoading) return;
 
-    try {
-      setSecurityAlertsLoading(true);
-      const offset = reset ? 0 : securityAlertsOffset;
-      const alerts = await SecurityService.getSecurityAlerts(false, ITEMS_PER_PAGE, offset);
-      
-      if (reset) {
-        setSecurityAlerts(alerts);
-        setSecurityAlertsOffset(ITEMS_PER_PAGE);
-      } else {
-        setSecurityAlerts(prev => [...prev, ...alerts]);
-        setSecurityAlertsOffset(prev => prev + ITEMS_PER_PAGE);
-      }
-
-      setSecurityAlertsHasMore(alerts.length === ITEMS_PER_PAGE);
-    } catch (error) {
-      console.error('Error loading security alerts:', error);
-      toast.error('Failed to load security alerts');
-    } finally {
-      setSecurityAlertsLoading(false);
-    }
-  };
 
   // Track if there are unsaved changes
   useEffect(() => {
@@ -514,6 +502,28 @@ const AdminSecurity = () => {
       toast.success('Security settings updated successfully!');
       setHasUnsavedChanges(false);
       loadSecurityData(); // Reload all data to ensure consistency
+
+      // Log security settings update
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await AccessLogService.logAdminSettingsAction(
+            user.id,
+            user.email || 'unknown@email.com',
+            'updated',
+            'security_settings',
+            {
+              two_factor_auth_enabled_admin: localSettings.two_factor_auth_enabled_admin,
+              two_factor_auth_enabled_teachers: localSettings.two_factor_auth_enabled_teachers,
+              two_factor_auth_enabled_students: localSettings.two_factor_auth_enabled_students,
+              session_timeout_minutes: localSettings.session_timeout_minutes,
+              max_login_attempts: localSettings.max_login_attempts
+            }
+          );
+        }
+      } catch (logError) {
+        console.error('Error logging security settings update:', logError);
+      }
     } catch (error) {
       console.error('Error saving security settings:', error);
       toast.error('Failed to save security settings');
@@ -522,13 +532,35 @@ const AdminSecurity = () => {
     }
   };
 
-  const handleResetSettings = () => {
+  const handleResetSettings = async () => {
     const initialSettings = securitySettings.reduce((acc, setting) => {
       acc[setting.setting_key] = SecurityService.parseSettingValue(setting.setting_value, setting.setting_type);
       return acc;
     }, {} as Record<string, any>);
     setLocalSettings(initialSettings);
     setHasUnsavedChanges(false);
+
+    // Log security settings reset
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await AccessLogService.logAdminSettingsAction(
+          user.id,
+          user.email || 'unknown@email.com',
+          'reset',
+          'security_settings',
+          {
+            two_factor_auth_enabled_admin: initialSettings.two_factor_auth_enabled_admin,
+            two_factor_auth_enabled_teachers: initialSettings.two_factor_auth_enabled_teachers,
+            two_factor_auth_enabled_students: initialSettings.two_factor_auth_enabled_students,
+            session_timeout_minutes: initialSettings.session_timeout_minutes,
+            max_login_attempts: initialSettings.max_login_attempts
+          }
+        );
+      }
+    } catch (logError) {
+      console.error('Error logging security settings reset:', logError);
+    }
   };
 
   // Scroll event listeners for infinite scrolling
@@ -543,30 +575,22 @@ const AdminSecurity = () => {
     };
 
     const accessLogsCurrent = accessLogsRef.current;
-    const securityAlertsCurrent = securityAlertsRef.current;
 
     const handleAccessLogsScroll = () => handleScroll(accessLogsRef, loadAccessLogs, accessLogsHasMore, accessLogsLoading);
-    const handleSecurityAlertsScroll = () => handleScroll(securityAlertsRef, loadSecurityAlerts, securityAlertsHasMore, securityAlertsLoading);
 
     if (accessLogsCurrent) {
       accessLogsCurrent.addEventListener('scroll', handleAccessLogsScroll);
-    }
-    if (securityAlertsCurrent) {
-      securityAlertsCurrent.addEventListener('scroll', handleSecurityAlertsScroll);
     }
 
     return () => {
       if (accessLogsCurrent) {
         accessLogsCurrent.removeEventListener('scroll', handleAccessLogsScroll);
       }
-      if (securityAlertsCurrent) {
-        securityAlertsCurrent.removeEventListener('scroll', handleSecurityAlertsScroll);
-      }
     };
-  }, [loadAccessLogs, accessLogsHasMore, accessLogsLoading, loadSecurityAlerts, securityAlertsHasMore, securityAlertsLoading]);
+  }, [loadAccessLogs, accessLogsHasMore, accessLogsLoading]);
 
   const formatTimestamp = (timestamp: string) => {
-    return new Date(timestamp).toLocaleString();
+    return formatTimestampWithTimezone(timestamp);
   };
 
   const getStatusIcon = (status: string) => {
@@ -582,18 +606,7 @@ const AdminSecurity = () => {
     }
   };
 
-  const getSeverityBadge = (severity: string) => {
-    switch (severity) {
-      case 'high':
-        return <Badge variant="destructive">High</Badge>;
-      case 'medium':
-        return <Badge variant="secondary">Medium</Badge>;
-      case 'low':
-        return <Badge variant="outline">Low</Badge>;
-      default:
-        return null;
-    }
-  };
+
 
   if (loading) {
     return <ContentLoader />;
@@ -614,20 +627,13 @@ const AdminSecurity = () => {
             Current security status and key metrics
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex items-center justify-between p-4 border rounded-lg">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Active Sessions</p>
               <p className="text-2xl font-bold">{securityStats?.active_sessions || 0}</p>
             </div>
             <Activity className="w-8 h-8 text-blue-500" />
-          </div>
-          <div className="flex items-center justify-between p-4 border rounded-lg">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Failed Attempts</p>
-              <p className="text-2xl font-bold text-red-600">{securityStats?.failed_attempts || 0}</p>
-            </div>
-            <AlertTriangle className="w-8 h-8 text-red-500" />
           </div>
           <div className="flex items-center justify-between p-4 border rounded-lg">
             <div>
@@ -751,57 +757,8 @@ const AdminSecurity = () => {
         </CardContent>
       </Card>
 
-      {/* Security Alerts */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5" />
-            Security Alerts
-          </CardTitle>
-          <CardDescription>
-            Recent security events and system notifications
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div 
-            ref={securityAlertsRef}
-            className="max-h-96 overflow-y-auto space-y-3 pr-2"
-          >
-            {securityAlerts.length === 0 ? (
-              <div className="text-center py-8">
-                <AlertTriangle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No security alerts at this time</p>
-              </div>
-            ) : (
-              <>
-                {securityAlerts.map((alert) => (
-                  <div key={alert.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <AlertTriangle className="w-5 h-5 text-yellow-500" />
-                      <div>
-                        <p className="font-medium">{alert.message}</p>
-                        <p className="text-sm text-muted-foreground">{formatTimestamp(alert.created_at)}</p>
-                      </div>
-                    </div>
-                    {getSeverityBadge(alert.severity)}
-                  </div>
-                ))}
-                {securityAlertsLoading && (
-                  <div className="flex items-center justify-center py-4">
-                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                    <span className="ml-2 text-sm text-muted-foreground">Loading more alerts...</span>
-                  </div>
-                )}
-                {!securityAlertsHasMore && securityAlerts.length > 0 && (
-                  <div className="text-center py-4">
-                    <p className="text-sm text-muted-foreground">No more alerts to load</p>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Login Security Alerts */}
+      <LoginSecurityAlerts />
 
       {/* User MFA Management */}
       <Card>
@@ -848,8 +805,6 @@ const AdminSecurity = () => {
                     <TableRow>
                       <TableHead>User</TableHead>
                       <TableHead>Action</TableHead>
-                      <TableHead>IP Address</TableHead>
-                      <TableHead>Location</TableHead>
                       <TableHead>Timestamp</TableHead>
                       <TableHead>Status</TableHead>
                     </TableRow>
@@ -859,8 +814,6 @@ const AdminSecurity = () => {
                       <TableRow key={log.id}>
                         <TableCell className="font-medium">{log.user_email}</TableCell>
                         <TableCell>{log.action}</TableCell>
-                        <TableCell>{log.ip_address}</TableCell>
-                        <TableCell>{log.location}</TableCell>
                         <TableCell>{formatTimestamp(log.created_at)}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">

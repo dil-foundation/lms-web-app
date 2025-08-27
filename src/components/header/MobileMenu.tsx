@@ -98,17 +98,20 @@ export const MobileMenu = memo(() => {
                 <Separator />
 
                 {/* Notifications Section */}
-                <div className="space-y-3">
-                  <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                    Notifications
-                  </h3>
-                  <div className="flex items-center justify-between px-3 py-2">
-                    <span className="text-sm">Notifications</span>
-                    <NotificationToggle />
-                  </div>
-                </div>
-
-                <Separator />
+                {user && (
+                  <>
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                        Notifications
+                      </h3>
+                      <div className="flex items-center justify-between px-3 py-2">
+                        <span className="text-sm">Notifications</span>
+                        <NotificationToggle />
+                      </div>
+                    </div>
+                    <Separator />
+                  </>
+                )}
 
                 {/* Appearance Section */}
                 <div className="space-y-3">

@@ -5,6 +5,8 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useAILMS } from '@/contexts/AILMSContext';
+import { useMaintenanceCheck } from '@/hooks/useMaintenanceCheck';
+import MaintenancePage from '@/components/MaintenancePage';
 import { BookOpen } from 'lucide-react';
 import { type UserRole } from '@/config/roleNavigation';
 import { ContentLoader } from '@/components/ContentLoader';
@@ -84,6 +86,7 @@ const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading, error: profileError } = useUserProfile();
   const { isAIMode } = useAILMS();
+  const { isMaintenanceMode, loading: maintenanceLoading } = useMaintenanceCheck();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -96,6 +99,14 @@ const Dashboard = () => {
       navigate('/auth', { replace: true });
     }
   }, [authLoading, user, navigate]);
+
+  // Check for maintenance mode (only for students and teachers)
+  useEffect(() => {
+    if (!maintenanceLoading && isMaintenanceMode && profile?.role !== 'admin') {
+      // Don't redirect, just show maintenance page
+      return;
+    }
+  }, [maintenanceLoading, isMaintenanceMode, profile?.role]);
 
   useEffect(() => {
     if (profile) {
@@ -117,9 +128,14 @@ const Dashboard = () => {
     role: currentRole,
   } : null;
   
-  const isLoading = authLoading || (user && profileLoading);
+  const isLoading = authLoading || (user && profileLoading) || maintenanceLoading;
 
   const DashboardContent = () => {
+    // Check for maintenance mode (only for students and teachers)
+    if (!maintenanceLoading && isMaintenanceMode && profile?.role !== 'admin') {
+      return <MaintenancePage />;
+    }
+
     // Removed loading state to prevent flash
 
     if (profileError) {

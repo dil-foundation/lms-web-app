@@ -37,6 +37,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useSearchParams } from 'react-router-dom';
+import AccessLogService from '@/services/accessLogService';
 
 const profileFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -216,6 +217,22 @@ export default function ProfileSettings() {
       if (error) throw error;
 
       toast.success('Profile updated successfully');
+      
+      // Log profile update
+      const fieldsUpdated = [];
+      if (data.firstName !== profile?.first_name) fieldsUpdated.push('first_name');
+      if (data.lastName !== profile?.last_name) fieldsUpdated.push('last_name');
+      if (data.phoneNumber !== profile?.phone_number) fieldsUpdated.push('phone_number');
+      if (data.timezone !== profile?.timezone) fieldsUpdated.push('timezone');
+      
+      if (fieldsUpdated.length > 0) {
+        await AccessLogService.logProfileUpdate(
+          user.id,
+          user.email || 'unknown@email.com',
+          fieldsUpdated,
+          'success'
+        );
+      }
     } catch (error: any) {
       toast.error('Failed to update profile', { description: error.message });
     }
@@ -231,6 +248,15 @@ export default function ProfileSettings() {
 
       passwordForm.reset();
       toast.success('Password updated successfully');
+      
+      // Log password update
+      await AccessLogService.logSecurityEvent(
+        user.id,
+        user.email || 'unknown@email.com',
+        'Password Changed',
+        'medium',
+        'User successfully changed their password'
+      );
     } catch (error: any) {
       toast.error('Failed to update password', { description: error.message });
     }
@@ -252,6 +278,15 @@ export default function ProfileSettings() {
       sessionStorage.setItem('profileSettings_resetProcessed', 'true'); // Set flag only after successful reset
       sessionStorage.removeItem('profileSettings_shouldShowDialog');
       resetPasswordForm.reset();
+      
+      // Log password reset
+      await AccessLogService.logSecurityEvent(
+        user.id,
+        user.email || 'unknown@email.com',
+        'Password Reset',
+        'high',
+        'User successfully reset their password via reset flow'
+      );
     } catch (error: any) {
       toast.error('Failed to reset password', { description: error.message });
     } finally {

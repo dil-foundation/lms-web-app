@@ -60,6 +60,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import AccessLogService from "@/services/accessLogService";
 
 type CourseStatus = "Published" | "Draft" | "Under Review" | "Rejected";
 
@@ -350,6 +351,16 @@ const CourseManagement = () => {
   }, [searchQuery, statusFilter]);
 
   const handleCreateCourse = () => {
+    // Log course creation attempt
+    if (user) {
+      AccessLogService.logCourseAction(
+        user.id,
+        user.email || 'unknown@email.com',
+        'created',
+        'new-course',
+        'New Course'
+      );
+    }
     navigate('/dashboard/courses/builder/new');
   }
 
@@ -425,6 +436,18 @@ const CourseManagement = () => {
       }
       
       toast.success(`Course "${courseToDelete.title}" deleted successfully.`);
+      
+      // Log course deletion
+      if (user) {
+        await AccessLogService.logCourseAction(
+          user.id,
+          user.email || 'unknown@email.com',
+          'deleted',
+          courseToDelete.id,
+          courseToDelete.title
+        );
+      }
+      
       // Optimistically update the UI
       setCourses(prev => prev.filter(c => c.id !== courseToDelete.id));
       // You might want to re-calculate stats here as well

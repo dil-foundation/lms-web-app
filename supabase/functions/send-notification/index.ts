@@ -224,6 +224,26 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
+    // Check admin settings for notification preferences
+    const { data: adminSettings, error: settingsError } = await supabaseAdmin.rpc('get_admin_settings');
+    if (settingsError) {
+      console.error("Error fetching admin settings:", settingsError);
+      // Continue with default behavior if settings can't be fetched
+    }
+
+    const settings = adminSettings && adminSettings.length > 0 ? adminSettings[0] : {
+      system_notifications: true,
+      push_notifications: false
+    };
+
+    // If system notifications are disabled, skip all notifications
+    if (!settings.system_notifications) {
+      console.log("System notifications are disabled, skipping notification");
+      return new Response(JSON.stringify({ success: true, message: "Notifications skipped - system notifications disabled" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Get target user IDs
     const userIds = await getTargetUserIds(supabaseAdmin, payload);
 
@@ -233,12 +253,7 @@ serve(async (req) => {
       });
     }
 
-    // Get FCM tokens for users
-    const { data: tokensResult, error: tokensError } = await supabaseAdmin.rpc('get_fcm_tokens_for_users', { user_ids: userIds });
-    if (tokensError) throw tokensError;
-    const tokens = tokensResult.map((t: any) => t.token);
-
-    // Create notifications in database for all target users
+    // Create notifications in database for all target users (always save to database)
     const notificationPromises = userIds.map(userId => 
       supabaseAdmin
         .from('notifications')
@@ -259,16 +274,32 @@ serve(async (req) => {
     // Wait for all notifications to be created
     await Promise.all(notificationPromises);
 
-    // Send FCM notifications if tokens are available
-    if (tokens && tokens.length > 0) {
-      const accessToken = await getGoogleAuthToken();
-      const projectId = Deno.env.get("FIREBASE_PROJECT_ID")!;
-      
-      if (!projectId) {
-        throw new Error("FIREBASE_PROJECT_ID environment variable is not set");
+    // Send FCM notifications only if push notifications are enabled
+    if (settings.push_notifications) {
+      const { data: tokensResult, error: tokensError } = await supabaseAdmin.rpc('get_fcm_tokens_for_users', { user_ids: userIds });
+      if (tokensError) {
+        console.error("Error fetching FCM tokens:", tokensError);
+      } else {
+        const tokens = tokensResult.map((t: any) => t.token);
+        
+        if (tokens && tokens.length > 0) {
+          try {
+            const accessToken = await getGoogleAuthToken();
+            const projectId = Deno.env.get("FIREBASE_PROJECT_ID")!;
+            
+            if (!projectId) {
+              throw new Error("FIREBASE_PROJECT_ID environment variable is not set");
+            }
+            
+            await sendFCMNotifications(tokens, payload, accessToken, projectId, supabaseAdmin);
+          } catch (error) {
+            console.error("Error sending FCM notifications:", error);
+            // Don't fail the entire request if FCM fails
+          }
+        }
       }
-      
-      await sendFCMNotifications(tokens, payload, accessToken, projectId, supabaseAdmin);
+    } else {
+      console.log("Push notifications are disabled, skipping FCM notifications");
     }
 
     return new Response(JSON.stringify({ success: true }), {
