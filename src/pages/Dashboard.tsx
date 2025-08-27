@@ -353,9 +353,9 @@ const Dashboard = () => {
 
   return (
     <SidebarProvider>
-      <div className="bg-background flex flex-col w-full h-screen">
+      <div className="bg-background w-full h-screen">
         <DashboardHeader onToggle={resetToDashboard} />
-        <div className="flex flex-1 w-full">
+        <div className="pt-20 h-full">
             <DashboardSidebar userRole={currentRole} userProfile={displayProfile}>
                 <DashboardContent />
             </DashboardSidebar>

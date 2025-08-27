@@ -86,7 +86,7 @@ export const DashboardSidebar = ({
     <>
       {/* Mobile Layout */}
       <div className="md:hidden">
-        <div className="sticky top-0 z-10 flex items-center justify-between h-16 p-4 bg-background border-b border-border">
+        <div className="fixed top-0 left-0 right-0 z-[90] flex items-center justify-between h-16 p-4 bg-background border-b border-border">
           <div className="w-32">
             <Logo />
           </div>
@@ -158,7 +158,7 @@ export const DashboardSidebar = ({
         </div>
         
         {/* Mobile Main Content */}
-        <main className="min-h-0 bg-background">
+        <main className="min-h-0 bg-background pt-16">
           <div className="w-full px-3 sm:px-4 py-4 sm:py-6">
             {children}
           </div>
@@ -167,12 +167,12 @@ export const DashboardSidebar = ({
 
       {/* Desktop Layout */}
       <div className="hidden md:flex min-h-full w-full">
-        <div className="w-72 flex-shrink-0 pt-20">
+        <div className="w-72 flex-shrink-0">
           <SidebarComponent />
         </div>
         
         {/* Desktop Main Content */}
-        <main className="flex-1 min-h-0 bg-background w-full max-w-7xl mx-auto">
+        <main className="flex-1 min-h-0 bg-background w-full max-w-7xl mx-auto overflow-auto">
           <div className="w-full h-full px-4 py-6">
             {children}
           </div>
