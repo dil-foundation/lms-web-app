@@ -305,6 +305,9 @@ const SupabaseMFAService = {
   // Remove MFA for a specific user (admin function)
   disableMFAForUser: async (userId: string): Promise<boolean> => {
     try {
+      // Get current admin user for logging
+      const { data: { user: adminUser } } = await supabase.auth.getUser();
+      
       // Call the edge function to remove MFA
       const { data, error } = await supabase.functions.invoke('admin-disable-mfa', {
         body: { targetUserId: userId }
@@ -315,6 +318,26 @@ const SupabaseMFAService = {
       }
       
       if (data && data.success) {
+        // Log the MFA disable action
+        if (adminUser) {
+          try {
+            await AccessLogService.logUserManagementAction(
+              adminUser.id,
+              adminUser.email || 'unknown@email.com',
+              'user_deactivated', // Using deactivated as MFA is a security feature
+              userId,
+              data.target_user_email || 'unknown@email.com',
+              {
+                action: 'MFA Disabled',
+                target_user_email: data.target_user_email,
+                target_user_name: data.target_user_name
+              }
+            );
+          } catch (logError) {
+            console.error('Error logging MFA disable action:', logError);
+          }
+        }
+        
         return true;
       } else {
         const errorMessage = data?.error || 'Unknown error occurred';

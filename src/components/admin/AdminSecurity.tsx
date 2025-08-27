@@ -27,6 +27,7 @@ import {
 import { toast } from 'sonner';
 import SecurityService, { SecuritySetting, AccessLog, SecurityStats } from '@/services/securityService';
 import SupabaseMFAService from '@/services/supabaseMFAService';
+import AccessLogService from '@/services/accessLogService';
 import { ContentLoader } from '@/components/ContentLoader';
 import { supabase } from '@/integrations/supabase/client';
 import { formatTimestampWithTimezone } from '@/utils/dateUtils';
@@ -501,6 +502,28 @@ const AdminSecurity = () => {
       toast.success('Security settings updated successfully!');
       setHasUnsavedChanges(false);
       loadSecurityData(); // Reload all data to ensure consistency
+
+      // Log security settings update
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await AccessLogService.logAdminSettingsAction(
+            user.id,
+            user.email || 'unknown@email.com',
+            'updated',
+            'security_settings',
+            {
+              two_factor_auth_enabled_admin: localSettings.two_factor_auth_enabled_admin,
+              two_factor_auth_enabled_teachers: localSettings.two_factor_auth_enabled_teachers,
+              two_factor_auth_enabled_students: localSettings.two_factor_auth_enabled_students,
+              session_timeout_minutes: localSettings.session_timeout_minutes,
+              max_login_attempts: localSettings.max_login_attempts
+            }
+          );
+        }
+      } catch (logError) {
+        console.error('Error logging security settings update:', logError);
+      }
     } catch (error) {
       console.error('Error saving security settings:', error);
       toast.error('Failed to save security settings');
@@ -509,13 +532,35 @@ const AdminSecurity = () => {
     }
   };
 
-  const handleResetSettings = () => {
+  const handleResetSettings = async () => {
     const initialSettings = securitySettings.reduce((acc, setting) => {
       acc[setting.setting_key] = SecurityService.parseSettingValue(setting.setting_value, setting.setting_type);
       return acc;
     }, {} as Record<string, any>);
     setLocalSettings(initialSettings);
     setHasUnsavedChanges(false);
+
+    // Log security settings reset
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await AccessLogService.logAdminSettingsAction(
+          user.id,
+          user.email || 'unknown@email.com',
+          'reset',
+          'security_settings',
+          {
+            two_factor_auth_enabled_admin: initialSettings.two_factor_auth_enabled_admin,
+            two_factor_auth_enabled_teachers: initialSettings.two_factor_auth_enabled_teachers,
+            two_factor_auth_enabled_students: initialSettings.two_factor_auth_enabled_students,
+            session_timeout_minutes: initialSettings.session_timeout_minutes,
+            max_login_attempts: initialSettings.max_login_attempts
+          }
+        );
+      }
+    } catch (logError) {
+      console.error('Error logging security settings reset:', logError);
+    }
   };
 
   // Scroll event listeners for infinite scrolling

@@ -278,10 +278,12 @@ export const UsersManagement = () => {
       
       // Log user creation
       if (currentUser) {
-        await AccessLogService.logAdminAction(
+        await AccessLogService.logUserManagementAction(
           currentUser.id,
           currentUser.email || 'unknown@email.com',
-          'User Invitation Sent',
+          'user_invited',
+          undefined,
+          newUser.email,
           {
             invited_user_email: newUser.email,
             invited_user_role: newUser.role,
@@ -318,17 +320,17 @@ export const UsersManagement = () => {
       
       // Log user deletion
       if (currentUser) {
-        await AccessLogService.logAdminAction(
+        await AccessLogService.logUserManagementAction(
           currentUser.id,
           currentUser.email || 'unknown@email.com',
-          'User Deleted',
+          'user_deleted',
+          userToDelete.id,
+          userToDelete.email,
           {
             deleted_user_email: userToDelete.email,
             deleted_user_name: userToDelete.name,
             deleted_user_role: userToDelete.role
-          },
-          userToDelete.id,
-          userToDelete.email
+          }
         );
       }
       
@@ -367,17 +369,17 @@ export const UsersManagement = () => {
       
       // Log user update
       if (currentUser && userToEdit) {
-        await AccessLogService.logAdminAction(
+        await AccessLogService.logUserManagementAction(
           currentUser.id,
           currentUser.email || 'unknown@email.com',
-          'User Updated',
+          'user_updated',
+          userToEdit.id,
+          userToEdit.email,
           {
             updated_user_email: userToEdit.email,
             updated_user_name: userToEdit.name,
             updated_user_role: userToEdit.role
-          },
-          userToEdit.id,
-          userToEdit.email
+          }
         );
       }
       
@@ -402,16 +404,16 @@ export const UsersManagement = () => {
       
       // Log password reset
       if (currentUser) {
-        await AccessLogService.logAdminAction(
+        await AccessLogService.logUserManagementAction(
           currentUser.id,
           currentUser.email || 'unknown@email.com',
-          'Password Reset Sent',
+          'password_reset_sent',
+          user.id,
+          user.email,
           {
             target_user_email: user.email,
             target_user_name: user.name
-          },
-          user.id,
-          user.email
+          }
         );
       }
     } catch (error: any) {

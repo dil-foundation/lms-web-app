@@ -338,6 +338,98 @@ class AccessLogService {
     }
   }
 
+  // Log student course action
+  static async logStudentCourseAction(user_id: string, user_email: string, action: 'content_completed' | 'quiz_submitted' | 'course_started' | 'course_completed', course_id: string, content_title: string, details?: Record<string, any>): Promise<void> {
+    try {
+      const metadata = {
+        course_id: course_id,
+        content_title: content_title,
+        action_type: action,
+        details: details || {},
+        timestamp: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('access_logs')
+        .insert({
+          user_id: user_id,
+          user_email: user_email,
+          action: `Student Course Activity: ${action.replace('_', ' ').charAt(0).toUpperCase() + action.replace('_', ' ').slice(1)}`,
+          status: 'success',
+          metadata: metadata
+        });
+
+      if (error) {
+        console.error('Error logging student course action:', error);
+      } else {
+        console.log(`🎓 Access Log: Student ${user_email} ${action.replace('_', ' ')}: ${content_title}`);
+      }
+    } catch (error) {
+      console.error('Error logging student course action:', error);
+    }
+  }
+
+  // Log discussion action
+  static async logDiscussionAction(user_id: string, user_email: string, action: 'created' | 'updated' | 'deleted' | 'reply_created' | 'reply_updated' | 'reply_deleted', discussion_id: string, discussion_title: string, details?: Record<string, any>): Promise<void> {
+    try {
+      const metadata = {
+        discussion_id: discussion_id,
+        discussion_title: discussion_title,
+        action_type: action,
+        details: details || {},
+        timestamp: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('access_logs')
+        .insert({
+          user_id: user_id,
+          user_email: user_email,
+          action: `Discussion Activity: ${action.replace('_', ' ').charAt(0).toUpperCase() + action.replace('_', ' ').slice(1)}`,
+          status: 'success',
+          metadata: metadata
+        });
+
+      if (error) {
+        console.error('Error logging discussion action:', error);
+      } else {
+        console.log(`💬 Access Log: User ${user_email} ${action.replace('_', ' ')} discussion: ${discussion_title}`);
+      }
+    } catch (error) {
+      console.error('Error logging discussion action:', error);
+    }
+  }
+
+  // Log admin settings action
+  static async logAdminSettingsAction(user_id: string, user_email: string, action: 'updated' | 'reset', settings_type: 'admin_settings' | 'security_settings' | 'ai_safety_ethics_settings', details?: Record<string, any>): Promise<void> {
+    try {
+      const metadata = {
+        settings_type: settings_type,
+        action_type: action,
+        details: details || {},
+        timestamp: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('access_logs')
+        .insert({
+          user_id: user_id,
+          user_email: user_email,
+          action: `Admin Settings: ${action.charAt(0).toUpperCase() + action.slice(1)} ${settings_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}`,
+          status: 'success',
+          metadata: metadata
+        });
+
+      if (error) {
+        console.error('Error logging admin settings action:', error);
+      } else {
+        console.log(`⚙️ Access Log: Admin ${user_email} ${action} ${settings_type.replace('_', ' ')}`);
+      }
+    } catch (error) {
+      console.error('Error logging admin settings action:', error);
+    }
+  }
+
   // Log admin actions
   static async logAdminAction(user_id: string, user_email: string, action: string, details: Record<string, any> = {}, target_user_id?: string, target_user_email?: string): Promise<void> {
     try {
@@ -366,6 +458,68 @@ class AccessLogService {
       }
     } catch (error) {
       console.error('Error logging admin action:', error);
+    }
+  }
+
+  // Log user management actions
+  static async logUserManagementAction(user_id: string, user_email: string, action: 'user_created' | 'user_updated' | 'user_deleted' | 'user_invited' | 'password_reset_sent' | 'user_activated' | 'user_deactivated', target_user_id?: string, target_user_email?: string, details: Record<string, any> = {}): Promise<void> {
+    try {
+      const metadata = {
+        target_user_id: target_user_id,
+        target_user_email: target_user_email,
+        details: details,
+        timestamp: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('access_logs')
+        .insert({
+          user_id: user_id,
+          user_email: user_email,
+          action: `User Management: ${action.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}`,
+          status: 'success',
+          metadata: metadata
+        });
+
+      if (error) {
+        console.error('Error logging user management action:', error);
+      } else {
+        const targetText = target_user_email ? ` for ${target_user_email}` : '';
+        console.log(`👥 Access Log: User management action ${action}${targetText} by ${user_email}`);
+      }
+    } catch (error) {
+      console.error('Error logging user management action:', error);
+    }
+  }
+
+  // Log user status changes
+  static async logUserStatusChange(user_id: string, user_email: string, target_user_id: string, target_user_email: string, old_status: string, new_status: string): Promise<void> {
+    try {
+      const metadata = {
+        target_user_id: target_user_id,
+        target_user_email: target_user_email,
+        old_status: old_status,
+        new_status: new_status,
+        timestamp: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('access_logs')
+        .insert({
+          user_id: user_id,
+          user_email: user_email,
+          action: 'User Status Changed',
+          status: 'success',
+          metadata: metadata
+        });
+
+      if (error) {
+        console.error('Error logging user status change:', error);
+      } else {
+        console.log(`🔄 Access Log: User ${target_user_email} status changed from ${old_status} to ${new_status} by ${user_email}`);
+      }
+    } catch (error) {
+      console.error('Error logging user status change:', error);
     }
   }
 

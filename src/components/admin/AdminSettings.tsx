@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Settings, 
   Server, 
@@ -16,6 +17,7 @@ import {
   Loader2
 } from 'lucide-react';
 import AdminSettingsService, { type AdminSettings } from '@/services/adminSettingsService';
+import AccessLogService from '@/services/accessLogService';
 
 const AdminSettings: React.FC = () => {
   const [saving, setSaving] = useState(false);
@@ -75,6 +77,27 @@ const AdminSettings: React.FC = () => {
       await AdminSettingsService.updateSettings(dbSettings);
       setOriginalSettings(settings);
       toast.success('Settings saved successfully');
+
+      // Log admin settings update
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await AccessLogService.logAdminSettingsAction(
+            user.id,
+            user.email || 'unknown@email.com',
+            'updated',
+            'admin_settings',
+            {
+              system_name: settings.systemName,
+              maintenance_mode: settings.maintenanceMode,
+              system_notifications: settings.systemNotifications,
+              push_notifications: settings.pushNotifications
+            }
+          );
+        }
+      } catch (logError) {
+        console.error('Error logging admin settings update:', logError);
+      }
     } catch (error) {
       console.error('Error saving settings:', error);
       toast.error('Failed to save settings');
@@ -100,6 +123,27 @@ const AdminSettings: React.FC = () => {
       setSettings(componentSettings);
       setOriginalSettings(componentSettings);
       toast.success('Settings reset successfully');
+
+      // Log admin settings reset
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await AccessLogService.logAdminSettingsAction(
+            user.id,
+            user.email || 'unknown@email.com',
+            'reset',
+            'admin_settings',
+            {
+              system_name: currentSettings.system_name,
+              maintenance_mode: currentSettings.maintenance_mode,
+              system_notifications: currentSettings.system_notifications,
+              push_notifications: currentSettings.push_notifications
+            }
+          );
+        }
+      } catch (logError) {
+        console.error('Error logging admin settings reset:', logError);
+      }
     } catch (error) {
       console.error('Error resetting settings:', error);
       toast.error('Failed to reset settings');
