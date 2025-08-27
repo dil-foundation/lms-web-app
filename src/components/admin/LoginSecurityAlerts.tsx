@@ -23,8 +23,11 @@ import LoginSecurityService, {
   LoginAttempt 
 } from '@/services/loginSecurityService';
 import { formatDistanceToNow } from 'date-fns';
+import { useAuth } from '@/hooks/useAuth';
+import AccessLogService from '@/services/accessLogService';
 
 const LoginSecurityAlerts = () => {
+  const { user } = useAuth();
   const [securityStats, setSecurityStats] = useState<SecurityStats | null>(null);
   const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([]);
   const [recentAttempts, setRecentAttempts] = useState<LoginAttempt[]>([]);
@@ -162,6 +165,18 @@ const LoginSecurityAlerts = () => {
     setUnblocking(email);
     try {
       await LoginSecurityService.unblockUser(email);
+      
+      // Log admin unblock action in access logs
+      if (user) {
+        await AccessLogService.logSecurityEvent(
+          user.id,
+          user.email || 'unknown@email.com',
+          'Admin Unblocked User',
+          'medium',
+          `Admin ${user.email} unblocked user ${email} from login restrictions`
+        );
+      }
+      
       toast.success(`User ${email} has been unblocked`);
       // Refresh blocked users data
       await loadBlockedUsers(true);

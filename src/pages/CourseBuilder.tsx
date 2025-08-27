@@ -2853,7 +2853,7 @@ const CourseBuilder = () => {
           await AccessLogService.logCourseAction(
             user.id,
             user.email || 'unknown@email.com',
-            'updated', // Using 'updated' since unpublishing changes status
+            'unpublished',
             courseData.id,
             courseData.title
           );
@@ -2947,6 +2947,21 @@ const CourseBuilder = () => {
         return;
       }
       
+      // Log course deletion
+      if (user) {
+        try {
+          await AccessLogService.logCourseAction(
+            user.id,
+            user.email || 'unknown@email.com',
+            'deleted',
+            courseData.id,
+            courseData.title
+          );
+        } catch (logError) {
+          console.error('Error logging course deletion:', logError);
+        }
+      }
+      
       toast.success(`Course "${courseData.title}" deleted successfully.`);
       navigate('/dashboard/courses');
     } catch (error: any) {
@@ -2977,7 +2992,7 @@ const CourseBuilder = () => {
           await AccessLogService.logCourseAction(
             user.id,
             user.email || 'unknown@email.com',
-            'updated', // Using 'updated' since submission changes status
+            'submitted_for_review',
             savedId,
             courseData.title
           );
@@ -3009,7 +3024,7 @@ const CourseBuilder = () => {
           await AccessLogService.logCourseAction(
             user.id,
             user.email || 'unknown@email.com',
-            'published', // Using 'published' since approval publishes the course
+            'approved',
             courseData.id,
             courseData.title
           );
@@ -3047,7 +3062,7 @@ const CourseBuilder = () => {
           await AccessLogService.logCourseAction(
             user.id,
             user.email || 'unknown@email.com',
-            'updated', // Using 'updated' since rejection changes status
+            'rejected',
             courseData.id,
             courseData.title
           );

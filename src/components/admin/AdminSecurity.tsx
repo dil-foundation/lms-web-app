@@ -781,11 +781,27 @@ const AdminSecurity = () => {
       {/* Access Logs */}
       <Card>
         <CardHeader>
-          <div>
-            <CardTitle>Access Logs</CardTitle>
-            <CardDescription>
-              Recent user access and activity logs
-            </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Access Logs</CardTitle>
+              <CardDescription>
+                Recent user access and activity logs
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => loadAccessLogs(true)}
+              disabled={accessLogsLoading}
+              className="flex items-center gap-2"
+            >
+              {accessLogsLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4" />
+              )}
+              {accessLogsLoading ? 'Refreshing...' : 'Refresh'}
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -813,7 +829,21 @@ const AdminSecurity = () => {
                     {accessLogs.map((log) => (
                       <TableRow key={log.id}>
                         <TableCell className="font-medium">{log.user_email}</TableCell>
-                        <TableCell>{log.action}</TableCell>
+                        <TableCell>
+                          {log.metadata?.details ? (
+                            <div className="space-y-1">
+                              <div className="font-medium">{log.action}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {typeof log.metadata.details === 'string' 
+                                  ? log.metadata.details 
+                                  : log.metadata.details.description || log.metadata.details.action || 'No additional details'
+                                }
+                              </div>
+                            </div>
+                          ) : (
+                            log.action
+                          )}
+                        </TableCell>
                         <TableCell>{formatTimestamp(log.created_at)}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
