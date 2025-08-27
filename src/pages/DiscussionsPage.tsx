@@ -69,6 +69,7 @@ import { format } from 'date-fns';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useDebounce } from '@/hooks/useDebounce';
 import NotificationService from '@/services/notificationService';
+import AccessLogService from '@/services/accessLogService';
 
 import { ContentLoader } from '@/components/ContentLoader';
 import { DiscussionDialog } from '@/components/discussions/DiscussionDialog';
@@ -193,6 +194,26 @@ export default function DiscussionsPage() {
 
       if (discussionError) throw new Error(discussionError.message);
 
+      // Log discussion creation
+      if (user) {
+        try {
+          await AccessLogService.logDiscussionAction(
+            user.id,
+            user.email || 'unknown@email.com',
+            'created',
+            discussionData.id,
+            discussionData.title,
+            {
+              course_id: newDiscussion.course === 'general' ? null : newDiscussion.course,
+              type: newDiscussion.type,
+              participants: newDiscussion.participants
+            }
+          );
+        } catch (logError) {
+          console.error('Error logging discussion creation:', logError);
+        }
+      }
+
       const participantsToInsert = newDiscussion.participants.map((role: string) => ({
         discussion_id: discussionData.id,
         role,
@@ -259,6 +280,26 @@ export default function DiscussionsPage() {
         .single();
       
       if (error) throw new Error(error.message);
+
+      // Log discussion update
+      if (user) {
+        try {
+          await AccessLogService.logDiscussionAction(
+            user.id,
+            user.email || 'unknown@email.com',
+            'updated',
+            discussionToUpdate.id,
+            discussionToUpdate.title,
+            {
+              course_id: discussionToUpdate.course === 'general' ? null : discussionToUpdate.course,
+              type: discussionToUpdate.type,
+              participants: discussionToUpdate.participants
+            }
+          );
+        } catch (logError) {
+          console.error('Error logging discussion update:', logError);
+        }
+      }
 
       // Delete and re-insert participants
       await supabase.from('discussion_participants').delete().eq('discussion_id', discussionToUpdate.id);
@@ -339,6 +380,24 @@ export default function DiscussionsPage() {
 
       if (participantsError) {
         console.error('Failed to fetch participants for notification:', participantsError);
+      }
+
+      // Log discussion deletion
+      if (user && discussionData) {
+        try {
+          await AccessLogService.logDiscussionAction(
+            user.id,
+            user.email || 'unknown@email.com',
+            'deleted',
+            discussionId,
+            discussionData.title,
+            {
+              participants: participants?.map(p => p.role) || []
+            }
+          );
+        } catch (logError) {
+          console.error('Error logging discussion deletion:', logError);
+        }
       }
 
       // Now delete the discussion

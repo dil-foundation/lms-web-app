@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { ContentLoader } from '@/components/ContentLoader';
+import AccessLogService from '@/services/accessLogService';
 import {
   Pagination,
   PaginationContent,
@@ -487,6 +488,24 @@ export default function StudentsPage() {
         });
 
       if (enrollError) throw enrollError;
+
+      // Log course enrollment
+      try {
+        const selectedCourse = availableCourses.find(c => c.id === selectedCourseForEnroll);
+        const selectedStudent = availableStudents.find(s => s.id === selectedStudentForEnroll);
+        
+        if (selectedCourse && selectedStudent) {
+          await AccessLogService.logCourseEnrollment(
+            selectedStudentForEnroll,
+            selectedStudent.email,
+            selectedCourseForEnroll,
+            selectedCourse.title,
+            'success'
+          );
+        }
+      } catch (logError) {
+        console.error('Error logging course enrollment:', logError);
+      }
 
       toast({
         title: 'Success',

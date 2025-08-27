@@ -32,6 +32,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { DiscussionDialog } from '@/components/discussions/DiscussionDialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import NotificationService from '@/services/notificationService';
+import AccessLogService from '@/services/accessLogService';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -270,6 +271,24 @@ export const DiscussionViewPage = () => {
         // Don't throw error here as the deletion was successfully completed
       }
 
+      // Log discussion deletion
+      if (user && discussionData) {
+        try {
+          await AccessLogService.logDiscussionAction(
+            user.id,
+            user.email || 'unknown@email.com',
+            'deleted',
+            discussionId,
+            discussionData.title,
+            {
+              participants: participants?.map(p => p.role) || []
+            }
+          );
+        } catch (logError) {
+          console.error('Error logging discussion deletion:', logError);
+        }
+      }
+
       // Now delete the discussion
       const { error } = await supabase.from('discussions').delete().eq('id', discussionId);
       if (error) throw new Error(error.message);
@@ -326,6 +345,25 @@ export const DiscussionViewPage = () => {
       const { error } = await supabase.from('discussion_replies').delete().eq('id', replyId);
       if (error) throw new Error(error.message);
 
+      // Log reply deletion
+      if (user && replyData && discussion) {
+        try {
+          await AccessLogService.logDiscussionAction(
+            user.id,
+            user.email || 'unknown@email.com',
+            'reply_deleted',
+            id,
+            discussion.title,
+            {
+              reply_id: replyId,
+              content_preview: replyData.content.substring(0, 100) + (replyData.content.length > 100 ? '...' : '')
+            }
+          );
+        } catch (logError) {
+          console.error('Error logging reply deletion:', logError);
+        }
+      }
+
       // Send notification for reply deletion
       if (user && replyData && discussion) {
         try {
@@ -379,6 +417,25 @@ export const DiscussionViewPage = () => {
         .update({ content: replyToUpdate.content })
         .eq('id', replyToUpdate.id);
       if (error) throw new Error(error.message);
+
+      // Log reply update
+      if (user && discussion) {
+        try {
+          await AccessLogService.logDiscussionAction(
+            user.id,
+            user.email || 'unknown@email.com',
+            'reply_updated',
+            id,
+            discussion.title,
+            {
+              reply_id: replyToUpdate.id,
+              content_preview: replyToUpdate.content.substring(0, 100) + (replyToUpdate.content.length > 100 ? '...' : '')
+            }
+          );
+        } catch (logError) {
+          console.error('Error logging reply update:', logError);
+        }
+      }
 
       // Send notification for reply update
       if (user && discussion) {
@@ -441,6 +498,26 @@ export const DiscussionViewPage = () => {
         .single();
 
       if (error) throw new Error(error.message);
+
+      // Log reply creation
+      if (user && discussion) {
+        try {
+          await AccessLogService.logDiscussionAction(
+            user.id,
+            user.email || 'unknown@email.com',
+            'reply_created',
+            id,
+            discussion.title,
+            {
+              reply_id: data.id,
+              parent_reply_id: newReply.parent_reply_id,
+              content_preview: newReply.content.substring(0, 100) + (newReply.content.length > 100 ? '...' : '')
+            }
+          );
+        } catch (logError) {
+          console.error('Error logging reply creation:', logError);
+        }
+      }
 
       // Send notification for new reply
       if (discussion && user) {
