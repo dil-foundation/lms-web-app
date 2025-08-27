@@ -205,49 +205,51 @@ export const PDFQuizUploader: React.FC<PDFQuizUploaderProps> = ({
   };
 
   const renderUploadStep = () => (
-    <div className="space-y-6">
-      <div
-        {...getRootProps()}
-        className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all
-          ${isDragActive ? 'border-purple-400 bg-purple-50 dark:bg-purple-900/10' : 'border-gray-300 dark:border-gray-600'}
-          hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/10`}
-      >
-        <input {...getInputProps()} />
-        <Upload className="w-12 h-12 mx-auto mb-4 text-purple-500" />
-        <h3 className="text-lg font-semibold mb-2">Upload Quiz PDF</h3>
-        <p className="text-gray-600 dark:text-gray-400 mb-4">
-          {isDragActive ? 'Drop your PDF file here' : 'Drag & drop your quiz PDF or click to browse'}
-        </p>
-        <p className="text-sm text-gray-500">
-          Max size: 10MB • Supports text-based PDFs
-        </p>
-      </div>
-
-      <Alert>
-        <Zap className="h-4 w-4" />
-        <AlertDescription>
-          <div className="flex items-start">
-            <div className="flex-1">
-              <strong>AI-Powered PDF Processing</strong>
-              <ul className="mt-2 ml-4 list-disc text-sm space-y-1">
-                <li>Multiple choice questions (A, B, C, D format)</li>
-                <li>Numbered questions (1, 2, 3, 4 format)</li>
-                <li>Mixed inline and separate-line options</li>
-                <li>Mathematical expressions and fractions</li>
-                <li>Complex layouts and formatting variations</li>
-              </ul>
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 mt-2">
-            🚀 Using advanced AI to extract quiz questions with high accuracy
+    <div className="h-full flex flex-col overflow-y-auto">
+      <div className="flex-1 space-y-6">
+        <div
+          {...getRootProps()}
+          className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all
+            ${isDragActive ? 'border-purple-400 bg-purple-50 dark:bg-purple-900/10' : 'border-gray-300 dark:border-gray-600'}
+            hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/10`}
+        >
+          <input {...getInputProps()} />
+          <Upload className="w-12 h-12 mx-auto mb-4 text-purple-500" />
+          <h3 className="text-lg font-semibold mb-2">Upload Quiz PDF</h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            {isDragActive ? 'Drop your PDF file here' : 'Drag & drop your quiz PDF or click to browse'}
           </p>
-        </AlertDescription>
-      </Alert>
+          <p className="text-sm text-gray-500">
+            Max size: 10MB • Supports text-based PDFs
+          </p>
+        </div>
+
+        <Alert>
+          <Zap className="h-4 w-4" />
+          <AlertDescription>
+            <div className="flex items-start">
+              <div className="flex-1">
+                <strong>AI-Powered PDF Processing</strong>
+                <ul className="mt-2 ml-4 list-disc text-sm space-y-1">
+                  <li>Multiple choice questions (A, B, C, D format)</li>
+                  <li>Numbered questions (1, 2, 3, 4 format)</li>
+                  <li>Mixed inline and separate-line options</li>
+                  <li>Mathematical expressions and fractions</li>
+                  <li>Complex layouts and formatting variations</li>
+                </ul>
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              🚀 Using advanced AI to extract quiz questions with high accuracy
+            </p>
+          </AlertDescription>
+        </Alert>
+      </div>
     </div>
   );
 
   const renderProcessingStep = () => (
-    <div className="space-y-6 text-center">
+    <div className="h-full flex flex-col justify-center space-y-6 text-center">
       <div className="space-y-4">
         <FileText className="w-16 h-16 mx-auto text-purple-500 animate-pulse" />
         <h3 className="text-lg font-semibold">Processing Your PDF</h3>
@@ -272,31 +274,35 @@ export const PDFQuizUploader: React.FC<PDFQuizUploaderProps> = ({
   );
 
   const renderPreviewStep = () => (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold">Review Extracted Questions</h3>
-          <p className="text-gray-600 dark:text-gray-400">
-            Found {previewQuestions.length} questions. Review and edit before adding to your quiz.
-          </p>
-        </div>
-        {parseResult && (
-          <div className="flex items-center space-x-2">
-            <Badge 
-              variant="default" 
-              className="flex items-center space-x-1"
-            >
-              <Zap className="w-3 h-3" />
-              <span>AI Powered</span>
-            </Badge>
-            <Badge variant={parseResult.confidence > 0.7 ? 'default' : 'secondary'}>
-              {Math.round(parseResult.confidence * 100)}% confidence
-            </Badge>
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Header section - always visible */}
+      <div className="flex-shrink-0 mb-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold">Review Extracted Questions</h3>
+            <p className="text-gray-600 dark:text-gray-400">
+              Found {previewQuestions.length} questions. Review and edit before adding to your quiz.
+            </p>
           </div>
-        )}
+          {parseResult && (
+            <div className="flex items-center space-x-2">
+              <Badge 
+                variant="default" 
+                className="flex items-center space-x-1"
+              >
+                <Zap className="w-3 h-3" />
+                <span>AI Powered</span>
+              </Badge>
+              <Badge variant={parseResult.confidence > 0.7 ? 'default' : 'secondary'}>
+                {Math.round(parseResult.confidence * 100)}% confidence
+              </Badge>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="max-h-96 overflow-y-auto space-y-4">
+      {/* Scrollable questions section */}
+      <div className="flex-1 overflow-y-auto pr-2 space-y-4 min-h-0">
         {previewQuestions.map((question, index) => (
           <Card key={index} className="relative">
             <CardHeader className="pb-3">
@@ -391,34 +397,37 @@ export const PDFQuizUploader: React.FC<PDFQuizUploaderProps> = ({
         ))}
       </div>
 
-      <div className="flex justify-between">
-        <Button variant="outline" onClick={() => {
-          cleanup();
-          setStep('upload');
-        }}>
-          Upload Different PDF
-        </Button>
-        <div className="space-x-2">
+      {/* Footer buttons - always visible */}
+      <div className="flex-shrink-0 border-t pt-4 mt-4">
+        <div className="flex justify-between">
           <Button variant="outline" onClick={() => {
             cleanup();
-            onClose();
+            setStep('upload');
           }}>
-            Cancel
+            Upload Different PDF
           </Button>
-          <Button 
-            onClick={handleConfirmExtraction}
-            disabled={previewQuestions.length === 0}
-            className="bg-purple-600 hover:bg-purple-700"
-          >
-            Add {previewQuestions.length} Questions to Quiz
-          </Button>
+          <div className="space-x-2">
+            <Button variant="outline" onClick={() => {
+              cleanup();
+              onClose();
+            }}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleConfirmExtraction}
+              disabled={previewQuestions.length === 0}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              Add {previewQuestions.length} Questions to Quiz
+            </Button>
+          </div>
         </div>
       </div>
     </div>
   );
 
   const renderCompleteStep = () => (
-    <div className="text-center space-y-4 py-8">
+    <div className="h-full flex flex-col justify-center text-center space-y-4">
       <CheckCircle className="w-16 h-16 mx-auto text-green-500" />
       <h3 className="text-lg font-semibold">Quiz Questions Added Successfully!</h3>
       <p className="text-gray-600 dark:text-gray-400">
@@ -428,23 +437,23 @@ export const PDFQuizUploader: React.FC<PDFQuizUploaderProps> = ({
   );
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
+    <div className="w-full h-full max-h-[85vh] flex flex-col p-6">
+      <div className="flex-shrink-0 mb-6">
+        <div className="flex items-center space-x-2">
           <FileText className="w-5 h-5 text-purple-600" />
-          <span>Import Quiz from PDF</span>
+          <span className="text-xl font-semibold">Import Quiz from PDF</span>
           <Badge variant="outline" className="ml-2">
             <Zap className="w-3 h-3 mr-1" />
             AI Powered
           </Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+        </div>
+      </div>
+      <div className="flex-1 min-h-0 overflow-hidden">
         {step === 'upload' && renderUploadStep()}
         {step === 'processing' && renderProcessingStep()}
         {step === 'preview' && renderPreviewStep()}
         {step === 'complete' && renderCompleteStep()}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };

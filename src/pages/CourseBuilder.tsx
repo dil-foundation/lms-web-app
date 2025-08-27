@@ -1096,7 +1096,7 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
                     Import from PDF
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden p-0">
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
                   <PDFQuizUploader 
                     onQuizExtracted={handlePDFQuizExtracted}
                     onClose={() => setShowPDFUploader(false)}
@@ -1291,7 +1291,7 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
                 Import More from PDF
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden p-0">
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
               <PDFQuizUploader 
                 onQuizExtracted={handlePDFQuizExtracted}
                 onClose={() => setShowPDFUploader(false)}
