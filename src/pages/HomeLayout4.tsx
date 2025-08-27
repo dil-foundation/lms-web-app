@@ -39,8 +39,9 @@ const HomeLayout4 = () => {
   const CurrentFeatureIcon = features[currentFeature].icon;
 
   return (
-    <div className="min-h-screen bg-background text-foreground relative overflow-hidden">
+    <>
       <Header />
+      <div className="min-h-screen bg-background text-foreground relative overflow-hidden">
       
       {/* Dynamic mouse follower */}
       <div 
@@ -332,7 +333,8 @@ const HomeLayout4 = () => {
           </div>
         </div>
       </section>
-    </div>
+      </div>
+    </>
   );
 };
 
