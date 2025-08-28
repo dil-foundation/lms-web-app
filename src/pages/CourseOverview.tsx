@@ -795,13 +795,13 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                 </p>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="text-center p-4 rounded-xl bg-gradient-to-br from-primary/5 to-primary/15 border border-primary/20 dark:border-primary/10 shadow-sm">
-                    <div className="text-2xl font-bold text-primary mb-1">{course.stats.level}</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="text-center p-3 sm:p-4 rounded-xl bg-gradient-to-br from-primary/5 to-primary/15 border border-primary/20 dark:border-primary/10 shadow-sm">
+                    <div className="text-lg sm:text-2xl font-bold text-primary mb-1 break-words">{course.stats.level}</div>
                     <div className="text-xs text-muted-foreground">Level</div>
                     </div>
-                  <div className="text-center p-4 rounded-xl bg-gradient-to-br from-primary/5 to-primary/15 border border-primary/20 dark:border-primary/10 shadow-sm">
-                    <div className="text-2xl font-bold text-primary mb-1">{course.stats.lessons}</div>
+                  <div className="text-center p-3 sm:p-4 rounded-xl bg-gradient-to-br from-primary/5 to-primary/15 border border-primary/20 dark:border-primary/10 shadow-sm">
+                    <div className="text-lg sm:text-2xl font-bold text-primary mb-1">{course.stats.lessons}</div>
                     <div className="text-xs text-muted-foreground">Lessons</div>
                     </div>
                     </div>
