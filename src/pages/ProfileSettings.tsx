@@ -44,6 +44,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useSearchParams } from 'react-router-dom';
 import AccessLogService from '@/services/accessLogService';
+import SupabaseMFAService from '@/services/supabaseMFAService';
+import { ContentLoader } from '@/components/ContentLoader';
 
 const profileFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -109,6 +111,7 @@ export default function ProfileSettings() {
   const [isCropping, setIsCropping] = useState(false);
 
   const [isAvatarLoading, setIsAvatarLoading] = useState(false);
+  const [isAvatarUpdating, setIsAvatarUpdating] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
 
   // Password reset dialog state
@@ -116,6 +119,9 @@ export default function ProfileSettings() {
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [showResetNewPassword, setShowResetNewPassword] = useState(false);
   const [showResetConfirmPassword, setShowResetConfirmPassword] = useState(false);
+  // Note: isMFAEnabled now represents whether MFA is required for the user's role based on global security settings
+  const [isMFAEnabled, setIsMFAEnabled] = useState(false);
+  const [isCheckingMFA, setIsCheckingMFA] = useState(true);
 
   const profileForm = useForm<ProfileFormData>({
     resolver: zodResolver(profileFormSchema),
@@ -165,6 +171,28 @@ export default function ProfileSettings() {
     }
   }, [searchParams]);
 
+  // Check MFA status on component mount
+  useEffect(() => {
+    const checkMFAStatus = async () => {
+      try {
+        // Check if the user has MFA factors set up
+        const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();
+        const hasMFASetup = factors?.totp?.[0]?.status === 'verified';
+        console.log('User MFA setup status:', hasMFASetup);
+        setIsMFAEnabled(hasMFASetup);
+      } catch (error) {
+        console.error('Error checking MFA status:', error);
+        setIsMFAEnabled(false);
+      } finally {
+        setIsCheckingMFA(false);
+      }
+    };
+
+    if (user) {
+      checkMFAStatus();
+    }
+  }, [user]);
+
   useEffect(() => {
     if (profile) {
       console.log('Profile loaded:', profile);
@@ -204,12 +232,16 @@ export default function ProfileSettings() {
     // Validate file type
     if (!file.type.startsWith('image/')) {
       toast.error('Please select a valid image file');
+      // Reset the file input for invalid file type
+      event.target.value = '';
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast.error('Image size must be less than 5MB');
+      // Reset the file input for invalid file size
+      event.target.value = '';
       return;
     }
 
@@ -232,6 +264,8 @@ export default function ProfileSettings() {
     reader.onerror = (error) => {
       console.error('Error reading file:', error);
       toast.error('Error reading the selected file');
+      // Reset the file input for file reading errors
+      event.target.value = '';
     };
     reader.readAsDataURL(file);
   };
@@ -274,11 +308,79 @@ export default function ProfileSettings() {
 
   const onPasswordUpdate = async (data: PasswordFormData) => {
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: data.newPassword
-      });
+      // Check if user has MFA set up first
+      const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();
+      const hasMFASetup = factors?.totp?.[0]?.status === 'verified';
+      
+      if (hasMFASetup) {
+        // User has MFA, we need to verify it first
+        console.log('MFA setup detected - proceeding with verification');
+        
+        // Validate MFA code format (6 digits)
+        const mfaCodeRegex = /^\d{6}$/;
+        if (!mfaCodeRegex.test(data.currentPassword)) {
+          toast.error('MFA is enabled for your account. Please enter a 6-digit code from your authenticator app.');
+          return;
+        }
 
-      if (error) throw error;
+        // Get the TOTP factor
+        const totpFactor = factors.totp?.[0];
+        if (!totpFactor) {
+          throw new Error('MFA factor not found');
+        }
+        
+        // Get a challenge for the TOTP factor
+        const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
+          factorId: totpFactor.id
+        });
+        
+        if (challengeError) throw challengeError;
+        
+        // Now verify the challenge with the MFA code
+        const { data: verifyData, error: verifyError } = await supabase.auth.mfa.verify({
+          factorId: totpFactor.id,
+          challengeId: challengeData.id,
+          code: data.currentPassword
+        });
+        
+        if (verifyError) {
+          if (verifyError.message.includes('Invalid code')) {
+            toast.error('Invalid MFA code. Please check your authenticator app and try again.');
+          } else {
+            throw verifyError;
+          }
+          return;
+        }
+        
+        // Now try to update the password with the re-authenticated session
+        const { error: updateError } = await supabase.auth.updateUser({
+          password: data.newPassword
+        });
+        
+        if (updateError) {
+          if (updateError.message.includes('insufficient_aal')) {
+            toast.error('Additional authentication required. Please try again or contact support.');
+          } else {
+            throw updateError;
+          }
+          return;
+        }
+      } else {
+        // User doesn't have MFA set up, try normal password update
+        console.log('No MFA setup detected - trying normal password update');
+        const { error } = await supabase.auth.updateUser({
+          password: data.newPassword
+        });
+        
+        if (error) {
+          if (error.message.includes('insufficient_aal')) {
+            toast.error('Authentication error. Please try again or contact support.');
+          } else {
+            throw error;
+          }
+          return;
+        }
+      }
 
       passwordForm.reset();
       toast.success('Password updated successfully');
@@ -292,7 +394,18 @@ export default function ProfileSettings() {
         'User successfully changed their password'
       );
     } catch (error: any) {
-      toast.error('Failed to update password', { description: error.message });
+      console.error('Password update error:', error);
+      
+      // Handle specific error cases
+      if (error.message.includes('insufficient_aal')) {
+        toast.error('Additional authentication required. Please try again or contact support.', { 
+          description: 'Your account requires additional verification to change the password.' 
+        });
+      } else if (error.message.includes('Invalid code')) {
+        toast.error('Invalid MFA code. Please check your authenticator app and try again.');
+      } else {
+        toast.error('Failed to update password', { description: error.message });
+      }
     }
   };
 
@@ -424,6 +537,7 @@ export default function ProfileSettings() {
 
     setIsCropping(true);
     setIsAvatarLoading(true);
+    setIsAvatarUpdating(true);
     try {
       // Get the cropped image as a blob
       const croppedImageBlob = await getCroppedImg(imgRef.current, completedCrop);
@@ -474,31 +588,31 @@ export default function ProfileSettings() {
         'success'
       );
       
+      // Update local profile state immediately to prevent flickering
+      if (profile) {
+        const updatedProfile = { ...profile, avatar_url: publicUrl };
+        // We'll let the refreshProfile handle the state update properly
+      }
+      
       // Force refresh the profile data to sync all components
       console.log('=== DESKTOP DEBUG: Starting profile refresh ===');
       await refreshProfile();
       console.log('=== DESKTOP DEBUG: Profile refresh completed ===');
       
-      // Additional force update for stubborn desktop browsers
-      setTimeout(() => {
-        console.log('=== DESKTOP DEBUG: Forcing secondary refresh ===');
-        window.dispatchEvent(new CustomEvent('profileUpdated', { 
-          detail: { avatarUrl: publicUrl, timestamp: Date.now() } 
-        }));
-        
-        // Force page reload for web view to ensure complete update
-        if (window.innerWidth >= 768) { // Desktop/tablet view (md breakpoint)
-          console.log('=== DESKTOP: Reloading page for complete refresh ===');
-          setTimeout(() => {
-            window.location.reload();
-          }, 500); // Small delay to allow toast message to show
-        }
-      }, 200);
+      // Dispatch event for other components to update
+      window.dispatchEvent(new CustomEvent('profileUpdated', { 
+        detail: { avatarUrl: publicUrl, timestamp: Date.now() } 
+      }));
+      
+      // Reload the profile settings component to ensure all data is fresh
+      console.log('=== RELOADING PROFILE SETTINGS COMPONENT ===');
+      window.location.reload();
     } catch (error: any) {
       toast.error('Failed to upload profile picture', { description: error.message });
     } finally {
       setIsCropping(false);
       setIsAvatarLoading(false);
+      setIsAvatarUpdating(false);
     }
   };
 
@@ -512,11 +626,19 @@ export default function ProfileSettings() {
       x: 0,
       y: 0,
     });
+    
+    // Reset the file input so the same file can be selected again
+    const fileInput = document.getElementById('avatar-upload') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
   };
 
   const handleRemoveAvatar = async () => {
     if (!user || !profile?.avatar_url) return;
 
+    setIsAvatarUpdating(true);
+    
     // Store the original URL for file deletion
     const originalAvatarUrl = profile.avatar_url;
 
@@ -568,51 +690,19 @@ export default function ProfileSettings() {
       // Refresh the profile data to sync all components
       await refreshProfile();
       
-      // Force page reload for web view when removing avatar
-      if (window.innerWidth >= 768) { // Desktop/tablet view (md breakpoint)
-        console.log('=== DESKTOP: Reloading page after avatar removal ===');
-        setTimeout(() => {
-          window.location.reload();
-        }, 500); // Small delay to allow toast message to show
-      }
+      // Dispatch event for other components to update
+      window.dispatchEvent(new CustomEvent('profileUpdated', { 
+        detail: { avatarUrl: null, timestamp: Date.now() } 
+      }));
     } catch (error: any) {
       toast.error('Failed to remove profile picture', { description: error.message });
+    } finally {
+      setIsAvatarUpdating(false);
     }
   };
 
   if (loading) {
-    return (
-      <div className="space-y-8 mx-auto">
-        {/* Premium Header Section */}
-        <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-          <div className="relative p-8 rounded-3xl">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
-                  <User className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text' }}>
-                    Profile Settings
-                  </h1>
-                  <p className="text-lg text-muted-foreground mt-2 leading-relaxed">
-                    Manage your account preferences and security
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="py-12">
-          <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-            <div className="h-64 bg-gray-200 rounded"></div>
-          </div>
-        </div>
-      </div>
-    );
+    return <ContentLoader message="Loading profile settings..." />;
   }
 
   if (error) {
@@ -850,9 +940,9 @@ export default function ProfileSettings() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-6">
-                <Avatar className="h-24 w-24" key={`avatar-profile-${refreshKey}-${Date.now()}`}>
+                <Avatar className="h-24 w-24" key={`avatar-profile-${refreshKey}`}>
                   <AvatarImage 
-                    src={profile?.avatar_url && profile.avatar_url !== 'null' ? `${profile.avatar_url}?v=${refreshKey}&t=${Date.now()}&force=desktop` : undefined} 
+                    src={profile?.avatar_url && profile.avatar_url !== 'null' ? `${profile.avatar_url}?v=${refreshKey}` : undefined} 
                     alt={displayName}
                     onLoad={() => {
                       console.log('=== PROFILE SETTINGS: Avatar image loaded successfully ===');
@@ -868,7 +958,7 @@ export default function ProfileSettings() {
                     }}
                   />
                   <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-3xl font-bold">
-                    {isAvatarLoading ? (
+                    {isAvatarLoading || isUploadingAvatar || isAvatarUpdating ? (
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     ) : (
                       getInitials(displayName)
@@ -1000,28 +1090,47 @@ export default function ProfileSettings() {
               {/* Password Change */}
               <div className="space-y-4">
                 <h4 className="font-semibold text-foreground">Change Password</h4>
-                <form onSubmit={passwordForm.handleSubmit(onPasswordUpdate)} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="currentPassword">Current Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="currentPassword"
-                        type={showPassword ? 'text' : 'password'}
-                        {...passwordForm.register('currentPassword')}
-                        className="bg-background border-border pl-10 pr-10"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </Button>
-                    </div>
+                {isCheckingMFA ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                    Checking security settings...
                   </div>
+                ) : (
+                  <form onSubmit={passwordForm.handleSubmit(onPasswordUpdate)} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="currentPassword">
+                        {isMFAEnabled ? 'MFA Code' : 'Current Password'}
+                      </Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          id="currentPassword"
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder={isMFAEnabled ? 'Enter your 6-digit MFA code' : 'Enter your current password'}
+                          {...passwordForm.register('currentPassword')}
+                          className="bg-background border-border pl-10 pr-10"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </Button>
+                      </div>
+                      {isMFAEnabled && (
+                        <p className="text-xs text-muted-foreground">
+                          MFA is enabled for your account. Enter the 6-digit code from your authenticator app to verify your identity.
+                        </p>
+                      )}
+                      {!isMFAEnabled && (
+                        <p className="text-xs text-muted-foreground">
+                          Enter your current password to update your password.
+                        </p>
+                      )}
+                    </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -1063,6 +1172,7 @@ export default function ProfileSettings() {
                     Update Password
                   </Button>
                 </form>
+                )}
               </div>
 
 

@@ -58,7 +58,7 @@ export const useUserProfile = () => {
     console.log('refreshProfile called - triggering refresh');
     console.log('Current refreshKey before:', refreshKey);
     
-    // Force immediate refresh key increment for instant UI updates
+    // Increment refresh key once for UI updates
     setRefreshKey(prev => {
       const newKey = prev + 1;
       console.log('RefreshKey updated to:', newKey);
@@ -67,15 +67,6 @@ export const useUserProfile = () => {
     
     // Fetch fresh profile data
     await fetchProfile();
-    
-    // Add small delay to ensure state propagation, then increment again for extra force
-    setTimeout(() => {
-      setRefreshKey(prev => {
-        const finalKey = prev + 1;
-        console.log('Final refreshKey updated to:', finalKey);
-        return finalKey;
-      });
-    }, 100);
   }, [fetchProfile, refreshKey]);
 
   return useMemo(() => ({
