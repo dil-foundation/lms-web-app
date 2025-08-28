@@ -114,19 +114,7 @@ const Dashboard = () => {
     }
   }, [profile]);
 
-  const currentRole = profile?.role as UserRole | undefined
-  ;
-  
-  // Debug logging
-  useEffect(() => {
-    // Dashboard component mounted successfully
-  }, []);
-  
-  const displayProfile = profile && currentRole ? {
-    ...profile,
-    full_name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim(),
-    role: currentRole,
-  } : null;
+  const currentRole = profile?.role as UserRole | undefined;
   
   const isLoading = authLoading || (user && profileLoading) || maintenanceLoading;
 
@@ -356,7 +344,7 @@ const Dashboard = () => {
       <div className="bg-background w-full h-screen">
         <DashboardHeader onToggle={resetToDashboard} />
         <div className="pt-20 h-full">
-            <DashboardSidebar userRole={currentRole} userProfile={displayProfile}>
+            <DashboardSidebar userRole={currentRole}>
                 <DashboardContent />
             </DashboardSidebar>
         </div>

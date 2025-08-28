@@ -14,24 +14,16 @@ import { AuthButton } from './header/AuthButton';
 import { useAILMS } from '@/contexts/AILMSContext';
 import { AILMSToggle } from '@/components/ui/AILMSToggle';
 
-type Profile = {
-  first_name: string | null;
-  last_name: string | null;
-  email: string | null;
-  role: UserRole;
-  [key: string]: any;
-};
+
 
 interface DashboardSidebarProps {
   children: React.ReactNode;
   userRole?: UserRole;
-  userProfile: Profile | null;
 }
 
 export const DashboardSidebar = ({
   children,
-  userRole,
-  userProfile
+  userRole
 }: DashboardSidebarProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { isAIMode } = useAILMS();
@@ -40,7 +32,7 @@ export const DashboardSidebar = ({
 
   const SidebarComponent = () => (
     <Sidebar className="border-r border-border bg-background h-full">
-      <UserProfileSection profile={userProfile} />
+      <UserProfileSection />
       <SidebarContent>
         {navigationCategories.map(category => (
           <SidebarGroup key={category.title}>
@@ -113,7 +105,7 @@ export const DashboardSidebar = ({
                 </Button>
               </div>
               <div className="flex-1 flex flex-col h-full">
-                <UserProfileSection profile={userProfile} />
+                <UserProfileSection />
                 <div className='flex-1 overflow-y-auto'>
                   <nav className="px-2 space-y-2">
                     {navigationCategories.map(category => (

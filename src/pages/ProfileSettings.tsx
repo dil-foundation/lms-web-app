@@ -81,7 +81,7 @@ type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 
 export default function ProfileSettings() {
   const { user, signOut } = useAuth();
-  const { profile, loading, error } = useUserProfile();
+  const { profile, loading, error, refreshProfile, refreshKey } = useUserProfile();
   const [searchParams] = useSearchParams();
   
 
@@ -108,7 +108,7 @@ export default function ProfileSettings() {
   });
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
   const [isCropping, setIsCropping] = useState(false);
-  const [avatarKey, setAvatarKey] = useState(0);
+
   const [isAvatarLoading, setIsAvatarLoading] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
 
@@ -460,16 +460,10 @@ export default function ProfileSettings() {
       if (updateError) throw updateError;
 
       // Update local state
-      console.log('Setting avatar URL to:', publicUrl);
+      console.log('Setting avatar URL tozzzzzz:', publicUrl);
       setAvatarUrl(publicUrl);
-      setAvatarKey(prev => prev + 1); // Force re-render
       setShowImageCropper(false);
       setSelectedImage(null);
-      
-      // Small delay to ensure state is updated before showing image
-      setTimeout(() => {
-        setAvatarKey(prev => prev + 1);
-      }, 100);
       
       toast.success('Profile picture updated successfully');
       
@@ -485,6 +479,9 @@ export default function ProfileSettings() {
       console.log('Current avatarUrl state:', avatarUrl);
       console.log('Profile avatar_url:', profile?.avatar_url);
       
+      // Refresh the profile data to sync all components
+      await refreshProfile();
+      
       // Force a refresh of the profile data by refetching
       const { data: refreshedProfile } = await supabase
         .from('profiles')
@@ -496,14 +493,11 @@ export default function ProfileSettings() {
         console.log('Refreshed profile:', refreshedProfile);
         // Update the profile state manually
         setAvatarUrl(refreshedProfile.avatar_url);
-        setAvatarKey(prev => prev + 1); // Force re-render with new image
         
         // Test if the image URL is accessible
         const testImg = new Image();
         testImg.onload = () => {
           console.log('Test image loaded successfully');
-          // Force another re-render after image loads
-          setAvatarKey(prev => prev + 1);
         };
         testImg.onerror = () => console.error('Test image failed to load');
         testImg.src = refreshedProfile.avatar_url;
@@ -534,7 +528,6 @@ export default function ProfileSettings() {
     // Immediately clear the avatar URL to prevent flickering
     const originalAvatarUrl = avatarUrl;
     setAvatarUrl(null);
-    setAvatarKey(prev => prev + 1); // Force immediate re-render
 
     try {
       // Extract the file path from the avatar URL (use the original URL before clearing)
@@ -581,6 +574,9 @@ export default function ProfileSettings() {
         'success'
       );
 
+      // Refresh the profile data to sync all components
+      await refreshProfile();
+      
       // Refresh profile data
       const { data: refreshedProfile } = await supabase
         .from('profiles')
@@ -866,9 +862,9 @@ export default function ProfileSettings() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-6">
-                <Avatar className="h-24 w-24" key={`${avatarUrl || 'no-avatar'}-${avatarKey}`}>
+                <Avatar className="h-24 w-24" key={`avatar-profile-${refreshKey}`}>
                   <AvatarImage 
-                    src={avatarUrl && avatarUrl !== 'null' ? `${avatarUrl}?t=${Date.now()}` : undefined} 
+                    src={avatarUrl && avatarUrl !== 'null' ? `${avatarUrl}?v=${refreshKey}` : undefined} 
                     alt={displayName}
                     onLoad={() => {
                       console.log('Avatar image loaded successfully');
