@@ -253,30 +253,64 @@ serve(async (req) => {
       });
     }
 
-    // Create notifications in database for all target users (always save to database)
-    const notificationPromises = userIds.map(userId => 
-      supabaseAdmin
-        .from('notifications')
-        .insert({
-          user_id: userId,
-          title: payload.title,
-          message: payload.body,
-          type: 'info', // Default type, can be enhanced later
-          notification_type: payload.type,
-          read: false,
-          action_url: payload.data?.url || null,
-          action_data: payload.data || null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-    );
+    // Get user notification preferences
+    const { data: userProfiles, error: profilesError } = await supabaseAdmin
+      .from('profiles')
+      .select('id, notification_preferences')
+      .in('id', userIds);
 
-    // Wait for all notifications to be created
-    await Promise.all(notificationPromises);
+    if (profilesError) {
+      console.error("Error fetching user profiles:", profilesError);
+      throw profilesError;
+    }
 
-    // Send FCM notifications only if push notifications are enabled
-    if (settings.push_notifications) {
-      const { data: tokensResult, error: tokensError } = await supabaseAdmin.rpc('get_fcm_tokens_for_users', { user_ids: userIds });
+    // Separate users based on their notification preferences
+    const usersForSystemNotifications: string[] = [];
+    const usersForPushNotifications: string[] = [];
+
+    userProfiles.forEach((profile: any) => {
+      const preferences = profile.notification_preferences || { push: false, inApp: true };
+      
+      // If system notifications (inApp) are enabled, save to database
+      if (preferences.inApp !== false) {
+        usersForSystemNotifications.push(profile.id);
+      }
+      
+      // If real time notifications (push) are enabled, send push notification
+      if (preferences.push === true) {
+        usersForPushNotifications.push(profile.id);
+      }
+    });
+
+    // Create notifications in database only for users who have system notifications enabled
+    if (usersForSystemNotifications.length > 0) {
+      const notificationPromises = usersForSystemNotifications.map(userId => 
+        supabaseAdmin
+          .from('notifications')
+          .insert({
+            user_id: userId,
+            title: payload.title,
+            message: payload.body,
+            type: 'info', // Default type, can be enhanced later
+            notification_type: payload.type,
+            read: false,
+            action_url: payload.data?.url || null,
+            action_data: payload.data || null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+      );
+
+      // Wait for all notifications to be created
+      await Promise.all(notificationPromises);
+      console.log(`Created ${usersForSystemNotifications.length} system notifications`);
+    } else {
+      console.log("No users have system notifications enabled, skipping database notifications");
+    }
+
+    // Send FCM notifications only if global push notifications are enabled AND user has real time notifications enabled
+    if (settings.push_notifications && usersForPushNotifications.length > 0) {
+      const { data: tokensResult, error: tokensError } = await supabaseAdmin.rpc('get_fcm_tokens_for_users', { user_ids: usersForPushNotifications });
       if (tokensError) {
         console.error("Error fetching FCM tokens:", tokensError);
       } else {
@@ -292,14 +326,21 @@ serve(async (req) => {
             }
             
             await sendFCMNotifications(tokens, payload, accessToken, projectId, supabaseAdmin);
+            console.log(`Sent ${tokens.length} push notifications to users with real time notifications enabled`);
           } catch (error) {
             console.error("Error sending FCM notifications:", error);
             // Don't fail the entire request if FCM fails
           }
+        } else {
+          console.log("No FCM tokens found for users with real time notifications enabled");
         }
       }
     } else {
-      console.log("Push notifications are disabled, skipping FCM notifications");
+      if (!settings.push_notifications) {
+        console.log("Global push notifications are disabled, skipping FCM notifications");
+      } else {
+        console.log("No users have real time notifications enabled, skipping FCM notifications");
+      }
     }
 
     return new Response(JSON.stringify({ success: true }), {

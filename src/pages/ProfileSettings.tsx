@@ -370,7 +370,7 @@ export default function ProfileSettings() {
       if (error) throw error;
 
       setNotifications(updatedNotifications);
-      toast.success(`${type === 'push' ? 'Push' : 'In-app'} notifications ${checked ? 'enabled' : 'disabled'}`);
+      toast.success(`${type === 'push' ? 'Real time' : 'System'} notifications ${checked ? 'enabled' : 'disabled'}`);
       
       // Log notification preference change
       await AccessLogService.logProfileUpdate(
@@ -1115,8 +1115,8 @@ export default function ProfileSettings() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
-                      <p className="font-medium">Push Notifications</p>
-                      <p className="text-sm text-muted-foreground">Receive push notifications</p>
+                      <p className="font-medium">Real Time Notifications</p>
+                      <p className="text-sm text-muted-foreground">Receive real time notifications</p>
                     </div>
                     <Switch
                       checked={notifications.push}
@@ -1125,8 +1125,8 @@ export default function ProfileSettings() {
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
-                      <p className="font-medium">In-App Notifications</p>
-                      <p className="text-sm text-muted-foreground">Show notifications within the app</p>
+                      <p className="font-medium">System Notifications</p>
+                      <p className="text-sm text-muted-foreground">Show system notifications within the app</p>
                     </div>
                     <Switch
                       checked={notifications.inApp}
