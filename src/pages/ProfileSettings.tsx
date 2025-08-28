@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -11,6 +11,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import ReactCrop, { Crop, PixelCrop } from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
 import { 
   User, 
   Shield, 
@@ -30,7 +32,11 @@ import {
   AlertCircle,
   BookOpen,
   Key,
-  Mail
+  Mail,
+  Crop as CropIcon,
+  RotateCcw,
+  Check,
+  X
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -43,7 +49,6 @@ const profileFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   phoneNumber: z.string().optional(),
-  timezone: z.string().optional(),
 });
 
 type ProfileFormData = z.infer<typeof profileFormSchema>;
@@ -85,13 +90,27 @@ export default function ProfileSettings() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('auto');
   const [notifications, setNotifications] = useState({
-    email: true,
     push: false,
     inApp: true,
   });
+
+  // Image cropper state
+  const [showImageCropper, setShowImageCropper] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [crop, setCrop] = useState<Crop>({
+    unit: '%',
+    width: 100,
+    height: 100,
+    x: 0,
+    y: 0,
+  });
+  const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
+  const [isCropping, setIsCropping] = useState(false);
+  const [avatarKey, setAvatarKey] = useState(0);
+  const [isAvatarLoading, setIsAvatarLoading] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
 
   // Password reset dialog state
   const [showResetDialog, setShowResetDialog] = useState(false);
@@ -105,7 +124,6 @@ export default function ProfileSettings() {
       firstName: '',
       lastName: '',
       phoneNumber: '',
-      timezone: 'UTC',
     },
   });
 
@@ -150,13 +168,24 @@ export default function ProfileSettings() {
 
   useEffect(() => {
     if (profile) {
+      console.log('Profile loaded:', profile);
+      console.log('Profile avatar_url:', profile.avatar_url);
       setAvatarUrl(profile.avatar_url);
       profileForm.reset({
         firstName: profile.first_name || '',
         lastName: profile.last_name || '',
         phoneNumber: profile.phone_number || '',
-        timezone: profile.timezone || 'UTC',
       });
+      
+      // Load notification preferences from profile
+      if (profile.notification_preferences) {
+        setNotifications(profile.notification_preferences);
+      }
+      
+      // Load theme preference from profile
+      if (profile.theme_preference) {
+        setTheme(profile.theme_preference as 'light' | 'dark' | 'auto');
+      }
     }
   }, [profile, profileForm]);
 
@@ -164,40 +193,49 @@ export default function ProfileSettings() {
     return name.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
   };
 
-  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('handleAvatarUpload called', event.target.files);
     const file = event.target.files?.[0];
-    if (!file || !user) return;
-
-    setIsUploadingAvatar(true);
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('dil-lms')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('dil-lms')
-        .getPublicUrl(filePath);
-
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: publicUrl })
-        .eq('id', user.id);
-
-      if (updateError) throw updateError;
-
-      setAvatarUrl(publicUrl);
-      toast.success('Profile picture updated successfully');
-    } catch (error: any) {
-      toast.error('Failed to upload profile picture', { description: error.message });
-    } finally {
-      setIsUploadingAvatar(false);
+    if (!file) {
+      console.log('No file selected');
+      return;
     }
+
+    console.log('File selected:', file.name, file.type, file.size);
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select a valid image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size must be less than 5MB');
+      return;
+    }
+
+    console.log('File validation passed, reading file...');
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      console.log('File read successfully, opening cropper...');
+      setSelectedImage(reader.result as string);
+      setShowImageCropper(true);
+      // Reset crop to default
+      setCrop({
+        unit: '%',
+        width: 100,
+        height: 100,
+        x: 0,
+        y: 0,
+      });
+    };
+    reader.onerror = (error) => {
+      console.error('Error reading file:', error);
+      toast.error('Error reading the selected file');
+    };
+    reader.readAsDataURL(file);
   };
 
   const onProfileUpdate = async (data: ProfileFormData) => {
@@ -210,7 +248,6 @@ export default function ProfileSettings() {
           first_name: data.firstName,
           last_name: data.lastName,
           phone_number: data.phoneNumber,
-          timezone: data.timezone,
         })
         .eq('id', user.id);
 
@@ -223,7 +260,6 @@ export default function ProfileSettings() {
       if (data.firstName !== profile?.first_name) fieldsUpdated.push('first_name');
       if (data.lastName !== profile?.last_name) fieldsUpdated.push('last_name');
       if (data.phoneNumber !== profile?.phone_number) fieldsUpdated.push('phone_number');
-      if (data.timezone !== profile?.timezone) fieldsUpdated.push('timezone');
       
       if (fieldsUpdated.length > 0) {
         await AccessLogService.logProfileUpdate(
@@ -294,10 +330,270 @@ export default function ProfileSettings() {
     }
   };
 
-  const handleThemeChange = (newTheme: 'light' | 'dark' | 'auto') => {
-    setTheme(newTheme);
-    // Here you would implement the actual theme change logic
-    toast.success(`Theme changed to ${newTheme}`);
+  const handleThemeChange = async (newTheme: 'light' | 'dark' | 'auto') => {
+    if (!user) return;
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ theme_preference: newTheme })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setTheme(newTheme);
+      toast.success(`Theme changed to ${newTheme}`);
+      
+      // Log theme change
+      await AccessLogService.logProfileUpdate(
+        user.id,
+        user.email || 'unknown@email.com',
+        ['theme_preference'],
+        'success'
+      );
+    } catch (error: any) {
+      toast.error('Failed to update theme preference', { description: error.message });
+    }
+  };
+
+  const handleNotificationChange = async (type: 'push' | 'inApp', checked: boolean) => {
+    if (!user) return;
+    
+    try {
+      const updatedNotifications = { ...notifications, [type]: checked };
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({ notification_preferences: updatedNotifications })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setNotifications(updatedNotifications);
+      toast.success(`${type === 'push' ? 'Push' : 'In-app'} notifications ${checked ? 'enabled' : 'disabled'}`);
+      
+      // Log notification preference change
+      await AccessLogService.logProfileUpdate(
+        user.id,
+        user.email || 'unknown@email.com',
+        ['notification_preferences'],
+        'success'
+      );
+    } catch (error: any) {
+      toast.error('Failed to update notification preferences', { description: error.message });
+    }
+  };
+
+  const getCroppedImg = (image: HTMLImageElement, crop: PixelCrop): Promise<Blob> => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+      throw new Error('No 2d context');
+    }
+
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
+
+    canvas.width = crop.width;
+    canvas.height = crop.height;
+
+    ctx.imageSmoothingQuality = 'high';
+
+    ctx.drawImage(
+      image,
+      crop.x * scaleX,
+      crop.y * scaleY,
+      crop.width * scaleX,
+      crop.height * scaleY,
+      0,
+      0,
+      crop.width,
+      crop.height
+    );
+
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        if (blob) {
+          resolve(blob);
+        }
+      }, 'image/jpeg', 0.9);
+    });
+  };
+
+  const handleCropComplete = async () => {
+    if (!completedCrop || !imgRef.current || !user) return;
+
+    setIsCropping(true);
+    setIsAvatarLoading(true);
+    try {
+      // Get the cropped image as a blob
+      const croppedImageBlob = await getCroppedImg(imgRef.current, completedCrop);
+      
+      // Create a file from the blob
+      const file = new File([croppedImageBlob], `avatar-${user.id}-${Date.now()}.jpg`, {
+        type: 'image/jpeg',
+      });
+
+      // Upload to Supabase storage
+      const filePath = `avatars/${user.id}-${Date.now()}.jpg`;
+      const { error: uploadError } = await supabase.storage
+        .from('dil-lms-public')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('dil-lms-public')
+        .getPublicUrl(filePath);
+
+      console.log('Generated public URL:', publicUrl);
+      console.log('File path:', filePath);
+
+      // Update the profile
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      // Update local state
+      console.log('Setting avatar URL to:', publicUrl);
+      setAvatarUrl(publicUrl);
+      setAvatarKey(prev => prev + 1); // Force re-render
+      setShowImageCropper(false);
+      setSelectedImage(null);
+      
+      // Small delay to ensure state is updated before showing image
+      setTimeout(() => {
+        setAvatarKey(prev => prev + 1);
+      }, 100);
+      
+      toast.success('Profile picture updated successfully');
+      
+      // Log the update
+      await AccessLogService.logProfileUpdate(
+        user.id,
+        user.email || 'unknown@email.com',
+        ['avatar_url'],
+        'success'
+      );
+      
+      // Log the current avatarUrl state
+      console.log('Current avatarUrl state:', avatarUrl);
+      console.log('Profile avatar_url:', profile?.avatar_url);
+      
+      // Force a refresh of the profile data by refetching
+      const { data: refreshedProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      if (refreshedProfile) {
+        console.log('Refreshed profile:', refreshedProfile);
+        // Update the profile state manually
+        setAvatarUrl(refreshedProfile.avatar_url);
+        setAvatarKey(prev => prev + 1); // Force re-render with new image
+        
+        // Test if the image URL is accessible
+        const testImg = new Image();
+        testImg.onload = () => {
+          console.log('Test image loaded successfully');
+          // Force another re-render after image loads
+          setAvatarKey(prev => prev + 1);
+        };
+        testImg.onerror = () => console.error('Test image failed to load');
+        testImg.src = refreshedProfile.avatar_url;
+      }
+    } catch (error: any) {
+      toast.error('Failed to upload profile picture', { description: error.message });
+    } finally {
+      setIsCropping(false);
+      setIsAvatarLoading(false);
+    }
+  };
+
+  const handleCancelCrop = () => {
+    setShowImageCropper(false);
+    setSelectedImage(null);
+    setCrop({
+      unit: '%',
+      width: 100,
+      height: 100,
+      x: 0,
+      y: 0,
+    });
+  };
+
+  const handleRemoveAvatar = async () => {
+    if (!user || !avatarUrl) return;
+
+    // Immediately clear the avatar URL to prevent flickering
+    const originalAvatarUrl = avatarUrl;
+    setAvatarUrl(null);
+    setAvatarKey(prev => prev + 1); // Force immediate re-render
+
+    try {
+      // Extract the file path from the avatar URL (use the original URL before clearing)
+      const urlParts = originalAvatarUrl.split('/');
+      const fileName = urlParts[urlParts.length - 1];
+      const filePath = `avatars/${fileName}`;
+
+      console.log('Removing avatar file:', filePath);
+
+      // Delete the file from storage
+      const { error: deleteError } = await supabase.storage
+        .from('dil-lms-public')
+        .remove([filePath]);
+
+      if (deleteError) {
+        console.error('Error deleting file from storage:', deleteError);
+        // Continue with database update even if storage delete fails
+      }
+
+      // Update the profile to remove avatar_url
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: null })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+      
+      // Clear any cached images
+      if ('caches' in window) {
+        caches.keys().then(names => {
+          names.forEach(name => {
+            caches.delete(name);
+          });
+        });
+      }
+      
+      toast.success('Profile picture removed successfully');
+      
+      // Log the removal
+      await AccessLogService.logProfileUpdate(
+        user.id,
+        user.email || 'unknown@email.com',
+        ['avatar_url'],
+        'success'
+      );
+
+      // Refresh profile data
+      const { data: refreshedProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      if (refreshedProfile) {
+        console.log('Profile refreshed after avatar removal:', refreshedProfile);
+      }
+    } catch (error: any) {
+      toast.error('Failed to remove profile picture', { description: error.message });
+    }
   };
 
   if (loading) {
@@ -449,7 +745,90 @@ export default function ProfileSettings() {
         </DialogContent>
       </Dialog>
 
-
+      {/* Image Cropper Dialog */}
+      <Dialog 
+        open={showImageCropper} 
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCancelCrop();
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CropIcon className="w-5 h-5 text-primary" />
+              Crop Profile Picture
+            </DialogTitle>
+            <DialogDescription>
+              Drag to select the area you want to crop. The image will be cropped to a square format.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {selectedImage && (
+              <div className="flex justify-center">
+                <ReactCrop
+                  crop={crop}
+                  onChange={(c) => setCrop(c)}
+                  onComplete={(c) => setCompletedCrop(c)}
+                  aspect={1}
+                  circularCrop
+                  className="max-w-full max-h-96"
+                >
+                  <img
+                    ref={imgRef}
+                    alt="Crop preview"
+                    src={selectedImage}
+                    className="max-w-full max-h-96 object-contain"
+                    onLoad={(e) => {
+                      const { width, height } = e.currentTarget;
+                      const size = Math.min(width, height);
+                      setCrop({
+                        unit: 'px',
+                        width: size,
+                        height: size,
+                        x: (width - size) / 2,
+                        y: (height - size) / 2,
+                      });
+                    }}
+                  />
+                </ReactCrop>
+              </div>
+            )}
+            
+            <div className="flex gap-3 justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCancelCrop}
+                disabled={isCropping}
+              >
+                <X className="w-4 h-4 mr-2" />
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={handleCropComplete}
+                disabled={!completedCrop || isCropping}
+                className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary"
+              >
+                {isCropping ? (
+                  <>
+                    <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4 mr-2" />
+                    Save Picture
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Premium Header */}
       <div className="relative">
@@ -487,20 +866,31 @@ export default function ProfileSettings() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-6">
-                <Avatar className="h-24 w-24">
-                  <AvatarImage src={avatarUrl || undefined} alt={displayName} />
+                <Avatar className="h-24 w-24" key={`${avatarUrl || 'no-avatar'}-${avatarKey}`}>
+                  <AvatarImage 
+                    src={avatarUrl && avatarUrl !== 'null' ? `${avatarUrl}?t=${Date.now()}` : undefined} 
+                    alt={displayName}
+                    onLoad={() => {
+                      console.log('Avatar image loaded successfully');
+                      setIsAvatarLoading(false);
+                    }}
+                    onError={(e) => {
+                      console.error('Avatar image failed to load:', e);
+                      // Force fallback when image fails to load
+                      setAvatarUrl(null);
+                      setIsAvatarLoading(false);
+                    }}
+                  />
                   <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-3xl font-bold">
-                    {getInitials(displayName)}
+                    {isAvatarLoading ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      getInitials(displayName)
+                    )}
                   </AvatarFallback>
                 </Avatar>
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="avatar-upload" className="cursor-pointer">
-                      <Button variant="outline" className="gap-2">
-                        <Upload className="w-4 h-4" />
-                        Upload New Picture
-                      </Button>
-                    </Label>
                     <input
                       id="avatar-upload"
                       type="file"
@@ -509,11 +899,29 @@ export default function ProfileSettings() {
                       className="hidden"
                       disabled={isUploadingAvatar}
                     />
+                    <Button 
+                      variant="outline" 
+                      className="gap-2"
+                      onClick={() => {
+                        console.log('Upload button clicked');
+                        const input = document.getElementById('avatar-upload') as HTMLInputElement;
+                        if (input) {
+                          console.log('File input found, triggering click');
+                          input.click();
+                        } else {
+                          console.error('File input not found');
+                        }
+                      }}
+                      disabled={isUploadingAvatar}
+                    >
+                      <Upload className="w-4 h-4" />
+                      Upload New Picture
+                    </Button>
                   </div>
                   {avatarUrl && (
                     <Button 
                       variant="ghost" 
-                      onClick={() => setAvatarUrl(null)}
+                      onClick={handleRemoveAvatar}
                       className="text-destructive hover:text-destructive"
                     >
                       <Trash2 className="w-4 h-4 mr-2" />
@@ -563,30 +971,16 @@ export default function ProfileSettings() {
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="profile-phoneNumber">Phone Number</Label>
-                    <div className="relative">
-                      <Smartphone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="profile-phoneNumber"
-                        {...profileForm.register('phoneNumber')}
-                        className="bg-background border-border pl-10"
-                        placeholder="+1 (555) 123-4567"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="profile-timezone">Timezone</Label>
-                    <div className="relative">
-                      <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="profile-timezone"
-                        {...profileForm.register('timezone')}
-                        className="bg-background border-border pl-10"
-                        placeholder="UTC"
-                      />
-                    </div>
+                <div className="space-y-2">
+                  <Label htmlFor="profile-phoneNumber">Phone Number</Label>
+                  <div className="relative">
+                    <Smartphone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="profile-phoneNumber"
+                      {...profileForm.register('phoneNumber')}
+                      className="bg-background border-border pl-10"
+                      placeholder="+1 (555) 123-4567"
+                    />
                   </div>
                 </div>
 
@@ -598,7 +992,6 @@ export default function ProfileSettings() {
                     disabled
                     className="bg-muted border-border"
                   />
-                  <p className="text-sm text-muted-foreground">Contact support to change your email address</p>
                 </div>
 
                 <Button type="submit" className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary">
@@ -686,19 +1079,7 @@ export default function ProfileSettings() {
                 </form>
               </div>
 
-              <Separator />
 
-              {/* Two-Factor Authentication */}
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <h4 className="font-semibold text-foreground">Two-Factor Authentication</h4>
-                  <p className="text-sm text-muted-foreground">Add an extra layer of security to your account</p>
-                </div>
-                <Switch
-                  checked={twoFactorEnabled}
-                  onCheckedChange={setTwoFactorEnabled}
-                />
-              </div>
             </CardContent>
           </Card>
 
@@ -738,22 +1119,12 @@ export default function ProfileSettings() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
-                      <p className="font-medium">Email Notifications</p>
-                      <p className="text-sm text-muted-foreground">Receive updates via email</p>
-                    </div>
-                    <Switch
-                      checked={notifications.email}
-                      onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, email: checked }))}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
                       <p className="font-medium">Push Notifications</p>
                       <p className="text-sm text-muted-foreground">Receive push notifications</p>
                     </div>
                     <Switch
                       checked={notifications.push}
-                      onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, push: checked }))}
+                      onCheckedChange={(checked) => handleNotificationChange('push', checked)}
                     />
                   </div>
                   <div className="flex items-center justify-between">
@@ -763,7 +1134,7 @@ export default function ProfileSettings() {
                     </div>
                     <Switch
                       checked={notifications.inApp}
-                      onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, inApp: checked }))}
+                      onCheckedChange={(checked) => handleNotificationChange('inApp', checked)}
                     />
                   </div>
                 </div>
