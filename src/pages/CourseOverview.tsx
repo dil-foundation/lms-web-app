@@ -167,7 +167,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
       title: data.title,
       subtitle: data.subtitle,
       description: data.description,
-      category: data.category?.name,
+      category: typeof data.category === 'string' ? data.category : data.category?.name,
       thumbnail: data.image || data.image_url || data.thumbnail_url,
       videoUrl: data.video_url || data.preview_video_url,
       hasValidVideo: isValidVideoUrl(data.video_url || data.preview_video_url),
@@ -185,8 +185,8 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
         students: data.students?.length || data.members?.filter((m: any) => m.role === 'student').length || 0,
         duration: data.duration || "N/A",
         lessons: totalLessons,
-        level: data.level?.name || "All Levels",
-        language: data.language?.name || "English",
+        level: typeof data.level === 'string' ? data.level : data.level?.name || "All Levels",
+        language: typeof data.language === 'string' ? data.language : data.language?.name || "English",
         lastUpdated: new Date(data.updated_at || Date.now()).toLocaleString('en-US', { month: 'long', year: 'numeric' })
       },
       progress: {
