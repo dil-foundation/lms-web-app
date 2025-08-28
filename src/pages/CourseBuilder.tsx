@@ -8,11 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Save, Eye, Upload, Plus, GripVertical, X, ChevronDown, ChevronUp, BookOpen, Info, UploadCloud } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Upload, Plus, GripVertical, X, ChevronDown, ChevronUp, BookOpen, Info, UploadCloud, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { FileUpload } from '@/components/ui/FileUpload';
 import { RichTextEditor } from '@/components/ui/RichTextEditor';
 import { MultiSelect } from '@/components/ui/MultiSelect';
+import { PDFQuizUploader } from '@/components/ui/PDFQuizUploader';
 import {
   DndContext,
   closestCenter,
@@ -53,10 +54,12 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { ContentLoader } from '@/components/ContentLoader';
+import AccessLogService from '@/services/accessLogService';
 import { CourseOverview } from './CourseOverview';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
@@ -956,6 +959,8 @@ const SortableItem = ({ id, children, type, sectionId }: { id: string, children:
 
 // #region QuizBuilder Component
 const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (quiz: QuizData) => void }) => {
+  const [showPDFUploader, setShowPDFUploader] = useState(false);
+  
   const addQuestion = () => {
     const newQuestion: QuizQuestion = {
       id: Date.now().toString(),
@@ -965,6 +970,22 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
       position: (quiz.questions.length || 0) + 1
     };
     onQuizChange({ ...quiz, questions: [...quiz.questions, newQuestion] });
+  };
+
+  const handlePDFQuizExtracted = (extractedQuiz: QuizData) => {
+    // Merge extracted questions with existing ones
+    const mergedQuiz: QuizData = {
+      id: quiz.id || extractedQuiz.id,
+      questions: [
+        ...quiz.questions,
+        ...extractedQuiz.questions.map(q => ({
+          ...q,
+          position: quiz.questions.length + q.position
+        }))
+      ]
+    };
+    onQuizChange(mergedQuiz);
+    setShowPDFUploader(false);
   };
 
   const updateQuestion = (qIndex: number, text: string) => {
@@ -1056,6 +1077,41 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
   
   return (
     <div className="w-full space-y-6">
+      {/* PDF Import Section - Show when there are no questions */}
+      {quiz.questions.length === 0 && (
+        <Card className="border-2 border-dashed border-purple-300 dark:border-purple-600 bg-purple-50/30 dark:bg-purple-900/10">
+          <CardContent className="p-8 text-center">
+            <FileText className="w-16 h-16 mx-auto mb-4 text-purple-500" />
+            <h3 className="text-xl font-semibold mb-2 text-purple-700 dark:text-purple-300">
+              Import Quiz from PDF
+            </h3>
+            <p className="text-purple-600 dark:text-purple-400 mb-6">
+              Upload a PDF file and let our system extract quiz questions automatically
+            </p>
+            <div className="flex justify-center gap-4">
+              <Dialog open={showPDFUploader} onOpenChange={setShowPDFUploader}>
+                <DialogTrigger asChild>
+                  <Button className="bg-purple-600 hover:bg-purple-700 text-white">
+                    <Upload className="w-4 h-4 mr-2" />
+                    Import from PDF
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+                  <PDFQuizUploader 
+                    onQuizExtracted={handlePDFQuizExtracted}
+                    onClose={() => setShowPDFUploader(false)}
+                  />
+                </DialogContent>
+              </Dialog>
+              <Button variant="outline" onClick={addQuestion}>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Manually
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
       {quiz.questions.map((question, qIndex) => (
         <Card key={question.id} className="overflow-hidden border-2 border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300">
           <CardHeader className="bg-gradient-to-r from-purple-50 to-purple-100/50 dark:from-purple-900/10 dark:to-purple-800/10 border-b border-purple-200/50 dark:border-purple-700/30 p-6">
@@ -1065,12 +1121,14 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
                   {qIndex + 1}
                 </span>
               </div>
+              <div className="flex-1 text-gray-900 dark:text-white">
               <Input
                 value={question.question_text}
                 onChange={(e) => updateQuestion(qIndex, e.target.value)}
                 placeholder={`Question ${qIndex + 1}`}
-                className="flex-1 border-0 bg-white/60 dark:bg-gray-800/60 rounded-xl px-4 py-3 focus-visible:ring-2 focus-visible:ring-purple-500/20 text-gray-900 dark:text-white"
+                  className="w-full border-0 bg-white/60 dark:bg-gray-800/60 rounded-xl px-4 py-3 focus-visible:ring-2 focus-visible:ring-purple-500/20 placeholder:text-gray-500 dark:placeholder:text-gray-400 [&]:text-gray-900 [&]:dark:text-white"
               />
+              </div>
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -1169,12 +1227,14 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
               <>
                 {question.options.map((option, oIndex) => (
                   <div key={option.id} className="flex items-center gap-3 p-4 bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 rounded-xl border border-gray-200/50 dark:border-gray-600/30 hover:border-gray-300 dark:hover:border-gray-500 transition-all duration-300">
+                    <div className="flex-1 text-gray-900 dark:text-white">
                     <Input
                       value={option.option_text}
                       onChange={(e) => updateOption(qIndex, oIndex, e.target.value)}
                       placeholder={`Option ${oIndex + 1}`}
-                      className="flex-1 border-0 bg-white/60 dark:bg-gray-800/60 rounded-xl px-4 py-3 focus-visible:ring-2 focus-visible:ring-purple-500/20 text-gray-900 dark:text-white"
+                        className="w-full border-0 bg-white/60 dark:bg-gray-800/60 rounded-xl px-4 py-3 focus-visible:ring-2 focus-visible:ring-purple-500/20 placeholder:text-gray-500 dark:placeholder:text-gray-400 [&]:text-gray-900 [&]:dark:text-white"
                     />
+                    </div>
                     <Button
                       variant={option.is_correct ? 'default' : 'outline'}
                       size="sm"
@@ -1211,13 +1271,35 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
           </CardContent>
         </Card>
       ))}
+      {/* Add Question Section */}
+      {quiz.questions.length > 0 ? (
+        <div className="flex gap-4">
       <Button 
         onClick={addQuestion}
-        className="w-full h-12 border-2 border-dashed border-purple-300 dark:border-purple-600 rounded-2xl text-purple-600 dark:text-purple-400 hover:bg-purple-50 hover:text-purple-700 dark:hover:bg-purple-900/10 dark:hover:text-purple-300 hover:border-purple-400 dark:hover:border-purple-500 transition-all duration-300 group hover:scale-105"
+            className="flex-1 h-12 border-2 border-dashed border-purple-300 dark:border-purple-600 rounded-2xl text-purple-600 dark:text-purple-400 hover:bg-purple-50 hover:text-purple-700 dark:hover:bg-purple-900/10 dark:hover:text-purple-300 hover:border-purple-400 dark:hover:border-purple-500 transition-all duration-300 group hover:scale-105"
       >
         <Plus className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-300" />
-        Add Question
+            Add Question Manually
       </Button>
+          <Dialog open={showPDFUploader} onOpenChange={setShowPDFUploader}>
+            <DialogTrigger asChild>
+              <Button 
+                variant="outline"
+                className="flex-1 h-12 border-2 border-dashed border-blue-300 dark:border-blue-600 rounded-2xl text-blue-600 dark:text-blue-400 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-900/10 dark:hover:text-blue-300 hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-300 group hover:scale-105"
+              >
+                <Upload className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-300" />
+                Import More from PDF
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+              <PDFQuizUploader 
+                onQuizExtracted={handlePDFQuizExtracted}
+                onClose={() => setShowPDFUploader(false)}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
+      ) : null}
     </div>
   );
 };
@@ -1567,6 +1649,21 @@ const CourseBuilder = () => {
 
     const currentCourseId = savedCourse.id;
 
+    // Log course action
+    if (user) {
+      try {
+        await AccessLogService.logCourseAction(
+          user.id,
+          user.email || 'unknown@email.com',
+          isUpdate ? 'updated' : 'created',
+          currentCourseId,
+          courseToSave.title
+        );
+      } catch (logError) {
+        console.error('Error logging course action:', logError);
+      }
+    }
+
     // A. Delete existing curriculum for this course to handle reordering/deletions
     await supabase.from('course_sections').delete().eq('course_id', currentCourseId);
 
@@ -1734,6 +1831,21 @@ const CourseBuilder = () => {
     if (!savedCourse) throw new Error("Failed to save course and retrieve its ID.");
 
     const currentCourseId = savedCourse.id;
+
+    // Log course action
+    if (user) {
+      try {
+        await AccessLogService.logCourseAction(
+          user.id,
+          user.email || 'unknown@email.com',
+          isUpdate ? 'updated' : 'created',
+          currentCourseId,
+          courseToSave.title
+        );
+      } catch (logError) {
+        console.error('Error logging course action:', logError);
+      }
+    }
 
     // Sync the members (this doesn't affect curriculum)
     const membersMap = new Map<string, { role: 'teacher' | 'student' }>();
@@ -2668,12 +2780,42 @@ const CourseBuilder = () => {
           }
         }
         
+        // Log course publishing
+        if (user) {
+          try {
+            await AccessLogService.logCourseAction(
+              user.id,
+              user.email || 'unknown@email.com',
+              'published',
+              courseData.id,
+              courseData.title
+            );
+          } catch (logError) {
+            console.error('Error logging course publish:', logError);
+          }
+        }
+        
         toast.success("Course published successfully!");
         navigate('/dashboard/courses');
       } else {
         // This is a new course, safe to save everything
         const savedId = await saveCourseData({ ...courseData, status: 'Published' });
         if(savedId) {
+          // Log course publishing for new course
+          if (user) {
+            try {
+              await AccessLogService.logCourseAction(
+                user.id,
+                user.email || 'unknown@email.com',
+                'published',
+                savedId,
+                courseData.title
+              );
+            } catch (logError) {
+              console.error('Error logging course publish:', logError);
+            }
+          }
+          
           toast.success("Course published successfully!");
           navigate('/dashboard/courses');
         }
@@ -2703,6 +2845,21 @@ const CourseBuilder = () => {
 
       if (error) {
         throw error;
+      }
+      
+      // Log course unpublishing
+      if (user) {
+        try {
+          await AccessLogService.logCourseAction(
+            user.id,
+            user.email || 'unknown@email.com',
+            'unpublished',
+            courseData.id,
+            courseData.title
+          );
+        } catch (logError) {
+          console.error('Error logging course unpublish:', logError);
+        }
       }
       
       toast.success("Course unpublished and saved as a draft.");
@@ -2790,6 +2947,21 @@ const CourseBuilder = () => {
         return;
       }
       
+      // Log course deletion
+      if (user) {
+        try {
+          await AccessLogService.logCourseAction(
+            user.id,
+            user.email || 'unknown@email.com',
+            'deleted',
+            courseData.id,
+            courseData.title
+          );
+        } catch (logError) {
+          console.error('Error logging course deletion:', logError);
+        }
+      }
+      
       toast.success(`Course "${courseData.title}" deleted successfully.`);
       navigate('/dashboard/courses');
     } catch (error: any) {
@@ -2814,6 +2986,20 @@ const CourseBuilder = () => {
       const { error } = await supabase.rpc('submit_for_review', { course_id_in: savedId });
       if (error) throw error;
       
+      // Log course submission for review
+      if (user) {
+        try {
+          await AccessLogService.logCourseAction(
+            user.id,
+            user.email || 'unknown@email.com',
+            'submitted_for_review',
+            savedId,
+            courseData.title
+          );
+        } catch (logError) {
+          console.error('Error logging course submission:', logError);
+        }
+      }
       
       toast.success("Course submitted for review successfully!");
       // Update the local state to reflect the new status and ID if it was a new course
@@ -2832,6 +3018,20 @@ const CourseBuilder = () => {
             const { error } = await supabase.rpc('approve_submission', { course_id_in: courseData.id });
       if (error) throw error;
       
+      // Log course approval
+      if (user) {
+        try {
+          await AccessLogService.logCourseAction(
+            user.id,
+            user.email || 'unknown@email.com',
+            'approved',
+            courseData.id,
+            courseData.title
+          );
+        } catch (logError) {
+          console.error('Error logging course approval:', logError);
+        }
+      }
       
       setPersistentFeedback(null);
       toast.success("Course approved and published successfully!");
@@ -2856,8 +3056,22 @@ const CourseBuilder = () => {
       });
       if (error) throw error;
       
+      // Log course rejection
+      if (user) {
+        try {
+          await AccessLogService.logCourseAction(
+            user.id,
+            user.email || 'unknown@email.com',
+            'rejected',
+            courseData.id,
+            courseData.title
+          );
+        } catch (logError) {
+          console.error('Error logging course rejection:', logError);
+        }
+      }
       
-            setPersistentFeedback(rejectionFeedback);
+      setPersistentFeedback(rejectionFeedback);
       toast.success("Submission rejected.");
       setCourseData(prev => ({ ...prev, status: 'Rejected', review_feedback: rejectionFeedback }));
       setIsRejectionDialogOpen(false);

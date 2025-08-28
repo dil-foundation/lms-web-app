@@ -293,16 +293,16 @@ export function getNotificationTypeColor(notificationType?: string): string {
     case 'assignment_due':
       return 'text-orange-600 dark:text-orange-400';
     case 'grade_received':
-      return 'text-green-600 dark:text-green-400';
+      return 'text-[#8DC63F] dark:text-[#8DC63F]';
     case 'course_update':
       return 'text-purple-600 dark:text-purple-400';
     case 'practice_completed':
-      return 'text-emerald-600 dark:text-emerald-400';
+      return 'text-[#8DC63F] dark:text-[#8DC63F]';
     case 'system_maintenance':
       return 'text-yellow-600 dark:text-yellow-400';
     case 'welcome':
-      return 'text-pink-600 dark:text-pink-400';
+      return 'text-[#8DC63F] dark:text-[#8DC63F]';
     default:
-      return 'text-gray-600 dark:text-gray-400';
+      return 'text-[#8DC63F] dark:text-[#8DC63F]';
   }
 }

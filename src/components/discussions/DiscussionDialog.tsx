@@ -49,14 +49,16 @@ export const DiscussionDialog = ({ isOpen, onOpenChange, editingDiscussion, onSa
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
+      <DialogContent 
+        className="w-[95vw] sm:max-w-[425px] max-h-[85vh] flex flex-col p-0 border-0 shadow-2xl rounded-xl overflow-hidden"
+      >
+        <DialogHeader className="flex-shrink-0 p-4 pb-3 border-b border-border/20 bg-background rounded-t-xl">
           <DialogTitle className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5 text-green-600" />
             {editingDiscussion ? 'Edit Discussion' : 'Start a New Discussion'}
           </DialogTitle>
         </DialogHeader>
-        <div className="space-y-6 py-4">
+        <div className="flex-1 overflow-y-auto space-y-3 px-4 py-3 min-h-0 bg-background">
           {/* Form fields */}
           <div className="space-y-2">
             <Label htmlFor="type">Type</Label>
@@ -93,17 +95,23 @@ export const DiscussionDialog = ({ isOpen, onOpenChange, editingDiscussion, onSa
           </div>
           <div className="space-y-2">
             <Label htmlFor="content">Content</Label>
-            <Textarea id="content" value={discussionData.content} onChange={(e) => setDiscussionData(prev => ({...prev, content: e.target.value}))} />
+            <Textarea 
+              id="content" 
+              value={discussionData.content} 
+              onChange={(e) => setDiscussionData(prev => ({...prev, content: e.target.value}))}
+              className="min-h-[60px] max-h-[100px] resize-none"
+              placeholder="Enter your discussion content..."
+            />
           </div>
-          <div className="space-y-3">
+          <div className="space-y-2">
             <Label>Participants</Label>
-            <div className="space-y-3 border rounded-lg p-4 bg-gray-50/50 dark:bg-gray-900/50">
+            <div className="space-y-1.5 border border-border/30 rounded-lg p-2.5 bg-muted/30">
               {roles.map((role) => {
                 const Icon = role.icon;
                 const isChecked = discussionData.participants.includes(role.value);
                 
                 return (
-                  <div key={role.value} className="flex items-start space-x-3">
+                  <div key={role.value} className="flex items-center space-x-2.5">
                     <Checkbox
                       id={`participant-${role.value}`}
                       checked={isChecked}
@@ -120,21 +128,19 @@ export const DiscussionDialog = ({ isOpen, onOpenChange, editingDiscussion, onSa
                           }));
                         }
                       }}
-                      className="mt-1"
+                      className="shrink-0"
                     />
-                    <div className="flex items-center space-x-2 flex-1">
-                      <Icon className="h-4 w-4 text-muted-foreground" />
-                      <div className="flex-1">
-                        <label
-                          htmlFor={`participant-${role.value}`}
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                        >
-                          {role.label}
-                        </label>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {role.description}
-                        </p>
-                      </div>
+                    <Icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <label
+                        htmlFor={`participant-${role.value}`}
+                        className="text-sm font-medium leading-tight cursor-pointer block"
+                      >
+                        {role.label}
+                      </label>
+                      <p className="text-xs text-muted-foreground leading-tight">
+                        {role.description}
+                      </p>
                     </div>
                   </div>
                 );
@@ -142,7 +148,7 @@ export const DiscussionDialog = ({ isOpen, onOpenChange, editingDiscussion, onSa
             </div>
           </div>
         </div>
-        <div className="flex justify-end space-x-2">
+        <div className="flex-shrink-0 flex justify-end space-x-2 p-4 border-t border-border/20 bg-background rounded-b-xl">
           <Button 
             variant="outline" 
             onClick={() => onOpenChange(false)} 

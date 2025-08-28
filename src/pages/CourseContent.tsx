@@ -39,6 +39,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
+import AccessLogService from '@/services/accessLogService';
 
 interface CourseContentProps {
   courseId?: string;
@@ -346,6 +347,37 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       toast.error("Failed to mark content complete.");
       return;
     }
+    
+    // Log content completion
+    try {
+      // Get content title from database if currentContentItem is not available
+      let contentTitle = currentContentItem?.title;
+      if (!contentTitle) {
+        const { data: contentData } = await supabase
+          .from('course_lesson_content')
+          .select('title, content_type')
+          .eq('id', contentId)
+          .single();
+        contentTitle = contentData?.title || 'Unknown Content';
+      }
+
+      await AccessLogService.logStudentCourseAction(
+        user.id,
+        user.email || 'unknown@email.com',
+        'content_completed',
+        courseId,
+        contentTitle,
+        {
+          content_id: contentId,
+          lesson_id: lessonId,
+          content_type: currentContentItem?.content_type,
+          duration: duration
+        }
+      );
+    } catch (logError) {
+      console.error('Error logging content completion:', logError);
+    }
+    
     toast.success("Content completed!");
     setCourse((prevCourse: any) => {
       if (!prevCourse) return null;
@@ -366,6 +398,29 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       const allContentItems = newModules.flatMap((m: any) => m.lessons.flatMap((l: any) => l.contentItems));
       const completedCount = allContentItems.filter((ci:any) => ci.completed).length;
       newTotalProgress = allContentItems.length > 0 ? Math.round((completedCount / allContentItems.length) * 100) : 0;
+      
+      // Log course completion if progress reaches 100%
+      if (newTotalProgress === 100 && prevCourse.totalProgress < 100) {
+        // Use setTimeout to avoid blocking the state update
+        setTimeout(async () => {
+          try {
+            await AccessLogService.logStudentCourseAction(
+              user.id,
+              user.email || 'unknown@email.com',
+              'course_completed',
+              courseId,
+              prevCourse.title || 'Unknown Course',
+              {
+                total_items: allContentItems.length,
+                completed_items: completedCount,
+                course_id: courseId
+              }
+            );
+          } catch (logError) {
+            console.error('Error logging course completion:', logError);
+          }
+        }, 0);
+      }
       
       return {...prevCourse, modules: newModules, totalProgress: newTotalProgress};
     });
@@ -460,6 +515,40 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         return;
     }
     
+    // Log quiz submission
+    try {
+      // Log as student course action (existing)
+      await AccessLogService.logStudentCourseAction(
+        user.id,
+        user.email || 'unknown@email.com',
+        'quiz_submitted',
+        course.id,
+        currentContentItem?.title || 'Unknown Quiz',
+        {
+          content_id: currentContentItem.id,
+          lesson_id: currentLesson.id,
+          submission_id: newSubmission.id,
+          score: finalScore,
+          has_text_answers: hasTextAnswers,
+          correct_answers: correctAnswers,
+          total_questions: questions.length
+        }
+      );
+      
+      // Also log as quiz submission (new)
+      await AccessLogService.logQuizSubmission(
+        user.id,
+        user.email || 'unknown@email.com',
+        currentContentItem.id,
+        currentContentItem?.title || 'Unknown Quiz',
+        course.id,
+        course.title,
+        finalScore
+      );
+    } catch (logError) {
+      console.error('Error logging quiz submission:', logError);
+    }
+    
     setQuizResults(results);
     setIsQuizSubmitted(true);
     // Add empty text_answer_grades array to new submission
@@ -539,6 +628,27 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
           }
           const transformedCourse = transformCourseData(data, userProgress, quizSubmissions);
           setCourse(transformedCourse);
+          
+          // Log course started if this is the first time accessing
+          if (transformedCourse && userProgress.length === 0) {
+            try {
+              AccessLogService.logStudentCourseAction(
+                user.id,
+                user.email || 'unknown@email.com',
+                'course_started',
+                actualCourseId,
+                transformedCourse.title || 'Unknown Course',
+                {
+                  course_id: actualCourseId,
+                  total_modules: transformedCourse.modules.length,
+                  total_lessons: transformedCourse.modules.flatMap((m: any) => m.lessons).length
+                }
+              );
+            } catch (logError) {
+              console.error('Error logging course started:', logError);
+            }
+          }
+          
           if (transformedCourse) {
             const allContentItems = transformedCourse.modules.flatMap((m: any) => m.lessons.flatMap((l: any) => l.contentItems));
             const firstUncompleted = allContentItems.find((item: any) => !item.completed);

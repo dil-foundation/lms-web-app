@@ -29,26 +29,26 @@ interface NotificationDialogProps {
 const getNotificationIcon = (type: 'info' | 'success' | 'warning' | 'error') => {
   switch (type) {
     case 'success':
-      return <CheckCircle className="h-5 w-5 text-green-500" />;
+      return <CheckCircle className="h-5 w-5 text-[#8DC63F]" />;
     case 'warning':
       return <AlertCircle className="h-5 w-5 text-yellow-500" />;
     case 'error':
       return <AlertCircle className="h-5 w-5 text-red-500" />;
     default:
-      return <Info className="h-5 w-5 text-green-500" />;
+      return <Info className="h-5 w-5 text-[#8DC63F]" />;
   }
 };
 
 const getNotificationBadgeColor = (type: 'info' | 'success' | 'warning' | 'error') => {
   switch (type) {
     case 'success':
-      return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+      return 'bg-[#8DC63F]/10 text-[#8DC63F] dark:bg-[#8DC63F]/20 dark:text-[#8DC63F]';
     case 'warning':
       return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
     case 'error':
       return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
     default:
-      return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+      return 'bg-[#8DC63F]/10 text-[#8DC63F] dark:bg-[#8DC63F]/20 dark:text-[#8DC63F]';
   }
 };
 
@@ -109,19 +109,19 @@ export const NotificationDialog = ({ open, onOpenChange }: NotificationDialogPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-             <DialogContent className="sm:max-w-lg max-h-[80vh] p-0 bg-gradient-to-br from-white/98 via-white/95 to-green-50/30 dark:from-gray-900/98 dark:via-gray-900/95 dark:to-green-950/20 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-xl">
-        <DialogHeader className="px-6 py-5 border-b border-gray-200/40 dark:border-gray-700/40 bg-gradient-to-r from-transparent via-green-50/20 to-transparent dark:via-green-950/10">
+             <DialogContent className="sm:max-w-lg max-h-[80vh] p-0 bg-gradient-to-br from-white/98 via-white/95 to-[#8DC63F]/5 dark:from-gray-900/98 dark:via-gray-900/95 dark:to-[#8DC63F]/10 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-xl">
+        <DialogHeader className="px-6 py-5 border-b border-gray-200/40 dark:border-gray-700/40 bg-gradient-to-r from-transparent via-[#8DC63F]/5 to-transparent dark:via-[#8DC63F]/10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/40 dark:to-green-800/40 rounded-2xl flex items-center justify-center shadow-sm border border-green-200/50 dark:border-green-800/50">
-                <Bell className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <div className="w-10 h-10 bg-gradient-to-br from-[#8DC63F]/20 to-[#8DC63F]/30 dark:from-[#8DC63F]/20 dark:to-[#8DC63F]/30 rounded-2xl flex items-center justify-center shadow-sm border border-[#8DC63F]/30 dark:border-[#8DC63F]/40">
+                <Bell className="h-5 w-5 text-[#8DC63F] dark:text-[#8DC63F]" />
               </div>
               <div>
-                <DialogTitle className="text-xl font-bold bg-gradient-to-r from-gray-900 to-green-800 dark:from-gray-100 dark:to-green-300 bg-clip-text text-transparent">
+                <DialogTitle className="text-xl font-bold bg-gradient-to-r from-gray-900 to-[#8DC63F] dark:from-gray-100 dark:to-[#8DC63F] bg-clip-text text-transparent">
                   Notifications
                 </DialogTitle>
                 {unreadCount > 0 && (
-                  <p className="text-sm text-green-600 dark:text-green-400 font-medium">
+                  <p className="text-sm text-[#8DC63F] dark:text-[#8DC63F] font-medium">
                     {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
                   </p>
                 )}
@@ -134,7 +134,7 @@ export const NotificationDialog = ({ open, onOpenChange }: NotificationDialogPro
                   variant="ghost"
                   size="sm"
                   onClick={markAllAsRead}
-                  className="h-8 px-3 text-xs bg-green-50 hover:bg-green-100 dark:bg-green-900/30 dark:hover:bg-green-900/40 text-green-700 dark:text-green-300 border border-green-200/60 dark:border-green-700/60 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md"
+                  className="h-8 px-3 text-xs bg-[#8DC63F]/10 hover:bg-[#8DC63F]/20 dark:bg-[#8DC63F]/20 dark:hover:bg-[#8DC63F]/30 text-[#8DC63F] dark:text-[#8DC63F] border border-[#8DC63F]/30 dark:border-[#8DC63F]/40 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md"
                 >
                   <Check className="h-3 w-3 mr-1" />
                   Mark all read
@@ -166,8 +166,8 @@ export const NotificationDialog = ({ open, onOpenChange }: NotificationDialogPro
                      <div className="p-3">
             {notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 px-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-3xl flex items-center justify-center mb-4 border border-green-200/30 dark:border-green-800/30">
-                  <Bell className="h-8 w-8 text-green-400 dark:text-green-500" />
+                <div className="w-16 h-16 bg-gradient-to-br from-[#8DC63F]/10 to-[#8DC63F]/20 dark:from-[#8DC63F]/20 dark:to-[#8DC63F]/30 rounded-3xl flex items-center justify-center mb-4 border border-[#8DC63F]/30 dark:border-[#8DC63F]/40">
+                  <Bell className="h-8 w-8 text-[#8DC63F] dark:text-[#8DC63F]" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
                   No notifications
@@ -181,16 +181,16 @@ export const NotificationDialog = ({ open, onOpenChange }: NotificationDialogPro
                 {notifications.map((notification, index) => (
                   <div key={notification.id}>
                                          <div
-                                              className={`group p-4 rounded-xl transition-all duration-300 cursor-pointer hover:bg-gradient-to-r hover:from-green-50/30 hover:to-white/80 dark:hover:from-green-900/10 dark:hover:to-gray-800/80 hover:shadow-md hover:-translate-y-0.5 ${
+                                              className={`group p-4 rounded-xl transition-all duration-300 cursor-pointer hover:bg-gradient-to-r hover:from-[#8DC63F]/10 hover:to-white/80 dark:hover:from-[#8DC63F]/10 dark:hover:to-gray-800/80 hover:shadow-md hover:-translate-y-0.5 ${
                         !notification.read 
-                          ? 'bg-gradient-to-r from-green-50/60 to-green-100/30 dark:from-green-900/15 dark:to-green-800/15 border border-green-200/50 dark:border-green-800/40 shadow-sm' 
+                          ? 'bg-gradient-to-r from-[#8DC63F]/10 to-[#8DC63F]/5 dark:from-[#8DC63F]/15 dark:to-[#8DC63F]/10 border border-[#8DC63F]/30 dark:border-[#8DC63F]/40 shadow-sm' 
                           : 'bg-white/80 dark:bg-gray-800/60 border border-gray-200/30 dark:border-gray-700/30'
-                       } hover:border-green-300/50 dark:hover:border-green-700/50`}
+                       } hover:border-[#8DC63F]/50 dark:hover:border-[#8DC63F]/50`}
                        onClick={() => handleNotificationClick(notification)}
                      >
                       <div className="flex items-start gap-3">
                         <div className="flex-shrink-0 mt-1">
-                          <div className="w-8 h-8 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/40 dark:to-green-800/40 rounded-full flex items-center justify-center border border-green-200/40 dark:border-green-800/40">
+                          <div className="w-8 h-8 bg-gradient-to-br from-[#8DC63F]/20 to-[#8DC63F]/30 dark:from-[#8DC63F]/20 dark:to-[#8DC63F]/30 rounded-full flex items-center justify-center border border-[#8DC63F]/30 dark:border-[#8DC63F]/40">
                             {getNotificationTypeIcon(notification.notificationType)}
                           </div>
                         </div>
@@ -260,7 +260,7 @@ export const NotificationDialog = ({ open, onOpenChange }: NotificationDialogPro
                             </div>
                             
                             {!notification.read && (
-                              <div className="w-2 h-2 bg-green-500 dark:bg-green-400 rounded-full animate-pulse shadow-sm" />
+                              <div className="w-2 h-2 bg-[#8DC63F] dark:bg-[#8DC63F] rounded-full animate-pulse shadow-sm" />
                             )}
                           </div>
                         </div>

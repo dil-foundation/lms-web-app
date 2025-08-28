@@ -5,6 +5,8 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useAILMS } from '@/contexts/AILMSContext';
+import { useMaintenanceCheck } from '@/hooks/useMaintenanceCheck';
+import MaintenancePage from '@/components/MaintenancePage';
 import { BookOpen } from 'lucide-react';
 import { type UserRole } from '@/config/roleNavigation';
 import { ContentLoader } from '@/components/ContentLoader';
@@ -64,7 +66,7 @@ const AdminAssessments = lazy(() => import('@/components/admin/AdminAssessments'
 const AssignmentSubmissions = lazy(() => import('@/components/admin/AssignmentSubmissions').then(module => ({ default: module.AssignmentSubmissions })));
 const StudentSubmissionDetail = lazy(() => import('@/components/admin/StudentSubmissionDetail').then(module => ({ default: module.StudentSubmissionDetail })));
 const AdminSettings = lazy(() => import('@/components/admin/AdminSettings'));
-const AdminSecurity = lazy(() => import('@/components/admin/AdminSecurity').then(module => ({ default: module.AdminSecurity })));
+const AdminSecurity = lazy(() => import('@/components/admin/AdminSecurity'));
 const AITutorSettings = lazy(() => import('@/components/admin/AITutorSettings').then(module => ({ default: module.AITutorSettings })));
 const AISafetyEthicsSettings = lazy(() => import('@/components/admin/AISafetyEthicsSettings').then(module => ({ default: module.AISafetyEthicsSettings })));
 const IntegrationAPIs = lazy(() => import('@/components/admin/IntegrationAPIs').then(module => ({ default: module.IntegrationAPIs })));
@@ -84,6 +86,7 @@ const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading, error: profileError } = useUserProfile();
   const { isAIMode } = useAILMS();
+  const { isMaintenanceMode, loading: maintenanceLoading } = useMaintenanceCheck();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -96,6 +99,14 @@ const Dashboard = () => {
       navigate('/auth', { replace: true });
     }
   }, [authLoading, user, navigate]);
+
+  // Check for maintenance mode (only for students and teachers)
+  useEffect(() => {
+    if (!maintenanceLoading && isMaintenanceMode && profile?.role !== 'admin') {
+      // Don't redirect, just show maintenance page
+      return;
+    }
+  }, [maintenanceLoading, isMaintenanceMode, profile?.role]);
 
   useEffect(() => {
     if (profile) {
@@ -117,9 +128,14 @@ const Dashboard = () => {
     role: currentRole,
   } : null;
   
-  const isLoading = authLoading || (user && profileLoading);
+  const isLoading = authLoading || (user && profileLoading) || maintenanceLoading;
 
   const DashboardContent = () => {
+    // Check for maintenance mode (only for students and teachers)
+    if (!maintenanceLoading && isMaintenanceMode && profile?.role !== 'admin') {
+      return <MaintenancePage />;
+    }
+
     // Removed loading state to prevent flash
 
     if (profileError) {
@@ -337,9 +353,9 @@ const Dashboard = () => {
 
   return (
     <SidebarProvider>
-      <div className="bg-background flex flex-col w-full h-screen">
+      <div className="bg-background w-full h-screen">
         <DashboardHeader onToggle={resetToDashboard} />
-        <div className="flex flex-1 w-full">
+        <div className="pt-20 h-full">
             <DashboardSidebar userRole={currentRole} userProfile={displayProfile}>
                 <DashboardContent />
             </DashboardSidebar>

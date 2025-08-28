@@ -24,7 +24,7 @@ export const DashboardHeader = memo(({ onToggle }: DashboardHeaderProps) => {
   }, []);
 
   return (
-    <div className={`hidden md:flex sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-background/80 backdrop-blur-lg' : ''} items-center justify-between h-20 border-b border-border px-4 sm:px-6 lg:px-8 py-3`}>
+    <div className={`hidden md:flex fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ${isScrolled ? 'bg-background/80 backdrop-blur-lg glass border-b border-border/60' : 'bg-background border-b border-border'} items-center justify-between h-20 px-4 sm:px-6 lg:px-8 py-3`}>
       <div>
         <Logo />
       </div>
@@ -36,7 +36,7 @@ export const DashboardHeader = memo(({ onToggle }: DashboardHeaderProps) => {
 
       <div className="flex items-center space-x-4">
         <ThemeToggle />
-        <NotificationToggle />
+        {user && <NotificationToggle />}
         <AuthButton />
       </div>
     </div>

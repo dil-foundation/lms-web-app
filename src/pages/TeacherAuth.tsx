@@ -17,9 +17,15 @@ import {
   validateConfirmPassword,
   validateTeacherId
 } from '@/utils/validation';
+import { SupabaseMFAVerification } from '@/components/auth/SupabaseMFAVerification';
+import SupabaseMFAService from '@/services/supabaseMFAService';
+import { useAuth } from '@/contexts/AuthContext';
+import AccessLogService from '@/services/accessLogService';
+import LoginSecurityService from '@/services/loginSecurityService';
 
 const TeacherAuth = () => {
   const navigate = useNavigate();
+  const { setPendingMFAUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   
   // Password visibility states
@@ -41,6 +47,12 @@ const TeacherAuth = () => {
 
   // Auth error state
   const [authError, setAuthError] = useState('');
+  
+  // MFA verification states
+  const [showMFAVerification, setShowMFAVerification] = useState(false);
+  const [pendingUser, setPendingUser] = useState<any>(null);
+  
+
   
   const [signupData, setSignupData] = useState({ 
     firstName: '',
@@ -119,18 +131,38 @@ const TeacherAuth = () => {
 
     try {
       console.log('🔐 Attempting teacher login...');
-      const { data, error } = await supabase.auth.signInWithPassword({
+      
+      // Check if user is already blocked before attempting authentication
+      const securityStatus = await LoginSecurityService.checkLoginSecurity(
+        loginData.email,
+        undefined, // IP address (can be enhanced later)
+        navigator.userAgent
+      );
+
+      if (securityStatus.isBlocked) {
+        const blockMessage = securityStatus.blockReason === 'Too many failed login attempts' 
+          ? `Account temporarily blocked due to too many failed login attempts. Please try again after 24 hours.`
+          : `Account temporarily blocked: ${securityStatus.blockReason}`;
+        
+        setAuthError(blockMessage);
+        setIsLoading(false);
+        return;
+      }
+
+      // Sign in and get user data
+      const { data: { user }, error: signInError } = await supabase.auth.signInWithPassword({
         email: loginData.email,
         password: loginData.password,
       });
 
-      if (error) throw error;
+      if (signInError) throw signInError;
       
-      if (data.user) {
+      if (user) {
+        // Get profile data while authenticated
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('role')
-          .eq('id', data.user.id)
+          .eq('id', user.id)
           .single();
 
         if (profileError || !profile) {
@@ -144,13 +176,86 @@ const TeacherAuth = () => {
           return;
         }
 
-        console.log('🔐 Teacher login successful:', data.user.email);
+        // Check if MFA is required and if user has MFA set up
+        const isMFARequired = await SupabaseMFAService.checkMFARequirement();
+        
+        // Get MFA status while authenticated
+        const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();
+        if (factorsError) throw factorsError;
+        
+        const totpFactor = factors.totp?.[0];
+        const mfaStatus = {
+          isEnabled: totpFactor?.status === 'verified',
+          isSetupComplete: totpFactor?.status === 'verified',
+          factors: factors.totp || []
+        };
+        
+        console.log('MFA Required:', isMFARequired, 'MFA Status:', mfaStatus);
+
+        if (isMFARequired && mfaStatus.isSetupComplete) {
+          // MFA is required and user has it set up, show verification dialog
+          console.log('🔐 MFA verification required for teacher login');
+          setPendingUser(user);
+          setPendingMFAUser(user); // Set in auth context
+          setShowMFAVerification(true);
+          setIsLoading(false);
+          return;
+        }
+
+        // No MFA required, proceed with normal login
+        console.log('🔐 Teacher login successful (no MFA required):', user.email);
+        
+        // Handle successful login security
+        await LoginSecurityService.handleSuccessfulLogin(
+          user.email || loginData.email,
+          undefined, // IP address (can be enhanced later)
+          navigator.userAgent
+        );
+        
         toast.success('Welcome back!');
-        // Force page refresh to ensure clean state
         window.location.href = '/dashboard';
       }
     } catch (error: any) {
       console.error('🔐 Teacher login error:', error);
+      
+      // Handle failed login security
+      try {
+        let reason = 'Invalid credentials';
+        if (error.message === 'Email not confirmed') {
+          reason = 'Email not confirmed';
+        } else if (error.message.includes('Invalid login credentials')) {
+          reason = 'Invalid email or password';
+        } else if (error.message.includes('Too many requests')) {
+          reason = 'Too many login attempts';
+        }
+        
+        const failedLoginResult = await LoginSecurityService.handleFailedLogin(
+          loginData.email,
+          reason,
+          undefined, // IP address (can be enhanced later)
+          navigator.userAgent
+        );
+
+        // Update error message based on security status
+        if (failedLoginResult.blocked) {
+          const blockMessage = failedLoginResult.blockReason === 'Too many failed login attempts' 
+            ? `Account temporarily blocked due to too many failed login attempts. Please try again after 24 hours.`
+            : `Account temporarily blocked: ${failedLoginResult.blockReason}`;
+          
+          setAuthError(blockMessage);
+        } else {
+          const remainingAttempts = failedLoginResult.remainingAttempts;
+          if (remainingAttempts <= 2) {
+            setAuthError(`Invalid credentials. Warning: ${remainingAttempts} login attempt${remainingAttempts !== 1 ? 's' : ''} remaining before account is blocked.`);
+          } else {
+            setAuthError('Invalid credentials.');
+          }
+        }
+      } catch (logError) {
+        console.error('Error handling failed login security:', logError);
+        setAuthError('Invalid credentials.');
+      }
+      
       if (error.message === 'Email not confirmed') {
         try {
           await supabase.auth.resend({
@@ -334,7 +439,7 @@ const TeacherAuth = () => {
           <Button
             variant="ghost"
             onClick={() => navigate('/auth')}
-            className="mb-8 p-3 hover:bg-primary/5 rounded-xl transition-all duration-300 group"
+            className="mb-8 p-3 hover:bg-primary/10 hover:text-primary rounded-xl transition-all duration-300 group border border-transparent hover:border-primary/20"
           >
             <ArrowLeft className="w-5 h-5 mr-3 group-hover:-translate-x-1 transition-transform duration-300" />
             Back to role selection
@@ -624,6 +729,36 @@ const TeacherAuth = () => {
           </Card>
         </div>
       </div>
+
+      {/* MFA Verification Dialog */}
+      <SupabaseMFAVerification
+        isOpen={showMFAVerification}
+        onClose={() => {
+          setShowMFAVerification(false);
+          setPendingUser(null);
+          setPendingMFAUser(null);
+          // Sign out the user if they cancel MFA verification
+          supabase.auth.signOut();
+        }}
+        onSuccess={async () => {
+          setShowMFAVerification(false);
+          setPendingUser(null);
+          setPendingMFAUser(null);
+          
+          console.log('🔐 MFA verification successful, redirecting to dashboard...');
+          toast.success('Welcome back!');
+          window.location.href = '/dashboard';
+        }}
+        onBack={() => {
+          setShowMFAVerification(false);
+          setPendingUser(null);
+          setPendingMFAUser(null);
+          // Sign out the user if they go back from MFA verification
+          supabase.auth.signOut();
+        }}
+        userEmail={pendingUser?.email || ''}
+      />
+
     </div>
   );
 };

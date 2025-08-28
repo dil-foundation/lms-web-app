@@ -10,6 +10,36 @@ import { ObservationReportsProvider } from "@/contexts/ObservationReportsContext
 import { SecureLinksProvider } from "@/contexts/SecureLinksContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import ScrollToTop from "@/components/ScrollToTop";
+import { useSessionTimeout } from "@/hooks/useSessionTimeout";
+import { SessionTimeoutWarning } from "@/components/SessionTimeoutWarning";
+import { SupabaseMFARequirement } from "@/components/auth/SupabaseMFARequirement";
+import { MFAProtectedRoute } from "@/components/auth/MFAProtectedRoute";
+
+
+// Component to handle session timeout and activity tracking
+const SessionTimeoutTracker = () => {
+  const {
+    showWarning,
+    warningTimeRemaining,
+    handleExtendSession,
+    handleDismissWarning
+  } = useSessionTimeout();
+
+
+
+  return (
+    <>
+
+      
+      <SessionTimeoutWarning
+        isVisible={showWarning}
+        timeRemaining={warningTimeRemaining}
+        onExtendSession={handleExtendSession}
+        onDismiss={handleDismissWarning}
+      />
+    </>
+  );
+};
 
 const Home = lazy(() => import("./pages/Home"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -25,6 +55,7 @@ const SecureObserverFormPage = lazy(() => import('./pages/SecureObserverFormPage
 import HomeLayout2 from './pages/HomeLayout2';
 import HomeLayout3 from './pages/HomeLayout3';
 import HomeLayout4 from './pages/HomeLayout4';
+import ProfileSettings from "./pages/ProfileSettings";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -34,7 +65,7 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => {
+const AppContent = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -43,28 +74,51 @@ const App = () => {
         <BrowserRouter>
           <ScrollToTop />
           <AuthProvider>
+            <SessionTimeoutTracker />
             <AILMSProvider>
               <ObservationReportsProvider>
                 <SecureLinksProvider>
-                  <NotificationProvider>
-                    <Suspense fallback={null}>
-                      <Routes>
-                        <Route path="/" element={<Home />} />
-                        <Route path="/home-layout-2" element={<HomeLayout2 />} />
-                        <Route path="/home-layout-3" element={<HomeLayout3 />} />
-                        <Route path="/home-layout-4" element={<HomeLayout4 />} />
-                        <Route path="/auth" element={<RoleSelection />} />
-                        <Route path="/auth/student" element={<StudentAuth />} />
-                        <Route path="/auth/teacher" element={<TeacherAuth />} />
-                        <Route path="/auth/admin" element={<AdminAuth />} />
-                        <Route path="/forgot-password" element={<ForgotPassword />} />
-                        <Route path="/dashboard/*" element={<Dashboard />} />
-                        <Route path="/course-builder/:courseId" element={<CourseBuilder />} />
-                        <Route path="/secure-form/:token" element={<SecureObserverFormPage />} />
-                        <Route path="*" element={<NotFound />} />
-                      </Routes>
-                    </Suspense>
-                  </NotificationProvider>
+                <NotificationProvider>
+                  <Suspense fallback={null}>
+                    <Routes>
+                      {/* Public routes - no MFA requirement */}
+                      <Route path="/" element={<Home />} />
+                      <Route path="/home-layout-2" element={<HomeLayout2 />} />
+                      <Route path="/home-layout-3" element={<HomeLayout3 />} />
+                      <Route path="/home-layout-4" element={<HomeLayout4 />} />
+                      <Route path="/auth" element={<RoleSelection />} />
+                      <Route path="/auth/student" element={<StudentAuth />} />
+                      <Route path="/auth/teacher" element={<TeacherAuth />} />
+                      <Route path="/auth/admin" element={<AdminAuth />} />
+                      <Route path="/forgot-password" element={<ForgotPassword />} />
+                      <Route path="/secure-form/:token" element={<SecureObserverFormPage />} />
+                      
+                                                {/* Protected routes - with MFA requirement */}
+                          <Route path="/dashboard/*" element={
+                            <MFAProtectedRoute>
+                              <SupabaseMFARequirement>
+                                <Dashboard />
+                              </SupabaseMFARequirement>
+                            </MFAProtectedRoute>
+                          } />
+                          <Route path="/course-builder/:courseId" element={
+                            <MFAProtectedRoute>
+                              <SupabaseMFARequirement>
+                                <CourseBuilder />
+                              </SupabaseMFARequirement>
+                            </MFAProtectedRoute>
+                          } />
+                          <Route path="/profile-settings" element={
+                            <MFAProtectedRoute>
+                              <SupabaseMFARequirement>
+                                <ProfileSettings />
+                              </SupabaseMFARequirement>
+                            </MFAProtectedRoute>
+                          } />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </Suspense>
+                </NotificationProvider>
                 </SecureLinksProvider>
               </ObservationReportsProvider>
             </AILMSProvider>
@@ -73,6 +127,10 @@ const App = () => {
       </TooltipProvider>
     </QueryClientProvider>
   );
+};
+
+const App = () => {
+  return <AppContent />;
 };
 
 export default App;
