@@ -30,49 +30,7 @@ export const DashboardSidebar = ({
   const navigationCategories = getCategorizedNavigation(userRole, isAIMode);
   const location = useLocation();
 
-  const SidebarComponent = () => (
-    <Sidebar className="border-r border-border bg-background h-full">
-      <UserProfileSection />
-      <SidebarContent>
-        {navigationCategories.map(category => (
-          <SidebarGroup key={category.title}>
-            <SidebarGroupLabel className="mb-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{category.title}</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {category.items.map(item => (
-                  <SidebarMenuItem key={item.path}>
-                    <SidebarMenuButton asChild>
-                      <NavLink
-                        to={item.path}
-                        end={item.path === '/dashboard'}
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        {({ isActive }) => (
-                          <div className={`flex items-center space-x-3 px-3 py-2 mx-2 rounded-lg transition-all duration-200 ${
-                            isActive 
-                              ? 'bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary font-medium shadow-sm' 
-                              : 'text-foreground hover:bg-primary/10 dark:hover:bg-primary/20 hover:text-primary dark:hover:text-primary'
-                          }`}>
-                            <item.icon className="h-5 w-5" />
-                            <span className="font-medium">{item.title}</span>
-                            {item.badge && (
-                              <span className="ml-auto bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded-full">
-                                {item.badge}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
-      </SidebarContent>
-    </Sidebar>
-  );
+  // Render the desktop sidebar content directly to avoid function component issues
 
   return (
     <>
@@ -160,7 +118,47 @@ export const DashboardSidebar = ({
       {/* Desktop Layout */}
       <div className="hidden md:flex min-h-full w-full">
         <div className="w-72 flex-shrink-0">
-          <SidebarComponent />
+          <Sidebar className="border-r border-border bg-background h-full">
+            <UserProfileSection />
+            <SidebarContent>
+              {navigationCategories.map(category => (
+                <SidebarGroup key={category.title}>
+                  <SidebarGroupLabel className="mb-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{category.title}</SidebarGroupLabel>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      {category.items.map(item => (
+                        <SidebarMenuItem key={item.path}>
+                          <SidebarMenuButton asChild>
+                            <NavLink
+                              to={item.path}
+                              end={item.path === '/dashboard'}
+                              onClick={() => setIsMobileMenuOpen(false)}
+                            >
+                              {({ isActive }) => (
+                                <div className={`flex items-center space-x-3 px-3 py-2 mx-2 rounded-lg transition-all duration-200 ${
+                                  isActive 
+                                    ? 'bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary font-medium shadow-sm' 
+                                    : 'text-foreground hover:bg-primary/10 dark:hover:bg-primary/20 hover:text-primary dark:hover:text-primary'
+                                }`}>
+                                  <item.icon className="h-5 w-5" />
+                                  <span className="font-medium">{item.title}</span>
+                                  {item.badge && (
+                                    <span className="ml-auto bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded-full">
+                                      {item.badge}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </NavLink>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+              ))}
+            </SidebarContent>
+          </Sidebar>
         </div>
         
         {/* Desktop Main Content */}

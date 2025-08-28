@@ -56,9 +56,27 @@ export const useUserProfile = () => {
 
   const refreshProfile = useCallback(async () => {
     console.log('refreshProfile called - triggering refresh');
+    console.log('Current refreshKey before:', refreshKey);
+    
+    // Force immediate refresh key increment for instant UI updates
+    setRefreshKey(prev => {
+      const newKey = prev + 1;
+      console.log('RefreshKey updated to:', newKey);
+      return newKey;
+    });
+    
+    // Fetch fresh profile data
     await fetchProfile();
-    setRefreshKey(prev => prev + 1); // Force refresh of dependent components
-  }, [fetchProfile]);
+    
+    // Add small delay to ensure state propagation, then increment again for extra force
+    setTimeout(() => {
+      setRefreshKey(prev => {
+        const finalKey = prev + 1;
+        console.log('Final refreshKey updated to:', finalKey);
+        return finalKey;
+      });
+    }, 100);
+  }, [fetchProfile, refreshKey]);
 
   return useMemo(() => ({
     profile,

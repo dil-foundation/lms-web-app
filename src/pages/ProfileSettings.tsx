@@ -87,7 +87,6 @@ export default function ProfileSettings() {
 
   
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('auto');
@@ -170,7 +169,6 @@ export default function ProfileSettings() {
     if (profile) {
       console.log('Profile loaded:', profile);
       console.log('Profile avatar_url:', profile.avatar_url);
-      setAvatarUrl(profile.avatar_url);
       profileForm.reset({
         firstName: profile.first_name || '',
         lastName: profile.last_name || '',
@@ -459,9 +457,10 @@ export default function ProfileSettings() {
 
       if (updateError) throw updateError;
 
-      // Update local state
-      console.log('Setting avatar URL tozzzzzz:', publicUrl);
-      setAvatarUrl(publicUrl);
+      // Close cropper UI
+      console.log('Avatar upload complete - URL:', publicUrl);
+      console.log('Current profile avatar_url before refresh:', profile?.avatar_url);
+      console.log('Current refreshKey before refresh:', refreshKey);
       setShowImageCropper(false);
       setSelectedImage(null);
       
@@ -475,33 +474,26 @@ export default function ProfileSettings() {
         'success'
       );
       
-      // Log the current avatarUrl state
-      console.log('Current avatarUrl state:', avatarUrl);
-      console.log('Profile avatar_url:', profile?.avatar_url);
-      
-      // Refresh the profile data to sync all components
+      // Force refresh the profile data to sync all components
+      console.log('=== DESKTOP DEBUG: Starting profile refresh ===');
       await refreshProfile();
+      console.log('=== DESKTOP DEBUG: Profile refresh completed ===');
       
-      // Force a refresh of the profile data by refetching
-      const { data: refreshedProfile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-      
-      if (refreshedProfile) {
-        console.log('Refreshed profile:', refreshedProfile);
-        // Update the profile state manually
-        setAvatarUrl(refreshedProfile.avatar_url);
+      // Additional force update for stubborn desktop browsers
+      setTimeout(() => {
+        console.log('=== DESKTOP DEBUG: Forcing secondary refresh ===');
+        window.dispatchEvent(new CustomEvent('profileUpdated', { 
+          detail: { avatarUrl: publicUrl, timestamp: Date.now() } 
+        }));
         
-        // Test if the image URL is accessible
-        const testImg = new Image();
-        testImg.onload = () => {
-          console.log('Test image loaded successfully');
-        };
-        testImg.onerror = () => console.error('Test image failed to load');
-        testImg.src = refreshedProfile.avatar_url;
-      }
+        // Force page reload for web view to ensure complete update
+        if (window.innerWidth >= 768) { // Desktop/tablet view (md breakpoint)
+          console.log('=== DESKTOP: Reloading page for complete refresh ===');
+          setTimeout(() => {
+            window.location.reload();
+          }, 500); // Small delay to allow toast message to show
+        }
+      }, 200);
     } catch (error: any) {
       toast.error('Failed to upload profile picture', { description: error.message });
     } finally {
@@ -523,11 +515,10 @@ export default function ProfileSettings() {
   };
 
   const handleRemoveAvatar = async () => {
-    if (!user || !avatarUrl) return;
+    if (!user || !profile?.avatar_url) return;
 
-    // Immediately clear the avatar URL to prevent flickering
-    const originalAvatarUrl = avatarUrl;
-    setAvatarUrl(null);
+    // Store the original URL for file deletion
+    const originalAvatarUrl = profile.avatar_url;
 
     try {
       // Extract the file path from the avatar URL (use the original URL before clearing)
@@ -577,15 +568,12 @@ export default function ProfileSettings() {
       // Refresh the profile data to sync all components
       await refreshProfile();
       
-      // Refresh profile data
-      const { data: refreshedProfile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-      
-      if (refreshedProfile) {
-        console.log('Profile refreshed after avatar removal:', refreshedProfile);
+      // Force page reload for web view when removing avatar
+      if (window.innerWidth >= 768) { // Desktop/tablet view (md breakpoint)
+        console.log('=== DESKTOP: Reloading page after avatar removal ===');
+        setTimeout(() => {
+          window.location.reload();
+        }, 500); // Small delay to allow toast message to show
       }
     } catch (error: any) {
       toast.error('Failed to remove profile picture', { description: error.message });
@@ -862,18 +850,20 @@ export default function ProfileSettings() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-6">
-                <Avatar className="h-24 w-24" key={`avatar-profile-${refreshKey}`}>
+                <Avatar className="h-24 w-24" key={`avatar-profile-${refreshKey}-${Date.now()}`}>
                   <AvatarImage 
-                    src={avatarUrl && avatarUrl !== 'null' ? `${avatarUrl}?v=${refreshKey}` : undefined} 
+                    src={profile?.avatar_url && profile.avatar_url !== 'null' ? `${profile.avatar_url}?v=${refreshKey}&t=${Date.now()}&force=desktop` : undefined} 
                     alt={displayName}
                     onLoad={() => {
-                      console.log('Avatar image loaded successfully');
+                      console.log('=== PROFILE SETTINGS: Avatar image loaded successfully ===');
+                      console.log('Loaded avatar URL:', profile?.avatar_url);
+                      console.log('RefreshKey:', refreshKey);
                       setIsAvatarLoading(false);
                     }}
                     onError={(e) => {
-                      console.error('Avatar image failed to load:', e);
-                      // Force fallback when image fails to load
-                      setAvatarUrl(null);
+                      console.error('=== PROFILE SETTINGS: Avatar image failed to load ===', e);
+                      console.log('Failed avatar URL:', profile?.avatar_url);
+                      console.log('RefreshKey:', refreshKey);
                       setIsAvatarLoading(false);
                     }}
                   />
@@ -914,7 +904,7 @@ export default function ProfileSettings() {
                       Upload New Picture
                     </Button>
                   </div>
-                  {avatarUrl && (
+                  {profile?.avatar_url && (
                     <Button 
                       variant="ghost" 
                       onClick={handleRemoveAvatar}
