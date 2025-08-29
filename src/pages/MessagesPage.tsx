@@ -52,6 +52,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { ContentLoader } from '@/components/ContentLoader';
+import { supabase } from '@/integrations/supabase/client';
 
 import { 
   UserForMessaging, 
@@ -132,6 +133,7 @@ const convertAPIConversationToChat = (conversation: Conversation, currentUserId:
   let participantName = 'Unknown';
   let participantRole: UserRole | undefined;
   let participantEmail: string | undefined;
+  let participantAvatar: string | undefined;
   
   if (otherParticipant) {
     // Check if we have a user object (expected structure)
@@ -139,6 +141,7 @@ const convertAPIConversationToChat = (conversation: Conversation, currentUserId:
       participantName = `${otherParticipant.user.first_name || ''} ${otherParticipant.user.last_name || ''}`.trim() || 'Unknown';
       participantRole = otherParticipant.user.role as UserRole;
       participantEmail = otherParticipant.user.email;
+      participantAvatar = otherParticipant.user.avatar_url;
     }
     // Check if we have a profiles object (actual backend structure)
     else if (otherParticipant.profiles) {
@@ -146,6 +149,7 @@ const convertAPIConversationToChat = (conversation: Conversation, currentUserId:
       // Get role from the profiles object (this is the correct source)
       participantRole = otherParticipant.profiles.role as UserRole;
       // Email might not be available in profiles object, so we'll leave it undefined
+      participantAvatar = otherParticipant.profiles.avatar_url;
     }
     // If no user or profiles object, try to get role from the participant's role field
     else if (otherParticipant.role) {
@@ -158,7 +162,7 @@ const convertAPIConversationToChat = (conversation: Conversation, currentUserId:
   return {
     id: conversation.id,
     name: conversation.title || participantName,
-    avatar: '', // Empty string to show initials instead of placeholder
+    avatar: participantAvatar || '', // Use avatar URL if available, otherwise empty string for initials
     lastMessage: conversation.last_message || '',
     timestamp: new Date(conversation.last_message_at),
     unreadCount: conversation.unread_count || 0,
@@ -521,12 +525,39 @@ export default function MessagesPage() {
         // Use getConversations with optional search query
         const result = await getConversations(1, 10, conversationsSearchQuery);
         
+        // Convert conversations to chats
         const convertedChats = result.conversations.map(conv => 
           convertAPIConversationToChat(conv, user.id)
         );
+
+        // Enrich chats with avatar URLs by fetching user profiles
+        const enrichedChats = await Promise.all(
+          convertedChats.map(async (chat) => {
+            if (chat.userId && !chat.avatar) {
+              try {
+                // Fetch user profile to get avatar URL
+                const { data: profile, error } = await supabase
+                  .from('profiles')
+                  .select('avatar_url')
+                  .eq('id', chat.userId)
+                  .single();
+                
+                if (!error && profile?.avatar_url) {
+                  return {
+                    ...chat,
+                    avatar: profile.avatar_url
+                  };
+                }
+              } catch (error) {
+                console.error('Error fetching avatar for user:', chat.userId, error);
+              }
+            }
+            return chat;
+          })
+        );
         
         // Set default offline status - will be updated with actual status from API
-        const chatsWithDefaultStatus = convertedChats.map(chat => ({
+        const chatsWithDefaultStatus = enrichedChats.map(chat => ({
           ...chat,
           isOnline: false
         }));
@@ -546,7 +577,7 @@ export default function MessagesPage() {
         }
 
         // Fetch user status for all participants
-        const participantIds = convertedChats
+        const participantIds = enrichedChats
           .map(chat => chat.userId)
           .filter(id => id && id !== user.id);
 
@@ -1714,6 +1745,7 @@ export default function MessagesPage() {
                         <SelectItem key={user.id} value={user.id} className="focus:bg-green-100 focus:text-gray-900 dark:focus:bg-green-900 dark:focus:text-white [&[data-highlighted]]:bg-green-100 [&[data-highlighted]]:text-gray-900 dark:[&[data-highlighted]]:bg-green-900 dark:[&[data-highlighted]]:text-white group">
                           <div className="flex items-center gap-2">
                             <Avatar className="h-6 w-6">
+                              <AvatarImage src={user.avatar_url} alt={`${user.first_name || ''} ${user.last_name || ''}`.trim()} />
                               <AvatarFallback className="text-xs font-semibold bg-gray-200 dark:bg-muted text-gray-900 dark:text-white group-hover:bg-white/20 group-hover:text-white group-focus:bg-white/20 group-focus:text-white" data-avatar>
                                 {(() => {
                                   const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
