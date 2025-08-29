@@ -1479,11 +1479,21 @@ const CourseBuilder = () => {
             
             const courseTeachers = data.members
               .filter((m: any) => m.role === 'teacher' && m.profile)
-              .map((m: any) => ({ id: m.profile.id, name: `${m.profile.first_name} ${m.profile.last_name}`, email: m.profile.email }));
+              .map((m: any) => ({ 
+                id: m.profile.id, 
+                name: `${m.profile.first_name} ${m.profile.last_name}`, 
+                email: m.profile.email,
+                avatar_url: m.profile.avatar_url 
+              }));
             
             const courseStudents = data.members
               .filter((m: any) => m.role === 'student' && m.profile)
-              .map((m: any) => ({ id: m.profile.id, name: `${m.profile.first_name} ${m.profile.last_name}`, email: m.profile.email }));
+              .map((m: any) => ({ 
+                id: m.profile.id, 
+                name: `${m.profile.first_name} ${m.profile.last_name}`, 
+                email: m.profile.email,
+                avatar_url: m.profile.avatar_url 
+              }));
 
             const finalCourseData: CourseData = {
               id: data.id,
