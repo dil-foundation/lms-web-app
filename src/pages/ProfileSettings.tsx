@@ -125,8 +125,9 @@ export default function ProfileSettings() {
   const [isMFAEnabled, setIsMFAEnabled] = useState(false);
   const [isCheckingMFA, setIsCheckingMFA] = useState(true);
   
-  // State to prevent multiple dialog openings
-  const [hasShownResetDialog, setHasShownResetDialog] = useState(false);
+  // Ref to prevent multiple dialog openings (more reliable than state for this use case)
+  const hasShownResetDialogRef = useRef(false);
+  const resetDialogProcessedRef = useRef(false);
 
   const profileForm = useForm<ProfileFormData>({
     resolver: zodResolver(profileFormSchema),
@@ -158,18 +159,28 @@ export default function ProfileSettings() {
   // Check for reset source parameter on component mount
   useEffect(() => {
     // Prevent multiple dialog openings
-    if (hasShownResetDialog || showResetDialog) {
+    if (hasShownResetDialogRef.current || showResetDialog || resetDialogProcessedRef.current) {
+      console.log('Dialog already shown, open, or processed, skipping...');
       return;
     }
     
     const source = searchParams.get('source');
     const hasProcessedReset = sessionStorage.getItem('profileSettings_resetProcessed');
+    const dialogShownThisSession = sessionStorage.getItem('profileSettings_dialogShownThisSession');
+    
+    // If we've already shown the dialog in this session, don't show it again
+    if (dialogShownThisSession === 'true') {
+      console.log('Dialog already shown this session, skipping...');
+      return;
+    }
     
     if (source === 'reset' && !hasProcessedReset) {
       console.log('Opening reset dialog - source=reset, no processed reset');
-      setHasShownResetDialog(true);
+      hasShownResetDialogRef.current = true;
+      resetDialogProcessedRef.current = true;
       setShowResetDialog(true);
       sessionStorage.setItem('profileSettings_shouldShowDialog', 'true');
+      sessionStorage.setItem('profileSettings_dialogShownThisSession', 'true');
       // Clear the URL parameter to prevent showing dialog on refresh
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete('source');
@@ -179,17 +190,20 @@ export default function ProfileSettings() {
       const shouldShowDialog = sessionStorage.getItem('profileSettings_shouldShowDialog');
       if (shouldShowDialog === 'true') {
         console.log('Opening reset dialog - shouldShowDialog=true');
-        setHasShownResetDialog(true);
+        hasShownResetDialogRef.current = true;
+        resetDialogProcessedRef.current = true;
         setShowResetDialog(true);
         sessionStorage.removeItem('profileSettings_shouldShowDialog');
+        sessionStorage.setItem('profileSettings_dialogShownThisSession', 'true');
       }
     }
   }, [searchParams]);
   
-  // Cleanup effect to reset state when component unmounts
+  // Cleanup effect to reset refs when component unmounts
   useEffect(() => {
     return () => {
-      setHasShownResetDialog(false);
+      hasShownResetDialogRef.current = false;
+      resetDialogProcessedRef.current = false;
     };
   }, []);
 
@@ -521,9 +535,11 @@ export default function ProfileSettings() {
       setShowResetDialog(false);
       sessionStorage.setItem('profileSettings_resetProcessed', 'true'); // Set flag only after successful reset
       sessionStorage.removeItem('profileSettings_shouldShowDialog');
+      sessionStorage.removeItem('profileSettings_dialogShownThisSession');
       resetPasswordForm.reset();
-      // Reset the state to allow dialog to be opened again
-      setHasShownResetDialog(false);
+      // Reset the refs to allow dialog to be opened again
+      hasShownResetDialogRef.current = false;
+      resetDialogProcessedRef.current = false;
       
       // Log password reset
       await AccessLogService.logSecurityEvent(
@@ -845,8 +861,10 @@ export default function ProfileSettings() {
             setShowResetMFACode(false);
             // Clear sessionStorage when dialog is closed manually
             sessionStorage.removeItem('profileSettings_shouldShowDialog');
-            // Reset the state to allow dialog to be opened again
-            setHasShownResetDialog(false);
+            sessionStorage.removeItem('profileSettings_dialogShownThisSession');
+            // Reset the refs to allow dialog to be opened again
+            hasShownResetDialogRef.current = false;
+            resetDialogProcessedRef.current = false;
           }
         }}
       >
