@@ -10,10 +10,56 @@ export const ThemeToggle = memo(() => {
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     
-    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
-      setIsDark(true);
+    // Initial theme setup
+    const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
+    const isDarkTheme = initialTheme === 'dark';
+    setIsDark(isDarkTheme);
+    
+    if (isDarkTheme) {
       document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
     }
+
+    // Listen for theme changes from other components
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'theme') {
+        const newTheme = e.newValue;
+        setIsDark(newTheme === 'dark');
+        
+        if (newTheme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      }
+    };
+
+    const handleCustomThemeChange = (e: CustomEvent) => {
+      const { theme } = e.detail;
+      setIsDark(theme === 'dark');
+    };
+
+    // Watch for direct DOM changes to the dark class (extra safety measure)
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+          const hasDarkClass = document.documentElement.classList.contains('dark');
+          setIsDark(hasDarkClass);
+        }
+      });
+    });
+
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('themeChanged', handleCustomThemeChange as EventListener);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('themeChanged', handleCustomThemeChange as EventListener);
+      observer.disconnect();
+    };
   }, []);
 
   const toggleTheme = () => {
@@ -27,6 +73,11 @@ export const ThemeToggle = memo(() => {
       document.documentElement.classList.remove('dark');
       localStorage.setItem('theme', 'light');
     }
+
+    // Dispatch custom event to notify other components
+    window.dispatchEvent(new CustomEvent('themeChanged', { 
+      detail: { theme: newTheme ? 'dark' : 'light' } 
+    }));
   };
 
   return (

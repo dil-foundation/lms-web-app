@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Search, Plus, Users, GraduationCap, BookOpen, MoreHorizontal, Edit, Trash2, Shield } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ContentLoader } from '../ContentLoader';
@@ -55,6 +56,7 @@ interface User {
   lastActive: string;
   grade?: string;
   teacherId?: string;
+  avatar_url?: string;
 }
 
 const initialNewUserState = {
@@ -167,6 +169,7 @@ export const UsersManagement = () => {
           lastActive: user.last_active_at || user.updated_at,
           grade: user.grade,
           teacherId: user.teacher_id,
+          avatar_url: user.avatar_url,
         }));
         setUsers(transformedUsers);
         setTotalUsers(count || 0);
@@ -710,7 +713,6 @@ export const UsersManagement = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="hidden md:table-cell">Joined</TableHead>
@@ -721,15 +723,33 @@ export const UsersManagement = () => {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={7}>
+                    <TableCell colSpan={6}>
                       <ContentLoader message="Loading users..." />
                     </TableCell>
                   </TableRow>
                 ) : (
                   users.map((user) => (
                     <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.name}</TableCell>
-                      <TableCell className="text-muted-foreground">{user.email}</TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center space-x-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage 
+                              src={user.avatar_url} 
+                              alt={user.name}
+                            />
+                            <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                              {user.firstName && user.lastName 
+                                ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
+                                : user.email ? user.email[0].toUpperCase() : 'U'
+                              }
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="font-medium">{user.name}</div>
+                            <div className="text-sm text-muted-foreground">{user.email}</div>
+                          </div>
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <Badge variant={getRoleBadgeVariant(user.role)}>
                           {user.role.charAt(0).toUpperCase() + user.role.slice(1)}

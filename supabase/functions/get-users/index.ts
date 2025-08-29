@@ -27,7 +27,7 @@ serve(async (req) => {
 
     let query = supabaseAdmin
       .from('profiles')
-      .select('id, first_name, last_name, email, role, grade, teacher_id, created_at, updated_at', { count: 'exact' });
+      .select('id, first_name, last_name, email, role, grade, teacher_id, created_at, updated_at, avatar_url', { count: 'exact' });
 
     if (roleFilter && roleFilter !== 'all') {
       query = query.eq('role', roleFilter);

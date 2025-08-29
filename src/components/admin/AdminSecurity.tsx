@@ -380,6 +380,7 @@ const AdminSecurity = () => {
     session_timeout_minutes: 30,
     max_login_attempts: 5
   });
+  const [originalSettings, setOriginalSettings] = useState<SecuritySettings | null>(null);
   const [securityStats, setSecurityStats] = useState<SecurityStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -413,7 +414,7 @@ const AdminSecurity = () => {
       // Initialize local settings with database values
       const initialLocalSettings = {
         two_factor_auth_enabled_admin: SecurityService.parseSettingValue(
-          settings.find(s => s.setting_key === 'two_factor_auth_enabled_admin')?.setting_value || 'false',
+          settings.find(s => s.setting_key === 'two_factor_auth_enabled_admins')?.setting_value || 'false',
           'boolean'
         ) as boolean,
         two_factor_auth_enabled_teachers: SecurityService.parseSettingValue(
@@ -435,6 +436,7 @@ const AdminSecurity = () => {
       };
 
       setLocalSettings(initialLocalSettings);
+      setOriginalSettings(initialLocalSettings);
       setHasUnsavedChanges(false);
 
       // Load initial data for logs
@@ -476,16 +478,31 @@ const AdminSecurity = () => {
 
   // Track if there are unsaved changes
   useEffect(() => {
-    const initialSettings = securitySettings.reduce((acc, setting) => {
-      acc[setting.setting_key] = SecurityService.parseSettingValue(setting.setting_value, setting.setting_type);
-      return acc;
-    }, {} as Record<string, any>);
+    // Only run comparison if we have original settings loaded
+    if (!originalSettings) {
+      setHasUnsavedChanges(false);
+      return;
+    }
+
+    // Debug logging
+    console.log('Original Settings:', originalSettings);
+    console.log('Local Settings:', localSettings);
 
     const isChanged = Object.keys(localSettings).some(key => {
-      return localSettings[key as keyof typeof localSettings] !== initialSettings[key];
+      const localValue = localSettings[key as keyof typeof localSettings];
+      const originalValue = originalSettings[key as keyof typeof originalSettings];
+      const changed = localValue !== originalValue;
+      
+      if (changed) {
+        console.log(`Setting "${key}" changed:`, { local: localValue, original: originalValue });
+      }
+      
+      return changed;
     });
+    
+    console.log('Has unsaved changes:', isChanged);
     setHasUnsavedChanges(isChanged);
-  }, [localSettings, securitySettings]);
+  }, [localSettings, originalSettings]);
 
   const handleLocalSettingChange = (key: keyof typeof localSettings, value: any) => {
     setLocalSettings(prev => ({ ...prev, [key]: value }));
@@ -495,13 +512,26 @@ const AdminSecurity = () => {
   const handleSaveSettings = async () => {
     setSaving(true);
     try {
-      const savePromises = Object.entries(localSettings).map(([key, value]) =>
-        SecurityService.updateSecuritySetting(key, SecurityService.stringifySettingValue(value))
-      );
+      // Map local setting keys to database keys
+      const keyMapping = {
+        two_factor_auth_enabled_admin: 'two_factor_auth_enabled_admins',
+        two_factor_auth_enabled_teachers: 'two_factor_auth_enabled_teachers',
+        two_factor_auth_enabled_students: 'two_factor_auth_enabled_students',
+        session_timeout_minutes: 'session_timeout_minutes',
+        max_login_attempts: 'max_login_attempts'
+      };
+
+      const savePromises = Object.entries(localSettings).map(([key, value]) => {
+        const databaseKey = keyMapping[key as keyof typeof keyMapping] || key;
+        return SecurityService.updateSecuritySetting(databaseKey, SecurityService.stringifySettingValue(value));
+      });
       await Promise.all(savePromises);
-      toast.success('Security settings updated successfully!');
+      
+      // Update the original settings to match the current local settings
+      setOriginalSettings({ ...localSettings });
       setHasUnsavedChanges(false);
-      loadSecurityData(); // Reload all data to ensure consistency
+      
+      toast.success('Security settings updated successfully!');
 
       // Log security settings update
       try {
@@ -533,33 +563,67 @@ const AdminSecurity = () => {
   };
 
   const handleResetSettings = async () => {
-    const initialSettings = securitySettings.reduce((acc, setting) => {
-      acc[setting.setting_key] = SecurityService.parseSettingValue(setting.setting_value, setting.setting_type);
-      return acc;
-    }, {} as Record<string, any>);
-    setLocalSettings(initialSettings);
-    setHasUnsavedChanges(false);
-
-    // Log security settings reset
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await AccessLogService.logAdminSettingsAction(
-          user.id,
-          user.email || 'unknown@email.com',
-          'reset',
-          'security_settings',
-          {
-            two_factor_auth_enabled_admin: initialSettings.two_factor_auth_enabled_admin,
-            two_factor_auth_enabled_teachers: initialSettings.two_factor_auth_enabled_teachers,
-            two_factor_auth_enabled_students: initialSettings.two_factor_auth_enabled_students,
-            session_timeout_minutes: initialSettings.session_timeout_minutes,
-            max_login_attempts: initialSettings.max_login_attempts
-          }
-        );
+      // Fetch fresh data from the database
+      const freshSettings = await SecurityService.getSecuritySettings();
+      
+      // Update the security settings state with fresh data
+      setSecuritySettings(freshSettings);
+      
+      // Initialize local settings with fresh database values
+      const freshLocalSettings = {
+        two_factor_auth_enabled_admin: SecurityService.parseSettingValue(
+          freshSettings.find(s => s.setting_key === 'two_factor_auth_enabled_admins')?.setting_value || 'false',
+          'boolean'
+        ) as boolean,
+        two_factor_auth_enabled_teachers: SecurityService.parseSettingValue(
+          freshSettings.find(s => s.setting_key === 'two_factor_auth_enabled_teachers')?.setting_value || 'false',
+          'boolean'
+        ) as boolean,
+        two_factor_auth_enabled_students: SecurityService.parseSettingValue(
+          freshSettings.find(s => s.setting_key === 'two_factor_auth_enabled_students')?.setting_value || 'false',
+          'boolean'
+        ) as boolean,
+        session_timeout_minutes: SecurityService.parseSettingValue(
+          freshSettings.find(s => s.setting_key === 'session_timeout_minutes')?.setting_value || '30',
+          'integer'
+        ) as number,
+        max_login_attempts: SecurityService.parseSettingValue(
+          freshSettings.find(s => s.setting_key === 'max_login_attempts')?.setting_value || '5',
+          'integer'
+        ) as number
+      };
+      
+      setLocalSettings(freshLocalSettings);
+      setOriginalSettings(freshLocalSettings);
+      setHasUnsavedChanges(false);
+      
+      toast.success('Settings reset successfully');
+
+      // Log security settings reset
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await AccessLogService.logAdminSettingsAction(
+            user.id,
+            user.email || 'unknown@email.com',
+            'reset',
+            'security_settings',
+            {
+              two_factor_auth_enabled_admin: freshLocalSettings.two_factor_auth_enabled_admin,
+              two_factor_auth_enabled_teachers: freshLocalSettings.two_factor_auth_enabled_teachers,
+              two_factor_auth_enabled_students: freshLocalSettings.two_factor_auth_enabled_students,
+              session_timeout_minutes: freshLocalSettings.session_timeout_minutes,
+              max_login_attempts: freshLocalSettings.max_login_attempts
+            }
+          );
+        }
+      } catch (logError) {
+        console.error('Error logging security settings reset:', logError);
       }
-    } catch (logError) {
-      console.error('Error logging security settings reset:', logError);
+    } catch (error) {
+      console.error('Error resetting settings:', error);
+      toast.error('Failed to reset settings');
     }
   };
 
