@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Search, Plus, Users, GraduationCap, BookOpen, MoreHorizontal, Edit, Trash2, Shield } from 'lucide-react';
+import { Search, Plus, Users, GraduationCap, BookOpen, MoreHorizontal, Edit, Trash2, Shield, Upload, Download, FileText, FileSpreadsheet } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ContentLoader } from '../ContentLoader';
 import { Skeleton } from '../ui/skeleton';
@@ -92,6 +92,13 @@ export const UsersManagement = () => {
   const [userToEdit, setUserToEdit] = useState<User | null>(null);
   const [editValidationErrors, setEditValidationErrors] = useState(initialValidationErrors);
   const [isUpdatingUser, setIsUpdatingUser] = useState(false);
+  
+  // Bulk upload state
+  const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadResult, setUploadResult] = useState<any>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
   
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage] = useState(10);
@@ -425,6 +432,96 @@ export const UsersManagement = () => {
     }
   };
 
+  // Bulk upload functions
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.type === 'text/csv' || file.name.endsWith('.csv') || file.name.endsWith('.xlsx')) {
+        setUploadedFile(file);
+        setUploadResult(null);
+      } else {
+        toast.error("Invalid file format", { description: "Please upload a CSV or XLSX file." });
+      }
+    }
+  };
+
+  const handleBulkUpload = async () => {
+    if (!uploadedFile) {
+      toast.error("No file selected", { description: "Please select a file to upload." });
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', uploadedFile);
+
+      const { data, error } = await supabase.functions.invoke('bulk-upload-users', {
+        body: formData,
+      });
+
+      if (error) throw error;
+
+      setUploadResult(data);
+      
+      if (data.success) {
+        toast.success("Bulk upload completed!", { 
+          description: `Successfully created ${data.createdUsers} users.` 
+        });
+        
+        // Log bulk upload
+        if (currentUser) {
+                  await AccessLogService.logUserManagementAction(
+          currentUser.id,
+          currentUser.email || 'unknown@email.com',
+          'user_created',
+          undefined,
+          'multiple',
+          {
+            total_rows: data.totalRows,
+            created_users: data.createdUsers,
+            file_name: uploadedFile.name
+          }
+        );
+        }
+        
+        setIsBulkUploadModalOpen(false);
+        setUploadedFile(null);
+        setUploadResult(null);
+        fetchUsers();
+        fetchStats();
+      } else {
+        toast.error("Upload completed with errors", { 
+          description: `Created ${data.createdUsers} users with ${data.errors.length} errors.` 
+        });
+      }
+    } catch (error: any) {
+      toast.error("Upload failed", { description: error.message });
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
+  };
+
+  const downloadTemplate = (format: 'csv' | 'xlsx') => {
+    const csvUrl = import.meta.env.VITE_BULK_UPLOAD_CSV_TEMPLATE_URL;
+    const xlsxUrl = import.meta.env.VITE_BULK_UPLOAD_XLSX_TEMPLATE_URL;
+    
+    const url = format === 'csv' ? csvUrl : xlsxUrl;
+    
+    if (url) {
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `bulk-upload-template.${format}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      toast.error("Template not available", { description: "Template URL not configured." });
+    }
+  };
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
@@ -467,19 +564,157 @@ export const UsersManagement = () => {
               </div>
             </div>
             
-            <Dialog open={isCreateModalOpen} onOpenChange={(isOpen) => {
-              setIsCreateModalOpen(isOpen);
-              if (!isOpen) {
-                setNewUser(initialNewUserState);
-                setValidationErrors(initialValidationErrors);
-              }
-            }}>
-              <DialogTrigger asChild>
-                <Button className="h-10 px-6 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create User
-                </Button>
-              </DialogTrigger>
+            <div className="flex gap-3">
+              <Dialog open={isBulkUploadModalOpen} onOpenChange={setIsBulkUploadModalOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="h-10 px-6 rounded-xl border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
+                    <Upload className="mr-2 h-4 w-4" />
+                    Bulk Upload
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[600px]">
+                  <DialogHeader>
+                    <DialogTitle>Bulk Upload Users</DialogTitle>
+                    <DialogDescription>
+                      Upload multiple users at once using CSV or XLSX files. Download the template first to ensure proper formatting.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-6">
+                    {/* Template Downloads */}
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium">Download Template</Label>
+                      <div className="flex gap-3">
+                        <Button 
+                          variant="outline" 
+                          onClick={() => downloadTemplate('csv')}
+                          className="flex-1"
+                        >
+                          <FileText className="mr-2 h-4 w-4" />
+                          Download CSV Template
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => downloadTemplate('xlsx')}
+                          className="flex-1"
+                        >
+                          <FileSpreadsheet className="mr-2 h-4 w-4" />
+                          Download XLSX Template
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* File Upload */}
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium">Upload File</Label>
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                        <input
+                          type="file"
+                          accept=".csv,.xlsx"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                          id="file-upload"
+                        />
+                        <label htmlFor="file-upload" className="cursor-pointer">
+                          <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                          <p className="mt-2 text-sm text-gray-600">
+                            Click to upload or drag and drop
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            CSV or XLSX files only
+                          </p>
+                        </label>
+                      </div>
+                      {uploadedFile && (
+                        <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-green-600" />
+                            <span className="text-sm text-green-800">{uploadedFile.name}</span>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setUploadedFile(null)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Upload Results */}
+                    {uploadResult && (
+                      <div className="space-y-3">
+                        <Label className="text-sm font-medium">Upload Results</Label>
+                        <div className={`p-4 rounded-lg border ${
+                          uploadResult.success ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'
+                        }`}>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className={`text-sm font-medium ${
+                              uploadResult.success ? 'text-green-800' : 'text-yellow-800'
+                            }`}>
+                              {uploadResult.message}
+                            </span>
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            <p>Total rows: {uploadResult.totalRows}</p>
+                            <p>Created users: {uploadResult.createdUsers}</p>
+                            {uploadResult.errors && uploadResult.errors.length > 0 && (
+                              <div className="mt-2">
+                                <p className="font-medium text-red-600">Errors:</p>
+                                <div className="max-h-32 overflow-y-auto">
+                                  {uploadResult.errors.slice(0, 5).map((error: any, index: number) => (
+                                    <p key={index} className="text-xs text-red-600">
+                                      Row {error.row}: {error.field} - {error.message}
+                                    </p>
+                                  ))}
+                                  {uploadResult.errors.length > 5 && (
+                                    <p className="text-xs text-red-600">
+                                      ... and {uploadResult.errors.length - 5} more errors
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setIsBulkUploadModalOpen(false);
+                        setUploadedFile(null);
+                        setUploadResult(null);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleBulkUpload}
+                      disabled={!uploadedFile || isUploading}
+                    >
+                      {isUploading ? "Uploading..." : "Upload Users"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={isCreateModalOpen} onOpenChange={(isOpen) => {
+                setIsCreateModalOpen(isOpen);
+                if (!isOpen) {
+                  setNewUser(initialNewUserState);
+                  setValidationErrors(initialValidationErrors);
+                }
+              }}>
+                <DialogTrigger asChild>
+                  <Button className="h-10 px-6 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create User
+                  </Button>
+                </DialogTrigger>
               <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                   <DialogTitle>Create New User</DialogTitle>
@@ -615,6 +850,7 @@ export const UsersManagement = () => {
                 </div>
               </DialogContent>
             </Dialog>
+            </div>
           </div>
         </div>
       </div>

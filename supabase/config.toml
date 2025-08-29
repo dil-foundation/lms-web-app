@@ -23,6 +23,7 @@ content_path = "supabase/email-templates/invite-user.html"
 [auth.email.template.reauthentication]
 subject = "Confirm reauthentication"
 content_path = "supabase/email-templates/reauthentication.html"
+
 [functions.reset-password]
 enabled = true
 verify_jwt = true
@@ -93,3 +94,14 @@ entrypoint = "./functions/update-user/index.ts"
 verify_jwt = true
 import_map = "./functions/update-unconfirmed-user/deno.json"
 entrypoint = "./functions/update-unconfirmed-user/index.ts"
+
+[functions.bulk-upload-users]
+enabled = true
+verify_jwt = true
+import_map = "./functions/bulk-upload-users/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/bulk-upload-users/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/bulk-upload-users/*.html" ]
