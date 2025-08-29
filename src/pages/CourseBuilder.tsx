@@ -126,8 +126,8 @@ interface CourseData {
   requirements: string[];
   learningOutcomes: string[];
   sections: CourseSection[];
-  teachers: { id: string; name: string; email: string }[];
-  students: { id: string; name: string; email: string }[];
+  teachers: { id: string; name: string; email: string; avatar_url?: string }[];
+  students: { id: string; name: string; email: string; avatar_url?: string }[];
   status?: 'Draft' | 'Published' | 'Under Review' | 'Rejected';
   duration?: string;
   published_course_id?: string;
@@ -1402,35 +1402,13 @@ const CourseBuilder = () => {
         setLanguages(fetchedLanguages);
         setLevels(fetchedLevels);
         
-        const getAvatarUrl = async (avatarPath?: string): Promise<string | undefined> => {
-            if (!avatarPath) return undefined;
-            
-            const { data, error } = await supabase.storage
-                .from('dil-lms-avatars')
-                .createSignedUrl(avatarPath, 3600); // 1-hour expiry
-                
-            if (error) {
-        
-                return undefined;
-            }
-            return data.signedUrl;
-        };
-
-        const profilesWithAvatars = await Promise.all(
-            fetchedProfiles.map(async (p) => ({
-                ...p,
-                avatarUrl: await getAvatarUrl((p as any).avatar_url),
-            }))
-        );
-
-        setUserProfiles(fetchedProfiles);
-        
         const teachers = fetchedProfiles
           .filter(p => p.role === 'teacher')
           .map(p => ({ 
             label: `${p.first_name} ${p.last_name}`, 
             value: p.id,
             subLabel: p.email,
+            imageUrl: p.avatar_url,
           }));
 
         const students = fetchedProfiles
@@ -1439,6 +1417,7 @@ const CourseBuilder = () => {
             label: `${p.first_name} ${p.last_name}`,
             value: p.id,
             subLabel: p.email,
+            imageUrl: p.avatar_url,
           }));
 
         setAllTeachers(teachers);
@@ -1500,11 +1479,21 @@ const CourseBuilder = () => {
             
             const courseTeachers = data.members
               .filter((m: any) => m.role === 'teacher' && m.profile)
-              .map((m: any) => ({ id: m.profile.id, name: `${m.profile.first_name} ${m.profile.last_name}`, email: m.profile.email }));
+              .map((m: any) => ({ 
+                id: m.profile.id, 
+                name: `${m.profile.first_name} ${m.profile.last_name}`, 
+                email: m.profile.email,
+                avatar_url: m.profile.avatar_url 
+              }));
             
             const courseStudents = data.members
               .filter((m: any) => m.role === 'student' && m.profile)
-              .map((m: any) => ({ id: m.profile.id, name: `${m.profile.first_name} ${m.profile.last_name}`, email: m.profile.email }));
+              .map((m: any) => ({ 
+                id: m.profile.id, 
+                name: `${m.profile.first_name} ${m.profile.last_name}`, 
+                email: m.profile.email,
+                avatar_url: m.profile.avatar_url 
+              }));
 
             const finalCourseData: CourseData = {
               id: data.id,
@@ -3383,7 +3372,12 @@ const CourseBuilder = () => {
   const handleMembersChange = (role: 'teachers' | 'students', selectedIds: string[]) => {
     const selectedUsers = userProfiles
         .filter(user => selectedIds.includes(user.id))
-        .map(user => ({ id: user.id, name: `${user.first_name} ${user.last_name}`, email: user.email }));
+        .map(user => ({ 
+          id: user.id, 
+          name: `${user.first_name} ${user.last_name}`, 
+          email: user.email,
+          avatar_url: user.avatar_url 
+        }));
     
     setCourseData(prev => ({
         ...prev,
@@ -4422,10 +4416,25 @@ const CourseBuilder = () => {
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                     {courseData.teachers.map(user => (
                           <div key={user.id} className="flex items-center gap-3 p-3 bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl border border-primary/20 hover:border-primary/30 transition-all duration-300 group hover:scale-105">
-                            <div className="w-8 h-8 bg-gradient-to-br from-primary/100 to-primary-200 dark:from-primary-900/30 dark:to-primary-800/30 rounded-full flex items-center justify-center flex-shrink-0">
-                              <span className="text-xs font-semibold text-primary-700 dark:text-primary-300">
-                                {user.name.split(' ').map(n => n[0]).join('')}
-                              </span>
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                              {user.avatar_url ? (
+                                <img 
+                                  src={user.avatar_url} 
+                                  alt={user.name}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    // Fallback to initials if image fails to load
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                    target.nextElementSibling?.classList.remove('hidden');
+                                  }}
+                                />
+                              ) : null}
+                              <div className={`w-full h-full bg-gradient-to-br from-primary/100 to-primary-200 dark:from-primary-900/30 dark:to-primary-800/30 rounded-full flex items-center justify-center ${user.avatar_url ? 'hidden' : ''}`}>
+                                <span className="text-xs font-semibold text-primary-700 dark:text-primary-300">
+                                  {user.name.split(' ').map(n => n[0]).join('')}
+                                </span>
+                              </div>
                         </div>
                             <div className="flex-1 min-w-0">
                               <p className="font-medium text-gray-900 dark:text-white text-sm truncate">{user.name}</p>
@@ -4524,10 +4533,25 @@ const CourseBuilder = () => {
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
                     {courseData.students.map(user => (
                           <div key={user.id} className="flex items-center gap-3 p-3 bg-gradient-to-r from-green-50 to-green-100/50 dark:from-green-900/10 dark:to-green-800/10 rounded-xl border border-green-200/50 dark:border-green-700/30 hover:border-green-300 dark:hover:border-green-600 transition-all duration-300 group hover:scale-105">
-                            <div className="w-8 h-8 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/30 rounded-full flex items-center justify-center flex-shrink-0">
-                              <span className="text-xs font-semibold text-green-700 dark:text-green-300">
-                                {user.name.split(' ').map(n => n[0]).join('')}
-                              </span>
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                              {user.avatar_url ? (
+                                <img 
+                                  src={user.avatar_url} 
+                                  alt={user.name}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    // Fallback to initials if image fails to load
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                    target.nextElementSibling?.classList.remove('hidden');
+                                  }}
+                                />
+                              ) : null}
+                              <div className={`w-full h-full bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/30 rounded-full flex items-center justify-center ${user.avatar_url ? 'hidden' : ''}`}>
+                                <span className="text-xs font-semibold text-green-700 dark:text-green-300">
+                                  {user.name.split(' ').map(n => n[0]).join('')}
+                                </span>
+                              </div>
                         </div>
                             <div className="flex-1 min-w-0">
                               <p className="font-medium text-gray-900 dark:text-white text-sm truncate">{user.name}</p>

@@ -526,9 +526,12 @@ const AdminSecurity = () => {
         return SecurityService.updateSecuritySetting(databaseKey, SecurityService.stringifySettingValue(value));
       });
       await Promise.all(savePromises);
-      toast.success('Security settings updated successfully!');
+      
+      // Update the original settings to match the current local settings
+      setOriginalSettings({ ...localSettings });
       setHasUnsavedChanges(false);
-      loadSecurityData(); // Reload all data to ensure consistency
+      
+      toast.success('Security settings updated successfully!');
 
       // Log security settings update
       try {

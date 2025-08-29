@@ -165,6 +165,7 @@ export default function ReportsPage() {
         name: student.student_name,
         email: student.student_email,
         avatar: student.student_avatar,
+        avatar_url: student.avatar_url,
         enrolledDate: student.enrolled_date,
         course: student.course_title,
         progress: student.progress_percentage,
@@ -731,6 +732,10 @@ export default function ReportsPage() {
                                 <TableCell className="font-medium">
                                   <div className="flex items-center space-x-3">
                                     <Avatar className="h-8 w-8">
+                                      <AvatarImage 
+                                        src={student.avatar_url} 
+                                        alt={student.name}
+                                      />
                                       <AvatarFallback className="text-xs">
                                         {student.avatar}
                                       </AvatarFallback>
