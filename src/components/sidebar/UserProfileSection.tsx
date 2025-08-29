@@ -1,24 +1,33 @@
+import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { getRoleDisplayName, type UserRole } from '@/config/roleNavigation';
 import { Skeleton } from '@/components/ui/skeleton';
-
-type Profile = {
-  first_name: string | null;
-  last_name: string | null;
-  email: string | null;
-  role: UserRole;
-  avatar_url?: string | null;
-  [key: string]: any;
-};
-
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 interface UserProfileSectionProps {
-  profile: Profile | null;
+  // Remove profile prop - we'll get it directly from the hook
 }
 
-export const UserProfileSection = ({ profile }: UserProfileSectionProps) => {
-  if (!profile) {
+export const UserProfileSection = ({}: UserProfileSectionProps = {}) => {
+  const { profile, loading, refreshKey } = useUserProfile();
+  const [forceUpdateKey, setForceUpdateKey] = useState(0);
+  
+  // Listen for profile updates from other components (desktop fix)
+  useEffect(() => {
+    const handleProfileUpdate = (event: CustomEvent) => {
+      console.log('=== SIDEBAR DEBUG: Profile update event received ===', event.detail);
+      setForceUpdateKey(prev => prev + 1);
+    };
+    
+    window.addEventListener('profileUpdated', handleProfileUpdate as EventListener);
+    
+    return () => {
+      window.removeEventListener('profileUpdated', handleProfileUpdate as EventListener);
+    };
+  }, []);
+  
+  if (loading || !profile) {
     return (
       <div className="flex items-center space-x-3 p-4 pt-10 border-t border-border">
         <Skeleton className="h-10 w-10 rounded-full" />
@@ -42,10 +51,24 @@ export const UserProfileSection = ({ profile }: UserProfileSectionProps) => {
     return 'U';
   };
 
+  const combinedRefreshKey = refreshKey + forceUpdateKey;
+  const cacheParam = `v=${combinedRefreshKey}&t=${Date.now()}`;
+  
+  console.log('=== SIDEBAR RENDER ===');
+  console.log('Profile avatar_url:', profile.avatar_url);
+  console.log('RefreshKey:', refreshKey);
+  console.log('ForceUpdateKey:', forceUpdateKey);
+  console.log('Combined key:', combinedRefreshKey);
+  
   return (
     <div className="flex items-center space-x-3 p-4">
-      <Avatar className="h-10 w-10">
-        <AvatarImage src={profile.avatar_url || undefined} alt={displayName} />
+      <Avatar className="h-10 w-10" key={`avatar-sidebar-${combinedRefreshKey}`}>
+        <AvatarImage 
+          src={profile.avatar_url && profile.avatar_url !== 'null' ? `${profile.avatar_url}?${cacheParam}` : undefined} 
+          alt={displayName}
+          onLoad={() => console.log('=== SIDEBAR: Avatar loaded successfully ===')}
+          onError={() => console.log('=== SIDEBAR: Avatar failed to load ===')}
+        />
         <AvatarFallback className="bg-primary text-primary-foreground">
           {getInitials()}
         </AvatarFallback>
