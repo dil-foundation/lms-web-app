@@ -167,7 +167,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
       title: data.title,
       subtitle: data.subtitle,
       description: data.description,
-      category: data.category?.name,
+      category: typeof data.category === 'string' ? data.category : data.category?.name,
       thumbnail: data.image || data.image_url || data.thumbnail_url,
       videoUrl: data.video_url || data.preview_video_url,
       hasValidVideo: isValidVideoUrl(data.video_url || data.preview_video_url),
@@ -185,8 +185,8 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
         students: data.students?.length || data.members?.filter((m: any) => m.role === 'student').length || 0,
         duration: data.duration || "N/A",
         lessons: totalLessons,
-        level: data.level?.name || "All Levels",
-        language: data.language?.name || "English",
+        level: typeof data.level === 'string' ? data.level : data.level?.name || "All Levels",
+        language: typeof data.language === 'string' ? data.language : data.language?.name || "English",
         lastUpdated: new Date(data.updated_at || Date.now()).toLocaleString('en-US', { month: 'long', year: 'numeric' })
       },
       progress: {
@@ -795,13 +795,13 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                 </p>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="text-center p-4 rounded-xl bg-gradient-to-br from-primary/5 to-primary/15 border border-primary/20 dark:border-primary/10 shadow-sm">
-                    <div className="text-2xl font-bold text-primary mb-1">{course.stats.level}</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="text-center p-3 sm:p-4 rounded-xl bg-gradient-to-br from-primary/5 to-primary/15 border border-primary/20 dark:border-primary/10 shadow-sm">
+                    <div className="text-lg sm:text-2xl font-bold text-primary mb-1 break-words">{course.stats.level}</div>
                     <div className="text-xs text-muted-foreground">Level</div>
                     </div>
-                  <div className="text-center p-4 rounded-xl bg-gradient-to-br from-primary/5 to-primary/15 border border-primary/20 dark:border-primary/10 shadow-sm">
-                    <div className="text-2xl font-bold text-primary mb-1">{course.stats.lessons}</div>
+                  <div className="text-center p-3 sm:p-4 rounded-xl bg-gradient-to-br from-primary/5 to-primary/15 border border-primary/20 dark:border-primary/10 shadow-sm">
+                    <div className="text-lg sm:text-2xl font-bold text-primary mb-1">{course.stats.lessons}</div>
                     <div className="text-xs text-muted-foreground">Lessons</div>
                     </div>
                     </div>
