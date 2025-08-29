@@ -36,7 +36,9 @@ import {
   Crop as CropIcon,
   RotateCcw,
   Check,
-  X
+  X,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -92,7 +94,7 @@ export default function ProfileSettings() {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('auto');
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [notifications, setNotifications] = useState({
     push: false,
     inApp: true,
@@ -244,12 +246,63 @@ export default function ProfileSettings() {
         setNotifications(profile.notification_preferences);
       }
       
-      // Load theme preference from profile
-      if (profile.theme_preference) {
-        setTheme(profile.theme_preference as 'light' | 'dark' | 'auto');
+      // Load theme preference from profile and apply it
+      if (profile.theme_preference && (profile.theme_preference === 'light' || profile.theme_preference === 'dark')) {
+        const profileTheme = profile.theme_preference as 'light' | 'dark';
+        setTheme(profileTheme);
+        
+        // Apply the theme to the document and localStorage
+        if (profileTheme === 'dark') {
+          document.documentElement.classList.add('dark');
+          localStorage.setItem('theme', 'dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+          localStorage.setItem('theme', 'light');
+        }
+        
+        // Dispatch custom event to notify other components (like header theme toggle)
+        window.dispatchEvent(new CustomEvent('themeChanged', { 
+          detail: { theme: profileTheme } 
+        }));
       }
     }
   }, [profile, profileForm]);
+
+  // Initialize theme from localStorage or system preference when component mounts
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+      setTheme('dark');
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+      // Dispatch event to sync with header
+      window.dispatchEvent(new CustomEvent('themeChanged', { 
+        detail: { theme: 'dark' } 
+      }));
+    } else {
+      setTheme('light');
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+      // Dispatch event to sync with header
+      window.dispatchEvent(new CustomEvent('themeChanged', { 
+        detail: { theme: 'light' } 
+      }));
+    }
+
+    // Listen for theme changes from other components (like header theme toggle)
+    const handleCustomThemeChange = (e: CustomEvent) => {
+      const { theme } = e.detail;
+      setTheme(theme as 'light' | 'dark');
+    };
+
+    window.addEventListener('themeChanged', handleCustomThemeChange as EventListener);
+
+    return () => {
+      window.removeEventListener('themeChanged', handleCustomThemeChange as EventListener);
+    };
+  }, []);
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
@@ -567,10 +620,19 @@ export default function ProfileSettings() {
     }
   };
 
-  const handleThemeChange = async (newTheme: 'light' | 'dark' | 'auto') => {
+  const handleThemeChange = async (newTheme: 'light' | 'dark') => {
     if (!user) return;
     
     try {
+      // Apply theme immediately to the document
+      if (newTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+      }
+
       const { error } = await supabase
         .from('profiles')
         .update({ theme_preference: newTheme })
@@ -579,7 +641,12 @@ export default function ProfileSettings() {
       if (error) throw error;
 
       setTheme(newTheme);
-      toast.success(`Theme changed to ${newTheme}`);
+      toast.success(`Theme changed to ${newTheme} mode`);
+      
+      // Dispatch custom event to notify other components (like header theme toggle)
+      window.dispatchEvent(new CustomEvent('themeChanged', { 
+        detail: { theme: newTheme } 
+      }));
       
       // Log theme change
       await AccessLogService.logProfileUpdate(
@@ -897,7 +964,7 @@ export default function ProfileSettings() {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-muted/50 hover:text-foreground"
                     onClick={() => setShowResetMFACode(!showResetMFACode)}
                   >
                     {showResetMFACode ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -923,7 +990,7 @@ export default function ProfileSettings() {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-muted/50 hover:text-foreground"
                   onClick={() => setShowResetNewPassword(!showResetNewPassword)}
                 >
                   {showResetNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -951,7 +1018,7 @@ export default function ProfileSettings() {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-muted/50 hover:text-foreground"
                   onClick={() => setShowResetConfirmPassword(!showResetConfirmPassword)}
                 >
                   {showResetConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -1161,7 +1228,7 @@ export default function ProfileSettings() {
                     <Button 
                       variant="ghost" 
                       onClick={handleRemoveAvatar}
-                      className="text-destructive hover:text-destructive"
+                      className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
                     >
                       <Trash2 className="w-4 h-4 mr-2" />
                       Remove Picture
@@ -1277,7 +1344,7 @@ export default function ProfileSettings() {
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-muted/50 hover:text-foreground"
                           onClick={() => setShowPassword(!showPassword)}
                         >
                           {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -1318,7 +1385,7 @@ export default function ProfileSettings() {
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-muted/50 hover:text-foreground"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                         >
                           {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -1355,18 +1422,23 @@ export default function ProfileSettings() {
               {/* Theme Settings */}
               <div className="space-y-4">
                 <h4 className="font-semibold text-foreground">Theme</h4>
-                <div className="grid grid-cols-3 gap-3">
-                  {(['light', 'dark', 'auto'] as const).map((themeOption) => (
-                    <Button
-                      key={themeOption}
-                      variant={theme === themeOption ? 'default' : 'outline'}
-                      onClick={() => handleThemeChange(themeOption)}
-                      className="flex items-center gap-2"
-                    >
-                      <Monitor className="w-4 h-4" />
-                      {themeOption.charAt(0).toUpperCase() + themeOption.slice(1)}
-                    </Button>
-                  ))}
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    variant={theme === 'light' ? 'default' : 'outline'}
+                    onClick={() => handleThemeChange('light')}
+                    className="flex items-center gap-2"
+                  >
+                    <Sun className="w-4 h-4" />
+                    Light
+                  </Button>
+                  <Button
+                    variant={theme === 'dark' ? 'default' : 'outline'}
+                    onClick={() => handleThemeChange('dark')}
+                    className="flex items-center gap-2"
+                  >
+                    <Moon className="w-4 h-4" />
+                    Dark
+                  </Button>
                 </div>
               </div>
 
@@ -1423,7 +1495,7 @@ export default function ProfileSettings() {
                 <Button 
                   variant="outline" 
                   onClick={signOut}
-                  className="text-destructive hover:text-destructive"
+                  className="text-destructive hover:bg-destructive hover:text-destructive-foreground hover:border-destructive"
                 >
                   <LogOut className="w-4 h-4 mr-2" />
                   Sign Out
