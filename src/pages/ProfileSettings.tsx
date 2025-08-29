@@ -67,6 +67,7 @@ const passwordSchema = z.object({
 type PasswordFormData = z.infer<typeof passwordSchema>;
 
 const resetPasswordSchema = z.object({
+  mfaCode: z.string().optional(),
   newPassword: z.string()
     .min(8, 'Password must be at least 8 characters')
     .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
@@ -119,9 +120,13 @@ export default function ProfileSettings() {
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [showResetNewPassword, setShowResetNewPassword] = useState(false);
   const [showResetConfirmPassword, setShowResetConfirmPassword] = useState(false);
+  const [showResetMFACode, setShowResetMFACode] = useState(false);
   // Note: isMFAEnabled now represents whether MFA is required for the user's role based on global security settings
   const [isMFAEnabled, setIsMFAEnabled] = useState(false);
   const [isCheckingMFA, setIsCheckingMFA] = useState(true);
+  
+  // State to prevent multiple dialog openings
+  const [hasShownResetDialog, setHasShownResetDialog] = useState(false);
 
   const profileForm = useForm<ProfileFormData>({
     resolver: zodResolver(profileFormSchema),
@@ -144,6 +149,7 @@ export default function ProfileSettings() {
   const resetPasswordForm = useForm<ResetPasswordFormData>({
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: {
+      mfaCode: '',
       newPassword: '',
       confirmPassword: '',
     },
@@ -151,10 +157,17 @@ export default function ProfileSettings() {
 
   // Check for reset source parameter on component mount
   useEffect(() => {
+    // Prevent multiple dialog openings
+    if (hasShownResetDialog || showResetDialog) {
+      return;
+    }
+    
     const source = searchParams.get('source');
     const hasProcessedReset = sessionStorage.getItem('profileSettings_resetProcessed');
     
     if (source === 'reset' && !hasProcessedReset) {
+      console.log('Opening reset dialog - source=reset, no processed reset');
+      setHasShownResetDialog(true);
       setShowResetDialog(true);
       sessionStorage.setItem('profileSettings_shouldShowDialog', 'true');
       // Clear the URL parameter to prevent showing dialog on refresh
@@ -165,11 +178,20 @@ export default function ProfileSettings() {
       // Check if we should still show the dialog (in case of remount)
       const shouldShowDialog = sessionStorage.getItem('profileSettings_shouldShowDialog');
       if (shouldShowDialog === 'true') {
+        console.log('Opening reset dialog - shouldShowDialog=true');
+        setHasShownResetDialog(true);
         setShowResetDialog(true);
         sessionStorage.removeItem('profileSettings_shouldShowDialog');
       }
     }
   }, [searchParams]);
+  
+  // Cleanup effect to reset state when component unmounts
+  useEffect(() => {
+    return () => {
+      setHasShownResetDialog(false);
+    };
+  }, []);
 
   // Check MFA status on component mount
   useEffect(() => {
@@ -412,11 +434,86 @@ export default function ProfileSettings() {
   const onResetPassword = async (data: ResetPasswordFormData) => {
     setIsResettingPassword(true);
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: data.newPassword,
-      });
+      // Check if user has MFA set up first
+      const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();
+      const hasMFASetup = factors?.totp?.[0]?.status === 'verified';
+      
+      if (hasMFASetup) {
+        // User has MFA, we need to verify it first
+        console.log('MFA setup detected during reset - proceeding with verification');
+        
+        // For reset password, we need to get the MFA code from the form
+        const mfaCode = resetPasswordForm.getValues('mfaCode');
+        
+        // Validate MFA code format (6 digits)
+        const mfaCodeRegex = /^\d{6}$/;
+        if (!mfaCode || !mfaCodeRegex.test(mfaCode)) {
+          toast.error('MFA is enabled for your account. Please enter a 6-digit code from your authenticator app.');
+          setIsResettingPassword(false);
+          return;
+        }
 
-      if (error) throw error;
+        // Get the TOTP factor
+        const totpFactor = factors.totp?.[0];
+        if (!totpFactor) {
+          throw new Error('MFA factor not found');
+        }
+        
+        // Get a challenge for the TOTP factor
+        const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
+          factorId: totpFactor.id
+        });
+        
+        if (challengeError) throw challengeError;
+        
+        // Now verify the challenge with the MFA code
+        const { data: verifyData, error: verifyError } = await supabase.auth.mfa.verify({
+          factorId: totpFactor.id,
+          challengeId: challengeData.id,
+          code: mfaCode
+        });
+        
+        if (verifyError) {
+          if (verifyError.message.includes('Invalid code')) {
+            toast.error('Invalid MFA code. Please check your authenticator app and try again.');
+          } else {
+            throw verifyError;
+          }
+          setIsResettingPassword(false);
+          return;
+        }
+        
+        // Now try to update the password with the re-authenticated session
+        const { error: updateError } = await supabase.auth.updateUser({
+          password: data.newPassword
+        });
+        
+        if (updateError) {
+          if (updateError.message.includes('insufficient_aal')) {
+            toast.error('Additional authentication required. Please try again or contact support.');
+          } else {
+            throw updateError;
+          }
+          setIsResettingPassword(false);
+          return;
+        }
+      } else {
+        // User doesn't have MFA set up, try normal password update
+        console.log('No MFA setup detected during reset - trying normal password update');
+        const { error } = await supabase.auth.updateUser({
+          password: data.newPassword
+        });
+        
+        if (error) {
+          if (error.message.includes('insufficient_aal')) {
+            toast.error('Authentication error. Please try again or contact support.');
+          } else {
+            throw error;
+          }
+          setIsResettingPassword(false);
+          return;
+        }
+      }
 
       toast.success('Password updated successfully', {
         description: 'Your password has been reset.'
@@ -425,6 +522,8 @@ export default function ProfileSettings() {
       sessionStorage.setItem('profileSettings_resetProcessed', 'true'); // Set flag only after successful reset
       sessionStorage.removeItem('profileSettings_shouldShowDialog');
       resetPasswordForm.reset();
+      // Reset the state to allow dialog to be opened again
+      setHasShownResetDialog(false);
       
       // Log password reset
       await AccessLogService.logSecurityEvent(
@@ -435,7 +534,18 @@ export default function ProfileSettings() {
         'User successfully reset their password via reset flow'
       );
     } catch (error: any) {
-      toast.error('Failed to reset password', { description: error.message });
+      console.error('Password reset error:', error);
+      
+      // Handle specific error cases
+      if (error.message.includes('insufficient_aal')) {
+        toast.error('Additional authentication required. Please try again or contact support.', { 
+          description: 'Your account requires additional verification to reset the password.' 
+        });
+      } else if (error.message.includes('Invalid code')) {
+        toast.error('Invalid MFA code. Please check your authenticator app and try again.');
+      } else {
+        toast.error('Failed to reset password', { description: error.message });
+      }
     } finally {
       setIsResettingPassword(false);
     }
@@ -721,16 +831,22 @@ export default function ProfileSettings() {
     <div className="min-h-full bg-background">
       {/* Password Reset Dialog */}
       <Dialog 
+        key="reset-password-dialog"
         open={showResetDialog} 
-        onOpenChange={(open) => {
+                onOpenChange={(open) => {
+          console.log('Dialog onOpenChange called with:', open);
           setShowResetDialog(open);
           if (!open) {
+            console.log('Dialog closing - resetting form and states');
             // Reset the form when dialog is closed
             resetPasswordForm.reset();
             setShowResetNewPassword(false);
             setShowResetConfirmPassword(false);
+            setShowResetMFACode(false);
             // Clear sessionStorage when dialog is closed manually
             sessionStorage.removeItem('profileSettings_shouldShowDialog');
+            // Reset the state to allow dialog to be opened again
+            setHasShownResetDialog(false);
           }
         }}
       >
@@ -745,6 +861,35 @@ export default function ProfileSettings() {
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={resetPasswordForm.handleSubmit(onResetPassword)} className="space-y-4">
+            {/* MFA Code field - only show if MFA is enabled */}
+            {isMFAEnabled && (
+              <div className="space-y-2">
+                <Label htmlFor="reset-mfaCode">MFA Code</Label>
+                <div className="relative">
+                  <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="reset-mfaCode"
+                    type={showResetMFACode ? 'text' : 'password'}
+                    {...resetPasswordForm.register('mfaCode')}
+                    className="pl-10 pr-10"
+                    placeholder="Enter your 6-digit MFA code"
+                    maxLength={6}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowResetMFACode(!showResetMFACode)}
+                  >
+                    {showResetMFACode ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </Button>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  MFA is enabled for your account. Enter the 6-digit code from your authenticator app.
+                </div>
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="reset-newPassword">New Password</Label>
               <div className="relative">
