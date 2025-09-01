@@ -44,10 +44,17 @@ serve(async (req) => {
     }
 
     const { data: profiles, error: profilesError, count } = await query.range(from, to);
-    if (profilesError) throw profilesError;
+    if (profilesError) {
+      // Return empty result instead of throwing error
+      return new Response(JSON.stringify({ users: [], count: 0 }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      });
+    }
     if (!profiles) {
       return new Response(JSON.stringify({ users: [], count: 0 }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
       });
     }
 
@@ -61,7 +68,13 @@ serve(async (req) => {
     // We filter manually after fetching a potentially larger list.
     const relevantAuthUsers = authUsers.users.filter((u: any) => userIds.includes(u.id));
 
-    if (authUsersError) throw authUsersError;
+    if (authUsersError) {
+      // Return empty result instead of throwing error
+      return new Response(JSON.stringify({ users: [], count: 0 }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      });
+    }
 
     const authUsersMap = new Map(relevantAuthUsers.map((u: any) => [u.id, u]));
 

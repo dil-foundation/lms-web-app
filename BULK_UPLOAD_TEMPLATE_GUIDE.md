@@ -62,19 +62,34 @@ The bulk upload template contains the following columns:
 
 ## File Format Requirements
 
-- **Format**: Excel (.xlsx) or CSV (.csv)
+- **Format**: Excel (.xlsx) only
 - **Encoding**: UTF-8
 - **Maximum rows**: 1000 users per upload
 - **Headers**: Must match exactly (case-sensitive)
 
 ## Upload Process
 
-1. Download the template
+1. Download the XLSX template
 2. Fill in user data following the validation rules
-3. Save the file
+3. Save the file as .xlsx format
 4. Upload through the admin interface
 5. Review validation results
 6. Confirm bulk user creation
+
+## Performance Optimizations
+
+The system is optimized for large-scale uploads:
+
+- **Batch Processing**: Users are processed in batches of 50
+- **Concurrent Processing**: Each batch processes users concurrently
+- **Rate Limiting**: 100ms delay between batches to prevent API limits
+- **Memory Efficient**: Optimized database queries and data structures
+- **Progress Tracking**: Real-time processing time and batch information
+
+### Expected Performance:
+- **1000 users**: ~30-60 seconds processing time
+- **Memory usage**: Optimized to stay within Edge Function limits
+- **Email delivery**: Batched to prevent rate limiting
 
 ## Error Handling
 

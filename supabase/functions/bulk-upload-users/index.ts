@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/cors.ts';
+import * as XLSX from 'https://esm.sh/xlsx@0.18.5';
 
 interface UserData {
   firstName: string;
@@ -21,59 +22,78 @@ interface UploadResult {
   success: boolean;
   totalRows: number;
   createdUsers: number;
+  skippedUsers: number;
   errors: ValidationError[];
   message: string;
+  processingTime?: number;
+  batchesProcessed?: number;
 }
 
-// Parse CSV content
-function parseCSV(csvContent: string): UserData[] {
-  const lines = csvContent.trim().split('\n');
-  const headers = lines[0].split(',').map(h => h.trim());
-  
-  // Validate headers
-  const requiredHeaders = ['First Name', 'Last Name', 'Email', 'Role'];
-  const optionalHeaders = ['Grade', 'Teacher ID'];
-  const allHeaders = [...requiredHeaders, ...optionalHeaders];
-  
-  for (const header of requiredHeaders) {
-    if (!headers.includes(header)) {
-      throw new Error(`Missing required header: ${header}`);
-    }
-  }
-  
-  const users: UserData[] = [];
-  
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
-    
-    const values = line.split(',').map(v => v.trim());
-    const user: any = {};
-    
-    headers.forEach((header, index) => {
-      user[header] = values[index] || '';
-    });
-    
-    users.push({
-      firstName: user['First Name'],
-      lastName: user['Last Name'],
-      email: user['Email'],
-      role: user['Role'],
-      grade: user['Grade'] || undefined,
-      teacherId: user['Teacher ID'] || undefined,
-    });
-  }
-  
-  return users;
-}
-
-// Parse XLSX content (simplified - you might want to use a proper XLSX library)
+// Parse XLSX content using proper XLSX library
 function parseXLSX(xlsxContent: ArrayBuffer): UserData[] {
-  // For now, we'll convert XLSX to CSV format
-  // In production, you'd want to use a proper XLSX parser like 'xlsx' library
-  const decoder = new TextDecoder('utf-8');
-  const csvContent = decoder.decode(xlsxContent);
-  return parseCSV(csvContent);
+  try {
+    // Read the workbook from the ArrayBuffer
+    const workbook = XLSX.read(xlsxContent, { type: 'array' });
+    
+    // Get the first worksheet
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) {
+      throw new Error('No worksheets found in XLSX file');
+    }
+    
+    const worksheet = workbook.Sheets[sheetName];
+    
+    // Convert worksheet to JSON with headers
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+    
+    if (jsonData.length < 2) {
+      throw new Error('Invalid XLSX file: insufficient data');
+    }
+    
+    // Get headers from first row
+    const headers = jsonData[0] as string[];
+    
+    // Validate required headers
+    const requiredHeaders = ['First Name', 'Last Name', 'Email', 'Role'];
+    for (const header of requiredHeaders) {
+      if (!headers.includes(header)) {
+        throw new Error(`Missing required header: ${header}`);
+      }
+    }
+    
+    const users: UserData[] = [];
+    
+    // Process data rows (skip header row)
+    for (let i = 1; i < jsonData.length; i++) {
+      const row = jsonData[i] as any[];
+      if (!row || row.length === 0) continue;
+      
+      // Create user object from row data
+      const user: any = {};
+      headers.forEach((header, index) => {
+        user[header] = row[index] || '';
+      });
+      
+              // Only add if we have the minimum required data
+        if (user['First Name'] && user['Last Name'] && user['Email'] && user['Role']) {
+          // Clean email address - remove any extra whitespace and convert to lowercase
+          const cleanEmail = user['Email'].toString().trim().toLowerCase();
+          
+          users.push({
+            firstName: user['First Name'].toString().trim(),
+            lastName: user['Last Name'].toString().trim(),
+            email: cleanEmail,
+            role: user['Role'].toString().trim().toLowerCase(),
+            grade: user['Grade'] ? user['Grade'].toString().trim() : undefined,
+            teacherId: user['Teacher ID'] ? user['Teacher ID'].toString().trim() : undefined,
+          });
+        }
+    }
+    
+    return users;
+  } catch (error) {
+    throw new Error(`Failed to parse XLSX file: ${error.message}`);
+  }
 }
 
 // Validate user data
@@ -190,19 +210,37 @@ serve(async (req) => {
       throw new Error('No file provided');
     }
 
+    // Only accept XLSX files
+    if (!file.name.endsWith('.xlsx')) {
+      throw new Error('Unsupported file format. Please upload XLSX files only.');
+    }
+
     let users: UserData[] = [];
     const errors: ValidationError[] = [];
     let createdUsers = 0;
+    let skippedUsers = 0;
+    const startTime = Date.now();
 
-    // Parse file based on type
-    if (file.name.endsWith('.csv')) {
-      const csvContent = await file.text();
-      users = parseCSV(csvContent);
-    } else if (file.name.endsWith('.xlsx')) {
-      const xlsxContent = await file.arrayBuffer();
-      users = parseXLSX(xlsxContent);
-    } else {
-      throw new Error('Unsupported file format. Please upload CSV or XLSX files only.');
+    // Parse XLSX file
+    const xlsxContent = await file.arrayBuffer();
+    users = parseXLSX(xlsxContent);
+
+    // Check maximum users limit
+    if (users.length > 1000) {
+      return new Response(JSON.stringify({
+        success: false,
+        totalRows: users.length,
+        createdUsers: 0,
+        errors: [{
+          row: 0,
+          field: 'File',
+          message: `Maximum 1000 users allowed per upload. Found ${users.length} users.`
+        }],
+        message: 'File exceeds maximum user limit'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      });
     }
 
     // Validate all users
@@ -240,83 +278,107 @@ serve(async (req) => {
       });
     }
 
-    // Check for existing users
+    // Check for existing users with optimized query
     const existingEmails = await supabaseAdmin
       .from('profiles')
       .select('email')
-      .in('email', emails);
+      .in('email', emails)
+      .limit(1000); // Add limit for safety
 
+    // Filter out existing users and count them as skipped
     if (existingEmails.data && existingEmails.data.length > 0) {
-      const existingEmailList = existingEmails.data.map(u => u.email);
-      for (const email of existingEmailList) {
-        const userIndex = emails.indexOf(email.toLowerCase());
-        errors.push({
-          row: userIndex + 2,
-          field: 'Email',
-          message: 'User with this email already exists'
-        });
-      }
-      
-      if (errors.length > 0) {
-        return new Response(JSON.stringify({
-          success: false,
-          totalRows: users.length,
-          createdUsers: 0,
-          errors,
-          message: 'Some users already exist'
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400,
-        });
-      }
+      const existingEmailSet = new Set(existingEmails.data.map(u => u.email.toLowerCase()));
+      users = users.filter(user => {
+        if (existingEmailSet.has(user.email.toLowerCase())) {
+          skippedUsers++;
+          return false; // Remove from users array
+        }
+        return true; // Keep in users array
+      });
     }
 
-    // Create users
-    for (const user of users) {
-      try {
-        const userMetaData: { [key: string]: any } = {
-          role: user.role,
-          first_name: user.firstName,
-          last_name: user.lastName,
-          password_setup_required: true,
-        };
+    // Create users with batch processing and rate limiting
+    const batchSize = 50; // Process 50 users at a time
+    const rateLimitDelay = 100; // 100ms delay between batches
+    let batchesProcessed = 0;
+    
+    for (let i = 0; i < users.length; i += batchSize) {
+      const batch = users.slice(i, i + batchSize);
+      const batchPromises = batch.map(async (user, batchIndex) => {
+        const userIndex = i + batchIndex;
+        
+        try {
+          // Additional email validation
+          const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+          if (!emailRegex.test(user.email)) {
+            errors.push({
+              row: userIndex + 2,
+              field: 'Email',
+              message: `Invalid email format: ${user.email}`
+            });
+            return;
+          }
 
-        if (user.role === 'student' && user.grade) {
-          userMetaData.grade = user.grade;
-        } else if (user.role === 'teacher' && user.teacherId) {
-          userMetaData.teacher_id = user.teacherId;
-        }
+          const userMetaData: { [key: string]: any } = {
+            role: user.role,
+            first_name: user.firstName,
+            last_name: user.lastName,
+            password_setup_required: true,
+          };
 
-        const { error } = await supabaseAdmin.auth.admin.inviteUserByEmail(user.email, {
-          data: userMetaData,
-        });
+          if (user.role === 'student' && user.grade) {
+            userMetaData.grade = user.grade;
+          } else if (user.role === 'teacher' && user.teacherId) {
+            userMetaData.teacher_id = user.teacherId;
+          }
 
-        if (error) {
+          const { error } = await supabaseAdmin.auth.admin.inviteUserByEmail(user.email, {
+            data: userMetaData,
+          });
+
+          if (error) {
+            console.error(`Error creating user ${user.email}:`, error);
+            errors.push({
+              row: userIndex + 2,
+              field: 'Email',
+              message: `Failed to create user: ${error.message}`
+            });
+          } else {
+            console.log(`Successfully created user: ${user.email}`);
+            createdUsers++;
+          }
+        } catch (error) {
+          console.error(`Exception creating user ${user.email}:`, error);
           errors.push({
-            row: users.indexOf(user) + 2,
+            row: userIndex + 2,
             field: 'Email',
             message: `Failed to create user: ${error.message}`
           });
-        } else {
-          createdUsers++;
         }
-      } catch (error) {
-        errors.push({
-          row: users.indexOf(user) + 2,
-          field: 'Email',
-          message: `Failed to create user: ${error.message}`
-        });
+      });
+
+      // Process batch concurrently
+      await Promise.all(batchPromises);
+      batchesProcessed++;
+      
+      // Rate limiting delay between batches (except for the last batch)
+      if (i + batchSize < users.length) {
+        await new Promise(resolve => setTimeout(resolve, rateLimitDelay));
       }
     }
 
+    const processingTime = Date.now() - startTime;
     const result: UploadResult = {
       success: errors.length === 0,
-      totalRows: users.length,
+      totalRows: users.length + skippedUsers, // Include skipped users in total
       createdUsers,
+      skippedUsers,
       errors,
       message: errors.length === 0 
-        ? `Successfully created ${createdUsers} users` 
-        : `Created ${createdUsers} users with ${errors.length} errors`
+        ? `Successfully created ${createdUsers} users${skippedUsers > 0 ? `, skipped ${skippedUsers} existing users` : ''} in ${(processingTime / 1000).toFixed(2)}s` 
+        : `Created ${createdUsers} users${skippedUsers > 0 ? `, skipped ${skippedUsers} existing users` : ''} with ${errors.length} errors in ${(processingTime / 1000).toFixed(2)}s`,
+      processingTime,
+      batchesProcessed
     };
 
     return new Response(JSON.stringify(result), {
