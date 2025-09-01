@@ -80,9 +80,40 @@ export const getUserRole = async (): Promise<string | null> => {
   }
 };
 
+/**
+ * Get authentication headers for API requests
+ */
+export const getAuthHeaders = async () => {
+  const token = getAuthToken();
+  if (!token) {
+    throw new Error('Authentication required - please log in again');
+  }
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+  };
+};
+
+/**
+ * Get authentication headers with Accept header for API requests
+ */
+export const getAuthHeadersWithAccept = () => {
+  const token = getAuthToken();
+  if (!token) {
+    throw new Error('Authentication required - please log in again');
+  }
+  return {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'Authorization': `Bearer ${token}`,
+  };
+};
+
 export default {
   getAuthToken,
   getCurrentUserId,
   isAuthenticated,
-  getUserRole
+  getUserRole,
+  getAuthHeaders,
+  getAuthHeadersWithAccept
 };

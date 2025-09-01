@@ -35,9 +35,7 @@ import {
   SortAsc,
   ChevronLeft,
   ChevronsLeft,
-  ChevronsRight,
-  Bot,
-  MessageCircle
+  ChevronsRight
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
@@ -48,7 +46,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { supabase } from '@/integrations/supabase/client';
 import { ContentLoader } from '@/components/ContentLoader';
 import { cn } from '@/lib/utils';
-import { ReportsChatbot } from '@/components/reports/ReportsChatbot';
 
 const chartConfig = {
   completion: {
@@ -82,9 +79,7 @@ export default function ReportsPage() {
   const [sortBy, setSortBy] = useState('enrolled_date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  // AI Chatbot state
-  const [showChatbot, setShowChatbot] = useState(false);
-  const [chatbotMinimized, setChatbotMinimized] = useState(false);
+
 
   // Fetch reports data from database
   const fetchReportsData = async () => {
@@ -938,38 +933,7 @@ export default function ReportsPage() {
         </>
       )}
 
-      {/* AI Chatbot Toggle Button */}
-      {!showChatbot && (
-        <Button
-          onClick={() => setShowChatbot(true)}
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-40"
-          size="lg"
-        >
-          <Bot className="h-6 w-6" />
-        </Button>
-      )}
 
-      {/* AI Chatbot */}
-      {showChatbot && (
-        <div className="fixed bottom-6 right-6 z-50">
-          <ReportsChatbot
-            minimized={chatbotMinimized}
-            onToggleSize={() => setChatbotMinimized(!chatbotMinimized)}
-            className={chatbotMinimized ? 'w-80 h-16' : 'w-96 h-[600px]'}
-          />
-          {/* Close button when not minimized */}
-          {!chatbotMinimized && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowChatbot(false)}
-              className="absolute top-2 right-2 h-8 w-8 rounded-full opacity-70 hover:opacity-100"
-            >
-              ×
-            </Button>
-          )}
-        </div>
-      )}
     </div>
   );
 } 
