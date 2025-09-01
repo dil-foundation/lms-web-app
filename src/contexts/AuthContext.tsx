@@ -14,6 +14,7 @@ interface AuthContextType {
   pendingMFAUser: User | null;
   setPendingMFAUser: (user: User | null) => void;
   isMFAVerificationPending: boolean;
+  handleUserNotFoundError: () => Promise<void>;
 }
 
 // Create the context with a default undefined value
@@ -62,7 +63,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     // Get the initial session and user data
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+      if (error) {
+        console.error('Error getting session:', error);
+        
+        // Handle user_not_found error
+        if (error.message?.includes('user_not_found') || error.message?.includes('User from sub claim in JWT does not exist')) {
+          console.warn('User not found, clearing auth state and redirecting to login');
+          cleanupAuthState();
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+          
+          // Redirect to login if on dashboard
+          if (window.location.pathname.startsWith('/dashboard')) {
+            navigate('/auth', { replace: true });
+          }
+          return;
+        }
+      }
+      
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -70,6 +90,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        // Handle auth errors
+        if (event === 'TOKEN_REFRESHED' && session) {
+          try {
+            // Check if user still exists in database
+            const { data: profile, error } = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('id', session.user.id)
+              .single();
+            
+            if (error && error.code === 'PGRST116') {
+              // User not found in database, sign them out
+              console.warn('User not found in database during auth state change, signing out');
+              cleanupAuthState();
+              setSession(null);
+              setUser(null);
+              navigate('/auth', { replace: true });
+              return;
+            }
+          } catch (profileError) {
+            console.error('Error checking user profile during auth state change:', profileError);
+          }
+        }
+        
         // Prevent re-renders on tab focus, etc. by only updating state if the user ID is different.
         if (event === 'USER_UPDATED' || session?.user?.id !== userRef.current?.id) {
           setSession(session);
@@ -161,6 +205,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [navigate, session, user]);
 
+  // Global error handler for user_not_found errors
+  const handleUserNotFoundError = useCallback(async () => {
+    console.warn('Handling user_not_found error globally');
+    cleanupAuthState();
+    setSession(null);
+    setUser(null);
+    setPendingMFAUser(null);
+    navigate('/auth', { replace: true });
+  }, [navigate]);
+
+  // Expose the error handler for use in other components
   const value = useMemo(() => ({
     user,
     session,
@@ -168,8 +223,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     signOut,
     pendingMFAUser,
     setPendingMFAUser,
-    isMFAVerificationPending: !!pendingMFAUser
-  }), [user, session, loading, signOut, pendingMFAUser]);
+    isMFAVerificationPending: !!pendingMFAUser,
+    handleUserNotFoundError
+  }), [user, session, loading, signOut, pendingMFAUser, handleUserNotFoundError]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
