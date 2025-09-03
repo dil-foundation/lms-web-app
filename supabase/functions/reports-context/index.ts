@@ -14,10 +14,15 @@ serve(async (req) => {
   }
 
   try {
-    // Initialize Supabase client
+    // Initialize Supabase client with SERVICE_ROLE_KEY for full database access
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseAnonKey)
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
 
     // Get the authorization header
     const authorization = req.headers.get('Authorization')
@@ -92,15 +97,31 @@ serve(async (req) => {
 
 async function getPlatformContext(supabase: any) {
   try {
+    console.log('=== Starting getPlatformContext function ===')
     const now = new Date()
     const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
     const thisYear = new Date(now.getFullYear(), 0, 1)
+    
+    console.log('Date ranges:', {
+      thisMonth: thisMonth.toISOString(),
+      lastMonth: lastMonth.toISOString(),
+      thisYear: thisYear.toISOString()
+    })
 
     // Get total users from profiles
-    const { count: totalUsers } = await supabase
+    console.log('Querying profiles table with SERVICE_ROLE_KEY...')
+    const { count: totalUsers, error: usersError } = await supabase
       .from('profiles')
       .select('*', { count: 'exact', head: true })
+    
+    console.log('Profiles query result:', { totalUsers, error: usersError })
+    
+    if (usersError) {
+      console.error('Error querying profiles:', usersError)
+    } else {
+      console.log(`✅ Found ${totalUsers} users in database`)
+    }
 
     // Get new users this month
     const { count: newUsersThisMonth } = await supabase
