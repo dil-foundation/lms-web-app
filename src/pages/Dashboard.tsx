@@ -11,6 +11,7 @@ import { BookOpen } from 'lucide-react';
 import { type UserRole } from '@/config/roleNavigation';
 import { ContentLoader } from '@/components/ContentLoader';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { AIAssistant } from '@/components/ui/AIAssistant';
 import { requestNotificationPermission } from '@/utils/fcm';
 
 const AIStudentLearn = lazy(() => import('@/components/dashboard/AIStudentLearn').then(module => ({ default: module.AIStudentLearn })));
@@ -32,6 +33,8 @@ const RolePlaceholder = lazy(() => import('@/components/dashboard/RolePlaceholde
 const UsersManagement = lazy(() => import('@/components/admin/UsersManagement').then(module => ({ default: module.UsersManagement })));
 const CourseManagement = lazy(() => import('@/components/admin/CourseManagement'));
 const ReportsAnalytics = lazy(() => import('@/components/admin/ReportsAnalytics').then(module => ({ default: module.ReportsAnalytics })));
+const AIAssistantAdmin = lazy(() => import('@/components/admin/AIAssistantAdmin').then(module => ({ default: module.AIAssistantAdmin })));
+const AIAdminAssistant = lazy(() => import('@/components/admin/AIAdminAssistant').then(module => ({ default: module.AIAdminAssistant })));
 
 const StageZero = lazy(() => import('@/pages/practice/StageZero').then(module => ({ default: module.StageZero })));
 const LessonDetail = lazy(() => import('@/pages/practice/LessonDetail').then(module => ({ default: module.LessonDetail })));
@@ -324,6 +327,8 @@ const Dashboard = () => {
                           <Route path="/grade-assignments/:id" element={<AssignmentSubmissions />} />
                           <Route path="/grade-assignments/:assignmentId/student/:studentId" element={<StudentSubmissionDetail />} />
                           <Route path="/admin-settings" element={<AdminSettings />} />
+                          <Route path="/ai-assistant-admin" element={<AIAssistantAdmin />} />
+                          <Route path="/ai-admin-assistant" element={<AIAdminAssistant userProfile={finalProfile} />} />
                           <Route path="/test-admin-settings" element={<AdminSettings />} />
                           <Route path="/security" element={<AdminSecurity />} />
                           <Route path="/integration-apis" element={<IntegrationAPIs userProfile={finalProfile} />} />
@@ -348,6 +353,7 @@ const Dashboard = () => {
                 <DashboardContent />
             </DashboardSidebar>
         </div>
+        <AIAssistant />
       </div>
     </SidebarProvider>
   );
