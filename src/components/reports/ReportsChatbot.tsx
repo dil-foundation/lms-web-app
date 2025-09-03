@@ -368,41 +368,80 @@ Your platform shows excellent user engagement with strong retention metrics.`;
         return <br key={lineIndex} />;
       }
 
-      // Parse inline markdown within each line
-      const parts = [];
-      let currentIndex = 0;
-      
-      // Find all **text** patterns
-      const boldRegex = /\*\*(.*?)\*\*/g;
-      let match;
-      
-      while ((match = boldRegex.exec(line)) !== null) {
-        // Add text before the bold part
-        if (match.index > currentIndex) {
-          parts.push(line.substring(currentIndex, match.index));
-        }
-        
-        // Add the bold part
-        parts.push(
-          <strong key={`${lineIndex}-${match.index}`} className="font-semibold">
-            {match[1]}
-          </strong>
+      // Handle markdown headers
+      if (line.startsWith('### ')) {
+        return (
+          <h3 key={lineIndex} className="text-lg font-semibold mt-6 mb-3 text-primary border-b border-primary/20 pb-1">
+            {line.replace('### ', '')}
+          </h3>
         );
-        
-        currentIndex = match.index + match[0].length;
       }
       
-      // Add remaining text after the last match
-      if (currentIndex < line.length) {
-        parts.push(line.substring(currentIndex));
+      if (line.startsWith('## ')) {
+        return (
+          <h2 key={lineIndex} className="text-xl font-bold mt-8 mb-4 text-primary border-b border-primary/30 pb-2">
+            {line.replace('## ', '')}
+          </h2>
+        );
       }
       
+      if (line.startsWith('# ')) {
+        return (
+          <h1 key={lineIndex} className="text-2xl font-bold mt-8 mb-6 text-primary border-b-2 border-primary/40 pb-3">
+            {line.replace('# ', '')}
+          </h1>
+        );
+      }
+
+      // Handle bullet points
+      if (line.startsWith('- ')) {
+        return (
+          <div key={lineIndex} className="flex items-start gap-3 ml-2 mb-2 py-1">
+            <span className="text-primary font-bold text-sm mt-0.5 min-w-[8px]">•</span>
+            <div className="flex-1">{parseInlineMarkdown(line.replace('- ', ''))}</div>
+          </div>
+        );
+      }
+
+      // Handle regular text with inline markdown
       return (
-        <div key={lineIndex} className="leading-relaxed">
-          {parts.length > 0 ? parts : line}
+        <div key={lineIndex} className="leading-relaxed mb-2">
+          {parseInlineMarkdown(line)}
         </div>
       );
     });
+  };
+
+  const parseInlineMarkdown = (text: string) => {
+    const parts = [];
+    let currentIndex = 0;
+    
+    // Find all **text** patterns
+    const boldRegex = /\*\*(.*?)\*\*/g;
+    let match;
+    
+    while ((match = boldRegex.exec(text)) !== null) {
+      // Add text before the bold part
+      if (match.index > currentIndex) {
+        parts.push(text.substring(currentIndex, match.index));
+      }
+      
+      // Add the bold part
+      parts.push(
+        <strong key={match.index} className="font-semibold text-primary">
+          {match[1]}
+        </strong>
+      );
+      
+      currentIndex = match.index + match[0].length;
+    }
+    
+    // Add remaining text after the last match
+    if (currentIndex < text.length) {
+      parts.push(text.substring(currentIndex));
+    }
+    
+    return parts.length > 0 ? parts : text;
   };
 
   const aiTutorInsights = [
@@ -600,7 +639,7 @@ Your platform shows excellent user engagement with strong retention metrics.`;
                         : "bg-muted/50 text-foreground border border-border/50"
                     )}
                   >
-                    <div className="text-sm break-words overflow-wrap-anywhere">
+                    <div className="text-sm break-words overflow-wrap-anywhere space-y-1">
                       {message.type === 'assistant' ? parseMarkdownToReact(message.content) : message.content}
                     </div>
                     <div className="text-xs opacity-70 mt-1">

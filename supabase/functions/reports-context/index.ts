@@ -129,22 +129,20 @@ async function getPlatformContext(supabase: any) {
       .select('*', { count: 'exact', head: true })
       .gte('created_at', thisMonth.toISOString())
 
-    // Get AI Tutor active users (last 3 months for better data coverage)
+    // Get AI Tutor active users (ALL TIME - no date filter)
     const { data: aiTutorUsersData, count: aiTutorActiveUsers } = await supabase
       .from('ai_tutor_daily_learning_analytics')
       .select('user_id', { count: 'exact' })
-      .gte('analytics_date', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]) // Last 90 days
-      .gt('sessions_count', 0)
+      .gt('sessions_count', 0) // Only users with actual sessions
 
-    console.log('AI Tutor active users:', aiTutorActiveUsers)
+    console.log('AI Tutor active users (all time):', aiTutorActiveUsers)
 
-    // Get LMS active users (last 3 months for better data coverage)
+    // Get LMS active users (ALL TIME - no date filter)
     const { data: lmsUsersData, count: lmsActiveUsers } = await supabase
       .from('user_content_item_progress')
       .select('user_id', { count: 'exact' })
-      .gte('updated_at', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()) // Last 90 days
 
-    console.log('LMS active users:', lmsActiveUsers)
+    console.log('LMS active users (all time):', lmsActiveUsers)
 
     // Get total published courses
     const { count: totalCourses } = await supabase
@@ -152,48 +150,41 @@ async function getPlatformContext(supabase: any) {
       .select('*', { count: 'exact', head: true })
       .eq('status', 'Published')
 
-    // Get comprehensive AI Tutor analytics data (last 3 months)
+    // Get comprehensive AI Tutor analytics data (ALL TIME)
     const { data: aiTutorAnalytics } = await supabase
       .from('ai_tutor_daily_learning_analytics')
       .select('sessions_count, total_time_minutes, average_session_duration, average_score, exercises_completed, exercises_attempted, urdu_usage_count')
-      .gte('analytics_date', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]) // Last 90 days
 
-    // Get AI Tutor progress summaries
+    // Get AI Tutor progress summaries (ALL TIME)
     const { data: progressSummaries } = await supabase
       .from('ai_tutor_user_progress_summary')
       .select('overall_progress_percentage, total_exercises_completed, total_time_spent_minutes, streak_days, longest_streak, weekly_learning_hours, monthly_learning_hours')
-      .gte('last_activity_date', thisMonth.toISOString().split('T')[0])
 
-    // Get AI Tutor milestones and achievements
+    // Get AI Tutor milestones and achievements (ALL TIME)
     const { data: milestones } = await supabase
       .from('ai_tutor_learning_milestones')
       .select('milestone_type, milestone_title, earned_at')
-      .gte('earned_at', thisMonth.toISOString())
 
-    // Get AI Tutor unlocks data
+    // Get AI Tutor unlocks data (ALL TIME)
     const { data: unlocks } = await supabase
       .from('ai_tutor_learning_unlocks')
       .select('stage_id, exercise_id, is_unlocked, unlocked_at')
       .eq('is_unlocked', true)
-      .gte('unlocked_at', thisMonth.toISOString())
 
-    // Get AI Tutor stage progress
+    // Get AI Tutor stage progress (ALL TIME)
     const { data: stageProgress } = await supabase
       .from('ai_tutor_user_stage_progress')
       .select('stage_id, completed, average_score, progress_percentage, time_spent_minutes')
-      .gte('updated_at', thisMonth.toISOString())
 
-    // Get AI Tutor topic progress details
+    // Get AI Tutor topic progress details (ALL TIME)
     const { data: topicProgress } = await supabase
       .from('ai_tutor_user_topic_progress')
       .select('stage_id, exercise_id, topic_id, score, completed, total_time_seconds, urdu_used')
-      .gte('created_at', thisMonth.toISOString())
 
-    // Get AI Tutor weekly summaries
+    // Get AI Tutor weekly summaries (ALL TIME)
     const { data: weeklySummaries } = await supabase
       .from('ai_tutor_weekly_progress_summaries')
       .select('total_sessions, total_time_hours, average_score, consistency_score, stages_completed, exercises_mastered, milestones_earned')
-      .gte('week_start_date', thisMonth.toISOString().split('T')[0])
 
     // Get AI Tutor user settings for analytics
     const { data: tutorSettings } = await supabase
@@ -203,34 +194,29 @@ async function getPlatformContext(supabase: any) {
 
     // Get comprehensive LMS data
     
-    // Course enrollment data
+    // Course enrollment data (ALL TIME)
     const { data: courseMembers } = await supabase
       .from('course_members')
       .select('course_id, user_id, role, created_at')
-      .gte('created_at', thisMonth.toISOString())
 
-    // Assignment submissions
+    // Assignment submissions (ALL TIME)
     const { data: assignments } = await supabase
       .from('assignment_submissions')
       .select('assignment_id, user_id, status, grade, submitted_at')
-      .gte('submitted_at', thisMonth.toISOString())
 
-    // Quiz submissions and performance
+    // Quiz submissions and performance (ALL TIME)
     const { data: quizSubmissions } = await supabase
       .from('quiz_submissions')
       .select('user_id, course_id, score, submitted_at, manual_grading_required, manual_grading_completed')
-      .gte('submitted_at', thisMonth.toISOString())
 
-    // Discussion engagement
+    // Discussion engagement (ALL TIME)
     const { data: discussions } = await supabase
       .from('discussions')
       .select('id, title, creator_id, course_id, created_at, type')
-      .gte('created_at', thisMonth.toISOString())
 
     const { data: discussionReplies } = await supabase
       .from('discussion_replies')
       .select('discussion_id, user_id, created_at')
-      .gte('created_at', thisMonth.toISOString())
 
     // Course structure data
     const { data: courseSections } = await supabase
@@ -245,24 +231,21 @@ async function getPlatformContext(supabase: any) {
       .from('course_lesson_content')
       .select('lesson_id, title, content_type')
 
-    // LMS completion tracking
+    // LMS completion tracking (ALL TIME)
     const { data: lmsCompletionData } = await supabase
       .from('user_content_item_progress')
       .select('status, progress_data, completed_at, user_id, course_id')
-      .gte('updated_at', thisMonth.toISOString())
 
     // User session data
     const { data: userSessions } = await supabase
       .from('user_sessions')
       .select('user_id, created_at, last_activity, is_active')
-      .gte('created_at', thisMonth.toISOString())
       .eq('is_active', true)
 
-    // Access logs for detailed analytics
+    // Access logs for detailed analytics (ALL TIME)
     const { data: accessLogs } = await supabase
       .from('access_logs')
       .select('user_id, action, status, created_at')
-      .gte('created_at', thisMonth.toISOString())
       .eq('status', 'success')
 
     // Calculate comprehensive AI Tutor metrics
@@ -387,7 +370,7 @@ async function getPlatformContext(supabase: any) {
       completionRate: Math.round((aiCompletionRate + lmsCompletionRate) / 2),
       engagementRate: engagementRate,
       averageSessionDuration: avgAiSessionDuration,
-      timeRange: 'Current Month',
+      timeRange: 'All Time Data',
       popularCourses: courseNames,
       userRoles: roleDistribution,
       totalPracticeSessions: totalAiSessions,
@@ -489,7 +472,7 @@ async function getPlatformContext(supabase: any) {
       completionRate: 0,
       engagementRate: 0,
       averageSessionDuration: 0,
-      timeRange: 'Current Month',
+      timeRange: 'All Time Data',
       popularCourses: [],
       userRoles: {},
       totalPracticeSessions: 0,

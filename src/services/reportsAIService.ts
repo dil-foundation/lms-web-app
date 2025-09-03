@@ -68,22 +68,25 @@ export class ReportsAIService {
   private static readonly SYSTEM_PROMPT = `You are an AI assistant specialized in generating and analyzing reports for an LMS (Learning Management System) platform. 
 
 Your capabilities include:
-- Generating comprehensive reports for any timeline (daily, weekly, monthly, yearly)
-- Analyzing user engagement metrics and patterns
-- Tracking course performance and completion rates
-- Identifying trends in learning data
-- Providing insights on platform usage
-- Creating comparative analyses between different time periods
+- Generating comprehensive reports using ALL-TIME historical data
+- Analyzing user engagement metrics and patterns across the entire platform history
+- Tracking course performance and completion rates from launch
+- Identifying trends in learning data over the platform's lifetime
+- Providing insights on overall platform usage and growth
+- Creating analyses based on complete historical data
 - Suggesting data-driven recommendations for improvement
 
 When users ask for reports, you should:
-1. Parse their request to understand the timeline, metrics, and type of report needed
-2. Generate realistic and helpful report data
-3. Present the information in a clear, structured format with relevant metrics
-4. Include insights and recommendations based on the data
+1. Parse their request to understand the metrics and type of report needed
+2. Use the provided ALL-TIME data to generate accurate insights
+3. Present information in a clear, structured format with relevant metrics
+4. Include insights and recommendations based on the complete historical data
 5. Use emojis and formatting to make reports visually appealing and easy to read
+6. Always specify that the analysis covers "All-Time Data" or "Historical Data" rather than monthly periods
 
-Always be professional, helpful, and focus on providing actionable insights from the data.`;
+IMPORTANT: The data provided covers the ENTIRE platform history, not just current month. Make this clear in your responses.
+
+Always be professional, helpful, and focus on providing actionable insights from the comprehensive historical data.`;
 
   /**
    * Generate a report response using OpenAI (with fallback to mock responses)
@@ -96,14 +99,13 @@ Always be professional, helpful, and focus on providing actionable insights from
       // First, try to get platform context
       const platformContext = context || await this.getPlatformContext();
       
-      // For now, use intelligent mock responses based on the query
-      // TODO: Replace with actual OpenAI integration when backend is deployed
-      const mockResponse = this.generateMockAIResponse(query, platformContext);
+      // Use OpenAI API for dynamic responses
+      const openAIResponse = await this.callOpenAI(query, platformContext);
       
       return {
         success: true,
-        response: mockResponse.content,
-        reportData: mockResponse.data
+        response: openAIResponse.content,
+        reportData: openAIResponse.data
       };
       
     } catch (error) {
@@ -117,7 +119,97 @@ Always be professional, helpful, and focus on providing actionable insights from
   }
 
   /**
-   * Generate AI responses using ONLY real database data - NO mock data
+   * Call OpenAI API for dynamic report generation
+   */
+  private static async callOpenAI(query: string, context: ReportContext): Promise<{
+    content: string;
+    data: any;
+  }> {
+    const openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY;
+    
+    console.log('🔍 OpenAI API Key check:', openaiApiKey ? 'API key found' : 'API key missing');
+    
+    if (!openaiApiKey) {
+      console.warn('❌ OpenAI API key not configured, falling back to structured response');
+      return this.generateMockAIResponse(query, context);
+    }
+
+    console.log('🚀 Making OpenAI API call for query:', query);
+
+    try {
+      const contextData = JSON.stringify(context, null, 2);
+      const systemPrompt = `${this.SYSTEM_PROMPT}
+
+CRITICAL: You have access to COMPLETE HISTORICAL PLATFORM DATA covering the entire platform lifetime. This is NOT monthly data - it's ALL-TIME data.
+
+Complete Platform Data (All-Time Historical):
+${contextData}
+
+Guidelines:
+- This data represents the ENTIRE platform history, not just current month
+- Use phrases like "All-Time Performance", "Historical Data", "Platform Lifetime", "Since Launch"
+- NEVER mention "current month" or "this month" - always reference all-time/historical data
+- If data shows zeros, acknowledge it and suggest why this might be the case historically
+- Provide actionable recommendations based on the complete historical real data
+- Format your response with clear sections using markdown
+- Include relevant emojis for visual appeal
+- Be specific about the numbers and percentages from the real historical data
+- Make it clear this is a comprehensive analysis of all platform activity since inception`;
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${openaiApiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: systemPrompt
+            },
+            {
+              role: 'user',
+              content: query
+            }
+          ],
+          max_tokens: 1500,
+          temperature: 0.7
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const aiResponse = data.choices[0]?.message?.content || 'Unable to generate response';
+
+      console.log('✅ OpenAI response received:', aiResponse.substring(0, 100) + '...');
+
+      // Extract any metrics from the response for reportData
+      const reportData = {
+        source: 'openai_dynamic',
+        query: query,
+        platformData: context,
+        generatedAt: new Date().toISOString()
+      };
+
+      return {
+        content: aiResponse,
+        data: reportData
+      };
+
+    } catch (error) {
+      console.error('OpenAI API call failed:', error);
+      console.log('Falling back to structured response with real data');
+      return this.generateMockAIResponse(query, context);
+    }
+  }
+
+  /**
+   * Fallback structured responses using real database data (used when OpenAI unavailable)
    */
   private static generateMockAIResponse(query: string, context: ReportContext): {
     content: string;
