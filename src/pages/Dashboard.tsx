@@ -33,6 +33,7 @@ const UsersManagement = lazy(() => import('@/components/admin/UsersManagement').
 const StatesManagement = lazy(() => import('@/components/admin/StatesManagement'));
 const BoardManagement = lazy(() => import('@/components/admin/BoardManagement'));
 const SchoolManagement = lazy(() => import('@/components/admin/SchoolManagement'));
+const ClassManagement = lazy(() => import('@/components/admin/ClassManagement'));
 const CourseManagement = lazy(() => import('@/components/admin/CourseManagement'));
 const ReportsAnalytics = lazy(() => import('@/components/admin/ReportsAnalytics').then(module => ({ default: module.ReportsAnalytics })));
 
@@ -319,6 +320,7 @@ const Dashboard = () => {
                 <Route path="/states" element={<StatesManagement />} />
                 <Route path="/boards" element={<BoardManagement />} />
                 <Route path="/schools" element={<SchoolManagement />} />
+                <Route path="/classes" element={<ClassManagement />} />
                 <Route path="/courses" element={<CourseManagement />} />
                           <Route path="/courses/builder/:courseId" element={<CourseBuilder />} />
                           <Route path="/reports" element={<ReportsOverview />} />

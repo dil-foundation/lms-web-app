@@ -134,6 +134,7 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean): N
           { title: 'States', path: '/dashboard/states', icon: MapPin },
           { title: 'Boards', path: '/dashboard/boards', icon: Building2 },
           { title: 'Schools', path: '/dashboard/schools', icon: GraduationCap },
+          { title: 'Classes', path: '/dashboard/classes', icon: BookOpen },
           { title: 'Courses', path: '/dashboard/courses', icon: BookOpen },
           { title: 'Assessments', path: '/dashboard/grade-assignments', icon: Award },
           { title: 'Messages', path: '/dashboard/messages', icon: MessageSquare },
