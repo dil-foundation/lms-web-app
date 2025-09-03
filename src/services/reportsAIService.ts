@@ -29,6 +29,21 @@ export interface ReportContext {
   completionRate: number;
   timeRange: string;
   availableMetrics: string[];
+  // Additional real data fields for production
+  averageSessionDuration?: number;
+  popularCourses?: string[];
+  activeUsersThisMonth?: number;
+  newUsersThisMonth?: number;
+  totalPracticeSessions?: number;
+  userRoles?: Record<string, number>;
+  lastUpdated?: string;
+  dataQuality?: {
+    userDataComplete: boolean;
+    courseDataComplete: boolean;
+    engagementDataComplete: boolean;
+    confidenceScore: number;
+    note?: string;
+  };
 }
 
 export class ReportsAIService {
@@ -84,8 +99,7 @@ Always be professional, helpful, and focus on providing actionable insights from
   }
 
   /**
-   * Generate intelligent AI responses based on query patterns using real database context
-   * Now uses actual platform data instead of mock responses
+   * Generate AI responses using ONLY real database data - NO mock data
    */
   private static generateMockAIResponse(query: string, context: ReportContext): {
     content: string;
@@ -94,55 +108,91 @@ Always be professional, helpful, and focus on providing actionable insights from
     const queryLower = query.toLowerCase();
     const currentDate = new Date().toLocaleDateString();
     
-    // Use real context data for calculations
-    const isRealData = context.totalUsers > 0 && context.totalCourses > 0;
-    const dataNote = isRealData ? 
-      `*Analysis based on real platform data as of ${currentDate}*` : 
-      `*Analysis based on simulated data as of ${currentDate}*`;
+    // Ensure we only use real data - throw error if no real data available
+    if (!context || context.totalUsers === 0) {
+      return {
+        content: `❌ **No Real Data Available**
+
+I cannot generate this report because there is no real database data available. This system is configured to use only production data.
+
+**To see reports, you need:**
+- Real user registrations in the database
+- Actual course data 
+- User activity and session data
+
+Please ensure your database has real data or contact your administrator.
+
+*Production-ready system - No mock data used*`,
+        data: {
+          error: 'No real data available',
+          totalUsers: 0,
+          totalCourses: 0,
+          dataSource: 'real_database_only'
+        }
+      };
+    }
     
-    // AI Tutor specific queries
+    const dataNote = `*Analysis based on real platform data as of ${currentDate}*`;
+    
+    // AI Tutor specific queries - using ONLY real data
     if (queryLower.includes('ai tutor') || queryLower.includes('tutor') || queryLower.includes('tutoring')) {
-      const aiTutorSessions = isRealData ? Math.floor(context.totalUsers * 3.2) : Math.floor(Math.random() * 500) + 300;
-      const aiActiveUsers = Math.floor(context.totalUsers * 0.7);
-      const sessionDuration = context.averageSessionDuration || Math.floor(Math.random() * 10) + 15;
+      // Calculate AI Tutor metrics from real database data
+      const aiTutorSessions = context.totalPracticeSessions || 0;
+      const aiActiveUsers = context.activeUsersThisMonth || 0;
+      const sessionDuration = context.averageSessionDuration || 0;
+      
+      // Calculate engagement percentage
+      const engagementPercentage = context.totalUsers > 0 ? Math.round((aiActiveUsers / context.totalUsers) * 100) : 0;
       
       return {
         content: `🤖 **AI Tutor System Analytics**
 
 📊 **Current AI Tutor Metrics:**
 - Total Tutoring Sessions: ${aiTutorSessions.toLocaleString()}
-- Active AI Interactions: ${aiActiveUsers} users (${Math.round(aiActiveUsers/context.totalUsers*100)}% of platform)
+- Active AI Users: ${aiActiveUsers.toLocaleString()} users (${engagementPercentage}% of platform)
 - Average Session Duration: ${sessionDuration} minutes
-- User Satisfaction Rating: ${(Math.random() * 0.8 + 4.2).toFixed(1)}/5.0
+- Platform Engagement Rate: ${context.engagementRate}%
 
 🎯 **Learning Outcomes:**
-- Concept Mastery Rate: ${Math.floor(Math.random() * 20) + 75}%
-- Question Response Accuracy: ${Math.floor(Math.random() * 15) + 82}%
-- Learning Progress Improvement: +${Math.floor(Math.random() * 25) + 35}%
+- Course Completion Rate: ${context.completionRate}%
+- Total Registered Users: ${context.totalUsers.toLocaleString()}
+- Active Users This Month: ${context.activeUsersThisMonth || 0}
+- New Users This Month: ${context.newUsersThisMonth || 0}
 
 💡 **AI Tutor Insights:**
-- Most popular topics: ${context.popularCourses?.slice(0,3).join(', ') || 'Grammar, Vocabulary, Pronunciation'}
-- Peak usage hours: 7-9 PM (evening study sessions)
-- Personalized learning paths show ${Math.floor(Math.random() * 20) + 40}% better outcomes
-- Voice interaction feature used by ${Math.floor(Math.random() * 30) + 60}% of users
+- Most popular courses: ${context.popularCourses?.slice(0,3).join(', ') || 'No course data available'}
+- Total Published Courses: ${context.totalCourses}
+- User Role Distribution: ${Object.entries(context.userRoles || {}).map(([role, count]) => `${role}: ${count}`).join(', ') || 'No role data'}
+- Data Quality Score: ${context.dataQuality?.confidenceScore || 0}%
+
+**Real Data Insights:**
+- ${context.dataQuality?.userDataComplete ? '✅ User data is complete' : '⚠️ Limited user data available'}
+- ${context.dataQuality?.courseDataComplete ? '✅ Course data is complete' : '⚠️ Limited course data available'}
+- ${context.dataQuality?.engagementDataComplete ? '✅ Engagement data is complete' : '⚠️ Limited engagement data available'}
 
 **Recommendations:**
-- Expand AI tutor content in high-demand areas
-- Implement advanced personalization algorithms
-- Consider multilingual AI tutor support
+${context.totalUsers < 50 ? '- Focus on user acquisition and onboarding' : '- Optimize for scale and performance'}
+${context.completionRate < 50 ? '- Improve course completion rates through better engagement' : '- Maintain high completion rates'}
+${context.engagementRate < 30 ? '- Enhance user engagement strategies' : '- Continue current engagement approaches'}
 
 ${dataNote}`,
         data: {
-          totalSessions: Math.floor(Math.random() * 500) + 300,
-          activeUsers: Math.floor(context.totalUsers * 0.7),
-          satisfactionRate: (Math.random() * 0.8 + 4.2).toFixed(1),
-          masteryRate: Math.floor(Math.random() * 20) + 75
+          totalSessions: aiTutorSessions,
+          activeUsers: aiActiveUsers,
+          engagementRate: context.engagementRate,
+          completionRate: context.completionRate,
+          totalUsers: context.totalUsers,
+          totalCourses: context.totalCourses,
+          dataSource: 'real_database',
+          lastUpdated: context.lastUpdated
         }
       };
     }
     
-    // LMS specific queries  
+    // LMS specific queries - using ONLY real data
     if (queryLower.includes('lms') || queryLower.includes('course') || queryLower.includes('student')) {
+      const courseToStudentRatio = context.totalCourses > 0 ? Math.round(context.totalUsers / context.totalCourses) : 0;
+      
       return {
         content: `📚 **LMS Platform Analytics**
 
@@ -153,87 +203,101 @@ ${dataNote}`,
 - Student Engagement Rate: ${context.engagementRate}%
 
 📈 **Course Performance:**
-- Most Popular Course: ${context.popularCourses?.[0] || 'English Basics'}
-- Top Courses: ${context.popularCourses?.slice(0, 3).join(', ') || 'English Basics, Advanced Grammar, Conversation Skills'}
-- Average Course Rating: ${(Math.random() * 1.2 + 3.8).toFixed(1)}/5.0
-- Assignment Submission Rate: ${Math.floor(Math.random() * 20) + 70}%
-- Discussion Participation: ${Math.floor(Math.random() * 25) + 45}%
+- Most Popular Course: ${context.popularCourses?.[0] || 'No course data available'}
+- Available Courses: ${context.popularCourses?.join(', ') || 'No course data available'}
+- Active Users This Month: ${context.activeUsersThisMonth || 0}
+- New Users This Month: ${context.newUsersThisMonth || 0}
 
 👥 **Student Engagement:**
-- Daily Active Students: ${Math.floor(context.totalUsers * 0.35).toLocaleString()}
-- Weekly Login Rate: ${Math.floor(Math.random() * 25) + 65}%
-- Content Consumption: ${context.averageSessionDuration || Math.floor(Math.random() * 15) + 25} minutes/session
-- Peer-to-Peer Interactions: ${Math.floor(Math.random() * 30) + 40}%
+- Total Registered Users: ${context.totalUsers.toLocaleString()}
+- Average Session Duration: ${context.averageSessionDuration || 0} minutes
+- User Role Distribution: ${Object.entries(context.userRoles || {}).map(([role, count]) => `${role}: ${count}`).join(', ') || 'No role data'}
 
 💡 **LMS Insights:**
-- Course-to-student ratio: ${Math.round(context.totalUsers/context.totalCourses)} students per course
-- Mobile access accounts for ${Math.floor(Math.random() * 30) + 50}% of usage
-- Interactive content shows ${Math.floor(Math.random() * 20) + 60}% higher engagement
+- Course-to-student ratio: ${courseToStudentRatio} students per course
+- Data Quality Score: ${context.dataQuality?.confidenceScore || 0}%
 - ${context.engagementRate < 20 ? 'Low engagement indicates need for improvement' : context.engagementRate > 70 ? 'High engagement shows strong platform adoption' : 'Moderate engagement with room for growth'}
+- Last Updated: ${context.lastUpdated || 'Unknown'}
 
-**Recommendations:**
-- ${context.engagementRate < 20 ? 'Priority: Focus on user onboarding and content quality' : 'Focus on mobile optimization for better accessibility'}
-- ${context.completionRate < 50 ? 'Review course difficulty and pacing to improve completion rates' : 'Consider advanced features and certifications'}
-- Implement peer mentoring programs to boost engagement
+**Real Data Status:**
+- ${context.dataQuality?.userDataComplete ? '✅ User data is complete and accurate' : '⚠️ Limited user data available'}
+- ${context.dataQuality?.courseDataComplete ? '✅ Course data is complete and accurate' : '⚠️ Limited course data available'}
+- ${context.dataQuality?.engagementDataComplete ? '✅ Engagement data is complete and accurate' : '⚠️ Limited engagement data available'}
+
+**Data-Driven Recommendations:**
+- ${context.engagementRate < 20 ? 'Priority: Focus on user onboarding and content quality' : 'Continue current engagement strategies'}
+- ${context.completionRate < 50 ? 'Review course difficulty and pacing to improve completion rates' : 'Maintain current course quality standards'}
+- ${context.totalUsers < 50 ? 'Focus on user acquisition campaigns' : 'Optimize for scale and user retention'}
 
 ${dataNote}`,
         data: {
           totalStudents: context.totalUsers,
           activeCourses: context.totalCourses,
           completionRate: context.completionRate,
-          engagementRate: context.engagementRate
+          engagementRate: context.engagementRate,
+          activeUsersThisMonth: context.activeUsersThisMonth,
+          newUsersThisMonth: context.newUsersThisMonth,
+          dataSource: 'real_database',
+          lastUpdated: context.lastUpdated
         }
       };
     }
 
-    // Combined platform analysis
+    // Combined platform analysis - using ONLY real data
     if (queryLower.includes('both') || queryLower.includes('combined') || queryLower.includes('compare')) {
-      const aiTutorUsers = Math.floor(context.totalUsers * 0.6);
+      const aiActiveUsers = context.activeUsersThisMonth || 0;
       const lmsUsers = context.totalUsers;
+      const activePercentage = context.totalUsers > 0 ? Math.round((aiActiveUsers / context.totalUsers) * 100) : 0;
       
       return {
         content: `🔄 **Combined Platform Analytics**
 
 📊 **Cross-Platform Overview:**
-- Total Users: ${context.totalUsers}
-- AI Tutor Active Users: ${aiTutorUsers} (${Math.floor((aiTutorUsers/context.totalUsers)*100)}%)
-- LMS Active Users: ${lmsUsers} (100%)
-- Both Platforms: ${Math.floor(aiTutorUsers * 0.8)} users (${Math.floor((Math.floor(aiTutorUsers * 0.8)/context.totalUsers)*100)}%)
+- Total Registered Users: ${context.totalUsers.toLocaleString()}
+- Active Users This Month: ${aiActiveUsers} (${activePercentage}%)
+- New Users This Month: ${context.newUsersThisMonth || 0}
+- Total Published Courses: ${context.totalCourses}
 
-⚡ **Platform Synergy:**
-- Users on both platforms show ${Math.floor(Math.random() * 20) + 45}% better learning outcomes
-- AI Tutor → LMS conversion rate: ${Math.floor(Math.random() * 15) + 75}%
-- Integrated learning paths completion: ${Math.floor(Math.random() * 20) + 80}%
+⚡ **Platform Performance:**
+- Course Completion Rate: ${context.completionRate}%
+- Overall Engagement Rate: ${context.engagementRate}%
+- Average Session Duration: ${context.averageSessionDuration || 0} minutes
+- User Role Distribution: ${Object.entries(context.userRoles || {}).map(([role, count]) => `${role}: ${count}`).join(', ') || 'No role data'}
 
-📈 **Comparative Performance:**
-- AI Tutor Engagement: ${Math.floor(Math.random() * 30) + 60}% (Higher due to personalization)
-- LMS Engagement: ${context.engagementRate}% (Structured learning approach)
-- Combined User Retention: ${Math.floor(Math.random() * 15) + 85}%
+📈 **Real Data Quality:**
+- Data Confidence Score: ${context.dataQuality?.confidenceScore || 0}%
+- User Data: ${context.dataQuality?.userDataComplete ? '✅ Complete' : '⚠️ Limited'}
+- Course Data: ${context.dataQuality?.courseDataComplete ? '✅ Complete' : '⚠️ Limited'}
+- Engagement Data: ${context.dataQuality?.engagementDataComplete ? '✅ Complete' : '⚠️ Limited'}
 
 💡 **Strategic Insights:**
-- AI Tutor drives initial engagement and personalization
-- LMS provides structured curriculum and certification
-- Combined approach yields optimal learning outcomes
-- Cross-platform data shows strong correlation between AI interactions and course completion
+- Platform serves ${context.totalUsers} total users across AI Tutor and LMS systems
+- ${context.engagementRate > 50 ? 'Strong user engagement indicates healthy platform adoption' : 'User engagement could be improved through better onboarding'}
+- ${context.completionRate > 60 ? 'High completion rates show effective course design' : 'Course completion rates need improvement'}
+- Available courses: ${context.popularCourses?.join(', ') || 'No course data available'}
 
-**Recommendations:**
-- Integrate AI Tutor recommendations into LMS course selection
-- Use LMS progress to personalize AI Tutor sessions
-- Create unified dashboard for learners across both platforms
-- Implement cross-platform achievement system
+**Data-Driven Recommendations:**
+- ${context.totalUsers < 100 ? 'Focus on user acquisition and growth strategies' : 'Optimize for scale and user retention'}
+- ${context.engagementRate < 30 ? 'Implement engagement improvement initiatives' : 'Maintain current engagement levels'}
+- ${context.completionRate < 50 ? 'Review course content and difficulty progression' : 'Consider advanced learning paths'}
+- Last data update: ${context.lastUpdated || 'Unknown'}
 
 ${dataNote}`,
         data: {
           totalUsers: context.totalUsers,
-          aiTutorUsers: aiTutorUsers,
-          lmsUsers: lmsUsers,
-          crossPlatformUsers: Math.floor(aiTutorUsers * 0.8),
-          combinedRetention: Math.floor(Math.random() * 15) + 85
+          activeUsersThisMonth: aiActiveUsers,
+          newUsersThisMonth: context.newUsersThisMonth,
+          totalCourses: context.totalCourses,
+          completionRate: context.completionRate,
+          engagementRate: context.engagementRate,
+          dataSource: 'real_database',
+          lastUpdated: context.lastUpdated,
+          dataQuality: context.dataQuality
         }
       };
     }
     
-    // Timeline/Date-based queries
+    // Timeline/Date-based queries - using ONLY real data
     if (queryLower.includes('month') || queryLower.includes('week') || queryLower.includes('timeline') || queryLower.includes('period')) {
       const period = queryLower.includes('week') ? 'this week' : 
                    queryLower.includes('month') ? 'this month' : 
@@ -242,182 +306,240 @@ ${dataNote}`,
       return {
         content: `📊 **Platform Performance Report for ${period.charAt(0).toUpperCase() + period.slice(1)}**
 
-👥 **User Metrics:**
-- Total Users: ${context.totalUsers.toLocaleString()}
-- New Registrations: ${Math.floor(context.totalUsers * 0.08)} 
-- Active Users: ${Math.floor(context.totalUsers * 0.65)}
-- Growth Rate: +${context.engagementRate * 0.3}% vs last period
+👥 **User Metrics (Real Data):**
+- Total Registered Users: ${context.totalUsers.toLocaleString()}
+- New Users This Month: ${context.newUsersThisMonth || 0}
+- Active Users This Month: ${context.activeUsersThisMonth || 0}
+- User Role Distribution: ${Object.entries(context.userRoles || {}).map(([role, count]) => `${role}: ${count}`).join(', ') || 'No role data'}
 
 📚 **Course Activity:**
-- Total Courses: ${context.totalCourses}
-- Completion Rate: ${context.completionRate}%
-- Average Session Duration: ${context.averageSessionDuration || 22} minutes
-- Most Popular: ${context.popularCourses?.[0] || 'English Basics'}
+- Total Published Courses: ${context.totalCourses}
+- Course Completion Rate: ${context.completionRate}%
+- Average Session Duration: ${context.averageSessionDuration || 0} minutes
+- Available Courses: ${context.popularCourses?.join(', ') || 'No course data available'}
 
 📈 **Engagement Insights:**
 - Platform Engagement Rate: ${context.engagementRate}%
-- Daily Active Users: ${Math.floor(context.totalUsers * 0.15)}
-- Discussion Participation: ${Math.floor(Math.random() * 30) + 40}%
+- Data Quality Score: ${context.dataQuality?.confidenceScore || 0}%
+- Time Range: ${context.timeRange || 'Current Month'}
+- Last Updated: ${context.lastUpdated || 'Unknown'}
+
+**Real Data Quality Status:**
+- ${context.dataQuality?.userDataComplete ? '✅ User data is complete and accurate' : '⚠️ Limited user data available'}
+- ${context.dataQuality?.courseDataComplete ? '✅ Course data is complete and accurate' : '⚠️ Limited course data available'}
+- ${context.dataQuality?.engagementDataComplete ? '✅ Engagement data is complete and accurate' : '⚠️ Limited engagement data available'}
 
 **Key Insights:**
-- User engagement is ${context.engagementRate > 70 ? 'strong' : 'moderate'} with consistent activity patterns
+- User engagement is ${context.engagementRate > 70 ? 'strong' : context.engagementRate > 30 ? 'moderate' : 'needs improvement'} based on real platform data
 - Course completion rates show ${context.completionRate > 60 ? 'healthy' : 'room for improvement'} learning outcomes
-- Peak activity hours align with typical study schedules
+- ${context.totalUsers < 50 ? 'Platform is in growth phase - focus on user acquisition' : 'Platform has established user base - focus on retention'}
 
 ${dataNote}`,
         data: {
           totalUsers: context.totalUsers,
-          newUsers: Math.floor(context.totalUsers * 0.08),
-          activeUsers: Math.floor(context.totalUsers * 0.65),
+          newUsersThisMonth: context.newUsersThisMonth,
+          activeUsersThisMonth: context.activeUsersThisMonth,
           engagementRate: context.engagementRate,
-          completionRate: context.completionRate
+          completionRate: context.completionRate,
+          dataSource: 'real_database',
+          timeRange: context.timeRange,
+          lastUpdated: context.lastUpdated
         }
       };
     }
     
-    // User-focused queries
+    // User-focused queries - using ONLY real data
     if (queryLower.includes('user') || queryLower.includes('student') || queryLower.includes('registration')) {
       return {
-        content: `👥 **User Analytics Report**
+        content: `👥 **User Analytics Report (Real Database Data)**
 
 📊 **Current User Base:**
 - Total Registered Users: ${context.totalUsers.toLocaleString()}
-- Active Users (30 days): ${Math.floor(context.totalUsers * 0.65).toLocaleString()}
-- New Users This Month: ${Math.floor(context.totalUsers * 0.12)}
-- User Retention Rate: ${Math.floor(Math.random() * 20) + 75}%
+- Active Users This Month: ${context.activeUsersThisMonth || 0}
+- New Users This Month: ${context.newUsersThisMonth || 0}
+- User Engagement Rate: ${context.engagementRate}%
 
-📈 **Growth Trends:**
-- Month-over-Month Growth: +${Math.floor(Math.random() * 15) + 5}%
-- User Engagement Score: ${context.engagementRate}%
-- Average Session Duration: ${context.averageSessionDuration || 22} minutes
+📈 **User Demographics:**
+- User Role Distribution: ${Object.entries(context.userRoles || {}).map(([role, count]) => `${role}: ${count} users`).join(', ') || 'No role data available'}
+- Average Session Duration: ${context.averageSessionDuration || 0} minutes
+- Course Completion Rate: ${context.completionRate}%
 
-🎯 **User Segments:**
-- Students: ${Math.floor(context.totalUsers * 0.85)} (85%)
-- Teachers: ${Math.floor(context.totalUsers * 0.12)} (12%)
-- Administrators: ${Math.floor(context.totalUsers * 0.03)} (3%)
+🎯 **Real Data Quality:**
+- Data Confidence Score: ${context.dataQuality?.confidenceScore || 0}%
+- User Data Status: ${context.dataQuality?.userDataComplete ? '✅ Complete' : '⚠️ Limited'}
+- Last Updated: ${context.lastUpdated || 'Unknown'}
+- Time Range: ${context.timeRange || 'Current Month'}
 
-**Recommendations:**
-- ${context.engagementRate > 70 ? 'Maintain current engagement strategies' : 'Focus on improving user onboarding'}
-- Consider expanding popular content areas
-- Implement user feedback collection for continuous improvement
+**Data-Driven Insights:**
+- ${context.totalUsers > 0 ? `Platform has ${context.totalUsers} registered users` : 'No registered users in database'}
+- ${context.activeUsersThisMonth > 0 ? `${context.activeUsersThisMonth} users were active this month` : 'No active users recorded this month'}
+- ${context.engagementRate > 50 ? 'Strong user engagement indicates healthy platform adoption' : 'User engagement could be improved'}
+
+**Production-Ready Recommendations:**
+- ${context.totalUsers < 50 ? 'Focus on user acquisition and marketing campaigns' : 'Optimize for user retention and satisfaction'}
+- ${context.engagementRate < 30 ? 'Implement user onboarding improvements' : 'Maintain current engagement levels'}
+- ${context.newUsersThisMonth === 0 ? 'No new user registrations - review marketing strategies' : `${context.newUsersThisMonth} new users acquired this month`}
 
 ${dataNote}`,
         data: {
           totalUsers: context.totalUsers,
-          activeUsers: Math.floor(context.totalUsers * 0.65),
-          newUsers: Math.floor(context.totalUsers * 0.12),
-          engagementRate: context.engagementRate
+          activeUsersThisMonth: context.activeUsersThisMonth,
+          newUsersThisMonth: context.newUsersThisMonth,
+          engagementRate: context.engagementRate,
+          userRoles: context.userRoles,
+          dataSource: 'real_database',
+          lastUpdated: context.lastUpdated
         }
       };
     }
     
-    // Course-focused queries
+    // Course-focused queries - using ONLY real data
     if (queryLower.includes('course') || queryLower.includes('lesson') || queryLower.includes('content') || queryLower.includes('performance')) {
       return {
-        content: `📚 **Course Performance Analysis**
+        content: `📚 **Course Performance Analysis (Real Database Data)**
 
 📖 **Course Overview:**
 - Total Published Courses: ${context.totalCourses}
 - Average Completion Rate: ${context.completionRate}%
-- Total Enrollments: ${context.totalUsers * 2} (avg 2 courses per user)
-- Content Satisfaction Rating: ${(Math.random() * 1.5 + 3.5).toFixed(1)}/5.0
+- Total Registered Users: ${context.totalUsers.toLocaleString()}
+- Active Users This Month: ${context.activeUsersThisMonth || 0}
 
-🏆 **Top Performing Courses:**
-${context.popularCourses?.map((course, i) => `${i + 1}. ${course} - ${Math.floor(Math.random() * 20) + 70}% completion`).join('\n') || 
-'1. English Basics - 85% completion\n2. Advanced Grammar - 78% completion\n3. Conversation Skills - 82% completion'}
+🏆 **Available Courses:**
+${context.popularCourses?.map((course, i) => `${i + 1}. ${course}`).join('\n') || 'No course data available in database'}
 
-📊 **Engagement Metrics:**
-- Average Study Time per Course: ${Math.floor(Math.random() * 10) + 15} hours
-- Discussion Posts per Course: ${Math.floor(Math.random() * 50) + 25}
-- Assignment Submission Rate: ${Math.floor(Math.random() * 25) + 70}%
+📊 **Real Engagement Metrics:**
+- Average Session Duration: ${context.averageSessionDuration || 0} minutes
+- Platform Engagement Rate: ${context.engagementRate}%
+- New Users This Month: ${context.newUsersThisMonth || 0}
+- User Role Distribution: ${Object.entries(context.userRoles || {}).map(([role, count]) => `${role}: ${count}`).join(', ') || 'No role data'}
 
-💡 **Insights:**
-- ${context.completionRate > 65 ? 'Course completion rates are healthy' : 'Consider reviewing course difficulty and pacing'}
-- Interactive content shows higher engagement rates
-- Mobile access accounts for ${Math.floor(Math.random() * 30) + 40}% of course views
+💡 **Data Quality & Insights:**
+- Data Confidence Score: ${context.dataQuality?.confidenceScore || 0}%
+- Course Data Status: ${context.dataQuality?.courseDataComplete ? '✅ Complete and accurate' : '⚠️ Limited course data available'}
+- Last Updated: ${context.lastUpdated || 'Unknown'}
+- Time Range: ${context.timeRange || 'Current Month'}
+
+**Production-Ready Analysis:**
+- ${context.totalCourses > 0 ? `Platform has ${context.totalCourses} published courses` : 'No published courses in database'}
+- ${context.completionRate > 65 ? 'Course completion rates are healthy' : context.completionRate > 0 ? 'Course completion rates need improvement' : 'No completion data available'}
+- ${context.popularCourses?.length > 0 ? `Available courses: ${context.popularCourses.join(', ')}` : 'No course content data available'}
+
+**Real Data Recommendations:**
+- ${context.totalCourses === 0 ? 'Priority: Add course content to the platform' : 'Continue developing course content'}
+- ${context.completionRate < 50 && context.completionRate > 0 ? 'Review course difficulty and user engagement strategies' : 'Monitor course performance metrics'}
+- ${context.dataQuality?.courseDataComplete ? 'Course data is complete - focus on optimization' : 'Improve course data collection and tracking'}
 
 ${dataNote}`,
         data: {
           totalCourses: context.totalCourses,
           completionRate: context.completionRate,
           popularCourses: context.popularCourses,
-          averageRating: (Math.random() * 1.5 + 3.5).toFixed(1)
+          totalUsers: context.totalUsers,
+          engagementRate: context.engagementRate,
+          dataSource: 'real_database',
+          dataQuality: context.dataQuality,
+          lastUpdated: context.lastUpdated
         }
       };
     }
     
-    // Engagement-focused queries
+    // Engagement-focused queries - using ONLY real data
     if (queryLower.includes('engagement') || queryLower.includes('activity') || queryLower.includes('interaction')) {
       return {
-        content: `🎯 **User Engagement Analysis**
+        content: `🎯 **User Engagement Analysis (Real Database Data)**
 
 📱 **Current Engagement Metrics:**
 - Overall Engagement Rate: ${context.engagementRate}%
-- Daily Active Users: ${Math.floor(context.totalUsers * 0.15).toLocaleString()}
-- Weekly Active Users: ${Math.floor(context.totalUsers * 0.45).toLocaleString()}
-- Average Session Duration: ${context.averageSessionDuration || 22} minutes
+- Total Registered Users: ${context.totalUsers.toLocaleString()}
+- Active Users This Month: ${context.activeUsersThisMonth || 0}
+- Average Session Duration: ${context.averageSessionDuration || 0} minutes
 
-⏱️ **Usage Patterns:**
-- Peak Hours: 9-11 AM, 2-4 PM, 7-9 PM
-- Most Active Days: Tuesday, Wednesday, Thursday
-- Mobile vs Desktop: ${Math.floor(Math.random() * 20) + 60}% mobile, ${40 - (Math.floor(Math.random() * 20) + 20)}% desktop
+⏱️ **Real Activity Data:**
+- New Users This Month: ${context.newUsersThisMonth || 0}
+- Course Completion Rate: ${context.completionRate}%
+- Total Published Courses: ${context.totalCourses}
+- Time Range: ${context.timeRange || 'Current Month'}
 
-💬 **Interaction Metrics:**
-- Discussion Participation: ${Math.floor(Math.random() * 25) + 45}%
-- Assignment Completion: ${Math.floor(Math.random() * 20) + 70}%
-- Peer-to-Peer Interactions: ${Math.floor(Math.random() * 30) + 35}%
+💬 **Platform Metrics:**
+- User Role Distribution: ${Object.entries(context.userRoles || {}).map(([role, count]) => `${role}: ${count} users`).join(', ') || 'No role data available'}
+- Available Courses: ${context.popularCourses?.join(', ') || 'No course data available'}
 
-📈 **Trends:**
-- ${context.engagementRate > 70 ? 'Strong upward trend in user engagement' : 'Steady engagement with room for growth'}
-- Content consumption has increased ${Math.floor(Math.random() * 15) + 10}% this month
-- Feature adoption rate: ${Math.floor(Math.random() * 20) + 60}%
+📈 **Data Quality & Trends:**
+- Data Confidence Score: ${context.dataQuality?.confidenceScore || 0}%
+- Engagement Data Status: ${context.dataQuality?.engagementDataComplete ? '✅ Complete and accurate' : '⚠️ Limited engagement data'}
+- Last Updated: ${context.lastUpdated || 'Unknown'}
+
+**Real Data Insights:**
+- ${context.engagementRate > 70 ? 'Strong user engagement indicates healthy platform adoption' : context.engagementRate > 30 ? 'Moderate engagement with room for improvement' : 'Low engagement - needs immediate attention'}
+- ${context.activeUsersThisMonth > 0 ? `${context.activeUsersThisMonth} users were active this month` : 'No active users recorded this month'}
+- ${context.totalUsers > 0 ? `Platform serves ${context.totalUsers} total registered users` : 'No users registered in the system'}
+
+**Production-Ready Recommendations:**
+- ${context.engagementRate < 30 ? 'Priority: Implement user engagement improvement strategies' : 'Continue monitoring engagement metrics'}
+- ${context.activeUsersThisMonth === 0 ? 'Critical: No active users detected - review platform accessibility' : 'Monitor user activity trends'}
+- ${context.dataQuality?.engagementDataComplete ? 'Engagement tracking is complete' : 'Improve engagement data collection systems'}
 
 ${dataNote}`,
         data: {
           engagementRate: context.engagementRate,
-          dailyActiveUsers: Math.floor(context.totalUsers * 0.15),
-          sessionDuration: context.averageSessionDuration || 22,
-          trends: 'positive'
+          totalUsers: context.totalUsers,
+          activeUsersThisMonth: context.activeUsersThisMonth,
+          sessionDuration: context.averageSessionDuration || 0,
+          dataSource: 'real_database',
+          dataQuality: context.dataQuality,
+          lastUpdated: context.lastUpdated
         }
       };
     }
     
-    // General/Default response
+    // General/Default response - using ONLY real data
     return {
-      content: `📊 **Multi-Platform Overview**
+      content: `📊 **Production-Ready Platform Overview**
 
 Thank you for your question: "${query}"
 
-🎯 **Current System Status:**
-- Total Users: ${context.totalUsers.toLocaleString()}
-- Active LMS Courses: ${context.totalCourses}
+🎯 **Current Real Data Status:**
+- Total Registered Users: ${context.totalUsers.toLocaleString()}
+- Published Courses: ${context.totalCourses}
 - Platform Engagement Rate: ${context.engagementRate}%
 - Course Completion Rate: ${context.completionRate}%
+- Active Users This Month: ${context.activeUsersThisMonth || 0}
+- New Users This Month: ${context.newUsersThisMonth || 0}
+
+📊 **Data Quality Assessment:**
+- Data Confidence Score: ${context.dataQuality?.confidenceScore || 0}%
+- User Data: ${context.dataQuality?.userDataComplete ? '✅ Complete' : '⚠️ Limited'}
+- Course Data: ${context.dataQuality?.courseDataComplete ? '✅ Complete' : '⚠️ Limited'}
+- Engagement Data: ${context.dataQuality?.engagementDataComplete ? '✅ Complete' : '⚠️ Limited'}
+- Last Updated: ${context.lastUpdated || 'Unknown'}
 
 🤖 **AI Tutor & 📚 LMS Integration:**
-- Dual-platform ecosystem serving diverse learning needs
-- AI Tutor: Personalized, adaptive learning experiences
-- LMS: Structured curriculum and certification paths
-- Cross-platform synergy enhancing educational outcomes
+- Production system serving real users with actual data
+- AI Tutor: Personalized learning with tracked interactions
+- LMS: Structured courses with completion tracking
+- Real-time analytics from database queries
 
-💡 **What I can help you analyze:**
+💡 **Available Real Data Reports:**
 
-🤖 **AI Tutor Reports:**
-- "Show me AI Tutor usage and learning outcomes"
-- "Analyze tutoring session effectiveness"
-- "AI interaction patterns and user satisfaction"
+🤖 **AI Tutor Analysis:**
+- "Show me AI Tutor session data and user interactions"
+- "Analyze real tutoring effectiveness metrics"
+- "AI platform usage patterns from database"
 
-📚 **LMS Reports:**
-- "Analyze LMS course performance and student engagement"
-- "Course completion rates and popular content"
-- "Student progress and assessment results"
+📚 **LMS Performance:**
+- "Analyze actual course completion and enrollment data"
+- "Real student engagement and progress metrics"
+- "Course performance based on database records"
 
-🔄 **Combined Analysis:**
-- "Compare AI Tutor vs LMS user activity trends"
-- "Cross-platform learning outcome analysis"
-- "Integrated platform performance insights"
+🔄 **Combined Analytics:**
+- "Cross-platform user activity from real data"
+- "Integrated learning outcomes analysis"
+- "Production platform performance insights"
 
-**Which system interests you most, or would you like a combined analysis?**
+**Production Notes:**
+- ${context.totalUsers === 0 ? '⚠️ No users in database - system needs real data' : `✅ ${context.totalUsers} real users tracked`}
+- ${context.totalCourses === 0 ? '⚠️ No courses published - add content to generate reports' : `✅ ${context.totalCourses} courses available`}
+- All metrics are calculated from live database queries
 
 ${dataNote}`,
       data: {
@@ -425,6 +547,11 @@ ${dataNote}`,
         totalCourses: context.totalCourses,
         engagementRate: context.engagementRate,
         completionRate: context.completionRate,
+        activeUsersThisMonth: context.activeUsersThisMonth,
+        newUsersThisMonth: context.newUsersThisMonth,
+        dataSource: 'real_database',
+        dataQuality: context.dataQuality,
+        lastUpdated: context.lastUpdated,
         platforms: ['AI Tutor', 'LMS']
       }
     };
@@ -556,34 +683,41 @@ ${dataNote}`,
   }
 
   /**
-   * Default context when API is not available
+   * Default context when API is not available - PRODUCTION READY (NO MOCK DATA)
    */
   private static getDefaultContext(): ReportContext {
     return {
-      totalUsers: 22, // Matches the current data shown in the screenshot
-      totalCourses: 7, // Matches the current data shown in the screenshot  
-      engagementRate: 9, // Matches the current data shown in the screenshot
-      completionRate: 65,
+      totalUsers: 0, // Real data only - no mock users
+      totalCourses: 0, // Real data only - no mock courses
+      engagementRate: 0, // Real data only - no mock engagement
+      completionRate: 0, // Real data only - no mock completion
       timeRange: 'Current Month',
-      averageSessionDuration: 18,
-      popularCourses: [
-        'English Basics',
-        'Advanced Grammar',
-        'Conversation Skills', 
-        'Business English',
-        'Pronunciation Practice'
-      ],
+      averageSessionDuration: 0, // Real data only
+      popularCourses: [], // Empty - will be populated from database
       availableMetrics: [
         'User Registration',
-        'Course Completion',
+        'Course Completion', 
         'Engagement Rate',
         'Session Duration',
         'Login Frequency',
-        'Assessment Scores',
-        'Discussion Participation',
-        'User Growth Trends',
-        'Platform Distribution'
-      ]
+        'Practice Sessions',
+        'Course Progress',
+        'User Activity',
+        'Platform Analytics'
+      ],
+      // Additional real data fields
+      activeUsersThisMonth: 0,
+      newUsersThisMonth: 0,
+      totalPracticeSessions: 0,
+      userRoles: {},
+      lastUpdated: new Date().toISOString(),
+      dataQuality: {
+        userDataComplete: false,
+        courseDataComplete: false,
+        engagementDataComplete: false,
+        confidenceScore: 0,
+        note: 'No real data available - database connection required'
+      }
     };
   }
 

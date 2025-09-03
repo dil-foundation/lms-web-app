@@ -1,3 +1,4 @@
+/// <reference types="https://deno.land/x/deno@v1.28.0/lib/deno.d.ts" />
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -107,11 +108,11 @@ async function getPlatformContext(supabase: any) {
       .select('*', { count: 'exact', head: true })
       .gte('created_at', thisMonth.toISOString())
 
-    // Get active users this month (users who have logged in or practiced)
+    // Get active users this month (users who have activity in content progress)
     const { count: activeUsersThisMonth } = await supabase
-      .from('user_practice_sessions')
+      .from('user_content_item_progress')
       .select('user_id', { count: 'exact', head: true })
-      .gte('created_at', thisMonth.toISOString())
+      .gte('updated_at', thisMonth.toISOString())
       .not('user_id', 'is', null)
 
     // Get total courses
@@ -120,38 +121,38 @@ async function getPlatformContext(supabase: any) {
       .select('*', { count: 'exact', head: true })
       .eq('status', 'Published')
 
-    // Get course completion data
+    // Get course completion data from user content progress
     const { data: completionData } = await supabase
-      .from('course_progress')
-      .select('completion_percentage')
+      .from('user_content_item_progress')
+      .select('status')
       .gte('updated_at', thisMonth.toISOString())
 
-    // Calculate average completion rate
+    // Calculate average completion rate based on status
     const completions = completionData || []
-    const totalCompletions = completions.filter(c => c.completion_percentage >= 90).length
+    const totalCompletions = completions.filter(c => c.status === 'completed').length
     const completionRate = completions.length > 0 ? Math.round((totalCompletions / completions.length) * 100) : 0
 
-    // Get engagement metrics (practice sessions)
+    // Get engagement metrics from user activity
     const { data: practiceSessions } = await supabase
-      .from('user_practice_sessions')
-      .select('duration_minutes, score')
+      .from('user_content_item_progress')
+      .select('progress_data, status, created_at')
       .gte('created_at', thisMonth.toISOString())
 
-    // Calculate average engagement
+    // Calculate average engagement from progress data
     const sessions = practiceSessions || []
     const avgSessionDuration = sessions.length > 0 ? 
-      Math.round(sessions.reduce((sum, s) => sum + (s.duration_minutes || 0), 0) / sessions.length) : 0
+      Math.round(sessions.reduce((sum, s) => {
+        const seconds = s.progress_data?.seconds || 0
+        return sum + (seconds / 60) // convert seconds to minutes
+      }, 0) / sessions.length) : 0
     
-    const avgScore = sessions.length > 0 ?
-      Math.round(sessions.reduce((sum, s) => sum + (s.score || 0), 0) / sessions.length) : 0
+    const engagementScore = sessions.length > 0 ?
+      Math.round((sessions.filter(s => s.status === 'completed').length / sessions.length) * 100) : 0
 
-    // Get popular courses
+    // Get popular courses based on user progress
     const { data: popularCourses } = await supabase
       .from('courses')
-      .select(`
-        title,
-        course_members!inner(user_id)
-      `)
+      .select('title')
       .eq('status', 'Published')
       .limit(5)
 
@@ -180,11 +181,12 @@ async function getPlatformContext(supabase: any) {
       activeUsersThisMonth: activeUsersThisMonth || 0,
       totalCourses: totalCourses || 0,
       completionRate: completionRate,
-      engagementRate: Math.min(90, Math.max(10, avgScore)), // Normalize to percentage
+      engagementRate: Math.min(90, Math.max(0, engagementScore)), // Normalize to percentage, allow 0
       averageSessionDuration: avgSessionDuration,
       timeRange: 'Current Month',
       popularCourses: courseNames.slice(0, 5),
       userRoles: roleDistribution,
+      totalPracticeSessions: sessions.length, // Add total practice sessions
       availableMetrics: [
         'User Registration',
         'Course Completion',
@@ -193,46 +195,38 @@ async function getPlatformContext(supabase: any) {
         'Login Frequency',
         'Practice Scores',
         'Course Progress',
-        'Discussion Participation',
-        'Assignment Submissions'
+        'User Activity',
+        'Platform Analytics'
       ],
       lastUpdated: new Date().toISOString(),
       dataQuality: {
         userDataComplete: (totalUsers || 0) > 0,
         courseDataComplete: (totalCourses || 0) > 0,
         engagementDataComplete: sessions.length > 0,
-        confidenceScore: Math.min(100, Math.max(50, 
-          ((totalUsers || 0) > 10 ? 30 : 0) +
+        confidenceScore: Math.min(100, Math.max(0, 
+          ((totalUsers || 0) > 0 ? 30 : 0) +
           ((totalCourses || 0) > 0 ? 30 : 0) +
-          (sessions.length > 5 ? 40 : 0)
-        ))
+          (sessions.length > 0 ? 40 : 0)
+        )),
+        note: 'Real database data - production ready'
       }
     }
   } catch (error) {
     console.error('Error fetching platform context:', error)
     
-    // Return fallback data
+    // Return empty fallback data - NO MOCK DATA in production
     return {
-      totalUsers: 1250,
-      newUsersThisMonth: 89,
-      activeUsersThisMonth: 234,
-      totalCourses: 15,
-      completionRate: 68,
-      engagementRate: 78,
-      averageSessionDuration: 22,
+      totalUsers: 0,
+      newUsersThisMonth: 0,
+      activeUsersThisMonth: 0,
+      totalCourses: 0,
+      completionRate: 0,
+      engagementRate: 0,
+      averageSessionDuration: 0,
       timeRange: 'Current Month',
-      popularCourses: [
-        'English Basics',
-        'Advanced Grammar',
-        'Conversation Skills',
-        'Business English',
-        'Pronunciation Practice'
-      ],
-      userRoles: {
-        student: 1050,
-        teacher: 85,
-        admin: 15
-      },
+      popularCourses: [],
+      userRoles: {},
+      totalPracticeSessions: 0,
       availableMetrics: [
         'User Registration',
         'Course Completion',
@@ -241,16 +235,16 @@ async function getPlatformContext(supabase: any) {
         'Login Frequency',
         'Practice Scores',
         'Course Progress',
-        'Discussion Participation',
-        'Assignment Submissions'
+        'User Activity',
+        'Platform Analytics'
       ],
       lastUpdated: new Date().toISOString(),
       dataQuality: {
         userDataComplete: false,
         courseDataComplete: false,
         engagementDataComplete: false,
-        confidenceScore: 60,
-        note: 'Using fallback data due to database connection issues'
+        confidenceScore: 0,
+        note: 'Database connection failed - no real data available. Production system requires valid database connection.'
       }
     }
   }

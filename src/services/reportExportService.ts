@@ -1,5 +1,3 @@
-import { format } from 'date-fns';
-
 export interface ExportData {
   title: string;
   timestamp: string;
@@ -8,9 +6,23 @@ export interface ExportData {
   summary: string;
 }
 
-export type ExportFormat = 'csv' | 'json' | 'pdf' | 'xlsx';
+export type ExportFormat = 'pdf' | 'xlsx';
 
 export class ReportExportService {
+  /**
+   * Format date to string in yyyy-MM-dd_HH-mm-ss format
+   */
+  private static formatDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`;
+  }
+
   /**
    * Export report data in the specified format
    */
@@ -19,17 +31,11 @@ export class ReportExportService {
     format: ExportFormat,
     filename?: string
   ): Promise<void> {
-    const timestamp = format(new Date(), 'yyyy-MM-dd_HH-mm-ss');
+    const timestamp = this.formatDate(new Date());
     const defaultFilename = `${exportData.title.replace(/\s+/g, '_')}_${timestamp}`;
     const finalFilename = filename || defaultFilename;
 
     switch (format) {
-      case 'csv':
-        await this.exportAsCSV(exportData, finalFilename);
-        break;
-      case 'json':
-        await this.exportAsJSON(exportData, finalFilename);
-        break;
       case 'pdf':
         await this.exportAsPDF(exportData, finalFilename);
         break;
@@ -41,54 +47,7 @@ export class ReportExportService {
     }
   }
 
-  /**
-   * Export data as CSV format
-   */
-  private static async exportAsCSV(exportData: ExportData, filename: string): Promise<void> {
-    let csvContent = `Report: ${exportData.title}\n`;
-    csvContent += `Generated: ${exportData.timestamp}\n`;
-    csvContent += `Query: "${exportData.query}"\n\n`;
 
-    // Add summary
-    csvContent += `Summary:\n"${exportData.summary.replace(/"/g, '""')}"\n\n`;
-
-    // Convert data object to CSV rows
-    if (exportData.data && typeof exportData.data === 'object') {
-      csvContent += 'Metric,Value\n';
-      
-      const flattenedData = this.flattenObject(exportData.data);
-      Object.entries(flattenedData).forEach(([key, value]) => {
-        const cleanKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-        const cleanValue = typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value;
-        csvContent += `"${cleanKey}",${cleanValue}\n`;
-      });
-    }
-
-    this.downloadFile(csvContent, `${filename}.csv`, 'text/csv');
-  }
-
-  /**
-   * Export data as JSON format
-   */
-  private static async exportAsJSON(exportData: ExportData, filename: string): Promise<void> {
-    const jsonData = {
-      report: {
-        title: exportData.title,
-        timestamp: exportData.timestamp,
-        query: exportData.query,
-        summary: exportData.summary,
-        data: exportData.data,
-        metadata: {
-          exportedAt: new Date().toISOString(),
-          format: 'JSON',
-          version: '1.0'
-        }
-      }
-    };
-
-    const jsonContent = JSON.stringify(jsonData, null, 2);
-    this.downloadFile(jsonContent, `${filename}.json`, 'application/json');
-  }
 
   /**
    * Export data as PDF format (using HTML to PDF conversion)
@@ -149,26 +108,208 @@ export class ReportExportService {
    * Export data as Excel format (XLSX)
    */
   private static async exportAsExcel(exportData: ExportData, filename: string): Promise<void> {
-    // For now, export as CSV with .xlsx extension
-    // In a production app, you'd use a library like SheetJS
-    let content = `Report: ${exportData.title}\t\t\t\n`;
-    content += `Generated: ${exportData.timestamp}\t\t\t\n`;
-    content += `Query: ${exportData.query}\t\t\t\n`;
-    content += '\t\t\t\n';
-    content += `Summary:\t\t\t\n`;
-    content += `${exportData.summary}\t\t\t\n`;
-    content += '\t\t\t\n';
-    content += 'Metric\tValue\tCategory\n';
+    const htmlContent = this.generateExcelHTML(exportData);
+    this.downloadFile(htmlContent, `${filename}.xls`, 'application/vnd.ms-excel');
+  }
 
-    if (exportData.data && typeof exportData.data === 'object') {
-      const flattenedData = this.flattenObject(exportData.data);
-      Object.entries(flattenedData).forEach(([key, value]) => {
-        const cleanKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-        content += `${cleanKey}\t${value}\tData\n`;
-      });
-    }
+  /**
+   * Generate professional Excel HTML format
+   */
+  private static generateExcelHTML(exportData: ExportData): string {
+    const flattenedData = this.flattenObject(exportData.data || {});
+    const sections = this.categorizeData(flattenedData);
+    
+    return `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+          <meta charset="utf-8">
+          <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+          <meta name="ProgId" content="Excel.Sheet">
+          <meta name="Generator" content="Microsoft Excel 15">
+          <!--[if gte mso 9]>
+          <xml>
+            <x:ExcelWorkbook>
+              <x:ExcelWorksheets>
+                <x:ExcelWorksheet>
+                  <x:Name>Report</x:Name>
+                  <x:WorksheetOptions>
+                    <x:DisplayGridlines/>
+                  </x:WorksheetOptions>
+                </x:ExcelWorksheet>
+              </x:ExcelWorksheets>
+            </x:ExcelWorkbook>
+          </xml>
+          <![endif]-->
+          <style>
+            .header { background-color: #8DC63F; color: white; font-weight: bold; font-size: 14pt; padding: 8px; text-align: center; }
+            .subheader { background-color: #0061AF; color: white; font-weight: bold; font-size: 12pt; padding: 6px; }
+            .section-header { background-color: #f1f5f9; font-weight: bold; font-size: 11pt; padding: 6px; border: 1px solid #e5e7eb; }
+            .data-cell { padding: 4px 8px; border: 1px solid #e5e7eb; font-size: 10pt; }
+            .metric-cell { background-color: #f8fafc; font-weight: bold; padding: 4px 8px; border: 1px solid #e5e7eb; }
+            .value-cell { text-align: right; padding: 4px 8px; border: 1px solid #e5e7eb; }
+            .summary-cell { background-color: #f0fdf4; padding: 8px; border: 1px solid #8DC63F; font-style: italic; }
+            table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+            .meta-info { font-size: 9pt; color: #64748b; }
+          </style>
+        </head>
+        <body>
+          <!-- Report Header -->
+          <table>
+            <tr><td class="header" colspan="3">${exportData.title}</td></tr>
+            <tr><td class="meta-info">Generated:</td><td class="meta-info" colspan="2">${exportData.timestamp}</td></tr>
+            <tr><td class="meta-info">Query:</td><td class="meta-info" colspan="2">${exportData.query}</td></tr>
+            <tr><td colspan="3">&nbsp;</td></tr>
+          </table>
 
-    this.downloadFile(content, `${filename}.xls`, 'application/vnd.ms-excel');
+          <!-- Executive Summary -->
+          <table>
+            <tr><td class="subheader" colspan="3">📋 Executive Summary</td></tr>
+            <tr><td class="summary-cell" colspan="3">${exportData.summary.replace(/\n/g, '<br>')}</td></tr>
+            <tr><td colspan="3">&nbsp;</td></tr>
+          </table>
+
+          <!-- Key Metrics Overview -->
+          ${this.generateMetricsSection(sections.metrics)}
+
+          <!-- User Analytics -->
+          ${this.generateUserAnalyticsSection(sections.users)}
+
+          <!-- Course Performance -->
+          ${this.generateCourseSection(sections.courses)}
+
+          <!-- Platform Statistics -->
+          ${this.generatePlatformSection(sections.platform)}
+
+          <!-- Additional Data -->
+          ${Object.keys(sections.other).length > 0 ? this.generateOtherDataSection(sections.other) : ''}
+
+          <!-- Report Footer -->
+          <table>
+            <tr><td colspan="3">&nbsp;</td></tr>
+            <tr><td class="meta-info" colspan="3">Report generated by AI Reports Assistant | ${new Date().toISOString()}</td></tr>
+          </table>
+        </body>
+      </html>
+    `;
+  }
+
+  /**
+   * Categorize data into logical sections
+   */
+  private static categorizeData(flattenedData: Record<string, any>) {
+    const sections = {
+      metrics: {} as Record<string, any>,
+      users: {} as Record<string, any>,
+      courses: {} as Record<string, any>,
+      platform: {} as Record<string, any>,
+      other: {} as Record<string, any>
+    };
+
+    Object.entries(flattenedData).forEach(([key, value]) => {
+      const keyLower = key.toLowerCase();
+      
+      if (keyLower.includes('user') || keyLower.includes('student') || keyLower.includes('teacher')) {
+        sections.users[key] = value;
+      } else if (keyLower.includes('course') || keyLower.includes('lesson') || keyLower.includes('completion')) {
+        sections.courses[key] = value;
+      } else if (keyLower.includes('rate') || keyLower.includes('percentage') || keyLower.includes('engagement') || keyLower.includes('retention')) {
+        sections.metrics[key] = value;
+      } else if (keyLower.includes('platform') || keyLower.includes('system') || keyLower.includes('active') || keyLower.includes('total')) {
+        sections.platform[key] = value;
+      } else {
+        sections.other[key] = value;
+      }
+    });
+
+    return sections;
+  }
+
+  /**
+   * Generate metrics section
+   */
+  private static generateMetricsSection(metrics: Record<string, any>): string {
+    if (Object.keys(metrics).length === 0) return '';
+    
+    let html = '<table><tr><td class="subheader" colspan="2">📊 Key Performance Metrics</td></tr>';
+    
+    Object.entries(metrics).forEach(([key, value]) => {
+      const cleanKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+      const formattedValue = typeof value === 'number' ? value.toLocaleString() : value;
+      html += `<tr><td class="metric-cell">${cleanKey}</td><td class="value-cell">${formattedValue}</td></tr>`;
+    });
+    
+    html += '<tr><td colspan="2">&nbsp;</td></tr></table>';
+    return html;
+  }
+
+  /**
+   * Generate user analytics section
+   */
+  private static generateUserAnalyticsSection(users: Record<string, any>): string {
+    if (Object.keys(users).length === 0) return '';
+    
+    let html = '<table><tr><td class="subheader" colspan="2">👥 User Analytics</td></tr>';
+    
+    Object.entries(users).forEach(([key, value]) => {
+      const cleanKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+      const formattedValue = typeof value === 'number' ? value.toLocaleString() : value;
+      html += `<tr><td class="metric-cell">${cleanKey}</td><td class="value-cell">${formattedValue}</td></tr>`;
+    });
+    
+    html += '<tr><td colspan="2">&nbsp;</td></tr></table>';
+    return html;
+  }
+
+  /**
+   * Generate course section
+   */
+  private static generateCourseSection(courses: Record<string, any>): string {
+    if (Object.keys(courses).length === 0) return '';
+    
+    let html = '<table><tr><td class="subheader" colspan="2">📚 Course Performance</td></tr>';
+    
+    Object.entries(courses).forEach(([key, value]) => {
+      const cleanKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+      const formattedValue = typeof value === 'number' ? value.toLocaleString() : value;
+      html += `<tr><td class="metric-cell">${cleanKey}</td><td class="value-cell">${formattedValue}</td></tr>`;
+    });
+    
+    html += '<tr><td colspan="2">&nbsp;</td></tr></table>';
+    return html;
+  }
+
+  /**
+   * Generate platform section
+   */
+  private static generatePlatformSection(platform: Record<string, any>): string {
+    if (Object.keys(platform).length === 0) return '';
+    
+    let html = '<table><tr><td class="subheader" colspan="2">🚀 Platform Statistics</td></tr>';
+    
+    Object.entries(platform).forEach(([key, value]) => {
+      const cleanKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+      const formattedValue = typeof value === 'number' ? value.toLocaleString() : value;
+      html += `<tr><td class="metric-cell">${cleanKey}</td><td class="value-cell">${formattedValue}</td></tr>`;
+    });
+    
+    html += '<tr><td colspan="2">&nbsp;</td></tr></table>';
+    return html;
+  }
+
+  /**
+   * Generate other data section
+   */
+  private static generateOtherDataSection(other: Record<string, any>): string {
+    let html = '<table><tr><td class="subheader" colspan="2">📈 Additional Insights</td></tr>';
+    
+    Object.entries(other).forEach(([key, value]) => {
+      const cleanKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+      const formattedValue = typeof value === 'number' ? value.toLocaleString() : value;
+      html += `<tr><td class="metric-cell">${cleanKey}</td><td class="value-cell">${formattedValue}</td></tr>`;
+    });
+    
+    html += '<tr><td colspan="2">&nbsp;</td></tr></table>';
+    return html;
   }
 
   /**
