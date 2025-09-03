@@ -129,18 +129,22 @@ async function getPlatformContext(supabase: any) {
       .select('*', { count: 'exact', head: true })
       .gte('created_at', thisMonth.toISOString())
 
-    // Get AI Tutor active users this month from daily analytics
-    const { count: aiTutorActiveUsers } = await supabase
+    // Get AI Tutor active users (last 3 months for better data coverage)
+    const { data: aiTutorUsersData, count: aiTutorActiveUsers } = await supabase
       .from('ai_tutor_daily_learning_analytics')
-      .select('user_id', { count: 'exact', head: true })
-      .gte('analytics_date', thisMonth.toISOString().split('T')[0])
+      .select('user_id', { count: 'exact' })
+      .gte('analytics_date', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]) // Last 90 days
       .gt('sessions_count', 0)
 
-    // Get LMS active users this month from content progress
-    const { count: lmsActiveUsers } = await supabase
+    console.log('AI Tutor active users:', aiTutorActiveUsers)
+
+    // Get LMS active users (last 3 months for better data coverage)
+    const { data: lmsUsersData, count: lmsActiveUsers } = await supabase
       .from('user_content_item_progress')
-      .select('user_id', { count: 'exact', head: true })
-      .gte('updated_at', thisMonth.toISOString())
+      .select('user_id', { count: 'exact' })
+      .gte('updated_at', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()) // Last 90 days
+
+    console.log('LMS active users:', lmsActiveUsers)
 
     // Get total published courses
     const { count: totalCourses } = await supabase
@@ -148,11 +152,11 @@ async function getPlatformContext(supabase: any) {
       .select('*', { count: 'exact', head: true })
       .eq('status', 'Published')
 
-    // Get comprehensive AI Tutor analytics data for this month
+    // Get comprehensive AI Tutor analytics data (last 3 months)
     const { data: aiTutorAnalytics } = await supabase
       .from('ai_tutor_daily_learning_analytics')
       .select('sessions_count, total_time_minutes, average_session_duration, average_score, exercises_completed, exercises_attempted, urdu_usage_count')
-      .gte('analytics_date', thisMonth.toISOString().split('T')[0])
+      .gte('analytics_date', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]) // Last 90 days
 
     // Get AI Tutor progress summaries
     const { data: progressSummaries } = await supabase

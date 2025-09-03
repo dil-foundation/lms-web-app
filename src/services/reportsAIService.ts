@@ -152,8 +152,17 @@ Please ensure your database has real data or contact your administrator.
     
     const dataNote = `*Analysis based on real platform data as of ${currentDate}*`;
     
+    // Platform-specific detection - check for explicit platform tags first
+    const isAITutorQuery = queryLower.includes('[ai tutor platform analysis only]') || 
+                          (queryLower.includes('ai tutor') && !queryLower.includes('exclude ai tutor'));
+    
+    const isLMSQuery = queryLower.includes('[lms platform analysis only]') || 
+                      (queryLower.includes('lms') && !queryLower.includes('ai tutor')) ||
+                      (queryLower.includes('course') && !queryLower.includes('ai tutor')) ||
+                      (queryLower.includes('student') && !queryLower.includes('ai tutor'));
+    
     // AI Tutor specific queries - using RICH real data from analytics tables
-    if (queryLower.includes('ai tutor') || queryLower.includes('tutor') || queryLower.includes('tutoring')) {
+    if (isAITutorQuery && !isLMSQuery) {
       const aiSessions = context.aiTutorSessions || 0;
       const aiActiveUsers = context.aiTutorActiveUsers || 0;
       const aiTotalTime = context.aiTutorTotalTime || 0;
@@ -225,7 +234,7 @@ ${dataNote}`,
     }
     
     // LMS specific queries - using separated LMS data
-    if (queryLower.includes('lms') || queryLower.includes('course') || queryLower.includes('student')) {
+    if (isLMSQuery && !isAITutorQuery) {
       const lmsActiveUsers = context.lmsActiveUsers || 0;
       const lmsCompletionRate = context.lmsCompletionRate || 0;
       const courseToStudentRatio = context.totalCourses > 0 ? Math.round(context.totalUsers / context.totalCourses) : 0;
@@ -696,7 +705,14 @@ ${dataNote}`,
         return this.getDefaultContext();
       }
 
-      const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.AI_REPORTS_CONTEXT}`, {
+      // Call Supabase Edge Function directly
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      if (!supabaseUrl) {
+        console.error('VITE_SUPABASE_URL not configured');
+        return this.getDefaultContext();
+      }
+      
+      const response = await fetch(`${supabaseUrl}/functions/v1/reports-context`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${authToken}`,
