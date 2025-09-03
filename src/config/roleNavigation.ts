@@ -1,5 +1,5 @@
 
-import { Home, BookOpen, FileQuestion, TrendingUp, Users, Settings, BarChart3, GraduationCap, ClipboardList, Award, UserCheck, Database, Shield, MessageSquare, Link, Eye, MessageCircle, Bot, Brain, Zap, Target, Sparkles, BookCheck, FileText, Cog, Settings2, ShieldCheck, Plug, Building2, Download } from 'lucide-react';
+import { Home, BookOpen, FileQuestion, TrendingUp, Users, Settings, BarChart3, GraduationCap, ClipboardList, Award, UserCheck, Database, Shield, MessageSquare, Link, Eye, MessageCircle, Bot, Brain, Zap, Target, Sparkles, BookCheck, FileText, Cog, Settings2, ShieldCheck, Plug, Building2, Download, MapPin } from 'lucide-react';
 
 export type UserRole = 'student' | 'teacher' | 'admin';
 
@@ -128,14 +128,17 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean): N
           ]
         },
         {
-          title: 'MANAGEMENT',
-          items: [
-            { title: 'Users', path: '/dashboard/users', icon: Users },
-            { title: 'Courses', path: '/dashboard/courses', icon: BookOpen },
-            { title: 'Assessments', path: '/dashboard/grade-assignments', icon: Award },
-            { title: 'Messages', path: '/dashboard/messages', icon: MessageSquare },
-            { title: 'Discussion', path: '/dashboard/discussion', icon: MessageCircle },
-          ]
+                  title: 'MANAGEMENT',
+        items: [
+          { title: 'Users', path: '/dashboard/users', icon: Users },
+          { title: 'States', path: '/dashboard/states', icon: MapPin },
+          { title: 'Boards', path: '/dashboard/boards', icon: Building2 },
+          { title: 'Schools', path: '/dashboard/schools', icon: GraduationCap },
+          { title: 'Courses', path: '/dashboard/courses', icon: BookOpen },
+          { title: 'Assessments', path: '/dashboard/grade-assignments', icon: Award },
+          { title: 'Messages', path: '/dashboard/messages', icon: MessageSquare },
+          { title: 'Discussion', path: '/dashboard/discussion', icon: MessageCircle },
+        ]
         },
         {
           title: 'ANALYTICS',
