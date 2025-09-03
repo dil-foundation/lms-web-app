@@ -894,7 +894,7 @@ export default function ProblemSolvingSimulations() {
         </div>
         
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
           <Button
             variant="outline"
             size="icon"
@@ -904,21 +904,21 @@ export default function ProblemSolvingSimulations() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           
-          <div className="text-center flex-1">
-            <div className="w-16 h-16 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg border border-primary/30 dark:border-primary/40">
-              <Lightbulb className="h-8 w-8 text-primary" />
+          <div className="text-center flex-1 px-12 sm:px-0">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4 shadow-lg border border-primary/30 dark:border-primary/40">
+              <Lightbulb className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
             </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent mb-2">Problem Solving</h1>
-            <p className="text-lg text-muted-foreground">Master Critical Thinking & Solutions</p>
+            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent mb-1 sm:mb-2">Problem Solving</h1>
+            <p className="text-base sm:text-lg text-muted-foreground">Master Critical Thinking & Solutions</p>
           </div>
           
-          <div className="w-10"></div>
+          <div className="hidden sm:block w-10"></div>
         </div>
 
         {/* Instructions */}
         <Card className="mb-6 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 dark:from-primary/10 dark:via-primary/20 dark:to-primary/10 border border-primary/20 dark:border-primary/30 rounded-2xl shadow-lg">
-          <CardContent className="p-6">
-            <p className="text-center text-primary/80 dark:text-primary/70 text-lg">
+          <CardContent className="p-4 sm:p-6">
+            <p className="text-center text-primary/80 dark:text-primary/70 text-base sm:text-lg">
               Practice problem-solving and decision-making in group scenarios
             </p>
           </CardContent>
@@ -979,22 +979,22 @@ export default function ProblemSolvingSimulations() {
                   className="cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all duration-300 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg"
                   onClick={() => handleScenarioSelect(scenario.id)}
                 >
-                  <CardContent className="p-6">
+                  <CardContent className="p-4 sm:p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center space-x-4">
-                        <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/90 rounded-xl flex items-center justify-center shadow-lg">
-                          <Monitor className="h-6 w-6 text-white" />
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary to-primary/90 rounded-xl flex items-center justify-center shadow-lg">
+                          <Monitor className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                         </div>
                         <div>
-                          <h3 className="font-semibold text-lg mb-1 text-primary dark:text-primary/90">{scenario.title}</h3>
-                          <p className="text-sm text-muted-foreground">{scenario.description}</p>
+                          <h3 className="font-semibold text-base sm:text-lg mb-1 text-primary dark:text-primary/90">{scenario.title}</h3>
+                          <p className="text-sm sm:text-base text-muted-foreground">{scenario.description}</p>
                         </div>
                       </div>
                       
                       {/* Participants */}
                       <div className="flex items-center space-x-1">
                         {scenario.participants.map((participant, index) => (
-                          <div key={index} className="w-8 h-8 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-full flex items-center justify-center border border-primary/30 dark:border-primary/40">
+                          <div key={index} className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-full flex items-center justify-center border border-primary/30 dark:border-primary/40">
                             <span className="text-xs text-primary font-medium">
                               {participant === 'You' ? '👤' : participant.split(' ')[0][0]}
                             </span>

@@ -1269,7 +1269,7 @@ export default function RoleplaySimulation() {
         </div>
         
         {/* Header */}
-        <div className="relative flex items-center justify-center mb-8 p-4 sm:p-6 lg:p-8">
+        <div className="relative flex items-center justify-center mb-6 sm:mb-8 p-4 sm:p-6 lg:p-8">
           <Button 
             variant="outline" 
             size="icon" 
@@ -1281,27 +1281,27 @@ export default function RoleplaySimulation() {
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div className="text-center">
-            <div className="inline-block p-4 bg-gradient-to-br from-primary/10 via-primary/20 to-primary/30 rounded-2xl mb-4 shadow-lg border border-primary/20">
-              <Users className="h-10 w-10 text-primary" />
+          <div className="text-center px-12 sm:px-0">
+            <div className="inline-block p-3 sm:p-4 bg-gradient-to-br from-primary/10 via-primary/20 to-primary/30 rounded-2xl mb-3 sm:mb-4 shadow-lg border border-primary/20">
+              <Users className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent mb-3">
+            <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent mb-2 sm:mb-3">
               Roleplay Simulation
             </h1>
-            <p className="text-lg text-muted-foreground font-medium">Practice Real Conversations</p>
+            <p className="text-base sm:text-lg text-muted-foreground font-medium">Practice Real Conversations</p>
           </div>
         </div>
 
         {/* Choose Scenario Section */}
         <div className="flex-1 px-4 pb-4">
           <div className="max-w-md mx-auto">
-            <h2 className="text-2xl font-bold text-center mb-2">Choose a Scenario</h2>
-            <p className="text-center text-muted-foreground mb-8">
+            <h2 className="text-xl sm:text-2xl font-bold text-center mb-2">Choose a Scenario</h2>
+            <p className="text-center text-muted-foreground mb-6 sm:mb-8">
               Practice English through realistic conversations
             </p>
 
             {/* Scenario Cards */}
-            <div className="space-y-4 px-4 sm:px-6 lg:px-8">
+            <div className="space-y-4 px-2 sm:px-6 lg:px-8">
               {currentScenarios.map((scenario, index) => {
                 const IconComponent = getIconComponent(scenario.icon_type, scenario.scenario_type);
                 return (

@@ -309,29 +309,29 @@ export default function AIGuidedSpontaneousSpeech() {
       <div className="min-h-screen bg-background">
         <div className="max-w-4xl mx-auto">
           {/* Consistent Header Section */}
-          <div className="px-6 py-8">
+          <div className="px-4 sm:px-6 py-6 sm:py-8">
             {/* Breadcrumb Navigation */}
             <PracticeBreadcrumb className="mb-6" />
             
             {/* Header with Back Button and Title */}
-            <div className="relative flex items-center justify-center mb-8 text-center">
+            <div className="relative flex items-center justify-center mb-6 sm:mb-8 text-center">
               <Button
                 variant="outline"
                 size="icon"
                 onClick={() => navigate('/dashboard/practice/stage-6')}
-                className="absolute left-0 group w-12 h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                className="absolute left-0 group w-10 h-10 sm:w-12 sm:h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
               >
-                <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-300" />
+                <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 group-hover:-translate-x-1 transition-transform duration-300" />
               </Button>
               
-              <div className="space-y-3">
-                <div className="inline-block p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
-                  <MessageSquare className="h-10 w-10 text-primary" />
+              <div className="space-y-2 sm:space-y-3 px-12 sm:px-0">
+                <div className="inline-block p-3 sm:p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
+                  <MessageSquare className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
                 </div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                   Spontaneous Speech
                 </h1>
-                <p className="text-muted-foreground text-lg">
+                <p className="text-muted-foreground text-base sm:text-lg">
                   Master the art of impromptu speaking with AI guidance
                 </p>
               </div>
@@ -339,10 +339,10 @@ export default function AIGuidedSpontaneousSpeech() {
           </div>
 
           {/* Main Content Area */}
-          <div className="px-6 pb-8 space-y-6">
+          <div className="px-4 sm:px-6 pb-8 space-y-6">
             {/* Topic Selection */}
             <div className="text-center">
-              <p className="text-muted-foreground text-lg">Click on a topic to start your conversation immediately</p>
+              <p className="text-muted-foreground text-sm sm:text-lg">Click on a topic to start your conversation immediately</p>
             </div>
 
             {topics.length > 0 ? (
@@ -353,20 +353,20 @@ export default function AIGuidedSpontaneousSpeech() {
                     className="cursor-pointer transition-all hover:shadow-xl hover:scale-[1.02] border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden"
                     onClick={() => handleTopicClick(topic)}
                   >
-                    <CardContent className="p-6">
+                    <CardContent className="p-5 sm:p-6">
                       <div className="flex items-start justify-between">
-                        <div className="flex items-start space-x-4">
-                          <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center border border-primary/30">
-                            <Rocket className="h-6 w-6 text-primary" />
+                        <div className="flex items-start space-x-3 sm:space-x-4">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center border border-primary/30">
+                            <Rocket className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                           </div>
                           <div className="flex-1">
-                            <h3 className="text-lg font-semibold mb-2 text-primary">{topic.title}</h3>
-                            <p className="text-muted-foreground text-sm mb-2">{topic.description}</p>
+                            <h3 className="text-base sm:text-lg font-semibold mb-2 text-primary">{topic.title}</h3>
+                            <p className="text-muted-foreground text-xs sm:text-sm mb-2">{topic.description}</p>
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
                           {(topic.complexity || topic.difficulty_level) && (
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 ${
+                            <span className={`px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-medium border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 ${
                               (topic.complexity === 'Expert' || topic.difficulty_level === 'Expert')
                                 ? 'text-red-700 dark:text-red-300' 
                                 : 'text-orange-700 dark:text-orange-300'
@@ -434,29 +434,29 @@ export default function AIGuidedSpontaneousSpeech() {
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto">
         {/* Consistent Header Section */}
-        <div className="px-6 py-8">
+        <div className="px-4 sm:px-6 py-6 sm:py-8">
           {/* Breadcrumb Navigation */}
           <PracticeBreadcrumb className="mb-6" />
           
           {/* Header with Back Button and Title */}
-          <div className="relative flex items-center justify-center mb-8 text-center">
+          <div className="relative flex items-center justify-center mb-6 sm:mb-8 text-center">
             <Button
               variant="outline"
               size="icon"
               onClick={resetSession}
-              className="absolute left-0 group w-12 h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+              className="absolute left-0 group w-10 h-10 sm:w-12 sm:h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
             >
-              <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-300" />
+              <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 group-hover:-translate-x-1 transition-transform duration-300" />
             </Button>
             
-            <div className="space-y-3">
-              <div className="inline-block p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
-                <MessageSquare className="h-10 w-10 text-primary" />
+            <div className="space-y-2 sm:space-y-3 px-12 sm:px-0">
+              <div className="inline-block p-3 sm:p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
+                <MessageSquare className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
               </div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                 Spontaneous Speech
               </h1>
-              <p className="text-muted-foreground text-lg">
+              <p className="text-muted-foreground text-base sm:text-lg">
                 Master the art of impromptu speaking with AI guidance
               </p>
             </div>
@@ -464,22 +464,22 @@ export default function AIGuidedSpontaneousSpeech() {
         </div>
 
         {/* Main Content Area */}
-        <div className="px-6 pb-8 space-y-6">
+        <div className="px-4 sm:px-6 pb-8 space-y-6">
           {/* Current Topic */}
           {currentTopic && (
             <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
-              <CardContent className="p-6">
+              <CardContent className="p-5 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-primary text-lg mb-2">{currentTopic.title}</h3>
-                    <p className="text-sm text-muted-foreground">{currentTopic.description}</p>
+                    <h3 className="font-semibold text-primary text-base sm:text-lg mb-2">{currentTopic.title}</h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground">{currentTopic.description}</p>
                   </div>
                   <div className="flex items-center space-x-3">
                     {/* Audio Button */}
                     <Button
                       onClick={handlePlayAudio}
                       disabled={isLoadingAudio}
-                      className={`w-16 h-16 rounded-full shadow-lg transition-all duration-200 ${
+                      className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full shadow-lg transition-all duration-200 ${
                         isLoadingAudio
                           ? 'bg-gray-600 cursor-not-allowed text-white border-2 border-gray-500'
                           : isPlayingAudio
@@ -489,11 +489,11 @@ export default function AIGuidedSpontaneousSpeech() {
                       size="icon"
                     >
                       {isLoadingAudio ? (
-                        <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                        <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
                       ) : isPlayingAudio ? (
-                        <Pause className="w-6 h-6" />
+                        <Pause className="w-5 h-5 sm:w-6 sm:h-6" />
                       ) : (
-                        <Play className="w-6 h-6" />
+                        <Play className="w-5 h-5 sm:w-6 sm:h-6" />
                       )}
                     </Button>
                     
@@ -584,7 +584,7 @@ export default function AIGuidedSpontaneousSpeech() {
                           </span>
                         ))}
                       </div>
-                      <p className="text-muted-foreground text-sm mt-3">
+                      <p className="text-muted-foreground text-xs sm:text-sm mt-3">
                         Try to incorporate these keywords naturally in your conversation.
                       </p>
                     </div>
@@ -597,12 +597,12 @@ export default function AIGuidedSpontaneousSpeech() {
           {/* Evaluation Loading State */}
           {isEvaluating && (
             <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
-              <CardContent className="p-6 text-center">
+              <CardContent className="p-5 sm:p-6 text-center">
                 <div className="flex items-center justify-center space-x-3">
-                  <Loader2 className="h-10 w-10 animate-spin text-[#1582B4]" />
+                  <Loader2 className="h-8 w-8 sm:h-10 sm:w-10 animate-spin text-[#1582B4]" />
                   <div>
-                    <h4 className="font-medium text-[#1582B4]">Evaluating Your Response</h4>
-                    <p className="text-muted-foreground text-sm">
+                    <h4 className="font-medium text-[#1582B4] text-sm sm:text-base">Evaluating Your Response</h4>
+                    <p className="text-muted-foreground text-xs sm:text-sm">
                       Please wait while we analyze your speech...
                     </p>
                   </div>
@@ -614,30 +614,30 @@ export default function AIGuidedSpontaneousSpeech() {
           {/* Evaluation Results */}
           {evaluationResult && !isEvaluating && (
             <Card className="border-0 bg-gradient-to-br from-[#1582B4]/10 to-indigo-50 dark:from-[#1582B4]/20 dark:to-indigo-900/20 rounded-3xl shadow-lg overflow-hidden">
-              <CardContent className="p-6">
+              <CardContent className="p-5 sm:p-6">
                 <h4 className="font-medium text-[#1582B4] mb-4 text-lg">Evaluation Results</h4>
                 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-4">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-[#1582B4]">
+                    <div className="text-xl sm:text-2xl font-bold text-[#1582B4]">
                       {evaluationResult.overall_score || 0}
                     </div>
                     <div className="text-xs text-muted-foreground">Overall</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-[#1582B4]">
+                    <div className="text-xl sm:text-2xl font-bold text-[#1582B4]">
                       {evaluationResult.fluency_score || 0}
                     </div>
                     <div className="text-xs text-muted-foreground">Fluency</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-[#1582B4]">
+                    <div className="text-xl sm:text-2xl font-bold text-[#1582B4]">
                       {evaluationResult.vocabulary_score || 0}
                     </div>
                     <div className="text-xs text-muted-foreground">Vocabulary</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-[#1582B4]">
+                    <div className="text-xl sm:text-2xl font-bold text-[#1582B4]">
                       {evaluationResult.content_relevance_score || 0}
                     </div>
                     <div className="text-xs text-muted-foreground">Relevance</div>
@@ -647,7 +647,7 @@ export default function AIGuidedSpontaneousSpeech() {
                 {evaluationResult.feedback && (
                   <div className="mb-4">
                     <h5 className="font-medium text-[#1582B4] mb-2">Feedback</h5>
-                    <p className="text-sm text-muted-foreground">{evaluationResult.feedback}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">{evaluationResult.feedback}</p>
                   </div>
                 )}
 
@@ -697,7 +697,7 @@ export default function AIGuidedSpontaneousSpeech() {
             {!isRecording && !isEvaluating ? (
               <Button
                 onClick={handleStartRecording}
-                className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white px-8 py-3 rounded-full text-lg font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+                className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white w-full sm:w-auto px-8 py-3 rounded-full text-lg font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
                 size="lg"
                 disabled={!currentTopic}
               >
@@ -707,7 +707,7 @@ export default function AIGuidedSpontaneousSpeech() {
             ) : isRecording ? (
               <Button
                 onClick={handleStopRecording}
-                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-8 py-3 rounded-full text-lg font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white w-full sm:w-auto px-8 py-3 rounded-full text-lg font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
                 size="lg"
               >
                 <Mic className="h-5 w-5 mr-2" />
@@ -716,7 +716,7 @@ export default function AIGuidedSpontaneousSpeech() {
             ) : (
               <Button
                 disabled
-                className="bg-gray-500 text-white px-8 py-3 rounded-full text-lg font-medium cursor-not-allowed"
+                className="bg-gray-500 text-white w-full sm:w-auto px-8 py-3 rounded-full text-lg font-medium cursor-not-allowed"
                 size="lg"
               >
                 <Loader2 className="h-5 w-5 mr-2 animate-spin" />
@@ -725,18 +725,18 @@ export default function AIGuidedSpontaneousSpeech() {
             )}
 
             <div className="mt-4 space-y-3">
-              <div className="flex justify-center space-x-4">
+              <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
                 <Button
                   onClick={resetSession}
                   variant="outline"
-                  className="px-6 py-2 border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 hover:bg-white/80 dark:hover:bg-gray-800/80 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
+                  className="w-full sm:w-auto px-6 py-2 border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 hover:bg-white/80 dark:hover:bg-gray-800/80 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
                 >
                   Choose Different Topic
                 </Button>
                 <Button
                   onClick={() => navigate('/dashboard/practice/stage-6')}
                   variant="outline"
-                  className="px-6 py-2 border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 hover:bg-white/80 dark:hover:bg-gray-800/80 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
+                  className="w-full sm:w-auto px-6 py-2 border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 hover:bg-white/80 dark:hover:bg-gray-800/80 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
                 >
                   Back to Stage 6
                 </Button>

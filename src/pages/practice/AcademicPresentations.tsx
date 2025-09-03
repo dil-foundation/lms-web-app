@@ -203,12 +203,12 @@ export default function AcademicPresentations() {
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto">
         {/* Consistent Header Section */}
-        <div className="px-6 py-8">
+        <div className="px-4 sm:px-6 py-6 sm:py-8">
           {/* Breadcrumb Navigation */}
           <PracticeBreadcrumb className="mb-6" />
           
           {/* Header with Back Button and Title */}
-          <div className="relative flex items-center justify-center mb-8 text-center">
+          <div className="relative flex items-center justify-center mb-6 sm:mb-8 text-center">
             <Button
               variant="outline"
               size="icon"
@@ -226,46 +226,46 @@ export default function AcademicPresentations() {
                   navigate('/dashboard/practice/stage-5');
                 }
               }}
-              className="absolute left-0 group w-12 h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+              className="absolute left-0 group w-10 h-10 sm:w-12 sm:h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
             >
-              <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-300" />
+              <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 group-hover:-translate-x-1 transition-transform duration-300" />
             </Button>
             
-            <div className="space-y-3">
-              <div className="inline-block p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
-                <GraduationCap className="h-10 w-10 text-primary" />
+            <div className="space-y-2 sm:space-y-3 px-12 sm:px-0">
+              <div className="inline-block p-3 sm:p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
+                <GraduationCap className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
               </div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                 Academic Presentation
               </h1>
-              <p className="text-muted-foreground text-lg">
+              <p className="text-muted-foreground text-base sm:text-lg">
                 Develop your presentation skills with academic topics
               </p>
             </div>
           </div>
 
           {/* Activity Stats */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <Card className="border-0 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg">
-              <CardContent className="p-4 text-center">
-                <Target className="h-6 w-6 text-primary mx-auto mb-2" />
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Presentation Skills</p>
+              <CardContent className="p-3 sm:p-4 text-center">
+                <Target className="h-5 w-5 sm:h-6 sm:w-6 text-primary mx-auto mb-1.5 sm:mb-2" />
+                <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-300">Presentation Skills</p>
               </CardContent>
             </Card>
             <Card className="border-0 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg">
-              <CardContent className="p-4 text-center">
-                <TrendingUp className="h-6 w-6 text-primary mx-auto mb-2" />
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Academic Growth</p>
+              <CardContent className="p-3 sm:p-4 text-center">
+                <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-primary mx-auto mb-1.5 sm:mb-2" />
+                <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-300">Academic Growth</p>
               </CardContent>
             </Card>
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="px-6 pb-8 space-y-6">
+        <div className="px-4 sm:px-6 pb-8 space-y-6">
           {/* Title */}
           <div className="text-center">
-            <h2 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary to-primary/90 bg-clip-text text-transparent">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-2 bg-gradient-to-r from-primary to-primary/90 bg-clip-text text-transparent">
               Presentation Challenge
             </h2>
           </div>
@@ -285,18 +285,18 @@ export default function AcademicPresentations() {
                       className="cursor-pointer border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300"
                       onClick={() => setSelectedTopic(topic)}
                     >
-                      <CardContent className="p-6">
+                      <CardContent className="p-5 sm:p-6">
                         <div className="flex items-start space-x-4">
-                          <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center shrink-0 border border-primary/30">
-                            <GraduationCap className="h-6 w-6 text-primary" />
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center shrink-0 border border-primary/30">
+                            <GraduationCap className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                           </div>
                           <div className="flex-1">
-                            <h4 className="text-lg font-semibold text-primary mb-2">
+                            <h4 className="text-base sm:text-lg font-semibold text-primary mb-2">
                               {topic.topic}
                             </h4>
                             {topic.difficulty_level && (
                               <div className="mt-2">
-                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-primary/20 text-primary">
+                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-medium bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-primary/20 text-primary">
                                   {topic.difficulty_level}
                                 </span>
                               </div>
@@ -309,7 +309,7 @@ export default function AcademicPresentations() {
                 </div>
               ) : (
                 <Card className="border-0 bg-gradient-to-br from-muted/30 to-muted/50 rounded-2xl shadow-lg">
-                  <CardContent className="p-8 text-center">
+                  <CardContent className="p-6 sm:p-8 text-center">
                     <GraduationCap className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <h4 className="text-lg font-semibold text-muted-foreground mb-2">No Topics Available</h4>
                     <p className="text-muted-foreground text-sm">
@@ -324,24 +324,24 @@ export default function AcademicPresentations() {
           {/* Selected Presentation Topic */}
           {selectedTopic && (
             <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
-              <CardContent className="p-8">
+              <CardContent className="p-5 sm:p-8">
                 <div className="text-center">
                   <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-primary/30 rounded-full flex items-center justify-center mx-auto mb-4 border border-primary/30">
-                    <GraduationCap className="h-8 w-8 text-primary" />
+                    <GraduationCap className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
                   </div>
-                  <h3 className="text-xl font-semibold text-primary mb-2">
+                  <h3 className="text-lg sm:text-xl font-semibold text-primary mb-2">
                     {selectedTopic.topic}
                   </h3>
                   
                   {/* Expected Keywords */}
                   {selectedTopic.expected_keywords && selectedTopic.expected_keywords.length > 0 && (
                     <div className="mt-4 mb-4">
-                      <h4 className="text-sm font-medium text-primary mb-2">Expected Keywords:</h4>
+                      <h4 className="text-xs sm:text-sm font-medium text-primary mb-2">Expected Keywords:</h4>
                       <div className="flex flex-wrap justify-center gap-2">
                         {selectedTopic.expected_keywords.map((keyword, index) => (
                           <span 
                             key={index}
-                            className="px-3 py-1 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-primary/20 text-primary text-xs rounded-full"
+                            className="px-2.5 py-1 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-primary/20 text-primary text-[11px] sm:text-xs rounded-full"
                           >
                             {keyword}
                           </span>
@@ -355,15 +355,15 @@ export default function AcademicPresentations() {
                     <button
                       onClick={handlePlayAudio}
                       disabled={isLoadingAudio}
-                      className="w-16 h-16 bg-gradient-to-r from-[#1582B4] to-[#1582B4]/90 hover:from-[#1582B4]/90 hover:to-[#1582B4] rounded-full flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#1582B4]/40 focus:ring-offset-2"
+                      className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-r from-[#1582B4] to-[#1582B4]/90 hover:from-[#1582B4]/90 hover:to-[#1582B4] rounded-full flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#1582B4]/40 focus:ring-offset-2"
                       title={isLoadingAudio ? "Loading audio..." : audioState.isPlaying ? "Pause audio" : "Play audio"}
                     >
                       {isLoadingAudio ? (
-                        <Loader2 className="h-6 w-6 text-white animate-spin" />
+                        <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 text-white animate-spin" />
                       ) : audioState.isPlaying ? (
-                        <Pause className="h-6 w-6 text-white ml-0" />
+                        <Pause className="h-5 w-5 sm:h-6 sm:w-6 text-white ml-0" />
                       ) : (
-                        <Play className="h-6 w-6 text-white ml-0.5" />
+                        <Play className="h-5 w-5 sm:h-6 sm:w-6 text-white ml-0.5" />
                       )}
                     </button>
                   </div>
@@ -421,13 +421,13 @@ export default function AcademicPresentations() {
           {/* Evaluation Loading */}
           {isEvaluating && (
             <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
-              <CardContent className="p-6">
+              <CardContent className="p-5 sm:p-6">
                 <div className="text-center">
-                  <Loader2 className="h-10 w-10 animate-spin mx-auto mb-4 text-primary" />
-                  <h3 className="text-lg font-semibold text-primary mb-2">
+                  <Loader2 className="h-8 w-8 sm:h-10 sm:w-10 animate-spin mx-auto mb-4 text-primary" />
+                  <h3 className="text-base sm:text-lg font-semibold text-primary mb-2">
                     Evaluating Your Presentation
                   </h3>
-                  <p className="text-primary/80 text-sm">
+                  <p className="text-primary/80 text-xs sm:text-sm">
                     Please wait while we analyze your presentation...
                   </p>
                 </div>
@@ -438,20 +438,20 @@ export default function AcademicPresentations() {
           {/* Evaluation Results */}
           {evaluation && evaluation.evaluation && (
             <div>
-              <h3 className="text-xl font-semibold mb-6 bg-gradient-to-r from-primary to-primary/90 bg-clip-text text-transparent">
+              <h3 className="text-lg sm:text-xl font-semibold mb-6 bg-gradient-to-r from-primary to-primary/90 bg-clip-text text-transparent">
                 Presentation Evaluation
               </h3>
               
               {/* Overall Score */}
               <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden mb-4">
-                <CardContent className="p-6">
+                <CardContent className="p-5 sm:p-6">
                   <div className="text-center">
-                    <h4 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/90 bg-clip-text text-transparent mb-2">
+                    <h4 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary to-primary/90 bg-clip-text text-transparent mb-2">
                       Overall Score: {evaluation.evaluation.evaluation.overall_score}/100
                     </h4>
-                    <div className="w-full bg-gradient-to-br from-card to-card/50 dark:bg-card rounded-full h-3 mb-4">
+                    <div className="w-full bg-gradient-to-br from-card to-card/50 dark:bg-card rounded-full h-2 sm:h-3 mb-4">
                       <div 
-                        className="bg-gradient-to-r from-primary to-primary/90 h-3 rounded-full transition-all duration-500"
+                        className="bg-gradient-to-r from-primary to-primary/90 h-2 sm:h-3 rounded-full transition-all duration-500"
                         style={{ width: `${evaluation.evaluation.evaluation.overall_score}%` }}
                       ></div>
                     </div>
@@ -464,7 +464,7 @@ export default function AcademicPresentations() {
                 <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg mb-4">
                   <CardContent className="p-4">
                     <h4 className="font-medium text-primary mb-2">Next Steps</h4>
-                    <p className="text-primary/80 text-sm">
+                    <p className="text-primary/80 text-xs sm:text-sm">
                       {evaluation.evaluation.evaluation.next_steps}
                     </p>
                   </CardContent>
@@ -476,7 +476,7 @@ export default function AcademicPresentations() {
                 <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
                   <CardContent className="p-4">
                     <h4 className="font-medium text-primary mb-2">Encouragement</h4>
-                    <p className="text-primary/80 text-sm">
+                    <p className="text-primary/80 text-xs sm:text-sm">
                       {evaluation.evaluation.evaluation.encouragement}
                     </p>
                   </CardContent>
@@ -492,7 +492,7 @@ export default function AcademicPresentations() {
                 <Button
                   onClick={handleStartPresenting}
                   disabled={loading}
-                  className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white px-8 py-3 rounded-full text-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+                  className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white w-full sm:w-auto px-8 py-3 rounded-full text-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
                   size="lg"
                 >
                   <Mic className="h-5 w-5 mr-2" />
@@ -501,7 +501,7 @@ export default function AcademicPresentations() {
               ) : isRecording ? (
                 <Button
                   onClick={handleStopPresenting}
-                  className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-8 py-3 rounded-full text-lg font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+                  className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white w-full sm:w-auto px-8 py-3 rounded-full text-lg font-medium shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
                   size="lg"
                 >
                   <Mic className="h-5 w-5 mr-2" />

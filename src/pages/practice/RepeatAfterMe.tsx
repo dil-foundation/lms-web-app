@@ -678,7 +678,7 @@ export const RepeatAfterMe: React.FC = () => {
     return (
       <div className="min-h-screen bg-background">
         {/* Header */}
-        <div className="relative flex items-center justify-center mb-8 p-4 sm:p-6 lg:p-8">
+        <div className="relative flex items-center justify-center mb-6 sm:mb-8 p-4 sm:p-6 lg:p-8">
           <Button 
             variant="outline" 
             size="icon" 
@@ -687,14 +687,14 @@ export const RepeatAfterMe: React.FC = () => {
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div className="text-center">
-            <div className="inline-block p-4 bg-gradient-to-br from-primary/10 via-primary/20 to-primary/30 rounded-2xl mb-4 shadow-lg border border-primary/20">
-              <Mic className="h-10 w-10 text-primary" />
+          <div className="text-center px-12 sm:px-0">
+            <div className="inline-block p-3 sm:p-4 bg-gradient-to-br from-primary/10 via-primary/20 to-primary/30 rounded-2xl mb-3 sm:mb-4 shadow-lg border border-primary/20">
+              <Mic className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-gray-100 dark:via-gray-200 dark:to-gray-100 bg-clip-text text-transparent mb-3">
+            <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-gray-100 dark:via-gray-200 dark:to-gray-100 bg-clip-text text-transparent mb-2 sm:mb-3">
               Repeat After Me
             </h1>
-            <p className="text-lg text-muted-foreground font-medium">Practice speaking with perfect pronunciation</p>
+            <p className="text-base sm:text-lg text-muted-foreground font-medium">Practice speaking with perfect pronunciation</p>
           </div>
         </div>
 
@@ -711,7 +711,7 @@ export const RepeatAfterMe: React.FC = () => {
     return (
       <div className="min-h-screen bg-background">
         {/* Header */}
-        <div className="relative flex items-center justify-center mb-8 p-4 sm:p-6 lg:p-8">
+        <div className="relative flex items-center justify-center mb-6 sm:mb-8 p-4 sm:p-6 lg:p-8">
           <Button 
             variant="outline" 
             size="icon" 
@@ -720,14 +720,14 @@ export const RepeatAfterMe: React.FC = () => {
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div className="text-center">
-            <div className="inline-block p-4 bg-gradient-to-br from-primary/10 via-primary/20 to-primary/30 rounded-2xl mb-4 shadow-lg border border-primary/20">
-              <Mic className="h-10 w-10 text-primary" />
+          <div className="text-center px-12 sm:px-0">
+            <div className="inline-block p-3 sm:p-4 bg-gradient-to-br from-primary/10 via-primary/20 to-primary/30 rounded-2xl mb-3 sm:mb-4 shadow-lg border border-primary/20">
+              <Mic className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-gray-100 dark:via-gray-200 dark:to-gray-100 bg-clip-text text-transparent mb-3">
+            <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-gray-100 dark:via-gray-200 dark:to-gray-100 bg-clip-text text-transparent mb-2 sm:mb-3">
               Repeat After Me
             </h1>
-            <p className="text-lg text-muted-foreground font-medium">Practice speaking with perfect pronunciation</p>
+            <p className="text-base sm:text-lg text-muted-foreground font-medium">Practice speaking with perfect pronunciation</p>
           </div>
         </div>
 
@@ -762,7 +762,7 @@ export const RepeatAfterMe: React.FC = () => {
     return (
       <div className="min-h-screen bg-background">
         {/* Header */}
-        <div className="relative flex items-center justify-center mb-8 p-4 sm:p-6 lg:p-8">
+        <div className="relative flex items-center justify-center mb-6 sm:mb-8 p-4 sm:p-6 lg:p-8">
           <Button 
             variant="outline" 
             size="icon" 
@@ -771,14 +771,14 @@ export const RepeatAfterMe: React.FC = () => {
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div className="text-center">
-            <div className="inline-block p-4 bg-gradient-to-br from-primary/10 via-primary/20 to-primary/30 rounded-2xl mb-4 shadow-lg border border-primary/20">
-              <Mic className="h-10 w-10 text-primary" />
+          <div className="text-center px-12 sm:px-0">
+            <div className="inline-block p-3 sm:p-4 bg-gradient-to-br from-primary/10 via-primary/20 to-primary/30 rounded-2xl mb-3 sm:mb-4 shadow-lg border border-primary/20">
+              <Mic className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-gray-100 dark:via-gray-200 dark:to-gray-100 bg-clip-text text-transparent mb-3">
+            <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-gray-100 dark:via-gray-200 dark:to-gray-100 bg-clip-text text-transparent mb-2 sm:mb-3">
               Repeat After Me
             </h1>
-            <p className="text-lg text-muted-foreground font-medium">Practice speaking with perfect pronunciation</p>
+            <p className="text-base sm:text-lg text-muted-foreground font-medium">Practice speaking with perfect pronunciation</p>
           </div>
         </div>
 
@@ -816,7 +816,7 @@ export const RepeatAfterMe: React.FC = () => {
       </div>
       
       {/* Header */}
-      <div className="relative flex items-center justify-center mb-8 p-4 sm:p-6 lg:p-8">
+      <div className="relative flex items-center justify-center mb-6 sm:mb-8 p-4 sm:p-6 lg:p-8">
         <Button 
           variant="outline" 
           size="icon" 
@@ -825,14 +825,14 @@ export const RepeatAfterMe: React.FC = () => {
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <div className="text-center">
-          <div className="inline-block p-4 bg-gradient-to-br from-primary/10 via-primary/20 to-primary/30 rounded-2xl mb-4 shadow-lg border border-primary/20">
-            <Mic className="h-10 w-10 text-primary" />
+        <div className="text-center px-12 sm:px-0">
+          <div className="inline-block p-3 sm:p-4 bg-gradient-to-br from-primary/10 via-primary/20 to-primary/30 rounded-2xl mb-3 sm:mb-4 shadow-lg border border-primary/20">
+            <Mic className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-gray-100 dark:via-gray-200 dark:to-gray-100 bg-clip-text text-transparent mb-3">
+          <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-gray-100 dark:via-gray-200 dark:to-gray-100 bg-clip-text text-transparent mb-2 sm:mb-3">
             Repeat After Me
           </h1>
-          <p className="text-lg text-muted-foreground font-medium">Practice speaking with perfect pronunciation</p>
+          <p className="text-base sm:text-lg text-muted-foreground font-medium">Practice speaking with perfect pronunciation</p>
         </div>
       </div>
 
@@ -856,14 +856,14 @@ export const RepeatAfterMe: React.FC = () => {
       <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
         {/* Phrase Card */}
         <Card className="w-full max-w-md mb-8 bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-2xl backdrop-blur-sm">
-          <CardContent className="p-8 text-center">
+          <CardContent className="p-6 sm:p-8 text-center">
             <div className="mb-6">
-              <h2 className="text-3xl font-bold mb-4 text-gray-900 dark:text-gray-100 leading-tight">
+              <h2 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4 text-gray-900 dark:text-gray-100 leading-tight">
                 {currentPhrase.text}
               </h2>
               
               {currentPhrase.urdu_text && (
-                <p className="text-xl text-muted-foreground mb-6 font-medium leading-relaxed" style={{ fontFamily: 'Noto Nastaliq Urdu, Arial, sans-serif' }}>
+                <p className="text-lg sm:text-xl text-muted-foreground mb-6 font-medium leading-relaxed" style={{ fontFamily: 'Noto Nastaliq Urdu, Arial, sans-serif' }}>
                   {currentPhrase.urdu_text}
                 </p>
               )}
@@ -871,7 +871,7 @@ export const RepeatAfterMe: React.FC = () => {
               <Button
                 onClick={handlePlayAudio}
                 disabled={isLoadingAudio}
-                className={`w-20 h-20 rounded-full shadow-2xl transition-all duration-300 ${
+                className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full shadow-2xl transition-all duration-300 ${
                   isLoadingAudio 
                     ? 'bg-gray-500 cursor-not-allowed text-white border-2 border-gray-400 shadow-lg' 
                     : isPlayingAudio
@@ -881,16 +881,16 @@ export const RepeatAfterMe: React.FC = () => {
                 size="icon"
               >
                 {isLoadingAudio ? (
-                  <div className="w-10 h-10 border-3 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 border-3 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
                 ) : isPlayingAudio ? (
-                  <Pause className="w-10 h-10" />
+                  <Pause className="w-8 h-8 sm:w-10 sm:h-10" />
                 ) : (
-                  <Play className="w-10 h-10" />
+                  <Play className="w-8 h-8 sm:w-10 sm:h-10" />
                 )}
               </Button>
             </div>
             
-            <p className="text-muted-foreground text-base font-medium">
+            <p className="text-muted-foreground text-sm sm:text-base font-medium">
               Listen to the phrase and repeat it clearly
             </p>
           </CardContent>
@@ -925,7 +925,7 @@ export const RepeatAfterMe: React.FC = () => {
         {/* Feedback Display */}
         {feedback && (
           <Card className="w-full max-w-md mt-8 bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-2xl backdrop-blur-sm">
-            <CardContent className="p-8">
+            <CardContent className="p-6 sm:p-8">
               <div className="text-center">
                 {feedback.score !== undefined && (
                   <div className="flex items-center justify-center mb-6">
@@ -942,22 +942,22 @@ export const RepeatAfterMe: React.FC = () => {
                         <XCircle className="w-10 h-10 text-red-600 dark:text-red-400" />
                       </div>
                     )}
-                    <span className="text-4xl font-bold text-gray-900 dark:text-gray-100">
+                    <span className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100">
                       {Math.round(feedback.score)}%
                     </span>
                   </div>
                 )}
                 
                 {feedback.feedback && (
-                  <p className="text-muted-foreground mb-6 text-lg leading-relaxed">
+                  <p className="text-muted-foreground mb-6 text-base sm:text-lg leading-relaxed">
                     {feedback.feedback}
                   </p>
                 )}
                 
                 {feedback.suggestions && feedback.suggestions.length > 0 && (
                   <div className="text-left">
-                    <h4 className="font-semibold mb-3 text-lg text-gray-900 dark:text-gray-100">Suggestions:</h4>
-                    <ul className="list-disc list-inside text-base text-muted-foreground space-y-2">
+                    <h4 className="font-semibold mb-3 text-base sm:text-lg text-gray-900 dark:text-gray-100">Suggestions:</h4>
+                    <ul className="list-disc list-inside text-sm sm:text-base text-muted-foreground space-y-2">
                       {feedback.suggestions.map((suggestion, index) => (
                         <li key={index} className="leading-relaxed">{suggestion}</li>
                       ))}
@@ -971,7 +971,7 @@ export const RepeatAfterMe: React.FC = () => {
 
         {/* Navigation buttons for manual phrase control */}
         {phrases.length > 1 && (
-          <div className="flex gap-4 mt-8">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-8 w-full max-w-md">
             <Button
               onClick={() => {
                 const newIndex = Math.max(0, currentPhraseIndex - 1);
@@ -981,7 +981,7 @@ export const RepeatAfterMe: React.FC = () => {
               }}
               disabled={currentPhraseIndex === 0}
               variant="outline"
-              className="px-8 py-3 bg-white/80 dark:bg-gray-800/80 hover:bg-primary/5 hover:border-primary/30 hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:-translate-y-0.5 border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg backdrop-blur-sm font-medium"
+              className="px-8 py-3 bg-white/80 dark:bg-gray-800/80 hover:bg-primary/5 hover:border-primary/30 hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:-translate-y-0.5 border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg backdrop-blur-sm font-medium w-full sm:w-auto"
             >
               Previous
             </Button>
@@ -994,7 +994,7 @@ export const RepeatAfterMe: React.FC = () => {
               }}
               disabled={currentPhraseIndex === phrases.length - 1}
               variant="outline"
-              className="px-8 py-3 bg-white/80 dark:bg-gray-800/80 hover:bg-primary/5 hover:border-primary/30 hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:-translate-y-0.5 border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg backdrop-blur-sm font-medium"
+              className="px-8 py-3 bg-white/80 dark:bg-gray-800/80 hover:bg-primary/5 hover:border-primary/30 hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:-translate-y-0.5 border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg backdrop-blur-sm font-medium w-full sm:w-auto"
             >
               Next
             </Button>
