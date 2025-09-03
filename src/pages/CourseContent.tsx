@@ -849,9 +849,11 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                               onClick={handleOptionClick}
                               className={cn(
                                 "w-full justify-start p-4 h-auto text-left transition-all duration-300 hover:shadow-md", 
-                                isSelected && (isMultipleChoice ? "border-purple-300 bg-purple-50 dark:bg-purple-900/20 dark:border-purple-600" : "border-blue-300 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-600"), 
-                                showAsCorrect && "bg-green-100 border-green-500 dark:bg-green-900/20 dark:border-green-400", 
-                                showAsIncorrect && "bg-red-100 border-red-500 dark:bg-red-900/20 dark:border-red-400"
+                                // Override default button hover to prevent color conflicts
+                                "hover:bg-gray-50 hover:text-gray-900 hover:border-gray-300 dark:hover:bg-gray-800/50 dark:hover:text-gray-100 dark:hover:border-gray-600",
+                                isSelected && (isMultipleChoice ? "border-purple-300 bg-purple-50 dark:bg-purple-900/20 dark:border-purple-600 hover:bg-purple-100 hover:border-purple-400 dark:hover:bg-purple-900/30 dark:hover:border-purple-500" : "border-blue-300 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-600 hover:bg-blue-100 hover:border-blue-400 dark:hover:bg-blue-900/30 dark:hover:border-blue-500"), 
+                                showAsCorrect && "bg-green-100 border-green-500 dark:bg-green-900/20 dark:border-green-400 hover:bg-green-200 hover:border-green-600 dark:hover:bg-green-900/30 dark:hover:border-green-300", 
+                                showAsIncorrect && "bg-red-100 border-red-500 dark:bg-red-900/20 dark:border-red-400 hover:bg-red-200 hover:border-red-600 dark:hover:bg-red-900/30 dark:hover:border-red-300"
                               )}
                             >
                               <div className="flex items-center gap-3 w-full">
