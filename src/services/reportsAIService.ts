@@ -37,10 +37,28 @@ export interface ReportContext {
   totalPracticeSessions?: number;
   userRoles?: Record<string, number>;
   lastUpdated?: string;
+  
+  // AI Tutor specific metrics
+  aiTutorActiveUsers?: number;
+  aiTutorSessions?: number;
+  aiTutorTotalTime?: number;
+  aiTutorAverageScore?: number;
+  aiTutorCompletionRate?: number;
+  aiTutorExercisesCompleted?: number;
+  aiTutorExercisesAttempted?: number;
+  aiTutorProgressPercentage?: number;
+  aiTutorStreakDays?: number;
+  
+  // LMS specific metrics
+  lmsActiveUsers?: number;
+  lmsCompletionRate?: number;
+  
   dataQuality?: {
     userDataComplete: boolean;
     courseDataComplete: boolean;
     engagementDataComplete: boolean;
+    aiTutorDataComplete?: boolean;
+    lmsDataComplete?: boolean;
     confidenceScore: number;
     note?: string;
   };
@@ -134,110 +152,137 @@ Please ensure your database has real data or contact your administrator.
     
     const dataNote = `*Analysis based on real platform data as of ${currentDate}*`;
     
-    // AI Tutor specific queries - using ONLY real data
+    // AI Tutor specific queries - using RICH real data from analytics tables
     if (queryLower.includes('ai tutor') || queryLower.includes('tutor') || queryLower.includes('tutoring')) {
-      // Calculate AI Tutor metrics from real database data
-      const aiTutorSessions = context.totalPracticeSessions || 0;
-      const aiActiveUsers = context.activeUsersThisMonth || 0;
-      const sessionDuration = context.averageSessionDuration || 0;
+      const aiSessions = context.aiTutorSessions || 0;
+      const aiActiveUsers = context.aiTutorActiveUsers || 0;
+      const aiTotalTime = context.aiTutorTotalTime || 0;
+      const aiAvgScore = context.aiTutorAverageScore || 0;
+      const aiCompletionRate = context.aiTutorCompletionRate || 0;
+      const exercisesCompleted = context.aiTutorExercisesCompleted || 0;
+      const exercisesAttempted = context.aiTutorExercisesAttempted || 0;
+      const progressPercentage = context.aiTutorProgressPercentage || 0;
+      const streakDays = context.aiTutorStreakDays || 0;
       
-      // Calculate engagement percentage
       const engagementPercentage = context.totalUsers > 0 ? Math.round((aiActiveUsers / context.totalUsers) * 100) : 0;
+      const avgSessionTime = aiSessions > 0 ? Math.round(aiTotalTime / aiSessions) : 0;
       
       return {
-        content: `🤖 **AI Tutor System Analytics**
+        content: `🤖 **AI Tutor System Analytics (Real Data)**
 
-📊 **Current AI Tutor Metrics:**
-- Total Tutoring Sessions: ${aiTutorSessions.toLocaleString()}
-- Active AI Users: ${aiActiveUsers.toLocaleString()} users (${engagementPercentage}% of platform)
-- Average Session Duration: ${sessionDuration} minutes
-- Platform Engagement Rate: ${context.engagementRate}%
+📊 **AI Tutor Performance Metrics:**
+- Total Learning Sessions: ${aiSessions.toLocaleString()}
+- Active AI Tutor Users: ${aiActiveUsers.toLocaleString()} (${engagementPercentage}% of platform)
+- Total Learning Time: ${Math.round(aiTotalTime / 60).toLocaleString()} hours
+- Average Session Duration: ${avgSessionTime} minutes
+- Average Learning Score: ${aiAvgScore}%
 
-🎯 **Learning Outcomes:**
-- Course Completion Rate: ${context.completionRate}%
-- Total Registered Users: ${context.totalUsers.toLocaleString()}
-- Active Users This Month: ${context.activeUsersThisMonth || 0}
+🎯 **Learning Achievement Data:**
+- Exercise Completion Rate: ${aiCompletionRate}%
+- Total Exercises Completed: ${exercisesCompleted.toLocaleString()}
+- Total Exercises Attempted: ${exercisesAttempted.toLocaleString()}
+- Average Progress Percentage: ${progressPercentage}%
+- Total Learning Streak Days: ${streakDays.toLocaleString()}
+
+📈 **Platform Integration:**
+- Total Platform Users: ${context.totalUsers.toLocaleString()}
 - New Users This Month: ${context.newUsersThisMonth || 0}
+- Overall Platform Engagement: ${context.engagementRate}%
+- User Roles: ${Object.entries(context.userRoles || {}).map(([role, count]) => `${role}: ${count}`).join(', ') || 'No role data'}
 
 💡 **AI Tutor Insights:**
-- Most popular courses: ${context.popularCourses?.slice(0,3).join(', ') || 'No course data available'}
-- Total Published Courses: ${context.totalCourses}
-- User Role Distribution: ${Object.entries(context.userRoles || {}).map(([role, count]) => `${role}: ${count}`).join(', ') || 'No role data'}
-- Data Quality Score: ${context.dataQuality?.confidenceScore || 0}%
+- ${aiActiveUsers > 0 ? `${aiActiveUsers} users actively using AI Tutor this month` : 'No active AI Tutor users this month'}
+- ${aiSessions > 0 ? `Average of ${Math.round(aiSessions / (aiActiveUsers || 1))} sessions per active user` : 'No session data available'}
+- ${aiAvgScore > 0 ? `Learning performance at ${aiAvgScore}% average score` : 'No performance data available'}
+- ${exercisesCompleted > 0 ? `${exercisesCompleted} exercises completed successfully` : 'No completed exercises recorded'}
 
-**Real Data Insights:**
-- ${context.dataQuality?.userDataComplete ? '✅ User data is complete' : '⚠️ Limited user data available'}
-- ${context.dataQuality?.courseDataComplete ? '✅ Course data is complete' : '⚠️ Limited course data available'}
-- ${context.dataQuality?.engagementDataComplete ? '✅ Engagement data is complete' : '⚠️ Limited engagement data available'}
+**Data Quality Assessment:**
+- AI Tutor Data: ${context.dataQuality?.aiTutorDataComplete ? '✅ Complete and accurate' : '⚠️ Limited or no AI Tutor data'}
+- User Data: ${context.dataQuality?.userDataComplete ? '✅ Complete' : '⚠️ Limited'}
+- Confidence Score: ${context.dataQuality?.confidenceScore || 0}%
+- Last Updated: ${context.lastUpdated || 'Unknown'}
 
-**Recommendations:**
-${context.totalUsers < 50 ? '- Focus on user acquisition and onboarding' : '- Optimize for scale and performance'}
-${context.completionRate < 50 ? '- Improve course completion rates through better engagement' : '- Maintain high completion rates'}
-${context.engagementRate < 30 ? '- Enhance user engagement strategies' : '- Continue current engagement approaches'}
+**Production Insights:**
+${aiActiveUsers === 0 ? '⚠️ No AI Tutor activity detected - check system functionality' : `✅ ${aiActiveUsers} active AI Tutor users`}
+${aiSessions === 0 ? '⚠️ No learning sessions recorded - verify data collection' : `✅ ${aiSessions} learning sessions tracked`}
+${aiAvgScore === 0 ? '⚠️ No performance scores available' : aiAvgScore >= 70 ? '✅ Strong learning performance scores' : '📈 Learning scores show room for improvement'}
 
 ${dataNote}`,
         data: {
-          totalSessions: aiTutorSessions,
-          activeUsers: aiActiveUsers,
-          engagementRate: context.engagementRate,
-          completionRate: context.completionRate,
-          totalUsers: context.totalUsers,
-          totalCourses: context.totalCourses,
-          dataSource: 'real_database',
+          aiTutorSessions: aiSessions,
+          aiTutorActiveUsers: aiActiveUsers,
+          aiTutorTotalTime: aiTotalTime,
+          aiTutorAverageScore: aiAvgScore,
+          aiTutorCompletionRate: aiCompletionRate,
+          exercisesCompleted: exercisesCompleted,
+          exercisesAttempted: exercisesAttempted,
+          progressPercentage: progressPercentage,
+          streakDays: streakDays,
+          dataSource: 'real_ai_tutor_analytics',
           lastUpdated: context.lastUpdated
         }
       };
     }
     
-    // LMS specific queries - using ONLY real data
+    // LMS specific queries - using separated LMS data
     if (queryLower.includes('lms') || queryLower.includes('course') || queryLower.includes('student')) {
+      const lmsActiveUsers = context.lmsActiveUsers || 0;
+      const lmsCompletionRate = context.lmsCompletionRate || 0;
       const courseToStudentRatio = context.totalCourses > 0 ? Math.round(context.totalUsers / context.totalCourses) : 0;
+      const lmsEngagementPercentage = context.totalUsers > 0 ? Math.round((lmsActiveUsers / context.totalUsers) * 100) : 0;
       
       return {
-        content: `📚 **LMS Platform Analytics**
+        content: `📚 **LMS Platform Analytics (Real Data)**
 
-📖 **Current LMS Metrics:**
-- Total Students: ${context.totalUsers.toLocaleString()} users
-- Active Courses: ${context.totalCourses} published courses
-- Course Completion Rate: ${context.completionRate}%
-- Student Engagement Rate: ${context.engagementRate}%
+📖 **LMS Performance Metrics:**
+- Total Platform Users: ${context.totalUsers.toLocaleString()}
+- LMS Active Users: ${lmsActiveUsers.toLocaleString()} (${lmsEngagementPercentage}% of platform)
+- Published Courses: ${context.totalCourses} courses
+- LMS Completion Rate: ${lmsCompletionRate}%
+- Course-to-Student Ratio: ${courseToStudentRatio}:1
 
-📈 **Course Performance:**
+📈 **Course Data:**
+- Available Courses: ${context.popularCourses?.join(', ') || 'No published courses available'}
 - Most Popular Course: ${context.popularCourses?.[0] || 'No course data available'}
-- Available Courses: ${context.popularCourses?.join(', ') || 'No course data available'}
-- Active Users This Month: ${context.activeUsersThisMonth || 0}
+- Course Catalog Size: ${context.totalCourses} published courses
+
+👥 **User Demographics:**
 - New Users This Month: ${context.newUsersThisMonth || 0}
+- User Role Distribution: ${Object.entries(context.userRoles || {}).map(([role, count]) => `${role}: ${count} users`).join(', ') || 'No role data available'}
+- Overall Platform Engagement: ${context.engagementRate}%
 
-👥 **Student Engagement:**
-- Total Registered Users: ${context.totalUsers.toLocaleString()}
-- Average Session Duration: ${context.averageSessionDuration || 0} minutes
-- User Role Distribution: ${Object.entries(context.userRoles || {}).map(([role, count]) => `${role}: ${count}`).join(', ') || 'No role data'}
+💡 **LMS vs AI Tutor Comparison:**
+- LMS Active Users: ${lmsActiveUsers} users
+- AI Tutor Active Users: ${context.aiTutorActiveUsers || 0} users  
+- LMS Completion Rate: ${lmsCompletionRate}%
+- AI Tutor Completion Rate: ${context.aiTutorCompletionRate || 0}%
 
-💡 **LMS Insights:**
-- Course-to-student ratio: ${courseToStudentRatio} students per course
-- Data Quality Score: ${context.dataQuality?.confidenceScore || 0}%
-- ${context.engagementRate < 20 ? 'Low engagement indicates need for improvement' : context.engagementRate > 70 ? 'High engagement shows strong platform adoption' : 'Moderate engagement with room for growth'}
-- Last Updated: ${context.lastUpdated || 'Unknown'}
+**Data Quality Assessment:**
+- LMS Data: ${context.dataQuality?.lmsDataComplete ? '✅ Complete and accurate' : '⚠️ Limited or no LMS activity data'}
+- Course Data: ${context.dataQuality?.courseDataComplete ? '✅ Complete' : '⚠️ Limited'}
+- User Data: ${context.dataQuality?.userDataComplete ? '✅ Complete' : '⚠️ Limited'}
+- Confidence Score: ${context.dataQuality?.confidenceScore || 0}%
 
-**Real Data Status:**
-- ${context.dataQuality?.userDataComplete ? '✅ User data is complete and accurate' : '⚠️ Limited user data available'}
-- ${context.dataQuality?.courseDataComplete ? '✅ Course data is complete and accurate' : '⚠️ Limited course data available'}
-- ${context.dataQuality?.engagementDataComplete ? '✅ Engagement data is complete and accurate' : '⚠️ Limited engagement data available'}
+**Production Insights:**
+${lmsActiveUsers === 0 ? '⚠️ No LMS activity detected this month' : `✅ ${lmsActiveUsers} users actively using LMS`}
+${context.totalCourses === 0 ? '⚠️ No published courses available' : `✅ ${context.totalCourses} courses published and available`}
+${lmsCompletionRate === 0 ? '⚠️ No course completions tracked' : lmsCompletionRate >= 60 ? '✅ Strong course completion rates' : '📈 Course completion rates need improvement'}
 
-**Data-Driven Recommendations:**
-- ${context.engagementRate < 20 ? 'Priority: Focus on user onboarding and content quality' : 'Continue current engagement strategies'}
-- ${context.completionRate < 50 ? 'Review course difficulty and pacing to improve completion rates' : 'Maintain current course quality standards'}
-- ${context.totalUsers < 50 ? 'Focus on user acquisition campaigns' : 'Optimize for scale and user retention'}
+**Strategic Recommendations:**
+- ${lmsActiveUsers < (context.aiTutorActiveUsers || 0) ? 'LMS engagement is lower than AI Tutor - consider integration strategies' : 'LMS showing strong engagement'}
+- ${context.totalCourses < 5 ? 'Expand course catalog to provide more learning options' : 'Good course variety available'}
+- ${lmsCompletionRate < 50 ? 'Review course structure and difficulty to improve completion rates' : 'Maintain current course quality standards'}
 
 ${dataNote}`,
         data: {
-          totalStudents: context.totalUsers,
-          activeCourses: context.totalCourses,
-          completionRate: context.completionRate,
+          lmsActiveUsers: lmsActiveUsers,
+          lmsCompletionRate: lmsCompletionRate,
+          totalCourses: context.totalCourses,
+          totalUsers: context.totalUsers,
           engagementRate: context.engagementRate,
-          activeUsersThisMonth: context.activeUsersThisMonth,
-          newUsersThisMonth: context.newUsersThisMonth,
-          dataSource: 'real_database',
+          popularCourses: context.popularCourses,
+          userRoles: context.userRoles,
+          dataSource: 'real_lms_data',
           lastUpdated: context.lastUpdated
         }
       };
@@ -687,36 +732,55 @@ ${dataNote}`,
    */
   private static getDefaultContext(): ReportContext {
     return {
-      totalUsers: 0, // Real data only - no mock users
-      totalCourses: 0, // Real data only - no mock courses
-      engagementRate: 0, // Real data only - no mock engagement
-      completionRate: 0, // Real data only - no mock completion
+      totalUsers: 0,
+      totalCourses: 0,
+      engagementRate: 0,
+      completionRate: 0,
       timeRange: 'Current Month',
-      averageSessionDuration: 0, // Real data only
-      popularCourses: [], // Empty - will be populated from database
+      averageSessionDuration: 0,
+      popularCourses: [],
       availableMetrics: [
-        'User Registration',
-        'Course Completion', 
-        'Engagement Rate',
-        'Session Duration',
-        'Login Frequency',
-        'Practice Sessions',
+        'AI Tutor Sessions',
+        'AI Tutor Progress',
+        'Exercise Completion',
+        'Learning Streaks',
+        'User Engagement',
         'Course Progress',
-        'User Activity',
-        'Platform Analytics'
+        'Session Duration',
+        'Learning Scores',
+        'Platform Analytics',
+        'User Growth'
       ],
-      // Additional real data fields
+      // Real data fields - all empty when no connection
       activeUsersThisMonth: 0,
       newUsersThisMonth: 0,
       totalPracticeSessions: 0,
       userRoles: {},
+      
+      // AI Tutor fields
+      aiTutorActiveUsers: 0,
+      aiTutorSessions: 0,
+      aiTutorTotalTime: 0,
+      aiTutorAverageScore: 0,
+      aiTutorCompletionRate: 0,
+      aiTutorExercisesCompleted: 0,
+      aiTutorExercisesAttempted: 0,
+      aiTutorProgressPercentage: 0,
+      aiTutorStreakDays: 0,
+      
+      // LMS fields
+      lmsActiveUsers: 0,
+      lmsCompletionRate: 0,
+      
       lastUpdated: new Date().toISOString(),
       dataQuality: {
         userDataComplete: false,
         courseDataComplete: false,
         engagementDataComplete: false,
+        aiTutorDataComplete: false,
+        lmsDataComplete: false,
         confidenceScore: 0,
-        note: 'No real data available - database connection required'
+        note: 'No real data available - database connection required for production reports'
       }
     };
   }
