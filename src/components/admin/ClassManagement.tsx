@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { MultiSelect } from '@/components/ui/MultiSelect';
 import { Search, Plus, BookOpen, Edit, Trash2, Eye, RefreshCw, Users, MoreHorizontal, MapPin, GraduationCap } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -27,7 +28,28 @@ interface Class {
   updated_at: string;
 }
 
+// Mock data for teachers and students
+const MOCK_TEACHERS_FOR_SELECT = [
+  { value: 'Ms. Sarah Ahmed', label: 'Ms. Sarah Ahmed' },
+  { value: 'Mr. Ali Hassan', label: 'Mr. Ali Hassan' },
+  { value: 'Dr. Fatima Khan', label: 'Dr. Fatima Khan' },
+  { value: 'Mr. Usman Khan', label: 'Mr. Usman Khan' },
+];
+
+const MOCK_STUDENTS_FOR_SELECT = [
+  { value: 'Ahmed Khan', label: 'Ahmed Khan' },
+  { value: 'Fatima Ali', label: 'Fatima Ali' },
+  { value: 'Omar Hassan', label: 'Omar Hassan' },
+  { value: 'Zara Ahmed', label: 'Zara Ahmed' },
+  { value: 'Bilal Khan', label: 'Bilal Khan' },
+  { value: 'Hassan Ali', label: 'Hassan Ali' },
+  { value: 'Aisha Khan', label: 'Aisha Khan' },
+  { value: 'Usman Ahmed', label: 'Usman Ahmed' },
+];
+
 const ClassManagement: React.FC = () => {
+
+  
   const [classes, setClasses] = useState<Class[]>([
     {
       id: '1',
@@ -78,6 +100,12 @@ const ClassManagement: React.FC = () => {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<Class | null>(null);
   const [viewingClass, setViewingClass] = useState<Class | null>(null);
+  
+  // Search states for teachers and students
+  const [teacherSearchTerm, setTeacherSearchTerm] = useState('');
+  const [studentSearchTerm, setStudentSearchTerm] = useState('');
+  const [filteredTeachers, setFilteredTeachers] = useState(MOCK_TEACHERS_FOR_SELECT);
+  const [filteredStudents, setFilteredStudents] = useState(MOCK_STUDENTS_FOR_SELECT);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -418,14 +446,14 @@ const ClassManagement: React.FC = () => {
 
       {/* Create Class Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-4xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>Create New Class</DialogTitle>
             <DialogDescription>
               Add a new class or academic section to the system. Fill in the required information below.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800">
             <div className="space-y-2">
               <Label htmlFor="name">Class Name *</Label>
               <Input
@@ -505,105 +533,221 @@ const ClassManagement: React.FC = () => {
              </div>
 
             
-                         <div className="space-y-2 md:col-span-2">
-               <Label htmlFor="description">Description</Label>
-               <Textarea
-                 id="description"
-                 value={formData.description}
-                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                 placeholder="Class description and focus areas..."
-                 rows={3}
-               />
-             </div>
+                                        <div className="space-y-2 md:col-span-2">
+                 <Label htmlFor="description">Description</Label>
+                 <Textarea
+                   id="description"
+                   value={formData.description}
+                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                   placeholder="Class description and focus areas..."
+                   rows={3}
+                 />
+               </div>
 
              {/* Access Management Section */}
              <div className="space-y-4 md:col-span-2">
                <div className="space-y-2">
                  <Label>Manage Teachers</Label>
                  <div className="space-y-2">
-                   <div className="flex flex-wrap gap-2 p-2 border rounded-md min-h-[40px]">
-                     {formData.teachers.map((teacher, index) => (
-                       <div key={index} className="flex items-center gap-1 bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm">
-                         <span>{teacher}</span>
-                         <button
-                           type="button"
-                           onClick={() => setFormData({
-                             ...formData,
-                             teachers: formData.teachers.filter((_, i) => i !== index)
-                           })}
-                           className="text-green-600 hover:text-green-800"
-                         >
-                           ×
-                         </button>
-                       </div>
-                     ))}
-                     <Select onValueChange={(value) => {
-                       if (value && !formData.teachers.includes(value)) {
-                         setFormData({
-                           ...formData,
-                           teachers: [...formData.teachers, value]
-                         });
-                       }
-                     }}>
-                       <SelectTrigger className="w-48 border-none shadow-none focus:ring-0">
-                         <SelectValue placeholder="Select teachers..." />
-                       </SelectTrigger>
-                       <SelectContent>
-                         <SelectItem value="Ms. Sarah Ahmed">Ms. Sarah Ahmed</SelectItem>
-                         <SelectItem value="Mr. Ali Hassan">Mr. Ali Hassan</SelectItem>
-                         <SelectItem value="Dr. Fatima Khan">Dr. Fatima Khan</SelectItem>
-                         <SelectItem value="Mr. Usman Khan">Mr. Usman Khan</SelectItem>
-                       </SelectContent>
-                     </Select>
+                   <div className="text-xs text-gray-500">
+                     Current teachers: {formData.teachers.length > 0 ? formData.teachers.join(', ') : 'None selected'}
                    </div>
-                   <p className="text-xs text-muted-foreground">Teachers can edit course content, manage students, and view analytics</p>
+                   <div className="space-y-2">
+                     <div className="relative">
+                       <Input
+                         placeholder="Search teachers..."
+                         value={teacherSearchTerm}
+                         onChange={(e) => {
+                           const searchTerm = e.target.value;
+                           setTeacherSearchTerm(searchTerm);
+                           const filtered = MOCK_TEACHERS_FOR_SELECT.filter(teacher =>
+                             teacher.label.toLowerCase().includes(searchTerm.toLowerCase())
+                           );
+                           setFilteredTeachers(filtered);
+                         }}
+                         className="pr-8"
+                       />
+                       <Search className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                     </div>
+                     
+                     {/* Filtered teachers list */}
+                     {teacherSearchTerm && filteredTeachers.length > 0 && (
+                       <div className="max-h-40 overflow-y-auto border rounded-md p-2 space-y-1">
+                         {filteredTeachers.map(teacher => (
+                           <div
+                             key={teacher.value}
+                             className="flex items-center justify-between p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded cursor-pointer"
+                             onClick={() => {
+                               if (!formData.teachers.includes(teacher.value)) {
+                                 setFormData({
+                                   ...formData,
+                                   teachers: [...formData.teachers, teacher.value]
+                                 });
+                               }
+                               setTeacherSearchTerm('');
+                               setFilteredTeachers(MOCK_TEACHERS_FOR_SELECT);
+                             }}
+                           >
+                             <span className="text-sm">{teacher.label}</span>
+                             {formData.teachers.includes(teacher.value) && (
+                               <Badge variant="secondary" className="text-xs">Added</Badge>
+                             )}
+                           </div>
+                         ))}
+                       </div>
+                     )}
+                     
+                     {/* Show all available teachers when no search */}
+                     {!teacherSearchTerm && (
+                       <div className="max-h-40 overflow-y-auto border rounded-md p-2 space-y-1">
+                         {MOCK_TEACHERS_FOR_SELECT.map(teacher => (
+                           <div
+                             key={teacher.value}
+                             className="flex items-center justify-between p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded cursor-pointer"
+                             onClick={() => {
+                               if (!formData.teachers.includes(teacher.value)) {
+                                 setFormData({
+                                   ...formData,
+                                   teachers: [...formData.teachers, teacher.value]
+                                 });
+                               }
+                             }}
+                           >
+                             <span className="text-sm">{teacher.label}</span>
+                             {formData.teachers.includes(teacher.value) && (
+                               <Badge variant="secondary" className="text-xs">Added</Badge>
+                             )}
+                           </div>
+                         ))}
+                       </div>
+                     )}
+                     
+                     {/* Display selected teachers as chips */}
+                     {formData.teachers.length > 0 && (
+                       <div className="flex flex-wrap gap-2">
+                         {formData.teachers.map((teacher, index) => (
+                           <Badge key={index} variant="default" className="bg-green-600">
+                             {teacher}
+                             <button
+                               type="button"
+                               onClick={() => setFormData({
+                                 ...formData,
+                                 teachers: formData.teachers.filter((_, i) => i !== index)
+                               })}
+                               className="ml-2 text-white hover:text-green-200"
+                             >
+                               ×
+                             </button>
+                           </Badge>
+                         ))}
+                       </div>
+                     )}
+                   </div>
+
                  </div>
+                 <p className="text-xs text-muted-foreground">Teachers can edit course content, manage students, and view analytics</p>
                </div>
 
-               <div className="space-y-2">
+                              <div className="space-y-2">
                  <Label>Manage Students</Label>
                  <div className="space-y-2">
-                   <div className="flex flex-wrap gap-2 p-2 border rounded-md min-h-[40px]">
-                     {formData.students.map((student, index) => (
-                       <div key={index} className="flex items-center gap-1 bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm">
-                         <span>{student}</span>
-                         <button
-                           type="button"
-                           onClick={() => setFormData({
-                             ...formData,
-                             students: formData.students.filter((_, i) => i !== index)
-                           })}
-                           className="text-blue-600 hover:text-blue-800"
-                         >
-                           ×
-                         </button>
-                       </div>
-                     ))}
-                     <Select onValueChange={(value) => {
-                       if (value && !formData.students.includes(value)) {
-                         setFormData({
-                           ...formData,
-                           students: [...formData.students, value]
-                         });
-                       }
-                     }}>
-                       <SelectTrigger className="w-48 border-none shadow-none focus:ring-0">
-                         <SelectValue placeholder="Select students..." />
-                       </SelectTrigger>
-                       <SelectContent>
-                         <SelectItem value="Ahmed Khan">Ahmed Khan</SelectItem>
-                         <SelectItem value="Fatima Ali">Fatima Ali</SelectItem>
-                         <SelectItem value="Omar Hassan">Omar Hassan</SelectItem>
-                         <SelectItem value="Zara Ahmed">Zara Ahmed</SelectItem>
-                         <SelectItem value="Bilal Khan">Bilal Khan</SelectItem>
-                         <SelectItem value="Hassan Ali">Hassan Ali</SelectItem>
-                         <SelectItem value="Aisha Khan">Aisha Khan</SelectItem>
-                         <SelectItem value="Usman Ahmed">Usman Ahmed</SelectItem>
-                       </SelectContent>
-                     </Select>
+                   <div className="text-xs text-gray-500">
+                     Current students: {formData.students.length > 0 ? formData.students.join(', ') : 'None selected'}
                    </div>
-                   <p className="text-xs text-muted-foreground">Students can access course content, submit assignments, and track progress</p>
+                   <div className="space-y-2">
+                     <div className="relative">
+                       <Input
+                         placeholder="Search students..."
+                         value={studentSearchTerm}
+                         onChange={(e) => {
+                           const searchTerm = e.target.value;
+                           setStudentSearchTerm(searchTerm);
+                           const filtered = MOCK_STUDENTS_FOR_SELECT.filter(student =>
+                             student.label.toLowerCase().includes(searchTerm.toLowerCase())
+                           );
+                           setFilteredStudents(filtered);
+                         }}
+                         className="pr-8"
+                       />
+                       <Search className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                     </div>
+                     
+                     {/* Filtered students list */}
+                     {studentSearchTerm && filteredStudents.length > 0 && (
+                       <div className="max-h-40 overflow-y-auto border rounded-md p-2 space-y-1">
+                         {filteredStudents.map(student => (
+                           <div
+                             key={student.value}
+                             className="flex items-center justify-between p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded cursor-pointer"
+                             onClick={() => {
+                               if (!formData.students.includes(student.value)) {
+                                 setFormData({
+                                   ...formData,
+                                   students: [...formData.students, student.value]
+                                 });
+                               }
+                               setStudentSearchTerm('');
+                               setFilteredStudents(MOCK_STUDENTS_FOR_SELECT);
+                             }}
+                           >
+                             <span className="text-sm">{student.label}</span>
+                             {formData.students.includes(student.value) && (
+                               <Badge variant="secondary" className="text-xs">Added</Badge>
+                             )}
+                           </div>
+                         ))}
+                       </div>
+                     )}
+                     
+                     {/* Show all available students when no search */}
+                     {!studentSearchTerm && (
+                       <div className="max-h-40 overflow-y-auto border rounded-md p-2 space-y-1">
+                         {MOCK_STUDENTS_FOR_SELECT.map(student => (
+                           <div
+                             key={student.value}
+                             className="flex items-center justify-between p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded cursor-pointer"
+                             onClick={() => {
+                               if (!formData.students.includes(student.value)) {
+                                 setFormData({
+                                   ...formData,
+                                   students: [...formData.students, student.value]
+                                 });
+                               }
+                             }}
+                           >
+                             <span className="text-sm">{student.label}</span>
+                             {formData.students.includes(student.value) && (
+                               <Badge variant="secondary" className="text-xs">Added</Badge>
+                             )}
+                           </div>
+                         ))}
+                       </div>
+                     )}
+                     
+                     {/* Display selected students as chips */}
+                     {formData.students.length > 0 && (
+                       <div className="flex flex-wrap gap-2">
+                         {formData.students.map((student, index) => (
+                           <Badge key={index} variant="outline" className="border-blue-300 text-blue-700">
+                             {student}
+                             <button
+                               type="button"
+                               onClick={() => setFormData({
+                                 ...formData,
+                                 students: formData.students.filter((_, i) => i !== index)
+                               })}
+                               className="ml-2 text-blue-600 hover:text-blue-800"
+                             >
+                               ×
+                             </button>
+                           </Badge>
+                         ))}
+                       </div>
+                     )}
+                   </div>
+
                  </div>
+                 <p className="text-xs text-muted-foreground">Students can access course content, submit assignments, and track progress</p>
                </div>
              </div>
           </div>
@@ -620,14 +764,14 @@ const ClassManagement: React.FC = () => {
 
       {/* Edit Class Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-4xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>Edit Class</DialogTitle>
             <DialogDescription>
               Update the information for {editingClass?.name}.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800">
             <div className="space-y-2">
               <Label htmlFor="edit-name">Class Name *</Label>
               <Input
@@ -723,40 +867,96 @@ const ClassManagement: React.FC = () => {
                <div className="space-y-2">
                  <Label>Manage Teachers</Label>
                  <div className="space-y-2">
-                   <div className="flex flex-wrap gap-2 p-2 border rounded-md min-h-[40px]">
-                     {formData.teachers.map((teacher, index) => (
-                       <div key={index} className="flex items-center gap-1 bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm">
-                         <span>{teacher}</span>
-                         <button
-                           type="button"
-                           onClick={() => setFormData({
-                             ...formData,
-                             teachers: formData.teachers.filter((_, i) => i !== index)
-                           })}
-                           className="text-green-600 hover:text-green-800"
-                         >
-                           ×
-                         </button>
+                   <div className="space-y-2">
+                     <div className="relative">
+                       <Input
+                         placeholder="Search teachers..."
+                         value={teacherSearchTerm}
+                         onChange={(e) => {
+                           const searchTerm = e.target.value;
+                           setTeacherSearchTerm(searchTerm);
+                           const filtered = MOCK_TEACHERS_FOR_SELECT.filter(teacher =>
+                             teacher.label.toLowerCase().includes(searchTerm.toLowerCase())
+                           );
+                           setFilteredTeachers(filtered);
+                         }}
+                         className="pr-8"
+                       />
+                       <Search className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                     </div>
+                     
+                     {/* Filtered teachers list */}
+                     {teacherSearchTerm && filteredTeachers.length > 0 && (
+                       <div className="max-h-40 overflow-y-auto border rounded-md p-2 space-y-1">
+                         {filteredTeachers.map(teacher => (
+                           <div
+                             key={teacher.value}
+                             className="flex items-center justify-between p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded cursor-pointer"
+                             onClick={() => {
+                               if (!formData.teachers.includes(teacher.value)) {
+                                 setFormData({
+                                   ...formData,
+                                   teachers: [...formData.teachers, teacher.value]
+                                 });
+                               }
+                               setTeacherSearchTerm('');
+                               setFilteredTeachers(MOCK_TEACHERS_FOR_SELECT);
+                             }}
+                           >
+                             <span className="text-sm">{teacher.label}</span>
+                             {formData.teachers.includes(teacher.value) && (
+                               <Badge variant="secondary" className="text-xs">Added</Badge>
+                             )}
+                           </div>
+                         ))}
                        </div>
-                     ))}
-                     <Select onValueChange={(value) => {
-                       if (value && !formData.teachers.includes(value)) {
-                         setFormData({
-                           ...formData,
-                           teachers: [...formData.teachers, value]
-                         });
-                       }
-                     }}>
-                       <SelectTrigger className="w-48 border-none shadow-none focus:ring-0">
-                         <SelectValue placeholder="Select teachers..." />
-                       </SelectTrigger>
-                       <SelectContent>
-                         <SelectItem value="Ms. Sarah Ahmed">Ms. Sarah Ahmed</SelectItem>
-                         <SelectItem value="Mr. Ali Hassan">Mr. Ali Hassan</SelectItem>
-                         <SelectItem value="Dr. Fatima Khan">Dr. Fatima Khan</SelectItem>
-                         <SelectItem value="Mr. Usman Khan">Mr. Usman Khan</SelectItem>
-                       </SelectContent>
-                     </Select>
+                     )}
+                     
+                     {/* Show all available teachers when no search */}
+                     {!teacherSearchTerm && (
+                       <div className="max-h-40 overflow-y-auto border rounded-md p-2 space-y-1">
+                         {MOCK_TEACHERS_FOR_SELECT.map(teacher => (
+                           <div
+                             key={teacher.value}
+                             className="flex items-center justify-between p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded cursor-pointer"
+                             onClick={() => {
+                               if (!formData.teachers.includes(teacher.value)) {
+                                 setFormData({
+                                   ...formData,
+                                   teachers: [...formData.teachers, teacher.value]
+                                 });
+                               }
+                             }}
+                           >
+                             <span className="text-sm">{teacher.label}</span>
+                             {formData.teachers.includes(teacher.value) && (
+                               <Badge variant="secondary" className="text-xs">Added</Badge>
+                             )}
+                           </div>
+                         ))}
+                       </div>
+                     )}
+                     
+                     {/* Display selected teachers as chips */}
+                     {formData.teachers.length > 0 && (
+                       <div className="flex flex-wrap gap-2">
+                         {formData.teachers.map((teacher, index) => (
+                           <Badge key={index} variant="default" className="bg-green-600">
+                             {teacher}
+                             <button
+                               type="button"
+                               onClick={() => setFormData({
+                                 ...formData,
+                                 teachers: formData.teachers.filter((_, i) => i !== index)
+                               })}
+                               className="ml-2 text-white hover:text-green-200"
+                             >
+                               ×
+                             </button>
+                           </Badge>
+                         ))}
+                       </div>
+                     )}
                    </div>
                    <p className="text-xs text-muted-foreground">Teachers can edit course content, manage students, and view analytics</p>
                  </div>
@@ -765,44 +965,99 @@ const ClassManagement: React.FC = () => {
                <div className="space-y-2">
                  <Label>Manage Students</Label>
                  <div className="space-y-2">
-                   <div className="flex flex-wrap gap-2 p-2 border rounded-md min-h-[40px]">
-                     {formData.students.map((student, index) => (
-                       <div key={index} className="flex items-center gap-1 bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm">
-                         <span>{student}</span>
-                         <button
-                           type="button"
-                           onClick={() => setFormData({
-                             ...formData,
-                             students: formData.students.filter((_, i) => i !== index)
-                           })}
-                           className="text-blue-600 hover:text-blue-800"
-                         >
-                           ×
-                         </button>
+                   <div className="space-y-2">
+                     <div className="relative">
+                       <Input
+                         placeholder="Search students..."
+                         value={studentSearchTerm}
+                         onChange={(e) => {
+                           const searchTerm = e.target.value;
+                           setStudentSearchTerm(searchTerm);
+                           const filtered = MOCK_STUDENTS_FOR_SELECT.filter(student =>
+                             student.label.toLowerCase().includes(searchTerm.toLowerCase())
+                           );
+                           setFilteredStudents(filtered);
+                         }}
+                         className="pr-8"
+                       />
+                       <Search className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                     </div>
+                     
+                     {/* Filtered students list */}
+                     {studentSearchTerm && filteredStudents.length > 0 && (
+                       <div className="max-h-40 overflow-y-auto border rounded-md p-2 space-y-1">
+                         {filteredStudents.map(student => (
+                           <div
+                             key={student.value}
+                             className="flex items-center justify-between p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded cursor-pointer"
+                             onClick={() => {
+                               if (!formData.students.includes(student.value)) {
+                                 setFormData({
+                                   ...formData,
+                                   students: [...formData.students, student.value]
+                                 });
+                               }
+                               setStudentSearchTerm('');
+                               setFilteredStudents(MOCK_STUDENTS_FOR_SELECT);
+                             }}
+                           >
+                             <span className="text-sm">{student.label}</span>
+                             {formData.students.includes(student.value) && (
+                               <Badge variant="secondary" className="text-xs">Added</Badge>
+                             )}
+                           </div>
+                         ))}
                        </div>
-                     ))}
-                     <Select onValueChange={(value) => {
-                       if (value && !formData.students.includes(value)) {
-                         setFormData({
-                           ...formData,
-                           students: [...formData.students, value]
-                         });
-                       }
-                     }}>
-                       <SelectTrigger className="w-48 border-none shadow-none focus:ring-0">
-                         <SelectValue placeholder="Select students..." />
-                       </SelectTrigger>
-                       <SelectContent>
-                         <SelectItem value="Ahmed Khan">Ahmed Khan</SelectItem>
-                         <SelectItem value="Fatima Ali">Fatima Ali</SelectItem>
-                         <SelectItem value="Omar Hassan">Omar Hassan</SelectItem>
-                         <SelectItem value="Zara Ahmed">Zara Ahmed</SelectItem>
-                         <SelectItem value="Bilal Khan">Bilal Khan</SelectItem>
-                         <SelectItem value="Hassan Ali">Hassan Ali</SelectItem>
-                         <SelectItem value="Aisha Khan">Aisha Khan</SelectItem>
-                         <SelectItem value="Usman Ahmed">Usman Ahmed</SelectItem>
-                       </SelectContent>
-                     </Select>
+                     )}
+                     
+                     {/* Show all available students when no search */}
+                     {!studentSearchTerm && (
+                       <div className="max-h-40 overflow-y-auto border rounded-md p-2 space-y-1">
+                         {MOCK_STUDENTS_FOR_SELECT.map(student => (
+                           <div
+                             key={student.value}
+                             className="flex items-center justify-between p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded cursor-pointer"
+                             onClick={() => {
+                               if (!formData.students.includes(student.value)) {
+                                 setFormData({
+                                   ...formData,
+                                   students: [...formData.students, student.value]
+                                 });
+                               }
+                             }}
+                           >
+                             <span className="text-sm">{student.label}</span>
+                             {formData.students.includes(student.value) && (
+                               <Badge variant="secondary" className="text-xs">Added</Badge>
+                             )}
+                           </div>
+                         ))}
+                       </div>
+                     )}
+                     
+                     {/* Display selected students as chips */}
+                     {formData.students.length > 0 && (
+                       <div className="flex flex-wrap gap-2">
+                         {formData.students.map((student, index) => (
+                           <Badge key={index} variant="outline" className="border-blue-300 text-blue-700">
+                             {student}
+                             <button
+                               type="button"
+                               onClick={() => setFormData({
+                                 ...formData,
+                                 students: formData.students.filter((_, i) => i !== index)
+                               })}
+                               className="ml-2 text-blue-600 hover:text-blue-800"
+                             >
+                               ×
+                             </button>
+                           </Badge>
+                         ))}
+                       </div>
+                     )}
+                   </div>
+                   <div className="text-xs text-gray-500 mt-1">
+                     Available options: {MOCK_STUDENTS_FOR_SELECT.map(s => s.label).join(', ')}
                    </div>
                    <p className="text-xs text-muted-foreground">Students can access course content, submit assignments, and track progress</p>
                  </div>
