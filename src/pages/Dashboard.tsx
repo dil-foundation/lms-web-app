@@ -30,9 +30,6 @@ const AIStudentProgress = lazy(() => import('@/components/dashboard/AIStudentPro
 const AIStudentPractice = lazy(() => import('@/components/dashboard/AIStudentPractice').then(module => ({ default: module.AIStudentPractice })));
 const RolePlaceholder = lazy(() => import('@/components/dashboard/RolePlaceholder').then(module => ({ default: module.RolePlaceholder })));
 const UsersManagement = lazy(() => import('@/components/admin/UsersManagement').then(module => ({ default: module.UsersManagement })));
-const StatesManagement = lazy(() => import('@/components/admin/StatesManagement'));
-const BoardManagement = lazy(() => import('@/components/admin/BoardManagement'));
-const SchoolManagement = lazy(() => import('@/components/admin/SchoolManagement'));
 const ClassManagement = lazy(() => import('@/components/admin/ClassManagement'));
 const CourseManagement = lazy(() => import('@/components/admin/CourseManagement'));
 const ReportsAnalytics = lazy(() => import('@/components/admin/ReportsAnalytics').then(module => ({ default: module.ReportsAnalytics })));
@@ -316,11 +313,8 @@ const Dashboard = () => {
                         </>
                       ) : (
                         <>
-                                          <Route path="/users" element={<UsersManagement />} />
-                <Route path="/states" element={<StatesManagement />} />
-                <Route path="/boards" element={<BoardManagement />} />
-                <Route path="/schools" element={<SchoolManagement />} />
-                <Route path="/classes" element={<ClassManagement />} />
+                          <Route path="/users" element={<UsersManagement />} />
+                          <Route path="/classes" element={<ClassManagement />} />
                 <Route path="/courses" element={<CourseManagement />} />
                           <Route path="/courses/builder/:courseId" element={<CourseBuilder />} />
                           <Route path="/reports" element={<ReportsOverview />} />

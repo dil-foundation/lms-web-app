@@ -128,18 +128,15 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean): N
           ]
         },
         {
-                  title: 'MANAGEMENT',
-        items: [
-          { title: 'Users', path: '/dashboard/users', icon: Users },
-          { title: 'States', path: '/dashboard/states', icon: MapPin },
-          { title: 'Boards', path: '/dashboard/boards', icon: Building2 },
-          { title: 'Schools', path: '/dashboard/schools', icon: GraduationCap },
-          { title: 'Classes', path: '/dashboard/classes', icon: Users2 },
-          { title: 'Courses', path: '/dashboard/courses', icon: BookOpen },
-          { title: 'Assessments', path: '/dashboard/grade-assignments', icon: Award },
-          { title: 'Messages', path: '/dashboard/messages', icon: MessageSquare },
-          { title: 'Discussion', path: '/dashboard/discussion', icon: MessageCircle },
-        ]
+          title: 'MANAGEMENT',
+          items: [
+            { title: 'Users', path: '/dashboard/users', icon: Users },
+            { title: 'Classes', path: '/dashboard/classes', icon: Users2 },
+            { title: 'Courses', path: '/dashboard/courses', icon: BookOpen },
+            { title: 'Assessments', path: '/dashboard/grade-assignments', icon: Award },
+            { title: 'Messages', path: '/dashboard/messages', icon: MessageSquare },
+            { title: 'Discussion', path: '/dashboard/discussion', icon: MessageCircle },
+          ]
         },
         {
           title: 'ANALYTICS',
