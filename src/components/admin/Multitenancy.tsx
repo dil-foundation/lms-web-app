@@ -23,11 +23,22 @@ interface MultitenancyProps {
   };
 }
 
-// State interface and data
-interface State {
+// Country interface and data
+interface Country {
   id: string;
   name: string;
   code: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// City interface and data
+interface City {
+  id: string;
+  name: string;
+  code: string;
+  country: string;
   description: string;
   created_at: string;
   updated_at: string;
@@ -38,7 +49,8 @@ interface Board {
   id: string;
   name: string;
   code: string;
-  state: string;
+  country: string;
+  city: string;
   description: string;
   created_at: string;
   updated_at: string;
@@ -51,8 +63,8 @@ interface School {
   code: string;
   type: string;
   address: string;
+  country: string;
   city: string;
-  state: string;
   board: string;
   phone: string;
   email: string;
@@ -66,29 +78,60 @@ interface School {
 }
 
 export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
-  // States Management
-  const [states, setStates] = useState<State[]>([
+  // Countries Management
+  const [countries, setCountries] = useState<Country[]>([
     {
       id: '1',
-      name: 'California',
-      code: 'CA',
-      description: 'The Golden State, known for its diverse geography and economy.',
+      name: 'Pakistan',
+      code: 'PK',
+      description: 'Islamic Republic of Pakistan, a country in South Asia.',
       created_at: '2024-01-15',
       updated_at: '2024-01-15'
     },
     {
       id: '2',
-      name: 'Texas',
-      code: 'TX',
-      description: 'The Lone Star State, second largest state by population.',
+      name: 'United States',
+      code: 'US',
+      description: 'United States of America, a federal republic in North America.',
+      created_at: '2024-01-15',
+      updated_at: '2024-01-15'
+    },
+    {
+      id: '3',
+      name: 'United Kingdom',
+      code: 'UK',
+      description: 'United Kingdom of Great Britain and Northern Ireland.',
+      created_at: '2024-01-15',
+      updated_at: '2024-01-15'
+    }
+  ]);
+
+  // Cities Management
+  const [cities, setCities] = useState<City[]>([
+    {
+      id: '1',
+      name: 'Lahore',
+      code: 'LHR',
+      country: 'Pakistan',
+      description: 'The cultural capital of Pakistan, known for its rich history and vibrant culture.',
+      created_at: '2024-01-15',
+      updated_at: '2024-01-15'
+    },
+    {
+      id: '2',
+      name: 'Karachi',
+      code: 'KHI',
+      country: 'Pakistan',
+      description: 'The economic hub of Pakistan, largest city by population.',
       created_at: '2024-01-15',
       updated_at: '2024-01-15'
     },
     {
       id: '3',
       name: 'New York',
-      code: 'NY',
-      description: 'The Empire State, home to New York City.',
+      code: 'NYC',
+      country: 'United States',
+      description: 'The Big Apple, financial capital of the world.',
       created_at: '2024-01-15',
       updated_at: '2024-01-15'
     }
@@ -100,7 +143,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       id: '1',
       name: 'Federal Board of Intermediate and Secondary Education',
       code: 'FBISE',
-      state: 'Islamabad Capital Territory',
+      country: 'Pakistan',
+      city: 'Islamabad Capital Territory',
       description: 'The Federal Board of Intermediate and Secondary Education is a federal level board of education in Pakistan for public and private schools.',
       created_at: '2024-01-15',
       updated_at: '2024-01-15'
@@ -109,7 +153,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       id: '2',
       name: 'Punjab Board of Intermediate and Secondary Education',
       code: 'PBISE',
-      state: 'Punjab',
+      country: 'Pakistan',
+      city: 'Punjab',
       description: 'Punjab Board of Intermediate and Secondary Education is the provincial education board of Punjab, Pakistan.',
       created_at: '2024-01-15',
       updated_at: '2024-01-15'
@@ -118,7 +163,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       id: '3',
       name: 'International Baccalaureate',
       code: 'IB',
-      state: 'Geneva',
+      country: 'United Kingdom',
+      city: 'Geneva',
       description: 'The International Baccalaureate is an international educational foundation headquartered in Geneva, Switzerland.',
       created_at: '2024-01-15',
       updated_at: '2024-01-15'
@@ -133,8 +179,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       code: 'BSS-001',
       type: 'Private',
       address: '123 Main Street, Gulberg III',
+      country: 'Pakistan',
       city: 'Lahore',
-      state: 'Punjab',
       board: 'CBSE',
       phone: '+92-42-1234567',
       email: 'info@beaconhouse.edu.pk',
@@ -152,8 +198,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       code: 'LGS-001',
       type: 'Private',
       address: '456 Mall Road, Gulberg V',
+      country: 'Pakistan',
       city: 'Lahore',
-      state: 'Punjab',
       board: 'MSBSHSE',
       phone: '+92-42-2345678',
       email: 'info@lgs.edu.pk',
@@ -171,8 +217,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       code: 'KPS-001',
       type: 'Public',
       address: '789 University Road, Gulshan-e-Iqbal',
+      country: 'Pakistan',
       city: 'Karachi',
-      state: 'Sindh',
       board: 'IB',
       phone: '+92-21-3456789',
       email: 'info@kps.edu.pk',
@@ -187,18 +233,31 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   ]);
 
   // Common state for all tabs
-  const [activeTab, setActiveTab] = useState('states');
+  const [activeTab, setActiveTab] = useState('countries');
   const [searchTerm, setSearchTerm] = useState('');
   
-  // States specific state
-  const [isStateCreateDialogOpen, setIsStateCreateDialogOpen] = useState(false);
-  const [isStateEditDialogOpen, setIsStateEditDialogOpen] = useState(false);
-  const [isStateViewDialogOpen, setIsStateViewDialogOpen] = useState(false);
-  const [editingState, setEditingState] = useState<State | null>(null);
-  const [viewingState, setViewingState] = useState<State | null>(null);
-  const [stateFormData, setStateFormData] = useState({
+  // Countries specific state
+  const [isCountryCreateDialogOpen, setIsCountryCreateDialogOpen] = useState(false);
+  const [isCountryEditDialogOpen, setIsCountryEditDialogOpen] = useState(false);
+  const [isCountryViewDialogOpen, setIsCountryViewDialogOpen] = useState(false);
+  const [editingCountry, setEditingCountry] = useState<Country | null>(null);
+  const [viewingCountry, setViewingCountry] = useState<Country | null>(null);
+  const [countryFormData, setCountryFormData] = useState({
     name: '',
     code: '',
+    description: ''
+  });
+
+  // Cities specific state
+  const [isCityCreateDialogOpen, setIsCityCreateDialogOpen] = useState(false);
+  const [isCityEditDialogOpen, setIsCityEditDialogOpen] = useState(false);
+  const [isCityViewDialogOpen, setIsCityViewDialogOpen] = useState(false);
+  const [editingCity, setEditingCity] = useState<City | null>(null);
+  const [viewingCity, setViewingCity] = useState<City | null>(null);
+  const [cityFormData, setCityFormData] = useState({
+    name: '',
+    code: '',
+    country: '',
     description: ''
   });
 
@@ -211,7 +270,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   const [boardFormData, setBoardFormData] = useState({
     name: '',
     code: '',
-    state: '',
+    country: '',
+    city: '',
     description: ''
   });
 
@@ -227,8 +287,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     code: '',
     type: '',
     address: '',
+    country: '',
     city: '',
-    state: '',
     board: '',
     phone: '',
     email: '',
@@ -240,9 +300,15 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   });
 
   // Filter functions
-  const filteredStates = states.filter(state => {
-    const matchesSearch = state.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         state.code.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredCountries = countries.filter(country => {
+    const matchesSearch = country.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         country.code.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSearch;
+  });
+
+  const filteredCities = cities.filter(city => {
+    const matchesSearch = city.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         city.code.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
 
@@ -260,84 +326,163 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     return matchesSearch && matchesType;
   });
 
-  // States handlers
-  const handleStateCreate = () => {
-    if (!stateFormData.name || !stateFormData.code) {
+  // Countries handlers
+  const handleCountryCreate = () => {
+    if (!countryFormData.name || !countryFormData.code) {
       toast.error('Please fill in all required fields');
       return;
     }
 
-    const newState: State = {
+    const newCountry: Country = {
       id: Date.now().toString(),
-      name: stateFormData.name,
-      code: stateFormData.code.toUpperCase(),
-      description: stateFormData.description,
+      name: countryFormData.name,
+      code: countryFormData.code.toUpperCase(),
+      description: countryFormData.description,
       created_at: new Date().toISOString().split('T')[0],
       updated_at: new Date().toISOString().split('T')[0]
     };
 
-    setStates([...states, newState]);
-    setIsStateCreateDialogOpen(false);
-    resetStateForm();
-    toast.success('State created successfully');
+    setCountries([...countries, newCountry]);
+    setIsCountryCreateDialogOpen(false);
+    resetCountryForm();
+    toast.success('Country created successfully');
   };
 
-  const handleStateEdit = () => {
-    if (!editingState || !stateFormData.name || !stateFormData.code) {
+  const handleCountryEdit = () => {
+    if (!editingCountry || !countryFormData.name || !countryFormData.code) {
       toast.error('Please fill in all required fields');
       return;
     }
 
-    const updatedStates = states.map(state =>
-      state.id === editingState.id
+    const updatedCountries = countries.map(country =>
+      country.id === editingCountry.id
         ? {
-            ...state,
-            name: stateFormData.name,
-            code: stateFormData.code.toUpperCase(),
-            description: stateFormData.description,
+            ...country,
+            name: countryFormData.name,
+            code: countryFormData.code.toUpperCase(),
+            description: countryFormData.description,
             updated_at: new Date().toISOString().split('T')[0]
           }
-        : state
+        : country
     );
 
-    setStates(updatedStates);
-    setIsStateEditDialogOpen(false);
-    setEditingState(null);
-    resetStateForm();
-    toast.success('State updated successfully');
+    setCountries(updatedCountries);
+    setIsCountryEditDialogOpen(false);
+    setEditingCountry(null);
+    resetCountryForm();
+    toast.success('Country updated successfully');
   };
 
-  const handleStateDelete = (stateId: string) => {
-    setStates(states.filter(state => state.id !== stateId));
-    toast.success('State deleted successfully');
+  const handleCountryDelete = (countryId: string) => {
+    setCountries(countries.filter(country => country.id !== countryId));
+    toast.success('Country deleted successfully');
   };
 
-  const openStateEditDialog = (state: State) => {
-    setEditingState(state);
-    setStateFormData({
-      name: state.name,
-      code: state.code,
-      description: state.description
+  const openCountryEditDialog = (country: Country) => {
+    setEditingCountry(country);
+    setCountryFormData({
+      name: country.name,
+      code: country.code,
+      description: country.description
     });
-    setIsStateEditDialogOpen(true);
+    setIsCountryEditDialogOpen(true);
   };
 
-  const openStateViewDialog = (state: State) => {
-    setViewingState(state);
-    setIsStateViewDialogOpen(true);
+  const openCountryViewDialog = (country: Country) => {
+    setViewingCountry(country);
+    setIsCountryViewDialogOpen(true);
   };
 
-  const resetStateForm = () => {
-    setStateFormData({
+  const resetCountryForm = () => {
+    setCountryFormData({
       name: '',
       code: '',
       description: ''
     });
   };
 
+  // Cities handlers
+  const handleCityCreate = () => {
+    if (!cityFormData.name || !cityFormData.code || !cityFormData.country) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    const newCity: City = {
+      id: Date.now().toString(),
+      name: cityFormData.name,
+      code: cityFormData.code.toUpperCase(),
+      country: cityFormData.country,
+      description: cityFormData.description,
+      created_at: new Date().toISOString().split('T')[0],
+      updated_at: new Date().toISOString().split('T')[0]
+    };
+
+    setCities([...cities, newCity]);
+    setIsCityCreateDialogOpen(false);
+    resetCityForm();
+    toast.success('City created successfully');
+  };
+
+  const handleCityEdit = () => {
+    if (!editingCity || !cityFormData.name || !cityFormData.code || !cityFormData.country) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    const updatedCities = cities.map(city =>
+      city.id === editingCity.id
+        ? {
+            ...city,
+            name: cityFormData.name,
+            code: cityFormData.code.toUpperCase(),
+            country: cityFormData.country,
+            description: cityFormData.description,
+            updated_at: new Date().toISOString().split('T')[0]
+          }
+        : city
+    );
+
+    setCities(updatedCities);
+    setIsCityEditDialogOpen(false);
+    setEditingCity(null);
+    resetCityForm();
+    toast.success('City updated successfully');
+  };
+
+  const handleCityDelete = (cityId: string) => {
+    setCities(cities.filter(city => city.id !== cityId));
+    toast.success('City deleted successfully');
+  };
+
+  const openCityEditDialog = (city: City) => {
+    setEditingCity(city);
+    setCityFormData({
+      name: city.name,
+      code: city.code,
+      country: city.country,
+      description: city.description
+    });
+    setIsCityEditDialogOpen(true);
+  };
+
+  const openCityViewDialog = (city: City) => {
+    setViewingCity(city);
+    setIsCityViewDialogOpen(true);
+  };
+
+  const resetCityForm = () => {
+    setCityFormData({
+      name: '',
+      code: '',
+      country: '',
+      description: ''
+    });
+  };
+
   // Boards handlers
   const handleBoardCreate = () => {
-    if (!boardFormData.name || !boardFormData.code || !boardFormData.state) {
+    if (!boardFormData.name || !boardFormData.code || !boardFormData.country || !boardFormData.city) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -346,7 +491,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       id: Date.now().toString(),
       name: boardFormData.name,
       code: boardFormData.code.toUpperCase(),
-      state: boardFormData.state,
+      country: boardFormData.country,
+      city: boardFormData.city,
       description: boardFormData.description,
       created_at: new Date().toISOString().split('T')[0],
       updated_at: new Date().toISOString().split('T')[0]
@@ -359,7 +505,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   };
 
   const handleBoardEdit = () => {
-    if (!editingBoard || !boardFormData.name || !boardFormData.code || !boardFormData.state) {
+    if (!editingBoard || !boardFormData.name || !boardFormData.code || !boardFormData.country || !boardFormData.city) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -370,7 +516,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
             ...board,
             name: boardFormData.name,
             code: boardFormData.code.toUpperCase(),
-            state: boardFormData.state,
+            country: boardFormData.country,
+            city: boardFormData.city,
             description: boardFormData.description,
             updated_at: new Date().toISOString().split('T')[0]
           }
@@ -394,7 +541,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     setBoardFormData({
       name: board.name,
       code: board.code,
-      state: board.state,
+      country: board.country,
+      city: board.city,
       description: board.description
     });
     setIsBoardEditDialogOpen(true);
@@ -409,14 +557,15 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     setBoardFormData({
       name: '',
       code: '',
-      state: '',
+      country: '',
+      city: '',
       description: ''
     });
   };
 
   // Schools handlers
   const handleSchoolCreate = () => {
-    if (!schoolFormData.name || !schoolFormData.code || !schoolFormData.type || !schoolFormData.city || !schoolFormData.state || !schoolFormData.board) {
+    if (!schoolFormData.name || !schoolFormData.code || !schoolFormData.type || !schoolFormData.country || !schoolFormData.city || !schoolFormData.board) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -427,8 +576,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       code: schoolFormData.code.toUpperCase(),
       type: schoolFormData.type,
       address: schoolFormData.address,
+      country: schoolFormData.country,
       city: schoolFormData.city,
-      state: schoolFormData.state,
       board: schoolFormData.board,
       phone: schoolFormData.phone,
       email: schoolFormData.email,
@@ -448,7 +597,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   };
 
   const handleSchoolEdit = () => {
-    if (!editingSchool || !schoolFormData.name || !schoolFormData.code || !schoolFormData.type || !schoolFormData.city || !schoolFormData.state || !schoolFormData.board) {
+    if (!editingSchool || !schoolFormData.name || !schoolFormData.code || !schoolFormData.type || !schoolFormData.country || !schoolFormData.city || !schoolFormData.board) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -461,8 +610,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
             code: schoolFormData.code.toUpperCase(),
             type: schoolFormData.type,
             address: schoolFormData.address,
+            country: schoolFormData.country,
             city: schoolFormData.city,
-            state: schoolFormData.state,
             board: schoolFormData.board,
             phone: schoolFormData.phone,
             email: schoolFormData.email,
@@ -495,8 +644,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       code: school.code,
       type: school.type,
       address: school.address,
+      country: school.country,
       city: school.city,
-      state: school.state,
       board: school.board,
       phone: school.phone,
       email: school.email,
@@ -520,8 +669,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       code: '',
       type: '',
       address: '',
+      country: '',
       city: '',
-      state: '',
       board: '',
       phone: '',
       email: '',
@@ -552,17 +701,21 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-[#8DC63F]">Multitenancy Management</h1>
-          <p className="text-muted-foreground">Manage organizational hierarchy: states, boards, and schools</p>
+          <p className="text-muted-foreground">Manage organizational hierarchy: countries, cities, boards, and schools</p>
         </div>
       </div>
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <div className="overflow-x-auto">
-          <TabsList className="grid w-full grid-cols-3 min-w-fit">
-            <TabsTrigger value="states" className="text-xs sm:text-sm">
+          <TabsList className="grid w-full grid-cols-4 min-w-fit">
+            <TabsTrigger value="countries" className="text-xs sm:text-sm">
+              <Globe className="w-4 h-4 mr-2" />
+              Countries
+            </TabsTrigger>
+            <TabsTrigger value="cities" className="text-xs sm:text-sm">
               <MapPin className="w-4 h-4 mr-2" />
-              States
+              Cities
             </TabsTrigger>
             <TabsTrigger value="boards" className="text-xs sm:text-sm">
               <Building2 className="w-4 h-4 mr-2" />
@@ -575,19 +728,19 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
           </TabsList>
         </div>
 
-        {/* States Tab */}
-        <TabsContent value="states" className="space-y-6">
+        {/* Countries Tab */}
+        <TabsContent value="countries" className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-bold text-[#8DC63F]">States Management</h2>
-              <p className="text-muted-foreground">Manage all states and territories in the system</p>
+              <h2 className="text-2xl font-bold text-[#8DC63F]">Countries Management</h2>
+              <p className="text-muted-foreground">Manage all countries in the system</p>
             </div>
             <Button
-              onClick={() => setIsStateCreateDialogOpen(true)}
+              onClick={() => setIsCountryCreateDialogOpen(true)}
               className="bg-[#8DC63F] hover:bg-[#8DC63F]/90"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Create State
+              Create Country
             </Button>
           </div>
 
@@ -595,22 +748,22 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total States</CardTitle>
-                <MapPin className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">Total Countries</CardTitle>
+                <Globe className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{states.length}</div>
-                <p className="text-xs text-muted-foreground">All states in the system</p>
+                <div className="text-2xl font-bold">{countries.length}</div>
+                <p className="text-xs text-muted-foreground">All countries in the system</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">States with Description</CardTitle>
+                <CardTitle className="text-sm font-medium">Countries with Description</CardTitle>
                 <FileText className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{states.filter(s => s.description && s.description.trim() !== '').length}</div>
+                <div className="text-2xl font-bold">{countries.filter(c => c.description && c.description.trim() !== '').length}</div>
                 <p className="text-xs text-muted-foreground">Have descriptions</p>
               </CardContent>
             </Card>
@@ -621,9 +774,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                 <Calendar className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{states.filter(s => {
+                <div className="text-2xl font-bold">{countries.filter(c => {
                   const today = new Date();
-                  const updateDate = new Date(s.updated_at);
+                  const updateDate = new Date(c.updated_at);
                   const diffTime = Math.abs(today.getTime() - updateDate.getTime());
                   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                   return diffDays <= 7;
@@ -636,15 +789,15 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
           {/* Search and Filters */}
           <Card>
             <CardHeader>
-              <CardTitle>State Directory</CardTitle>
-              <CardDescription>Search and filter states by various criteria</CardDescription>
+              <CardTitle>Country Directory</CardTitle>
+              <CardDescription>Search and filter countries by various criteria</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
-                    placeholder="Search states by name or code..."
+                    placeholder="Search countries by name or code..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -657,7 +810,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
             </CardContent>
           </Card>
 
-          {/* States Table */}
+          {/* Countries Table */}
           <Card>
             <CardContent className="p-0">
               <Table>
@@ -671,17 +824,17 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredStates.map((state) => (
-                    <TableRow key={state.id}>
-                      <TableCell className="font-medium">{state.name}</TableCell>
+                  {filteredCountries.map((country) => (
+                    <TableRow key={country.id}>
+                      <TableCell className="font-medium">{country.name}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{state.code}</Badge>
+                        <Badge variant="outline">{country.code}</Badge>
                       </TableCell>
-                      <TableCell className="max-w-xs truncate">{state.description}</TableCell>
+                      <TableCell className="max-w-xs truncate">{country.description}</TableCell>
                       <TableCell className="text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          {state.updated_at}
+                          {country.updated_at}
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
@@ -693,33 +846,198 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => openStateViewDialog(state)}>
+                            <DropdownMenuItem onClick={() => openCountryViewDialog(country)}>
                               <Eye className="mr-2 h-4 w-4" />
                               View Details
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => openStateEditDialog(state)}>
+                            <DropdownMenuItem onClick={() => openCountryEditDialog(country)}>
                               <Edit className="mr-2 h-4 w-4" />
-                              Edit State
+                              Edit Country
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                                   <Trash2 className="mr-2 h-4 w-4" />
-                                  Delete State
+                                  Delete Country
                                 </DropdownMenuItem>
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete State</AlertDialogTitle>
+                                  <AlertDialogTitle>Delete Country</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    Are you sure you want to delete "{state.name}"? This action cannot be undone.
+                                    Are you sure you want to delete "{country.name}"? This action cannot be undone.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                                   <AlertDialogAction
-                                    onClick={() => handleStateDelete(state.id)}
+                                    onClick={() => handleCountryDelete(country.id)}
+                                    className="bg-red-600 hover:bg-red-700"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Cities Tab */}
+        <TabsContent value="cities" className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-bold text-[#8DC63F]">Cities Management</h2>
+              <p className="text-muted-foreground">Manage all cities and territories in the system</p>
+            </div>
+            <Button
+              onClick={() => setIsCityCreateDialogOpen(true)}
+              className="bg-[#8DC63F] hover:bg-[#8DC63F]/90"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create City
+            </Button>
+          </div>
+
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Cities</CardTitle>
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{cities.length}</div>
+                <p className="text-xs text-muted-foreground">All cities in the system</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Cities with Description</CardTitle>
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{cities.filter(c => c.description && c.description.trim() !== '').length}</div>
+                <p className="text-xs text-muted-foreground">Have descriptions</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Recent Updates</CardTitle>
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{cities.filter(c => {
+                  const today = new Date();
+                  const updateDate = new Date(c.updated_at);
+                  const diffTime = Math.abs(today.getTime() - updateDate.getTime());
+                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                  return diffDays <= 7;
+                }).length}</div>
+                <p className="text-xs text-muted-foreground">Updated this week</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Search and Filters */}
+          <Card>
+            <CardHeader>
+              <CardTitle>City Directory</CardTitle>
+              <CardDescription>Search and filter cities by various criteria</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder="Search cities by name or code..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Button variant="outline" size="icon">
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Cities Table */}
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Country</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Last Updated</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredCities.map((city) => (
+                    <TableRow key={city.id}>
+                      <TableCell className="font-medium">{city.name}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{city.code}</Badge>
+                      </TableCell>
+                      <TableCell>{city.country}</TableCell>
+                      <TableCell className="max-w-xs truncate">{city.description}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {city.updated_at}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Open menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => openCityViewDialog(city)}>
+                              <Eye className="mr-2 h-4 w-4" />
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openCityEditDialog(city)}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit City
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete City
+                                </DropdownMenuItem>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete City</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete "{city.name}"? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleCityDelete(city.id)}
                                     className="bg-red-600 hover:bg-red-700"
                                   >
                                     Delete
@@ -828,7 +1146,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Code</TableHead>
-                    <TableHead>State</TableHead>
+                    <TableHead>Country</TableHead>
+                    <TableHead>City</TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead>Last Updated</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -841,7 +1160,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                       <TableCell>
                         <Badge variant="outline">{board.code}</Badge>
                       </TableCell>
-                      <TableCell>{board.state}</TableCell>
+                      <TableCell>{board.country}</TableCell>
+                      <TableCell>{board.city}</TableCell>
                       <TableCell className="max-w-xs truncate">{board.description}</TableCell>
                       <TableCell className="text-muted-foreground">
                         <div className="flex items-center gap-1">
@@ -999,8 +1319,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                     <TableHead>Name</TableHead>
                     <TableHead>Code</TableHead>
                     <TableHead>Type</TableHead>
+                    <TableHead>Country</TableHead>
                     <TableHead>City</TableHead>
-                    <TableHead>State</TableHead>
                     <TableHead>Board</TableHead>
                     <TableHead>Students</TableHead>
                     <TableHead>Teachers</TableHead>
@@ -1015,8 +1335,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                         <Badge variant="outline">{school.code}</Badge>
                       </TableCell>
                       <TableCell>{getTypeBadge(school.type)}</TableCell>
+                      <TableCell>{school.country}</TableCell>
                       <TableCell>{school.city}</TableCell>
-                      <TableCell>{school.state}</TableCell>
                       <TableCell>
                         <Badge variant="outline">{school.board}</Badge>
                       </TableCell>
@@ -1077,158 +1397,356 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
         </TabsContent>
       </Tabs>
 
-      {/* State Dialogs */}
-      {/* Create State Dialog */}
-      <Dialog open={isStateCreateDialogOpen} onOpenChange={setIsStateCreateDialogOpen}>
+      {/* Country Dialogs */}
+      {/* Create Country Dialog */}
+      <Dialog open={isCountryCreateDialogOpen} onOpenChange={setIsCountryCreateDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Create New State</DialogTitle>
+            <DialogTitle>Create New Country</DialogTitle>
             <DialogDescription>
-              Add a new state or territory to the system. Fill in the required information below.
+              Add a new country to the system. Fill in the required information below.
             </DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name">State Name *</Label>
+              <Label htmlFor="country-name">Country Name *</Label>
               <Input
-                id="name"
-                value={stateFormData.name}
-                onChange={(e) => setStateFormData({ ...stateFormData, name: e.target.value })}
-                placeholder="e.g., California"
+                id="country-name"
+                value={countryFormData.name}
+                onChange={(e) => setCountryFormData({ ...countryFormData, name: e.target.value })}
+                placeholder="e.g., Pakistan"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="code">State Code *</Label>
+              <Label htmlFor="country-code">Country Code *</Label>
               <Input
-                id="code"
-                value={stateFormData.code}
-                onChange={(e) => setStateFormData({ ...stateFormData, code: e.target.value })}
-                placeholder="e.g., CA"
+                id="country-code"
+                value={countryFormData.code}
+                onChange={(e) => setCountryFormData({ ...countryFormData, code: e.target.value })}
+                placeholder="e.g., PK"
                 maxLength={3}
               />
             </div>
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="country-description">Description</Label>
               <Textarea
-                id="description"
-                value={stateFormData.description}
-                onChange={(e) => setStateFormData({ ...stateFormData, description: e.target.value })}
-                placeholder="Brief description of the state..."
+                id="country-description"
+                value={countryFormData.description}
+                onChange={(e) => setCountryFormData({ ...countryFormData, description: e.target.value })}
+                placeholder="Brief description of the country..."
                 rows={3}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsStateCreateDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsCountryCreateDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleStateCreate} className="bg-[#8DC63F] hover:bg-[#8DC63F]/90">
-              Create State
+            <Button onClick={handleCountryCreate} className="bg-[#8DC63F] hover:bg-[#8DC63F]/90">
+              Create Country
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Edit State Dialog */}
-      <Dialog open={isStateEditDialogOpen} onOpenChange={setIsStateEditDialogOpen}>
+      {/* Edit Country Dialog */}
+      <Dialog open={isCountryEditDialogOpen} onOpenChange={setIsCountryEditDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Edit State</DialogTitle>
+            <DialogTitle>Edit Country</DialogTitle>
             <DialogDescription>
-              Update the information for {editingState?.name}.
+              Update the information for {editingCountry?.name}.
             </DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-name">State Name *</Label>
+              <Label htmlFor="edit-country-name">Country Name *</Label>
               <Input
-                id="edit-name"
-                value={stateFormData.name}
-                onChange={(e) => setStateFormData({ ...stateFormData, name: e.target.value })}
-                placeholder="e.g., California"
+                id="edit-country-name"
+                value={countryFormData.name}
+                onChange={(e) => setCountryFormData({ ...countryFormData, name: e.target.value })}
+                placeholder="e.g., Pakistan"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-code">State Code *</Label>
+              <Label htmlFor="edit-country-code">Country Code *</Label>
               <Input
-                id="edit-code"
-                value={stateFormData.code}
-                onChange={(e) => setStateFormData({ ...stateFormData, code: e.target.value })}
-                placeholder="e.g., CA"
+                id="edit-country-code"
+                value={countryFormData.code}
+                onChange={(e) => setCountryFormData({ ...countryFormData, code: e.target.value })}
+                placeholder="e.g., PK"
                 maxLength={3}
               />
             </div>
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="edit-description">Description</Label>
+              <Label htmlFor="edit-country-description">Description</Label>
               <Textarea
-                id="edit-description"
-                value={stateFormData.description}
-                onChange={(e) => setStateFormData({ ...stateFormData, description: e.target.value })}
-                placeholder="Brief description of the state..."
+                id="edit-country-description"
+                value={countryFormData.description}
+                onChange={(e) => setCountryFormData({ ...countryFormData, description: e.target.value })}
+                placeholder="Brief description of the country..."
                 rows={3}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsStateEditDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsCountryEditDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleStateEdit} className="bg-blue-600 hover:bg-blue-700">
-              Update State
+            <Button onClick={handleCountryEdit} className="bg-blue-600 hover:bg-blue-700">
+              Update Country
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* View State Dialog */}
-      <Dialog open={isStateViewDialogOpen} onOpenChange={setIsStateViewDialogOpen}>
+      {/* View Country Dialog */}
+      <Dialog open={isCountryViewDialogOpen} onOpenChange={setIsCountryViewDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>State Details</DialogTitle>
+            <DialogTitle>Country Details</DialogTitle>
             <DialogDescription>
-              View detailed information about {viewingState?.name}.
+              View detailed information about {viewingCountry?.name}.
             </DialogDescription>
           </DialogHeader>
-          {viewingState && (
+          {viewingCountry && (
             <div className="space-y-6 py-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
-                    <Label className="text-sm font-medium text-muted-foreground">State Name</Label>
-                    <p className="text-lg font-semibold">{viewingState.name}</p>
+                    <Label className="text-sm font-medium text-muted-foreground">Country Name</Label>
+                    <p className="text-lg font-semibold">{viewingCountry.name}</p>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium text-muted-foreground">State Code</Label>
-                    <Badge variant="outline" className="text-lg">{viewingState.code}</Badge>
+                    <Label className="text-sm font-medium text-muted-foreground">Country Code</Label>
+                    <Badge variant="outline" className="text-lg">{viewingCountry.code}</Badge>
                   </div>
                   <div>
                     <Label className="text-sm font-medium text-muted-foreground">Created</Label>
-                    <p className="text-lg">{viewingState.created_at}</p>
+                    <p className="text-lg">{viewingCountry.created_at}</p>
                   </div>
                   <div>
                     <Label className="text-sm font-medium text-muted-foreground">Last Updated</Label>
-                    <p className="text-lg">{viewingState.updated_at}</p>
+                    <p className="text-lg">{viewingCountry.updated_at}</p>
                   </div>
                 </div>
                 <div className="space-y-4">
                   <div>
                     <Label className="text-sm font-medium text-muted-foreground">Description</Label>
-                    <p className="text-lg">{viewingState.description}</p>
+                    <p className="text-lg">{viewingCountry.description}</p>
                   </div>
                 </div>
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsStateViewDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsCountryViewDialogOpen(false)}>
               Close
             </Button>
-            {viewingState && (
+            {viewingCountry && (
               <Button onClick={() => {
-                setIsStateViewDialogOpen(false);
-                openStateEditDialog(viewingState);
+                setIsCountryViewDialogOpen(false);
+                openCountryEditDialog(viewingCountry);
               }} className="bg-blue-600 hover:bg-blue-700">
-                Edit State
+                Edit Country
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* City Dialogs */}
+      {/* Create City Dialog */}
+      <Dialog open={isCityCreateDialogOpen} onOpenChange={setIsCityCreateDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Create New City</DialogTitle>
+            <DialogDescription>
+              Add a new city or territory to the system. Fill in the required information below.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">City Name *</Label>
+              <Input
+                id="name"
+                value={cityFormData.name}
+                onChange={(e) => setCityFormData({ ...cityFormData, name: e.target.value })}
+                placeholder="e.g., California"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="code">City Code *</Label>
+              <Input
+                id="code"
+                value={cityFormData.code}
+                onChange={(e) => setCityFormData({ ...cityFormData, code: e.target.value })}
+                placeholder="e.g., LHR"
+                maxLength={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="city-country">Country *</Label>
+              <Select
+                value={cityFormData.country}
+                onValueChange={(value) => setCityFormData({ ...cityFormData, country: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a country" />
+                </SelectTrigger>
+                <SelectContent>
+                  {countries.map((country) => (
+                    <SelectItem key={country.id} value={country.name}>
+                      {country.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={cityFormData.description}
+                onChange={(e) => setCityFormData({ ...cityFormData, description: e.target.value })}
+                placeholder="Brief description of the city..."
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCityCreateDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCityCreate} className="bg-[#8DC63F] hover:bg-[#8DC63F]/90">
+              Create City
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit City Dialog */}
+      <Dialog open={isCityEditDialogOpen} onOpenChange={setIsCityEditDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit City</DialogTitle>
+            <DialogDescription>
+              Update the information for {editingCity?.name}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">City Name *</Label>
+              <Input
+                id="edit-name"
+                value={cityFormData.name}
+                onChange={(e) => setCityFormData({ ...cityFormData, name: e.target.value })}
+                placeholder="e.g., California"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-code">City Code *</Label>
+              <Input
+                id="edit-code"
+                value={cityFormData.code}
+                onChange={(e) => setCityFormData({ ...cityFormData, code: e.target.value })}
+                placeholder="e.g., LHR"
+                maxLength={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-city-country">Country *</Label>
+              <Select
+                value={cityFormData.country}
+                onValueChange={(value) => setCityFormData({ ...cityFormData, country: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a country" />
+                </SelectTrigger>
+                <SelectContent>
+                  {countries.map((country) => (
+                    <SelectItem key={country.id} value={country.name}>
+                      {country.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="edit-description">Description</Label>
+              <Textarea
+                id="edit-description"
+                value={cityFormData.description}
+                onChange={(e) => setCityFormData({ ...cityFormData, description: e.target.value })}
+                placeholder="Brief description of the city..."
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCityEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCityEdit} className="bg-blue-600 hover:bg-blue-700">
+              Update City
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View City Dialog */}
+      <Dialog open={isCityViewDialogOpen} onOpenChange={setIsCityViewDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>City Details</DialogTitle>
+            <DialogDescription>
+              View detailed information about {viewingCity?.name}.
+            </DialogDescription>
+          </DialogHeader>
+          {viewingCity && (
+            <div className="space-y-6 py-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">City Name</Label>
+                    <p className="text-lg font-semibold">{viewingCity.name}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">City Code</Label>
+                    <Badge variant="outline" className="text-lg">{viewingCity.code}</Badge>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Country</Label>
+                    <p className="text-lg">{viewingCity.country}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Created</Label>
+                    <p className="text-lg">{viewingCity.created_at}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Last Updated</Label>
+                    <p className="text-lg">{viewingCity.updated_at}</p>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Description</Label>
+                    <p className="text-lg">{viewingCity.description}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCityViewDialogOpen(false)}>
+              Close
+            </Button>
+            {viewingCity && (
+              <Button onClick={() => {
+                setIsCityViewDialogOpen(false);
+                openCityEditDialog(viewingCity);
+              }} className="bg-blue-600 hover:bg-blue-700">
+                Edit City
               </Button>
             )}
           </DialogFooter>
@@ -1266,13 +1784,31 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="board-state">State *</Label>
+              <Label htmlFor="board-country">Country *</Label>
               <Select
-                value={boardFormData.state}
-                onValueChange={(value) => setBoardFormData({ ...boardFormData, state: value })}
+                value={boardFormData.country}
+                onValueChange={(value) => setBoardFormData({ ...boardFormData, country: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a state" />
+                  <SelectValue placeholder="Select a country" />
+                </SelectTrigger>
+                <SelectContent>
+                  {countries.map((country) => (
+                    <SelectItem key={country.id} value={country.name}>
+                      {country.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="board-city">City *</Label>
+              <Select
+                value={boardFormData.city}
+                onValueChange={(value) => setBoardFormData({ ...boardFormData, city: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a city" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Azad Jammu and Kashmir">Azad Jammu and Kashmir</SelectItem>
@@ -1339,13 +1875,31 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-board-state">State *</Label>
+              <Label htmlFor="edit-board-country">Country *</Label>
               <Select
-                value={boardFormData.state}
-                onValueChange={(value) => setBoardFormData({ ...boardFormData, state: value })}
+                value={boardFormData.country}
+                onValueChange={(value) => setBoardFormData({ ...boardFormData, country: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a state" />
+                  <SelectValue placeholder="Select a country" />
+                </SelectTrigger>
+                <SelectContent>
+                  {countries.map((country) => (
+                    <SelectItem key={country.id} value={country.name}>
+                      {country.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-board-city">City *</Label>
+              <Select
+                value={boardFormData.city}
+                onValueChange={(value) => setBoardFormData({ ...boardFormData, city: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a city" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Azad Jammu and Kashmir">Azad Jammu and Kashmir</SelectItem>
@@ -1404,8 +1958,12 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                     <Badge variant="outline" className="text-lg">{viewingBoard.code}</Badge>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium text-muted-foreground">State</Label>
-                    <p className="text-lg">{viewingBoard.state}</p>
+                    <Label className="text-sm font-medium text-muted-foreground">Country</Label>
+                    <p className="text-lg">{viewingBoard.country}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">City</Label>
+                    <p className="text-lg">{viewingBoard.city}</p>
                   </div>
                   <div>
                     <Label className="text-sm font-medium text-muted-foreground">Created</Label>
@@ -1488,6 +2046,24 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
               </Select>
             </div>
             <div className="space-y-2">
+              <Label htmlFor="school-country">Country *</Label>
+              <Select
+                value={schoolFormData.country}
+                onValueChange={(value) => setSchoolFormData({ ...schoolFormData, country: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a country" />
+                </SelectTrigger>
+                <SelectContent>
+                  {countries.map((country) => (
+                    <SelectItem key={country.id} value={country.name}>
+                      {country.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="school-city">City *</Label>
               <Input
                 id="school-city"
@@ -1495,28 +2071,6 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                 onChange={(e) => setSchoolFormData({ ...schoolFormData, city: e.target.value })}
                 placeholder="e.g., Lahore"
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="school-state">State *</Label>
-              <Select
-                value={schoolFormData.state}
-                onValueChange={(value) => setSchoolFormData({ ...schoolFormData, state: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a state" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Azad Jammu and Kashmir">Azad Jammu and Kashmir</SelectItem>
-                  <SelectItem value="Balochistan">Balochistan</SelectItem>
-                  <SelectItem value="Gilgit-Baltistan">Gilgit-Baltistan</SelectItem>
-                  <SelectItem value="Islamabad Capital Territory">Islamabad Capital Territory</SelectItem>
-                  <SelectItem value="Khyber Pakhtunkhwa">Khyber Pakhtunkhwa</SelectItem>
-                  <SelectItem value="Punjab">Punjab</SelectItem>
-                  <SelectItem value="Sindh">Sindh</SelectItem>
-                  <SelectItem value="Federally Administered Tribal Areas">Federally Administered Tribal Areas</SelectItem>
-                  <SelectItem value="Geneva">Geneva</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="school-board">Board *</Label>
@@ -1674,6 +2228,24 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
               </Select>
             </div>
             <div className="space-y-2">
+              <Label htmlFor="edit-school-country">Country *</Label>
+              <Select
+                value={schoolFormData.country}
+                onValueChange={(value) => setSchoolFormData({ ...schoolFormData, country: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a country" />
+                </SelectTrigger>
+                <SelectContent>
+                  {countries.map((country) => (
+                    <SelectItem key={country.id} value={country.name}>
+                      {country.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="edit-school-city">City *</Label>
               <Input
                 id="edit-school-city"
@@ -1681,28 +2253,6 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                 onChange={(e) => setSchoolFormData({ ...schoolFormData, city: e.target.value })}
                 placeholder="e.g., Lahore"
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-school-state">State *</Label>
-              <Select
-                value={schoolFormData.state}
-                onValueChange={(value) => setSchoolFormData({ ...schoolFormData, state: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a state" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Azad Jammu and Kashmir">Azad Jammu and Kashmir</SelectItem>
-                  <SelectItem value="Balochistan">Balochistan</SelectItem>
-                  <SelectItem value="Gilgit-Baltistan">Gilgit-Baltistan</SelectItem>
-                  <SelectItem value="Islamabad Capital Territory">Islamabad Capital Territory</SelectItem>
-                  <SelectItem value="Khyber Pakhtunkhwa">Khyber Pakhtunkhwa</SelectItem>
-                  <SelectItem value="Punjab">Punjab</SelectItem>
-                  <SelectItem value="Sindh">Sindh</SelectItem>
-                  <SelectItem value="Federally Administered Tribal Areas">Federally Administered Tribal Areas</SelectItem>
-                  <SelectItem value="Geneva">Geneva</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-school-board">Board *</Label>
@@ -1840,12 +2390,12 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                     <div className="mt-1">{getTypeBadge(viewingSchool.type)}</div>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium text-muted-foreground">City</Label>
-                    <p className="text-lg">{viewingSchool.city}</p>
+                    <Label className="text-sm font-medium text-muted-foreground">Country</Label>
+                    <p className="text-lg">{viewingSchool.country}</p>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium text-muted-foreground">State</Label>
-                    <p className="text-lg">{viewingSchool.state}</p>
+                    <Label className="text-sm font-medium text-muted-foreground">City</Label>
+                    <p className="text-lg">{viewingSchool.city}</p>
                   </div>
                   <div>
                     <Label className="text-sm font-medium text-muted-foreground">Board</Label>
