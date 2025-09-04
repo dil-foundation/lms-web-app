@@ -55,7 +55,7 @@ interface QuickAction {
   action: string;
 }
 
-interface AIAdminAssistantProps {
+interface IRISProps {
   userProfile: {
     id: string;
     first_name?: string;
@@ -64,12 +64,12 @@ interface AIAdminAssistantProps {
   };
 }
 
-export const AIAdminAssistant: React.FC<AIAdminAssistantProps> = ({ userProfile }) => {
+export const IRIS: React.FC<IRISProps> = ({ userProfile }) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       type: 'assistant',
-      content: `Hello ${userProfile?.first_name || 'Administrator'}! I'm your AI Admin Assistant. I'm here to help you with platform management, user support, analytics insights, and system optimization. What would you like assistance with today?`,
+      content: `Hello ${userProfile?.first_name || 'Administrator'}! I'm IRIS (Intelligent Response & Insight System), your AI-powered platform management assistant. I'm here to help you with user analytics, course management, system optimization, and comprehensive insights. What would you like assistance with today?`,
       timestamp: new Date(),
       category: 'general',
       suggestions: [
@@ -341,7 +341,7 @@ export const AIAdminAssistant: React.FC<AIAdminAssistantProps> = ({ userProfile 
 
       // Default response if no specific match
       if (!response) {
-        response = `I understand you're asking about "${content}". As your AI Admin Assistant, I can help you with:
+        response = `I understand you're asking about "${content}". As IRIS (Intelligent Response & Insight System), I can help you with:
 
 🔍 **User Management**: Analytics, user behavior, registration trends
 📚 **Course Management**: Performance metrics, content optimization
@@ -404,10 +404,10 @@ Could you be more specific about what you'd like to know? I can provide detailed
               </div>
               <div>
                 <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
-                  AI Admin Assistant
+                  IRIS
                 </h1>
                 <p className="text-lg text-muted-foreground font-light mt-2">
-                  Your intelligent platform management companion
+                  Intelligent Response & Insight System
                 </p>
               </div>
             </div>
@@ -430,7 +430,7 @@ Could you be more specific about what you'd like to know? I can provide detailed
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="chat" className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
-            Chat Assistant
+            IRIS Chat
           </TabsTrigger>
           <TabsTrigger value="quick-actions" className="flex items-center gap-2">
             <Zap className="h-4 w-4" />
@@ -446,7 +446,7 @@ Could you be more specific about what you'd like to know? I can provide detailed
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center gap-2">
                     <Bot className="h-5 w-5 text-primary" />
-                    AI Assistant Chat
+                    IRIS Chat Interface
                   </CardTitle>
                 </CardHeader>
                                  <CardContent className="flex-1 flex flex-col p-0">
@@ -530,7 +530,7 @@ Could you be more specific about what you'd like to know? I can provide detailed
                       <Input
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
-                        placeholder="Ask me anything about platform management..."
+                        placeholder="Ask IRIS anything about platform management..."
                         className="flex-1"
                         onKeyPress={(e) => e.key === 'Enter' && handleSendMessage(inputValue)}
                         disabled={isLoading}

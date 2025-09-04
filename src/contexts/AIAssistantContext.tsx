@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { AIAssistantService } from '@/services/aiAssistantService';
+import { APEXService } from '@/services/aiAssistantService';
 
 export interface AIMessage {
   id: string;
@@ -23,7 +23,7 @@ export interface AIAssistantState {
   currentCategory?: string;
 }
 
-interface AIAssistantContextType {
+interface APEXContextType {
   state: AIAssistantState;
   openAssistant: () => void;
   closeAssistant: () => void;
@@ -34,13 +34,13 @@ interface AIAssistantContextType {
   setCategory: (category: string) => void;
 }
 
-const AIAssistantContext = createContext<AIAssistantContextType | undefined>(undefined);
+const APEXContext = createContext<APEXContextType | undefined>(undefined);
 
-interface AIAssistantProviderProps {
+interface APEXProviderProps {
   children: ReactNode;
 }
 
-export const AIAssistantProvider: React.FC<AIAssistantProviderProps> = ({ children }) => {
+export const APEXProvider: React.FC<APEXProviderProps> = ({ children }) => {
   const { user } = useAuth();
   const { profile } = useUserProfile();
   
@@ -115,7 +115,7 @@ export const AIAssistantProvider: React.FC<AIAssistantProviderProps> = ({ childr
     await simulateTyping(1500 + Math.random() * 1000);
 
     // Use the knowledge base service to generate responses
-    return AIAssistantService.generateResponse(userMessage);
+    return APEXService.generateResponse(userMessage);
   };
 
   const sendMessage = async (message: string) => {
@@ -205,16 +205,16 @@ export const AIAssistantProvider: React.FC<AIAssistantProviderProps> = ({ childr
   };
 
   return (
-    <AIAssistantContext.Provider value={value}>
+    <APEXContext.Provider value={value}>
       {children}
-    </AIAssistantContext.Provider>
+    </APEXContext.Provider>
   );
 };
 
-export const useAIAssistant = (): AIAssistantContextType => {
-  const context = useContext(AIAssistantContext);
+export const useAPEX = (): APEXContextType => {
+  const context = useContext(APEXContext);
   if (context === undefined) {
-    throw new Error('useAIAssistant must be used within an AIAssistantProvider');
+    throw new Error('useAPEX must be used within an APEXProvider');
   }
   return context;
 };

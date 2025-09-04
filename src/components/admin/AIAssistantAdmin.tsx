@@ -44,10 +44,10 @@ import {
   Save,
   X
 } from 'lucide-react';
-import { AIAssistantService, FAQ_ITEMS, CONTACT_INFO, KNOWLEDGE_BASE } from '@/services/aiAssistantService';
+import { APEXService, FAQ_ITEMS, CONTACT_INFO, KNOWLEDGE_BASE } from '@/services/aiAssistantService';
 import { toast } from 'sonner';
 
-export const AIAssistantAdmin = () => {
+export const APEXAdmin = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -60,7 +60,7 @@ export const AIAssistantAdmin = () => {
     priority: 'medium'
   });
 
-  const categories = AIAssistantService.getFAQCategories();
+  const categories = APEXService.getFAQCategories();
 
   const handleAddFAQ = () => {
     if (!newFAQ.question || !newFAQ.answer) {

@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Link, useNavigate } from 'react-router-dom';
 import { Brain, MessageCircle, Globe, Award, Languages, Target, ArrowRight, Sparkles, CheckCircle } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { AIAssistant } from '@/components/ui/AIAssistant';
+import { APEX } from '@/components/ui/AIAssistant';
 
 const Home = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -822,7 +822,7 @@ const Home = () => {
         </div>
       </footer>
       </div>
-      <AIAssistant />
+      <APEX />
     </>
   );
 };

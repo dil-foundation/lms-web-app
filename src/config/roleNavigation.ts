@@ -125,7 +125,7 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean): N
           title: 'MAIN',
           items: [
             { title: 'Overview', path: '/dashboard', icon: Home },
-            { title: 'AI Admin Assistant', path: '/dashboard/ai-admin-assistant', icon: Bot },
+            { title: 'IRIS', path: '/dashboard/iris', icon: Bot },
           ]
         },
         {
@@ -149,7 +149,7 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean): N
           title: 'SYSTEM',
           items: [
             { title: 'Admin Settings', path: '/dashboard/admin-settings', icon: Settings },
-            { title: 'AI Assistant', path: '/dashboard/ai-assistant-admin', icon: AIAssistant },
+            { title: 'APEX Admin', path: '/dashboard/apex-admin', icon: AIAssistant },
             { title: 'Security', path: '/dashboard/security', icon: Shield },
             { title: 'Integration APIs', path: '/dashboard/integration-apis', icon: Plug },
             { title: 'Multitenancy', path: '/dashboard/multitenancy', icon: Building2 },

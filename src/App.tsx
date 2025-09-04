@@ -9,7 +9,7 @@ import { AILMSProvider } from "@/contexts/AILMSContext";
 import { ObservationReportsProvider } from "@/contexts/ObservationReportsContext";
 import { SecureLinksProvider } from "@/contexts/SecureLinksContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
-import { AIAssistantProvider } from "@/contexts/AIAssistantContext";
+import { APEXProvider } from "@/contexts/AIAssistantContext";
 import ScrollToTop from "@/components/ScrollToTop";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { SessionTimeoutWarning } from "@/components/SessionTimeoutWarning";
@@ -79,10 +79,10 @@ const AppContent = () => {
             <AILMSProvider>
               <ObservationReportsProvider>
                 <SecureLinksProvider>
-                <NotificationProvider>
-                <AIAssistantProvider>
-                  <Suspense fallback={null}>
-                    <Routes>
+                        <NotificationProvider>
+        <APEXProvider>
+          <Suspense fallback={null}>
+            <Routes>
                       {/* Public routes - no MFA requirement */}
                       <Route path="/" element={<Home />} />
                       <Route path="/home-layout-2" element={<HomeLayout2 />} />
@@ -120,8 +120,8 @@ const AppContent = () => {
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </Suspense>
-                </AIAssistantProvider>
-                </NotificationProvider>
+                        </APEXProvider>
+        </NotificationProvider>
                 </SecureLinksProvider>
               </ObservationReportsProvider>
             </AILMSProvider>

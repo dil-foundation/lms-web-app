@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useAIAssistant } from '@/contexts/AIAssistantContext';
+import { useAPEX } from '@/contexts/AIAssistantContext';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,11 +33,11 @@ import {
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
-interface AIAssistantProps {
+interface APEXProps {
   className?: string;
 }
 
-export const AIAssistant: React.FC<AIAssistantProps> = ({ className }) => {
+export const APEX: React.FC<APEXProps> = ({ className }) => {
   const { user } = useAuth();
   const {
     state,
@@ -47,7 +47,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ className }) => {
     sendQuickReply,
     contactAdmin,
     clearMessages
-  } = useAIAssistant();
+  } = useAPEX();
 
   const [inputValue, setInputValue] = useState('');
   const [isMinimized, setIsMinimized] = useState(false);

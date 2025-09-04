@@ -199,7 +199,7 @@ export const CONTACT_INFO: ContactInfo[] = [
   }
 ];
 
-export class AIAssistantService {
+export class APEXService {
   static searchFAQ(query: string): FAQItem[] {
     const searchTerms = query.toLowerCase().split(' ');
     
