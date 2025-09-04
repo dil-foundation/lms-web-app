@@ -11,6 +11,7 @@ import { BookOpen } from 'lucide-react';
 import { type UserRole } from '@/config/roleNavigation';
 import { ContentLoader } from '@/components/ContentLoader';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { APEX } from '@/components/ui/AIAssistant';
 import { requestNotificationPermission } from '@/utils/fcm';
 
 const AIStudentLearn = lazy(() => import('@/components/dashboard/AIStudentLearn').then(module => ({ default: module.AIStudentLearn })));
@@ -33,6 +34,8 @@ const UsersManagement = lazy(() => import('@/components/admin/UsersManagement').
 const ClassManagement = lazy(() => import('@/components/admin/ClassManagement'));
 const CourseManagement = lazy(() => import('@/components/admin/CourseManagement'));
 const ReportsAnalytics = lazy(() => import('@/components/admin/ReportsAnalytics').then(module => ({ default: module.ReportsAnalytics })));
+const APEXAdmin = lazy(() => import('@/components/admin/AIAssistantAdmin').then(module => ({ default: module.APEXAdmin })));
+const IRIS = lazy(() => import('@/components/admin/AIAdminAssistant').then(module => ({ default: module.IRIS })));
 
 const StageZero = lazy(() => import('@/pages/practice/StageZero').then(module => ({ default: module.StageZero })));
 const LessonDetail = lazy(() => import('@/pages/practice/LessonDetail').then(module => ({ default: module.LessonDetail })));
@@ -326,6 +329,8 @@ const Dashboard = () => {
                           <Route path="/grade-assignments/:id" element={<AssignmentSubmissions />} />
                           <Route path="/grade-assignments/:assignmentId/student/:studentId" element={<StudentSubmissionDetail />} />
                           <Route path="/admin-settings" element={<AdminSettings />} />
+                          <Route path="/apex-admin" element={<APEXAdmin />} />
+                          <Route path="/iris" element={<IRIS userProfile={finalProfile} />} />
                           <Route path="/test-admin-settings" element={<AdminSettings />} />
                           <Route path="/security" element={<AdminSecurity />} />
                           <Route path="/integration-apis" element={<IntegrationAPIs userProfile={finalProfile} />} />
@@ -350,6 +355,7 @@ const Dashboard = () => {
                 <DashboardContent />
             </DashboardSidebar>
         </div>
+        <APEX />
       </div>
     </SidebarProvider>
   );

@@ -79,6 +79,8 @@ export default function ReportsPage() {
   const [sortBy, setSortBy] = useState('enrolled_date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
+
+
   // Fetch reports data from database
   const fetchReportsData = async () => {
     if (!user) return;
@@ -930,6 +932,8 @@ export default function ReportsPage() {
           </Tabs>
         </>
       )}
+
+
     </div>
   );
 } 

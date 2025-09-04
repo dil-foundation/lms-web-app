@@ -1,55 +1,119 @@
-/**
- * Authentication utilities for API requests
- */
+import { supabase } from '@/integrations/supabase/client';
 
 /**
- * Get the authentication token from localStorage
- * @returns The JWT access token or null if not found
+ * Get authentication token for API requests
  */
 export const getAuthToken = (): string | null => {
   try {
-    const authData = localStorage.getItem(import.meta.env.VITE_AUTH_TOKEN);
-    if (authData) {
-      const parsed = JSON.parse(authData);
-      return parsed.access_token || null;
+    // First try to get from local storage (Supabase auth)
+    const session = JSON.parse(localStorage.getItem('sb-' + import.meta.env.VITE_SUPABASE_URL?.split('//')[1]?.split('.')[0] + '-auth-token') || '{}');
+    
+    if (session?.access_token) {
+      return session.access_token;
     }
+
+    // Fallback: try to get current session directly
+    const currentSession = supabase.auth.getSession();
+    currentSession.then(({ data: { session } }) => {
+      if (session?.access_token) {
+        return session.access_token;
+      }
+    });
+
+    return null;
   } catch (error) {
     console.error('Error getting auth token:', error);
+    return null;
   }
-  return null;
 };
 
 /**
- * Get headers with authentication for API requests
- * @returns Headers object with Content-Type and Authorization
- * @throws Error if authentication token is not found
+ * Get user ID from current session
  */
-export const getAuthHeaders = (): Record<string, string> => {
-  const authToken = getAuthToken();
-  if (!authToken) {
-    throw new Error('Authentication token not found. Please log in again.');
+export const getCurrentUserId = async (): Promise<string | null> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user?.id || null;
+  } catch (error) {
+    console.error('Error getting current user ID:', error);
+    return null;
   }
+};
 
+/**
+ * Check if user is authenticated
+ */
+export const isAuthenticated = async (): Promise<boolean> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    return !!user;
+  } catch (error) {
+    console.error('Error checking authentication:', error);
+    return false;
+  }
+};
+
+/**
+ * Get user role from session or database
+ */
+export const getUserRole = async (): Promise<string | null> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    // Check user metadata first
+    if (user.user_metadata?.role) {
+      return user.user_metadata.role;
+    }
+
+    // Fallback: query profiles table
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    return profile?.role || 'student'; // default role
+  } catch (error) {
+    console.error('Error getting user role:', error);
+    return null;
+  }
+};
+
+/**
+ * Get authentication headers for API requests
+ */
+export const getAuthHeaders = async () => {
+  const token = getAuthToken();
+  if (!token) {
+    throw new Error('Authentication required - please log in again');
+  }
   return {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${authToken}`,
+    'Authorization': `Bearer ${token}`,
   };
 };
 
 /**
- * Get headers with authentication and Accept header for API requests
- * @returns Headers object with Content-Type, Authorization, and Accept
- * @throws Error if authentication token is not found
+ * Get authentication headers with Accept header for API requests
  */
-export const getAuthHeadersWithAccept = (): Record<string, string> => {
-  const authToken = getAuthToken();
-  if (!authToken) {
-    throw new Error('Authentication token not found. Please log in again.');
+export const getAuthHeadersWithAccept = () => {
+  const token = getAuthToken();
+  if (!token) {
+    throw new Error('Authentication required - please log in again');
   }
-
   return {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
-    'Authorization': `Bearer ${authToken}`,
+    'Authorization': `Bearer ${token}`,
   };
+};
+
+export default {
+  getAuthToken,
+  getCurrentUserId,
+  isAuthenticated,
+  getUserRole,
+  getAuthHeaders,
+  getAuthHeadersWithAccept
 };

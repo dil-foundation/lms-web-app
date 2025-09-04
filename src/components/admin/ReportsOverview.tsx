@@ -5,11 +5,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend } from 'recharts';
-import { Users, GraduationCap, BookOpen, TrendingUp, Clock, Star, Award, BarChart3 } from 'lucide-react';
+import { Users, GraduationCap, BookOpen, TrendingUp, Clock, Star, Award, BarChart3, Bot } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ContentLoader } from '@/components/ContentLoader';
+import { Button } from '@/components/ui/button';
+import { ReportsChatbot } from '@/components/reports/ReportsChatbot';
 
 // TypeScript interfaces for database data
 interface DashboardStats {
@@ -102,6 +104,8 @@ export const ReportsOverview = () => {
   const [loading, setLoading] = useState(true);
   const [filterLoading, setFilterLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+
   
   // State for dashboard data
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -434,10 +438,14 @@ export const ReportsOverview = () => {
       {/* Main Reports Tabs */}
       <Tabs defaultValue="users" className="space-y-6">
         <div className="overflow-x-auto">
-          <TabsList className="grid w-full grid-cols-3 min-w-fit">
+          <TabsList className="grid w-full grid-cols-4 min-w-fit">
             <TabsTrigger value="users" className="text-xs sm:text-sm">User Analytics</TabsTrigger>
             <TabsTrigger value="courses" className="text-xs sm:text-sm">Course Performance</TabsTrigger>
             <TabsTrigger value="engagement" className="text-xs sm:text-sm">Engagement</TabsTrigger>
+            <TabsTrigger value="ai-assistant" className="text-xs sm:text-sm">
+              <Bot className="h-4 w-4 mr-1" />
+              AI Assistant
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -671,7 +679,34 @@ export const ReportsOverview = () => {
             </Card>
           </div>
         </TabsContent>
+
+        {/* AI Assistant Tab */}
+        <TabsContent value="ai-assistant" className="space-y-6">
+          <Card className="h-full">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <Bot className="h-5 w-5" />
+                AI Reports Assistant
+                <span className="text-sm font-normal text-muted-foreground">
+                  Powered by OpenAI
+                </span>
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Ask questions about your platform's data, generate reports for any timeline, 
+                and get insights on user engagement and course performance.
+              </p>
+            </CardHeader>
+            <CardContent className="p-0">
+              <ReportsChatbot 
+                className="h-[600px] w-full border-0 shadow-none"
+                minimized={false}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
+
+
     </div>
   );
 };

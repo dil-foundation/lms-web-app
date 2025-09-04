@@ -9,17 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from "@/components/ui/sheet"
 import { 
   PlayCircle,
   CheckCircle, 
@@ -74,89 +63,6 @@ const getContentItemIcon = (item: any, currentContentItemId: string | null) => {
     }
 };
 
-const CourseNavigationSidebar = ({ course, openSectionIds, setOpenSectionIds, currentContentItemId, onContentItemClick }: any) => {
-    return (
-        <>
-            <div className="p-4 space-y-4 border-b border-gray-200/50 dark:border-gray-700/50">
-                 <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{course.title}</h2>
-                 <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg">
-                    <CardContent className="pt-4">
-                        <div className="flex justify-between items-center mb-2">
-                           <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Course Progress</span>
-                           <span className="text-lg font-bold text-primary">{course.totalProgress}%</span>
-                        </div>
-                        <Progress value={course.totalProgress} className="h-2 bg-gray-200 dark:bg-gray-700" />
-                        <p className="text-xs text-muted-foreground font-medium mt-2">Keep up the great work!</p>
-                    </CardContent>
-                 </Card>
-            </div>
-            <ScrollArea className="flex-1 p-2">
-                <Accordion type="multiple" value={openSectionIds} onValueChange={setOpenSectionIds} className="w-full">
-                    {course.modules.map((module: any) => (
-                        <AccordionItem key={module.id} value={module.id} className="border-b border-gray-200/50 dark:border-gray-700/50">
-                            <AccordionTrigger className="hover:no-underline px-2 py-3 text-base font-semibold hover:bg-gray-50/50 dark:hover:bg-gray-800/50 rounded-xl transition-all duration-300">
-                                <div className="flex items-center gap-3">
-                                    <BookOpen className="w-5 h-5 text-primary" />
-                                    <span className="text-gray-900 dark:text-gray-100">{module.title}</span>
-                                </div>
-                            </AccordionTrigger>
-                            <AccordionContent className="pt-1 pb-0 pl-3">
-                                <div className="space-y-2 py-2">
-                                {module.lessons.map((lesson: any) => (
-                                    <div key={lesson.id}>
-                                        <h4 className="font-semibold text-sm text-muted-foreground px-2 py-2">{lesson.title}</h4>
-                                        <div className="space-y-1 pl-3 border-l-2 border-dashed border-gray-300/50 dark:border-gray-600/50 ml-3">
-                                            {lesson.contentItems.map((item: any) => {
-                                                const isCurrent = item.id === currentContentItemId;
-                                                return (
-                                                <div
-                                                    key={item.id}
-                                                    className={cn(
-                                                    "relative flex items-center gap-4 py-3 px-3 rounded-xl cursor-pointer transition-all duration-300 hover:shadow-md",
-                                                    isCurrent 
-                                                        ? "bg-gradient-to-r from-primary/10 to-primary/20 border border-primary/30 dark:border-primary/20 shadow-lg" 
-                                                        : "hover:bg-gray-50/50 dark:hover:bg-gray-800/50",
-                                                    )}
-                                                    onClick={() => onContentItemClick(item.id)}
-                                                >
-                                                    {isCurrent && <div className="absolute left-0 top-1 bottom-1 w-1 bg-primary rounded-r-full"></div>}
-                                                    <div className="flex-shrink-0 ml-1">
-                                                    {getContentItemIcon(item, currentContentItemId)}
-                                                    </div>
-                                                    <div className="flex-1 flex flex-col overflow-hidden">
-                                                        <span className={cn(
-                                                            "font-medium text-sm leading-tight truncate", 
-                                                            isCurrent ? "text-primary" : "text-gray-900 dark:text-gray-100"
-                                                        )}>
-                                                            {item.title}
-                                                        </span>
-                                                        {(item.content_type === 'assignment' || item.content_type === 'quiz') && item.due_date && (
-                                                            <div className="flex items-center gap-1 mt-1">
-                                                                <Calendar className="h-3 w-3 text-yellow-500" />
-                                                                <span className="text-xs text-yellow-600 dark:text-yellow-400 truncate">
-                                                                    {new Date(item.due_date).toLocaleDateString()}
-                                                                </span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <Badge variant={getBadgeVariant(item.content_type)} className="capitalize text-xs h-6 px-2.5 flex-shrink-0">
-                                                        {item.content_type === 'attachment' ? 'File' : item.content_type}
-                                                    </Badge>
-                                                </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                    ))}
-                                </div>
-                            </AccordionContent>
-                        </AccordionItem>
-                    ))}
-                </Accordion>
-            </ScrollArea>
-        </>
-    )
-}
 
 
 export const CourseContent = ({ courseId }: CourseContentProps) => {
@@ -1077,66 +983,263 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
   );
 
   return (
-    <div className="flex h-full bg-background">
-      <div className="hidden lg:flex flex-col w-80 border-r border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-br from-card to-card/50 dark:bg-card">
-        <CourseNavigationSidebar
-            course={course}
-            openSectionIds={openSectionIds}
-            setOpenSectionIds={setOpenSectionIds}
-            currentContentItemId={currentContentItemId}
-            onContentItemClick={(itemId: string) => handleNavigation(allContentItems.find(item => item.id === itemId))}
-        />
-       </div>
-       <div className="flex-1 flex flex-col w-full">
-          <div className="relative border-b border-gray-200/50 dark:border-gray-700/50 p-4 bg-gradient-to-br from-card to-card/50 dark:bg-card">
-              <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-                        <SheetTrigger asChild>
-                            <Button variant="outline" size="icon" className="lg:hidden hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300">
-                              <Menu className="w-5 h-5" />
-                            </Button>
-                        </SheetTrigger>
-                        <SheetContent side="left" className="w-80 p-0 flex flex-col bg-gradient-to-br from-card to-card/50 dark:bg-card">
-                           <CourseNavigationSidebar
-                                course={course}
-                                openSectionIds={openSectionIds}
-                                setOpenSectionIds={setOpenSectionIds}
-                                currentContentItemId={currentContentItemId}
-                                onContentItemClick={handleContentItemClick}
-                            />
-                        </SheetContent>
-                      </Sheet>
-                      <div>
-                          <h1 className="font-bold text-xl md:text-2xl text-gray-900 dark:text-gray-100">{currentContentItem?.title}</h1>
-                          <p className="text-muted-foreground text-sm mt-1">{currentLesson?.title}</p>
-                      </div>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={() => navigate(`/dashboard/courses/${actualCourseId}`)} className="hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300">
-                    <ChevronLeft className="w-4 h-4 mr-2" />Back to Course
-                  </Button>
+    <div className="min-h-screen bg-background">
+      {/* Premium Header Section */}
+      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            {/* Breadcrumb Navigation */}
+            <div className="flex items-center space-x-4">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => navigate(`/dashboard/courses/${actualCourseId}`)}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Back to Course
+              </Button>
+              <div className="h-4 w-px bg-border" />
+              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                <span className="font-medium">{currentModule?.title}</span>
+                <span>•</span>
+                <span>{currentLesson?.title}</span>
               </div>
-          </div>
-          <ScrollArea className="flex-1">
-            <div className="p-4 md:p-6">
-                <div className="max-w-5xl mx-auto space-y-8">{renderContent()}</div>
             </div>
-          </ScrollArea>
-          <div className="bg-gradient-to-br from-card to-card/50 dark:bg-card p-4 sticky bottom-0 border-t border-gray-200/50 dark:border-gray-700/50">
-            <div className="flex items-center justify-between max-w-5xl mx-auto">
-              <div>{prevContentItem && (
-                <Button variant="outline" onClick={() => handleNavigation(prevContentItem)} className="hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300">
-                  <ChevronLeft className="w-4 h-4 mr-2" />Previous
-                </Button>
-              )}</div>
-              <div>{nextContentItem && (
-                <Button onClick={() => handleNavigation(nextContentItem)} className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300">
-                  Next<ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
-              )}</div>
+            
+            {/* Progress Indicator */}
+            <div className="flex items-center space-x-4">
+              <div className="text-right">
+                <div className="text-sm font-semibold text-foreground">
+                  {allContentItems.findIndex(item => item.id === currentContentItemId) + 1} of {allContentItems.length}
+                </div>
+                <div className="text-xs text-muted-foreground">Progress</div>
+              </div>
+              <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-primary rounded-full transition-all duration-500"
+                  style={{ width: `${((allContentItems.findIndex(item => item.id === currentContentItemId) + 1) / allContentItems.length) * 100}%` }}
+                />
+              </div>
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Main Content Layout */}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          
+          {/* Left Sidebar - Course Navigation */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-24 space-y-6">
+              
+              {/* Course Overview Card */}
+              <Card className="bg-card border-border shadow-sm">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg font-bold text-card-foreground leading-tight">
+                    {course.title}
+                  </CardTitle>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Overall Progress</span>
+                    <span className="text-lg font-bold text-primary">{course.totalProgress}%</span>
+                  </div>
+                  <Progress value={course.totalProgress} className="h-2" />
+                </CardHeader>
+              </Card>
+
+              {/* Module Navigation */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide">
+                  Course Modules
+                </h3>
+                <div className="space-y-2">
+                  {course.modules.map((module: any) => {
+                    const isCurrentModule = module.id === currentModule?.id;
+                    const moduleProgress = Math.round((module.lessons.reduce((acc: number, lesson: any) => 
+                      acc + lesson.contentItems.filter((item: any) => item.completed).length, 0) / 
+                      module.lessons.reduce((acc: number, lesson: any) => acc + lesson.contentItems.length, 0)) * 100);
+                    
+                    return (
+                      <div key={module.id} className="group">
+                        <button
+                          onClick={() => {
+                            const firstItem = module.lessons[0]?.contentItems[0];
+                            if (firstItem) handleNavigation(firstItem);
+                          }}
+                          className={cn(
+                            "w-full text-left p-3 rounded-lg transition-all duration-200 border",
+                            "hover:bg-muted/50",
+                            isCurrentModule 
+                              ? "bg-primary/10 border-primary/20 shadow-sm" 
+                              : "bg-card border-border hover:border-primary/20"
+                          )}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center space-x-2">
+                              <BookOpen className={cn(
+                                "w-4 h-4",
+                                isCurrentModule ? "text-primary" : "text-muted-foreground"
+                              )} />
+                              <span className={cn(
+                                "text-sm font-medium",
+                                isCurrentModule ? "text-primary" : "text-foreground"
+                              )}>
+                                {module.title}
+                              </span>
+                            </div>
+                            <span className="text-xs text-muted-foreground">
+                              {moduleProgress}%
+                            </span>
+                          </div>
+                          <Progress value={moduleProgress} className="h-1" />
+                        </button>
+                        
+                        {/* Current Module Lessons with Content Items */}
+                        {isCurrentModule && (
+                          <div className="mt-2 ml-6 space-y-1">
+                            {module.lessons.map((lesson: any) => {
+                              const isCurrentLesson = lesson.id === currentLesson?.id;
+                              return (
+                                <div key={lesson.id} className="space-y-1">
+                                  <button
+                                    onClick={() => {
+                                      const firstItem = lesson.contentItems[0];
+                                      if (firstItem) handleNavigation(firstItem);
+                                    }}
+                                    className={cn(
+                                      "w-full text-left p-2 rounded-md text-sm transition-all duration-200",
+                                      "hover:bg-muted/30",
+                                      isCurrentLesson 
+                                        ? "bg-primary/5 text-primary font-medium" 
+                                        : "text-muted-foreground hover:text-foreground"
+                                    )}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center space-x-2">
+                                        <ClipboardList className="w-3 h-3" />
+                                        <span className="truncate">{lesson.title}</span>
+                                      </div>
+                                      {isCurrentLesson && (
+                                        <span className="text-xs text-muted-foreground">
+                                          {lesson.contentItems.filter((item: any) => item.completed).length}/{lesson.contentItems.length}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </button>
+                                  
+                                  {/* Show content items for current lesson */}
+                                  {isCurrentLesson && (
+                                    <div className="ml-4 space-y-0.5">
+                                      {lesson.contentItems.map((item: any, index: number) => {
+                                        const isActive = item.id === currentContentItemId;
+                                        const isCompleted = item.completed;
+                                        
+                                        return (
+                                          <button
+                                            key={item.id}
+                                            onClick={() => handleNavigation(item)}
+                                            className={cn(
+                                              "w-full text-left p-1.5 rounded text-xs transition-all duration-200 flex items-center space-x-2",
+                                              "hover:bg-muted/20",
+                                              isActive 
+                                                ? "bg-primary/10 text-primary font-medium border-l-2 border-primary" 
+                                                : "text-muted-foreground hover:text-foreground"
+                                            )}
+                                          >
+                                            <div className="flex-shrink-0">
+                                              {getContentItemIcon(item, currentContentItemId)}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                              <div className="truncate">
+                                                {index + 1}. {item.title}
+                                              </div>
+                                            </div>
+                                            {isCompleted && (
+                                              <CheckCircle className="w-3 h-3 text-green-500 flex-shrink-0" />
+                                            )}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Main Content Area */}
+          <div className="lg:col-span-3">
+            <div className="space-y-6">
+              
+              {/* Content Header */}
+              <Card className="bg-card border-border shadow-sm">
+                <CardHeader className="pb-4">
+                  <div className="flex items-start justify-between">
+                                          <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-primary rounded-full" />
+                          <span className="text-sm font-medium text-primary uppercase tracking-wide">
+                            {currentContentItem?.content_type}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            • {allContentItems.findIndex(item => item.id === currentContentItemId) + 1} of {allContentItems.length}
+                          </span>
+                        </div>
+                        <CardTitle className="text-2xl font-bold text-card-foreground leading-tight">
+                          {currentContentItem?.title}
+                        </CardTitle>
+                        <p className="text-muted-foreground">
+                          {currentLesson?.title} • {currentModule?.title}
+                        </p>
+                      </div>
+                    
+                    {/* Content Actions */}
+                    <div className="flex items-center space-x-2">
+                      {prevContentItem && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleNavigation(prevContentItem)}
+                          className="hover:bg-muted"
+                        >
+                          <ChevronLeft className="w-4 h-4 mr-1" />
+                          Previous
+                        </Button>
+                      )}
+                      {nextContentItem && (
+                        <Button 
+                          size="sm"
+                          onClick={() => handleNavigation(nextContentItem)}
+                          className="bg-primary hover:bg-primary/90"
+                        >
+                          Next
+                          <ChevronRight className="w-4 h-4 ml-1" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
+
+              {/* Content Display */}
+              <Card className="bg-card border-border shadow-sm">
+                <CardContent className="p-6">
+                  {renderContent()}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
