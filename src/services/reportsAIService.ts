@@ -96,8 +96,28 @@ Always be professional, helpful, and focus on providing actionable insights from
     context?: ReportContext
   ): Promise<ReportsAIResponse> {
     try {
-      // First, try to get platform context
-      const platformContext = context || await this.getPlatformContext();
+      // Extract timeframe from query if present
+      const timeframe = this.extractTimeframe(query);
+      console.log('🕐 Extracted timeframe from query:', timeframe);
+      
+      // Get platform context with timeframe (always fetch fresh data when timeframe is specified)
+      console.log('🔄 Getting platform context with timeframe:', timeframe);
+      console.log('🤔 Context parameter provided:', !!context);
+      
+      let platformContext: ReportContext;
+      if (timeframe && !context) {
+        // If timeframe is specified and no context provided, fetch with timeframe
+        platformContext = await this.getPlatformContext(timeframe);
+      } else if (context) {
+        // If context is provided, use it (but this shouldn't happen with timeframe queries)
+        console.log('⚠️ Using provided context instead of fetching with timeframe');
+        platformContext = context;
+      } else {
+        // No timeframe and no context, fetch default
+        platformContext = await this.getPlatformContext();
+      }
+      
+      console.log('📊 Platform context timeRange:', platformContext.timeRange);
       
       // Use OpenAI API for dynamic responses
       const openAIResponse = await this.callOpenAI(query, platformContext);
@@ -116,6 +136,35 @@ Always be professional, helpful, and focus on providing actionable insights from
         error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
+  }
+
+  /**
+   * Extract timeframe from user query
+   */
+  private static extractTimeframe(query: string): string | undefined {
+    const queryLower = query.toLowerCase();
+    
+    // Check for specific timeframes
+    if (queryLower.includes('today') || queryLower.includes('for today')) {
+      return 'today';
+    }
+    if (queryLower.includes('yesterday')) {
+      return 'yesterday';
+    }
+    if (queryLower.includes('this week') || queryLower.includes('weekly')) {
+      return 'this_week';
+    }
+    if (queryLower.includes('this month') || queryLower.includes('monthly')) {
+      return 'this_month';
+    }
+    if (queryLower.includes('last week')) {
+      return 'last_week';
+    }
+    if (queryLower.includes('last month')) {
+      return 'last_month';
+    }
+    
+    return undefined; // Default to all-time
   }
 
   /**
@@ -140,21 +189,25 @@ Always be professional, helpful, and focus on providing actionable insights from
       const contextData = JSON.stringify(context, null, 2);
       const systemPrompt = `${this.SYSTEM_PROMPT}
 
-CRITICAL: You have access to COMPLETE HISTORICAL PLATFORM DATA covering the entire platform lifetime. This is NOT monthly data - it's ALL-TIME data.
+CRITICAL: You have access to REAL PLATFORM DATA for the requested timeframe. Check the timeRange field to see what period this data covers.
 
-Complete Platform Data (All-Time Historical):
+Platform Data for Requested Timeframe:
 ${contextData}
 
 Guidelines:
-- This data represents the ENTIRE platform history, not just current month
-- Use phrases like "All-Time Performance", "Historical Data", "Platform Lifetime", "Since Launch"
-- NEVER mention "current month" or "this month" - always reference all-time/historical data
-- If data shows zeros, acknowledge it and suggest why this might be the case historically
-- Provide actionable recommendations based on the complete historical real data
+- The provided data represents real platform data for the requested timeframe
+- The timeRange field in the data tells you exactly what period this data covers
+- Use the timeRange value to properly title your report (e.g., "Today", "This Week", "All-Time Data")
+- If timeRange is "Today" - present it as today's performance data
+- If timeRange is "This Week" - present it as this week's performance data  
+- If timeRange is "All-Time Data" - present it as comprehensive historical analysis
+- Always match your language to the actual timeRange provided
+- If data shows zeros, acknowledge it and suggest why this might be the case for that specific timeframe
+- Provide actionable recommendations based on the real data for the specified time period
 - Format your response with clear sections using markdown
 - Include relevant emojis for visual appeal
-- Be specific about the numbers and percentages from the real historical data
-- Make it clear this is a comprehensive analysis of all platform activity since inception`;
+- Be specific about the numbers and percentages from the real data
+- Always use the exact timeRange in your report title and analysis`;
 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -786,10 +839,11 @@ ${dataNote}`,
   }
 
   /**
-   * Get current platform context for better AI responses
+   * Get platform context for AI responses with optional timeframe
    */
-  static async getPlatformContext(): Promise<ReportContext> {
+  static async getPlatformContext(timeframe: string | undefined = undefined): Promise<ReportContext> {
     try {
+      console.log('🎯 getPlatformContext received timeframe:', timeframe);
       console.log('Fetching real platform context from database...');
       const authToken = getAuthToken();
       if (!authToken) {
@@ -804,7 +858,17 @@ ${dataNote}`,
         return this.getDefaultContext();
       }
       
-      const response = await fetch(`${supabaseUrl}/functions/v1/reports-context`, {
+      const url = new URL(`${supabaseUrl}/functions/v1/reports-context`);
+      console.log('🔗 Constructing URL with timeframe:', timeframe);
+      if (timeframe) {
+        url.searchParams.append('timeframe', timeframe);
+        console.log('✅ Added timeframe to URL');
+      } else {
+        console.log('❌ No timeframe to add to URL');
+      }
+      console.log('🌐 Final URL:', url.toString());
+      
+      const response = await fetch(url.toString(), {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${authToken}`,
@@ -815,15 +879,24 @@ ${dataNote}`,
       if (response.ok) {
         const contextData = await response.json();
         console.log('✅ Real platform context loaded:', contextData);
+        console.log('🎯 TimeRange from backend:', contextData.timeRange);
         return {
           totalUsers: contextData.totalUsers || 0,
           totalCourses: contextData.totalCourses || 0,
           engagementRate: contextData.engagementRate || 0,
           completionRate: Math.round(contextData.completionRate) || 0,
-          timeRange: contextData.timeRange || 'Current Month',
+          timeRange: contextData.timeRange || 'All Time Data',
           averageSessionDuration: contextData.averageSessionDuration || 0,
           popularCourses: contextData.popularCourses || [],
-          availableMetrics: contextData.availableMetrics || []
+          availableMetrics: contextData.availableMetrics || [],
+          // Include all the AI Tutor and LMS specific fields
+          aiTutorActiveUsers: contextData.aiTutorActiveUsers || 0,
+          aiTutorSessions: contextData.aiTutorSessions || 0,
+          aiTutorTotalTime: contextData.aiTutorTotalTime || 0,
+          aiTutorAverageScore: contextData.aiTutorAverageScore || 0,
+          aiTutorCompletionRate: contextData.aiTutorCompletionRate || 0,
+          lmsActiveUsers: contextData.lmsActiveUsers || 0,
+          lmsCompletionRate: contextData.lmsCompletionRate || 0
         };
       } else {
         console.warn('API call failed, using default context. Status:', response.status);

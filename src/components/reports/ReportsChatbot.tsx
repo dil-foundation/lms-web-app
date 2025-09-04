@@ -133,13 +133,10 @@ export const ReportsChatbot: React.FC<ReportsChatbotProps> = ({
 
   const generateReportData = async (parsedQuery: ReportsQuery): Promise<any> => {
     try {
-      // Get platform context for better AI responses
-      const context = await ReportsAIService.getPlatformContext();
-      
-      // Generate AI response using OpenAI
+      // Generate AI response using OpenAI (it will handle context and timeframe internally)
       const aiResponse = await ReportsAIService.generateReportResponse(
-        parsedQuery.query,
-        context
+        parsedQuery.query
+        // No context parameter - let the service handle timeframe extraction
       );
 
       if (aiResponse.success) {
@@ -368,7 +365,23 @@ Your platform shows excellent user engagement with strong retention metrics.`;
         return <br key={lineIndex} />;
       }
 
-      // Handle markdown headers
+      // Handle markdown headers (check longer patterns first)
+      if (line.startsWith('##### ')) {
+        return (
+          <h5 key={lineIndex} className="text-sm font-medium mt-3 mb-1 text-primary">
+            {line.replace('##### ', '')}
+          </h5>
+        );
+      }
+      
+      if (line.startsWith('#### ')) {
+        return (
+          <h4 key={lineIndex} className="text-base font-medium mt-4 mb-2 text-primary">
+            {line.replace('#### ', '')}
+          </h4>
+        );
+      }
+      
       if (line.startsWith('### ')) {
         return (
           <h3 key={lineIndex} className="text-lg font-semibold mt-6 mb-3 text-primary border-b border-primary/20 pb-1">

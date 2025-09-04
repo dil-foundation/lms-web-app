@@ -67,8 +67,14 @@ serve(async (req) => {
       )
     }
 
-    // Get platform context data
-    const contextData = await getPlatformContext(supabase)
+    // Get timeframe from query parameters
+    const url = new URL(req.url);
+    const timeframe = url.searchParams.get('timeframe');
+    
+    console.log('Requested timeframe:', timeframe);
+    
+    // Get platform context data with timeframe
+    const contextData = await getPlatformContext(supabase, timeframe)
 
     return new Response(
       JSON.stringify(contextData),
@@ -95,14 +101,64 @@ serve(async (req) => {
   }
 })
 
-async function getPlatformContext(supabase: any) {
+async function getPlatformContext(supabase: any, timeframe?: string | null) {
+  // Declare timeRangeLabel outside try block so it's accessible in catch
+  let timeRangeLabel = 'All Time Data';
+  
   try {
     console.log('=== Starting getPlatformContext function ===')
+    console.log('Timeframe requested:', timeframe)
+    console.log('Timeframe type:', typeof timeframe)
+    console.log('Timeframe value check:', timeframe === 'today')
+    
     const now = new Date()
     const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-    const thisYear = new Date(now.getFullYear(), 0, 1)
     
+    // Calculate date filters based on timeframe
+    let startDate: Date | null = null;
+    
+    if (timeframe) {
+      console.log('Processing timeframe:', timeframe);
+      switch (timeframe) {
+        case 'today':
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          timeRangeLabel = 'Today';
+          console.log('Set timeRangeLabel to:', timeRangeLabel);
+          break;
+        case 'yesterday':
+          const yesterday = new Date(now);
+          yesterday.setDate(yesterday.getDate() - 1);
+          startDate = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+          timeRangeLabel = 'Yesterday';
+          break;
+        case 'this_week':
+          const weekStart = new Date(now);
+          weekStart.setDate(now.getDate() - now.getDay());
+          startDate = weekStart;
+          timeRangeLabel = 'This Week';
+          break;
+        case 'this_month':
+          startDate = thisMonth;
+          timeRangeLabel = 'This Month';
+          break;
+        case 'last_week':
+          const lastWeekStart = new Date(now);
+          lastWeekStart.setDate(now.getDate() - now.getDay() - 7);
+          startDate = lastWeekStart;
+          timeRangeLabel = 'Last Week';
+          break;
+        case 'last_month':
+          startDate = lastMonth;
+          timeRangeLabel = 'Last Month';
+          break;
+      }
+    }
+    
+    console.log('Date filter:', startDate ? startDate.toISOString() : 'No filter (all-time)');
+    console.log('Final timeRangeLabel before queries:', timeRangeLabel);
+    const thisYear = new Date(now.getFullYear(), 0, 1)
+
     console.log('Date ranges:', {
       thisMonth: thisMonth.toISOString(),
       lastMonth: lastMonth.toISOString(),
@@ -129,13 +185,19 @@ async function getPlatformContext(supabase: any) {
       .select('*', { count: 'exact', head: true })
       .gte('created_at', thisMonth.toISOString())
 
-    // Get AI Tutor active users (ALL TIME - no date filter)
-    const { data: aiTutorUsersData, count: aiTutorActiveUsers } = await supabase
+    // Get AI Tutor active users with optional date filter
+    let aiTutorQuery = supabase
       .from('ai_tutor_daily_learning_analytics')
       .select('user_id', { count: 'exact' })
-      .gt('sessions_count', 0) // Only users with actual sessions
+      .gt('sessions_count', 0); // Only users with actual sessions
+    
+    if (startDate) {
+      aiTutorQuery = aiTutorQuery.gte('analytics_date', startDate.toISOString().split('T')[0]);
+    }
+    
+    const { data: aiTutorUsersData, count: aiTutorActiveUsers } = await aiTutorQuery;
 
-    console.log('AI Tutor active users (all time):', aiTutorActiveUsers)
+    console.log(`AI Tutor active users (${timeRangeLabel}):`, aiTutorActiveUsers)
 
     // Get LMS active users (ALL TIME - no date filter)
     const { data: lmsUsersData, count: lmsActiveUsers } = await supabase
@@ -150,10 +212,16 @@ async function getPlatformContext(supabase: any) {
       .select('*', { count: 'exact', head: true })
       .eq('status', 'Published')
 
-    // Get comprehensive AI Tutor analytics data (ALL TIME)
-    const { data: aiTutorAnalytics } = await supabase
+    // Get comprehensive AI Tutor analytics data with optional date filter
+    let analyticsQuery = supabase
       .from('ai_tutor_daily_learning_analytics')
-      .select('sessions_count, total_time_minutes, average_session_duration, average_score, exercises_completed, exercises_attempted, urdu_usage_count')
+      .select('sessions_count, total_time_minutes, average_session_duration, average_score, exercises_completed, exercises_attempted, urdu_usage_count');
+    
+    if (startDate) {
+      analyticsQuery = analyticsQuery.gte('analytics_date', startDate.toISOString().split('T')[0]);
+    }
+    
+    const { data: aiTutorAnalytics } = await analyticsQuery;
 
     // Get AI Tutor progress summaries (ALL TIME)
     const { data: progressSummaries } = await supabase
@@ -370,7 +438,7 @@ async function getPlatformContext(supabase: any) {
       completionRate: Math.round((aiCompletionRate + lmsCompletionRate) / 2),
       engagementRate: engagementRate,
       averageSessionDuration: avgAiSessionDuration,
-      timeRange: 'All Time Data',
+      timeRange: timeRangeLabel,
       popularCourses: courseNames,
       userRoles: roleDistribution,
       totalPracticeSessions: totalAiSessions,
@@ -472,7 +540,7 @@ async function getPlatformContext(supabase: any) {
       completionRate: 0,
       engagementRate: 0,
       averageSessionDuration: 0,
-      timeRange: 'All Time Data',
+      timeRange: timeRangeLabel,
       popularCourses: [],
       userRoles: {},
       totalPracticeSessions: 0,
