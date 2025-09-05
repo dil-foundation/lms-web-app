@@ -111,8 +111,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (isAccessTokenExpired) {
       console.log('🔐 Access token is expired, attempting refresh...');
       
-      // Try to refresh the token
-      supabase.auth.refreshSession().then(({ data: refreshData, error: refreshError }) => {
+      // Try to refresh the token with timeout
+      console.log('🔐 Calling supabase.auth.refreshSession()...');
+      
+      const refreshPromise = supabase.auth.refreshSession();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('refreshSession timeout after 5 seconds')), 5000)
+      );
+      
+      Promise.race([refreshPromise, timeoutPromise]).then((result: any) => {
+        const { data: refreshData, error: refreshError } = result;
+        console.log('🔐 refreshSession() completed:', { 
+          hasData: !!refreshData, 
+          hasError: !!refreshError,
+          hasSession: !!refreshData?.session,
+          userId: refreshData?.session?.user?.id
+        });
         if (refreshError) {
           console.error('🔐 Token refresh failed:', refreshError);
           console.log('🔐 Refresh token is also invalid, clearing auth state');
@@ -153,6 +167,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       }).catch((refreshException) => {
         console.error('🔐 Exception during token refresh:', refreshException);
+        
+        if (refreshException.message?.includes('timeout')) {
+          console.warn('🔐 refreshSession timed out, refresh token may be invalid');
+        }
+        
         console.log('🔐 Exception during refresh, clearing auth state');
         cleanupAuthState();
         setSession(null);
