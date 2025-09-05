@@ -115,6 +115,7 @@ const getValidToken = async (): Promise<string> => {
           const currentTime = Math.floor(Date.now() / 1000);
           if (payload.exp && payload.exp < currentTime) {
             // Force refresh the session
+            console.log('🔄 Token expired, forcing refresh in getValidToken');
             const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
             
             if (refreshError) {
@@ -126,6 +127,7 @@ const getValidToken = async (): Promise<string> => {
               throw new Error('No session after refresh');
             }
             
+            console.log('✅ Token refresh successful in getValidToken');
             return refreshData.session.access_token;
           }
         }
@@ -141,6 +143,7 @@ const getValidToken = async (): Promise<string> => {
     
     if (tokenExpiry <= fiveMinutesFromNow) {
       // Refresh the token
+      console.log('🔄 Token expires soon (5min buffer), refreshing in getValidToken');
       const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
       
       if (refreshError) {
@@ -152,6 +155,7 @@ const getValidToken = async (): Promise<string> => {
         throw new Error('No session after refresh');
       }
       
+      console.log('✅ Token refresh successful (5min buffer) in getValidToken');
       return refreshData.session.access_token;
     }
     
@@ -1304,10 +1308,13 @@ export const startTokenRefreshInterval = () => {
       const fifteenMinutesFromNow = new Date(now.getTime() + 15 * 60 * 1000);
       
       if (tokenExpiry <= fifteenMinutesFromNow) {
+        console.log('🔄 Proactive token refresh triggered (15min buffer)');
         const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
         
         if (refreshError) {
           console.error('Error during proactive refresh:', refreshError);
+        } else {
+          console.log('✅ Proactive token refresh successful');
         }
       }
     } catch (error) {
