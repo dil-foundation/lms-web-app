@@ -153,9 +153,8 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean): N
         {
           title: 'SYSTEM',
           items: [
-            { title: 'Admin Settings', path: '/dashboard/admin-settings', icon: Settings },
+            { title: 'Settings and Security', path: '/dashboard/admin-settings', icon: Settings },
             { title: 'APEX Admin', path: '/dashboard/apex-admin', icon: AIAssistant },
-            { title: 'Security', path: '/dashboard/security', icon: Shield },
             { title: 'Integration APIs', path: '/dashboard/integration-apis', icon: Plug },
             { title: 'Multitenancy', path: '/dashboard/multitenancy', icon: Building2 },
             { title: 'Offline Learning', path: '/dashboard/offline-learning', icon: Download },
@@ -242,7 +241,7 @@ export const getAICategorizedNavigation = (role: UserRole): NavigationCategory[]
         {
           title: 'SYSTEM MANAGEMENT',
           items: [
-            { title: 'Admin Settings', path: '/dashboard/admin-settings', icon: Settings },
+            { title: 'Settings and Security', path: '/dashboard/admin-settings', icon: Settings },
             { title: 'AI Tutor Settings', path: '/dashboard/ai-tutor-settings', icon: Settings2 },
             { title: 'AI Safety & Ethics', path: '/dashboard/ai-safety-ethics', icon: ShieldCheck },
           ]
