@@ -15,7 +15,6 @@ import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { SessionTimeoutWarning } from "@/components/SessionTimeoutWarning";
 import { SupabaseMFARequirement } from "@/components/auth/SupabaseMFARequirement";
 import { MFAProtectedRoute } from "@/components/auth/MFAProtectedRoute";
-import { DebugAuthStatus } from "@/components/DebugAuthStatus";
 
 
 // Component to handle session timeout and activity tracking
@@ -82,7 +81,6 @@ const AppContent = () => {
                 <SecureLinksProvider>
                         <NotificationProvider>
         <APEXProvider>
-          <DebugAuthStatus />
           <Suspense fallback={null}>
             <Routes>
                       {/* Public routes - no MFA requirement */}

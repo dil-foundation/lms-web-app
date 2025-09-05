@@ -29,14 +29,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
 
 // Global error interceptor for handling user_not_found errors
 supabase.auth.onAuthStateChange(async (event, session) => {
-  console.log(`🔐 Auth state change: ${event}`, { 
-    hasSession: !!session, 
-    userId: session?.user?.id,
-    tokenExpiry: session?.expires_at ? new Date(session.expires_at * 1000).toISOString() : 'N/A'
-  });
-  
   if (event === 'TOKEN_REFRESHED' && session) {
-    console.log('🔄 Token refresh detected in global handler');
     try {
       // Check if the user still exists in the database
       const { data: profile, error } = await supabase
@@ -47,7 +40,6 @@ supabase.auth.onAuthStateChange(async (event, session) => {
       
       if (error && error.code === 'PGRST116') {
         // User not found in database, sign them out
-        console.warn('User not found in database, signing out automatically');
         await supabase.auth.signOut({ scope: 'global' });
         
         // Clear local storage
@@ -61,11 +53,9 @@ supabase.auth.onAuthStateChange(async (event, session) => {
         if (window.location.pathname.startsWith('/dashboard')) {
           window.location.href = '/auth';
         }
-      } else {
-        console.log('✅ User profile check passed after token refresh');
       }
     } catch (profileError) {
-      console.error('Error checking user profile:', profileError);
+      // Silently handle profile check errors
     }
   }
 });
