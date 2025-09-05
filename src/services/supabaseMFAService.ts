@@ -21,7 +21,11 @@ const SupabaseMFAService = {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         console.log('🔐 No user found, returning default MFA status');
-        throw new Error('User not authenticated');
+        return {
+          isEnabled: false,
+          isSetupComplete: false,
+          factors: []
+        };
       }
 
       console.log('🔐 User found, listing MFA factors...');
@@ -515,7 +519,7 @@ const SupabaseMFAService = {
       console.log('🔐 Checking MFA requirement...');
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) {
-        console.log('🔐 No user found for MFA requirement check');
+        console.log('🔐 No user found for MFA requirement check, returning false');
         return false;
       }
 
