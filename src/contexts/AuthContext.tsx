@@ -91,6 +91,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isExpired: session?.expires_at ? session.expires_at < Math.floor(Date.now() / 1000) : 'N/A'
       });
       
+      // Log the exact error details if there's an error
+      if (error) {
+        console.log('🔐 Error details for refresh check:', {
+          message: error.message,
+          status: error.status,
+          name: error.name,
+          code: error.code
+        });
+      }
+      
       if (error) {
         console.error('🔐 Error getting session:', error);
         console.error('🔐 Error details:', {
@@ -223,6 +233,105 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(null);
         setLoading(false);
         return;
+      }
+      
+      // Check if session exists but token is expired
+      if (session && session.expires_at && session.expires_at < Math.floor(Date.now() / 1000)) {
+        console.warn('🔐 Session exists but token is expired, attempting refresh...');
+        
+        // Check if we have a refresh token available
+        const authTokenKey = import.meta.env.VITE_AUTH_TOKEN;
+        const storedToken = localStorage.getItem(authTokenKey);
+        let hasRefreshToken = false;
+        
+        if (storedToken) {
+          try {
+            const parsedToken = JSON.parse(storedToken);
+            hasRefreshToken = !!parsedToken.refresh_token;
+            console.log('🔐 Refresh token available for expired session:', hasRefreshToken);
+          } catch (e) {
+            console.error('🔐 Error parsing stored token for refresh check:', e);
+          }
+        }
+        
+        if (!hasRefreshToken) {
+          console.warn('🔐 No refresh token available for expired session');
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+          alert('Your session has expired. Please log in again.');
+          
+          if (window.location.pathname.startsWith('/dashboard')) {
+            navigate('/auth', { replace: true });
+          }
+          return;
+        }
+        
+        // Try to refresh the token
+        try {
+          console.log('🔐 Attempting token refresh for expired session...');
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+          
+          if (refreshError) {
+            console.error('🔐 Token refresh failed for expired session:', refreshError);
+            console.warn('🔐 Session expired - refresh token is also invalid');
+            cleanupAuthState();
+            setSession(null);
+            setUser(null);
+            setLoading(false);
+            
+            // Show session expired message
+            alert('Your session has expired. Please log in again.');
+            
+            // Redirect to login if we're on a protected route
+            if (window.location.pathname.startsWith('/dashboard')) {
+              console.log('🔐 Redirecting to login page due to session expiry');
+              navigate('/auth', { replace: true });
+            }
+            return;
+          }
+          
+          if (refreshData.session) {
+            console.log('🔐 Token refresh successful for expired session!', {
+              userId: refreshData.session.user?.id,
+              expiresAt: refreshData.session.expires_at,
+              expiresAtDate: new Date(refreshData.session.expires_at * 1000).toISOString()
+            });
+            setSession(refreshData.session);
+            setUser(refreshData.session.user);
+            setLoading(false);
+            return;
+          } else {
+            console.warn('🔐 Token refresh returned no session data for expired session');
+            cleanupAuthState();
+            setSession(null);
+            setUser(null);
+            setLoading(false);
+            alert('Your session has expired. Please log in again.');
+            
+            if (window.location.pathname.startsWith('/dashboard')) {
+              navigate('/auth', { replace: true });
+            }
+            return;
+          }
+        } catch (refreshException) {
+          console.error('🔐 Exception during token refresh for expired session:', refreshException);
+          console.warn('🔐 Session expired - exception during refresh');
+          cleanupAuthState();
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+          
+          // Show session expired message
+          alert('Your session has expired. Please log in again.');
+          
+          // Redirect to login if we're on a protected route
+          if (window.location.pathname.startsWith('/dashboard')) {
+            console.log('🔐 Redirecting to login page due to session expiry');
+            navigate('/auth', { replace: true });
+          }
+          return;
+        }
       }
       
       setSession(session);
