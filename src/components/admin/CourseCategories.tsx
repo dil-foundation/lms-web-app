@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,63 +9,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Search, Plus, BookCheck, Edit, Trash2, Eye, RefreshCw, Calendar, MoreHorizontal, Hash, Tag } from 'lucide-react';
+import { Search, Plus, BookCheck, Edit, Trash2, Eye, RefreshCw, Calendar, MoreHorizontal, Hash, Tag, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
-
-interface CourseCategory {
-  id: string;
-  name: string;
-  description: string;
-  course_count: number;
-  created_at: string;
-  updated_at: string;
-}
+import { CourseCategoriesService, CourseCategory, PaginatedResponse, PaginationParams, SearchParams } from '@/services/courseCategoriesService';
+import { useDebounce } from '@/hooks/useDebounce';
 
 export const CourseCategories = () => {
-  // Mock data for course categories
-  const [categories, setCategories] = useState<CourseCategory[]>([
-    {
-      id: '1',
-      name: 'Programming',
-      description: 'Software development and programming languages',
-      course_count: 15,
-      created_at: '2024-01-15',
-      updated_at: '2024-01-20'
-    },
-    {
-      id: '2',
-      name: 'Mathematics',
-      description: 'Mathematical concepts and problem solving',
-      course_count: 8,
-      created_at: '2024-01-10',
-      updated_at: '2024-01-18'
-    },
-    {
-      id: '3',
-      name: 'Science',
-      description: 'Natural sciences and scientific methods',
-      course_count: 12,
-      created_at: '2024-01-12',
-      updated_at: '2024-01-19'
-    },
-    {
-      id: '4',
-      name: 'Language Arts',
-      description: 'Literature, writing, and communication skills',
-      course_count: 6,
-      created_at: '2024-01-08',
-      updated_at: '2024-01-16'
-    },
-    {
-      id: '5',
-      name: 'Business',
-      description: 'Business management and entrepreneurship',
-      course_count: 9,
-      created_at: '2024-01-14',
-      updated_at: '2024-01-21'
-    }
-  ]);
-
+  const [categories, setCategories] = useState<CourseCategory[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -73,76 +23,157 @@ export const CourseCategories = () => {
   const [editingCategory, setEditingCategory] = useState<CourseCategory | null>(null);
   const [viewingCategory, setViewingCategory] = useState<CourseCategory | null>(null);
   const [formData, setFormData] = useState({
-    name: '',
-    description: ''
+    name: ''
   });
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [courseCounts, setCourseCounts] = useState<Record<number, number>>({});
+  
+  // Pagination state
+  const [pagination, setPagination] = useState<PaginationParams>({
+    page: 1,
+    limit: 10
+  });
+  const [paginationData, setPaginationData] = useState<PaginatedResponse<CourseCategory> | null>(null);
+  
+  // Debounced search term
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  // Filter categories based on search term
-  const filteredCategories = categories.filter(category => {
-    const matchesSearch = category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         category.description.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSearch;
-  });
+  // Load categories when pagination or search changes
+  useEffect(() => {
+    loadCategoriesPaginated();
+  }, [pagination, debouncedSearchTerm]);
+
+  // Load course counts for each category
+  useEffect(() => {
+    if (categories.length > 0) {
+      loadCourseCounts();
+    }
+  }, [categories]);
+
+  // Load categories with pagination and search
+  const loadCategoriesPaginated = async () => {
+    try {
+      setLoading(true);
+      const searchParams: SearchParams = debouncedSearchTerm ? { searchTerm: debouncedSearchTerm } : {};
+      const response = await CourseCategoriesService.getCategoriesPaginated(pagination, searchParams);
+      
+      setCategories(response.data);
+      setPaginationData(response);
+    } catch (error) {
+      console.error('Error loading categories:', error);
+      toast.error('Failed to load categories');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load categories from API (for refresh functionality)
+  const loadCategories = async () => {
+    await loadCategoriesPaginated();
+  };
+
+  // Load course counts for each category
+  const loadCourseCounts = async () => {
+    try {
+      const counts: Record<number, number> = {};
+      for (const category of categories) {
+        const count = await CourseCategoriesService.getCourseCountForCategory(category.id);
+        counts[category.id] = count;
+      }
+      setCourseCounts(counts);
+    } catch (error) {
+      console.error('Error loading course counts:', error);
+      // Don't show error toast for course counts as it's not critical
+    }
+  };
+
+  // Pagination functions
+  const goToPage = (page: number) => {
+    setPagination(prev => ({ ...prev, page }));
+  };
+
+
+  // Handle search with debounce
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page on search
+  };
 
   // Handle create category
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!formData.name.trim()) {
       toast.error('Please enter a category name');
       return;
     }
 
-    const newCategory: CourseCategory = {
-      id: Date.now().toString(),
-      name: formData.name,
-      description: formData.description,
-      course_count: 0,
-      created_at: new Date().toISOString().split('T')[0],
-      updated_at: new Date().toISOString().split('T')[0]
-    };
-
-    setCategories([...categories, newCategory]);
-    setIsCreateDialogOpen(false);
-    resetForm();
-    toast.success('Category created successfully');
+    try {
+      setSubmitting(true);
+      const newCategory = await CourseCategoriesService.createCategory({
+        name: formData.name.trim()
+      });
+      
+      setIsCreateDialogOpen(false);
+      resetForm();
+      toast.success('Category created successfully');
+      // Refresh current page to show the new category
+      await loadCategoriesPaginated();
+    } catch (error) {
+      console.error('Error creating category:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to create category');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // Handle edit category
-  const handleEdit = () => {
+  const handleEdit = async () => {
     if (!editingCategory || !formData.name.trim()) {
       toast.error('Please enter a category name');
       return;
     }
 
-    const updatedCategories = categories.map(category =>
-      category.id === editingCategory.id
-        ? {
-            ...category,
-            name: formData.name,
-            description: formData.description,
-            updated_at: new Date().toISOString().split('T')[0]
-          }
-        : category
-    );
-
-    setCategories(updatedCategories);
-    setIsEditDialogOpen(false);
-    setEditingCategory(null);
-    resetForm();
-    toast.success('Category updated successfully');
+    try {
+      setSubmitting(true);
+      const updatedCategory = await CourseCategoriesService.updateCategory(editingCategory.id, {
+        name: formData.name.trim()
+      });
+      
+      setIsEditDialogOpen(false);
+      setEditingCategory(null);
+      resetForm();
+      toast.success('Category updated successfully');
+      // Refresh current page to show updated data
+      await loadCategoriesPaginated();
+    } catch (error) {
+      console.error('Error updating category:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to update category');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // Handle delete category
-  const handleDelete = (categoryId: string) => {
-    setCategories(categories.filter(category => category.id !== categoryId));
-    toast.success('Category deleted successfully');
+  const handleDelete = async (categoryId: number) => {
+    try {
+      setSubmitting(true);
+      await CourseCategoriesService.deleteCategory(categoryId);
+      toast.success('Category deleted successfully');
+      // Refresh current page to show updated data
+      await loadCategoriesPaginated();
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to delete category');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // Open edit dialog
   const openEditDialog = (category: CourseCategory) => {
     setEditingCategory(category);
     setFormData({
-      name: category.name,
-      description: category.description
+      name: category.name
     });
     setIsEditDialogOpen(true);
   };
@@ -156,8 +187,7 @@ export const CourseCategories = () => {
   // Reset form
   const resetForm = () => {
     setFormData({
-      name: '',
-      description: ''
+      name: ''
     });
   };
 
@@ -187,7 +217,7 @@ export const CourseCategories = () => {
             <BookCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{categories.length}</div>
+            <div className="text-2xl font-bold">{paginationData?.total || 0}</div>
             <p className="text-xs text-muted-foreground">All categories in the system</p>
           </CardContent>
         </Card>
@@ -198,7 +228,9 @@ export const CourseCategories = () => {
             <Hash className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{categories.reduce((sum, cat) => sum + cat.course_count, 0)}</div>
+            <div className="text-2xl font-bold">
+              {Object.values(courseCounts).reduce((sum, count) => sum + count, 0)}
+            </div>
             <p className="text-xs text-muted-foreground">Across all categories</p>
           </CardContent>
         </Card>
@@ -210,7 +242,10 @@ export const CourseCategories = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {categories.length > 0 ? categories.reduce((max, cat) => cat.course_count > max.course_count ? cat : max).name : 'N/A'}
+              {categories.length > 0 ? 
+                categories.reduce((max, cat) => 
+                  (courseCounts[cat.id] || 0) > (courseCounts[max.id] || 0) ? cat : max
+                ).name : 'N/A'}
             </div>
             <p className="text-xs text-muted-foreground">Category with most courses</p>
           </CardContent>
@@ -224,39 +259,31 @@ export const CourseCategories = () => {
           <CardContent>
             <div className="text-2xl font-bold">{categories.filter(c => {
               const today = new Date();
-              const updateDate = new Date(c.updated_at);
-              const diffTime = Math.abs(today.getTime() - updateDate.getTime());
+              const createdDate = new Date(c.created_at);
+              const diffTime = Math.abs(today.getTime() - createdDate.getTime());
               const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
               return diffDays <= 7;
             }).length}</div>
-            <p className="text-xs text-muted-foreground">Updated this week</p>
+            <p className="text-xs text-muted-foreground">Created this week</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Search and Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Category Directory</CardTitle>
-          <CardDescription>Search and filter categories by various criteria</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Search categories by name or description..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Button variant="outline" size="icon">
-              <RefreshCw className="h-4 w-4" />
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder="Search by name..."
+            value={searchTerm}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Button variant="outline" size="icon" onClick={loadCategories} disabled={loading}>
+          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+        </Button>
+      </div>
 
       {/* Categories Table */}
       <Card>
@@ -265,85 +292,174 @@ export const CourseCategories = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Category</TableHead>
-                <TableHead>Description</TableHead>
                 <TableHead>Courses</TableHead>
-                <TableHead>Last Updated</TableHead>
+                <TableHead>Created</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredCategories.map((category) => (
-                <TableRow key={category.id}>
-                  <TableCell className="font-medium">
-                    {category.name}
-                  </TableCell>
-                  <TableCell className="max-w-xs truncate">{category.description}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{category.course_count} courses</Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      {category.updated_at}
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-8">
+                    <div className="flex items-center justify-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Loading categories...
                     </div>
                   </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Open menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => openViewDialog(category)}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => openEditDialog(category)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit Category
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete Category
-                            </DropdownMenuItem>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Category</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete "{category.name}"? This action cannot be undone.
-                                {category.course_count > 0 && (
-                                  <span className="block mt-2 text-amber-600">
-                                    Warning: This category has {category.course_count} courses assigned to it.
-                                  </span>
-                                )}
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDelete(category.id)}
-                                className="bg-red-600 hover:bg-red-700"
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                </TableRow>
+              ) : categories.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                    {searchTerm ? 'No categories found matching your search.' : 'No categories found.'}
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                categories.map((category) => (
+                  <TableRow key={category.id}>
+                    <TableCell className="font-medium">
+                      {category.name}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {courseCounts[category.id] || 0} courses
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        {new Date(category.created_at).toLocaleDateString()}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Open menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => openViewDialog(category)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openEditDialog(category)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit Category
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete Category
+                              </DropdownMenuItem>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Category</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete "{category.name}"? This action cannot be undone.
+                                  {(courseCounts[category.id] || 0) > 0 && (
+                                    <span className="block mt-2 text-amber-600">
+                                      Warning: This category has {courseCounts[category.id]} courses assigned to it.
+                                    </span>
+                                  )}
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDelete(category.id)}
+                                  className="bg-red-600 hover:bg-red-700"
+                                  disabled={submitting}
+                                >
+                                  {submitting ? (
+                                    <>
+                                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                      Deleting...
+                                    </>
+                                  ) : (
+                                    'Delete'
+                                  )}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      {/* Pagination */}
+      {paginationData && (
+        <div className="flex items-center justify-center gap-2 mt-6">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => goToPage(paginationData.page - 1)}
+            disabled={paginationData.page <= 1 || loading || paginationData.totalPages <= 1}
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Previous
+          </Button>
+          
+          <div className="flex items-center gap-1">
+            {paginationData.totalPages > 1 ? (
+              Array.from({ length: Math.min(5, paginationData.totalPages) }, (_, i) => {
+                let pageNum;
+                if (paginationData.totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (paginationData.page <= 3) {
+                  pageNum = i + 1;
+                } else if (paginationData.page >= paginationData.totalPages - 2) {
+                  pageNum = paginationData.totalPages - 4 + i;
+                } else {
+                  pageNum = paginationData.page - 2 + i;
+                }
+                
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={paginationData.page === pageNum ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => goToPage(pageNum)}
+                    disabled={loading}
+                    className="w-8 h-8 p-0"
+                  >
+                    {pageNum}
+                  </Button>
+                );
+              })
+            ) : (
+              <Button
+                variant="default"
+                size="sm"
+                disabled
+                className="w-8 h-8 p-0"
+              >
+                1
+              </Button>
+            )}
+          </div>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => goToPage(paginationData.page + 1)}
+            disabled={paginationData.page >= paginationData.totalPages || loading || paginationData.totalPages <= 1}
+          >
+            Next
+            <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        </div>
+      )}
 
       {/* Create Category Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
@@ -362,25 +478,23 @@ export const CourseCategories = () => {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="e.g., Programming"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="category-description">Description</Label>
-              <Textarea
-                id="category-description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Brief description of the category..."
-                rows={3}
+                disabled={submitting}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)} disabled={submitting}>
               Cancel
             </Button>
-            <Button onClick={handleCreate} className="bg-[#8DC63F] hover:bg-[#8DC63F]/90">
-              Create Category
+            <Button onClick={handleCreate} className="bg-[#8DC63F] hover:bg-[#8DC63F]/90" disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Creating...
+                </>
+              ) : (
+                'Create Category'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -403,25 +517,23 @@ export const CourseCategories = () => {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="e.g., Programming"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-category-description">Description</Label>
-              <Textarea
-                id="edit-category-description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Brief description of the category..."
-                rows={3}
+                disabled={submitting}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} disabled={submitting}>
               Cancel
             </Button>
-            <Button onClick={handleEdit} className="bg-blue-600 hover:bg-blue-700">
-              Update Category
+            <Button onClick={handleEdit} className="bg-blue-600 hover:bg-blue-700" disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Updating...
+                </>
+              ) : (
+                'Update Category'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -446,21 +558,11 @@ export const CourseCategories = () => {
                   </div>
                   <div>
                     <Label className="text-sm font-medium text-muted-foreground">Courses Count</Label>
-                    <p className="text-lg">{viewingCategory.course_count} courses</p>
+                    <p className="text-lg">{courseCounts[viewingCategory.id] || 0} courses</p>
                   </div>
                   <div>
                     <Label className="text-sm font-medium text-muted-foreground">Created</Label>
-                    <p className="text-lg">{viewingCategory.created_at}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-muted-foreground">Last Updated</Label>
-                    <p className="text-lg">{viewingCategory.updated_at}</p>
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <Label className="text-sm font-medium text-muted-foreground">Description</Label>
-                    <p className="text-lg">{viewingCategory.description}</p>
+                    <p className="text-lg">{new Date(viewingCategory.created_at).toLocaleDateString()}</p>
                   </div>
                 </div>
               </div>
