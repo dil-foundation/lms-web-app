@@ -32,7 +32,7 @@ export const CourseCategories = () => {
   // Pagination state
   const [pagination, setPagination] = useState<PaginationParams>({
     page: 1,
-    limit: 10
+    limit: 5
   });
   const [paginationData, setPaginationData] = useState<PaginatedResponse<CourseCategory> | null>(null);
   
