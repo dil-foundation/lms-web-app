@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
-import { ArrowLeft, Mic, Building2, User, Star, TrendingUp, CheckCircle, Loader2, Play, Pause, Bot, Target, MessageSquare } from 'lucide-react';
+import { CompletionDialog } from '@/components/practice/CompletionDialog';
+import { ArrowLeft, Mic, Building2, User, Star, TrendingUp, CheckCircle, Loader2, Play, Pause, Bot, Target, MessageSquare, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
@@ -13,6 +14,19 @@ import {
   InDepthInterviewPrompt,
   InDepthInterviewEvaluationResponse 
 } from '@/services/inDepthInterviewService';
+
+interface ExerciseCompletion {
+  exercise_completed: boolean;
+  progress_percentage: number;
+  completed_topics: number;
+  total_topics: number;
+  current_topic_id: number;
+  stage_id: number;
+  exercise_id: number;
+  exercise_name: string;
+  stage_name: string;
+  completion_date?: string | null;
+}
 
 export default function InDepthInterviewSimulation() {
   const navigate = useNavigate();
@@ -28,6 +42,8 @@ export default function InDepthInterviewSimulation() {
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
 
   // Audio hooks
   const { 
@@ -170,9 +186,40 @@ export default function InDepthInterviewSimulation() {
         urdu_used: false // This would be determined by the API
       };
 
-      const result = await inDepthInterviewService.evaluateResponse(evaluationData);
+      const result = await inDepthInterviewService.evaluateResponse(evaluationData) as any;
+      
+      // Handle API error responses (like no_speech_detected)
+      if (result.success === false || result.error) {
+        const errorMessage = result.message || result.error || 'Speech evaluation failed';
+        
+        // Create modified feedback object for error cases
+        const errorFeedback = {
+          ...result,
+          evaluation: {
+            ...result.evaluation,
+            evaluation: {
+              ...result.evaluation?.evaluation,
+              overall_score: 0,
+              feedback: errorMessage,
+              suggested_improvements: ['Please speak more clearly and try again']
+            }
+          }
+        };
+        
+        setEvaluation(errorFeedback);
+        toast.error('Speech evaluation failed: ' + errorMessage);
+        return;
+      }
+      
       setEvaluation(result);
       toast.success('Response evaluated successfully!');
+      
+      // Check if the exercise is completed based on API response
+      if (result?.exercise_completion?.exercise_completed) {
+        // Exercise is completed according to the API
+        setIsCompleted(true);
+        setShowCompletionDialog(true);
+      }
     } catch (error) {
       console.error('Error evaluating response:', error);
       toast.error('Failed to evaluate response');
@@ -187,7 +234,24 @@ export default function InDepthInterviewSimulation() {
     setStartTime(null);
     setSelectedPrompt(null); // Allow user to choose a different prompt
     setAudioUrl(null);
+    setIsCompleted(false);
+    setShowCompletionDialog(false);
     stopAudio();
+  };
+
+  const handleRedo = () => {
+    setShowCompletionDialog(false);
+    setIsCompleted(false);
+    setHasStarted(false);
+    setEvaluation(null);
+    setStartTime(null);
+    setAudioUrl(null);
+    stopAudio();
+  };
+
+  const handleContinue = () => {
+    setShowCompletionDialog(false);
+    resetInterview();
   };
 
   if (loading) {
@@ -447,7 +511,11 @@ export default function InDepthInterviewSimulation() {
                 <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
                   <CardContent className="p-4">
                     <div className="text-center">
-                      <div className="text-3xl font-bold bg-gradient-to-r from-primary to-[#1582B4] bg-clip-text text-transparent mb-2">
+                      <div className={`text-3xl font-bold mb-2 ${
+                        (evaluation?.evaluation?.evaluation?.overall_score || 0) === 0 
+                          ? 'text-red-600 dark:text-red-400' 
+                          : 'bg-gradient-to-r from-primary to-[#1582B4] bg-clip-text text-transparent'
+                      }`}>
                         {evaluation?.evaluation?.evaluation?.overall_score || 0}%
                       </div>
                       <div className="text-sm text-muted-foreground">Overall Score</div>
@@ -660,7 +728,11 @@ export default function InDepthInterviewSimulation() {
               <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
                 <CardContent className="p-4">
                   <div className="text-center">
-                    <div className="text-3xl font-bold bg-gradient-to-r from-primary to-[#1582B4] bg-clip-text text-transparent mb-2">
+                    <div className={`text-3xl font-bold mb-2 ${
+                      (evaluation?.evaluation?.evaluation?.overall_score || 0) === 0 
+                        ? 'text-red-600 dark:text-red-400' 
+                        : 'bg-gradient-to-r from-primary to-[#1582B4] bg-clip-text text-transparent'
+                    }`}>
                       {evaluation?.evaluation?.evaluation?.overall_score || 0}%
                     </div>
                     <div className="text-sm text-muted-foreground">Overall Score</div>
@@ -857,6 +929,16 @@ export default function InDepthInterviewSimulation() {
           )}
         </div>
       </div>
+
+      {/* Completion Dialog */}
+      <CompletionDialog
+        isOpen={showCompletionDialog}
+        onClose={() => setShowCompletionDialog(false)}
+        exerciseName="In-Depth Interview"
+        score={evaluation?.evaluation?.evaluation?.overall_score || 0}
+        onRedo={handleRedo}
+        onContinue={handleContinue}
+      />
     </div>
   );
 } 

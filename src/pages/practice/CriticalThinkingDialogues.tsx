@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Mic, Bot, User, Play, Pause, RefreshCw, Loader2, Target, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Mic, Bot, User, Play, Pause, RefreshCw, Loader2, Target, TrendingUp, CheckCircle, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { 
   fetchCriticalThinkingTopics, 
@@ -13,11 +13,25 @@ import {
   type CriticalThinkingAudioResponse,
   type CriticalThinkingEvaluationResponse
 } from '@/services/criticalThinkingService';
+
+interface ExerciseCompletion {
+  exercise_completed: boolean;
+  progress_percentage: number;
+  completed_topics: number;
+  total_topics: number;
+  current_topic_id: number;
+  stage_id: number;
+  exercise_id: number;
+  exercise_name: string;
+  stage_name: string;
+  completion_date?: string | null;
+}
 import { useToast } from '@/hooks/use-toast';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useAuth } from '@/hooks/useAuth';
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
+import { CompletionDialog } from '@/components/practice/CompletionDialog';
 
 interface ConversationMessage {
   id: string;
@@ -45,6 +59,8 @@ export default function CriticalThinkingDialogues() {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const [isEvaluating, setIsEvaluating] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   
   // Audio hooks
   const { 
@@ -253,10 +269,40 @@ export default function CriticalThinkingDialogues() {
         user_id: user.id,
         time_spent_seconds: timeSpentSeconds,
         urdu_used: false, // You might want to detect this or make it configurable
-      });
+      }) as any;
+
+      // Handle API error responses (like no_speech_detected)
+      if (evaluationResponse.success === false || evaluationResponse.error) {
+        const errorMessage = evaluationResponse.message || evaluationResponse.error || 'Speech evaluation failed';
+        
+        // Create modified feedback object for error cases
+        const errorFeedback = {
+          ...evaluationResponse,
+          evaluation: {
+            ...evaluationResponse.evaluation,
+            evaluation: {
+              ...evaluationResponse.evaluation?.evaluation,
+              overall_score: 0,
+              feedback: errorMessage,
+              suggested_improvements: ['Please speak more clearly and try again']
+            }
+          }
+        };
+        
+        setEvaluation(errorFeedback);
+        setShowFeedback(true);
+        return;
+      }
 
       setEvaluation(evaluationResponse);
       setShowFeedback(true);
+      
+      // Check if the exercise is completed based on API response
+      if (evaluationResponse?.exercise_completion?.exercise_completed) {
+        // Exercise is completed according to the API
+        setIsCompleted(true);
+        setShowCompletionDialog(true);
+      }
     } catch (error) {
       console.error('Error evaluating response:', error);
       toast({
@@ -318,7 +364,20 @@ export default function CriticalThinkingDialogues() {
     setRecordingStartTime(null);
     setAudioUrl(null);
     setIsEvaluating(false);
+    setIsCompleted(false);
+    setShowCompletionDialog(false);
     stopAudio();
+  };
+
+  const handleRedo = () => {
+    setShowCompletionDialog(false);
+    setIsCompleted(false);
+    resetConversation();
+  };
+
+  const handleContinue = () => {
+    setShowCompletionDialog(false);
+    selectNewTopic();
   };
 
   return (
@@ -697,6 +756,16 @@ export default function CriticalThinkingDialogues() {
           </Card>
         )}
       </div>
+
+      {/* Completion Dialog */}
+      <CompletionDialog
+        isOpen={showCompletionDialog}
+        onClose={() => setShowCompletionDialog(false)}
+        exerciseName="Critical Thinking Dialogues"
+        score={evaluation?.evaluation?.evaluation?.overall_score || 0}
+        onRedo={handleRedo}
+        onContinue={handleContinue}
+      />
     </div>
   );
 } 

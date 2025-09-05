@@ -79,6 +79,8 @@ export default function ReportsPage() {
   const [sortBy, setSortBy] = useState('enrolled_date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
+
+
   // Fetch reports data from database
   const fetchReportsData = async () => {
     if (!user) return;
@@ -165,6 +167,7 @@ export default function ReportsPage() {
         name: student.student_name,
         email: student.student_email,
         avatar: student.student_avatar,
+        avatar_url: student.avatar_url,
         enrolledDate: student.enrolled_date,
         course: student.course_title,
         progress: student.progress_percentage,
@@ -731,6 +734,10 @@ export default function ReportsPage() {
                                 <TableCell className="font-medium">
                                   <div className="flex items-center space-x-3">
                                     <Avatar className="h-8 w-8">
+                                      <AvatarImage 
+                                        src={student.avatar_url} 
+                                        alt={student.name}
+                                      />
                                       <AvatarFallback className="text-xs">
                                         {student.avatar}
                                       </AvatarFallback>
@@ -925,6 +932,8 @@ export default function ReportsPage() {
           </Tabs>
         </>
       )}
+
+
     </div>
   );
 } 

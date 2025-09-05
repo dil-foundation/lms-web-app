@@ -2,7 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import {
@@ -53,7 +53,7 @@ interface CourseData {
       title: string;
       lessons: { id: string; title: string; }[];
   }[];
-  teachers: { name: string; email: string; }[];
+  teachers: { name: string; email: string; avatar_url?: string; }[];
   students: { id: string; }[];
   duration?: string;
   level?: string;
@@ -148,16 +148,20 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
 
     let teacherName: string;
     let teacherEmail: string;
+    let teacherAvatar: string | null = null;
 
     if (previewTeacher && previewTeacher.name) {
       teacherName = previewTeacher.name;
       teacherEmail = previewTeacher.email || 'Not available';
+      teacherAvatar = previewTeacher.avatar_url || null;
     } else if (teacherProfile) {
       teacherName = `${teacherProfile.first_name || ''} ${teacherProfile.last_name || ''}`.trim() || 'Teacher TBD';
       teacherEmail = teacherProfile.email || 'Not available';
+      teacherAvatar = teacherProfile.avatar_url || null;
     } else {
       teacherName = 'Teacher TBD';
       teacherEmail = 'Not available';
+      teacherAvatar = null;
     }
 
     const getInitials = (name: string) => (name.split(' ').map(n => n[0]).join('').toUpperCase() || 'T');
@@ -174,7 +178,8 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
       instructor: {
         name: teacherName,
         title: instructorExtraData?.email || teacherEmail,
-        avatar: getInitials(teacherName),
+        avatar: teacherAvatar,
+        initials: getInitials(teacherName),
         rating: instructorExtraData?.rating || 4.8,
         students: instructorExtraData?.students || 0,
         courses: instructorExtraData?.courses || 0
@@ -753,8 +758,12 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
               <CardContent>
                 <div className="flex items-start gap-6">
                   <Avatar className="h-20 w-20 shadow-lg border-2 border-primary/20">
+                    <AvatarImage 
+                      src={course.instructor.avatar} 
+                      alt={course.instructor.name}
+                    />
                     <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-2xl font-bold">
-                      {course.instructor.avatar}
+                      {course.instructor.initials}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">

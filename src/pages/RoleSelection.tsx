@@ -30,7 +30,9 @@ const RoleSelection = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <>
+      <Header />
+      <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Video Background */}
       <div className="absolute inset-0 overflow-hidden">
         <video
@@ -84,8 +86,7 @@ const RoleSelection = () => {
         <div className="absolute inset-0 bg-[conic-gradient(from_0deg_at_50%_50%,rgba(var(--primary),0.02),transparent_25%,rgba(var(--primary),0.02))]"></div>
       </div>
       
-      <Header />
-      <div className="pt-16 min-h-screen flex items-center justify-center px-4 relative" style={{ zIndex: 3 }}>
+      <div className="min-h-screen flex items-center justify-center px-4 relative" style={{ zIndex: 3 }}>
         <div className="w-full max-w-4xl mx-auto">
           <div className="text-center mb-12">
             {/* Global Flair Badge */}
@@ -166,7 +167,8 @@ const RoleSelection = () => {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

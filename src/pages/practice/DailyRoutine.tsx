@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Calendar, Play, Mic, AlertCircle, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, Calendar, Play, Mic, AlertCircle, RefreshCw, CheckCircle, XCircle, Trophy, RotateCcw } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ContentLoader } from '@/components/ContentLoader';
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
 import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
@@ -31,6 +32,31 @@ interface EvaluationFeedback {
   accuracy?: number;
   pronunciation?: string;
   suggestions?: string[];
+  message?: string;
+}
+
+interface ExerciseCompletion {
+  exercise_completed: boolean;
+  progress_percentage: number;
+  completed_topics: number;
+  total_topics: number;
+  current_topic_id: number;
+  stage_id: number;
+  exercise_id: number;
+  exercise_name: string;
+  stage_name: string;
+  completion_date?: string | null;
+}
+
+interface EvaluationResponse {
+  success: boolean;
+  expected_phrase?: string;
+  user_text?: string;
+  evaluation: any;
+  progress_recorded: boolean;
+  unlocked_content: any[];
+  exercise_completion: ExerciseCompletion;
+  error?: string;
   message?: string;
 }
 
@@ -185,6 +211,8 @@ export default function DailyRoutine() {
   const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
   const [progressInitialized, setProgressInitialized] = useState(false);
   const [resumeDataLoaded, setResumeDataLoaded] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -393,7 +421,7 @@ export default function DailyRoutine() {
   };
 
   // Evaluate recorded audio
-  const evaluateAudio = async (audioBase64: string, timeSpentSeconds: number): Promise<EvaluationFeedback> => {
+  const evaluateAudio = async (audioBase64: string, timeSpentSeconds: number): Promise<{feedback: EvaluationFeedback, evaluationResponse: EvaluationResponse | null}> => {
     try {
       const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.EVALUATE_DAILY_ROUTINE}`, {
         method: 'POST',
@@ -428,7 +456,7 @@ export default function DailyRoutine() {
             ['Please speak more clearly and try again']
         };
         
-        return feedback;
+        return { feedback, evaluationResponse: null };
       }
       
       // Handle successful evaluation responses
@@ -443,7 +471,7 @@ export default function DailyRoutine() {
         message: evaluation.message || evaluation.feedback
       };
       
-      return feedback;
+      return { feedback, evaluationResponse: result };
     } catch (error) {
       console.error('Error evaluating audio:', error);
       throw error;
@@ -467,11 +495,19 @@ export default function DailyRoutine() {
       const audioBase64 = await blobToBase64(audioBlob);
       const timeSpentSeconds = Math.round((Date.now() - recordingStartTime) / 1000);
       
-      const evaluationResult = await evaluateAudio(audioBase64, timeSpentSeconds);
-      setFeedback(evaluationResult);
+      const { feedback, evaluationResponse } = await evaluateAudio(audioBase64, timeSpentSeconds);
+      setFeedback(feedback);
       
-      // Save progress after successful evaluation
-      saveProgress(currentPhraseIndex);
+      // Check if the exercise is completed based on API response
+      if (evaluationResponse?.exercise_completion?.exercise_completed) {
+        // Exercise is completed according to the API
+        setIsCompleted(true);
+        setShowCompletionDialog(true);
+        markExerciseCompleted();
+      } else {
+        // Save progress after successful evaluation
+        saveProgress(currentPhraseIndex);
+      }
       
     } catch (error: any) {
       console.error('Processing error:', error);
@@ -566,6 +602,35 @@ export default function DailyRoutine() {
     }
   };
 
+  // Mark exercise as completed
+  const markExerciseCompleted = async () => {
+    if (user?.id) {
+      try {
+        // Update progress to mark as completed
+        await updateCurrentProgress(
+          user.id,
+          2, // Stage 2
+          1  // Exercise 1 (DailyRoutine)
+        );
+        console.log('Exercise marked as completed: Stage 2, Exercise 1 (DailyRoutine)');
+      } catch (error) {
+        console.warn('Failed to mark exercise as completed:', error);
+      }
+    }
+  };
+
+  // Restart the exercise (redo functionality)
+  const handleRedo = () => {
+    setCurrentPhraseIndex(0);
+    setFeedback(null);
+    setIsCompleted(false);
+    setShowCompletionDialog(false);
+    // Save progress for restart
+    if (user?.id) {
+      saveProgress(0);
+    }
+  };
+
   const handlePlayAudio = async () => {
     if (!currentPhrase) return;
 
@@ -583,12 +648,7 @@ export default function DailyRoutine() {
   };
 
   const handleNext = () => {
-    let newIndex;
-    if (currentPhraseIndex < phrases.length - 1) {
-      newIndex = currentPhraseIndex + 1;
-    } else {
-      newIndex = 0;
-    }
+    const newIndex = Math.min(phrases.length - 1, currentPhraseIndex + 1);
     setCurrentPhraseIndex(newIndex);
     setFeedback(null); // Clear feedback when navigating
     saveProgress(newIndex); // Save progress when navigating
@@ -875,6 +935,7 @@ export default function DailyRoutine() {
             </Button>
             <Button
               onClick={handleNext}
+              disabled={currentPhraseIndex === phrases.length - 1}
               variant="outline"
               className="flex-1 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl hover:-translate-y-0.5 w-full sm:w-auto"
             >
@@ -954,6 +1015,51 @@ export default function DailyRoutine() {
           )}
         </div>
       </div>
+
+      {/* Completion Dialog */}
+      <Dialog open={showCompletionDialog} onOpenChange={setShowCompletionDialog}>
+        <DialogContent className="sm:max-w-lg p-0 bg-gradient-to-br from-white/98 via-white/95 to-[#8DC63F]/5 dark:from-gray-900/98 dark:via-gray-900/95 dark:to-[#8DC63F]/10 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-xl">
+          <DialogHeader className="px-6 py-5 border-b border-gray-200/40 dark:border-gray-700/40 bg-gradient-to-r from-transparent via-[#8DC63F]/5 to-transparent dark:via-[#8DC63F]/10">
+            <div className="flex items-center justify-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-[#8DC63F]/20 to-[#8DC63F]/30 dark:from-[#8DC63F]/20 dark:to-[#8DC63F]/30 rounded-3xl flex items-center justify-center shadow-sm border border-[#8DC63F]/30 dark:border-[#8DC63F]/40 mb-4">
+                <Trophy className="h-8 w-8 text-[#8DC63F] dark:text-[#8DC63F]" />
+              </div>
+            </div>
+            <DialogTitle className="text-center text-2xl font-bold bg-gradient-to-r from-gray-900 to-[#8DC63F] dark:from-gray-100 dark:to-[#8DC63F] bg-clip-text text-transparent">
+              Congratulations!
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="p-6">
+            <div className="text-center space-y-4">
+              <p className="text-lg text-gray-700 dark:text-gray-300 font-medium">
+                🎉 You've completed all {phrases.length} daily routine topics!
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Great job on your daily routine practice. You can redo the exercise to practice more or continue to other exercises.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-3 mt-6">
+                <Button
+                  onClick={handleRedo}
+                  variant="outline"
+                  className="flex-1 h-12 px-6 bg-[#8DC63F]/10 hover:bg-[#8DC63F]/20 dark:bg-[#8DC63F]/20 dark:hover:bg-[#8DC63F]/30 text-[#8DC63F] dark:text-[#8DC63F] border border-[#8DC63F]/30 dark:border-[#8DC63F]/40 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md font-medium"
+                >
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  Redo Exercise
+                </Button>
+                
+                <Button
+                  onClick={() => navigate('/dashboard/practice')}
+                  className="flex-1 h-12 px-6 bg-gradient-to-r from-[#8DC63F] to-[#8DC63F]/90 hover:from-[#8DC63F]/90 hover:to-[#8DC63F] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 border-0 rounded-xl"
+                >
+                  Continue Learning
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 

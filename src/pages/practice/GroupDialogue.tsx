@@ -2,12 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
-import { ArrowLeft, Users, Mic, Plus, GraduationCap, Heart, Play, Loader2, MicOff, Volume2, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Users, Mic, Plus, GraduationCap, Heart, Play, Loader2, MicOff, Volume2, MessageSquare, Trophy, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useAuth } from '@/hooks/useAuth';
 import { getAuthHeadersWithAccept, getAuthHeaders } from '@/utils/authUtils';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface Message {
   type: 'ai' | 'user' | 'system';
@@ -46,6 +47,31 @@ interface EvaluationFeedback {
   suggested_improvement?: string;
   areas_to_improve?: string[];
   strengths?: string[];
+}
+
+interface ExerciseCompletion {
+  exercise_completed: boolean;
+  progress_percentage: number;
+  completed_topics: number;
+  total_topics: number;
+  current_topic_id: number;
+  stage_id: number;
+  exercise_id: number;
+  exercise_name: string;
+  stage_name: string;
+  completion_date?: string | null;
+}
+
+interface EvaluationResponse {
+  success: boolean;
+  expected_phrase?: string;
+  user_text?: string;
+  evaluation: any;
+  progress_recorded: boolean;
+  unlocked_content: any[];
+  exercise_completion: ExerciseCompletion;
+  error?: string;
+  message?: string;
 }
 
 // API Functions
@@ -245,7 +271,7 @@ const fetchGroupDialogueScenarioAudio = async (scenarioId: string): Promise<stri
 };
 
 // Evaluate group dialogue audio
-const evaluateGroupDialogueAudio = async (audioBase64: string, scenarioId: string, timeSpentSeconds: number, userId: string): Promise<EvaluationFeedback> => {
+const evaluateGroupDialogueAudio = async (audioBase64: string, scenarioId: string, timeSpentSeconds: number, userId: string): Promise<{feedback: EvaluationFeedback, evaluationResponse: EvaluationResponse | null}> => {
   try {
     const payload = {
       audio_base64: audioBase64,
@@ -282,6 +308,20 @@ const evaluateGroupDialogueAudio = async (audioBase64: string, scenarioId: strin
       throw new Error('Invalid JSON response from server');
     }
     
+    // Handle API error responses (like no_speech_detected)
+    if (result.success === false || result.error) {
+      const errorMessage = result.message || result.error || 'Speech evaluation failed';
+      
+      // Create feedback object for error cases
+      const feedback: EvaluationFeedback = {
+        overall_score: 0,
+        feedback: errorMessage,
+        suggested_improvement: 'Please speak more clearly and try again'
+      };
+      
+      return { feedback, evaluationResponse: null };
+    }
+    
     // Handle nested evaluation structure
     let evaluationData = result;
     if (result.evaluation && typeof result.evaluation === 'object') {
@@ -299,7 +339,7 @@ const evaluateGroupDialogueAudio = async (audioBase64: string, scenarioId: strin
                  (evaluationData.strengths ? [evaluationData.strengths] : [])
     };
     
-    return feedback;
+    return { feedback, evaluationResponse: result };
     
   } catch (error: any) {
     console.error('Error evaluating group dialogue audio:', error);
@@ -336,6 +376,8 @@ export default function GroupDialogue() {
   const [feedback, setFeedback] = useState<EvaluationFeedback | null>(null);
   const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   
   const hasFetchedData = useRef(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -739,14 +781,27 @@ export default function GroupDialogue() {
       
       const timeSpentSeconds = Math.floor((Date.now() - actualStartTime) / 1000);
       
-      const evaluationResult = await evaluateGroupDialogueAudio(
+      const { feedback, evaluationResponse } = await evaluateGroupDialogueAudio(
         base64Audio,
         selectedScenario,
         timeSpentSeconds,
         user?.id || 'anonymous'
       );
       
-      setFeedback(evaluationResult);
+      setFeedback(feedback);
+      
+      // Check if the exercise is completed based on API response
+      if (evaluationResponse?.exercise_completion?.exercise_completed) {
+        // Exercise is completed according to the API
+        setIsCompleted(true);
+        setShowCompletionDialog(true);
+        markExerciseCompleted();
+      } else if (!isCompleted) {
+        // Mark exercise as completed after receiving feedback (fallback logic)
+        setIsCompleted(true);
+        setShowCompletionDialog(true);
+        markExerciseCompleted();
+      }
       
     } catch (error: any) {
       console.error('Error processing audio:', error);
@@ -776,6 +831,46 @@ export default function GroupDialogue() {
       recordingStartTimeRef.current = null; // Clear ref too
       // Clear the audio chunks for next recording
       audioChunksRef.current = [];
+    }
+  };
+
+  const markExerciseCompleted = async () => {
+    if (user?.id) {
+      try {
+        // Import the progress update function
+        const { updateCurrentProgress } = await import('@/utils/progressTracker');
+        
+        // Update progress to mark as completed
+        await updateCurrentProgress(
+          user.id,
+          3, // Stage 3
+          2  // Exercise 2 (GroupDialogue)
+        );
+        console.log('Exercise marked as completed: Stage 3, Exercise 2 (GroupDialogue)');
+      } catch (error) {
+        console.warn('Failed to mark exercise as completed:', error);
+      }
+    }
+  };
+
+  const handleRedo = () => {
+    setSelectedScenario(null);
+    setCurrentScenarioData(null);
+    setConversation([]);
+    setUserInput('');
+    setFeedback(null);
+    setIsCompleted(false);
+    setShowCompletionDialog(false);
+    setIsRecording(false);
+    setIsEvaluating(false);
+    setRecordingStartTime(null);
+    recordingStartTimeRef.current = null;
+    setRecordingDuration(0);
+    
+    // Clear recording timeout
+    if (recordingTimeoutRef.current) {
+      clearTimeout(recordingTimeoutRef.current);
+      recordingTimeoutRef.current = null;
     }
   };
 
@@ -1293,13 +1388,13 @@ export default function GroupDialogue() {
                 <div className="mb-4 p-4 bg-gradient-to-br from-card to-card/50 dark:bg-card rounded-md border">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Overall Score</span>
-                    <span className="text-lg font-bold text-green-600">
+                    <span className={`text-lg font-bold ${feedback.overall_score === 0 ? 'text-red-600' : 'text-green-600'}`}>
                       {feedback.overall_score}/100
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div 
-                      className="h-2 rounded-full bg-green-600"
+                      className={`h-2 rounded-full ${feedback.overall_score === 0 ? 'bg-red-600' : 'bg-green-600'}`}
                       style={{ width: `${feedback.overall_score}%` }}
                     ></div>
                   </div>
@@ -1361,6 +1456,47 @@ export default function GroupDialogue() {
             </Card>
           )}
 
+          {/* Completion Dialog */}
+          <Dialog open={showCompletionDialog} onOpenChange={setShowCompletionDialog}>
+            <DialogContent className="sm:max-w-lg p-0 bg-gradient-to-br from-white/98 via-white/95 to-[#8DC63F]/5 dark:from-gray-900/98 dark:via-gray-900/95 dark:to-[#8DC63F]/10 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-xl">
+              <DialogHeader className="px-6 py-5 border-b border-gray-200/40 dark:border-gray-700/40 bg-gradient-to-r from-transparent via-[#8DC63F]/5 to-transparent dark:via-[#8DC63F]/10">
+                <div className="flex items-center justify-center">
+                  <div className="w-16 h-16 bg-gradient-to-br from-[#8DC63F]/20 to-[#8DC63F]/30 dark:from-[#8DC63F]/20 dark:to-[#8DC63F]/30 rounded-3xl flex items-center justify-center shadow-sm border border-[#8DC63F]/30 dark:border-[#8DC63F]/40 mb-4">
+                    <Trophy className="h-8 w-8 text-[#8DC63F] dark:text-[#8DC63F]" />
+                  </div>
+                </div>
+                <DialogTitle className="text-center text-2xl font-bold bg-gradient-to-r from-gray-900 to-[#8DC63F] dark:from-gray-100 dark:to-[#8DC63F] bg-clip-text text-transparent">
+                  Congratulations!
+                </DialogTitle>
+              </DialogHeader>
+              <div className="p-6">
+                <div className="text-center space-y-4">
+                  <p className="text-lg text-gray-700 dark:text-gray-300 font-medium">
+                    🎉 You've completed the group dialogue scenario!
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Excellent work on practicing your group conversation skills. You can try another scenario or redo this one for more practice.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 mt-6">
+                    <Button
+                      onClick={handleRedo}
+                      variant="outline"
+                      className="flex-1 h-12 px-6 bg-[#8DC63F]/10 hover:bg-[#8DC63F]/20 dark:bg-[#8DC63F]/20 dark:hover:bg-[#8DC63F]/30 text-[#8DC63F] dark:text-[#8DC63F] border border-[#8DC63F]/30 dark:border-[#8DC63F]/40 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md font-medium"
+                    >
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Try Another Scenario
+                    </Button>
+                    <Button
+                      onClick={() => navigate('/dashboard/practice')}
+                      className="flex-1 h-12 px-6 bg-gradient-to-r from-[#8DC63F] to-[#8DC63F]/90 hover:from-[#8DC63F]/90 hover:to-[#8DC63F] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 border-0 rounded-xl"
+                    >
+                      Continue Learning
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
 
         </div>
       </div>

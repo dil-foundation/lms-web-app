@@ -1,0 +1,1610 @@
+﻿create table public.access_logs (
+  id uuid not null default gen_random_uuid (),
+  user_id uuid null,
+  user_email text null,
+  action character varying(100) not null,
+  ip_address inet null,
+  user_agent text null,
+  location text null,
+  status character varying(20) not null,
+  metadata jsonb null default '{}'::jsonb,
+  created_at timestamp with time zone null default now(),
+  constraint access_logs_pkey primary key (id),
+  constraint access_logs_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete set null,
+  constraint access_logs_status_check check (
+    (
+      (status)::text = any (
+        (
+          array[
+            'success'::character varying,
+            'failed'::character varying,
+            'pending'::character varying
+          ]
+        )::text[]
+      )
+    )
+  )
+) TABLESPACE pg_default;
+
+
+create index IF not exists idx_access_logs_user_id on public.access_logs using btree (user_id) TABLESPACE pg_default;
+
+
+create index IF not exists idx_access_logs_created_at on public.access_logs using btree (created_at) TABLESPACE pg_default;
+
+
+create index IF not exists idx_access_logs_status on public.access_logs using btree (status) TABLESPACE pg_default;
+
+
+create index IF not exists idx_access_logs_action on public.access_logs using btree (action) TABLESPACE pg_default;
+
+
+create table public.admin_settings (
+  id uuid not null default gen_random_uuid (),
+  system_name character varying(255) null default 'DIL Learning Platform'::character varying,
+  maintenance_mode boolean null default false,
+  system_notifications boolean null default true,
+  email_notifications boolean null default true,
+  push_notifications boolean null default false,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  updated_by uuid null,
+  constraint admin_settings_pkey primary key (id),
+  constraint admin_settings_created_by_fkey foreign KEY (created_by) references auth.users (id),
+  constraint admin_settings_updated_by_fkey foreign KEY (updated_by) references auth.users (id)
+) TABLESPACE pg_default;
+
+
+create index IF not exists idx_admin_settings_created_at on public.admin_settings using btree (created_at desc) TABLESPACE pg_default;
+
+
+create trigger trigger_set_admin_settings_created_by BEFORE INSERT on admin_settings for EACH row
+execute FUNCTION set_admin_settings_created_by ();
+
+
+create trigger trigger_update_admin_settings_updated_at BEFORE
+update on admin_settings for EACH row
+execute FUNCTION update_admin_settings_updated_at ();
+
+
+
+
+create table public.ai_report_interactions (
+  id uuid not null default gen_random_uuid (),
+  user_id uuid not null,
+  query text not null,
+  response text not null,
+  tokens_used integer null default 0,
+  model_used text null default 'gpt-4'::text,
+  execution_time_ms integer null default 0,
+  success boolean null default true,
+  error_message text null,
+  created_at timestamp with time zone not null default timezone ('utc'::text, now()),
+  updated_at timestamp with time zone not null default timezone ('utc'::text, now()),
+  constraint ai_report_interactions_pkey primary key (id),
+  constraint ai_report_interactions_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+
+create index IF not exists idx_ai_report_interactions_user_id on public.ai_report_interactions using btree (user_id) TABLESPACE pg_default;
+
+
+create index IF not exists idx_ai_report_interactions_created_at on public.ai_report_interactions using btree (created_at) TABLESPACE pg_default;
+
+
+create index IF not exists idx_ai_report_interactions_success on public.ai_report_interactions using btree (success) TABLESPACE pg_default;
+
+
+create trigger update_ai_report_interactions_updated_at BEFORE
+update on ai_report_interactions for EACH row
+execute FUNCTION update_updated_at_column ();
+
+
+
+
+create table public.ai_tutor_daily_learning_analytics (
+  id uuid not null default gen_random_uuid (),
+  user_id uuid not null,
+  analytics_date date null default CURRENT_DATE,
+  sessions_count integer null default 0,
+  total_time_minutes integer null default 0,
+  average_session_duration numeric(5, 2) null default 0.00,
+  average_score numeric(5, 2) null default 0.00,
+  best_score numeric(5, 2) null default 0.00,
+  exercises_attempted integer null default 0,
+  exercises_completed integer null default 0,
+  stages_worked_on integer[] null default '{}'::integer[],
+  exercises_worked_on jsonb null default '{}'::jsonb,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  urdu_usage_count integer not null default 0,
+  constraint ai_tutor_daily_learning_analytics_pkey primary key (id),
+  constraint ai_tutor_daily_learning_analytics_user_id_analytics_date_key unique (user_id, analytics_date),
+  constraint ai_tutor_daily_learning_analytics_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE,
+  constraint ai_tutor_daily_learning_analytics_exercises_completed_check check ((exercises_completed >= 0)),
+  constraint ai_tutor_daily_learning_analytics_exercises_attempted_check check ((exercises_attempted >= 0)),
+  constraint ai_tutor_daily_learning_analytics_sessions_count_check check ((sessions_count >= 0)),
+  constraint ai_tutor_daily_learning_analytics_total_time_minutes_check check ((total_time_minutes >= 0)),
+  constraint ai_tutor_daily_learning_analytics_best_score_check check (
+    (
+      (best_score >= (0)::numeric)
+      and (best_score <= (100)::numeric)
+    )
+  ),
+  constraint ai_tutor_daily_learning_analytics_average_score_check check (
+    (
+      (average_score >= (0)::numeric)
+      and (average_score <= (100)::numeric)
+    )
+  )
+) TABLESPACE pg_default;
+
+
+create index IF not exists idx_daily_analytics_user_date on public.ai_tutor_daily_learning_analytics using btree (user_id, analytics_date) TABLESPACE pg_default;
+
+
+create index IF not exists idx_daily_analytics_user_id on public.ai_tutor_daily_learning_analytics using btree (user_id) TABLESPACE pg_default;
+
+
+create index IF not exists idx_daily_analytics_date on public.ai_tutor_daily_learning_analytics using btree (analytics_date) TABLESPACE pg_default;
+
+
+
+
+create table public.ai_tutor_learning_milestones (
+  id uuid not null default gen_random_uuid (),
+  user_id uuid not null,
+  milestone_type text not null,
+  milestone_title text not null,
+  milestone_description text not null,
+  achievement_data jsonb null default '{}'::jsonb,
+  milestone_value text null,
+  earned_at timestamp with time zone null default now(),
+  is_notified boolean null default false,
+  created_at timestamp with time zone null default now(),
+  constraint ai_tutor_learning_milestones_pkey primary key (id),
+  constraint ai_tutor_learning_milestones_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+
+create index IF not exists idx_learning_milestones_user_type on public.ai_tutor_learning_milestones using btree (user_id, milestone_type) TABLESPACE pg_default;
+
+
+create index IF not exists idx_learning_milestones_earned on public.ai_tutor_learning_milestones using btree (earned_at) TABLESPACE pg_default;
+
+
+create index IF not exists idx_milestones_user_id on public.ai_tutor_learning_milestones using btree (user_id) TABLESPACE pg_default;
+
+
+create index IF not exists idx_milestones_type on public.ai_tutor_learning_milestones using btree (milestone_type) TABLESPACE pg_default;
+
+
+create index IF not exists idx_milestones_user_type on public.ai_tutor_learning_milestones using btree (user_id, milestone_type) TABLESPACE pg_default;
+
+
+
+
+
+
+create table public.ai_tutor_learning_unlocks (
+  id uuid not null default gen_random_uuid (),
+  user_id uuid not null,
+  stage_id integer not null,
+  exercise_id integer null,
+  is_unlocked boolean null default false,
+  unlock_criteria_met boolean null default false,
+  unlocked_at timestamp with time zone null,
+  unlocked_by_criteria text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  constraint ai_tutor_learning_unlocks_pkey primary key (id),
+  constraint ai_tutor_learning_unlocks_user_id_stage_id_exercise_id_key unique (user_id, stage_id, exercise_id),
+  constraint ai_tutor_learning_unlocks_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE,
+  constraint ai_tutor_learning_unlocks_exercise_id_check check (
+    (
+      (exercise_id >= 1)
+      and (exercise_id <= 3)
+    )
+  ),
+  constraint ai_tutor_learning_unlocks_stage_id_check check (
+    (
+      (stage_id >= 1)
+      and (stage_id <= 6)
+    )
+  )
+) TABLESPACE pg_default;
+
+
+create index IF not exists idx_learning_unlocks_user_stage on public.ai_tutor_learning_unlocks using btree (user_id, stage_id) TABLESPACE pg_default;
+
+
+create index IF not exists idx_learning_unlocks_status on public.ai_tutor_learning_unlocks using btree (is_unlocked) TABLESPACE pg_default;
+
+
+create index IF not exists idx_learning_unlocks_user_id on public.ai_tutor_learning_unlocks using btree (user_id) TABLESPACE pg_default;
+
+
+create index IF not exists idx_learning_unlocks_stage_exercise on public.ai_tutor_learning_unlocks using btree (stage_id, exercise_id) TABLESPACE pg_default;
+
+
+create index IF not exists idx_learning_unlocks_user_stage_exercise on public.ai_tutor_learning_unlocks using btree (user_id, stage_id, exercise_id) TABLESPACE pg_default;
+
+
+
+
+create table public.ai_tutor_settings (
+  id uuid not null default gen_random_uuid (),
+  user_id uuid null default auth.uid (),
+  personality_type text null default 'encouraging'::text,
+  response_style text null default 'conversational'::text,
+  adaptive_difficulty boolean null default true,
+  context_awareness boolean null default true,
+  max_response_length integer null default 150,
+  response_speed text null default 'normal'::text,
+  repetition_threshold integer null default 3,
+  error_correction_style text null default 'gentle'::text,
+  voice_enabled boolean null default true,
+  voice_gender text null default 'neutral'::text,
+  speech_rate numeric(3, 1) null default 1.0,
+  audio_feedback boolean null default true,
+  cultural_sensitivity boolean null default true,
+  age_appropriate boolean null default true,
+  professional_context boolean null default false,
+  custom_prompts text null default ''::text,
+  learning_analytics boolean null default true,
+  progress_tracking boolean null default true,
+  performance_reports boolean null default true,
+  data_retention integer null default 90,
+  multilingual_support boolean null default true,
+  emotional_intelligence boolean null default true,
+  gamification_elements boolean null default true,
+  real_time_adaptation boolean null default true,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  updated_by uuid null,
+  constraint ai_tutor_settings_pkey primary key (id),
+  constraint ai_tutor_settings_updated_by_fkey foreign KEY (updated_by) references auth.users (id),
+  constraint ai_tutor_settings_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE,
+  constraint ai_tutor_settings_created_by_fkey foreign KEY (created_by) references auth.users (id),
+  constraint ai_tutor_settings_personality_type_check check (
+    (
+      personality_type = any (
+        array[
+          'encouraging'::text,
+          'professional'::text,
+          'friendly'::text,
+          'academic'::text
+        ]
+      )
+    )
+  ),
+  constraint ai_tutor_settings_repetition_threshold_check check (
+    (
+      (repetition_threshold >= 1)
+      and (repetition_threshold <= 10)
+    )
+  ),
+  constraint ai_tutor_settings_response_speed_check check (
+    (
+      response_speed = any (array['fast'::text, 'normal'::text, 'slow'::text])
+    )
+  ),
+  constraint ai_tutor_settings_response_style_check check (
+    (
+      response_style = any (
+        array[
+          'conversational'::text,
+          'structured'::text,
+          'interactive'::text,
+          'concise'::text
+        ]
+      )
+    )
+  ),
+  constraint ai_tutor_settings_speech_rate_check check (
+    (
+      (speech_rate >= 0.5)
+      and (speech_rate <= 2.0)
+    )
+  ),
+  constraint ai_tutor_settings_voice_gender_check check (
+    (
+      voice_gender = any (
+        array['neutral'::text, 'female'::text, 'male'::text]
+      )
+    )
+  ),
+  constraint ai_tutor_settings_data_retention_check check (
+    (
+      (data_retention >= 30)
+      and (data_retention <= 365)
+    )
+  ),
+  constraint ai_tutor_settings_error_correction_style_check check (
+    (
+      error_correction_style = any (
+        array[
+          'gentle'::text,
+          'direct'::text,
+          'detailed'::text,
+          'minimal'::text
+        ]
+      )
+    )
+  ),
+  constraint ai_tutor_settings_max_response_length_check check (
+    (
+      (max_response_length >= 50)
+      and (max_response_length <= 300)
+    )
+  )
+) TABLESPACE pg_default;
+
+
+create index IF not exists idx_ai_tutor_settings_user_id on public.ai_tutor_settings using btree (user_id) TABLESPACE pg_default;
+
+
+create trigger trigger_set_ai_tutor_settings_metadata BEFORE INSERT
+or
+update on ai_tutor_settings for EACH row
+execute FUNCTION set_ai_tutor_settings_metadata ();
+
+
+
+
+create table public.ai_tutor_user_exercise_progress (
+  id serial not null,
+  user_id uuid not null,
+  stage_id integer not null,
+  exercise_id integer not null,
+  attempts integer null default 0,
+  scores numeric[] null default '{}'::numeric[],
+  last_5_scores numeric[] null default '{}'::numeric[],
+  average_score numeric(5, 2) null default 0.00,
+  urdu_used boolean[] null default '{}'::boolean[],
+  mature boolean null default false,
+  total_score numeric(5, 2) null default 0.00,
+  best_score numeric(5, 2) null default 0.00,
+  time_spent_minutes integer null default 0,
+  started_at timestamp with time zone null,
+  completed_at timestamp with time zone null,
+  last_attempt_at timestamp with time zone null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  current_topic_id integer null default 1,
+  constraint ai_tutor_user_exercise_progress_pkey primary key (id),
+  constraint ai_tutor_user_exercise_progres_user_id_stage_id_exercise_id_key unique (user_id, stage_id, exercise_id),
+  constraint ai_tutor_user_exercise_progress_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE,
+  constraint ai_tutor_user_exercise_progress_best_score_check check ((best_score >= (0)::numeric)),
+  constraint ai_tutor_user_exercise_progress_current_topic_id_check check ((current_topic_id >= 1)),
+  constraint ai_tutor_user_exercise_progress_exercise_id_check check (
+    (
+      (exercise_id >= 1)
+      and (exercise_id <= 3)
+    )
+  ),
+  constraint ai_tutor_user_exercise_progress_average_score_check check (
+    (
+      (average_score >= (0)::numeric)
+      and (average_score <= (100)::numeric)
+    )
+  ),
+  constraint ai_tutor_user_exercise_progress_stage_id_check check (
+    (
+      (stage_id >= 1)
+      and (stage_id <= 6)
+    )
+  ),
+  constraint ai_tutor_user_exercise_progress_time_spent_minutes_check check ((time_spent_minutes >= 0)),
+  constraint ai_tutor_user_exercise_progress_total_score_check check ((total_score >= (0)::numeric)),
+  constraint ai_tutor_user_exercise_progress_attempts_check check ((attempts >= 0))
+) TABLESPACE pg_default;
+
+
+create index IF not exists idx_user_exercise_progress_user_stage_exercise on public.ai_tutor_user_exercise_progress using btree (user_id, stage_id, exercise_id) TABLESPACE pg_default;
+
+
+create index IF not exists idx_user_exercise_progress_maturity on public.ai_tutor_user_exercise_progress using btree (mature) TABLESPACE pg_default;
+
+
+create index IF not exists idx_exercise_progress_user_id on public.ai_tutor_user_exercise_progress using btree (user_id) TABLESPACE pg_default;
+
+
+create index IF not exists idx_exercise_progress_stage_exercise on public.ai_tutor_user_exercise_progress using btree (stage_id, exercise_id) TABLESPACE pg_default;
+
+
+create index IF not exists idx_exercise_progress_user_stage_exercise on public.ai_tutor_user_exercise_progress using btree (user_id, stage_id, exercise_id) TABLESPACE pg_default;
+
+
+create trigger trigger_update_progress_summary_exercise
+after INSERT
+or
+update on ai_tutor_user_exercise_progress for EACH row
+execute FUNCTION update_user_progress_summary ();
+
+
+
+
+create table public.ai_tutor_user_progress_summary (
+  user_id uuid not null,
+  current_stage integer not null,
+  current_exercise integer not null,
+  topic_id integer null,
+  urdu_enabled boolean null default true,
+  unlocked_stages integer[] null default '{1}'::integer[],
+  unlocked_exercises jsonb null default '{"1": [1]}'::jsonb,
+  overall_progress_percentage numeric(5, 2) null default 0.00,
+  total_time_spent_minutes integer null default 0,
+  total_exercises_completed integer null default 0,
+  streak_days integer null default 0,
+  longest_streak integer null default 0,
+  average_session_duration_minutes numeric(5, 2) null default 0.00,
+  weekly_learning_hours numeric(4, 2) null default 0.00,
+  monthly_learning_hours numeric(5, 2) null default 0.00,
+  first_activity_date date null default CURRENT_DATE,
+  last_activity_date date null default CURRENT_DATE,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  constraint user_progress_summary_pkey primary key (user_id),
+  constraint user_progress_summary_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE,
+  constraint user_progress_summary_longest_streak_check check ((longest_streak >= 0)),
+  constraint user_progress_summary_overall_progress_percentage_check check (
+    (
+      (overall_progress_percentage >= (0)::numeric)
+      and (overall_progress_percentage <= (100)::numeric)
+    )
+  ),
+  constraint user_progress_summary_current_stage_check check (
+    (
+      (current_stage >= 1)
+      and (current_stage <= 6)
+    )
+  ),
+  constraint user_progress_summary_streak_days_check check ((streak_days >= 0)),
+  constraint user_progress_summary_total_exercises_completed_check check ((total_exercises_completed >= 0)),
+  constraint user_progress_summary_total_time_spent_minutes_check check ((total_time_spent_minutes >= 0)),
+  constraint user_progress_summary_current_exercise_check check (
+    (
+      (current_exercise >= 1)
+      and (current_exercise <= 3)
+    )
+  )
+) TABLESPACE pg_default;
+
+
+create index IF not exists idx_user_progress_summary_current on public.ai_tutor_user_progress_summary using btree (current_stage, current_exercise) TABLESPACE pg_default;
+
+
+create index IF not exists idx_user_progress_summary_activity on public.ai_tutor_user_progress_summary using btree (last_activity_date) TABLESPACE pg_default;
+
+
+create index IF not exists idx_progress_summary_user_id on public.ai_tutor_user_progress_summary using btree (user_id) TABLESPACE pg_default;
+
+
+create index IF not exists idx_progress_summary_current_stage on public.ai_tutor_user_progress_summary using btree (current_stage) TABLESPACE pg_default;
+
+
+
+
+create table public.ai_tutor_user_stage_progress (
+  id serial not null,
+  user_id uuid not null,
+  stage_id integer not null,
+  completed boolean null default false,
+  mature boolean null default false,
+  average_score numeric(5, 2) null default 0.00,
+  progress_percentage numeric(5, 2) null default 0.00,
+  total_score numeric(5, 2) null default 0.00,
+  best_score numeric(5, 2) null default 0.00,
+  time_spent_minutes integer null default 0,
+  attempts_count integer null default 0,
+  exercises_completed integer null default 0,
+  started_at timestamp with time zone null,
+  completed_at timestamp with time zone null,
+  last_attempt_at timestamp with time zone null,
+  updated_at timestamp with time zone null default now(),
+  constraint ai_tutor_user_stage_progress_pkey primary key (id),
+  constraint ai_tutor_user_stage_progress_user_id_stage_id_key unique (user_id, stage_id),
+  constraint ai_tutor_user_stage_progress_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE,
+  constraint ai_tutor_user_stage_progress_exercises_completed_check check (
+    (
+      (exercises_completed >= 0)
+      and (exercises_completed <= 3)
+    )
+  ),
+  constraint ai_tutor_user_stage_progress_attempts_count_check check ((attempts_count >= 0)),
+  constraint ai_tutor_user_stage_progress_stage_id_check check (
+    (
+      (stage_id >= 1)
+      and (stage_id <= 6)
+    )
+  ),
+  constraint ai_tutor_user_stage_progress_time_spent_minutes_check check ((time_spent_minutes >= 0)),
+  constraint ai_tutor_user_stage_progress_total_score_check check ((total_score >= (0)::numeric)),
+  constraint ai_tutor_user_stage_progress_progress_percentage_check check (
+    (
+      (progress_percentage >= (0)::numeric)
+      and (progress_percentage <= (100)::numeric)
+    )
+  ),
+  constraint ai_tutor_user_stage_progress_average_score_check check (
+    (
+      (average_score >= (0)::numeric)
+      and (average_score <= (100)::numeric)
+    )
+  ),
+  constraint ai_tutor_user_stage_progress_best_score_check check ((best_score >= (0)::numeric))
+) TABLESPACE pg_default;
+
+
+create index IF not exists idx_user_stage_progress_user_stage on public.ai_tutor_user_stage_progress using btree (user_id, stage_id) TABLESPACE pg_default;
+
+
+create index IF not exists idx_user_stage_progress_completion on public.ai_tutor_user_stage_progress using btree (completed, mature) TABLESPACE pg_default;
+
+
+create index IF not exists idx_stage_progress_user_id on public.ai_tutor_user_stage_progress using btree (user_id) TABLESPACE pg_default;
+
+
+create index IF not exists idx_stage_progress_stage_id on public.ai_tutor_user_stage_progress using btree (stage_id) TABLESPACE pg_default;
+
+
+create index IF not exists idx_stage_progress_user_stage on public.ai_tutor_user_stage_progress using btree (user_id, stage_id) TABLESPACE pg_default;
+
+
+create trigger trigger_update_progress_summary
+after INSERT
+or
+update on ai_tutor_user_stage_progress for EACH row
+execute FUNCTION update_user_progress_summary ();
+
+
+
+
+create table public.ai_tutor_user_topic_progress (
+  id serial not null,
+  user_id uuid not null,
+  stage_id integer not null,
+  exercise_id integer not null,
+  topic_id integer not null,
+  attempt_num integer not null,
+  score numeric(5, 2) null,
+  urdu_used boolean null default false,
+  completed boolean null default false,
+  started_at timestamp with time zone null default now(),
+  completed_at timestamp with time zone null,
+  total_time_seconds integer null default 0,
+  created_at timestamp with time zone null default now(),
+  constraint ai_tutor_user_topic_progress_pkey primary key (id),
+  constraint ai_tutor_user_topic_progress_user_id_stage_id_exercise_id_t_key unique (
+    user_id,
+    stage_id,
+    exercise_id,
+    topic_id,
+    attempt_num
+  ),
+  constraint ai_tutor_user_topic_progress_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE,
+  constraint ai_tutor_user_topic_progress_attempt_num_check check ((attempt_num > 0)),
+  constraint ai_tutor_user_topic_progress_total_time_seconds_check check ((total_time_seconds >= 0)),
+  constraint ai_tutor_user_topic_progress_stage_id_check check (
+    (
+      (stage_id >= 1)
+      and (stage_id <= 6)
+    )
+  ),
+  constraint ai_tutor_user_topic_progress_exercise_id_check check (
+    (
+      (exercise_id >= 1)
+      and (exercise_id <= 3)
+    )
+  ),
+  constraint ai_tutor_user_topic_progress_score_check check (
+    (
+      (score >= (0)::numeric)
+      and (score <= (100)::numeric)
+    )
+  )
+) TABLESPACE pg_default;
+
+
+create index IF not exists idx_user_topic_progress_user_topic on public.ai_tutor_user_topic_progress using btree (user_id, stage_id, exercise_id, topic_id) TABLESPACE pg_default;
+
+
+create index IF not exists idx_user_topic_progress_date on public.ai_tutor_user_topic_progress using btree (created_at) TABLESPACE pg_default;
+
+
+create index IF not exists idx_topic_progress_user_id on public.ai_tutor_user_topic_progress using btree (user_id) TABLESPACE pg_default;
+
+
+create index IF not exists idx_topic_progress_stage_exercise_topic on public.ai_tutor_user_topic_progress using btree (stage_id, exercise_id, topic_id) TABLESPACE pg_default;
+
+
+create index IF not exists idx_topic_progress_user_stage_exercise_topic on public.ai_tutor_user_topic_progress using btree (user_id, stage_id, exercise_id, topic_id) TABLESPACE pg_default;
+
+
+create index IF not exists idx_topic_progress_created_at on public.ai_tutor_user_topic_progress using btree (created_at) TABLESPACE pg_default;
+
+
+
+
+create table public.ai_tutor_weekly_progress_summaries (
+  id uuid not null default gen_random_uuid (),
+  user_id uuid not null,
+  week_start_date date not null,
+  total_sessions integer null default 0,
+  total_time_hours numeric(5, 2) null default 0.00,
+  average_daily_time_minutes numeric(5, 2) null default 0.00,
+  average_score numeric(5, 2) null default 0.00,
+  score_improvement numeric(5, 2) null default 0.00,
+  consistency_score numeric(3, 2) null default 0.00,
+  stages_completed integer null default 0,
+  exercises_mastered integer null default 0,
+  milestones_earned integer null default 0,
+  weekly_recommendations text[] null default '{}'::text[],
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  constraint ai_tutor_weekly_progress_summaries_pkey primary key (id),
+  constraint ai_tutor_weekly_progress_summaries_user_id_week_start_date_key unique (user_id, week_start_date),
+  constraint ai_tutor_weekly_progress_summaries_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE,
+  constraint ai_tutor_weekly_progress_summaries_milestones_earned_check check ((milestones_earned >= 0)),
+  constraint ai_tutor_weekly_progress_summaries_average_score_check check (
+    (
+      (average_score >= (0)::numeric)
+      and (average_score <= (100)::numeric)
+    )
+  ),
+  constraint ai_tutor_weekly_progress_summaries_total_sessions_check check ((total_sessions >= 0)),
+  constraint ai_tutor_weekly_progress_summaries_total_time_hours_check check ((total_time_hours >= (0)::numeric)),
+  constraint ai_tutor_weekly_progress_summaries_stages_completed_check check ((stages_completed >= 0)),
+  constraint ai_tutor_weekly_progress_summaries_consistency_score_check check (
+    (
+      (consistency_score >= (0)::numeric)
+      and (consistency_score <= (1)::numeric)
+    )
+  ),
+  constraint ai_tutor_weekly_progress_summaries_exercises_mastered_check check ((exercises_mastered >= 0))
+) TABLESPACE pg_default;
+
+
+create index IF not exists idx_weekly_summaries_user_week on public.ai_tutor_weekly_progress_summaries using btree (user_id, week_start_date) TABLESPACE pg_default;
+
+
+create index IF not exists idx_weekly_summaries_user_id on public.ai_tutor_weekly_progress_summaries using btree (user_id) TABLESPACE pg_default;
+
+
+create index IF not exists idx_weekly_summaries_week_start on public.ai_tutor_weekly_progress_summaries using btree (week_start_date) TABLESPACE pg_default;
+
+
+
+
+create table public.assignment_submissions (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  assignment_id uuid not null,
+  user_id uuid not null,
+  submitted_at timestamp with time zone not null default now(),
+  submission_type text not null,
+  content text null,
+  status text not null default 'submitted'::text,
+  grade integer null,
+  feedback text null,
+  graded_at timestamp with time zone null,
+  created_at timestamp with time zone not null default now(),
+  constraint assignment_submissions_pkey primary key (id),
+  constraint assignment_submissions_assignment_id_user_id_key unique (assignment_id, user_id),
+  constraint assignment_submissions_assignment_id_fkey foreign KEY (assignment_id) references course_lesson_content (id) on delete CASCADE,
+  constraint assignment_submissions_user_id_fkey foreign KEY (user_id) references profiles (id) on delete CASCADE,
+  constraint assignment_submissions_status_check check (
+    (
+      status = any (array['submitted'::text, 'graded'::text])
+    )
+  ),
+  constraint assignment_submissions_submission_type_check check (
+    (
+      submission_type = any (array['text'::text, 'file'::text, 'link'::text])
+    )
+  )
+) TABLESPACE pg_default;
+
+
+
+
+create table public.blocked_users (
+  id uuid not null default gen_random_uuid (),
+  email text not null,
+  ip_address inet null,
+  block_reason text not null,
+  blocked_at timestamp with time zone null default now(),
+  blocked_until timestamp with time zone not null,
+  attempts_count integer null default 0,
+  is_active boolean null default true,
+  metadata jsonb null default '{}'::jsonb,
+  constraint blocked_users_pkey primary key (id),
+  constraint blocked_users_email_key unique (email)
+) TABLESPACE pg_default;
+
+
+create index IF not exists idx_blocked_users_email on public.blocked_users using btree (email) TABLESPACE pg_default;
+
+
+create index IF not exists idx_blocked_users_active on public.blocked_users using btree (is_active) TABLESPACE pg_default;
+
+
+create index IF not exists idx_blocked_users_until on public.blocked_users using btree (blocked_until) TABLESPACE pg_default;
+
+
+create index IF not exists idx_blocked_users_ip on public.blocked_users using btree (ip_address) TABLESPACE pg_default;
+
+
+create trigger trigger_cleanup_expired_blocks
+after INSERT
+or
+update on blocked_users for EACH row when (new.is_active = true)
+execute FUNCTION auto_cleanup_expired_blocks ();
+
+
+create table public.conversation_participants (
+  id uuid not null default gen_random_uuid (),
+  conversation_id uuid not null,
+  user_id uuid not null,
+  role text not null default 'participant'::text,
+  joined_at timestamp with time zone null default now(),
+  left_at timestamp with time zone null,
+  is_muted boolean null default false,
+  is_blocked boolean null default false,
+  last_read_at timestamp with time zone null default now(),
+  constraint conversation_participants_pkey primary key (id),
+  constraint conversation_participants_conversation_id_user_id_key unique (conversation_id, user_id),
+  constraint conversation_participants_conversation_id_fkey foreign KEY (conversation_id) references conversations (id) on delete CASCADE,
+  constraint conversation_participants_user_id_fkey foreign KEY (user_id) references profiles (id) on delete CASCADE,
+  constraint conversation_participants_role_check check (
+    (
+      role = any (
+        array[
+          'participant'::text,
+          'admin'::text,
+          'moderator'::text
+        ]
+      )
+    )
+  )
+) TABLESPACE pg_default;
+
+
+create index IF not exists idx_conversation_participants_conversation_id on public.conversation_participants using btree (conversation_id) TABLESPACE pg_default;
+
+
+create index IF not exists idx_conversation_participants_user_id on public.conversation_participants using btree (user_id) TABLESPACE pg_default;
+
+
+create index IF not exists idx_conversation_participants_active on public.conversation_participants using btree (conversation_id, user_id) TABLESPACE pg_default
+where
+  (left_at is null);
+
+
+create trigger create_user_status_record_trigger
+after INSERT on conversation_participants for EACH row
+execute FUNCTION create_user_status_record ();
+
+
+create table public.conversations (
+  id uuid not null default gen_random_uuid (),
+  title text null,
+  type text not null default 'direct'::text,
+  created_by uuid not null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  last_message_at timestamp with time zone null default now(),
+  is_archived boolean null default false,
+  is_deleted boolean null default false,
+  constraint conversations_pkey primary key (id),
+  constraint conversations_created_by_fkey foreign KEY (created_by) references profiles (id) on delete CASCADE,
+  constraint conversations_type_check check (
+    (type = any (array['direct'::text, 'group'::text]))
+  )
+) TABLESPACE pg_default;
+
+
+create index IF not exists idx_conversations_created_by on public.conversations using btree (created_by) TABLESPACE pg_default;
+
+
+create index IF not exists idx_conversations_updated_at on public.conversations using btree (updated_at) TABLESPACE pg_default;
+
+
+create index IF not exists idx_conversations_last_message_at on public.conversations using btree (last_message_at) TABLESPACE pg_default;
+
+
+create index IF not exists idx_conversations_type on public.conversations using btree (type) TABLESPACE pg_default;
+
+
+create trigger update_conversations_updated_at BEFORE
+update on conversations for EACH row
+execute FUNCTION update_updated_at_column ();
+
+
+
+
+create table public.course_categories (
+  id bigint generated by default as identity not null,
+  name text not null,
+  created_at timestamp with time zone null default now(),
+  constraint course_categories_pkey primary key (id),
+  constraint course_categories_name_key unique (name)
+) TABLESPACE pg_default;
+
+
+
+
+create table public.course_languages (
+  id bigint generated by default as identity not null,
+  name text not null,
+  created_at timestamp with time zone not null default now(),
+  constraint course_languages_pkey primary key (id),
+  constraint course_languages_name_key unique (name)
+) TABLESPACE pg_default;
+
+
+
+
+create table public.course_languages (
+  id bigint generated by default as identity not null,
+  name text not null,
+  created_at timestamp with time zone not null default now(),
+  constraint course_languages_pkey primary key (id),
+  constraint course_languages_name_key unique (name)
+) TABLESPACE pg_default;
+
+
+create table public.course_lessons (
+  id uuid not null default gen_random_uuid (),
+  section_id uuid not null,
+  title text not null,
+  position integer not null default 0,
+  created_at timestamp with time zone not null default now(),
+  overview text null,
+  duration_text text null,
+  constraint course_lessons_pkey primary key (id),
+  constraint course_lessons_section_id_fkey foreign KEY (section_id) references course_sections (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+
+create table public.course_levels (
+  id bigint generated by default as identity not null,
+  name text not null,
+  created_at timestamp with time zone not null default now(),
+  constraint course_levels_pkey primary key (id),
+  constraint course_levels_name_key unique (name)
+) TABLESPACE pg_default;
+
+
+
+
+create table public.course_members (
+  id uuid not null default gen_random_uuid (),
+  course_id uuid not null,
+  user_id uuid not null,
+  role public.course_member_role not null,
+  created_at timestamp with time zone not null default now(),
+  constraint course_members_pkey primary key (id),
+  constraint course_members_course_user_unique unique (course_id, user_id),
+  constraint course_members_course_id_fkey foreign KEY (course_id) references courses (id) on delete CASCADE,
+  constraint course_members_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE,
+  constraint fk_course_members_user_id foreign KEY (user_id) references profiles (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+
+
+
+
+
+create table public.course_sections (
+  id uuid not null default gen_random_uuid (),
+  course_id uuid not null,
+  title text not null,
+  position integer not null default 0,
+  created_at timestamp with time zone not null default now(),
+  overview text null,
+  constraint course_sections_pkey primary key (id),
+  constraint course_sections_course_id_fkey foreign KEY (course_id) references courses (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+
+create table public.courses (
+  id uuid not null default gen_random_uuid (),
+  title text not null,
+  subtitle text null,
+  description text null,
+  image_url text null,
+  category_id integer null,
+  language_id integer null,
+  level_id integer null,
+  requirements jsonb null,
+  learning_outcomes jsonb null,
+  creator_id uuid null default auth.uid (),
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default now(),
+  author_id uuid null,
+  status text not null default 'Draft'::text,
+  duration text null,
+  published_course_id uuid null,
+  review_feedback text null,
+  constraint courses_pkey primary key (id),
+  constraint courses_category_id_fkey foreign KEY (category_id) references course_categories (id) on delete set null,
+  constraint courses_creator_id_fkey foreign KEY (creator_id) references auth.users (id) on delete set null,
+  constraint courses_language_id_fkey foreign KEY (language_id) references course_languages (id) on delete set null,
+  constraint courses_level_id_fkey foreign KEY (level_id) references course_levels (id) on delete set null,
+  constraint courses_published_course_id_fkey foreign KEY (published_course_id) references courses (id),
+  constraint courses_author_id_fkey foreign KEY (author_id) references profiles (id) on delete set null,
+  constraint courses_status_check check (
+    (
+      status = any (
+        array[
+          'Draft'::text,
+          'Published'::text,
+          'Under Review'::text,
+          'Rejected'::text
+        ]
+      )
+    )
+  )
+) TABLESPACE pg_default;
+
+
+create index IF not exists idx_courses_updated_at on public.courses using btree (updated_at desc) TABLESPACE pg_default;
+
+
+create trigger update_courses_updated_at BEFORE
+update on courses for EACH row
+execute FUNCTION update_courses_updated_at_column ();
+
+
+create table public.discussion_likes (
+  id uuid not null default gen_random_uuid (),
+  user_id uuid not null,
+  discussion_id uuid null,
+  reply_id uuid null,
+  created_at timestamp with time zone not null default now(),
+  constraint discussion_likes_pkey primary key (id),
+  constraint user_unique_reply_like unique (user_id, reply_id),
+  constraint user_unique_like unique (user_id, discussion_id),
+  constraint discussion_likes_reply_id_fkey foreign KEY (reply_id) references discussion_replies (id) on delete CASCADE,
+  constraint discussion_likes_discussion_id_fkey foreign KEY (discussion_id) references discussions (id) on delete CASCADE,
+  constraint discussion_likes_user_id_fkey foreign KEY (user_id) references profiles (id) on delete CASCADE,
+  constraint check_like_target check (
+    (
+      (
+        (discussion_id is not null)
+        and (reply_id is null)
+      )
+      or (
+        (discussion_id is null)
+        and (reply_id is not null)
+      )
+    )
+  )
+) TABLESPACE pg_default;
+
+
+
+
+create table public.discussion_participants (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  discussion_id uuid null,
+  role public.app_role not null,
+  constraint discussion_participants_pkey primary key (id),
+  constraint discussion_participants_discussion_id_role_key unique (discussion_id, role),
+  constraint discussion_participants_discussion_id_fkey foreign KEY (discussion_id) references discussions (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+
+create table public.discussion_replies (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  discussion_id uuid null,
+  user_id uuid null,
+  content text not null,
+  parent_reply_id uuid null,
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default now(),
+  constraint discussion_replies_pkey primary key (id),
+  constraint discussion_replies_discussion_id_fkey foreign KEY (discussion_id) references discussions (id) on delete CASCADE,
+  constraint discussion_replies_parent_reply_id_fkey foreign KEY (parent_reply_id) references discussion_replies (id) on delete CASCADE,
+  constraint discussion_replies_user_id_fkey foreign KEY (user_id) references profiles (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+
+
+
+create table public.discussions (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  title text not null,
+  content text not null,
+  creator_id uuid null,
+  course_id uuid null,
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default now(),
+  type text not null default 'regular'::text,
+  constraint discussions_pkey primary key (id),
+  constraint discussions_course_id_fkey foreign KEY (course_id) references courses (id) on delete set null,
+  constraint discussions_creator_id_fkey foreign KEY (creator_id) references profiles (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+
+create table public.login_attempts (
+  id uuid not null default gen_random_uuid (),
+  email text not null,
+  ip_address inet null,
+  user_agent text null,
+  attempt_time timestamp with time zone null default now(),
+  success boolean null default false,
+  failure_reason text null,
+  metadata jsonb null default '{}'::jsonb,
+  constraint login_attempts_pkey primary key (id)
+) TABLESPACE pg_default;
+
+
+create index IF not exists idx_login_attempts_email on public.login_attempts using btree (email) TABLESPACE pg_default;
+
+
+create index IF not exists idx_login_attempts_time on public.login_attempts using btree (attempt_time) TABLESPACE pg_default;
+
+
+create index IF not exists idx_login_attempts_success on public.login_attempts using btree (success) TABLESPACE pg_default;
+
+
+create index IF not exists idx_login_attempts_ip on public.login_attempts using btree (ip_address) TABLESPACE pg_default;
+
+
+create table public.message_status (
+  id uuid not null default gen_random_uuid (),
+  message_id uuid not null,
+  user_id uuid not null,
+  status text not null default 'sent'::text,
+  updated_at timestamp with time zone null default now(),
+  constraint message_status_pkey primary key (id),
+  constraint message_status_message_id_user_id_key unique (message_id, user_id),
+  constraint message_status_message_id_fkey foreign KEY (message_id) references messages (id) on delete CASCADE,
+  constraint message_status_user_id_fkey foreign KEY (user_id) references profiles (id) on delete CASCADE,
+  constraint message_status_status_check check (
+    (
+      status = any (
+        array['sent'::text, 'delivered'::text, 'read'::text]
+      )
+    )
+  )
+) TABLESPACE pg_default;
+
+
+create index IF not exists idx_message_status_message_id on public.message_status using btree (message_id) TABLESPACE pg_default;
+
+
+create index IF not exists idx_message_status_user_id on public.message_status using btree (user_id) TABLESPACE pg_default;
+
+
+create index IF not exists idx_message_status_status on public.message_status using btree (status) TABLESPACE pg_default;
+
+
+
+
+create table public.messages (
+  id uuid not null default gen_random_uuid (),
+  conversation_id uuid not null,
+  sender_id uuid not null,
+  content text not null,
+  message_type text not null default 'text'::text,
+  reply_to_id uuid null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  is_edited boolean null default false,
+  is_deleted boolean null default false,
+  metadata jsonb null default '{}'::jsonb,
+  constraint messages_pkey primary key (id),
+  constraint messages_conversation_id_fkey foreign KEY (conversation_id) references conversations (id) on delete CASCADE,
+  constraint messages_reply_to_id_fkey foreign KEY (reply_to_id) references messages (id) on delete set null,
+  constraint messages_sender_id_fkey foreign KEY (sender_id) references profiles (id) on delete CASCADE,
+  constraint messages_message_type_check check (
+    (
+      message_type = any (
+        array[
+          'text'::text,
+          'image'::text,
+          'file'::text,
+          'system'::text
+        ]
+      )
+    )
+  )
+) TABLESPACE pg_default;
+
+
+create index IF not exists idx_messages_conversation_id on public.messages using btree (conversation_id) TABLESPACE pg_default;
+
+
+create index IF not exists idx_messages_sender_id on public.messages using btree (sender_id) TABLESPACE pg_default;
+
+
+create index IF not exists idx_messages_created_at on public.messages using btree (created_at) TABLESPACE pg_default;
+
+
+create index IF not exists idx_messages_reply_to_id on public.messages using btree (reply_to_id) TABLESPACE pg_default;
+
+
+create index IF not exists idx_messages_not_deleted on public.messages using btree (conversation_id, created_at) TABLESPACE pg_default
+where
+  (is_deleted = false);
+
+
+create trigger create_message_status_records_trigger
+after INSERT on messages for EACH row
+execute FUNCTION create_message_status_records ();
+
+
+create trigger update_conversation_last_message_trigger
+after INSERT on messages for EACH row
+execute FUNCTION update_conversation_last_message ();
+
+
+create trigger update_messages_updated_at BEFORE
+update on messages for EACH row
+execute FUNCTION update_updated_at_column ();
+
+
+create table public.observation_reports (
+  id uuid not null default gen_random_uuid (),
+  observer_name character varying(255) not null,
+  observer_role character varying(50) not null,
+  school_name character varying(255) not null,
+  teacher_name character varying(255) not null,
+  observation_date date not null,
+  start_time time without time zone not null,
+  end_time time without time zone not null,
+  lesson_code character varying(100) not null,
+  project_name character varying(255) not null,
+  overall_score integer not null,
+  status character varying(20) not null default 'completed'::character varying,
+  form_data jsonb not null,
+  submitted_by uuid not null,
+  show_teal_observations boolean null default false,
+  observer_id uuid null,
+  school_id uuid null,
+  teacher_id uuid null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  constraint observation_reports_pkey primary key (id),
+  constraint observation_reports_submitted_by_fkey foreign KEY (submitted_by) references auth.users (id) on delete CASCADE,
+  constraint observation_reports_observer_role_check check (
+    (
+      (observer_role)::text = any (
+        (
+          array[
+            'principal'::character varying,
+            'ece'::character varying,
+            'school-officer'::character varying,
+            'project-manager'::character varying
+          ]
+        )::text[]
+      )
+    )
+  ),
+  constraint observation_reports_overall_score_check check (
+    (
+      (overall_score >= 0)
+      and (overall_score <= 100)
+    )
+  ),
+  constraint observation_reports_status_check check (
+    (
+      (status)::text = any (
+        (
+          array[
+            'completed'::character varying,
+            'draft'::character varying
+          ]
+        )::text[]
+      )
+    )
+  )
+) TABLESPACE pg_default;
+
+
+create index IF not exists idx_observation_reports_submitted_by on public.observation_reports using btree (submitted_by) TABLESPACE pg_default;
+
+
+create index IF not exists idx_observation_reports_created_at on public.observation_reports using btree (created_at desc) TABLESPACE pg_default;
+
+
+create index IF not exists idx_observation_reports_observation_date on public.observation_reports using btree (observation_date desc) TABLESPACE pg_default;
+
+
+create index IF not exists idx_observation_reports_observer_role on public.observation_reports using btree (observer_role) TABLESPACE pg_default;
+
+
+create index IF not exists idx_observation_reports_school_name on public.observation_reports using btree (school_name) TABLESPACE pg_default;
+
+
+create index IF not exists idx_observation_reports_status on public.observation_reports using btree (status) TABLESPACE pg_default;
+
+
+create trigger update_observation_reports_updated_at BEFORE
+update on observation_reports for EACH row
+execute FUNCTION update_updated_at_column ();
+
+
+
+
+create table public.profiles (
+  id uuid not null,
+  email text not null,
+  role public.app_role not null,
+  grade text null,
+  teacher_id text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  first_name text not null,
+  last_name text not null,
+  two_factor_backup_codes text[] null,
+  two_factor_setup_completed_at timestamp with time zone null,
+  mfa_reset_required boolean null default false,
+  mfa_reset_requested_at timestamp with time zone null,
+  metadata jsonb null default '{}'::jsonb,
+  phone_number character varying(20) null,
+  avatar_url text null,
+  notification_preferences jsonb null default '{"push": false, "inApp": true}'::jsonb,
+  theme_preference character varying(10) null default 'auto'::character varying,
+  constraint profiles_pkey primary key (id),
+  constraint profiles_email_key unique (email),
+  constraint profiles_id_fkey foreign KEY (id) references auth.users (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+
+create index IF not exists idx_profiles_backup_codes on public.profiles using gin (two_factor_backup_codes) TABLESPACE pg_default;
+
+
+create index IF not exists idx_profiles_metadata_mfa on public.profiles using btree (((metadata ->> 'mfa_enabled'::text))) TABLESPACE pg_default;
+
+
+create index IF not exists idx_profiles_phone_number on public.profiles using btree (phone_number) TABLESPACE pg_default;
+
+
+
+
+create table public.quiz_submissions (
+  id uuid not null default gen_random_uuid (),
+  user_id uuid not null,
+  lesson_id uuid not null,
+  course_id uuid not null,
+  submitted_at timestamp with time zone not null default now(),
+  answers jsonb not null,
+  score double precision null,
+  results jsonb null,
+  lesson_content_id uuid null,
+  manual_grading_required boolean not null default false,
+  manual_grading_completed boolean not null default false,
+  manual_grading_score numeric(5, 2) null,
+  manual_grading_feedback text null,
+  manual_grading_completed_at timestamp with time zone null,
+  manual_grading_completed_by uuid null,
+  constraint quiz_submissions_pkey primary key (id),
+  constraint quiz_submissions_user_lesson_content_unique unique (user_id, lesson_content_id),
+  constraint quiz_submissions_lesson_id_fkey foreign KEY (lesson_id) references course_lessons (id) on delete CASCADE,
+  constraint quiz_submissions_course_id_fkey foreign KEY (course_id) references courses (id) on delete CASCADE,
+  constraint quiz_submissions_user_id_fkey foreign KEY (user_id) references profiles (id) on delete CASCADE,
+  constraint quiz_submissions_manual_grading_completed_by_fkey foreign KEY (manual_grading_completed_by) references profiles (id),
+  constraint quiz_submissions_lesson_content_id_fkey foreign KEY (lesson_content_id) references course_lesson_content (id) on delete set null
+) TABLESPACE pg_default;
+
+
+create index IF not exists idx_quiz_submissions_manual_grading on public.quiz_submissions using btree (manual_grading_required, manual_grading_completed) TABLESPACE pg_default
+where
+  (manual_grading_required = true);
+
+
+create trigger trigger_update_quiz_grading_status BEFORE INSERT
+or
+update on quiz_submissions for EACH row
+execute FUNCTION update_quiz_submission_grading_status ();
+
+
+create table public.secure_links (
+  id uuid not null default gen_random_uuid (),
+  role character varying(50) not null,
+  observer_role character varying(50) not null,
+  token character varying(255) not null,
+  full_url text not null,
+  expiry timestamp with time zone not null,
+  status character varying(20) not null default 'active'::character varying,
+  used_by character varying(255) null,
+  used_at timestamp with time zone null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid not null,
+  expiry_days integer not null,
+  constraint secure_links_pkey primary key (id),
+  constraint secure_links_token_key unique (token),
+  constraint secure_links_created_by_fkey foreign KEY (created_by) references auth.users (id) on delete CASCADE,
+  constraint secure_links_expiry_days_check check ((expiry_days > 0)),
+  constraint secure_links_observer_role_check check (
+    (
+      (observer_role)::text = any (
+        (
+          array[
+            'principal'::character varying,
+            'ece'::character varying,
+            'school-officer'::character varying,
+            'project-manager'::character varying
+          ]
+        )::text[]
+      )
+    )
+  ),
+  constraint secure_links_role_check check (
+    (
+      (role)::text = any (
+        (
+          array[
+            'Principal'::character varying,
+            'ECE Observer'::character varying,
+            'School Officer'::character varying,
+            'Project Manager'::character varying
+          ]
+        )::text[]
+      )
+    )
+  ),
+  constraint secure_links_status_check check (
+    (
+      (status)::text = any (
+        (
+          array[
+            'active'::character varying,
+            'expired'::character varying,
+            'used'::character varying,
+            'deactivated'::character varying
+          ]
+        )::text[]
+      )
+    )
+  )
+) TABLESPACE pg_default;
+
+
+create index IF not exists idx_secure_links_created_by on public.secure_links using btree (created_by) TABLESPACE pg_default;
+
+
+create index IF not exists idx_secure_links_token on public.secure_links using btree (token) TABLESPACE pg_default;
+
+
+create index IF not exists idx_secure_links_status on public.secure_links using btree (status) TABLESPACE pg_default;
+
+
+create index IF not exists idx_secure_links_expiry on public.secure_links using btree (expiry) TABLESPACE pg_default;
+
+
+create index IF not exists idx_secure_links_created_at on public.secure_links using btree (created_at desc) TABLESPACE pg_default;
+
+
+create index IF not exists idx_secure_links_observer_role on public.secure_links using btree (observer_role) TABLESPACE pg_default;
+
+
+create index IF not exists idx_secure_links_active_expiry on public.secure_links using btree (expiry) TABLESPACE pg_default
+where
+  ((status)::text = 'active'::text);
+
+
+create trigger update_secure_links_updated_at BEFORE
+update on secure_links for EACH row
+execute FUNCTION update_secure_links_updated_at ();
+
+
+
+
+create table public.security_alerts (
+  id uuid not null default gen_random_uuid (),
+  alert_type character varying(50) not null,
+  message text not null,
+  severity character varying(20) not null,
+  metadata jsonb null default '{}'::jsonb,
+  is_resolved boolean null default false,
+  resolved_at timestamp with time zone null,
+  resolved_by uuid null,
+  created_at timestamp with time zone null default now(),
+  constraint security_alerts_pkey primary key (id),
+  constraint security_alerts_resolved_by_fkey foreign KEY (resolved_by) references auth.users (id),
+  constraint security_alerts_alert_type_check check (
+    (
+      (alert_type)::text = any (
+        (
+          array[
+            'info'::character varying,
+            'warning'::character varying,
+            'error'::character varying,
+            'success'::character varying
+          ]
+        )::text[]
+      )
+    )
+  ),
+  constraint security_alerts_severity_check check (
+    (
+      (severity)::text = any (
+        (
+          array[
+            'low'::character varying,
+            'medium'::character varying,
+            'high'::character varying,
+            'critical'::character varying
+          ]
+        )::text[]
+      )
+    )
+  )
+) TABLESPACE pg_default;
+
+
+create index IF not exists idx_security_alerts_type on public.security_alerts using btree (alert_type) TABLESPACE pg_default;
+
+
+create index IF not exists idx_security_alerts_severity on public.security_alerts using btree (severity) TABLESPACE pg_default;
+
+
+create index IF not exists idx_security_alerts_resolved on public.security_alerts using btree (is_resolved) TABLESPACE pg_default;
+
+
+
+
+create table public.security_settings (
+  id uuid not null default gen_random_uuid (),
+  setting_key character varying(100) not null,
+  setting_value text not null,
+  setting_type character varying(50) not null,
+  description text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  constraint security_settings_pkey primary key (id),
+  constraint security_settings_setting_key_key unique (setting_key),
+  constraint security_settings_setting_type_check check (
+    (
+      (setting_type)::text = any (
+        (
+          array[
+            'boolean'::character varying,
+            'integer'::character varying,
+            'string'::character varying
+          ]
+        )::text[]
+      )
+    )
+  )
+) TABLESPACE pg_default;
+
+
+create trigger update_security_settings_updated_at BEFORE
+update on security_settings for EACH row
+execute FUNCTION update_updated_at_column ();
+
+
+create table public.text_answer_grades (
+  id uuid not null default gen_random_uuid (),
+  quiz_submission_id uuid not null,
+  question_id uuid not null,
+  grade numeric(5, 2) not null,
+  feedback text null,
+  graded_by uuid not null,
+  graded_at timestamp with time zone not null default now(),
+  constraint text_answer_grades_pkey primary key (id),
+  constraint text_answer_grades_quiz_submission_id_question_id_key unique (quiz_submission_id, question_id),
+  constraint text_answer_grades_graded_by_fkey foreign KEY (graded_by) references profiles (id),
+  constraint text_answer_grades_question_id_fkey foreign KEY (question_id) references quiz_questions (id) on delete CASCADE,
+  constraint text_answer_grades_quiz_submission_id_fkey foreign KEY (quiz_submission_id) references quiz_submissions (id) on delete CASCADE,
+  constraint text_answer_grades_grade_check check (
+    (
+      (grade >= (0)::numeric)
+      and (grade <= (100)::numeric)
+    )
+  )
+) TABLESPACE pg_default;
+
+
+create index IF not exists idx_text_answer_grades_submission on public.text_answer_grades using btree (quiz_submission_id) TABLESPACE pg_default;
+
+
+create index IF not exists idx_text_answer_grades_question on public.text_answer_grades using btree (question_id) TABLESPACE pg_default;
+
+
+create index IF not exists idx_text_answer_grades_teacher on public.text_answer_grades using btree (graded_by) TABLESPACE pg_default;
+
+
+create table public.user_content_item_progress (
+  id bigint generated by default as identity not null,
+  user_id uuid not null,
+  course_id uuid not null,
+  lesson_id uuid not null,
+  lesson_content_id uuid not null,
+  status text not null default 'not_started'::text,
+  progress_data jsonb null,
+  completed_at timestamp with time zone null,
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default now(),
+  constraint user_content_item_progress_pkey primary key (id),
+  constraint user_content_item_progress_user_id_lesson_content_id_key unique (user_id, lesson_content_id),
+  constraint user_content_item_progress_course_id_fkey foreign KEY (course_id) references courses (id) on delete CASCADE,
+  constraint user_content_item_progress_lesson_content_id_fkey foreign KEY (lesson_content_id) references course_lesson_content (id) on delete CASCADE,
+  constraint user_content_item_progress_lesson_id_fkey foreign KEY (lesson_id) references course_lessons (id) on delete CASCADE,
+  constraint user_content_item_progress_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+
+
+
+create table public.user_sessions (
+  id uuid not null default gen_random_uuid (),
+  user_id uuid null,
+  session_token text not null,
+  ip_address inet null,
+  user_agent text null,
+  location text null,
+  is_active boolean null default true,
+  last_activity timestamp with time zone null default now(),
+  created_at timestamp with time zone null default now(),
+  expires_at timestamp with time zone null,
+  constraint user_sessions_pkey primary key (id),
+  constraint user_sessions_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+
+create index IF not exists idx_user_sessions_user_id on public.user_sessions using btree (user_id) TABLESPACE pg_default;
+
+
+create index IF not exists idx_user_sessions_active on public.user_sessions using btree (is_active) TABLESPACE pg_default;
+
+
+create index IF not exists idx_user_sessions_last_activity on public.user_sessions using btree (last_activity) TABLESPACE pg_default;
+
+
+create index IF not exists idx_user_sessions_expires_at on public.user_sessions using btree (expires_at) TABLESPACE pg_default;
+
+
+create trigger trigger_update_session_activity BEFORE
+update on user_sessions for EACH row
+execute FUNCTION update_session_on_access ();
+
+
+create table public.user_status (
+  id uuid not null default gen_random_uuid (),
+  user_id uuid not null,
+  status text not null default 'offline'::text,
+  last_seen_at timestamp with time zone null default now(),
+  is_typing boolean null default false,
+  typing_in_conversation uuid null,
+  updated_at timestamp with time zone null default now(),
+  constraint user_status_pkey primary key (id),
+  constraint user_status_user_id_key unique (user_id),
+  constraint user_status_typing_in_conversation_fkey foreign KEY (typing_in_conversation) references conversations (id) on delete set null,
+  constraint user_status_user_id_fkey foreign KEY (user_id) references profiles (id) on delete CASCADE,
+  constraint user_status_status_check check (
+    (
+      status = any (
+        array[
+          'online'::text,
+          'offline'::text,
+          'away'::text,
+          'busy'::text
+        ]
+      )
+    )
+  )
+) TABLESPACE pg_default;
+
+
+create index IF not exists idx_user_status_user_id on public.user_status using btree (user_id) TABLESPACE pg_default;
+
+
+create index IF not exists idx_user_status_status on public.user_status using btree (status) TABLESPACE pg_default;
+
+
+create index IF not exists idx_user_status_last_seen on public.user_status using btree (last_seen_at) TABLESPACE pg_default;
+
+
+create trigger update_user_status_updated_at BEFORE
+update on user_status for EACH row
+execute FUNCTION update_updated_at_column ();
