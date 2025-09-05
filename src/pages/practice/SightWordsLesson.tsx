@@ -225,7 +225,7 @@ const SightWordsLesson = () => {
 
     return (
         <div className="w-full">
-            <div className="relative flex items-center justify-center mb-6">
+            <div className="relative flex items-center justify-center mb-4 sm:mb-6">
                  <Button 
                     variant="outline" 
                     size="icon" 
@@ -234,29 +234,29 @@ const SightWordsLesson = () => {
                 >
                     <ArrowLeft className="h-4 w-4" />
                 </Button>
-                <div className="text-center">
-                    <div className="inline-block p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl mb-3 shadow-lg">
-                        <BookOpen className="h-8 w-8 text-primary" />
+                <div className="text-center px-12 sm:px-0">
+                    <div className="inline-block p-3 sm:p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl mb-2 sm:mb-3 shadow-lg">
+                        <BookOpen className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
                     </div>
-                    <h1 className="text-2xl font-bold text-primary">{getTitleForStep()}</h1>
-                    <p className="text-muted-foreground">Essential English Vocabulary</p>
+                    <h1 className="text-xl sm:text-2xl font-bold text-primary">{getTitleForStep()}</h1>
+                    <p className="text-muted-foreground text-sm sm:text-base">Essential English Vocabulary</p>
                 </div>
             </div>
 
-            <div className="my-6">
+            <div className="my-4 sm:my-6">
                 <Progress value={progress} className="h-2 bg-gray-200 dark:bg-gray-700" />
-                <p className="text-center text-sm text-muted-foreground mt-2">{mainStep + 1} of {totalSteps}</p>
+                <p className="text-center text-xs sm:text-sm text-muted-foreground mt-2">{mainStep + 1} of {totalSteps}</p>
             </div>
             
-            <div className="text-center mb-8">
-                 <div className="inline-block p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl mb-3 shadow-lg">
-                    <currentStepData.icon className="h-8 w-8 text-primary" />
+            <div className="text-center mb-6 sm:mb-8">
+                 <div className="inline-block p-3 sm:p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl mb-2 sm:mb-3 shadow-lg">
+                    <currentStepData.icon className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
                 </div>
-                <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{currentStepData.title}</h2>
-                <p className="text-muted-foreground max-w-md mx-auto">{currentStepData.description}</p>
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">{currentStepData.title}</h2>
+                <p className="text-muted-foreground max-w-md mx-auto text-sm sm:text-base">{currentStepData.description}</p>
             </div>
 
-            <div className="space-y-4 mb-8">
+            <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
                  {areExercises(currentPageContent) ? (
                     (currentPageContent as Exercise[]).map((exercise, index) => (
                          <Card key={index} className="p-6 bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300">
@@ -264,7 +264,7 @@ const SightWordsLesson = () => {
                                 <div className="p-2 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl"><Edit className="w-5 h-5 text-primary"/></div>
                                 <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{exercise.exercise}</h3>
                             </div>
-                            <p className="text-xl text-center my-4">{exercise.sentence.split('____').map((part, i) => (
+                            <p className="text-lg sm:text-xl text-center my-4">{exercise.sentence.split('____').map((part, i) => (
                                 <React.Fragment key={i}>
                                     {part}
                                     {i < exercise.sentence.split('____').length - 1 && <span className="inline-block w-16 h-0.5 bg-gray-300 dark:bg-gray-600 align-middle mx-2"></span>}
@@ -275,7 +275,7 @@ const SightWordsLesson = () => {
                                     <Button 
                                         key={option}
                                         variant={selectedAnswers[index] === option ? 'default' : 'outline'}
-                                        className={`h-12 text-base transition-all duration-300 ${
+                                        className={`h-11 sm:h-12 text-sm sm:text-base transition-all duration-300 ${
                                             selectedAnswers[index] === option 
                                                 ? 'bg-primary hover:bg-primary/90 shadow-lg' 
                                                 : 'hover:bg-primary/10 hover:border-primary/30'
@@ -292,9 +292,9 @@ const SightWordsLesson = () => {
                     <Card className="p-6 bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300">
                         <div className="flex items-center gap-4 mb-4">
                             <div className="p-3 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl"><Edit className="w-6 h-6 text-primary"/></div>
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">{currentPageContent.exercise}</h3>
+                            <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">{currentPageContent.exercise}</h3>
                         </div>
-                        <p className="text-2xl text-center my-6">{currentPageContent.sentence.split('____').map((part, i) => (
+                        <p className="text-xl sm:text-2xl text-center my-6">{currentPageContent.sentence.split('____').map((part, i) => (
                             <React.Fragment key={i}>
                                 {part}
                                 {i < currentPageContent.sentence.split('____').length - 1 && <span className="inline-block w-20 h-1 bg-gray-300 dark:bg-gray-600 align-middle mx-2"></span>}
@@ -305,7 +305,7 @@ const SightWordsLesson = () => {
                                 <Button 
                                     key={option}
                                     variant={selectedAnswers[subStep] === option ? 'default' : 'outline'}
-                                    className={`h-14 text-lg transition-all duration-300 ${
+                                    className={`h-12 sm:h-14 text-base sm:text-lg transition-all duration-300 ${
                                         selectedAnswers[subStep] === option 
                                             ? 'bg-primary hover:bg-primary/90 shadow-lg' 
                                             : 'hover:bg-primary/10 hover:border-primary/30'
@@ -319,17 +319,17 @@ const SightWordsLesson = () => {
                     </Card>
                 ) : (
                     (currentPageContent as Word[]).map((item, index) => (
-                        <Card key={index} className="p-6 flex items-center bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300">
+                        <Card key={index} className="p-4 sm:p-6 flex items-center bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300">
                             <div className="flex-1">
-                                <h3 className="text-2xl font-bold flex items-center gap-3 text-gray-900 dark:text-gray-100">
+                                <h3 className="text-xl sm:text-2xl font-bold flex items-center gap-2 sm:gap-3 text-gray-900 dark:text-gray-100">
                                     {item.word}
-                                    <span className="text-lg text-muted-foreground font-normal">{item.pronunciation}</span>
+                                    <span className="text-sm sm:text-lg text-muted-foreground font-normal">{item.pronunciation}</span>
                                 </h3>
-                                <p className="font-urdu text-muted-foreground text-xl">{item.translation}</p>
+                                <p className="font-urdu text-muted-foreground text-lg sm:text-xl">{item.translation}</p>
                             </div>
                             <Button 
                                 size="icon" 
-                                className={`w-14 h-14 rounded-full shadow-lg transition-all duration-300 ${
+                                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-lg transition-all duration-300 ${
                                     loadingAudio === item.word 
                                         ? 'bg-primary/60 cursor-not-allowed' 
                                         : 'bg-primary hover:bg-primary/90 hover:scale-105'
@@ -338,9 +338,9 @@ const SightWordsLesson = () => {
                                 disabled={loadingAudio === item.word}
                             >
                                 {loadingAudio === item.word ? (
-                                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
                                 ) : (
-                                    <Play className="w-6 h-6" />
+                                    <Play className="w-5 h-5 sm:w-6 sm:h-6" />
                                 )}
                             </Button>
                         </Card>
@@ -348,7 +348,7 @@ const SightWordsLesson = () => {
                 )}
             </div>
 
-            <Button size="lg" className="w-full h-16 text-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300" onClick={handleNext}>
+            <Button size="lg" className="w-full h-14 sm:h-16 text-lg sm:text-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300" onClick={handleNext}>
                 {mainStep === totalSteps - 1 && subStep === currentStepData.pages.length - 1 ? 
                     <>
                         <PartyPopper className="w-6 h-6 mr-2" />

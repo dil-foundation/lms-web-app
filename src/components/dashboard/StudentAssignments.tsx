@@ -836,12 +836,12 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
         {isCollapsed ? (
           // Slim collapsed state
           <div className="p-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <CardTitle className="text-lg text-gray-900 dark:text-gray-100 truncate">{assignment.title}</CardTitle>
                 <p className="text-sm text-muted-foreground mt-1 truncate">{assignment.courseTitle}</p>
               </div>
-              <div className="flex items-center space-x-3 ml-4">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 ml-0 sm:ml-4">
                 {/* Grade display for graded assignments */}
                 {assignment.status === 'graded' && (
                   <div className="flex items-center space-x-2">
@@ -870,7 +870,7 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
                     setSelectedAssignment(assignment);
                     setIsDetailModalOpen(true);
                   }} 
-                  className="hover:bg-primary/10 hover:border-primary/30 hover:text-gray-900 dark:hover:text-gray-100"
+                  className="hover:bg-primary/10 hover:border-primary/30 hover:text-gray-900 dark:hover:text-gray-100 w-full sm:w-auto"
                 >
                   <Eye className="h-4 w-4 mr-2" />
                   View Details
@@ -892,7 +892,7 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
           // Expanded state
           <>
             <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                 <div className="flex-1">
                   <CardTitle className="text-lg text-gray-900 dark:text-gray-100">{assignment.title}</CardTitle>
                   <p className="text-sm text-muted-foreground mt-1">{assignment.courseTitle}</p>
@@ -913,8 +913,8 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
                 <div dangerouslySetInnerHTML={{ __html: assignment.description }} />
               </div>
               
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center space-x-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm">
+                <div className="flex items-center gap-4">
                   <div className="flex items-center space-x-1">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className={isOverdue(assignment.dueDate, assignment.status) ? 'text-red-600' : ''}>
@@ -923,11 +923,11 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
                   </div>
                 </div>
                 
-                <div className="flex items-center space-x-2">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                   <Button variant="outline" size="sm" onClick={() => {
                     setSelectedAssignment(assignment);
                     setIsDetailModalOpen(true);
-                  }} className="hover:bg-primary/10 hover:border-primary/30 hover:text-gray-900 dark:hover:text-gray-100">
+                  }} className="hover:bg-primary/10 hover:border-primary/30 hover:text-gray-900 dark:hover:text-gray-100 w-full sm:w-auto">
                     <Eye className="h-4 w-4 mr-2" />
                     View Details
                   </Button>
@@ -936,7 +936,7 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
                     <Button
                       size="sm"
                       onClick={() => handleOpenSubmissionModal(assignment)}
-                      className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl"
+                      className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl w-full sm:w-auto"
                     >
                       <Edit className="h-4 w-4 mr-2" />
                       {assignment.status === 'pending' ? 'Submit' : 'Edit Submission'}
@@ -1015,17 +1015,17 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
     <div className="space-y-6">
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-8 rounded-3xl">
-          <div className="flex items-center justify-between mb-6">
+        <div className="relative p-4 md:p-8 rounded-3xl">
+          <div className="flex items-center justify-between mb-4 md:mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
-                <ClipboardList className="w-6 h-6 text-primary" />
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
+                <ClipboardList className="w-5 h-5 md:w-6 md:h-6 text-primary" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ lineHeight: '3rem' }}>
+                <h1 className="text-2xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
                   Assignments
                 </h1>
-                <p className="text-lg text-muted-foreground font-light">
+                <p className="text-sm md:text-lg text-muted-foreground font-light">
                   View and submit your course assignments.
                 </p>
               </div>
@@ -1034,21 +1034,21 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <div className="relative">
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center justify-between">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full">
+          <div className="relative w-full sm:w-auto">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search by assignment or course name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-96 bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg"
+              className="pl-10 w-full sm:w-96 bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg"
             />
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-2 sm:w-auto">
             <Filter className="h-4 w-4 text-muted-foreground" />
             <Select value={filterStatus} onValueChange={(value) => setFilterStatus(value as any)}>
-              <SelectTrigger className="w-32 bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg">
+              <SelectTrigger className="w-full sm:w-32 bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg">
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent>

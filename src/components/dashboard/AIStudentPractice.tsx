@@ -110,7 +110,7 @@ const CourseCard = ({ course }) => {
     <Card className="group overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-gradient-to-br from-card to-card/50 dark:bg-card rounded-2xl h-full flex flex-col">
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-        <img src={course.imageUrl} alt={course.title} className="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-105" />
+        <img src={course.imageUrl} alt={course.title} className="w-full h-36 sm:h-48 object-cover transition-transform duration-500 group-hover:scale-105" />
         {course.isAITutor && (
           <Badge className="absolute top-3 left-3 bg-gradient-to-r from-primary to-primary/90 text-white border-0 shadow-lg">
             <Sparkles className="w-3 h-3 mr-1" />
@@ -124,13 +124,13 @@ const CourseCard = ({ course }) => {
           </div>
         </div>
       </div>
-      <CardContent className="p-6 flex-1 flex flex-col">
+      <CardContent className="p-5 sm:p-6 flex-1 flex flex-col">
         <div className="space-y-4 flex-1 flex flex-col">
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2 line-clamp-2 leading-tight">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2 line-clamp-2 leading-tight">
               {course.title}
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-3">
               {course.description}
             </p>
           </div>
@@ -176,21 +176,21 @@ const CourseCard = ({ course }) => {
 
 export const AIStudentPractice: React.FC = () => {
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Premium Header Section */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/3 to-[#1582B4]/5 rounded-3xl"></div>
-        <div className="relative p-8 md:p-10 rounded-3xl">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
-                <PlayCircle className="w-8 h-8 text-primary" />
+        <div className="relative p-5 sm:p-8 md:p-10 rounded-3xl">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-center gap-6">
+            <div className="flex flex-col sm:flex-row items-center sm:items-center sm:justify-center gap-3 sm:gap-4 text-center">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg shrink-0">
+                <PlayCircle className="w-7 h-7 sm:w-8 sm:h-8 text-primary" />
               </div>
-              <div>
-                <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-primary leading-[1.2]">
+              <div className="space-y-1 sm:space-y-2 text-center">
+                <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight text-primary leading-[1.2]">
                   Practice Hub
                 </h1>
-                <p className="text-lg text-muted-foreground font-light mt-4 leading-relaxed">
+                <p className="text-sm sm:text-lg text-muted-foreground font-light leading-relaxed">
                   Master English through structured AI-guided practice sessions
                 </p>
               </div>
@@ -200,7 +200,7 @@ export const AIStudentPractice: React.FC = () => {
       </div>
 
       {/* Course Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
         {mockCourses.map((course) => (
           <CourseCard key={course.title} course={course} />
         ))}

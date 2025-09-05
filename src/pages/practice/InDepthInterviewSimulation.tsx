@@ -272,29 +272,29 @@ export default function InDepthInterviewSimulation() {
       <div className="min-h-screen bg-background">
         <div className="max-w-4xl mx-auto">
           {/* Consistent Header Section */}
-          <div className="px-6 py-8">
+          <div className="px-4 sm:px-6 py-6 sm:py-8">
             {/* Breadcrumb Navigation */}
             <PracticeBreadcrumb className="mb-6" />
             
             {/* Header with Back Button and Title */}
-            <div className="relative flex items-center justify-center mb-8 text-center">
+            <div className="relative flex items-center justify-center mb-6 sm:mb-8 text-center">
               <Button
                 variant="outline"
                 size="icon"
                 onClick={() => navigate('/dashboard/practice/stage-5')}
-                className="absolute left-0 group w-12 h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                className="absolute left-0 group w-10 h-10 sm:w-12 sm:h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
               >
-                <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-300" />
+                <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 group-hover:-translate-x-1 transition-transform duration-300" />
               </Button>
               
-              <div className="space-y-3">
-                <div className="inline-block p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
-                  <Building2 className="h-10 w-10 text-primary" />
+              <div className="space-y-2 sm:space-y-3 px-12 sm:px-0">
+                <div className="inline-block p-3 sm:p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
+                  <Building2 className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
                 </div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                   In-Depth Interview
                 </h1>
-                <p className="text-muted-foreground text-lg">
+                <p className="text-muted-foreground text-base sm:text-lg">
                   Practice professional interview scenarios with detailed feedback
                 </p>
               </div>
@@ -357,29 +357,29 @@ export default function InDepthInterviewSimulation() {
       <div className="min-h-screen bg-background">
         <div className="max-w-4xl mx-auto">
           {/* Consistent Header Section */}
-          <div className="px-6 py-8">
+          <div className="px-4 sm:px-6 py-6 sm:py-8">
             {/* Breadcrumb Navigation */}
             <PracticeBreadcrumb className="mb-6" />
             
             {/* Header with Back Button and Title */}
-            <div className="relative flex items-center justify-center mb-8 text-center">
+            <div className="relative flex items-center justify-center mb-6 sm:mb-8 text-center">
               <Button
                 variant="outline"
                 size="icon"
                 onClick={() => setSelectedPrompt(null)}
-                className="absolute left-0 group w-12 h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                className="absolute left-0 group w-10 h-10 sm:w-12 sm:h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
               >
-                <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-300" />
+                <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 group-hover:-translate-x-1 transition-transform duration-300" />
               </Button>
               
-              <div className="space-y-3">
-                <div className="inline-block p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
-                  <Building2 className="h-10 w-10 text-primary" />
+              <div className="space-y-2 sm:space-y-3 px-12 sm:px-0">
+                <div className="inline-block p-3 sm:p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
+                  <Building2 className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
                 </div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                   In-Depth Interview
                 </h1>
-                <p className="text-muted-foreground text-lg">
+                <p className="text-muted-foreground text-base sm:text-lg">
                   Practice professional interview scenarios with detailed feedback
                 </p>
               </div>
@@ -628,12 +628,12 @@ export default function InDepthInterviewSimulation() {
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto">
         {/* Consistent Header Section */}
-        <div className="px-6 py-8">
+        <div className="px-4 sm:px-6 py-6 sm:py-8">
           {/* Breadcrumb Navigation */}
           <PracticeBreadcrumb className="mb-6" />
           
           {/* Header with Back Button and Title */}
-          <div className="relative flex items-center justify-center mb-8 text-center">
+          <div className="relative flex items-center justify-center mb-6 sm:mb-8 text-center">
             <Button
               variant="outline"
               size="icon"
@@ -654,19 +654,19 @@ export default function InDepthInterviewSimulation() {
                   stopAudio();
                 }
               }}
-              className="absolute left-0 group w-12 h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+              className="absolute left-0 group w-10 h-10 sm:w-12 sm:h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
             >
-              <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-300" />
+              <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 group-hover:-translate-x-1 transition-transform duration-300" />
             </Button>
             
-            <div className="space-y-3">
-              <div className="inline-block p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
-                <Building2 className="h-10 w-10 text-primary" />
+            <div className="space-y-2 sm:space-y-3 px-12 sm:px-0">
+              <div className="inline-block p-3 sm:p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
+                <Building2 className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
               </div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                 In-Depth Interview
               </h1>
-              <p className="text-muted-foreground text-lg">
+              <p className="text-muted-foreground text-base sm:text-lg">
                 Practice professional interview scenarios with detailed feedback
                 </p>
             </div>

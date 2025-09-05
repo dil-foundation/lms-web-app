@@ -356,29 +356,29 @@ export default function SensitiveScenarioRoleplay() {
       <div className="min-h-screen bg-background">
         <div className="max-w-4xl mx-auto">
           {/* Consistent Header Section */}
-          <div className="px-6 py-8">
+          <div className="px-4 sm:px-6 py-6 sm:py-8">
             {/* Breadcrumb Navigation */}
             <PracticeBreadcrumb className="mb-6" />
             
             {/* Header with Back Button and Title */}
-            <div className="relative flex items-center justify-center mb-8 text-center">
+            <div className="relative flex items-center justify-center mb-6 sm:mb-8 text-center">
               <Button
                 variant="outline"
                 size="icon"
                 onClick={() => navigate('/dashboard/practice/stage-6')}
-                className="absolute left-0 group w-12 h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                className="absolute left-0 group w-10 h-10 sm:w-12 sm:h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
               >
-                <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-300" />
+                <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 group-hover:-translate-x-1 transition-transform duration-300" />
               </Button>
               
-              <div className="space-y-3">
-                <div className="inline-block p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
-                  <Users className="h-10 w-10 text-primary" />
+              <div className="space-y-2 sm:space-y-3 px-12 sm:px-0">
+                <div className="inline-block p-3 sm:p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
+                  <Users className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
                 </div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                   Sensitive Scenario Roleplay
                 </h1>
-                <p className="text-muted-foreground text-lg">
+                <p className="text-muted-foreground text-base sm:text-lg">
                   Practice handling sensitive situations with empathy and communication skills
                 </p>
               </div>
@@ -386,10 +386,10 @@ export default function SensitiveScenarioRoleplay() {
           </div>
 
           {/* Main Content Area */}
-          <div className="px-6 pb-8 space-y-6">
+          <div className="px-4 sm:px-6 pb-8 space-y-6">
             {/* Scenario Selection */}
             <div className="text-center">
-              <p className="text-muted-foreground text-lg">Click on a scenario to start the roleplay immediately</p>
+              <p className="text-muted-foreground text-sm sm:text-lg">Click on a scenario to start the roleplay immediately</p>
             </div>
 
             {scenarios.length > 0 ? (
@@ -400,18 +400,18 @@ export default function SensitiveScenarioRoleplay() {
                     className="cursor-pointer transition-all hover:shadow-xl hover:scale-[1.02] border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden"
                     onClick={() => handleScenarioClick(scenario)}
                   >
-                    <CardContent className="p-6">
-                      <div className="flex items-center space-x-4">
-                        <div className="w-14 h-14 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center flex-shrink-0 border border-primary/30">
-                          <Users className="h-7 w-7 text-white" />
+                    <CardContent className="p-5 sm:p-6">
+                      <div className="flex items-center space-x-3 sm:space-x-4">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center flex-shrink-0 border border-primary/30">
+                          <Users className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
-                              <span className="font-semibold text-primary text-base">Context:</span> {scenario.context}
+                              <span className="font-semibold text-primary text-sm sm:text-base">Context:</span> {scenario.context}
                             </div>
                             {(scenario.difficulty || scenario.difficulty_level) && (
-                              <span className={`px-4 py-2 rounded-full text-sm font-medium ml-4 flex-shrink-0 border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm ${
+                              <span className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium ml-3 sm:ml-4 flex-shrink-0 border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm ${
                                 (scenario.difficulty === 'Advanced' || scenario.difficulty_level === 'Advanced')
                                   ? 'text-red-600 dark:text-red-400' 
                                   : (scenario.difficulty === 'Intermediate' || scenario.difficulty_level === 'Intermediate')
@@ -541,11 +541,11 @@ export default function SensitiveScenarioRoleplay() {
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
-                        <h2 className="text-2xl font-bold text-primary mb-3">
+                        <h2 className="text-xl sm:text-2xl font-bold text-primary mb-2 sm:mb-3">
                           {selectedScenario.title}
                         </h2>
                         {selectedScenario.description && (
-                          <p className="text-muted-foreground mb-4 leading-relaxed text-base">
+                          <p className="text-muted-foreground mb-3 sm:mb-4 leading-relaxed text-sm sm:text-base">
                             {selectedScenario.description}
                           </p>
                         )}
@@ -555,7 +555,7 @@ export default function SensitiveScenarioRoleplay() {
                         <Button
                           onClick={handlePlayAudio}
                           disabled={isLoadingAudio}
-                          className={`w-16 h-16 rounded-full shadow-lg transition-all duration-300 ${
+                          className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full shadow-lg transition-all duration-300 ${
                             isLoadingAudio
                               ? 'bg-gray-600 cursor-not-allowed text-white border-2 border-gray-500'
                               : isPlayingAudio
@@ -565,11 +565,11 @@ export default function SensitiveScenarioRoleplay() {
                           size="icon"
                         >
                           {isLoadingAudio ? (
-                            <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                            <div className="w-7 h-7 sm:w-8 sm:h-8 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
                           ) : isPlayingAudio ? (
-                            <Pause className="w-8 h-8" />
+                            <Pause className="w-7 h-7 sm:w-8 sm:h-8" />
                           ) : (
-                            <Play className="w-8 h-8" />
+                            <Play className="w-7 h-7 sm:w-8 sm:h-8" />
                           )}
                         </Button>
                         
@@ -627,20 +627,20 @@ export default function SensitiveScenarioRoleplay() {
                         <Zap className="h-5 w-5 text-white" />
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-semibold text-[#1582B4] mb-3 text-lg">
+                        <h3 className="font-semibold text-[#1582B4] mb-2 sm:mb-3 text-base sm:text-lg">
                           Expected Keywords & Concepts
                         </h3>
                         <div className="flex flex-wrap gap-2 mb-3">
                           {selectedScenario.expected_keywords.map((keyword, index) => (
                             <span 
                               key={index}
-                              className="px-4 py-2 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm text-[#1582B4] text-sm rounded-full border border-primary/30 font-medium"
+                              className="px-3 py-1.5 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm text-[#1582B4] text-xs sm:text-sm rounded-full border border-primary/30 font-medium"
                             >
                               {keyword}
                             </span>
                           ))}
                         </div>
-                        <p className="text-muted-foreground text-base">
+                        <p className="text-muted-foreground text-sm sm:text-base">
                           Try to incorporate these concepts naturally in your responses to demonstrate professional communication skills.
                         </p>
                       </div>
@@ -779,7 +779,7 @@ export default function SensitiveScenarioRoleplay() {
             {!isRecording && !isEvaluating ? (
               <Button
                 onClick={handleStartRecording}
-                  className="group bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white px-12 py-4 rounded-2xl text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none"
+                  className="group bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white w-full sm:w-auto px-10 sm:px-12 py-3 sm:py-4 rounded-2xl text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none"
                 size="lg"
                 disabled={!selectedScenario}
               >
@@ -791,7 +791,7 @@ export default function SensitiveScenarioRoleplay() {
             ) : isRecording ? (
               <Button
                 onClick={handleStopRecording}
-                  className="group bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-12 py-4 rounded-2xl text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:scale-105"
+                  className="group bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white w-full sm:w-auto px-10 sm:px-12 py-3 sm:py-4 rounded-2xl text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:scale-105"
                 size="lg"
               >
                   <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center mr-3 group-hover:bg-white/30 transition-all duration-300">
@@ -803,11 +803,11 @@ export default function SensitiveScenarioRoleplay() {
             </div>
 
             {/* Secondary Action Buttons */}
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4">
                 <Button
                   onClick={resetRoleplay}
                   variant="outline"
-                className="group px-8 py-3 rounded-2xl border-2 border-primary/20 hover:border-primary/40 hover:bg-primary/5 hover:text-primary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg font-medium text-primary hover:bg-gradient-to-r hover:from-primary/5 hover:to-primary/10"
+                className="group w-full sm:w-auto px-8 py-3 rounded-2xl border-2 border-primary/20 hover:border-primary/40 hover:bg-primary/5 hover:text-primary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg font-medium text-primary hover:bg-gradient-to-r hover:from-primary/5 hover:to-primary/10"
                 >
                 <Users className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform duration-300" />
                   Choose Different Scenario
@@ -815,7 +815,7 @@ export default function SensitiveScenarioRoleplay() {
                 <Button
                   onClick={() => navigate('/dashboard/practice/stage-6')}
                   variant="outline"
-                className="group px-8 py-3 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg font-medium text-secondary hover:bg-gradient-to-r hover:from-secondary/5 hover:to-secondary/10"
+                className="group w-full sm:w-auto px-8 py-3 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg font-medium text-secondary hover:bg-gradient-to-r hover:from-secondary/5 hover:to-secondary/10"
                 >
                 <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform duration-300" />
                   Back to Stage 6
