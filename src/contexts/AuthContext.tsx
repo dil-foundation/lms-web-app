@@ -81,10 +81,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
           return;
         }
+        
+        // For other errors, still set loading to false to prevent infinite loading
+        console.warn('Session error (non-user_not_found), setting loading to false');
+        setSession(null);
+        setUser(null);
+        setLoading(false);
+        return;
       }
       
       setSession(session);
       setUser(session?.user ?? null);
+      setLoading(false);
+    }).catch((catchError) => {
+      // Handle any unexpected errors in the promise chain
+      console.error('Unexpected error in getSession:', catchError);
+      setSession(null);
+      setUser(null);
       setLoading(false);
     });
     
@@ -109,8 +122,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               navigate('/auth', { replace: true });
               return;
             }
+            
+            // Update session state after successful token refresh
+            console.log('🔄 Token refreshed successfully, updating session state');
+            setSession(session);
+            setUser(session.user);
           } catch (profileError) {
             console.error('Error checking user profile during auth state change:', profileError);
+            // Even if profile check fails, still update the session state
+            setSession(session);
+            setUser(session.user);
           }
         }
         

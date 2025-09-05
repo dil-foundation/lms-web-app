@@ -17,25 +17,33 @@ const SupabaseMFAService = {
   // Get MFA status for current user
   getMFAStatus: async (): Promise<MFAStatus> => {
     try {
+      console.log('🔐 Getting MFA status...');
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
+        console.log('🔐 No user found, returning default MFA status');
         throw new Error('User not authenticated');
       }
 
+      console.log('🔐 User found, listing MFA factors...');
       const { data: factors, error } = await supabase.auth.mfa.listFactors();
-      if (error) throw error;
+      if (error) {
+        console.error('🔐 Error listing MFA factors:', error);
+        throw error;
+      }
       
+      console.log('🔐 MFA factors retrieved:', factors);
       const totpFactor = factors.totp?.[0];
       const isEnabled = totpFactor?.status === 'verified';
       const isSetupComplete = isEnabled;
 
+      console.log('🔐 MFA status determined:', { isEnabled, isSetupComplete });
       return {
         isEnabled,
         isSetupComplete,
         factors: factors.totp || []
       };
     } catch (error) {
-      console.error('Error getting MFA status:', error);
+      console.error('🔐 Error getting MFA status:', error);
       return {
         isEnabled: false,
         isSetupComplete: false,
@@ -504,11 +512,14 @@ const SupabaseMFAService = {
   // Check if MFA is required for the current user
   checkMFARequirement: async (): Promise<boolean> => {
     try {
+      console.log('🔐 Checking MFA requirement...');
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) {
+        console.log('🔐 No user found for MFA requirement check');
         return false;
       }
 
+      console.log('🔐 User found, checking profile...');
       // Get user profile to check role and MFA reset status
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
@@ -517,16 +528,21 @@ const SupabaseMFAService = {
         .single();
 
       if (profileError) {
+        console.error('🔐 Error getting user profile:', profileError);
         return false;
       }
 
+      console.log('🔐 Profile retrieved:', { role: profile.role, mfa_reset_required: profile.mfa_reset_required });
+
       // If MFA reset is required, force factor removal and MFA setup
       if (profile.mfa_reset_required) {
+        console.log('🔐 MFA reset required, forcing MFA setup');
         // Call the database function to remove factors
         const { data: resetResult, error: resetError } = await supabase
           .rpc('force_mfa_reset_for_user', { target_user_id: user.id });
 
         if (resetError) {
+          console.error('🔐 Error in MFA reset:', resetError);
           // Even if reset fails, still force MFA setup
           return true;
         }
@@ -535,17 +551,20 @@ const SupabaseMFAService = {
         return true;
       }
 
+      console.log('🔐 Checking MFA requirement for role:', profile.role);
       // Use database function to check MFA requirement based on role
       const { data: mfaRequired, error: functionError } = await supabase
         .rpc('check_mfa_requirement', { user_role: profile.role });
 
       if (functionError) {
+        console.error('🔐 Error checking MFA requirement:', functionError);
         return false;
       }
 
+      console.log('🔐 MFA requirement result:', mfaRequired);
       return mfaRequired;
     } catch (error) {
-      console.error('Error in checkMFARequirement:', error);
+      console.error('🔐 Error in checkMFARequirement:', error);
       return false;
     }
   },
