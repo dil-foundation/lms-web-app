@@ -99,7 +99,6 @@ const Dashboard = () => {
   
   useEffect(() => {
     if (!authLoading && !user) {
-      console.log('🔐 No user found and auth not loading, redirecting to auth page');
       navigate('/auth', { replace: true });
     }
   }, [authLoading, user, navigate]);
@@ -121,11 +120,6 @@ const Dashboard = () => {
   const currentRole = profile?.role as UserRole | undefined;
   
   const isLoading = authLoading || (user && profileLoading) || maintenanceLoading;
-  
-  // Don't show loading screen if there's no user and auth is not loading
-  if (!authLoading && !user) {
-    return null; // This will trigger the redirect in useEffect
-  }
 
   const DashboardContent = () => {
     // Check for maintenance mode (only for students and teachers)

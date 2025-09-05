@@ -40,6 +40,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
       
       if (error && error.code === 'PGRST116') {
         // User not found in database, sign them out
+        console.warn('User not found in database, signing out automatically');
         await supabase.auth.signOut({ scope: 'global' });
         
         // Clear local storage
@@ -55,7 +56,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
         }
       }
     } catch (profileError) {
-      // Silently handle profile check errors
+      console.error('Error checking user profile:', profileError);
     }
   }
 });
