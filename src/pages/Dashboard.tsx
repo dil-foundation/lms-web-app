@@ -76,6 +76,7 @@ const AISafetyEthicsSettings = lazy(() => import('@/components/admin/AISafetyEth
 const IntegrationAPIs = lazy(() => import('@/components/admin/IntegrationAPIs').then(module => ({ default: module.IntegrationAPIs })));
 const Multitenancy = lazy(() => import('@/components/admin/Multitenancy').then(module => ({ default: module.Multitenancy })));
 const OfflineLearning = lazy(() => import('@/components/admin/OfflineLearning').then(module => ({ default: module.OfflineLearning })));
+const CourseCategories = lazy(() => import('@/components/admin/CourseCategories').then(module => ({ default: module.CourseCategories })));
 const CourseBuilder = lazy(() => import('./CourseBuilder'));
 const CourseOverview = lazy(() => import('./CourseOverview').then(module => ({ default: module.CourseOverview })));
 const CourseContent = lazy(() => import('./CourseContent').then(module => ({ default: module.CourseContent })));
@@ -263,6 +264,7 @@ const Dashboard = () => {
                           <Route path="/courses" element={<CourseManagement />} />
                           <Route path="/courses/builder/:courseId" element={<CourseBuilder />} />
                           <Route path="/students" element={<StudentsPage />} />
+                          <Route path="/classes" element={<ClassManagement />} />
                           <Route path="/reports" element={<ReportsPage />} />
                           <Route path="/grade-assignments" element={<GradeAssignments />} />
                           <Route path="/grade-assignments/:id" element={<AssignmentSubmissions />} />
@@ -318,7 +320,8 @@ const Dashboard = () => {
                         <>
                           <Route path="/users" element={<UsersManagement />} />
                           <Route path="/classes" element={<ClassManagement />} />
-                <Route path="/courses" element={<CourseManagement />} />
+                          <Route path="/courses" element={<CourseManagement />} />
+                          <Route path="/course-categories" element={<CourseCategories />} />
                           <Route path="/courses/builder/:courseId" element={<CourseBuilder />} />
                           <Route path="/reports" element={<ReportsOverview />} />
                           <Route path="/observation-reports" element={<ObservationReports />} />

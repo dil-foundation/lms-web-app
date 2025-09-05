@@ -106,6 +106,7 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean): N
           title: 'CLASSROOM',
           items: [
             { title: 'Students', path: '/dashboard/students', icon: Users },
+            { title: 'Classes', path: '/dashboard/classes', icon: Users2 },
             { title: 'Assessments', path: '/dashboard/grade-assignments', icon: Award },
             { title: 'Reports', path: '/dashboard/reports', icon: FileQuestion },
           ]
@@ -134,6 +135,7 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean): N
             { title: 'Users', path: '/dashboard/users', icon: Users },
             { title: 'Classes', path: '/dashboard/classes', icon: Users2 },
             { title: 'Courses', path: '/dashboard/courses', icon: BookOpen },
+            { title: 'Course Categories', path: '/dashboard/course-categories', icon: BookCheck },
             { title: 'Assessments', path: '/dashboard/grade-assignments', icon: Award },
             { title: 'Messages', path: '/dashboard/messages', icon: MessageSquare },
             { title: 'Discussion', path: '/dashboard/discussion', icon: MessageCircle },

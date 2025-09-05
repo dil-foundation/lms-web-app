@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Save, Eye, Upload, Plus, GripVertical, X, ChevronDown, ChevronUp, BookOpen, Info, UploadCloud, FileText } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Upload, Plus, GripVertical, X, ChevronDown, ChevronUp, BookOpen, Info, UploadCloud, FileText, RefreshCw, Calendar, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import { FileUpload } from '@/components/ui/FileUpload';
 import { RichTextEditor } from '@/components/ui/RichTextEditor';
@@ -177,6 +177,46 @@ const MOCK_USER_DATABASE = [
 
 const MOCK_TEACHERS_FOR_SELECT = MOCK_USER_DATABASE.filter(u => u.role === 'teacher').map(u => ({ label: `${u.name} (${u.email})`, value: u.id }));
 const MOCK_STUDENTS_FOR_SELECT = MOCK_USER_DATABASE.filter(u => u.role === 'student').map(u => ({ label: `${u.name} (${u.email})`, value: u.id }));
+
+// Mock Classes Data
+const MOCK_CLASSES: Class[] = [
+  {
+    id: 'class-1',
+    name: 'Advanced Mathematics',
+    description: 'Advanced calculus and linear algebra for engineering students',
+    schedule: 'Mon, Wed, Fri 10:00 AM - 11:30 AM',
+    capacity: 30,
+    enrolled_students: 24,
+    teacher: { id: 'inst1', name: 'Dr. Evelyn Reed', email: 'e.reed@example.com' },
+    status: 'active',
+    created_at: '2024-01-15',
+    updated_at: '2024-01-20'
+  },
+  {
+    id: 'class-2',
+    name: 'Introduction to Programming',
+    description: 'Basic programming concepts using Python',
+    schedule: 'Tue, Thu 2:00 PM - 3:30 PM',
+    capacity: 25,
+    enrolled_students: 25,
+    teacher: { id: 'inst2', name: 'Mr. David Chen', email: 'd.chen@example.com' },
+    status: 'active',
+    created_at: '2024-01-10',
+    updated_at: '2024-01-18'
+  },
+  {
+    id: 'class-3',
+    name: 'Data Structures & Algorithms',
+    description: 'Comprehensive study of data structures and algorithmic problem solving',
+    schedule: 'Mon, Wed 1:00 PM - 2:30 PM',
+    capacity: 20,
+    enrolled_students: 18,
+    teacher: { id: 'inst3', name: 'Prof. Ana Silva', email: 'a.silva@example.com' },
+    status: 'active',
+    created_at: '2024-01-12',
+    updated_at: '2024-01-19'
+  }
+];
 // #endregion
 
 interface Profile {
@@ -186,6 +226,19 @@ interface Profile {
   email: string;
   role: 'admin' | 'teacher' | 'student';
   avatar_url?: string;
+}
+
+interface Class {
+  id: string;
+  name: string;
+  description: string;
+  schedule: string;
+  capacity: number;
+  enrolled_students: number;
+  teacher: { id: string; name: string; email: string; avatar_url?: string };
+  status: 'active' | 'inactive' | 'completed';
+  created_at: string;
+  updated_at: string;
 }
 
 // #region LessonItem Component
@@ -1334,6 +1387,7 @@ const CourseBuilder = () => {
   const [isLoadingPage, setIsLoadingPage] = useState(true);
   const [showContentTypeSelector, setShowContentTypeSelector] = useState(false);
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
+  const [classes, setClasses] = useState<Class[]>(MOCK_CLASSES);
   const [courseData, setCourseData] = useState<CourseData>(() => ({
     title: '',
     subtitle: '',
@@ -4353,6 +4407,151 @@ const CourseBuilder = () => {
             </TabsContent>
 
             <TabsContent value="access" className="space-y-6">
+              {/* Classes Management Card */}
+              <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-card to-card/50 dark:bg-card">
+                <CardHeader className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 pb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl flex items-center justify-center">
+                        <BookOpen className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 dark:from-white dark:via-gray-100 dark:to-gray-200 bg-clip-text text-transparent">
+                          Manage Classes
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Organize students into classes with specific schedules and teachers
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-700">
+                        {classes.length} Classes
+                      </Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-3 text-xs bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-700 rounded-lg"
+                      >
+                        <Plus className="w-3 h-3 mr-1" />
+                        Add Class
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-6 space-y-4">
+                  {/* Classes List */}
+                  {classes.length > 0 ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
+                          Current Classes
+                        </h4>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-3 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+                          >
+                            <RefreshCw className="w-3 h-3 mr-1" />
+                            Refresh
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      {/* Classes Grid */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {classes.map(classItem => (
+                          <div key={classItem.id} className="group p-4 bg-gradient-to-r from-purple-50/50 to-purple-100/50 dark:from-purple-900/10 dark:to-purple-800/10 rounded-xl border border-purple-200/50 dark:border-purple-700/30 hover:border-purple-300 dark:hover:border-purple-600 transition-all duration-300 hover:scale-[1.02]">
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex-1 min-w-0">
+                                <h5 className="font-semibold text-gray-900 dark:text-white text-sm truncate mb-1">
+                                  {classItem.name}
+                                </h5>
+                                <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 mb-2">
+                                  {classItem.description}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-1 ml-2">
+                                <Badge 
+                                  variant={classItem.status === 'active' ? 'default' : 'secondary'}
+                                  className={`text-xs ${
+                                    classItem.status === 'active' 
+                                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' 
+                                      : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+                                  }`}
+                                >
+                                  {classItem.status}
+                                </Badge>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 rounded-lg"
+                                >
+                                  <X className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            </div>
+                            
+                            {/* Class Stats */}
+                            <div className="flex items-center justify-between text-xs">
+                              <div className="flex items-center gap-4">
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 px-2 text-xs text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/20 rounded-lg"
+                                >
+                                  <Eye className="w-3 h-3 mr-1" />
+                                  View
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 px-2 text-xs text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/20 rounded-lg"
+                                >
+                                  <Edit className="w-3 h-3 mr-1" />
+                                  Edit
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                      <div className="w-16 h-16 mx-auto mb-3 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                        <BookOpen className="w-8 h-8" />
+                      </div>
+                      <p className="text-sm font-medium mb-1">No classes created yet</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">Create your first class to organize students</p>
+                    </div>
+                  )}
+
+                  {/* Class Management Info */}
+                  <div className="mt-6 p-4 bg-gradient-to-r from-purple-50/50 to-indigo-50/50 dark:from-purple-900/10 dark:to-indigo-900/10 rounded-xl border border-purple-200/50 dark:border-purple-700/30">
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Info className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <div className="space-y-2">
+                        <h4 className="font-semibold text-purple-900 dark:text-purple-100 text-sm">
+                          Class Management Benefits
+                        </h4>
+                        <ul className="text-xs text-purple-800 dark:text-purple-200 space-y-1">
+                          <li>• Organize students into manageable groups with specific schedules</li>
+                          <li>• Assign dedicated teachers to each class for better instruction</li>
+                          <li>• Track enrollment capacity and manage class sizes</li>
+                          <li>• Monitor class-specific progress and engagement</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Teachers Management Card */}
               <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-card to-card/50 dark:bg-card">
                 <CardHeader className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 pb-4">
@@ -4601,7 +4800,7 @@ const CourseBuilder = () => {
                         </p>
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="space-y-3">
                           <h4 className="font-semibold text-blue-900 dark:text-blue-100 flex items-center gap-2 text-sm">
                             <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
@@ -4625,6 +4824,19 @@ const CourseBuilder = () => {
                             <li>• Submit assignments and take quizzes</li>
                             <li>• Track learning progress</li>
                             <li>• Participate in discussions</li>
+                          </ul>
+                        </div>
+
+                        <div className="space-y-3">
+                          <h4 className="font-semibold text-blue-900 dark:text-blue-100 flex items-center gap-2 text-sm">
+                            <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                            Classes ({classes.length})
+                          </h4>
+                          <ul className="text-xs text-blue-800 dark:text-blue-200 space-y-1">
+                            <li>• Organize students into groups</li>
+                            <li>• Set specific schedules and capacity</li>
+                            <li>• Assign dedicated teachers</li>
+                            <li>• Track class-specific progress</li>
                           </ul>
                         </div>
                       </div>

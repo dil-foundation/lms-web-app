@@ -69,10 +69,6 @@ interface School {
   phone: string;
   email: string;
   website: string;
-  principal: string;
-  established_year: number;
-  total_students: number;
-  total_teachers: number;
   created_at: string;
   updated_at: string;
 }
@@ -185,10 +181,6 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       phone: '+92-42-1234567',
       email: 'info@beaconhouse.edu.pk',
       website: 'www.beaconhouse.edu.pk',
-      principal: 'Dr. Sarah Ahmed',
-      established_year: 1975,
-      total_students: 2500,
-      total_teachers: 180,
       created_at: '2024-01-15',
       updated_at: '2024-01-15'
     },
@@ -204,10 +196,6 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       phone: '+92-42-2345678',
       email: 'info@lgs.edu.pk',
       website: 'www.lgs.edu.pk',
-      principal: 'Mr. Ali Hassan',
-      established_year: 1979,
-      total_students: 3000,
-      total_teachers: 220,
       created_at: '2024-01-15',
       updated_at: '2024-01-15'
     },
@@ -223,10 +211,6 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       phone: '+92-21-3456789',
       email: 'info@kps.edu.pk',
       website: 'www.kps.edu.pk',
-      principal: 'Ms. Fatima Khan',
-      established_year: 1985,
-      total_students: 1800,
-      total_teachers: 120,
       created_at: '2024-01-15',
       updated_at: '2024-01-15'
     }
@@ -292,11 +276,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     board: '',
     phone: '',
     email: '',
-    website: '',
-    principal: '',
-    established_year: '',
-    total_students: '',
-    total_teachers: ''
+    website: ''
   });
 
   // Filter functions
@@ -582,10 +562,6 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       phone: schoolFormData.phone,
       email: schoolFormData.email,
       website: schoolFormData.website,
-      principal: schoolFormData.principal,
-      established_year: parseInt(schoolFormData.established_year) || 0,
-      total_students: parseInt(schoolFormData.total_students) || 0,
-      total_teachers: parseInt(schoolFormData.total_teachers) || 0,
       created_at: new Date().toISOString().split('T')[0],
       updated_at: new Date().toISOString().split('T')[0]
     };
@@ -616,10 +592,6 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
             phone: schoolFormData.phone,
             email: schoolFormData.email,
             website: schoolFormData.website,
-            principal: schoolFormData.principal,
-            established_year: parseInt(schoolFormData.established_year) || 0,
-            total_students: parseInt(schoolFormData.total_students) || 0,
-            total_teachers: parseInt(schoolFormData.total_teachers) || 0,
             updated_at: new Date().toISOString().split('T')[0]
           }
         : school
@@ -649,11 +621,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       board: school.board,
       phone: school.phone,
       email: school.email,
-      website: school.website,
-      principal: school.principal,
-      established_year: school.established_year.toString(),
-      total_students: school.total_students.toString(),
-      total_teachers: school.total_teachers.toString()
+      website: school.website
     });
     setIsSchoolEditDialogOpen(true);
   };
@@ -674,11 +642,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       board: '',
       phone: '',
       email: '',
-      website: '',
-      principal: '',
-      established_year: '',
-      total_students: '',
-      total_teachers: ''
+      website: ''
     });
   };
 
@@ -1254,23 +1218,23 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+                <CardTitle className="text-sm font-medium">Private Schools</CardTitle>
                 <Users2 className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{schools.reduce((sum, s) => sum + s.total_students, 0).toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">Across all schools</p>
+                <div className="text-2xl font-bold">{schools.filter(s => s.type === 'Private').length}</div>
+                <p className="text-xs text-muted-foreground">Private institutions</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Teachers</CardTitle>
+                <CardTitle className="text-sm font-medium">Public Schools</CardTitle>
                 <Calendar className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{schools.reduce((sum, s) => sum + s.total_teachers, 0).toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">Across all schools</p>
+                <div className="text-2xl font-bold">{schools.filter(s => s.type === 'Public').length}</div>
+                <p className="text-xs text-muted-foreground">Public institutions</p>
               </CardContent>
             </Card>
           </div>
@@ -1322,8 +1286,6 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                     <TableHead>Country</TableHead>
                     <TableHead>City</TableHead>
                     <TableHead>Board</TableHead>
-                    <TableHead>Students</TableHead>
-                    <TableHead>Teachers</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -1340,8 +1302,6 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                       <TableCell>
                         <Badge variant="outline">{school.board}</Badge>
                       </TableCell>
-                      <TableCell>{school.total_students.toLocaleString()}</TableCell>
-                      <TableCell>{school.total_teachers.toLocaleString()}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -2065,12 +2025,21 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="school-city">City *</Label>
-              <Input
-                id="school-city"
+              <Select
                 value={schoolFormData.city}
-                onChange={(e) => setSchoolFormData({ ...schoolFormData, city: e.target.value })}
-                placeholder="e.g., Lahore"
-              />
+                onValueChange={(value) => setSchoolFormData({ ...schoolFormData, city: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a city" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cities.map((city) => (
+                    <SelectItem key={city.id} value={city.name}>
+                      {city.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="school-board">Board *</Label>
@@ -2115,49 +2084,6 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                 value={schoolFormData.website}
                 onChange={(e) => setSchoolFormData({ ...schoolFormData, website: e.target.value })}
                 placeholder="e.g., www.school.edu.pk"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="school-principal">Principal</Label>
-              <Input
-                id="school-principal"
-                value={schoolFormData.principal}
-                onChange={(e) => setSchoolFormData({ ...schoolFormData, principal: e.target.value })}
-                placeholder="e.g., Dr. Sarah Ahmed"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="school-established_year">Established Year</Label>
-              <Input
-                id="school-established_year"
-                type="number"
-                value={schoolFormData.established_year}
-                onChange={(e) => setSchoolFormData({ ...schoolFormData, established_year: e.target.value })}
-                placeholder="e.g., 1975"
-                min="1800"
-                max={new Date().getFullYear()}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="school-total_students">Total Students</Label>
-              <Input
-                id="school-total_students"
-                type="number"
-                value={schoolFormData.total_students}
-                onChange={(e) => setSchoolFormData({ ...schoolFormData, total_students: e.target.value })}
-                placeholder="e.g., 2500"
-                min="0"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="school-total_teachers">Total Teachers</Label>
-              <Input
-                id="school-total_teachers"
-                type="number"
-                value={schoolFormData.total_teachers}
-                onChange={(e) => setSchoolFormData({ ...schoolFormData, total_teachers: e.target.value })}
-                placeholder="e.g., 180"
-                min="0"
               />
             </div>
             <div className="space-y-2 md:col-span-2">
@@ -2247,12 +2173,21 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-school-city">City *</Label>
-              <Input
-                id="edit-school-city"
+              <Select
                 value={schoolFormData.city}
-                onChange={(e) => setSchoolFormData({ ...schoolFormData, city: e.target.value })}
-                placeholder="e.g., Lahore"
-              />
+                onValueChange={(value) => setSchoolFormData({ ...schoolFormData, city: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a city" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cities.map((city) => (
+                    <SelectItem key={city.id} value={city.name}>
+                      {city.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-school-board">Board *</Label>
@@ -2297,49 +2232,6 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                 value={schoolFormData.website}
                 onChange={(e) => setSchoolFormData({ ...schoolFormData, website: e.target.value })}
                 placeholder="e.g., www.school.edu.pk"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-school-principal">Principal</Label>
-              <Input
-                id="edit-school-principal"
-                value={schoolFormData.principal}
-                onChange={(e) => setSchoolFormData({ ...schoolFormData, principal: e.target.value })}
-                placeholder="e.g., Dr. Sarah Ahmed"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-school-established_year">Established Year</Label>
-              <Input
-                id="edit-school-established_year"
-                type="number"
-                value={schoolFormData.established_year}
-                onChange={(e) => setSchoolFormData({ ...schoolFormData, established_year: e.target.value })}
-                placeholder="e.g., 1975"
-                min="1800"
-                max={new Date().getFullYear()}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-school-total_students">Total Students</Label>
-              <Input
-                id="edit-school-total_students"
-                type="number"
-                value={schoolFormData.total_students}
-                onChange={(e) => setSchoolFormData({ ...schoolFormData, total_students: e.target.value })}
-                placeholder="e.g., 2500"
-                min="0"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-school-total_teachers">Total Teachers</Label>
-              <Input
-                id="edit-school-total_teachers"
-                type="number"
-                value={schoolFormData.total_teachers}
-                onChange={(e) => setSchoolFormData({ ...schoolFormData, total_teachers: e.target.value })}
-                placeholder="e.g., 180"
-                min="0"
               />
             </div>
             <div className="space-y-2 md:col-span-2">
@@ -2424,22 +2316,6 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   </div>
                 </div>
                 <div className="space-y-4">
-                  <div>
-                    <Label className="text-sm font-medium text-muted-foreground">Principal</Label>
-                    <p className="text-lg">{viewingSchool.principal}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-muted-foreground">Established Year</Label>
-                    <p className="text-lg">{viewingSchool.established_year}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-muted-foreground">Total Students</Label>
-                    <p className="text-lg">{viewingSchool.total_students.toLocaleString()}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-muted-foreground">Total Teachers</Label>
-                    <p className="text-lg">{viewingSchool.total_teachers.toLocaleString()}</p>
-                  </div>
                   <div>
                     <Label className="text-sm font-medium text-muted-foreground">Created</Label>
                     <p className="text-lg">{viewingSchool.created_at}</p>
