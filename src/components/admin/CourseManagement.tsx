@@ -135,7 +135,7 @@ const CourseManagement = () => {
   const [statusFilter, setStatusFilter] = useState<CourseStatus | "All">("All");
   const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage] = useState(6); // Show 6 courses per page
+  const [rowsPerPage] = useState(8); // Show 8 courses per page
   const [totalCourses, setTotalCourses] = useState(0);
   const [stats, setStats] = useState({
     total: 0,

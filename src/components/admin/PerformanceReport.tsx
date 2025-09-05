@@ -170,8 +170,19 @@ const ExecutiveSummary = ({ data }: { data: any }) => {
   // Handle both new data structure from form submission and legacy mock data
   const overall = data.overall || {};
   const overallScore = overall.score || data.overallScore || 4.0;
-  const previousScore = data.previousScore || 3.5;
-  const improvementPercent = ((overallScore - previousScore) / previousScore * 100).toFixed(1);
+  const previousScore = data.previousScore || null;
+  
+  // Calculate improvement percentage with proper handling for first-time observations
+  let improvementPercent = null;
+  let improvementDisplay = 'N/A';
+  
+  if (previousScore && previousScore > 0) {
+    improvementPercent = ((overallScore - previousScore) / previousScore * 100);
+    improvementDisplay = `${improvementPercent >= 0 ? '+' : ''}${improvementPercent.toFixed(1)}%`;
+  } else {
+    // For first-time observations, show 0%
+    improvementDisplay = '0%';
+  }
   const strengths = data.strengths || [];
   const improvements = data.improvements || [];
 
@@ -224,14 +235,12 @@ const ExecutiveSummary = ({ data }: { data: any }) => {
             <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-1">{overallScore.toFixed(1)}</div>
             <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Current Score</div>
           </div>
-          {previousScore && (
-            <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-1">
-                {parseFloat(improvementPercent) >= 0 ? '+' : ''}{improvementPercent}%
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Improvement</div>
+          <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-1">
+              {improvementDisplay}
             </div>
-          )}
+            <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Improvement</div>
+          </div>
           <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
             <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-1">{strengths.length}</div>
             <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Key Strengths</div>
@@ -677,6 +686,25 @@ const fetchReportById = async (reportId: string): Promise<any> => {
       return null; // Will trigger fallback to mock data or error handling
     }
 
+    // Fetch previous observation score for the same teacher to calculate improvement
+    let previousScore = null;
+    try {
+      const { data: previousReports, error: prevError } = await supabase
+        .from('observation_reports')
+        .select('overall_score, created_at')
+        .eq('teacher_name', report.teacher_name)
+        .neq('id', report.id) // Exclude current report
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (!prevError && previousReports && previousReports.length > 0) {
+        previousScore = previousReports[0].overall_score / 20; // Convert from 0-100 to 0-5 scale
+      }
+    } catch (prevError) {
+      console.log('Could not fetch previous score:', prevError);
+      // Continue without previous score - will show "0%"
+    }
+
     // Transform database report to expected format
     return {
       reportId: report.id,
@@ -695,6 +723,7 @@ const fetchReportById = async (reportId: string): Promise<any> => {
       
       // Basic fields
       overallScore: report.overall_score / 20, // Convert from 0-100 to 0-5 scale for display
+      previousScore: previousScore, // Add the fetched previous score
       showTealObservations: report.show_teal_observations,
       
       // Extract data from form_data JSON
