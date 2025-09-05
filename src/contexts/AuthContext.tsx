@@ -15,7 +15,7 @@ interface AuthContextType {
   setPendingMFAUser: (user: User | null) => void;
   isMFAVerificationPending: boolean;
   handleUserNotFoundError: () => Promise<void>;
-  clearInvalidToken: () => void;
+  clearInvalidToken: () => Promise<void>;
 }
 
 // Create the context with a default undefined value
@@ -114,23 +114,107 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           return;
         }
         
-        // Handle invalid token errors
+        // Handle invalid token errors - try refresh first
         if (error.message?.includes('Invalid JWT') || 
             error.message?.includes('JWT expired') || 
             error.message?.includes('invalid_token') ||
             error.status === 401) {
-          console.warn('🔐 Invalid or expired token, clearing auth state and redirecting to login');
-          cleanupAuthState();
-          setSession(null);
-          setUser(null);
-          setLoading(false);
+          console.warn('🔐 Invalid or expired token detected, attempting refresh...');
           
-          // Redirect to login if we're on a protected route
-          if (window.location.pathname.startsWith('/dashboard')) {
-            console.log('🔐 Redirecting to login page due to invalid token');
-            navigate('/auth', { replace: true });
+          // Check if we have a refresh token available
+          const authTokenKey = import.meta.env.VITE_AUTH_TOKEN;
+          const storedToken = localStorage.getItem(authTokenKey);
+          let hasRefreshToken = false;
+          
+          if (storedToken) {
+            try {
+              const parsedToken = JSON.parse(storedToken);
+              hasRefreshToken = !!parsedToken.refresh_token;
+              console.log('🔐 Refresh token available:', hasRefreshToken);
+            } catch (e) {
+              console.error('🔐 Error parsing stored token for refresh check:', e);
+            }
           }
-          return;
+          
+          if (!hasRefreshToken) {
+            console.warn('🔐 No refresh token available, session expired');
+            cleanupAuthState();
+            setSession(null);
+            setUser(null);
+            setLoading(false);
+            alert('Your session has expired. Please log in again.');
+            
+            if (window.location.pathname.startsWith('/dashboard')) {
+              navigate('/auth', { replace: true });
+            }
+            return;
+          }
+          
+          // Try to refresh the token
+          try {
+            console.log('🔐 Attempting token refresh...');
+            const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+            
+            if (refreshError) {
+              console.error('🔐 Token refresh failed:', refreshError);
+              console.warn('🔐 Session expired - refresh token is also invalid');
+              cleanupAuthState();
+              setSession(null);
+              setUser(null);
+              setLoading(false);
+              
+              // Show session expired message
+              alert('Your session has expired. Please log in again.');
+              
+              // Redirect to login if we're on a protected route
+              if (window.location.pathname.startsWith('/dashboard')) {
+                console.log('🔐 Redirecting to login page due to session expiry');
+                navigate('/auth', { replace: true });
+              }
+              return;
+            }
+            
+            if (refreshData.session) {
+              console.log('🔐 Token refresh successful!', {
+                userId: refreshData.session.user?.id,
+                expiresAt: refreshData.session.expires_at,
+                expiresAtDate: new Date(refreshData.session.expires_at * 1000).toISOString()
+              });
+              setSession(refreshData.session);
+              setUser(refreshData.session.user);
+              setLoading(false);
+              return;
+            } else {
+              console.warn('🔐 Token refresh returned no session data');
+              cleanupAuthState();
+              setSession(null);
+              setUser(null);
+              setLoading(false);
+              alert('Your session has expired. Please log in again.');
+              
+              if (window.location.pathname.startsWith('/dashboard')) {
+                navigate('/auth', { replace: true });
+              }
+              return;
+            }
+          } catch (refreshException) {
+            console.error('🔐 Exception during token refresh:', refreshException);
+            console.warn('🔐 Session expired - exception during refresh');
+            cleanupAuthState();
+            setSession(null);
+            setUser(null);
+            setLoading(false);
+            
+            // Show session expired message
+            alert('Your session has expired. Please log in again.');
+            
+            // Redirect to login if we're on a protected route
+            if (window.location.pathname.startsWith('/dashboard')) {
+              console.log('🔐 Redirecting to login page due to session expiry');
+              navigate('/auth', { replace: true });
+            }
+            return;
+          }
         }
         
         // For other errors, still set loading to false to prevent infinite loading
@@ -287,16 +371,54 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     navigate('/auth', { replace: true });
   }, [navigate]);
 
-  // Manual function to clear invalid tokens
-  const clearInvalidToken = useCallback(() => {
+  // Manual function to clear invalid tokens - with refresh attempt
+  const clearInvalidToken = useCallback(async () => {
     console.log('🔐 Manually clearing invalid token...');
+    
+    // First try to refresh the token
+    try {
+      console.log('🔐 Attempting manual token refresh...');
+      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+      
+      if (refreshError) {
+        console.error('🔐 Manual token refresh failed:', refreshError);
+        console.log('🔐 Clearing auth state and redirecting to login');
+        cleanupAuthState();
+        setSession(null);
+        setUser(null);
+        setPendingMFAUser(null);
+        setLoading(false);
+        alert('Your session has expired. Please log in again.');
+        
+        if (window.location.pathname.startsWith('/dashboard')) {
+          navigate('/auth', { replace: true });
+        }
+        return;
+      }
+      
+      if (refreshData.session) {
+        console.log('🔐 Manual token refresh successful!', {
+          userId: refreshData.session.user?.id,
+          expiresAt: refreshData.session.expires_at
+        });
+        setSession(refreshData.session);
+        setUser(refreshData.session.user);
+        setLoading(false);
+        return;
+      }
+    } catch (refreshException) {
+      console.error('🔐 Exception during manual token refresh:', refreshException);
+    }
+    
+    // If refresh fails, clear everything
+    console.log('🔐 Clearing auth state and redirecting to login');
     cleanupAuthState();
     setSession(null);
     setUser(null);
     setPendingMFAUser(null);
     setLoading(false);
+    alert('Your session has expired. Please log in again.');
     
-    // Redirect to login
     if (window.location.pathname.startsWith('/dashboard')) {
       navigate('/auth', { replace: true });
     }
