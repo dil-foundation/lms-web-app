@@ -4,6 +4,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import SessionService from '@/services/sessionService';
 import AccessLogService from '@/services/accessLogService';
+import { isTokenExpired, getTokenExpiry, getTokenTimeRemaining } from '@/utils/tokenUtils';
 
 // Define the shape of the context state
 interface AuthContextType {
@@ -57,294 +58,162 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user]);
 
   useEffect(() => {
-    // Get the initial session and user data
-    console.log('🔐 AuthContext: Getting initial session...');
+    // Proactive token validation approach
+    console.log('🔐 AuthContext: Starting proactive token validation...');
     
-    // Check localStorage for debugging
     const authTokenKey = import.meta.env.VITE_AUTH_TOKEN;
     const storedToken = localStorage.getItem(authTokenKey);
-    if (storedToken) {
-      try {
-        const parsedToken = JSON.parse(storedToken);
-        console.log('🔐 Stored token info:', {
-          hasAccessToken: !!parsedToken.access_token,
-          hasRefreshToken: !!parsedToken.refresh_token,
-          expiresAt: parsedToken.expires_at,
-          expiresAtDate: parsedToken.expires_at ? new Date(parsedToken.expires_at * 1000).toISOString() : 'N/A',
-          isExpired: parsedToken.expires_at ? parsedToken.expires_at < Math.floor(Date.now() / 1000) : 'N/A',
-          currentTime: Math.floor(Date.now() / 1000)
-        });
-      } catch (e) {
-        console.error('🔐 Error parsing stored token:', e);
-      }
-    } else {
-      console.log('🔐 No stored token found with key:', authTokenKey);
-    }
     
-    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
-      console.log('🔐 AuthContext: Session result:', { 
-        hasSession: !!session, 
-        hasError: !!error,
-        userId: session?.user?.id,
-        expiresAt: session?.expires_at,
-        expiresAtDate: session?.expires_at ? new Date(session.expires_at * 1000).toISOString() : 'N/A',
-        isExpired: session?.expires_at ? session.expires_at < Math.floor(Date.now() / 1000) : 'N/A'
-      });
-      
-      // Log the exact error details if there's an error
-      if (error) {
-        console.log('🔐 Error details for refresh check:', {
-          message: error.message,
-          status: error.status,
-          name: error.name,
-          code: error.code
-        });
-      }
-      
-      if (error) {
-        console.error('🔐 Error getting session:', error);
-        console.error('🔐 Error details:', {
-          message: error.message,
-          status: error.status,
-          name: error.name
-        });
-        
-        // Handle user_not_found error
-        if (error.message?.includes('user_not_found') || error.message?.includes('User from sub claim in JWT does not exist')) {
-          console.warn('🔐 User not found, clearing auth state and redirecting to login');
-          cleanupAuthState();
-          setSession(null);
-          setUser(null);
-          setLoading(false);
-          
-          // Redirect to login if on dashboard
-          if (window.location.pathname.startsWith('/dashboard')) {
-            navigate('/auth', { replace: true });
-          }
-          return;
-        }
-        
-        // Handle invalid token errors - try refresh first
-        if (error.message?.includes('Invalid JWT') || 
-            error.message?.includes('JWT expired') || 
-            error.message?.includes('invalid_token') ||
-            error.status === 401) {
-          console.warn('🔐 Invalid or expired token detected, attempting refresh...');
-          
-          // Check if we have a refresh token available
-          const authTokenKey = import.meta.env.VITE_AUTH_TOKEN;
-          const storedToken = localStorage.getItem(authTokenKey);
-          let hasRefreshToken = false;
-          
-          if (storedToken) {
-            try {
-              const parsedToken = JSON.parse(storedToken);
-              hasRefreshToken = !!parsedToken.refresh_token;
-              console.log('🔐 Refresh token available:', hasRefreshToken);
-            } catch (e) {
-              console.error('🔐 Error parsing stored token for refresh check:', e);
-            }
-          }
-          
-          if (!hasRefreshToken) {
-            console.warn('🔐 No refresh token available, session expired');
-            cleanupAuthState();
-            setSession(null);
-            setUser(null);
-            setLoading(false);
-            alert('Your session has expired. Please log in again.');
-            
-            if (window.location.pathname.startsWith('/dashboard')) {
-              navigate('/auth', { replace: true });
-            }
-            return;
-          }
-          
-          // Try to refresh the token
-          try {
-            console.log('🔐 Attempting token refresh...');
-            const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-            
-            if (refreshError) {
-              console.error('🔐 Token refresh failed:', refreshError);
-              console.warn('🔐 Session expired - refresh token is also invalid');
-              cleanupAuthState();
-              setSession(null);
-              setUser(null);
-              setLoading(false);
-              
-              // Show session expired message
-              alert('Your session has expired. Please log in again.');
-              
-              // Redirect to login if we're on a protected route
-              if (window.location.pathname.startsWith('/dashboard')) {
-                console.log('🔐 Redirecting to login page due to session expiry');
-                navigate('/auth', { replace: true });
-              }
-              return;
-            }
-            
-            if (refreshData.session) {
-              console.log('🔐 Token refresh successful!', {
-                userId: refreshData.session.user?.id,
-                expiresAt: refreshData.session.expires_at,
-                expiresAtDate: new Date(refreshData.session.expires_at * 1000).toISOString()
-              });
-              setSession(refreshData.session);
-              setUser(refreshData.session.user);
-              setLoading(false);
-              return;
-            } else {
-              console.warn('🔐 Token refresh returned no session data');
-              cleanupAuthState();
-              setSession(null);
-              setUser(null);
-              setLoading(false);
-              alert('Your session has expired. Please log in again.');
-              
-              if (window.location.pathname.startsWith('/dashboard')) {
-                navigate('/auth', { replace: true });
-              }
-              return;
-            }
-          } catch (refreshException) {
-            console.error('🔐 Exception during token refresh:', refreshException);
-            console.warn('🔐 Session expired - exception during refresh');
-            cleanupAuthState();
-            setSession(null);
-            setUser(null);
-            setLoading(false);
-            
-            // Show session expired message
-            alert('Your session has expired. Please log in again.');
-            
-            // Redirect to login if we're on a protected route
-            if (window.location.pathname.startsWith('/dashboard')) {
-              console.log('🔐 Redirecting to login page due to session expiry');
-              navigate('/auth', { replace: true });
-            }
-            return;
-          }
-        }
-        
-        // For other errors, still set loading to false to prevent infinite loading
-        console.warn('🔐 Session error (non-user_not_found), setting loading to false');
-        setSession(null);
-        setUser(null);
-        setLoading(false);
-        return;
-      }
-      
-      // Check if session exists but token is expired
-      if (session && session.expires_at && session.expires_at < Math.floor(Date.now() / 1000)) {
-        console.warn('🔐 Session exists but token is expired, attempting refresh...');
-        
-        // Check if we have a refresh token available
-        const authTokenKey = import.meta.env.VITE_AUTH_TOKEN;
-        const storedToken = localStorage.getItem(authTokenKey);
-        let hasRefreshToken = false;
-        
-        if (storedToken) {
-          try {
-            const parsedToken = JSON.parse(storedToken);
-            hasRefreshToken = !!parsedToken.refresh_token;
-            console.log('🔐 Refresh token available for expired session:', hasRefreshToken);
-          } catch (e) {
-            console.error('🔐 Error parsing stored token for refresh check:', e);
-          }
-        }
-        
-        if (!hasRefreshToken) {
-          console.warn('🔐 No refresh token available for expired session');
-          setSession(null);
-          setUser(null);
-          setLoading(false);
-          alert('Your session has expired. Please log in again.');
-          
-          if (window.location.pathname.startsWith('/dashboard')) {
-            navigate('/auth', { replace: true });
-          }
-          return;
-        }
-        
-        // Try to refresh the token
-        try {
-          console.log('🔐 Attempting token refresh for expired session...');
-          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-          
-          if (refreshError) {
-            console.error('🔐 Token refresh failed for expired session:', refreshError);
-            console.warn('🔐 Session expired - refresh token is also invalid');
-            cleanupAuthState();
-            setSession(null);
-            setUser(null);
-            setLoading(false);
-            
-            // Show session expired message
-            alert('Your session has expired. Please log in again.');
-            
-            // Redirect to login if we're on a protected route
-            if (window.location.pathname.startsWith('/dashboard')) {
-              console.log('🔐 Redirecting to login page due to session expiry');
-              navigate('/auth', { replace: true });
-            }
-            return;
-          }
-          
-          if (refreshData.session) {
-            console.log('🔐 Token refresh successful for expired session!', {
-              userId: refreshData.session.user?.id,
-              expiresAt: refreshData.session.expires_at,
-              expiresAtDate: new Date(refreshData.session.expires_at * 1000).toISOString()
-            });
-            setSession(refreshData.session);
-            setUser(refreshData.session.user);
-            setLoading(false);
-            return;
-          } else {
-            console.warn('🔐 Token refresh returned no session data for expired session');
-            cleanupAuthState();
-            setSession(null);
-            setUser(null);
-            setLoading(false);
-            alert('Your session has expired. Please log in again.');
-            
-            if (window.location.pathname.startsWith('/dashboard')) {
-              navigate('/auth', { replace: true });
-            }
-            return;
-          }
-        } catch (refreshException) {
-          console.error('🔐 Exception during token refresh for expired session:', refreshException);
-          console.warn('🔐 Session expired - exception during refresh');
-          cleanupAuthState();
-          setSession(null);
-          setUser(null);
-          setLoading(false);
-          
-          // Show session expired message
-          alert('Your session has expired. Please log in again.');
-          
-          // Redirect to login if we're on a protected route
-          if (window.location.pathname.startsWith('/dashboard')) {
-            console.log('🔐 Redirecting to login page due to session expiry');
-            navigate('/auth', { replace: true });
-          }
-          return;
-        }
-      }
-      
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    }).catch((catchError) => {
-      // Handle any unexpected errors in the promise chain
-      console.error('Unexpected error in getSession:', catchError);
+    if (!storedToken) {
+      console.log('🔐 No stored token found, setting loading to false');
       setSession(null);
       setUser(null);
       setLoading(false);
+      return;
+    }
+    
+    let parsedToken;
+    try {
+      parsedToken = JSON.parse(storedToken);
+      console.log('🔐 Stored token parsed successfully');
+    } catch (e) {
+      console.error('🔐 Error parsing stored token:', e);
+      setSession(null);
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+    
+    // Check if we have required tokens
+    if (!parsedToken.access_token || !parsedToken.refresh_token) {
+      console.log('🔐 Missing access_token or refresh_token, clearing auth state');
+      cleanupAuthState();
+      setSession(null);
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+    
+    // Check if access token is expired
+    const isAccessTokenExpired = isTokenExpired(parsedToken.access_token);
+    const tokenExpiry = getTokenExpiry(parsedToken.access_token);
+    const timeRemaining = getTokenTimeRemaining(parsedToken.access_token);
+    
+    console.log('🔐 Token validation results:', {
+      hasAccessToken: !!parsedToken.access_token,
+      hasRefreshToken: !!parsedToken.refresh_token,
+      isAccessTokenExpired,
+      tokenExpiry: tokenExpiry?.toISOString(),
+      timeRemainingSeconds: timeRemaining,
+      timeRemainingMinutes: Math.floor(timeRemaining / 60)
     });
     
+    if (isAccessTokenExpired) {
+      console.log('🔐 Access token is expired, attempting refresh...');
+      
+      // Try to refresh the token
+      supabase.auth.refreshSession().then(({ data: refreshData, error: refreshError }) => {
+        if (refreshError) {
+          console.error('🔐 Token refresh failed:', refreshError);
+          console.log('🔐 Refresh token is also invalid, clearing auth state');
+          cleanupAuthState();
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+          alert('Your session has expired. Please log in again.');
+          
+          if (window.location.pathname.startsWith('/dashboard')) {
+            navigate('/auth', { replace: true });
+          }
+          return;
+        }
+        
+        if (refreshData.session) {
+          console.log('🔐 Token refresh successful!', {
+            userId: refreshData.session.user?.id,
+            expiresAt: refreshData.session.expires_at,
+            expiresAtDate: new Date(refreshData.session.expires_at * 1000).toISOString()
+          });
+          setSession(refreshData.session);
+          setUser(refreshData.session.user);
+          setLoading(false);
+          return;
+        } else {
+          console.warn('🔐 Token refresh returned no session data');
+          cleanupAuthState();
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+          alert('Your session has expired. Please log in again.');
+          
+          if (window.location.pathname.startsWith('/dashboard')) {
+            navigate('/auth', { replace: true });
+          }
+          return;
+        }
+      }).catch((refreshException) => {
+        console.error('🔐 Exception during token refresh:', refreshException);
+        console.log('🔐 Exception during refresh, clearing auth state');
+        cleanupAuthState();
+        setSession(null);
+        setUser(null);
+        setLoading(false);
+        alert('Your session has expired. Please log in again.');
+        
+        if (window.location.pathname.startsWith('/dashboard')) {
+          navigate('/auth', { replace: true });
+        }
+      });
+    } else {
+      console.log('🔐 Access token is valid, getting session from Supabase...');
+      
+      // Token is valid, get the session normally
+      supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+        console.log('🔐 AuthContext: Session result:', { 
+          hasSession: !!session, 
+          hasError: !!error,
+          userId: session?.user?.id,
+          expiresAt: session?.expires_at,
+          expiresAtDate: session?.expires_at ? new Date(session.expires_at * 1000).toISOString() : 'N/A'
+        });
+      
+        if (error) {
+          console.error('🔐 Error getting session:', error);
+          
+          // Handle user_not_found error
+          if (error.message?.includes('user_not_found') || error.message?.includes('User from sub claim in JWT does not exist')) {
+            console.warn('🔐 User not found, clearing auth state and redirecting to login');
+            cleanupAuthState();
+            setSession(null);
+            setUser(null);
+            setLoading(false);
+            
+            if (window.location.pathname.startsWith('/dashboard')) {
+              navigate('/auth', { replace: true });
+            }
+            return;
+          }
+          
+          // For other errors, still set loading to false to prevent infinite loading
+          console.warn('🔐 Session error, setting loading to false');
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+      }).catch((catchError) => {
+        console.error('🔐 Error in getSession:', catchError);
+        setSession(null);
+        setUser(null);
+        setLoading(false);
+      });
+    }
+    
+    // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         // Handle auth errors
