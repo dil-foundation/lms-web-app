@@ -64,7 +64,7 @@ export const DebugAuthStatus: React.FC = () => {
       {/* Clear Invalid Token Button */}
       <div style={{ marginTop: '10px' }}>
         <button 
-          onClick={clearInvalidToken}
+          onClick={() => clearInvalidToken()}
           style={{
             background: '#ff4444',
             color: 'white',
@@ -75,7 +75,7 @@ export const DebugAuthStatus: React.FC = () => {
             fontSize: '11px'
           }}
         >
-          🗑️ Clear Invalid Token
+          🔄 Try Refresh Token
         </button>
       </div>
     </div>
