@@ -184,11 +184,9 @@ export const useSupabaseMFA = () => {
   // Load initial data
   useEffect(() => {
     if (user) {
-      console.log('🔐 User found in useSupabaseMFA, loading MFA data...');
       loadMFAStatus();
       checkMFARequirement();
     } else {
-      console.log('🔐 No user found in useSupabaseMFA, skipping MFA data loading');
       // Reset MFA state when no user
       setMfaStatus({
         isEnabled: false,

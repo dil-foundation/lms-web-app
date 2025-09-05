@@ -18,17 +18,15 @@ export const SupabaseMFARequirement: React.FC<SupabaseMFARequirementProps> = ({ 
   useEffect(() => {
     const checkRequirements = async () => {
       if (user) {
-        console.log('🔐 User found, starting MFA requirement check...');
         setIsChecking(true);
         try {
           await checkMFARequirement();
         } catch (error) {
-          console.error('Error checking MFA requirement:', error);
+          // Silently handle MFA requirement check errors
         } finally {
           setIsChecking(false);
         }
       } else {
-        console.log('🔐 No user found, skipping MFA requirement check');
         setIsChecking(false);
       }
     };

@@ -25,7 +25,6 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 const getInitialUser = () => {
   // Don't try to read from localStorage manually - let Supabase handle it
   // The initial user will be set when getSession() is called
-  console.log('🔐 getInitialUser: Returning null, will be set by getSession()');
   return null;
 };
 
@@ -59,13 +58,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     // Proactive token validation approach
-    console.log('🔐 AuthContext: Starting proactive token validation...');
-    
     const authTokenKey = import.meta.env.VITE_AUTH_TOKEN;
     const storedToken = localStorage.getItem(authTokenKey);
     
     if (!storedToken) {
-      console.log('🔐 No stored token found, setting loading to false');
       setSession(null);
       setUser(null);
       setLoading(false);
@@ -75,9 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     let parsedToken;
     try {
       parsedToken = JSON.parse(storedToken);
-      console.log('🔐 Stored token parsed successfully');
     } catch (e) {
-      console.error('🔐 Error parsing stored token:', e);
       setSession(null);
       setUser(null);
       setLoading(false);
@@ -86,7 +80,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     // Check if we have required tokens
     if (!parsedToken.access_token || !parsedToken.refresh_token) {
-      console.log('🔐 Missing access_token or refresh_token, clearing auth state');
       cleanupAuthState();
       setSession(null);
       setUser(null);
@@ -96,24 +89,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     // Check if access token is expired
     const isAccessTokenExpired = isTokenExpired(parsedToken.access_token);
-    const tokenExpiry = getTokenExpiry(parsedToken.access_token);
-    const timeRemaining = getTokenTimeRemaining(parsedToken.access_token);
-    
-    console.log('🔐 Token validation results:', {
-      hasAccessToken: !!parsedToken.access_token,
-      hasRefreshToken: !!parsedToken.refresh_token,
-      isAccessTokenExpired,
-      tokenExpiry: tokenExpiry?.toISOString(),
-      timeRemainingSeconds: timeRemaining,
-      timeRemainingMinutes: Math.floor(timeRemaining / 60)
-    });
     
     if (isAccessTokenExpired) {
-      console.log('🔐 Access token is expired, attempting refresh...');
-      
       // Try to refresh the token with timeout
-      console.log('🔐 Calling supabase.auth.refreshSession()...');
-      
       const refreshPromise = supabase.auth.refreshSession();
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('refreshSession timeout after 5 seconds')), 5000)
@@ -121,20 +99,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       Promise.race([refreshPromise, timeoutPromise]).then((result: any) => {
         const { data: refreshData, error: refreshError } = result;
-        console.log('🔐 refreshSession() completed:', { 
-          hasData: !!refreshData, 
-          hasError: !!refreshError,
-          hasSession: !!refreshData?.session,
-          userId: refreshData?.session?.user?.id
-        });
+        
         if (refreshError) {
-          console.error('🔐 Token refresh failed:', refreshError);
-          console.log('🔐 Refresh token is also invalid, clearing auth state');
           cleanupAuthState();
           setSession(null);
           setUser(null);
           setLoading(false);
-          alert('Your session has expired. Please log in again.');
           
           if (window.location.pathname.startsWith('/dashboard')) {
             navigate('/auth', { replace: true });
@@ -143,22 +113,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         
         if (refreshData.session) {
-          console.log('🔐 Token refresh successful!', {
-            userId: refreshData.session.user?.id,
-            expiresAt: refreshData.session.expires_at,
-            expiresAtDate: new Date(refreshData.session.expires_at * 1000).toISOString()
-          });
           setSession(refreshData.session);
           setUser(refreshData.session.user);
           setLoading(false);
           return;
         } else {
-          console.warn('🔐 Token refresh returned no session data');
           cleanupAuthState();
           setSession(null);
           setUser(null);
           setLoading(false);
-          alert('Your session has expired. Please log in again.');
           
           if (window.location.pathname.startsWith('/dashboard')) {
             navigate('/auth', { replace: true });
@@ -166,42 +129,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           return;
         }
       }).catch((refreshException) => {
-        console.error('🔐 Exception during token refresh:', refreshException);
-        
-        if (refreshException.message?.includes('timeout')) {
-          console.warn('🔐 refreshSession timed out, refresh token may be invalid');
-        }
-        
-        console.log('🔐 Exception during refresh, clearing auth state');
         cleanupAuthState();
         setSession(null);
         setUser(null);
         setLoading(false);
-        alert('Your session has expired. Please log in again.');
         
         if (window.location.pathname.startsWith('/dashboard')) {
           navigate('/auth', { replace: true });
         }
       });
     } else {
-      console.log('🔐 Access token is valid, getting session from Supabase...');
-      
       // Token is valid, get the session normally
       supabase.auth.getSession().then(async ({ data: { session }, error }) => {
-        console.log('🔐 AuthContext: Session result:', { 
-          hasSession: !!session, 
-          hasError: !!error,
-          userId: session?.user?.id,
-          expiresAt: session?.expires_at,
-          expiresAtDate: session?.expires_at ? new Date(session.expires_at * 1000).toISOString() : 'N/A'
-        });
-      
         if (error) {
-          console.error('🔐 Error getting session:', error);
-          
           // Handle user_not_found error
           if (error.message?.includes('user_not_found') || error.message?.includes('User from sub claim in JWT does not exist')) {
-            console.warn('🔐 User not found, clearing auth state and redirecting to login');
             cleanupAuthState();
             setSession(null);
             setUser(null);
@@ -214,7 +156,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
           
           // For other errors, still set loading to false to prevent infinite loading
-          console.warn('🔐 Session error, setting loading to false');
           setSession(null);
           setUser(null);
           setLoading(false);
@@ -225,7 +166,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(session?.user ?? null);
         setLoading(false);
       }).catch((catchError) => {
-        console.error('🔐 Error in getSession:', catchError);
         setSession(null);
         setUser(null);
         setLoading(false);
@@ -247,7 +187,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             
             if (error && error.code === 'PGRST116') {
               // User not found in database, sign them out
-              console.warn('User not found in database during auth state change, signing out');
               cleanupAuthState();
               setSession(null);
               setUser(null);
@@ -256,11 +195,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
             
             // Update session state after successful token refresh
-            console.log('🔄 Token refreshed successfully, updating session state');
             setSession(session);
             setUser(session.user);
           } catch (profileError) {
-            console.error('Error checking user profile during auth state change:', profileError);
             // Even if profile check fails, still update the session state
             setSession(session);
             setUser(session.user);
@@ -330,7 +267,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             navigator.userAgent
           );
         } catch (error) {
-          console.error('Error logging user logout:', error);
+          // Silently handle logging errors
         }
       }
 
@@ -339,7 +276,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         try {
           await SessionService.deactivateSession(session.access_token);
         } catch (error) {
-          console.error('Error deactivating session:', error);
+          // Silently handle session deactivation errors
         }
       }
       
@@ -354,13 +291,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       navigate('/', { replace: true });
       localStorage.removeItem('cameFromDashboard');
     } catch (error) {
-      console.error('🔐 Sign out error:', error);
+      // Silently handle sign out errors
     }
   }, [navigate, session, user]);
 
   // Global error handler for user_not_found errors
   const handleUserNotFoundError = useCallback(async () => {
-    console.warn('Handling user_not_found error globally');
     cleanupAuthState();
     setSession(null);
     setUser(null);
@@ -370,22 +306,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Manual function to clear invalid tokens - with refresh attempt
   const clearInvalidToken = useCallback(async () => {
-    console.log('🔐 Manually clearing invalid token...');
-    
     // First try to refresh the token
     try {
-      console.log('🔐 Attempting manual token refresh...');
       const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
       
       if (refreshError) {
-        console.error('🔐 Manual token refresh failed:', refreshError);
-        console.log('🔐 Clearing auth state and redirecting to login');
         cleanupAuthState();
         setSession(null);
         setUser(null);
         setPendingMFAUser(null);
         setLoading(false);
-        alert('Your session has expired. Please log in again.');
         
         if (window.location.pathname.startsWith('/dashboard')) {
           navigate('/auth', { replace: true });
@@ -394,27 +324,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       if (refreshData.session) {
-        console.log('🔐 Manual token refresh successful!', {
-          userId: refreshData.session.user?.id,
-          expiresAt: refreshData.session.expires_at
-        });
         setSession(refreshData.session);
         setUser(refreshData.session.user);
         setLoading(false);
         return;
       }
     } catch (refreshException) {
-      console.error('🔐 Exception during manual token refresh:', refreshException);
+      // Silently handle refresh exceptions
     }
     
     // If refresh fails, clear everything
-    console.log('🔐 Clearing auth state and redirecting to login');
     cleanupAuthState();
     setSession(null);
     setUser(null);
     setPendingMFAUser(null);
     setLoading(false);
-    alert('Your session has expired. Please log in again.');
     
     if (window.location.pathname.startsWith('/dashboard')) {
       navigate('/auth', { replace: true });
