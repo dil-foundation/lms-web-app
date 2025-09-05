@@ -2,14 +2,28 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
-import { ArrowLeft, Play, Pause, Mic, RefreshCw, AlertCircle, Loader2, Square, CheckCircle, X, TrendingUp, Target, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Play, Pause, Mic, RefreshCw, AlertCircle, Loader2, Square, CheckCircle, X, TrendingUp, Target, MessageSquare, Trophy, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import NewsSummaryService, { NewsSummaryItem, NewsSummaryEvaluationResponse } from '@/services/newsSummaryService';
+
+interface ExerciseCompletion {
+  exercise_completed: boolean;
+  progress_percentage: number;
+  completed_topics: number;
+  total_topics: number;
+  current_topic_id: number;
+  stage_id: number;
+  exercise_id: number;
+  exercise_name: string;
+  stage_name: string;
+  completion_date?: string | null;
+}
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 // Using NewsSummaryItem interface from service instead
 
@@ -28,6 +42,8 @@ export default function NewsSummaryChallenge() {
   const [evaluationResult, setEvaluationResult] = useState<NewsSummaryEvaluationResponse | null>(null);
   const [startTime] = useState<Date>(new Date());
   const timeSpentRef = useRef<number>(0);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
 
   // Load news items from API
   useEffect(() => {
@@ -132,9 +148,43 @@ export default function NewsSummaryChallenge() {
         urdu_used: false, // You can add UI to let user specify this
       };
 
-      const result = await NewsSummaryService.evaluate(evaluationRequest);
+      const result = await NewsSummaryService.evaluate(evaluationRequest) as any;
+      
+      // Handle API error responses (like no_speech_detected)
+      if (result.success === false || result.error) {
+        const errorMessage = result.message || result.error || 'Speech evaluation failed';
+        
+        // Create modified feedback object for error cases
+        const errorFeedback = {
+          ...result,
+          score: 0,
+          feedback: errorMessage,
+          suggestions: ['Please speak more clearly and try again'],
+          success: false
+        };
+        
+        setEvaluationResult(errorFeedback);
+        toast.error('Speech not detected. Please try again.');
+        return;
+      }
+      
       setEvaluationResult(result);
       toast.success('Evaluation completed!');
+      
+      // Check if the exercise is completed based on API response
+      if (result.exercise_completion?.exercise_completed) {
+        // Exercise is completed according to the API
+        setIsCompleted(true);
+        setShowCompletionDialog(true);
+        markExerciseCompleted();
+        console.log('✅ Exercise completed according to API response');
+      } else if (!isCompleted) {
+        // Fallback: mark as completed after receiving evaluation (existing behavior)
+        setIsCompleted(true);
+        setShowCompletionDialog(true);
+        markExerciseCompleted();
+        console.log('✅ Exercise marked as completed (fallback logic)');
+      }
       
     } catch (error) {
       console.error('Evaluation failed:', error);
@@ -151,6 +201,35 @@ export default function NewsSummaryChallenge() {
     stopAudio();
     resetRecording();
     setEvaluationResult(null);
+  };
+
+  const markExerciseCompleted = async () => {
+    if (user?.id) {
+      try {
+        // Import the progress update function
+        const { updateCurrentProgress } = await import('@/utils/progressTracker');
+        
+        // Update progress to mark as completed
+        await updateCurrentProgress(
+          user.id,
+          4, // Stage 4
+          3  // Exercise 3 (NewsSummaryChallenge)
+        );
+        console.log('Exercise marked as completed: Stage 4, Exercise 3 (NewsSummaryChallenge)');
+      } catch (error) {
+        console.warn('Failed to mark exercise as completed:', error);
+      }
+    }
+  };
+
+  const handleRedo = () => {
+    setCurrentItemIndex(0);
+    setEvaluationResult(null);
+    setIsCompleted(false);
+    setShowCompletionDialog(false);
+    stopAudio();
+    resetRecording();
+    console.log('✅ News summary challenge reset complete');
   };
 
   const handleRetry = () => {
@@ -437,10 +516,14 @@ export default function NewsSummaryChallenge() {
                   </Button>
                 </div>
                 
-                {evaluationResult.score && (
+                {evaluationResult.score !== undefined && (
                   <div className="mb-4 p-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl border border-gray-200/60 dark:border-gray-700/60 shadow-lg">
                     <div className="text-center">
-                      <div className="text-4xl font-bold bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent mb-2">
+                      <div className={`text-4xl font-bold mb-2 ${
+                        evaluationResult.score === 0 
+                          ? 'text-red-600 dark:text-red-400' 
+                          : 'bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent'
+                      }`}>
                         {evaluationResult.score}/100
                       </div>
                       <div className="text-sm text-muted-foreground">Overall Score</div>
@@ -537,6 +620,48 @@ export default function NewsSummaryChallenge() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Completion Dialog */}
+          <Dialog open={showCompletionDialog} onOpenChange={setShowCompletionDialog}>
+            <DialogContent className="sm:max-w-lg p-0 bg-gradient-to-br from-white/98 via-white/95 to-[#8DC63F]/5 dark:from-gray-900/98 dark:via-gray-900/95 dark:to-[#8DC63F]/10 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-xl">
+              <DialogHeader className="px-6 py-5 border-b border-gray-200/40 dark:border-gray-700/40 bg-gradient-to-r from-transparent via-[#8DC63F]/5 to-transparent dark:via-[#8DC63F]/10">
+                <div className="flex items-center justify-center">
+                  <div className="w-16 h-16 bg-gradient-to-br from-[#8DC63F]/20 to-[#8DC63F]/30 dark:from-[#8DC63F]/20 dark:to-[#8DC63F]/30 rounded-3xl flex items-center justify-center shadow-sm border border-[#8DC63F]/30 dark:border-[#8DC63F]/40 mb-4">
+                    <Trophy className="h-8 w-8 text-[#8DC63F] dark:text-[#8DC63F]" />
+                  </div>
+                </div>
+                <DialogTitle className="text-center text-2xl font-bold bg-gradient-to-r from-gray-900 to-[#8DC63F] dark:from-gray-100 dark:to-[#8DC63F] bg-clip-text text-transparent">
+                  Congratulations!
+                </DialogTitle>
+              </DialogHeader>
+              <div className="p-6">
+                <div className="text-center space-y-4">
+                  <p className="text-lg text-gray-700 dark:text-gray-300 font-medium">
+                    🎉 You've completed the News Summary Challenge!
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Great job on practicing your summarizing skills with news articles. You can redo the exercise to practice more or continue to other exercises.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 mt-6">
+                    <Button
+                      onClick={handleRedo}
+                      variant="outline"
+                      className="flex-1 h-12 px-6 bg-[#8DC63F]/10 hover:bg-[#8DC63F]/20 dark:bg-[#8DC63F]/20 dark:hover:bg-[#8DC63F]/30 text-[#8DC63F] dark:text-[#8DC63F] border border-[#8DC63F]/30 dark:border-[#8DC63F]/40 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md font-medium"
+                    >
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Redo Exercise
+                    </Button>
+                    <Button
+                      onClick={() => navigate('/dashboard/practice')}
+                      className="flex-1 h-12 px-6 bg-gradient-to-r from-[#8DC63F] to-[#8DC63F]/90 hover:from-[#8DC63F]/90 hover:to-[#8DC63F] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 border-0 rounded-xl"
+                    >
+                      Continue Learning
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </div>

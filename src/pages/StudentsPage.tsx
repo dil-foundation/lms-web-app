@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { ContentLoader } from '@/components/ContentLoader';
+import AccessLogService from '@/services/accessLogService';
 import {
   Pagination,
   PaginationContent,
@@ -50,6 +51,7 @@ interface Student {
   lastName: string;
   email: string;
   avatar: string;
+  avatar_url?: string;
   enrolledDate: string;
   course: string;
   progress: number;
@@ -72,6 +74,7 @@ interface AvailableStudent {
   name: string;
   email: string;
   avatar: string;
+  avatar_url?: string;
 }
 
 interface AvailableCourse {
@@ -223,6 +226,7 @@ export default function StudentsPage() {
             lastName,
             email: student.email || 'N/A',
             avatar: getInitials(fullName || 'Unknown Student'),
+            avatar_url: student.avatar_url,
             enrolledDate: student.enrolled_at || new Date().toISOString(),
             course: student.course_title || 'Unknown Course',
             progress: mockProgress,
@@ -424,7 +428,8 @@ export default function StudentsPage() {
           id: profile.id,
           name: fullName,
           email: profile.email || 'N/A',
-          avatar: getInitials(fullName)
+          avatar: getInitials(fullName),
+          avatar_url: profile.avatar_url
         };
       });
 
@@ -487,6 +492,24 @@ export default function StudentsPage() {
         });
 
       if (enrollError) throw enrollError;
+
+      // Log course enrollment
+      try {
+        const selectedCourse = availableCourses.find(c => c.id === selectedCourseForEnroll);
+        const selectedStudent = availableStudents.find(s => s.id === selectedStudentForEnroll);
+        
+        if (selectedCourse && selectedStudent) {
+          await AccessLogService.logCourseEnrollment(
+            selectedStudentForEnroll,
+            selectedStudent.email,
+            selectedCourseForEnroll,
+            selectedCourse.title,
+            'success'
+          );
+        }
+      } catch (logError) {
+        console.error('Error logging course enrollment:', logError);
+      }
 
       toast({
         title: 'Success',
@@ -619,6 +642,10 @@ export default function StudentsPage() {
                         <SelectItem key={student.id} value={student.id} className="focus:bg-accent focus:text-white [&[data-highlighted]]:bg-accent [&[data-highlighted]]:text-white [&[data-highlighted]_[data-avatar]]:bg-white/20 [&[data-highlighted]_[data-avatar]]:text-white focus:[&_[data-avatar]]:bg-white/20 focus:[&_[data-avatar]]:text-white py-3">
                           <div className="flex items-center space-x-3">
                             <Avatar className="h-8 w-8 shrink-0">
+                              <AvatarImage 
+                                src={student.avatar_url} 
+                                alt={student.name}
+                              />
                               <AvatarFallback className="text-xs bg-primary/10 text-primary" data-avatar>
                                 {student.avatar}
                               </AvatarFallback>
@@ -869,6 +896,10 @@ export default function StudentsPage() {
                       <TableCell className="font-medium">
                         <div className="flex items-center space-x-3">
                           <Avatar className="h-8 w-8">
+                            <AvatarImage 
+                              src={student.avatar_url} 
+                              alt={student.name}
+                            />
                             <AvatarFallback className="text-xs bg-primary/10 text-primary">
                               {student.avatar}
                             </AvatarFallback>

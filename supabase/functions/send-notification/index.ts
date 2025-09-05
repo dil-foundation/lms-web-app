@@ -224,6 +224,26 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
+    // Check admin settings for notification preferences
+    const { data: adminSettings, error: settingsError } = await supabaseAdmin.rpc('get_admin_settings');
+    if (settingsError) {
+      console.error("Error fetching admin settings:", settingsError);
+      // Continue with default behavior if settings can't be fetched
+    }
+
+    const settings = adminSettings && adminSettings.length > 0 ? adminSettings[0] : {
+      system_notifications: true,
+      push_notifications: false
+    };
+
+    // If system notifications are disabled, skip all notifications
+    if (!settings.system_notifications) {
+      console.log("System notifications are disabled, skipping notification");
+      return new Response(JSON.stringify({ success: true, message: "Notifications skipped - system notifications disabled" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Get target user IDs
     const userIds = await getTargetUserIds(supabaseAdmin, payload);
 
@@ -233,42 +253,94 @@ serve(async (req) => {
       });
     }
 
-    // Get FCM tokens for users
-    const { data: tokensResult, error: tokensError } = await supabaseAdmin.rpc('get_fcm_tokens_for_users', { user_ids: userIds });
-    if (tokensError) throw tokensError;
-    const tokens = tokensResult.map((t: any) => t.token);
+    // Get user notification preferences
+    const { data: userProfiles, error: profilesError } = await supabaseAdmin
+      .from('profiles')
+      .select('id, notification_preferences')
+      .in('id', userIds);
 
-    // Create notifications in database for all target users
-    const notificationPromises = userIds.map(userId => 
-      supabaseAdmin
-        .from('notifications')
-        .insert({
-          user_id: userId,
-          title: payload.title,
-          message: payload.body,
-          type: 'info', // Default type, can be enhanced later
-          notification_type: payload.type,
-          read: false,
-          action_url: payload.data?.url || null,
-          action_data: payload.data || null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-    );
+    if (profilesError) {
+      console.error("Error fetching user profiles:", profilesError);
+      throw profilesError;
+    }
 
-    // Wait for all notifications to be created
-    await Promise.all(notificationPromises);
+    // Separate users based on their notification preferences
+    const usersForSystemNotifications: string[] = [];
+    const usersForPushNotifications: string[] = [];
 
-    // Send FCM notifications if tokens are available
-    if (tokens && tokens.length > 0) {
-      const accessToken = await getGoogleAuthToken();
-      const projectId = Deno.env.get("FIREBASE_PROJECT_ID")!;
+    userProfiles.forEach((profile: any) => {
+      const preferences = profile.notification_preferences || { push: false, inApp: true };
       
-      if (!projectId) {
-        throw new Error("FIREBASE_PROJECT_ID environment variable is not set");
+      // If system notifications (inApp) are enabled, save to database
+      if (preferences.inApp !== false) {
+        usersForSystemNotifications.push(profile.id);
       }
       
-      await sendFCMNotifications(tokens, payload, accessToken, projectId, supabaseAdmin);
+      // If real time notifications (push) are enabled, send push notification
+      if (preferences.push === true) {
+        usersForPushNotifications.push(profile.id);
+      }
+    });
+
+    // Create notifications in database only for users who have system notifications enabled
+    if (usersForSystemNotifications.length > 0) {
+      const notificationPromises = usersForSystemNotifications.map(userId => 
+        supabaseAdmin
+          .from('notifications')
+          .insert({
+            user_id: userId,
+            title: payload.title,
+            message: payload.body,
+            type: 'info', // Default type, can be enhanced later
+            notification_type: payload.type,
+            read: false,
+            action_url: payload.data?.url || null,
+            action_data: payload.data || null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+      );
+
+      // Wait for all notifications to be created
+      await Promise.all(notificationPromises);
+      console.log(`Created ${usersForSystemNotifications.length} system notifications`);
+    } else {
+      console.log("No users have system notifications enabled, skipping database notifications");
+    }
+
+    // Send FCM notifications only if global push notifications are enabled AND user has real time notifications enabled
+    if (settings.push_notifications && usersForPushNotifications.length > 0) {
+      const { data: tokensResult, error: tokensError } = await supabaseAdmin.rpc('get_fcm_tokens_for_users', { user_ids: usersForPushNotifications });
+      if (tokensError) {
+        console.error("Error fetching FCM tokens:", tokensError);
+      } else {
+        const tokens = tokensResult.map((t: any) => t.token);
+        
+        if (tokens && tokens.length > 0) {
+          try {
+            const accessToken = await getGoogleAuthToken();
+            const projectId = Deno.env.get("FIREBASE_PROJECT_ID")!;
+            
+            if (!projectId) {
+              throw new Error("FIREBASE_PROJECT_ID environment variable is not set");
+            }
+            
+            await sendFCMNotifications(tokens, payload, accessToken, projectId, supabaseAdmin);
+            console.log(`Sent ${tokens.length} push notifications to users with real time notifications enabled`);
+          } catch (error) {
+            console.error("Error sending FCM notifications:", error);
+            // Don't fail the entire request if FCM fails
+          }
+        } else {
+          console.log("No FCM tokens found for users with real time notifications enabled");
+        }
+      }
+    } else {
+      if (!settings.push_notifications) {
+        console.log("Global push notifications are disabled, skipping FCM notifications");
+      } else {
+        console.log("No users have real time notifications enabled, skipping FCM notifications");
+      }
     }
 
     return new Response(JSON.stringify({ success: true }), {

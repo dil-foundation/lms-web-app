@@ -6,8 +6,9 @@ import { Brain, MessageCircle, Globe, Award, Languages, Target, ArrowRight, Spar
 
 const HomeLayout3 = () => {
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-hidden">
+    <>
       <Header />
+      <div className="min-h-screen bg-background text-foreground overflow-hidden">
       
       {/* Story-driven Hero - Chapter 1 */}
       <section className="relative pt-20 pb-32 px-4 bg-gradient-to-br from-background via-primary/5 to-background">
@@ -384,7 +385,8 @@ const HomeLayout3 = () => {
           </div>
         </div>
       </section>
-    </div>
+      </div>
+    </>
   );
 };
 

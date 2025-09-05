@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -20,41 +20,60 @@ export const useUserProfile = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const fetchProfile = useCallback(async () => {
+    if (!user) {
+      setProfile(null);
+      setLoading(false);
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      console.log('Profile data fetched:', data);
+      setProfile(data);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      if (!user) {
-        setProfile(null);
-        setLoading(false);
-        return;
-      }
-      
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-
-        if (error) {
-          throw error;
-        }
-
-        setProfile(data);
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchProfile();
-  }, [user]);
+  }, [fetchProfile]);
+
+  const refreshProfile = useCallback(async () => {
+    console.log('refreshProfile called - triggering refresh');
+    console.log('Current refreshKey before:', refreshKey);
+    
+    // Increment refresh key once for UI updates
+    setRefreshKey(prev => {
+      const newKey = prev + 1;
+      console.log('RefreshKey updated to:', newKey);
+      return newKey;
+    });
+    
+    // Fetch fresh profile data
+    await fetchProfile();
+  }, [fetchProfile, refreshKey]);
 
   return useMemo(() => ({
     profile,
     loading,
-    error
-  }), [profile, loading, error]);
+    error,
+    refreshProfile,
+    refreshKey
+  }), [profile, loading, error, refreshProfile, refreshKey]);
 };

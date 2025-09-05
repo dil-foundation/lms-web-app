@@ -1,19 +1,33 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Mic, GraduationCap, Loader2, Play, Pause, Target, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Mic, GraduationCap, Loader2, Play, Pause, Target, TrendingUp, CheckCircle, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { toast } from 'sonner';
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
+import { CompletionDialog } from '@/components/practice/CompletionDialog';
 import { 
   academicPresentationService, 
   AcademicPresentationTopic,
   AcademicPresentationAudioResponse,
   EvaluationResponse 
 } from '@/services/academicPresentationService';
+
+interface ExerciseCompletion {
+  exercise_completed: boolean;
+  progress_percentage: number;
+  completed_topics: number;
+  total_topics: number;
+  current_topic_id: number;
+  stage_id: number;
+  exercise_id: number;
+  exercise_name: string;
+  stage_name: string;
+  completion_date?: string | null;
+}
 
 
 
@@ -33,6 +47,8 @@ export default function AcademicPresentations() {
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   
 
 
@@ -134,9 +150,40 @@ export default function AcademicPresentations() {
         urdu_used: false // This would be determined by the API
       };
 
-      const result = await academicPresentationService.evaluatePresentation(evaluationData);
+      const result = await academicPresentationService.evaluatePresentation(evaluationData) as any;
+      
+      // Handle API error responses (like no_speech_detected)
+      if (result.success === false || result.error) {
+        const errorMessage = result.message || result.error || 'Speech evaluation failed';
+        
+        // Create modified feedback object for error cases
+        const errorFeedback = {
+          ...result,
+          evaluation: {
+            ...result.evaluation,
+            evaluation: {
+              ...result.evaluation?.evaluation,
+              overall_score: 0,
+              feedback: errorMessage,
+              suggested_improvements: ['Please speak more clearly and try again']
+            }
+          }
+        };
+        
+        setEvaluation(errorFeedback);
+        toast.error('Speech evaluation failed: ' + errorMessage);
+        return;
+      }
+      
       setEvaluation(result);
       toast.success('Presentation evaluated successfully!');
+      
+      // Check if the exercise is completed based on API response
+      if (result?.exercise_completion?.exercise_completed) {
+        // Exercise is completed according to the API
+        setIsCompleted(true);
+        setShowCompletionDialog(true);
+      }
     } catch (error) {
       console.error('Error evaluating presentation:', error);
       toast.error('Failed to evaluate presentation');
@@ -183,7 +230,24 @@ export default function AcademicPresentations() {
     setStartTime(null);
     setSelectedTopic(null); // Allow user to choose a different topic
     setAudioUrl(null);
+    setIsCompleted(false);
+    setShowCompletionDialog(false);
     stopAudio();
+  };
+
+  const handleRedo = () => {
+    setShowCompletionDialog(false);
+    setIsCompleted(false);
+    setHasStarted(false);
+    setEvaluation(null);
+    setStartTime(null);
+    setAudioUrl(null);
+    stopAudio();
+  };
+
+  const handleContinue = () => {
+    setShowCompletionDialog(false);
+    resetPresentation();
   };
 
   if (loading) {
@@ -522,6 +586,16 @@ export default function AcademicPresentations() {
           )}
         </div>
       </div>
+
+      {/* Completion Dialog */}
+      <CompletionDialog
+        isOpen={showCompletionDialog}
+        onClose={() => setShowCompletionDialog(false)}
+        exerciseName="Academic Presentation"
+        score={evaluation?.evaluation?.evaluation?.overall_score || 0}
+        onRedo={handleRedo}
+        onContinue={handleContinue}
+      />
     </div>
   );
 } 

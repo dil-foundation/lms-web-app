@@ -6,6 +6,7 @@ export interface UserForMessaging {
   last_name?: string;
   email: string;
   role: 'admin' | 'teacher' | 'student';
+  avatar_url?: string;
   isOnline?: boolean;
 }
 
@@ -40,12 +41,14 @@ export interface ConversationParticipant {
     last_name?: string;
     email: string;
     role: 'admin' | 'teacher' | 'student';
+    avatar_url?: string;
   };
   profiles?: {
     first_name?: string;
     last_name?: string;
     email?: string;
     role?: 'admin' | 'teacher' | 'student';
+    avatar_url?: string;
   };
 }
 
@@ -369,7 +372,7 @@ export const getUsersForAdminMessaging = async (page: number = 1, limit: number 
   // Get data
   const { data: users, error } = await supabase
     .from('profiles')
-    .select('id, first_name, last_name, email, role')
+    .select('id, first_name, last_name, email, role, avatar_url')
     .range(from, to)
     .order('first_name');
 
@@ -421,7 +424,7 @@ export const getStudentsForTeacherMessaging = async (teacherId: string, page: nu
         const uniqueStudentIds = [...new Set(studentIds.map(s => s.user_id))];
         const { data: courseStudents, error: courseError } = await supabase
           .from('profiles')
-          .select('id, first_name, last_name, email, role')
+          .select('id, first_name, last_name, email, role, avatar_url')
           .in('id', uniqueStudentIds)
           .eq('role', 'student');
 
@@ -444,7 +447,7 @@ export const getStudentsForTeacherMessaging = async (teacherId: string, page: nu
         const uniqueTeacherIds = [...new Set(teacherIds.map(t => t.user_id))];
         const { data: courseTeachers, error: teachersError } = await supabase
           .from('profiles')
-          .select('id, first_name, last_name, email, role')
+          .select('id, first_name, last_name, email, role, avatar_url')
           .in('id', uniqueTeacherIds)
           .eq('role', 'teacher');
 
@@ -456,7 +459,7 @@ export const getStudentsForTeacherMessaging = async (teacherId: string, page: nu
     // Get all admins
     const { data: admins, error: adminsError } = await supabase
       .from('profiles')
-      .select('id, first_name, last_name, email, role')
+      .select('id, first_name, last_name, email, role, avatar_url')
       .eq('role', 'admin');
 
     if (adminsError) throw adminsError;
@@ -464,7 +467,7 @@ export const getStudentsForTeacherMessaging = async (teacherId: string, page: nu
     // Get all other teachers (excluding the current teacher)
     const { data: allTeachers, error: allTeachersError } = await supabase
       .from('profiles')
-      .select('id, first_name, last_name, email, role')
+      .select('id, first_name, last_name, email, role, avatar_url')
       .eq('role', 'teacher')
       .neq('id', teacherId);
 
@@ -543,7 +546,7 @@ export const getUsersForStudentMessaging = async (studentId: string, page: numbe
     // Get user profiles
     const { data: users, error: usersError } = await supabase
       .from('profiles')
-      .select('id, first_name, last_name, email, role')
+      .select('id, first_name, last_name, email, role, avatar_url')
       .in('id', uniqueUserIds);
 
     if (usersError) throw usersError;
@@ -584,7 +587,7 @@ export const searchUsersForMessaging = async (searchTerm: string, page: number =
 
   const { data: users, error } = await supabase
     .from('profiles')
-    .select('id, first_name, last_name, email, role')
+    .select('id, first_name, last_name, email, role, avatar_url')
     .or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`)
     .range(from, to)
     .order('first_name');
@@ -637,7 +640,7 @@ export const searchStudentsForTeacherMessaging = async (teacherId: string, searc
         const uniqueStudentIds = [...new Set(studentIds.map(s => s.user_id))];
         const { data: courseStudents, error: courseError } = await supabase
           .from('profiles')
-          .select('id, first_name, last_name, email, role')
+          .select('id, first_name, last_name, email, role, avatar_url')
           .in('id', uniqueStudentIds)
           .eq('role', 'student');
 
@@ -660,7 +663,7 @@ export const searchStudentsForTeacherMessaging = async (teacherId: string, searc
         const uniqueTeacherIds = [...new Set(teacherIds.map(t => t.user_id))];
         const { data: courseTeachers, error: teachersError } = await supabase
           .from('profiles')
-          .select('id, first_name, last_name, email, role')
+          .select('id, first_name, last_name, email, role, avatar_url')
           .in('id', uniqueTeacherIds)
           .eq('role', 'teacher');
 
@@ -672,7 +675,7 @@ export const searchStudentsForTeacherMessaging = async (teacherId: string, searc
     // Get all admins
     const { data: admins, error: adminsError } = await supabase
       .from('profiles')
-      .select('id, first_name, last_name, email, role')
+      .select('id, first_name, last_name, email, role, avatar_url')
       .eq('role', 'admin');
 
     if (adminsError) throw adminsError;
@@ -680,7 +683,7 @@ export const searchStudentsForTeacherMessaging = async (teacherId: string, searc
     // Get all other teachers (excluding the current teacher)
     const { data: allTeachers, error: allTeachersError } = await supabase
       .from('profiles')
-      .select('id, first_name, last_name, email, role')
+      .select('id, first_name, last_name, email, role, avatar_url')
       .eq('role', 'teacher')
       .neq('id', teacherId);
 
@@ -764,7 +767,7 @@ export const searchUsersForStudentMessaging = async (studentId: string, searchTe
     // Get user profiles
     const { data: users, error: usersError } = await supabase
       .from('profiles')
-      .select('id, first_name, last_name, email, role')
+      .select('id, first_name, last_name, email, role, avatar_url')
       .in('id', uniqueUserIds);
 
     if (usersError) throw usersError;
