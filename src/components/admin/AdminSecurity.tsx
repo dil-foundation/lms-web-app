@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Shield, 
   Settings, 
@@ -22,12 +23,15 @@ import {
   ChevronRight,
   Search,
   XCircle,
-  X
+  X,
+  Server,
+  Bell
 } from 'lucide-react';
 import { toast } from 'sonner';
 import SecurityService, { SecuritySetting, AccessLog, SecurityStats } from '@/services/securityService';
 import SupabaseMFAService from '@/services/supabaseMFAService';
 import AccessLogService from '@/services/accessLogService';
+import AdminSettingsService, { type AdminSettings } from '@/services/adminSettingsService';
 import { ContentLoader } from '@/components/ContentLoader';
 import { supabase } from '@/integrations/supabase/client';
 import { formatTimestampWithTimezone } from '@/utils/dateUtils';
@@ -386,6 +390,21 @@ const AdminSecurity = () => {
   const [saving, setSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
+  // Admin Settings state
+  const [adminSettings, setAdminSettings] = useState({
+    // System Settings
+    systemName: 'DIL Learning Platform',
+    maintenanceMode: false,
+    
+    // Notifications
+    systemNotifications: true,
+    pushNotifications: false
+  });
+  const [originalAdminSettings, setOriginalAdminSettings] = useState(adminSettings);
+  const [adminSettingsLoading, setAdminSettingsLoading] = useState(true);
+  const [adminSettingsSaving, setAdminSettingsSaving] = useState(false);
+  const [adminSettingsResetting, setAdminSettingsResetting] = useState(false);
+
   // Access logs states
   const [accessLogs, setAccessLogs] = useState<AccessLog[]>([]);
   const [accessLogsLoading, setAccessLogsLoading] = useState(false);
@@ -398,7 +417,125 @@ const AdminSecurity = () => {
   // Load all data on component mount
   useEffect(() => {
     loadSecurityData();
+    loadAdminSettings();
   }, []);
+
+  // Admin Settings functions
+  const loadAdminSettings = async () => {
+    try {
+      setAdminSettingsLoading(true);
+      const dbSettings = await AdminSettingsService.getSettings();
+      
+      // Convert database format to component format
+      const componentSettings = {
+        systemName: dbSettings.system_name,
+        maintenanceMode: dbSettings.maintenance_mode,
+        systemNotifications: dbSettings.system_notifications,
+        pushNotifications: dbSettings.push_notifications
+      };
+      
+      setAdminSettings(componentSettings);
+      setOriginalAdminSettings(componentSettings);
+    } catch (error) {
+      console.error('Error loading admin settings:', error);
+      toast.error('Failed to load admin settings');
+    } finally {
+      setAdminSettingsLoading(false);
+    }
+  };
+
+  const handleAdminSettingsSave = async () => {
+    setAdminSettingsSaving(true);
+    try {
+      // Convert component format to database format
+      const dbSettings = {
+        system_name: adminSettings.systemName,
+        maintenance_mode: adminSettings.maintenanceMode,
+        system_notifications: adminSettings.systemNotifications,
+        email_notifications: true, // Keep email notifications enabled in database
+        push_notifications: adminSettings.pushNotifications
+      };
+
+      await AdminSettingsService.updateSettings(dbSettings);
+      setOriginalAdminSettings(adminSettings);
+      toast.success('Admin settings saved successfully');
+
+      // Log admin settings update
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await AccessLogService.logAdminSettingsAction(
+            user.id,
+            user.email || 'unknown@email.com',
+            'updated',
+            'admin_settings',
+            {
+              system_name: adminSettings.systemName,
+              maintenance_mode: adminSettings.maintenanceMode,
+              system_notifications: adminSettings.systemNotifications,
+              push_notifications: adminSettings.pushNotifications
+            }
+          );
+        }
+      } catch (logError) {
+        console.error('Error logging admin settings update:', logError);
+      }
+    } catch (error) {
+      console.error('Error saving admin settings:', error);
+      toast.error('Failed to save admin settings');
+    } finally {
+      setAdminSettingsSaving(false);
+    }
+  };
+
+  const handleAdminSettingsReset = async () => {
+    setAdminSettingsResetting(true);
+    try {
+      // Load current settings from database (this will restore the original values)
+      const currentSettings = await AdminSettingsService.getSettings();
+      
+      // Convert database format to component format
+      const componentSettings = {
+        systemName: currentSettings.system_name,
+        maintenanceMode: currentSettings.maintenance_mode,
+        systemNotifications: currentSettings.system_notifications,
+        pushNotifications: currentSettings.push_notifications
+      };
+      
+      setAdminSettings(componentSettings);
+      setOriginalAdminSettings(componentSettings);
+      toast.success('Admin settings reset successfully');
+
+      // Log admin settings reset
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await AccessLogService.logAdminSettingsAction(
+            user.id,
+            user.email || 'unknown@email.com',
+            'reset',
+            'admin_settings',
+            {
+              system_name: currentSettings.system_name,
+              maintenance_mode: currentSettings.maintenance_mode,
+              system_notifications: currentSettings.system_notifications,
+              push_notifications: currentSettings.push_notifications
+            }
+          );
+        }
+      } catch (logError) {
+        console.error('Error logging admin settings reset:', logError);
+      }
+    } catch (error) {
+      console.error('Error resetting admin settings:', error);
+      toast.error('Failed to reset admin settings');
+    } finally {
+      setAdminSettingsResetting(false);
+    }
+  };
+
+  // Check if there are unsaved changes for admin settings
+  const hasUnsavedAdminChanges = JSON.stringify(adminSettings) !== JSON.stringify(originalAdminSettings);
 
   const loadSecurityData = async () => {
     try {
@@ -672,13 +809,157 @@ const AdminSecurity = () => {
 
 
 
-  if (loading) {
+  if (loading || adminSettingsLoading) {
     return <ContentLoader />;
   }
 
   return (
     <div className="space-y-6 p-6">
-      <h1 className="text-3xl font-bold">Security Settings</h1>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
+            <Settings className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">Settings and Security</h1>
+            <p className="text-muted-foreground">Configure system-wide settings and security policies</p>
+          </div>
+        </div>
+      </div>
+
+      <Tabs defaultValue="settings" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsTrigger value="security">Security</TabsTrigger>
+        </TabsList>
+
+        {/* Settings Tab */}
+        <TabsContent value="settings">
+          <div className="space-y-6">
+            {/* Settings Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-lg flex items-center justify-center">
+                  <Server className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold">System Settings</h2>
+                  <p className="text-sm text-muted-foreground">Configure system-wide settings and preferences</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={handleAdminSettingsReset}
+                  disabled={adminSettingsResetting || adminSettingsSaving || adminSettingsLoading}
+                >
+                  {adminSettingsResetting ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                  )}
+                  {adminSettingsResetting ? 'Resetting...' : 'Reset'}
+                </Button>
+                <Button 
+                  onClick={handleAdminSettingsSave} 
+                  disabled={adminSettingsSaving || adminSettingsResetting || adminSettingsLoading || !hasUnsavedAdminChanges}
+                >
+                  {adminSettingsSaving ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4 mr-2" />
+                  )}
+                  {adminSettingsSaving ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            </div>
+
+            {/* System Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Server className="w-5 h-5" />
+                  System Configuration
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="systemName">System Name</Label>
+                  <Input
+                    id="systemName"
+                    value={adminSettings.systemName}
+                    onChange={(e) => setAdminSettings({...adminSettings, systemName: e.target.value})}
+                    disabled={adminSettingsSaving || adminSettingsResetting}
+                  />
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Maintenance Mode</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Temporarily disable access for maintenance
+                      </p>
+                    </div>
+                    <Switch
+                      checked={adminSettings.maintenanceMode}
+                      onCheckedChange={(checked) => setAdminSettings({...adminSettings, maintenanceMode: checked})}
+                      disabled={adminSettingsSaving || adminSettingsResetting}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Notifications */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bell className="w-5 h-5" />
+                  Notification Settings
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>System Notifications</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Enable system-wide notifications
+                      </p>
+                    </div>
+                    <Switch
+                      checked={adminSettings.systemNotifications}
+                      onCheckedChange={(checked) => setAdminSettings({...adminSettings, systemNotifications: checked})}
+                      disabled={adminSettingsSaving || adminSettingsResetting}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Real Time Notifications</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Send real-time notifications
+                      </p>
+                    </div>
+                    <Switch
+                      checked={adminSettings.pushNotifications}
+                      onCheckedChange={(checked) => setAdminSettings({...adminSettings, pushNotifications: checked})}
+                      disabled={adminSettingsSaving || adminSettingsResetting}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Security Tab */}
+        <TabsContent value="security">
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold">Security Settings</h2>
 
       {/* Security Overview */}
       <Card>
@@ -937,6 +1218,9 @@ const AdminSecurity = () => {
           </div>
         </CardContent>
       </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
