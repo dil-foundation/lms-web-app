@@ -15,6 +15,7 @@ interface AuthContextType {
   setPendingMFAUser: (user: User | null) => void;
   isMFAVerificationPending: boolean;
   handleUserNotFoundError: () => Promise<void>;
+  clearInvalidToken: () => void;
 }
 
 // Create the context with a default undefined value
@@ -58,6 +59,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // Get the initial session and user data
     console.log('🔐 AuthContext: Getting initial session...');
+    
+    // Check localStorage for debugging
+    const authTokenKey = import.meta.env.VITE_AUTH_TOKEN;
+    const storedToken = localStorage.getItem(authTokenKey);
+    if (storedToken) {
+      try {
+        const parsedToken = JSON.parse(storedToken);
+        console.log('🔐 Stored token info:', {
+          hasAccessToken: !!parsedToken.access_token,
+          hasRefreshToken: !!parsedToken.refresh_token,
+          expiresAt: parsedToken.expires_at,
+          expiresAtDate: parsedToken.expires_at ? new Date(parsedToken.expires_at * 1000).toISOString() : 'N/A',
+          isExpired: parsedToken.expires_at ? parsedToken.expires_at < Math.floor(Date.now() / 1000) : 'N/A',
+          currentTime: Math.floor(Date.now() / 1000)
+        });
+      } catch (e) {
+        console.error('🔐 Error parsing stored token:', e);
+      }
+    } else {
+      console.log('🔐 No stored token found with key:', authTokenKey);
+    }
+    
     supabase.auth.getSession().then(async ({ data: { session }, error }) => {
       console.log('🔐 AuthContext: Session result:', { 
         hasSession: !!session, 
@@ -69,11 +92,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
       
       if (error) {
-        console.error('Error getting session:', error);
+        console.error('🔐 Error getting session:', error);
+        console.error('🔐 Error details:', {
+          message: error.message,
+          status: error.status,
+          name: error.name
+        });
         
         // Handle user_not_found error
         if (error.message?.includes('user_not_found') || error.message?.includes('User from sub claim in JWT does not exist')) {
-          console.warn('User not found, clearing auth state and redirecting to login');
+          console.warn('🔐 User not found, clearing auth state and redirecting to login');
           cleanupAuthState();
           setSession(null);
           setUser(null);
@@ -86,8 +114,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           return;
         }
         
+        // Handle invalid token errors
+        if (error.message?.includes('Invalid JWT') || 
+            error.message?.includes('JWT expired') || 
+            error.message?.includes('invalid_token') ||
+            error.status === 401) {
+          console.warn('🔐 Invalid or expired token, clearing auth state and redirecting to login');
+          cleanupAuthState();
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+          
+          // Redirect to login if we're on a protected route
+          if (window.location.pathname.startsWith('/dashboard')) {
+            console.log('🔐 Redirecting to login page due to invalid token');
+            navigate('/auth', { replace: true });
+          }
+          return;
+        }
+        
         // For other errors, still set loading to false to prevent infinite loading
-        console.warn('Session error (non-user_not_found), setting loading to false');
+        console.warn('🔐 Session error (non-user_not_found), setting loading to false');
         setSession(null);
         setUser(null);
         setLoading(false);
@@ -240,6 +287,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     navigate('/auth', { replace: true });
   }, [navigate]);
 
+  // Manual function to clear invalid tokens
+  const clearInvalidToken = useCallback(() => {
+    console.log('🔐 Manually clearing invalid token...');
+    cleanupAuthState();
+    setSession(null);
+    setUser(null);
+    setPendingMFAUser(null);
+    setLoading(false);
+    
+    // Redirect to login
+    if (window.location.pathname.startsWith('/dashboard')) {
+      navigate('/auth', { replace: true });
+    }
+  }, [navigate]);
+
   // Expose the error handler for use in other components
   const value = useMemo(() => ({
     user,
@@ -249,8 +311,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     pendingMFAUser,
     setPendingMFAUser,
     isMFAVerificationPending: !!pendingMFAUser,
-    handleUserNotFoundError
-  }), [user, session, loading, signOut, pendingMFAUser, handleUserNotFoundError]);
+    handleUserNotFoundError,
+    clearInvalidToken
+  }), [user, session, loading, signOut, pendingMFAUser, handleUserNotFoundError, clearInvalidToken]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
 export const DebugAuthStatus: React.FC = () => {
-  const { user, session, loading } = useAuth();
+  const { user, session, loading, clearInvalidToken } = useAuth();
   const [debugInfo, setDebugInfo] = useState<any>({});
 
   useEffect(() => {
@@ -60,6 +60,24 @@ export const DebugAuthStatus: React.FC = () => {
       <div>Token Expiry: {debugInfo.tokenExpiry}</div>
       <div>LocalStorage Keys: {debugInfo.localStorage?.length || 0}</div>
       <div>SessionStorage Keys: {debugInfo.sessionStorage?.length || 0}</div>
+      
+      {/* Clear Invalid Token Button */}
+      <div style={{ marginTop: '10px' }}>
+        <button 
+          onClick={clearInvalidToken}
+          style={{
+            background: '#ff4444',
+            color: 'white',
+            border: 'none',
+            padding: '5px 10px',
+            borderRadius: '3px',
+            cursor: 'pointer',
+            fontSize: '11px'
+          }}
+        >
+          🗑️ Clear Invalid Token
+        </button>
+      </div>
     </div>
   );
 };
