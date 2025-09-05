@@ -28,7 +28,21 @@ const SupabaseMFAService = {
         };
       }
 
-      console.log('🔐 User found, listing MFA factors...');
+      console.log('🔐 User found, checking MFA status...');
+      console.log('🔐 User app_metadata:', user.app_metadata);
+      console.log('🔐 User user_metadata:', user.user_metadata);
+      
+      // Check if MFA is disabled by admin
+      if (user.app_metadata?.mfa_disabled_by_admin === 'true') {
+        console.log('🔐 MFA disabled by admin, returning disabled status');
+        return {
+          isEnabled: false,
+          isSetupComplete: false,
+          factors: []
+        };
+      }
+      
+      console.log('🔐 MFA not disabled by admin, listing MFA factors...');
       const { data: factors, error } = await supabase.auth.mfa.listFactors();
       if (error) {
         console.error('🔐 Error listing MFA factors:', error);

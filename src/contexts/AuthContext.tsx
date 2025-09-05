@@ -21,15 +21,9 @@ interface AuthContextType {
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const getInitialUser = () => {
-  try {
-    const sessionStr = localStorage.getItem(import.meta.env.VITE_AUTH_TOKEN);
-    if (sessionStr) {
-      const session = JSON.parse(sessionStr);
-      return session.user || null;
-    }
-  } catch (error) {
-    // Ignore parsing errors
-  }
+  // Don't try to read from localStorage manually - let Supabase handle it
+  // The initial user will be set when getSession() is called
+  console.log('🔐 getInitialUser: Returning null, will be set by getSession()');
   return null;
 };
 
@@ -63,7 +57,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     // Get the initial session and user data
+    console.log('🔐 AuthContext: Getting initial session...');
     supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+      console.log('🔐 AuthContext: Session result:', { 
+        hasSession: !!session, 
+        hasError: !!error,
+        userId: session?.user?.id,
+        expiresAt: session?.expires_at,
+        expiresAtDate: session?.expires_at ? new Date(session.expires_at * 1000).toISOString() : 'N/A',
+        isExpired: session?.expires_at ? session.expires_at < Math.floor(Date.now() / 1000) : 'N/A'
+      });
+      
       if (error) {
         console.error('Error getting session:', error);
         
