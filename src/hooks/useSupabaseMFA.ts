@@ -32,12 +32,10 @@ export const useSupabaseMFA = () => {
   // Check if MFA is required globally
   const checkMFARequirement = useCallback(async () => {
     try {
-      console.log('🔐 MFA Hook: Calling checkMFARequirement service');
       const required = await SupabaseMFAService.checkMFARequirement();
-      console.log('🔐 MFA Hook: MFA requirement result:', required);
       setIsMFARequired(required);
     } catch (error) {
-      console.error('🔐 MFA Hook: Error checking MFA requirement:', error);
+      console.error('Error checking MFA requirement:', error);
       setIsMFARequired(false);
     }
   }, []);
@@ -186,18 +184,8 @@ export const useSupabaseMFA = () => {
   // Load initial data
   useEffect(() => {
     if (user) {
-      console.log('🔐 MFA Hook: User found, loading MFA data');
       loadMFAStatus();
       checkMFARequirement();
-    } else {
-      console.log('🔐 MFA Hook: No user, resetting MFA state');
-      // Reset MFA state when no user
-      setMfaStatus({
-        isEnabled: false,
-        isSetupComplete: false,
-        factors: []
-      });
-      setIsMFARequired(false);
     }
   }, [user, loadMFAStatus, checkMFARequirement]);
 

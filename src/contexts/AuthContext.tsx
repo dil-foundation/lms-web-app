@@ -4,7 +4,6 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import SessionService from '@/services/sessionService';
 import AccessLogService from '@/services/accessLogService';
-import { isTokenExpired, getTokenExpiry, getTokenTimeRemaining } from '@/utils/tokenUtils';
 
 // Define the shape of the context state
 interface AuthContextType {
@@ -16,15 +15,21 @@ interface AuthContextType {
   setPendingMFAUser: (user: User | null) => void;
   isMFAVerificationPending: boolean;
   handleUserNotFoundError: () => Promise<void>;
-  clearInvalidToken: () => Promise<void>;
 }
 
 // Create the context with a default undefined value
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const getInitialUser = () => {
-  // Don't try to read from localStorage manually - let Supabase handle it
-  // The initial user will be set when getSession() is called
+  try {
+    const sessionStr = localStorage.getItem(import.meta.env.VITE_AUTH_TOKEN);
+    if (sessionStr) {
+      const session = JSON.parse(sessionStr);
+      return session.user || null;
+    }
+  } catch (error) {
+    // Ignore parsing errors
+  }
   return null;
 };
 
@@ -57,122 +62,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user]);
 
   useEffect(() => {
-    // Proactive token validation approach
-    const authTokenKey = import.meta.env.VITE_AUTH_TOKEN;
-    const storedToken = localStorage.getItem(authTokenKey);
-    
-    if (!storedToken) {
-      setSession(null);
-      setUser(null);
-      setLoading(false);
-      return;
-    }
-    
-    let parsedToken;
-    try {
-      parsedToken = JSON.parse(storedToken);
-    } catch (e) {
-      setSession(null);
-      setUser(null);
-      setLoading(false);
-      return;
-    }
-    
-    // Check if we have required tokens
-    if (!parsedToken.access_token || !parsedToken.refresh_token) {
-      cleanupAuthState();
-      setSession(null);
-      setUser(null);
-      setLoading(false);
-      return;
-    }
-    
-    // Check if access token is expired
-    const isAccessTokenExpired = isTokenExpired(parsedToken.access_token);
-    
-    if (isAccessTokenExpired) {
-      // Try to refresh the token with timeout
-      const refreshPromise = supabase.auth.refreshSession();
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('refreshSession timeout after 5 seconds')), 5000)
-      );
+    // Get the initial session and user data
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+      if (error) {
+        console.error('Error getting session:', error);
+        
+        // Handle user_not_found error
+        if (error.message?.includes('user_not_found') || error.message?.includes('User from sub claim in JWT does not exist')) {
+          console.warn('User not found, clearing auth state and redirecting to login');
+          cleanupAuthState();
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+          
+          // Redirect to login if on dashboard
+          if (window.location.pathname.startsWith('/dashboard')) {
+            navigate('/auth', { replace: true });
+          }
+          return;
+        }
+      }
       
-      Promise.race([refreshPromise, timeoutPromise]).then((result: any) => {
-        const { data: refreshData, error: refreshError } = result;
-        
-        if (refreshError) {
-          cleanupAuthState();
-          setSession(null);
-          setUser(null);
-          setLoading(false);
-          
-          if (window.location.pathname.startsWith('/dashboard')) {
-            navigate('/auth', { replace: true });
-          }
-          return;
-        }
-        
-        if (refreshData.session) {
-          setSession(refreshData.session);
-          setUser(refreshData.session.user);
-          setLoading(false);
-          return;
-        } else {
-          cleanupAuthState();
-          setSession(null);
-          setUser(null);
-          setLoading(false);
-          
-          if (window.location.pathname.startsWith('/dashboard')) {
-            navigate('/auth', { replace: true });
-          }
-          return;
-        }
-      }).catch((refreshException) => {
-        cleanupAuthState();
-        setSession(null);
-        setUser(null);
-        setLoading(false);
-        
-        if (window.location.pathname.startsWith('/dashboard')) {
-          navigate('/auth', { replace: true });
-        }
-      });
-    } else {
-      // Token is valid, get the session normally
-      supabase.auth.getSession().then(async ({ data: { session }, error }) => {
-        if (error) {
-          // Handle user_not_found error
-          if (error.message?.includes('user_not_found') || error.message?.includes('User from sub claim in JWT does not exist')) {
-            cleanupAuthState();
-            setSession(null);
-            setUser(null);
-            setLoading(false);
-            
-            if (window.location.pathname.startsWith('/dashboard')) {
-              navigate('/auth', { replace: true });
-            }
-            return;
-          }
-          
-          // For other errors, still set loading to false to prevent infinite loading
-          setSession(null);
-          setUser(null);
-          setLoading(false);
-          return;
-        }
-        
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }).catch((catchError) => {
-        setSession(null);
-        setUser(null);
-        setLoading(false);
-      });
-    }
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
     
-    // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         // Handle auth errors
@@ -187,20 +102,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             
             if (error && error.code === 'PGRST116') {
               // User not found in database, sign them out
+              console.warn('User not found in database during auth state change, signing out');
               cleanupAuthState();
               setSession(null);
               setUser(null);
               navigate('/auth', { replace: true });
               return;
             }
-            
-            // Update session state after successful token refresh
-            setSession(session);
-            setUser(session.user);
           } catch (profileError) {
-            // Even if profile check fails, still update the session state
-            setSession(session);
-            setUser(session.user);
+            console.error('Error checking user profile during auth state change:', profileError);
           }
         }
         
@@ -267,7 +177,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             navigator.userAgent
           );
         } catch (error) {
-          // Silently handle logging errors
+          console.error('Error logging user logout:', error);
         }
       }
 
@@ -276,7 +186,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         try {
           await SessionService.deactivateSession(session.access_token);
         } catch (error) {
-          // Silently handle session deactivation errors
+          console.error('Error deactivating session:', error);
         }
       }
       
@@ -291,58 +201,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       navigate('/', { replace: true });
       localStorage.removeItem('cameFromDashboard');
     } catch (error) {
-      // Silently handle sign out errors
+      console.error('🔐 Sign out error:', error);
     }
   }, [navigate, session, user]);
 
   // Global error handler for user_not_found errors
   const handleUserNotFoundError = useCallback(async () => {
+    console.warn('Handling user_not_found error globally');
     cleanupAuthState();
     setSession(null);
     setUser(null);
     setPendingMFAUser(null);
     navigate('/auth', { replace: true });
-  }, [navigate]);
-
-  // Manual function to clear invalid tokens - with refresh attempt
-  const clearInvalidToken = useCallback(async () => {
-    // First try to refresh the token
-    try {
-      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-      
-      if (refreshError) {
-        cleanupAuthState();
-        setSession(null);
-        setUser(null);
-        setPendingMFAUser(null);
-        setLoading(false);
-        
-        if (window.location.pathname.startsWith('/dashboard')) {
-          navigate('/auth', { replace: true });
-        }
-        return;
-      }
-      
-      if (refreshData.session) {
-        setSession(refreshData.session);
-        setUser(refreshData.session.user);
-        setLoading(false);
-        return;
-      }
-    } catch (refreshException) {
-      // Silently handle refresh exceptions
-    }
-    
-    // If refresh fails, clear everything
-    cleanupAuthState();
-    setSession(null);
-    setUser(null);
-    setPendingMFAUser(null);
-    setLoading(false);
-    
-    if (window.location.pathname.startsWith('/dashboard')) {
-      navigate('/auth', { replace: true });
-    }
   }, [navigate]);
 
   // Expose the error handler for use in other components
@@ -354,9 +224,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     pendingMFAUser,
     setPendingMFAUser,
     isMFAVerificationPending: !!pendingMFAUser,
-    handleUserNotFoundError,
-    clearInvalidToken
-  }), [user, session, loading, signOut, pendingMFAUser, handleUserNotFoundError, clearInvalidToken]);
+    handleUserNotFoundError
+  }), [user, session, loading, signOut, pendingMFAUser, handleUserNotFoundError]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
