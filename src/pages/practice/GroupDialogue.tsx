@@ -1512,7 +1512,7 @@ export default function GroupDialogue() {
         </div>
         
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
           <Button
             variant="outline"
             size="icon"
@@ -1522,25 +1522,25 @@ export default function GroupDialogue() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           
-          <div className="text-center flex-1">
-            <div className="w-16 h-16 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg border border-primary/30 dark:border-primary/40">
-              <Users className="h-8 w-8 text-primary" />
+          <div className="text-center flex-1 px-12 sm:px-0">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4 shadow-lg border border-primary/30 dark:border-primary/40">
+              <Users className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
             </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent mb-2">Group Dialogue</h1>
-            <p className="text-lg text-muted-foreground">Master Interactive Group Conversations</p>
+            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent mb-1 sm:mb-2">Group Dialogue</h1>
+            <p className="text-base sm:text-lg text-muted-foreground">Master Interactive Group Conversations</p>
           </div>
           
-          <div className="w-10"></div>
+          <div className="hidden sm:block w-10"></div>
         </div>
 
         {/* Instructions */}
         <Card className="mb-6 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 dark:from-primary/10 dark:via-primary/20 dark:to-primary/10 border border-primary/20 dark:border-primary/30 rounded-2xl shadow-lg">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="text-center">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-md border border-primary/30 dark:border-primary/40">
-                <MessageSquare className="h-6 w-6 text-primary" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 dark:from-primary/30 dark:via-primary/40 dark:to-primary/50 rounded-xl flex items-center justify-center mx-auto mb-2 sm:mb-3 shadow-md border border-primary/30 dark:border-primary/40">
+                <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
               </div>
-              <p className="text-primary dark:text-primary/90 font-medium text-lg">
+              <p className="text-primary dark:text-primary/90 font-medium text-base sm:text-lg">
                 Practice group conversations with AI personas in real-world scenarios
               </p>
             </div>
@@ -1589,22 +1589,22 @@ export default function GroupDialogue() {
         {/* Scenario Selection */}
         {!isLoading && scenarios.length > 0 && (
         <div className="mb-4">
-          <h2 className="text-xl font-semibold mb-6 text-center bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent">Choose a Scenario</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6 text-center bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent">Choose a Scenario</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             {scenarios.map((scenario) => (
               <Card
                 key={scenario.id}
                 className="cursor-pointer bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group"
                 onClick={() => handleScenarioSelect(scenario.id)}
               >
-                <CardContent className="p-6">
+                <CardContent className="p-4 sm:p-6">
                   <div className="flex items-center justify-between mb-4">
-                    <div className={`w-12 h-12 ${getScenarioColor(scenario)} rounded-2xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300`}>
-                      {React.createElement(getScenarioIcon(scenario), { className: "h-6 w-6 text-white" })}
+                    <div className={`w-10 h-10 sm:w-12 sm:h-12 ${getScenarioColor(scenario)} rounded-2xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300`}>
+                      {React.createElement(getScenarioIcon(scenario), { className: "h-5 w-5 sm:h-6 sm:w-6 text-white" })}
                     </div>
                     <div className="flex items-center space-x-1">
                       {scenario.participants.map((participant, index) => (
-                        <div key={index} className="w-6 h-6 bg-primary/20 dark:bg-primary/30 rounded-full flex items-center justify-center border border-primary/30 dark:border-primary/40">
+                        <div key={index} className="w-5 h-5 sm:w-6 sm:h-6 bg-primary/20 dark:bg-primary/30 rounded-full flex items-center justify-center border border-primary/30 dark:border-primary/40">
                           <span className="text-xs text-primary font-medium">
                             {participant === 'You' ? 'Y' : participant[0]}
                           </span>
@@ -1612,8 +1612,8 @@ export default function GroupDialogue() {
                       ))}
                     </div>
                   </div>
-                  <h3 className="font-semibold text-lg mb-2 text-gray-900 dark:text-gray-100 group-hover:text-primary transition-colors duration-300">{scenario.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{scenario.description}</p>
+                  <h3 className="font-semibold text-base sm:text-lg mb-2 text-gray-900 dark:text-gray-100 group-hover:text-primary transition-colors duration-300">{scenario.title}</h3>
+                  <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">{scenario.description}</p>
                 </CardContent>
               </Card>
             ))}

@@ -519,40 +519,40 @@ export default function AbstractTopicMonologue() {
   return (
     <div className="min-h-screen bg-background">
       {/* Consistent Header Section */}
-      <div className="px-6 py-8">
+      <div className="px-4 sm:px-6 py-6 sm:py-8">
         {/* Breadcrumb Navigation */}
         <PracticeBreadcrumb className="mb-6" />
         
         {/* Header with Back Button and Title */}
-        <div className="relative flex items-center justify-center mb-8 text-center">
+        <div className="relative flex items-center justify-center mb-6 sm:mb-8 text-center">
               <Button 
                 variant="outline" 
                 size="icon"
                 onClick={() => navigate('/dashboard/practice/stage-4')}
-            className="absolute left-0 group w-12 h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+            className="absolute left-0 group w-10 h-10 sm:w-12 sm:h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
               >
-            <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-300" />
+            <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 group-hover:-translate-x-1 transition-transform duration-300" />
               </Button>
           
-          <div className="space-y-3">
-            <div className="inline-block p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
-              <MessageSquare className="h-10 w-10 text-primary" />
+          <div className="space-y-2 sm:space-y-3 px-12 sm:px-0">
+            <div className="inline-block p-3 sm:p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
+              <MessageSquare className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
               </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
               Abstract Topic Monologue
             </h1>
-            <p className="text-muted-foreground text-lg">Express complex ideas fluently and handle abstract concepts</p>
+            <p className="text-muted-foreground text-base sm:text-lg">Express complex ideas fluently and handle abstract concepts</p>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="px-6 pb-8 space-y-6">
+      <div className="px-4 sm:px-6 pb-8 space-y-6">
         {/* Title */}
         <div className="text-center">
-          <h2 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent">Speak Your Mind</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-2 bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent">Speak Your Mind</h2>
           {!isLoading && topics.length > 0 && (
-            <p className="text-muted-foreground text-lg">
+            <p className="text-muted-foreground text-sm sm:text-lg">
               Topic: {currentTopicIndex + 1} of {topics.length}
             </p>
           )}
@@ -569,7 +569,7 @@ export default function AbstractTopicMonologue() {
               <h3 className="text-xl font-semibold mb-2">Current Topic</h3>
             </div>
           </div>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             {isLoading ? (
               <div className="text-center">
                 <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 text-primary" />
@@ -596,7 +596,7 @@ export default function AbstractTopicMonologue() {
                 <Button
                   onClick={handleToggleAudio}
                   disabled={isLoadingAudio || audioState.error !== null}
-                  className={`w-24 h-24 rounded-full text-white shadow-lg mb-6 transition-all duration-300 hover:scale-105 ${
+                  className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full text-white shadow-lg mb-6 transition-all duration-300 hover:scale-105 ${
                     isLoadingAudio || audioState.error
                       ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed'
                       : audioState.isPlaying
@@ -606,13 +606,13 @@ export default function AbstractTopicMonologue() {
                   size="icon"
                 >
                   {isLoadingAudio ? (
-                    <div className="w-10 h-10 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   ) : audioState.isPlaying ? (
-                    <Pause className="w-12 h-12" />
+                    <Pause className="w-10 h-10 sm:w-12 sm:h-12" />
                   ) : audioState.error ? (
-                    <VolumeX className="w-12 h-12" />
+                    <VolumeX className="w-10 h-10 sm:w-12 sm:h-12" />
                   ) : (
-                    <Play className="w-12 h-12" />
+                    <Play className="w-10 h-10 sm:w-12 sm:h-12" />
                   )}
                 </Button>
                 
@@ -672,17 +672,17 @@ export default function AbstractTopicMonologue() {
 
         {/* Timer */}
         <Card className="overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-gradient-to-br from-card to-card/50 dark:bg-card backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-lg hover:shadow-xl">
-          <CardContent className="p-8 text-center">
-            <h3 className="text-xl font-semibold mb-6 text-foreground">Time Remaining</h3>
-            <div className="inline-flex items-center space-x-12">
+          <CardContent className="p-6 sm:p-8 text-center">
+            <h3 className="text-lg sm:text-xl font-semibold mb-6 text-foreground">Time Remaining</h3>
+            <div className="inline-flex items-center space-x-8 sm:space-x-12">
               <div className="text-center">
-                <div className="text-5xl font-bold text-primary">
+                <div className="text-4xl sm:text-5xl font-bold text-primary">
                   {formatTime(timeLeft).split(':')[0]}
                 </div>
                 <div className="text-sm text-muted-foreground">Minutes</div>
               </div>
               <div className="text-center">
-                <div className="text-5xl font-bold text-primary">
+                <div className="text-4xl sm:text-5xl font-bold text-primary">
                   {formatTime(timeLeft).split(':')[1]}
                 </div>
                 <div className="text-sm text-muted-foreground">Seconds</div>
@@ -858,7 +858,7 @@ export default function AbstractTopicMonologue() {
             <Button
               onClick={handleStartRecording}
               disabled={isLoading || !currentTopic || isEvaluating}
-              className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white px-12 py-4 rounded-full text-xl font-medium transition-all duration-300 hover:scale-105 hover:shadow-2xl shadow-lg"
+              className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white px-8 sm:px-12 py-3 sm:py-4 rounded-full text-lg sm:text-xl font-medium transition-all duration-300 hover:scale-105 hover:shadow-2xl shadow-lg"
               size="lg"
             >
               {isLoading ? (
@@ -876,7 +876,7 @@ export default function AbstractTopicMonologue() {
           ) : isRecording ? (
             <Button
               onClick={handleStopRecording}
-              className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-12 py-4 rounded-full text-xl font-medium transition-all duration-300 hover:scale-105 hover:shadow-2xl shadow-lg animate-pulse"
+              className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-8 sm:px-12 py-3 sm:py-4 rounded-full text-lg sm:text-xl font-medium transition-all duration-300 hover:scale-105 hover:shadow-2xl shadow-lg animate-pulse"
               size="lg"
             >
               <MicOff className="h-6 w-6 mr-3" />
@@ -885,7 +885,7 @@ export default function AbstractTopicMonologue() {
           ) : isEvaluating ? (
             <Button
               disabled
-              className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-12 py-4 rounded-full text-xl font-medium cursor-not-allowed shadow-lg"
+              className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-8 sm:px-12 py-3 sm:py-4 rounded-full text-lg sm:text-xl font-medium cursor-not-allowed shadow-lg"
               size="lg"
             >
               <Loader2 className="h-6 w-6 mr-3 animate-spin" />
@@ -895,7 +895,7 @@ export default function AbstractTopicMonologue() {
             <Button
               onClick={resetSession}
               disabled={isLoading || !currentTopic}
-              className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white px-10 py-4 rounded-full text-xl font-medium transition-all duration-300 hover:scale-105 hover:shadow-2xl shadow-lg"
+              className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white px-8 sm:px-10 py-3 sm:py-4 rounded-full text-lg sm:text-xl font-medium transition-all duration-300 hover:scale-105 hover:shadow-2xl shadow-lg"
               size="lg"
             >
               <Mic className="h-6 w-6 mr-3" />

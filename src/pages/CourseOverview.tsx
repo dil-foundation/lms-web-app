@@ -437,7 +437,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
   }
 
   return (
-    <div className="min-h-full bg-background">
+    <div className="min-h-full bg-background overflow-x-hidden">
       {/* Premium Header */}
       {!isPreviewMode && (
         <div className="relative">
@@ -460,7 +460,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
       {/* Enhanced Hero Section */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20"></div>
-        <div className="relative w-full max-w-none px-4 sm:px-6 lg:px-8 py-16">
+        <div className="relative w-full max-w-none px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
           <div className="space-y-12">
             {/* Premium Course Info */}
             <div className="text-center space-y-8">
@@ -470,7 +470,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                     {course.category}
                   </Badge>
                 )}
-                <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-6 leading-tight">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-6 leading-tight break-words">
                   {course.title}
                 </h1>
                 <p className="text-xl text-muted-foreground mb-8 max-w-4xl mx-auto leading-relaxed">
@@ -479,7 +479,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
               </div>
 
               {/* Enhanced Course Stats */}
-              <div className="flex flex-wrap items-center justify-center gap-8 text-sm">
+              <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 text-sm">
                 <div className="flex items-center gap-2 bg-gradient-to-br from-card/80 to-card/60 dark:bg-card/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
                   <Users className="w-5 h-5 text-primary" />
                   <span className="font-medium text-gray-900 dark:text-gray-100">{course.stats.students.toLocaleString()} students</span>
@@ -496,11 +496,11 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
             </div>
 
             {/* Premium Video Player */}
-            <div className="mx-auto w-[90%]">
+            <div className="mx-auto w-full sm:w-[90%]">
               <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm shadow-xl rounded-3xl overflow-hidden">
                 <CardContent className="p-0">
                   {/* Enhanced Video/Image Preview */}
-                  <div className="relative aspect-video bg-gray-100 rounded-t-lg overflow-hidden min-h-[360px] md:min-h-[450px]">
+                  <div className="relative aspect-video bg-gray-100 rounded-t-lg overflow-hidden min-h-[200px] sm:min-h-[300px] md:min-h-[450px]">
                     {course.hasValidVideo && course.videoUrl ? (
                       // Valid video available
                       isVideoPlaying ? (
@@ -643,8 +643,8 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {course.features.map((feature, index) => (
-                    <div key={`feature-${index}`} className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/10 dark:to-green-800/10 border border-green-200/50 dark:border-green-700/30 shadow-sm hover:shadow-md transition-all duration-300">
-                      <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                    <div key={`feature-${index}`} className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-primary/5 to-primary/15 border border-primary/20 dark:border-primary/10 shadow-sm hover:shadow-md transition-all duration-300">
+                      <CheckCircle className="w-5 h-5 text-green-500 dark:text-green-400 mt-0.5 flex-shrink-0" />
                       <span className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-relaxed">{feature}</span>
                     </div>
                   ))}
@@ -667,9 +667,9 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {course.requirements.map((req, index) => (
-                      <div key={index} className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/10 dark:to-orange-800/10 border border-orange-200/50 dark:border-orange-700/30 shadow-sm hover:shadow-md transition-all duration-300">
-                        <div className="w-6 h-6 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <span className="text-xs font-semibold text-orange-700 dark:text-orange-300">{index + 1}</span>
+                      <div key={index} className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-primary/5 to-primary/15 border border-primary/20 dark:border-primary/10 shadow-sm hover:shadow-md transition-all duration-300">
+                        <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <span className="text-xs font-bold text-primary">{index + 1}</span>
                         </div>
                         <span className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-relaxed">{req}</span>
                       </div>
@@ -804,16 +804,16 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                 </p>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   <div className="text-center p-3 sm:p-4 rounded-xl bg-gradient-to-br from-primary/5 to-primary/15 border border-primary/20 dark:border-primary/10 shadow-sm">
-                    <div className="text-lg sm:text-2xl font-bold text-primary mb-1 break-words">{course.stats.level}</div>
+                    <div className="text-sm sm:text-lg lg:text-xl font-bold text-primary mb-1 whitespace-nowrap overflow-hidden text-ellipsis" title={course.stats.level}>{course.stats.level}</div>
                     <div className="text-xs text-muted-foreground">Level</div>
-                    </div>
+                  </div>
                   <div className="text-center p-3 sm:p-4 rounded-xl bg-gradient-to-br from-primary/5 to-primary/15 border border-primary/20 dark:border-primary/10 shadow-sm">
-                    <div className="text-lg sm:text-2xl font-bold text-primary mb-1">{course.stats.lessons}</div>
+                    <div className="text-sm sm:text-lg lg:text-xl font-bold text-primary mb-1">{course.stats.lessons}</div>
                     <div className="text-xs text-muted-foreground">Lessons</div>
-                    </div>
-                    </div>
+                  </div>
+                </div>
                 
                   <div className="space-y-3">
                   <div className="flex justify-between items-center p-3 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 border border-gray-200/50 dark:border-gray-600/50 shadow-sm">

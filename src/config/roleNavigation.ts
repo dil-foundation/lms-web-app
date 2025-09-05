@@ -34,7 +34,7 @@ export const getRoleNavigation = (role?: UserRole): NavigationItem[] => {
         { title: 'Overview', path: '/dashboard', icon: Home },
         { title: 'My Courses', path: '/dashboard/courses', icon: BookOpen },
         { title: 'Students', path: '/dashboard/students', icon: Users },
-        { title: 'Reports', path: '/dashboard/reports', icon: FileQuestion },
+        { title: 'Performance Analytics', path: '/dashboard/reports', icon: FileQuestion },
         { title: 'Discussion', path: '/dashboard/discussion', icon: MessageCircle },
       ];
     
@@ -43,7 +43,7 @@ export const getRoleNavigation = (role?: UserRole): NavigationItem[] => {
         { title: 'Overview', path: '/dashboard', icon: Home },
         { title: 'Users', path: '/dashboard/users', icon: Users },
         { title: 'Courses', path: '/dashboard/courses', icon: BookOpen },
-        { title: 'Reports', path: '/dashboard/reports', icon: FileQuestion },
+        { title: 'Performance Analytics', path: '/dashboard/reports', icon: FileQuestion },
         { title: 'Observation Reports', path: '/dashboard/observation-reports', icon: Eye },
         { title: 'Discussion', path: '/dashboard/discussion', icon: MessageSquare },
         { title: 'Assessments', path: '/dashboard/grade-assignments', icon: Award },
@@ -108,7 +108,7 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean): N
             { title: 'Students', path: '/dashboard/students', icon: Users },
             { title: 'Classes', path: '/dashboard/classes', icon: Users2 },
             { title: 'Assessments', path: '/dashboard/grade-assignments', icon: Award },
-            { title: 'Reports', path: '/dashboard/reports', icon: FileQuestion },
+            { title: 'Performance Analytics', path: '/dashboard/reports', icon: FileQuestion },
           ]
         },
         {
@@ -144,7 +144,12 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean): N
         {
           title: 'ANALYTICS',
           items: [
-            { title: 'Reports', path: '/dashboard/reports', icon: FileQuestion },
+            { title: 'Performance Analytics', path: '/dashboard/reports', icon: FileQuestion },
+          ]
+        },
+        {
+          title: 'OBSERVATION',
+          items: [
             { title: 'Observation Reports', path: '/dashboard/observation-reports', icon: Eye },
           ]
         },
