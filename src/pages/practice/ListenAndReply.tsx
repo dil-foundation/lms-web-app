@@ -744,7 +744,7 @@ export const ListenAndReply: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="relative flex items-center justify-center mb-8 p-4 sm:p-6 lg:p-8">
+        <div className="relative flex items-center justify-center mb-6 sm:mb-8 p-4 sm:p-6 lg:p-8">
           <Button 
             variant="outline" 
             size="icon" 
@@ -753,14 +753,14 @@ export const ListenAndReply: React.FC = () => {
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div className="text-center">
-            <div className="inline-block p-4 bg-gradient-to-br from-primary/10 via-primary/20 to-primary/30 rounded-2xl mb-4 shadow-lg border border-primary/20">
-              <Ear className="h-10 w-10 text-primary" />
+          <div className="text-center px-12 sm:px-0">
+            <div className="inline-block p-3 sm:p-4 bg-gradient-to-br from-primary/10 via-primary/20 to-primary/30 rounded-2xl mb-3 sm:mb-4 shadow-lg border border-primary/20">
+              <Ear className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-gray-100 dark:via-gray-200 dark:to-gray-100 bg-clip-text text-transparent mb-3">
+            <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-gray-100 dark:via-gray-200 dark:to-gray-100 bg-clip-text text-transparent mb-2 sm:mb-3">
               Listen and Reply
             </h1>
-            <p className="text-lg text-muted-foreground font-medium">Practice Conversation Skills</p>
+            <p className="text-base sm:text-lg text-muted-foreground font-medium">Practice Conversation Skills</p>
           </div>
         </div>
 
@@ -775,7 +775,7 @@ export const ListenAndReply: React.FC = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="relative flex items-center justify-center mb-8 p-4 sm:p-6 lg:p-8">
+        <div className="relative flex items-center justify-center mb-6 sm:mb-8 p-4 sm:p-6 lg:p-8">
           <Button 
             variant="outline" 
             size="icon" 
@@ -784,14 +784,14 @@ export const ListenAndReply: React.FC = () => {
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div className="text-center">
-            <div className="inline-block p-4 bg-gradient-to-br from-primary/10 via-primary/20 to-primary/30 rounded-2xl mb-4 shadow-lg border border-primary/20">
-              <Ear className="h-10 w-10 text-primary" />
+          <div className="text-center px-12 sm:px-0">
+            <div className="inline-block p-3 sm:p-4 bg-gradient-to-br from-primary/10 via-primary/20 to-primary/30 rounded-2xl mb-3 sm:mb-4 shadow-lg border border-primary/20">
+              <Ear className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-gray-100 dark:via-gray-200 dark:to-gray-100 bg-clip-text text-transparent mb-3">
+            <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-gray-100 dark:via-gray-200 dark:to-gray-100 bg-clip-text text-transparent mb-2 sm:mb-3">
               Listen and Reply
             </h1>
-            <p className="text-lg text-muted-foreground font-medium">Practice Conversation Skills</p>
+            <p className="text-base sm:text-lg text-muted-foreground font-medium">Practice Conversation Skills</p>
           </div>
         </div>
 
@@ -841,7 +841,7 @@ export const ListenAndReply: React.FC = () => {
       </div>
       
       {/* Header */}
-      <div className="relative flex items-center justify-center mb-8 p-4 sm:p-6 lg:p-8">
+      <div className="relative flex items-center justify-center mb-6 sm:mb-8 p-4 sm:p-6 lg:p-8">
         <Button 
           variant="outline" 
           size="icon" 
@@ -850,15 +850,15 @@ export const ListenAndReply: React.FC = () => {
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <div className="text-center">
-          <div className="inline-block p-4 bg-gradient-to-br from-primary/10 via-primary/20 to-primary/30 rounded-2xl mb-4 shadow-lg border border-primary/20">
-            <Ear className="h-10 w-10 text-primary" />
+        <div className="text-center px-12 sm:px-0">
+          <div className="inline-block p-3 sm:p-4 bg-gradient-to-br from-primary/10 via-primary/20 to-primary/30 rounded-2xl mb-3 sm:mb-4 shadow-lg border border-primary/20">
+            <Ear className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-gray-100 dark:via-gray-200 dark:to-gray-100 bg-clip-text text-transparent mb-3">
+          <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-gray-100 dark:via-gray-200 dark:to-gray-100 bg-clip-text text-transparent mb-2 sm:mb-3">
             Listen and Reply
           </h1>
-          <p className="text-lg text-muted-foreground font-medium">Practice Conversation Skills</p>
-          <p className="text-base text-muted-foreground mt-2 font-medium">
+          <p className="text-base sm:text-lg text-muted-foreground font-medium">Practice Conversation Skills</p>
+          <p className="text-sm sm:text-base text-muted-foreground mt-2 font-medium">
             Topic: {currentDialogueIndex + 1} of {dialogues.length}
           </p>
         </div>
@@ -867,26 +867,26 @@ export const ListenAndReply: React.FC = () => {
       {/* Main Content */}
       <div className="flex-1 px-4 pb-4">
         <Card className="max-w-md mx-auto bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-2xl backdrop-blur-sm">
-          <CardContent className="p-8 text-center">
+          <CardContent className="p-6 sm:p-8 text-center">
             {/* Question */}
-            <h2 className="text-3xl font-bold mb-6 text-gray-900 dark:text-gray-100 leading-tight">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-gray-900 dark:text-gray-100 leading-tight">
               {safeDisplay(currentDialogue.question, 'No question available')}
             </h2>
             
             {/* Urdu Text */}
             {currentDialogue.urdu_text && (
-              <p className="text-2xl text-muted-foreground mb-8 leading-relaxed" style={{ fontFamily: 'Noto Nastaliq Urdu, Arial, sans-serif' }}>
+              <p className="text-xl sm:text-2xl text-muted-foreground mb-6 sm:mb-8 leading-relaxed" style={{ fontFamily: 'Noto Nastaliq Urdu, Arial, sans-serif' }}>
                 {safeDisplay(currentDialogue.urdu_text)}
               </p>
             )}
 
             {/* Expected Keywords */}
             {currentDialogue.expected_keywords && currentDialogue.expected_keywords.length > 0 && (
-              <div className="bg-gradient-to-br from-primary/10 via-primary/20 to-primary/30 border border-primary/30 dark:border-primary/20 rounded-2xl p-6 mb-8 shadow-lg">
-                <p className="text-base font-semibold text-primary dark:text-primary/80 mb-3">
+              <div className="bg-gradient-to-br from-primary/10 via-primary/20 to-primary/30 border border-primary/30 dark:border-primary/20 rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 shadow-lg">
+                <p className="text-sm sm:text-base font-semibold text-primary dark:text-primary/80 mb-2 sm:mb-3">
                   Expected Keywords:
                 </p>
-                <p className="text-primary dark:text-primary/90 font-medium text-lg leading-relaxed">
+                <p className="text-primary dark:text-primary/90 font-medium text-base sm:text-lg leading-relaxed">
                   {currentDialogue.expected_keywords.map(keyword => safeDisplay(keyword)).join(', ')}
                 </p>
               </div>
@@ -896,7 +896,7 @@ export const ListenAndReply: React.FC = () => {
             <Button
               onClick={handlePlayAudio}
               disabled={isLoadingAudio}
-              className={`w-20 h-20 rounded-full text-white shadow-2xl mb-8 transition-all duration-300 ${
+              className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full text-white shadow-2xl mb-6 sm:mb-8 transition-all duration-300 ${
                 isLoadingAudio 
                   ? 'bg-gray-500 cursor-not-allowed border-2 border-gray-400' 
                   : 'bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary hover:scale-105 hover:shadow-3xl'
@@ -904,14 +904,14 @@ export const ListenAndReply: React.FC = () => {
               size="icon"
             >
               {isLoadingAudio ? (
-                <div className="w-10 h-10 border-3 border-white border-t-transparent rounded-full animate-spin" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 border-3 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
-                <Play className="w-10 h-10" />
+                <Play className="w-8 h-8 sm:w-10 sm:h-10" />
               )}
             </Button>
             
             {/* Instruction */}
-            <p className="text-muted-foreground text-base font-medium leading-relaxed">
+            <p className="text-muted-foreground text-sm sm:text-base font-medium leading-relaxed">
               Listen to the dialogue and respond naturally
             </p>
           </CardContent>
@@ -919,11 +919,11 @@ export const ListenAndReply: React.FC = () => {
 
         {/* Navigation buttons */}
         {dialogues.length > 1 && (
-          <div className="flex gap-4 mt-8 max-w-md mx-auto">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-8 max-w-md mx-auto">
             <Button
               onClick={handlePrevious}
               variant="outline"
-              className="flex-1 px-8 py-3 bg-white/80 dark:bg-gray-800/80 hover:bg-primary/5 hover:border-primary/30 hover:text-primary transition-all duration-300 hover:-translate-y-0.5 border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg backdrop-blur-sm font-medium"
+              className="flex-1 px-8 py-3 bg-white/80 dark:bg-gray-800/80 hover:bg-primary/5 hover:border-primary/30 hover:text-primary transition-all duration-300 hover:-translate-y-0.5 border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg backdrop-blur-sm font-medium w-full sm:w-auto"
             >
               Previous
             </Button>
@@ -931,7 +931,7 @@ export const ListenAndReply: React.FC = () => {
               onClick={handleNext}
               disabled={currentDialogueIndex === dialogues.length - 1}
               variant="outline"
-              className="flex-1 px-8 py-3 bg-white/80 dark:bg-gray-800/80 hover:bg-primary/5 hover:border-primary/30 hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:-translate-y-0.5 border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg backdrop-blur-sm font-medium"
+              className="flex-1 px-8 py-3 bg-white/80 dark:bg-gray-800/80 hover:bg-primary/5 hover:border-primary/30 hover:text-primary transition-all duration-300 hover:-translate-y-0.5 border-gray-200/60 dark:border-gray-700/60 rounded-2xl shadow-lg backdrop-blur-sm font-medium w-full sm:w-auto"
             >
               Next
             </Button>
@@ -941,7 +941,7 @@ export const ListenAndReply: React.FC = () => {
         {/* Feedback Display */}
         {feedback && (
           <Card className="w-full max-w-md mt-8 mx-auto bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/60 dark:border-gray-700/60 rounded-3xl shadow-2xl backdrop-blur-sm">
-            <CardContent className="p-8">
+            <CardContent className="p-6 sm:p-8">
               <div className="text-center">
                 {feedback.score !== undefined && feedback.score > 0 ? (
                   <div className="flex items-center justify-center mb-6">
@@ -958,7 +958,7 @@ export const ListenAndReply: React.FC = () => {
                         <XCircle className="w-10 h-10 text-red-600 dark:text-red-400" />
                       </div>
                     )}
-                    <span className="text-4xl font-bold text-gray-900 dark:text-gray-100">
+                    <span className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100">
                       {Math.round(feedback.score)}%
                     </span>
                   </div>
@@ -974,17 +974,15 @@ export const ListenAndReply: React.FC = () => {
                 )}
                 
                 {feedback.feedback && (
-                  <p className={`mb-6 text-lg leading-relaxed ${feedback.score === 0 ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-muted-foreground'}`}>
+                  <p className="text-muted-foreground mb-6 text-base sm:text-lg leading-relaxed">
                     {safeDisplay(feedback.feedback)}
                   </p>
                 )}
                 
                 {feedback.suggestions && feedback.suggestions.length > 0 && (
                   <div className="text-left">
-                    <h4 className="font-semibold mb-3 text-lg text-gray-900 dark:text-gray-100">
-                      {feedback.score === 0 ? 'Try These Tips:' : 'Suggestions:'}
-                    </h4>
-                    <ul className="list-disc list-inside text-base text-muted-foreground space-y-2">
+                    <h4 className="font-semibold mb-3 text-base sm:text-lg text-gray-900 dark:text-gray-100">Suggestions:</h4>
+                    <ul className="list-disc list-inside text-sm sm:text-base text-muted-foreground space-y-2">
                       {feedback.suggestions.map((suggestion, index) => (
                         <li key={index} className="leading-relaxed">{safeDisplay(suggestion)}</li>
                       ))}

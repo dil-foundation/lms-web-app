@@ -90,7 +90,7 @@ export const AuthButton = () => {
 
           {/* Dropdown Menu */}
           {isDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-64 rounded-xl bg-card/95 backdrop-blur-md border border-border shadow-xl shadow-black/10 transition-all duration-300 animate-in fade-in-0 zoom-in-95 slide-in-from-top-2">
+            <div className="absolute right-0 w-64 rounded-xl bg-card/95 backdrop-blur-md border border-border shadow-xl shadow-black/10 z-50 transition-all duration-300 animate-in fade-in-0 zoom-in-95 bottom-full mb-2 slide-in-from-bottom-2 md:bottom-auto md:mb-0 md:mt-2 md:slide-in-from-top-2">
               <div className="p-2 space-y-1">
                 {/* Profile Header */}
                 <div className="px-3 py-2 rounded-lg bg-gray-50/50 dark:bg-gray-800/50">

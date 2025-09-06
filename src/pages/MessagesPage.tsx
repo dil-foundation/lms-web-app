@@ -48,6 +48,7 @@ import {
   TrendingUp,
   Clock,
   Bell,
+  ArrowLeft,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -86,6 +87,7 @@ import {
   getConversationParticipants,
 } from '@/services/messagingService';
 import { UserRole } from '@/config/roleNavigation';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Message {
   id: string;
@@ -248,6 +250,7 @@ const getMessageStatusIcon = (status: string) => {
 export default function MessagesPage() {
   const { user } = useAuth();
   const { profile } = useUserProfile();
+  const isMobile = useIsMobile();
   const [chats, setChats] = useState<Chat[]>([]);
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [newMessage, setNewMessage] = useState('');
@@ -1262,22 +1265,25 @@ export default function MessagesPage() {
     }
   };
 
+  const showList = !isMobile || (isMobile && !selectedChat);
+  const showChat = !isMobile || (isMobile && !!selectedChat);
+
   return (
     <div className="flex flex-col h-[80vh] bg-background">
       {/* Premium Header Section */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-8 rounded-3xl">
-          <div className="flex items-center justify-between">
+        <div className="relative p-4 md:p-8 rounded-3xl">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
-                <MessageSquare className="w-6 h-6 text-primary" />
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
+                <MessageSquare className="w-5 h-5 md:w-6 md:h-6 text-primary" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ lineHeight: '3rem' }}>
+                <h1 className="text-2xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ lineHeight: '3rem' }}>
                   Messages
                 </h1>
-                <p className="text-lg text-muted-foreground font-light">
+                <p className="text-sm md:text-lg text-muted-foreground font-light">
                   Connect and communicate with your team
                 </p>
               </div>
@@ -1285,7 +1291,7 @@ export default function MessagesPage() {
             <Button
               size="sm"
               onClick={() => setShowNewChatDialog(true)}
-              className="h-12 px-6 bg-gradient-to-br from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl"
+              className="h-11 md:h-12 w-full md:w-auto px-6 mt-2 md:mt-0 bg-gradient-to-br from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl"
             >
               <Plus className="h-4 w-4 mr-2" />
               New Chat
@@ -1323,9 +1329,10 @@ export default function MessagesPage() {
         /* Main Content - Show Chat UI only when conversations exist */
         <div className="flex flex-1 overflow-hidden">
           {/* Chat List Sidebar */}
-          <div className="w-80 border-r border-border flex flex-col">
+          {showList && (
+          <div className="md:w-80 w-full md:border-r border-border flex flex-col min-h-0">
             {/* Enhanced Search */}
-            <div className="relative p-6 border-b border-border/50">
+            <div className="relative p-4 md:p-6 border-b border-border/50">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -1447,19 +1454,26 @@ export default function MessagesPage() {
             </div>
           </ScrollArea>
                 </div>
+          )}
 
         {/* Chat View */}
-        <div className="flex-1 flex flex-col h-full border-r border-border/50">
+        {showChat && (
+        <div className="flex-1 flex flex-col h-full min-h-0 md:border-r border-border/50">
           {selectedChat ? (
             <>
               {/* Enhanced Chat Header */}
               <div className="relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 dark:from-primary/10 dark:via-transparent dark:to-primary/10"></div>
-                <div className="relative p-6 border-b border-border/50 flex-shrink-0">
+                <div className="relative p-3 md:p-4 border-b border-border/50 flex-shrink-0 mt-[5px] md:mt-0">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
+                      {isMobile && (
+                        <Button variant="ghost" size="icon" onClick={() => setSelectedChat(null)} className="-ml-2">
+                          <ArrowLeft className="h-5 w-5" />
+                        </Button>
+                      )}
                       <div className="relative">
-                        <Avatar className="h-12 w-12 border-2 border-background dark:border-background/50">
+                        <Avatar className="h-10 w-10 md:h-12 md:w-12 border-2 border-background dark:border-background/50">
                       <AvatarImage src={selectedChat.avatar} alt={selectedChat.name} />
                           <AvatarFallback className="bg-gradient-to-br from-primary/10 to-primary/20 dark:from-primary/20 dark:to-primary/30 text-primary dark:text-primary/90 font-semibold">
                         {getUserInitials(selectedChat.name, selectedChat.email)}
@@ -1517,7 +1531,7 @@ export default function MessagesPage() {
                 </div>
               ) : (
                 <div 
-                  className="flex-1 p-4 min-h-0 overflow-y-auto" 
+                  className={`flex-1 p-4 min-h-0 overflow-y-auto scrollbar-hide ${isMobile ? 'pb-28' : ''}`} 
                   ref={messagesContainerRef}
                   onScroll={handleScroll}
                 >
@@ -1608,9 +1622,9 @@ export default function MessagesPage() {
               )}
 
               {/* Enhanced Message Input */}
-              <div className="relative overflow-hidden">
+              <div className={`${isMobile ? 'fixed inset-x-0 bottom-0 z-30' : 'sticky bottom-0 z-10 md:relative'} overflow-hidden`}>
                 <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 dark:from-primary/10 dark:via-transparent dark:to-primary/10"></div>
-                <div className="relative p-6 border-t border-border/50 flex-shrink-0">
+                <div className="relative p-4 md:p-6 border-t border-border/50 flex-shrink-0 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/80">
                   <div className="flex gap-3">
                     <div className="flex-1 relative">
                   <Textarea
@@ -1652,6 +1666,7 @@ export default function MessagesPage() {
             </div>
           )}
         </div>
+        )}
         </div>
       )}
 

@@ -323,50 +323,50 @@ export default function CriticalOpinionBuilder() {
           </div>
           
           {/* Header */}
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-6 sm:mb-8">
             <Button
               variant="outline"
               size="icon"
               onClick={() => navigate('/dashboard/practice/stage-6')}
-              className="shrink-0 group w-12 h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+              className="shrink-0 group w-10 h-10 sm:w-12 sm:h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
             >
-              <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-300" />
+              <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 group-hover:-translate-x-1 transition-transform duration-300" />
             </Button>
             
-            <div className="text-center flex-1">
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-2">
+            <div className="text-center flex-1 px-10 sm:px-0">
+              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-1.5 sm:mb-2">
                 Critical Opinion Builder
               </h1>
-              <p className="text-muted-foreground text-lg">Develop sophisticated viewpoints with AI guidance</p>
+              <p className="text-muted-foreground text-sm sm:text-lg">Develop sophisticated viewpoints with AI guidance</p>
             </div>
             
             <div className="w-12"></div>
           </div>
 
           {/* Topic Selection */}
-          <div className="space-y-8">
+          <div className="space-y-6 sm:space-y-8">
             <div className="text-center">
-              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              <p className="text-muted-foreground text-sm sm:text-lg max-w-2xl mx-auto">
                 Click on a topic to start building your opinion immediately with our AI-powered guidance system
               </p>
             </div>
 
             {topics.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {topics.map((topic) => (
                   <Card 
                     key={topic.id}
                     className="group cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 hover:scale-105 border-2 border-transparent hover:border-primary/20 bg-gradient-to-br from-card to-card/50 dark:bg-card rounded-2xl overflow-hidden"
                     onClick={() => handleTopicClick(topic)}
                   >
-                    <CardContent className="p-6">
+                    <CardContent className="p-5 sm:p-6">
                       <div className="space-y-4">
                         <div className="flex items-start justify-between">
-                          <div className="w-14 h-14 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
-                            <Lightbulb className="h-7 w-7 text-white" />
+                          <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
+                            <Lightbulb className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
                           </div>
                           {(topic.complexity || topic.difficulty_level) && (
-                            <span className={`px-3 py-1.5 rounded-xl text-xs font-semibold shadow-md ${
+                            <span className={`px-2.5 py-1 rounded-xl text-[11px] sm:text-xs font-semibold shadow-md ${
                               (topic.complexity === 'Advanced' || topic.difficulty_level === 'Advanced')
                                 ? 'bg-gradient-to-r from-red-500 to-red-600 text-white' 
                                 : (topic.complexity === 'Intermediate' || topic.difficulty_level === 'Intermediate')
@@ -378,13 +378,13 @@ export default function CriticalOpinionBuilder() {
                           )}
                         </div>
                         <div>
-                          <h3 className="font-bold text-lg mb-2 text-gray-900 dark:text-gray-100 group-hover:text-primary transition-colors duration-300">
+                          <h3 className="font-bold text-base sm:text-lg mb-2 text-gray-900 dark:text-gray-100 group-hover:text-primary transition-colors duration-300">
                             {topic.title}
                           </h3>
-                          <p className="text-sm text-muted-foreground mb-3 leading-relaxed">
+                          <p className="text-xs sm:text-sm text-muted-foreground mb-3 leading-relaxed">
                             {topic.description}
                           </p>
-                          <span className="inline-block px-3 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-primary/10 to-primary/20 text-primary border border-primary/20">
+                          <span className="inline-block px-2.5 py-1 rounded-xl text-[11px] sm:text-xs font-semibold bg-gradient-to-r from-primary/10 to-primary/20 text-primary border border-primary/20">
                             {topic.category}
                           </span>
                         </div>
@@ -395,12 +395,12 @@ export default function CriticalOpinionBuilder() {
               </div>
             ) : (
               <Card className="bg-gradient-to-br from-muted/30 to-muted/50 border-2 border-dashed border-muted-foreground/20 rounded-2xl">
-                <CardContent className="p-12 text-center">
+                <CardContent className="p-8 sm:p-12 text-center">
                   <div className="w-20 h-20 bg-gradient-to-br from-muted-foreground/20 to-muted-foreground/30 rounded-2xl flex items-center justify-center mx-auto mb-6">
                     <Lightbulb className="h-10 w-10 text-muted-foreground" />
                   </div>
                   <h4 className="text-xl font-semibold text-muted-foreground mb-3">No Topics Available</h4>
-                  <p className="text-muted-foreground text-base max-w-md mx-auto">
+                  <p className="text-muted-foreground text-sm sm:text-base max-w-md mx-auto">
                     Please check back later or contact support if this issue persists.
                   </p>
                 </CardContent>
@@ -409,24 +409,24 @@ export default function CriticalOpinionBuilder() {
 
             {/* Building Guidelines */}
             <Card className="bg-gradient-to-br from-primary/5 to-secondary/5 border-2 border-primary/20 rounded-2xl shadow-xl">
-              <CardContent className="p-8">
+              <CardContent className="p-6 sm:p-8">
                 <div className="flex items-center mb-6">
-                  <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center mr-4 shadow-lg">
-                    <Brain className="h-6 w-6 text-white" />
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center mr-3 sm:mr-4 shadow-lg">
+                    <Brain className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Opinion Building Guidelines</h3>
+                  <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">Opinion Building Guidelines</h3>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   <div className="space-y-4">
                     <div className="flex items-start space-x-4">
                       <div className="w-3 h-3 bg-gradient-to-r from-primary to-primary/80 rounded-full mt-2 flex-shrink-0"></div>
-                      <p className="text-muted-foreground text-base leading-relaxed">
+                      <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
                       Develop a clear, well-reasoned position on the topic
                     </p>
                   </div>
                     <div className="flex items-start space-x-4">
                       <div className="w-3 h-3 bg-gradient-to-r from-primary to-primary/80 rounded-full mt-2 flex-shrink-0"></div>
-                      <p className="text-muted-foreground text-base leading-relaxed">
+                      <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
                       Support your arguments with evidence, examples, and logical reasoning
                     </p>
                   </div>
@@ -434,13 +434,13 @@ export default function CriticalOpinionBuilder() {
                   <div className="space-y-4">
                     <div className="flex items-start space-x-4">
                       <div className="w-3 h-3 bg-gradient-to-r from-primary to-primary/80 rounded-full mt-2 flex-shrink-0"></div>
-                      <p className="text-muted-foreground text-base leading-relaxed">
+                      <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
                       Consider and address potential counterarguments
                     </p>
                   </div>
                     <div className="flex items-start space-x-4">
                       <div className="w-3 h-3 bg-gradient-to-r from-primary to-primary/80 rounded-full mt-2 flex-shrink-0"></div>
-                      <p className="text-muted-foreground text-base leading-relaxed">
+                      <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
                       Use sophisticated vocabulary and complex sentence structures
                     </p>
                     </div>
@@ -468,9 +468,9 @@ export default function CriticalOpinionBuilder() {
             variant="outline"
             size="icon"
             onClick={resetBuilder}
-            className="shrink-0 group w-12 h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+            className="shrink-0 group w-10 h-10 sm:w-12 sm:h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
           >
-            <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-300" />
+            <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 group-hover:-translate-x-1 transition-transform duration-300" />
           </Button>
           
           <div className="text-center flex-1">
@@ -499,12 +499,12 @@ export default function CriticalOpinionBuilder() {
                     {selectedTopic.category}
                   </span>
                 </div>
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-3 sm:space-x-4">
                   {/* Audio Play Button */}
                   <Button
                     onClick={handlePlayAudio}
                     disabled={isLoadingAudio}
-                    className={`w-14 h-14 rounded-2xl shadow-xl transition-all duration-300 ${
+                    className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl shadow-xl transition-all duration-300 ${
                       isLoadingAudio
                         ? 'bg-gradient-to-r from-slate-400 to-slate-500 cursor-not-allowed text-white border-2 border-slate-500'
                         : isPlayingAudio
@@ -514,11 +514,11 @@ export default function CriticalOpinionBuilder() {
                     size="icon"
                   >
                     {isLoadingAudio ? (
-                      <div className="w-7 h-7 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                      <div className="w-6 h-6 sm:w-7 sm:h-7 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
                     ) : isPlayingAudio ? (
-                      <Pause className="w-6 h-6" />
+                      <Pause className="w-5 h-5 sm:w-6 sm:h-6" />
                     ) : (
-                      <Play className="w-6 h-6" />
+                      <Play className="w-5 h-5 sm:w-6 sm:h-6" />
                     )}
                   </Button>
                   
@@ -645,18 +645,18 @@ export default function CriticalOpinionBuilder() {
           {!isRecording && !isEvaluating ? (
             <Button
               onClick={handleStartRecording}
-                className="group bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white px-16 py-5 rounded-2xl text-xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:scale-105"
+              className="group bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white w-full sm:w-auto px-10 sm:px-16 py-4 sm:py-5 rounded-2xl text-lg sm:text-xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:scale-105"
               size="lg"
             >
                 <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center mr-4 group-hover:bg-white/30 transition-all duration-300">
-                  <Mic className="h-5 w-5 text-white" />
+                  <Mic className="h-5 w-5 text white" />
                 </div>
               Start Recording Your Opinion
             </Button>
           ) : isRecording ? (
             <Button
               onClick={handleStopRecording}
-                className="group bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-16 py-5 rounded-2xl text-xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:scale-105"
+              className="group bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white w-full sm:w-auto px-10 sm:px-16 py-4 sm:py-5 rounded-2xl text-lg sm:text-xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:scale-105"
               size="lg"
             >
                 <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center mr-4 group-hover:bg-white/30 transition-all duration-300">
@@ -668,11 +668,11 @@ export default function CriticalOpinionBuilder() {
           </div>
 
           {/* Secondary Action Buttons */}
-          <div className="flex flex-col sm:flex-row justify-center items-center gap-6">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6">
               <Button
                 onClick={resetBuilder}
                 variant="outline"
-              className="group px-10 py-4 rounded-2xl border-2 border-primary/20 hover:border-primary/40 hover:bg-primary/5 hover:text-primary transition-all duration-300 hover:-translate-y-1 hover:shadow-xl font-semibold text-primary hover:bg-gradient-to-r hover:from-primary/5 hover:to-primary/10 text-lg"
+                className="group w-full sm:w-auto px-8 sm:px-10 py-3 sm:py-4 rounded-2xl border-2 border-primary/20 hover:border-primary/40 hover:bg-primary/5 hover:text-primary transition-all duration-300 hover:-translate-y-1 hover:shadow-xl font-semibold text-primary hover:bg-gradient-to-r hover:from-primary/5 hover:to-primary/10 text-base sm:text-lg"
               >
               <Lightbulb className="h-5 w-5 mr-3 group-hover:scale-110 transition-transform duration-300" />
                 Choose Different Topic
@@ -680,7 +680,7 @@ export default function CriticalOpinionBuilder() {
               <Button
                 onClick={() => navigate('/dashboard/practice/stage-6')}
                 variant="outline"
-              className="group px-10 py-4 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-xl font-semibold text-secondary hover:bg-gradient-to-r hover:from-secondary/5 hover:to-secondary/10 text-lg"
+                className="group w-full sm:w-auto px-8 sm:px-10 py-3 sm:py-4 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-xl font-semibold text-secondary hover:bg-gradient-to-r hover:from-secondary/5 hover:to-secondary/10 text-base sm:text-lg"
               >
               <ArrowLeft className="h-5 w-5 mr-3 group-hover:-translate-x-1 transition-transform duration-300" />
                 Back to Stage 6

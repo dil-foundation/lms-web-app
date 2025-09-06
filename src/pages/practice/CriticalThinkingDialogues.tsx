@@ -384,12 +384,12 @@ export default function CriticalThinkingDialogues() {
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto">
         {/* Consistent Header Section */}
-        <div className="px-6 py-8">
+        <div className="px-4 sm:px-6 py-6 sm:py-8">
           {/* Breadcrumb Navigation */}
           <PracticeBreadcrumb className="mb-6" />
           
           {/* Header with Back Button and Title */}
-          <div className="relative flex items-center justify-center mb-8 text-center">
+          <div className="relative flex items-center justify-center mb-6 sm:mb-8 text-center">
             <Button
               variant="outline"
               size="icon"
@@ -402,19 +402,19 @@ export default function CriticalThinkingDialogues() {
                   navigate('/dashboard/practice/stage-5');
                 }
               }}
-              className="absolute left-0 group w-12 h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+              className="absolute left-0 group w-10 h-10 sm:w-12 sm:h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
             >
-              <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-300" />
+              <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 group-hover:-translate-x-1 transition-transform duration-300" />
             </Button>
             
-            <div className="space-y-3">
-              <div className="inline-block p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
-                <Target className="h-10 w-10 text-primary" />
+            <div className="space-y-2 sm:space-y-3 px-12 sm:px-0">
+              <div className="inline-block p-3 sm:p-4 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl shadow-lg">
+                <Target className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
               </div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                 Critical Thinking Dialogues
               </h1>
-              <p className="text-muted-foreground text-lg">
+              <p className="text-muted-foreground text-base sm:text-lg">
                 Engage in thoughtful discussions and develop analytical skills
               </p>
             </div>
@@ -437,28 +437,28 @@ export default function CriticalThinkingDialogues() {
 
         {/* Topic Selection */}
         {showTopicSelection && !isLoading && (
-          <div className="px-6 pb-8 space-y-6">
-            <h2 className="text-2xl font-bold text-center bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent mb-6">
+          <div className="px-4 sm:px-6 pb-8 space-y-6">
+            <h2 className="text-2xl sm:text-3xl font-bold text-center bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent mb-6 sm:mb-8">
               Select a Critical Thinking Topic
             </h2>
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
               {topics.map((topic) => (
                 <Card 
                   key={topic.topic_id}
                   className="cursor-pointer hover:shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden"
                   onClick={() => loadTopic(topic.topic_id)}
                 >
-                  <CardContent className="p-6">
+                  <CardContent className="p-5 sm:p-6">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <h3 className="font-semibold text-primary mb-3 text-lg">
+                        <h3 className="font-semibold text-primary mb-2 sm:mb-3 text-base sm:text-lg">
                           {topic.topic_title}
                         </h3>
-                        <p className="text-sm text-muted-foreground mb-4">
+                        <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
                           {topic.topic_description}
                         </p>
-                        <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                          <span className="px-3 py-1 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-full border border-primary/20">
+                        <div className="flex items-center space-x-2 text-[11px] sm:text-xs text-muted-foreground">
+                          <span className="px-2.5 py-1 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-full border border-primary/20">
                             {topic.category}
                           </span>
                         </div>
@@ -544,7 +544,7 @@ export default function CriticalThinkingDialogues() {
 
         {/* Conversation */}
         {currentTopic && !showTopicSelection && (
-          <div className="px-6 pb-8 mt-8 space-y-4 mb-6">
+          <div className="px-4 sm:px-6 pb-8 mt-6 sm:mt-8 space-y-4 mb-6">
             {conversation.map((message) => (
               <Card 
                 key={message.id} 
@@ -554,35 +554,35 @@ export default function CriticalThinkingDialogues() {
                     : 'border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden'
                 }`}
               >
-                <CardContent className="p-6">
+                <CardContent className="p-4 sm:p-6">
                   <div className="flex items-start space-x-4">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center ${
                       message.sender === 'user' 
                         ? 'bg-white/20' 
                         : 'bg-[#1582B4]/20'
                     }`}>
                       {message.sender === 'user' ? (
-                        <User className="h-6 w-6 text-white" />
+                        <User className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                       ) : (
-                        <Bot className="h-6 w-6 text-[#1582B4]" />
+                        <Bot className="h-5 w-5 sm:h-6 sm:w-6 text-[#1582B4]" />
                       )}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center space-x-3 mb-2">
-                        <span className={`text-sm font-semibold ${
+                        <span className={`text-xs sm:text-sm font-semibold ${
                           message.sender === 'user' 
                             ? 'text-white' 
                             : 'text-[#1582B4]'
                         }`}>
                           {message.sender === 'user' ? 'You' : 'AI Tutor'}
                         </span>
-                        <span className="text-xs text-muted-foreground bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm px-2 py-1 rounded-full">
+                        <span className="text-[10px] sm:text-xs text-muted-foreground bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm px-2 py-1 rounded-full">
                           {message.timestamp.toLocaleTimeString()}
                         </span>
                       </div>
                       <p className={`${
                         message.sender === 'user' ? 'text-white' : 'text-foreground'
-                      } text-base leading-relaxed`}>
+                      } text-sm sm:text-base leading-relaxed`}>
                         {message.message}
                       </p>
                     </div>
@@ -595,16 +595,16 @@ export default function CriticalThinkingDialogues() {
 
         {/* Evaluation Loading State */}
         {isEvaluating && (
-          <div className="mb-6 px-6">
+          <div className="mb-6 px-4 sm:px-6">
             <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
               <CardContent className="p-6">
                 <div className="flex flex-col items-center justify-center space-y-4">
                   <Loader2 className="h-10 w-10 animate-spin text-[#1582B4]" />
                   <div className="text-center">
-                    <h3 className="text-xl font-semibold text-[#1582B4] mb-2">
+                    <h3 className="text-lg sm:text-xl font-semibold text-[#1582B4] mb-2">
                       Evaluating Your Response
                     </h3>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       Please wait while we analyze your critical thinking skills...
                     </p>
                   </div>
@@ -616,21 +616,17 @@ export default function CriticalThinkingDialogues() {
 
         {/* Feedback Section */}
         {showFeedback && evaluation && (
-          <div className="mb-6 px-6">
-            <h3 className="text-2xl font-bold text-center bg-gradient-to-r from-[#1582B4] via-[#1582B4]/90 to-[#1582B4] bg-clip-text text-transparent mb-6">
+          <div className="mb-6 px-4 sm:px-6">
+            <h3 className="text-xl sm:text-2xl font-bold text-center bg-gradient-to-r from-[#1582B4] via-[#1582B4]/90 to-[#1582B4] bg-clip-text text-transparent mb-4 sm:mb-6">
               Your Performance
             </h3>
             
             <div className="space-y-6">
               {/* Overall Score */}
               <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
-                <CardContent className="p-6">
+                <CardContent className="p-4 sm:p-6">
                   <div className="text-center">
-                    <div className={`text-4xl font-bold mb-3 ${
-                      (evaluation?.evaluation?.evaluation?.overall_score || 0) === 0 
-                        ? 'text-red-600 dark:text-red-400' 
-                        : 'bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent'
-                    }`}>
+                    <div className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent mb-3">
                       {evaluation?.evaluation?.evaluation?.overall_score || 0}%
                     </div>
                     <div className="text-sm text-muted-foreground">Overall Score</div>
@@ -640,13 +636,13 @@ export default function CriticalThinkingDialogues() {
 
               {/* Keywords Used */}
               <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
-                <CardContent className="p-6">
+                <CardContent className="p-4 sm:p-6">
                   <div className="flex items-start space-x-4">
-                    <div className="w-10 h-10 bg-[#1582B4]/20 rounded-2xl flex items-center justify-center mt-1">
-                      <Bot className="h-5 w-5 text-[#1582B4]" />
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[#1582B4]/20 rounded-2xl flex items-center justify-center mt-1">
+                      <Bot className="h-4 w-4 sm:h-5 sm:w-5 text-[#1582B4]" />
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-semibold text-[#1582B4] mb-3 text-lg">
+                      <h4 className="font-semibold text-[#1582B4] mb-2 sm:mb-3 text-base sm:text-lg">
                         Keywords Used ({evaluation?.evaluation?.evaluation?.matched_keywords_count || 0} / {evaluation?.evaluation?.evaluation?.total_keywords || 0})
                       </h4>
                       {evaluation?.evaluation?.evaluation?.keyword_matches && 
@@ -656,14 +652,14 @@ export default function CriticalThinkingDialogues() {
                           {evaluation.evaluation.evaluation.keyword_matches.map((keyword, index) => (
                             <span 
                               key={index}
-                              className="px-3 py-1 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm text-[#1582B4] text-xs rounded-full border border-[#1582B4]/20"
+                              className="px-2.5 py-1 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm text-[#1582B4] text-xs rounded-full border border-[#1582B4]/20"
                             >
                               {keyword}
                             </span>
                           ))}
                         </div>
                       ) : (
-                        <p className="text-muted-foreground text-sm">No keywords used</p>
+                        <p className="text-muted-foreground text-xs sm:text-sm">No keywords used</p>
                       )}
                     </div>
                   </div>
@@ -675,17 +671,17 @@ export default function CriticalThinkingDialogues() {
                Array.isArray(evaluation.evaluation.evaluation.suggested_improvements) && 
                evaluation.evaluation.evaluation.suggested_improvements.length > 0 && (
                 <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
-                  <CardContent className="p-6">
+                  <CardContent className="p-4 sm:p-6">
                     <div className="flex items-start space-x-4">
-                      <div className="w-10 h-10 bg-primary/20 rounded-2xl flex items-center justify-center mt-1">
-                        <Bot className="h-5 w-5 text-primary" />
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary/20 rounded-2xl flex items-center justify-center mt-1">
+                        <Bot className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-semibold text-primary mb-3 text-lg">Suggested Improvements</h4>
-                        <ul className="space-y-2">
+                        <h4 className="font-semibold text-primary mb-2 sm:mb-3 text-base sm:text-lg">Suggested Improvements</h4>
+                        <ul className="space-y-1 sm:space-y-2">
                           {evaluation.evaluation.evaluation.suggested_improvements.map((suggestion, index) => (
-                            <li key={index} className="text-muted-foreground text-sm flex items-start space-x-2">
-                              <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
+                            <li key={index} className="text-muted-foreground text-xs sm:text-sm flex items-start space-x-2">
+                              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
                               <span>{suggestion}</span>
                             </li>
                           ))}

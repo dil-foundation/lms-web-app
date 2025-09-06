@@ -67,44 +67,38 @@ export const StageFour: React.FC = () => {
       {/* Premium Header Section */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-8 md:p-10 rounded-3xl">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-            <div className="flex items-center gap-4">
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={() => navigate('/dashboard/ai-practice')}
-                className="hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center shadow-lg">
-                  <GraduationCap className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent">Stage 4 - Upper Intermediate</h1>
-                  <p className="text-sm text-muted-foreground">B2 Upper Intermediate Level</p>
-                </div>
-              </div>
+        <div className="relative p-6 sm:p-8 md:p-10 rounded-3xl">
+          <div className="flex">
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={() => navigate('/dashboard/ai-practice')}
+              className="hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-3 text-center">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center shadow-lg">
+              <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
             </div>
-            
-            {/* Stage Stats */}
-            <div className="flex flex-wrap gap-4">
-              <div className="flex items-center gap-2 px-4 py-2 bg-white/60 dark:bg-gray-800/60 rounded-xl border border-gray-200/50 dark:border-gray-700/50 shadow-md">
-                <Target className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">3 Activities</span>
-              </div>
-              <div className="flex items-center gap-2 px-4 py-2 bg-white/60 dark:bg-gray-800/60 rounded-xl border border-gray-200/50 dark:border-gray-700/50 shadow-md">
-                <TrendingUp className="w-4 h-4 text-[#1582B4]" />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Upper Intermediate</span>
-              </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary via-primary/90 to-primary bg-clip-text text-transparent">Stage 4 - Upper Intermediate</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground">B2 Upper Intermediate Level</p>
             </div>
           </div>
-          
-          {/* Stage Description */}
-          <div className="mt-6 text-center md:text-left">
-            <p className="text-muted-foreground text-lg leading-relaxed max-w-2xl">
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 px-3 py-2 sm:px-4 bg-white/60 dark:bg-gray-800/60 rounded-xl border border-gray-200/50 dark:border-gray-700/50 shadow-md">
+              <Target className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">3 Activities</span>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-2 sm:px-4 bg-white/60 dark:bg-gray-800/60 rounded-xl border border-gray-200/50 dark:border-gray-700/50 shadow-md">
+              <TrendingUp className="w-4 h-4 text-[#1582B4]" />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Upper Intermediate</span>
+            </div>
+          </div>
+          <div className="mt-5 text-center">
+            <p className="text-muted-foreground text-base sm:text-lg leading-relaxed max-w-2xl mx-auto">
               Express complex ideas fluently and handle most situations confidently
             </p>
           </div>

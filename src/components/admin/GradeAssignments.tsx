@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import {
   Card,
   CardContent,
@@ -77,6 +78,7 @@ const StatCard = ({ title, value, icon: Icon, color }: StatCardProps) => (
 
 export const GradeAssignments = () => {
   const { user } = useAuth();
+  const { profile } = useUserProfile();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourse, setSelectedCourse] = useState('all');
@@ -87,19 +89,39 @@ export const GradeAssignments = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
+  // Check if user is admin
+  const isAdmin = profile?.role === 'admin';
+
   const fetchCourses = useCallback(async () => {
     if(!user) return;
-    const { data, error } = await supabase
-      .from('courses')
-      .select('id, title')
-      .in('id', (await supabase.from('course_members').select('course_id').eq('user_id', user.id).eq('role', 'teacher')).data?.map(c => c.course_id) || [])
+    
+    if (isAdmin) {
+      // For admin, get all published courses
+      const { data, error } = await supabase
+        .from('courses')
+        .select('id, title')
+        .eq('status', 'Published')
+        .order('title');
       
-    if(error) {
-        console.error("Error fetching courses for teacher", error);
-    } else {
+      if(error) {
+        console.error("Error fetching courses for admin", error);
+      } else {
         setCourses(data || []);
+      }
+    } else {
+      // For teacher, get only their courses
+      const { data, error } = await supabase
+        .from('courses')
+        .select('id, title')
+        .in('id', (await supabase.from('course_members').select('course_id').eq('user_id', user.id).eq('role', 'teacher')).data?.map(c => c.course_id) || [])
+        
+      if(error) {
+          console.error("Error fetching courses for teacher", error);
+      } else {
+          setCourses(data || []);
+      }
     }
-  }, [user]);
+  }, [user, isAdmin]);
 
   const fetchAssignments = useCallback(async () => {
     if (!user) return;
@@ -108,11 +130,26 @@ export const GradeAssignments = () => {
     setError(null);
 
     try {
-      const { data, error: rpcError } = await supabase.rpc('get_teacher_assessments_data', {
-        teacher_id: user.id,
-        search_query: debouncedSearchTerm,
-        course_filter_id: selectedCourse === 'all' ? null : selectedCourse,
-      });
+      let data, rpcError;
+      
+      if (isAdmin) {
+        // Use admin function to get all assessments
+        const result = await supabase.rpc('get_admin_assessments_data', {
+          search_query: debouncedSearchTerm,
+          course_filter_id: selectedCourse === 'all' ? null : selectedCourse,
+        });
+        data = result.data;
+        rpcError = result.error;
+      } else {
+        // Use teacher function to get only their assessments
+        const result = await supabase.rpc('get_teacher_assessments_data', {
+          teacher_id: user.id,
+          search_query: debouncedSearchTerm,
+          course_filter_id: selectedCourse === 'all' ? null : selectedCourse,
+        });
+        data = result.data;
+        rpcError = result.error;
+      }
       
       if (rpcError) {
         throw rpcError;
@@ -132,7 +169,7 @@ export const GradeAssignments = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, debouncedSearchTerm, selectedCourse]);
+  }, [user, debouncedSearchTerm, selectedCourse, isAdmin]);
 
   useEffect(() => {
     fetchCourses();
@@ -196,7 +233,10 @@ export const GradeAssignments = () => {
               Assessments
             </h1>
             <p className="text-lg text-muted-foreground mt-2 leading-relaxed">
-              Grade quizzes and assignments for your courses
+              {isAdmin 
+                ? 'View and manage all quizzes and assignments across all courses'
+                : 'Grade quizzes and assignments for your courses'
+              }
             </p>
           </div>
         </div>

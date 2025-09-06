@@ -183,44 +183,44 @@ const AlphabetLesson = () => {
 
     return (
         <div className="w-full">
-            <div className="relative flex items-center justify-center mb-6">
+            <div className="relative flex items-center justify-center mb-4 sm:mb-6">
                 <Button 
                     variant="outline" 
                     size="icon" 
-                    className="absolute left-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary" 
+                    className="absolute left-0 w-10 h-10 sm:w-12 sm:h-12 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary" 
                     onClick={() => navigate(-1)}
                 >
                     <ArrowLeft className="h-4 w-4" />
                 </Button>
-                <div className="text-center">
-                    <div className="inline-block p-3 bg-primary/20 rounded-full mb-2">
-                        <BookOpen className="h-8 w-8 text-primary" />
+                <div className="text-center px-16 sm:px-0">
+                    <div className="inline-block p-2.5 sm:p-3 bg-primary/20 rounded-full mb-1.5 sm:mb-2">
+                        <BookOpen className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
                     </div>
-                    <h1 className="text-3xl font-bold">The English Alphabet</h1>
-                    <p className="text-muted-foreground">Master the ABCs with confidence</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold">The English Alphabet</h1>
+                    <p className="text-muted-foreground text-sm sm:text-base">Master the ABCs with confidence</p>
                 </div>
             </div>
 
-            <div className="my-6">
+            <div className="my-4 sm:my-6">
                 <Progress value={progress} className="h-2" />
-                <p className="text-center text-sm text-muted-foreground mt-2">{step + 1} of {alphabetSets.length}</p>
+                <p className="text-center text-xs sm:text-sm text-muted-foreground mt-2">{step + 1} of {alphabetSets.length}</p>
             </div>
             
-            <div className="space-y-4 mb-8">
+            <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
                 {alphabetSets[step].map((item, index) => (
-                    <Card key={index} className="p-4 sm:p-6 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 flex items-center">
-                        <div className="flex items-center gap-4 flex-1">
-                            <div className="bg-primary text-primary-foreground rounded-full w-12 h-12 flex items-center justify-center text-2xl font-bold">{item.letter}</div>
-                            <span className="text-muted-foreground">{item.phonetic}</span>
+                    <Card key={index} className="p-3 sm:p-4 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 flex items-center">
+                        <div className="flex items-center gap-3 sm:gap-4 flex-1">
+                            <div className="bg-primary text-primary-foreground rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-xl sm:text-2xl font-bold">{item.letter}</div>
+                            <span className="text-muted-foreground text-sm sm:text-base">{item.phonetic}</span>
                         </div>
                         <div className="flex-1 text-left sm:text-center">
-                            <h3 className="text-2xl font-bold">{item.word}</h3>
-                            <p className="font-urdu text-muted-foreground text-lg">{item.translation}</p>
+                            <h3 className="text-xl sm:text-2xl font-bold">{item.word}</h3>
+                            <p className="font-urdu text-muted-foreground text-base sm:text-lg">{item.translation}</p>
                         </div>
                         <div className="flex-1 flex justify-end">
                             <Button 
                                 size="icon" 
-                                className={`w-14 h-14 rounded-full ${
+                                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full ${
                                     loadingAudio === item.word 
                                         ? 'bg-primary/60 cursor-not-allowed' 
                                         : 'bg-primary/80 hover:bg-primary'
@@ -229,9 +229,9 @@ const AlphabetLesson = () => {
                                 disabled={loadingAudio === item.word}
                             >
                                 {loadingAudio === item.word ? (
-                                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
                                 ) : (
-                                    <Play className="w-6 h-6" />
+                                    <Play className="w-5 h-5 sm:w-6 sm:h-6" />
                                 )}
                             </Button>
                         </div>
@@ -310,34 +310,34 @@ const PhonicsLesson = () => {
 
     return (
         <div className="w-full">
-            <div className="relative flex items-center justify-center mb-6">
+            <div className="relative flex items-center justify-center mb-4 sm:mb-6">
                 <Button 
                     variant="outline" 
                     size="icon" 
-                    className="absolute left-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary" 
+                    className="absolute left-0 w-10 h-10 sm:w-12 sm:h-12 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary" 
                     onClick={() => navigate(-1)}
                 >
                     <ArrowLeft className="h-4 w-4" />
                 </Button>
-                <div className="text-center">
-                    <div className="inline-block p-3 bg-primary/20 rounded-full mb-2"><Music className="h-8 w-8 text-primary" /></div>
-                    <h1 className="text-3xl font-bold">Phonics & Sound Confusion</h1>
-                    <p className="text-muted-foreground">Master tricky sound differences</p>
+                <div className="text-center px-16 sm:px-0">
+                    <div className="inline-block p-2.5 sm:p-3 bg-primary/20 rounded-full mb-1.5 sm:mb-2"><Music className="h-7 w-7 sm:h-8 sm:w-8 text-primary" /></div>
+                    <h1 className="text-2xl sm:text-3xl font-bold">Phonics & Sound Confusion</h1>
+                    <p className="text-muted-foreground text-sm sm:text-base">Master tricky sound differences</p>
                 </div>
             </div>
-            <div className="my-6">
+            <div className="my-4 sm:my-6">
                 <Progress value={progress} className="h-2" />
-                <p className="text-center text-sm text-muted-foreground mt-2">{step + 1} of {phonicsSets.length}</p>
+                <p className="text-center text-xs sm:text-sm text-muted-foreground mt-2">{step + 1} of {phonicsSets.length}</p>
             </div>
-            <div className="space-y-6 mb-8">
+            <div className="space-y-4 sm:space-y-6 mb-6 sm:mb-8">
                 <Card className="p-4 sm:p-6 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 flex items-center">
-                    <div className="flex items-center gap-4 flex-1">
-                        <div className="bg-primary/10 text-primary-foreground rounded-full w-16 h-16 flex items-center justify-center"><currentSet.icon className="w-8 h-8 text-primary" /></div>
-                        <h2 className="text-2xl font-bold">{currentSet.title}</h2>
+                    <div className="flex items-center gap-3 sm:gap-4 flex-1">
+                        <div className="bg-primary/10 text-primary-foreground rounded-full w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center"><currentSet.icon className="w-7 h-7 sm:w-8 sm:h-8 text-primary" /></div>
+                        <h2 className="text-xl sm:text-2xl font-bold">{currentSet.title}</h2>
                     </div>
                     <Button 
                         size="icon" 
-                        className={`w-14 h-14 rounded-full ${
+                        className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full ${
                             loadingAudio === currentSet.title 
                                 ? 'bg-primary/60 cursor-not-allowed' 
                                 : 'bg-primary/80 hover:bg-primary'
@@ -346,9 +346,9 @@ const PhonicsLesson = () => {
                         disabled={loadingAudio === currentSet.title}
                     >
                         {loadingAudio === currentSet.title ? (
-                            <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         ) : (
-                            <Play className="w-6 h-6" />
+                            <Play className="w-5 h-5 sm:w-6 sm:h-6" />
                         )}
                     </Button>
                 </Card>
@@ -464,47 +464,47 @@ const VocabularyLesson = () => {
 
     return (
          <div className="w-full">
-            <div className="relative flex items-center justify-center mb-6">
+            <div className="relative flex items-center justify-center mb-4 sm:mb-6">
                 <Button 
                     variant="outline" 
                     size="icon" 
-                    className="absolute left-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary" 
+                    className="absolute left-0 w-10 h-10 sm:w-12 sm:h-12 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary" 
                     onClick={() => navigate(-1)}
                 >
                     <ArrowLeft className="h-4 w-4" />
                 </Button>
-                <div className="text-center">
-                    <div className="inline-block p-3 bg-primary/20 rounded-full mb-2"><BookOpen className="h-8 w-8 text-primary" /></div>
-                    <h1 className="text-3xl font-bold">Vocabulary Basics</h1>
-                    <p className="text-muted-foreground">Essential words for everyday use</p>
+                <div className="text-center px-16 sm:px-0">
+                    <div className="inline-block p-2.5 sm:p-3 bg-primary/20 rounded-full mb-1.5 sm:mb-2"><BookOpen className="h-7 w-7 sm:h-8 sm:w-8 text-primary" /></div>
+                    <h1 className="text-2xl sm:text-3xl font-bold">Vocabulary Basics</h1>
+                    <p className="text-muted-foreground text-sm sm:text-base">Essential words for everyday use</p>
                 </div>
             </div>
-            <div className="my-6">
+            <div className="my-4 sm:my-6">
                 <Progress value={progress} className="h-2" />
-                <p className="text-center text-sm text-muted-foreground mt-2">{step + 1} of {vocabularySets.length}</p>
+                <p className="text-center text-xs sm:text-sm text-muted-foreground mt-2">{step + 1} of {vocabularySets.length}</p>
             </div>
-            <div className="space-y-4 mb-8">
-                <Card className="p-4 sm:p-6 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 flex items-center">
-                    <div className="p-3 bg-primary/10 rounded-full mr-4"><currentSet.icon className="w-8 h-8 text-primary" /></div>
-                    <div>
-                        <h2 className="text-2xl font-bold">{currentSet.title}</h2>
-                        <p className="text-muted-foreground">{currentSet.wordsToLearn} words to learn</p>
+            <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
+                <Card className="p-6 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+                    <div className="flex items-center mb-4">
+                        <div className="p-2 bg-primary/20 rounded-full mr-3"><BookOpen className="w-5 h-5 text-primary"/></div>
+                        <h2 className="text-xl sm:text-2xl font-bold">{currentSet.title}</h2>
                     </div>
+                    <p className="text-muted-foreground text-sm sm:text-base">{currentSet.wordsToLearn} words to learn</p>
                 </Card>
                 {currentSet.words.map((item, index) => {
                     const wordToPlay = item.word || item.number || '';
                     return (
-                        <Card key={index} className="p-4 flex items-center">
+                        <Card key={index} className="p-3 sm:p-4 flex items-center">
                             <div className="flex-1">
-                                <h3 className="text-2xl font-bold flex items-center gap-3">
+                                <h3 className="text-xl sm:text-2xl font-bold flex items-center gap-2 sm:gap-3">
                                     {item.number || item.word}
-                                    <span className="text-lg text-muted-foreground font-normal">{item.phonetic}</span>
+                                    <span className="text-sm sm:text-lg text-muted-foreground font-normal">{item.phonetic}</span>
                                 </h3>
-                                <p className="font-urdu text-muted-foreground text-xl">{item.translation}</p>
+                                <p className="font-urdu text-muted-foreground text-lg sm:text-xl">{item.translation}</p>
                             </div>
                             <Button 
                                 size="icon" 
-                                className={`w-14 h-14 rounded-full ${
+                                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full ${
                                     loadingAudio === wordToPlay 
                                         ? 'bg-primary/60 cursor-not-allowed' 
                                         : 'bg-primary/80 hover:bg-primary'
@@ -513,9 +513,9 @@ const VocabularyLesson = () => {
                                 disabled={loadingAudio === wordToPlay}
                             >
                                 {loadingAudio === wordToPlay ? (
-                                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
                                 ) : (
-                                    <Play className="w-6 h-6" />
+                                    <Play className="w-5 h-5 sm:w-6 sm:h-6" />
                                 )}
                             </Button>
                         </Card>
