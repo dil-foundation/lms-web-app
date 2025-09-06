@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Plus, MapPin, Building2, GraduationCap, Edit, Trash2, Eye, RefreshCw, Calendar, FileText, MoreHorizontal, Phone, Mail, Globe, Users2 } from 'lucide-react';
+import { Search, Plus, MapPin, Building2, GraduationCap, Edit, Trash2, Eye, RefreshCw, Calendar, FileText, MoreHorizontal, Phone, Mail, Globe, Users2, Building, FolderOpen } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface MultitenancyProps {
@@ -33,12 +33,37 @@ interface Country {
   updated_at: string;
 }
 
+// Region interface and data
+interface Region {
+  id: string;
+  name: string;
+  code: string;
+  country: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // City interface and data
 interface City {
   id: string;
   name: string;
   code: string;
   country: string;
+  region: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Project interface and data
+interface Project {
+  id: string;
+  name: string;
+  code: string;
+  country: string;
+  region: string;
+  city: string;
   description: string;
   created_at: string;
   updated_at: string;
@@ -50,7 +75,9 @@ interface Board {
   name: string;
   code: string;
   country: string;
+  region: string;
   city: string;
+  project: string;
   description: string;
   created_at: string;
   updated_at: string;
@@ -64,7 +91,9 @@ interface School {
   type: string;
   address: string;
   country: string;
+  region: string;
   city: string;
+  project: string;
   board: string;
   phone: string;
   email: string;
@@ -102,8 +131,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     }
   ]);
 
-  // Cities Management
-  const [cities, setCities] = useState<City[]>([
+  // Regions Management
+  const [regions, setRegions] = useState<Region[]>([
     {
       id: '1',
       name: 'Lahore',
@@ -118,7 +147,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       name: 'Karachi',
       code: 'KHI',
       country: 'Pakistan',
-      description: 'The economic hub of Pakistan, largest city by population.',
+      description: 'The economic hub of Pakistan, largest region by population.',
       created_at: '2024-01-15',
       updated_at: '2024-01-15'
     },
@@ -133,6 +162,98 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     }
   ]);
 
+  // Cities Management
+  const [cities, setCities] = useState<City[]>([
+    {
+      id: '1',
+      name: 'Lahore',
+      code: 'LHE',
+      country: 'Pakistan',
+      region: 'Lahore',
+      description: 'The cultural capital of Pakistan, known for its rich history and vibrant culture.',
+      created_at: '2024-01-15',
+      updated_at: '2024-01-15'
+    },
+    {
+      id: '2',
+      name: 'Karachi',
+      code: 'KHI',
+      country: 'Pakistan',
+      region: 'Karachi',
+      description: 'The economic hub of Pakistan, largest city by population.',
+      created_at: '2024-01-15',
+      updated_at: '2024-01-15'
+    },
+    {
+      id: '3',
+      name: 'New York City',
+      code: 'NYC',
+      country: 'United States',
+      region: 'New York',
+      description: 'The Big Apple, financial capital of the world.',
+      created_at: '2024-01-15',
+      updated_at: '2024-01-15'
+    },
+    {
+      id: '4',
+      name: 'London',
+      code: 'LON',
+      country: 'United Kingdom',
+      region: 'England',
+      description: 'The capital and largest city of England and the United Kingdom.',
+      created_at: '2024-01-15',
+      updated_at: '2024-01-15'
+    }
+  ]);
+
+  // Projects Management
+  const [projects, setProjects] = useState<Project[]>([
+    {
+      id: '1',
+      name: 'Digital Learning Initiative',
+      code: 'DLI-001',
+      country: 'Pakistan',
+      region: 'Lahore',
+      city: 'Lahore',
+      description: 'A comprehensive digital learning platform for schools in Lahore.',
+      created_at: '2024-01-15',
+      updated_at: '2024-01-15'
+    },
+    {
+      id: '2',
+      name: 'Smart Education Hub',
+      code: 'SEH-001',
+      country: 'Pakistan',
+      region: 'Karachi',
+      city: 'Karachi',
+      description: 'Modern educational technology integration project for Karachi schools.',
+      created_at: '2024-01-15',
+      updated_at: '2024-01-15'
+    },
+    {
+      id: '3',
+      name: 'Global Learning Network',
+      code: 'GLN-001',
+      country: 'United States',
+      region: 'New York',
+      city: 'New York City',
+      description: 'International collaboration project for educational excellence.',
+      created_at: '2024-01-15',
+      updated_at: '2024-01-15'
+    },
+    {
+      id: '4',
+      name: 'Future Schools Program',
+      code: 'FSP-001',
+      country: 'United Kingdom',
+      region: 'England',
+      city: 'London',
+      description: 'Innovative teaching methods and technology adoption program.',
+      created_at: '2024-01-15',
+      updated_at: '2024-01-15'
+    }
+  ]);
+
   // Boards Management
   const [boards, setBoards] = useState<Board[]>([
     {
@@ -140,7 +261,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       name: 'Federal Board of Intermediate and Secondary Education',
       code: 'FBISE',
       country: 'Pakistan',
-      city: 'Islamabad Capital Territory',
+      region: 'Islamabad Capital Territory',
+      city: 'Islamabad',
+      project: 'Digital Learning Initiative',
       description: 'The Federal Board of Intermediate and Secondary Education is a federal level board of education in Pakistan for public and private schools.',
       created_at: '2024-01-15',
       updated_at: '2024-01-15'
@@ -150,7 +273,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       name: 'Punjab Board of Intermediate and Secondary Education',
       code: 'PBISE',
       country: 'Pakistan',
-      city: 'Punjab',
+      region: 'Lahore',
+      city: 'Lahore',
+      project: 'Digital Learning Initiative',
       description: 'Punjab Board of Intermediate and Secondary Education is the provincial education board of Punjab, Pakistan.',
       created_at: '2024-01-15',
       updated_at: '2024-01-15'
@@ -160,7 +285,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       name: 'International Baccalaureate',
       code: 'IB',
       country: 'United Kingdom',
-      city: 'Geneva',
+      region: 'England',
+      city: 'London',
+      project: 'Future Schools Program',
       description: 'The International Baccalaureate is an international educational foundation headquartered in Geneva, Switzerland.',
       created_at: '2024-01-15',
       updated_at: '2024-01-15'
@@ -176,7 +303,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       type: 'Private',
       address: '123 Main Street, Gulberg III',
       country: 'Pakistan',
+      region: 'Lahore',
       city: 'Lahore',
+      project: 'Digital Learning Initiative',
       board: 'CBSE',
       phone: '+92-42-1234567',
       email: 'info@beaconhouse.edu.pk',
@@ -191,7 +320,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       type: 'Private',
       address: '456 Mall Road, Gulberg V',
       country: 'Pakistan',
+      region: 'Lahore',
       city: 'Lahore',
+      project: 'Digital Learning Initiative',
       board: 'MSBSHSE',
       phone: '+92-42-2345678',
       email: 'info@lgs.edu.pk',
@@ -206,7 +337,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       type: 'Public',
       address: '789 University Road, Gulshan-e-Iqbal',
       country: 'Pakistan',
+      region: 'Karachi',
       city: 'Karachi',
+      project: 'Smart Education Hub',
       board: 'IB',
       phone: '+92-21-3456789',
       email: 'info@kps.edu.pk',
@@ -232,13 +365,13 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     description: ''
   });
 
-  // Cities specific state
-  const [isCityCreateDialogOpen, setIsCityCreateDialogOpen] = useState(false);
-  const [isCityEditDialogOpen, setIsCityEditDialogOpen] = useState(false);
-  const [isCityViewDialogOpen, setIsCityViewDialogOpen] = useState(false);
-  const [editingCity, setEditingCity] = useState<City | null>(null);
-  const [viewingCity, setViewingCity] = useState<City | null>(null);
-  const [cityFormData, setCityFormData] = useState({
+  // Regions specific state
+  const [isRegionCreateDialogOpen, setIsRegionCreateDialogOpen] = useState(false);
+  const [isRegionEditDialogOpen, setIsRegionEditDialogOpen] = useState(false);
+  const [isRegionViewDialogOpen, setIsRegionViewDialogOpen] = useState(false);
+  const [editingRegion, setEditingRegion] = useState<Region | null>(null);
+  const [viewingRegion, setViewingRegion] = useState<Region | null>(null);
+  const [regionFormData, setRegionFormData] = useState({
     name: '',
     code: '',
     country: '',
@@ -255,6 +388,37 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     name: '',
     code: '',
     country: '',
+    region: '',
+    city: '',
+    project: '',
+    description: ''
+  });
+
+  // Cities specific state
+  const [isCityCreateDialogOpen, setIsCityCreateDialogOpen] = useState(false);
+  const [isCityEditDialogOpen, setIsCityEditDialogOpen] = useState(false);
+  const [isCityViewDialogOpen, setIsCityViewDialogOpen] = useState(false);
+  const [editingCity, setEditingCity] = useState<City | null>(null);
+  const [viewingCity, setViewingCity] = useState<City | null>(null);
+  const [cityFormData, setCityFormData] = useState({
+    name: '',
+    code: '',
+    country: '',
+    region: '',
+    description: ''
+  });
+
+  // Projects specific state
+  const [isProjectCreateDialogOpen, setIsProjectCreateDialogOpen] = useState(false);
+  const [isProjectEditDialogOpen, setIsProjectEditDialogOpen] = useState(false);
+  const [isProjectViewDialogOpen, setIsProjectViewDialogOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [viewingProject, setViewingProject] = useState<Project | null>(null);
+  const [projectFormData, setProjectFormData] = useState({
+    name: '',
+    code: '',
+    country: '',
+    region: '',
     city: '',
     description: ''
   });
@@ -272,7 +436,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     type: '',
     address: '',
     country: '',
+    region: '',
     city: '',
+    project: '',
     board: '',
     phone: '',
     email: '',
@@ -286,9 +452,21 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     return matchesSearch;
   });
 
+  const filteredRegions = regions.filter(region => {
+    const matchesSearch = region.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         region.code.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSearch;
+  });
+
   const filteredCities = cities.filter(city => {
     const matchesSearch = city.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          city.code.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSearch;
+  });
+
+  const filteredProjects = projects.filter(project => {
+    const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         project.code.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
 
@@ -301,7 +479,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   const filteredSchools = schools.filter(school => {
     const matchesSearch = school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          school.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         school.city.toLowerCase().includes(searchTerm.toLowerCase());
+                         school.region.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = typeFilter === 'all' || !typeFilter || school.type === typeFilter;
     return matchesSearch && matchesType;
   });
@@ -381,9 +559,88 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     });
   };
 
+  // Regions handlers
+  const handleRegionCreate = () => {
+    if (!regionFormData.name || !regionFormData.code || !regionFormData.country) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    const newRegion: Region = {
+      id: Date.now().toString(),
+      name: regionFormData.name,
+      code: regionFormData.code.toUpperCase(),
+      country: regionFormData.country,
+      description: regionFormData.description,
+      created_at: new Date().toISOString().split('T')[0],
+      updated_at: new Date().toISOString().split('T')[0]
+    };
+
+    setRegions([...regions, newRegion]);
+    setIsRegionCreateDialogOpen(false);
+    resetRegionForm();
+    toast.success('Region created successfully');
+  };
+
+  const handleRegionEdit = () => {
+    if (!editingRegion || !regionFormData.name || !regionFormData.code || !regionFormData.country) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    const updatedRegions = regions.map(region =>
+      region.id === editingRegion.id
+        ? {
+            ...region,
+            name: regionFormData.name,
+            code: regionFormData.code.toUpperCase(),
+            country: regionFormData.country,
+            description: regionFormData.description,
+            updated_at: new Date().toISOString().split('T')[0]
+          }
+        : region
+    );
+
+    setRegions(updatedRegions);
+    setIsRegionEditDialogOpen(false);
+    setEditingRegion(null);
+    resetRegionForm();
+    toast.success('Region updated successfully');
+  };
+
+  const handleRegionDelete = (regionId: string) => {
+    setRegions(regions.filter(region => region.id !== regionId));
+    toast.success('Region deleted successfully');
+  };
+
+  const openRegionEditDialog = (region: Region) => {
+    setEditingRegion(region);
+    setRegionFormData({
+      name: region.name,
+      code: region.code,
+      country: region.country,
+      description: region.description
+    });
+    setIsRegionEditDialogOpen(true);
+  };
+
+  const openRegionViewDialog = (region: Region) => {
+    setViewingRegion(region);
+    setIsRegionViewDialogOpen(true);
+  };
+
+  const resetRegionForm = () => {
+    setRegionFormData({
+      name: '',
+      code: '',
+      country: '',
+      description: ''
+    });
+  };
+
   // Cities handlers
   const handleCityCreate = () => {
-    if (!cityFormData.name || !cityFormData.code || !cityFormData.country) {
+    if (!cityFormData.name || !cityFormData.code || !cityFormData.country || !cityFormData.region) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -393,6 +650,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       name: cityFormData.name,
       code: cityFormData.code.toUpperCase(),
       country: cityFormData.country,
+      region: cityFormData.region,
       description: cityFormData.description,
       created_at: new Date().toISOString().split('T')[0],
       updated_at: new Date().toISOString().split('T')[0]
@@ -405,7 +663,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   };
 
   const handleCityEdit = () => {
-    if (!editingCity || !cityFormData.name || !cityFormData.code || !cityFormData.country) {
+    if (!editingCity || !cityFormData.name || !cityFormData.code || !cityFormData.country || !cityFormData.region) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -417,6 +675,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
             name: cityFormData.name,
             code: cityFormData.code.toUpperCase(),
             country: cityFormData.country,
+            region: cityFormData.region,
             description: cityFormData.description,
             updated_at: new Date().toISOString().split('T')[0]
           }
@@ -441,6 +700,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       name: city.name,
       code: city.code,
       country: city.country,
+      region: city.region,
       description: city.description
     });
     setIsCityEditDialogOpen(true);
@@ -456,13 +716,101 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       name: '',
       code: '',
       country: '',
+      region: '',
+      description: ''
+    });
+  };
+
+  // Projects handlers
+  const handleProjectCreate = () => {
+    if (!projectFormData.name || !projectFormData.code || !projectFormData.country || !projectFormData.region || !projectFormData.city) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    const newProject: Project = {
+      id: Date.now().toString(),
+      name: projectFormData.name,
+      code: projectFormData.code.toUpperCase(),
+      country: projectFormData.country,
+      region: projectFormData.region,
+      city: projectFormData.city,
+      description: projectFormData.description,
+      created_at: new Date().toISOString().split('T')[0],
+      updated_at: new Date().toISOString().split('T')[0]
+    };
+
+    setProjects([...projects, newProject]);
+    setIsProjectCreateDialogOpen(false);
+    resetProjectForm();
+    toast.success('Project created successfully');
+  };
+
+  const handleProjectEdit = () => {
+    if (!editingProject || !projectFormData.name || !projectFormData.code || !projectFormData.country || !projectFormData.region || !projectFormData.city) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    const updatedProjects = projects.map(project =>
+      project.id === editingProject.id
+        ? {
+            ...project,
+            name: projectFormData.name,
+            code: projectFormData.code.toUpperCase(),
+            country: projectFormData.country,
+            region: projectFormData.region,
+            city: projectFormData.city,
+            description: projectFormData.description,
+            updated_at: new Date().toISOString().split('T')[0]
+          }
+        : project
+    );
+
+    setProjects(updatedProjects);
+    setIsProjectEditDialogOpen(false);
+    setEditingProject(null);
+    resetProjectForm();
+    toast.success('Project updated successfully');
+  };
+
+  const handleProjectDelete = (projectId: string) => {
+    setProjects(projects.filter(project => project.id !== projectId));
+    toast.success('Project deleted successfully');
+  };
+
+  const openProjectEditDialog = (project: Project) => {
+    setEditingProject(project);
+    setProjectFormData({
+      name: project.name,
+      code: project.code,
+      country: project.country,
+      region: project.region,
+      city: project.city,
+      description: project.description
+    });
+    setIsProjectEditDialogOpen(true);
+  };
+
+  const openProjectViewDialog = (project: Project) => {
+    setViewingProject(project);
+    setIsProjectViewDialogOpen(true);
+  };
+
+  const resetProjectForm = () => {
+    setProjectFormData({
+      name: '',
+      code: '',
+      country: '',
+      region: '',
+      city: '',
       description: ''
     });
   };
 
   // Boards handlers
   const handleBoardCreate = () => {
-    if (!boardFormData.name || !boardFormData.code || !boardFormData.country || !boardFormData.city) {
+    if (!boardFormData.name || !boardFormData.code || !boardFormData.country || !boardFormData.region || !boardFormData.city || !boardFormData.project) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -472,7 +820,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       name: boardFormData.name,
       code: boardFormData.code.toUpperCase(),
       country: boardFormData.country,
+      region: boardFormData.region,
       city: boardFormData.city,
+      project: boardFormData.project,
       description: boardFormData.description,
       created_at: new Date().toISOString().split('T')[0],
       updated_at: new Date().toISOString().split('T')[0]
@@ -485,7 +835,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   };
 
   const handleBoardEdit = () => {
-    if (!editingBoard || !boardFormData.name || !boardFormData.code || !boardFormData.country || !boardFormData.city) {
+    if (!editingBoard || !boardFormData.name || !boardFormData.code || !boardFormData.country || !boardFormData.region || !boardFormData.city || !boardFormData.project) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -497,7 +847,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
             name: boardFormData.name,
             code: boardFormData.code.toUpperCase(),
             country: boardFormData.country,
+            region: boardFormData.region,
             city: boardFormData.city,
+            project: boardFormData.project,
             description: boardFormData.description,
             updated_at: new Date().toISOString().split('T')[0]
           }
@@ -522,7 +874,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       name: board.name,
       code: board.code,
       country: board.country,
+      region: board.region,
       city: board.city,
+      project: board.project,
       description: board.description
     });
     setIsBoardEditDialogOpen(true);
@@ -538,14 +892,16 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       name: '',
       code: '',
       country: '',
+      region: '',
       city: '',
+      project: '',
       description: ''
     });
   };
 
   // Schools handlers
   const handleSchoolCreate = () => {
-    if (!schoolFormData.name || !schoolFormData.code || !schoolFormData.type || !schoolFormData.country || !schoolFormData.city || !schoolFormData.board) {
+    if (!schoolFormData.name || !schoolFormData.code || !schoolFormData.type || !schoolFormData.country || !schoolFormData.region || !schoolFormData.city || !schoolFormData.project || !schoolFormData.board) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -557,7 +913,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       type: schoolFormData.type,
       address: schoolFormData.address,
       country: schoolFormData.country,
+      region: schoolFormData.region,
       city: schoolFormData.city,
+      project: schoolFormData.project,
       board: schoolFormData.board,
       phone: schoolFormData.phone,
       email: schoolFormData.email,
@@ -573,7 +931,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   };
 
   const handleSchoolEdit = () => {
-    if (!editingSchool || !schoolFormData.name || !schoolFormData.code || !schoolFormData.type || !schoolFormData.country || !schoolFormData.city || !schoolFormData.board) {
+    if (!editingSchool || !schoolFormData.name || !schoolFormData.code || !schoolFormData.type || !schoolFormData.country || !schoolFormData.region || !schoolFormData.city || !schoolFormData.project || !schoolFormData.board) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -587,7 +945,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
             type: schoolFormData.type,
             address: schoolFormData.address,
             country: schoolFormData.country,
+            region: schoolFormData.region,
             city: schoolFormData.city,
+            project: schoolFormData.project,
             board: schoolFormData.board,
             phone: schoolFormData.phone,
             email: schoolFormData.email,
@@ -617,7 +977,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       type: school.type,
       address: school.address,
       country: school.country,
+      region: school.region,
       city: school.city,
+      project: school.project,
       board: school.board,
       phone: school.phone,
       email: school.email,
@@ -638,7 +1000,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       type: '',
       address: '',
       country: '',
+      region: '',
       city: '',
+      project: '',
       board: '',
       phone: '',
       email: '',
@@ -659,27 +1023,36 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     }
   };
 
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-[#8DC63F]">Multitenancy Management</h1>
-          <p className="text-muted-foreground">Manage organizational hierarchy: countries, cities, boards, and schools</p>
+          <p className="text-muted-foreground">Manage organizational hierarchy: countries, regions, boards, and schools</p>
         </div>
       </div>
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <div className="overflow-x-auto">
-          <TabsList className="grid w-full grid-cols-4 min-w-fit">
+          <TabsList className="grid w-full grid-cols-6 min-w-fit">
             <TabsTrigger value="countries" className="text-xs sm:text-sm">
               <Globe className="w-4 h-4 mr-2" />
               Countries
             </TabsTrigger>
-            <TabsTrigger value="cities" className="text-xs sm:text-sm">
+            <TabsTrigger value="regions" className="text-xs sm:text-sm">
               <MapPin className="w-4 h-4 mr-2" />
+              Regions
+            </TabsTrigger>
+            <TabsTrigger value="cities" className="text-xs sm:text-sm">
+              <Building className="w-4 h-4 mr-2" />
               Cities
+            </TabsTrigger>
+            <TabsTrigger value="projects" className="text-xs sm:text-sm">
+              <FolderOpen className="w-4 h-4 mr-2" />
+              Projects
             </TabsTrigger>
             <TabsTrigger value="boards" className="text-xs sm:text-sm">
               <Building2 className="w-4 h-4 mr-2" />
@@ -855,12 +1228,177 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
           </Card>
         </TabsContent>
 
+        {/* Regions Tab */}
+        <TabsContent value="regions" className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-bold text-[#8DC63F]">Regions Management</h2>
+              <p className="text-muted-foreground">Manage all regions and territories in the system</p>
+            </div>
+            <Button
+              onClick={() => setIsRegionCreateDialogOpen(true)}
+              className="bg-[#8DC63F] hover:bg-[#8DC63F]/90"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create Region
+            </Button>
+          </div>
+
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Regions</CardTitle>
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{regions.length}</div>
+                <p className="text-xs text-muted-foreground">All regions in the system</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Regions with Description</CardTitle>
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{regions.filter(r => r.description && r.description.trim() !== '').length}</div>
+                <p className="text-xs text-muted-foreground">Have descriptions</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Recent Updates</CardTitle>
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{regions.filter(r => {
+                  const today = new Date();
+                  const updateDate = new Date(r.updated_at);
+                  const diffTime = Math.abs(today.getTime() - updateDate.getTime());
+                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                  return diffDays <= 7;
+                }).length}</div>
+                <p className="text-xs text-muted-foreground">Updated this week</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Search and Filters */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Region Directory</CardTitle>
+              <CardDescription>Search and filter regions by various criteria</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder="Search regions by name or code..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Button variant="outline" size="icon">
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Regions Table */}
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Country</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Last Updated</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredRegions.map((region) => (
+                    <TableRow key={region.id}>
+                      <TableCell className="font-medium">{region.name}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{region.code}</Badge>
+                      </TableCell>
+                      <TableCell>{region.country}</TableCell>
+                      <TableCell className="max-w-xs truncate">{region.description}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {region.updated_at}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Open menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => openRegionViewDialog(region)}>
+                              <Eye className="mr-2 h-4 w-4" />
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openRegionEditDialog(region)}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit Region
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete Region
+                                </DropdownMenuItem>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Region</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete "{region.name}"? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleRegionDelete(region.id)}
+                                    className="bg-red-600 hover:bg-red-700"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* Cities Tab */}
         <TabsContent value="cities" className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h2 className="text-2xl font-bold text-[#8DC63F]">Cities Management</h2>
-              <p className="text-muted-foreground">Manage all cities and territories in the system</p>
+              <p className="text-muted-foreground">Manage all cities and urban areas in the system</p>
             </div>
             <Button
               onClick={() => setIsCityCreateDialogOpen(true)}
@@ -876,7 +1414,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Cities</CardTitle>
-                <MapPin className="h-4 w-4 text-muted-foreground" />
+                <Building className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{cities.length}</div>
@@ -946,6 +1484,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                     <TableHead>Name</TableHead>
                     <TableHead>Code</TableHead>
                     <TableHead>Country</TableHead>
+                    <TableHead>Region</TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead>Last Updated</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -959,6 +1498,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                         <Badge variant="outline">{city.code}</Badge>
                       </TableCell>
                       <TableCell>{city.country}</TableCell>
+                      <TableCell>{city.region}</TableCell>
                       <TableCell className="max-w-xs truncate">{city.description}</TableCell>
                       <TableCell className="text-muted-foreground">
                         <div className="flex items-center gap-1">
@@ -1002,6 +1542,175 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                                   <AlertDialogAction
                                     onClick={() => handleCityDelete(city.id)}
+                                    className="bg-red-600 hover:bg-red-700"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Projects Tab */}
+        <TabsContent value="projects" className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-bold text-[#8DC63F]">Projects Management</h2>
+              <p className="text-muted-foreground">Manage all educational projects and initiatives in the system</p>
+            </div>
+            <Button
+              onClick={() => setIsProjectCreateDialogOpen(true)}
+              className="bg-[#8DC63F] hover:bg-[#8DC63F]/90"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create Project
+            </Button>
+          </div>
+
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
+                <FolderOpen className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{projects.length}</div>
+                <p className="text-xs text-muted-foreground">All projects in the system</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Projects with Description</CardTitle>
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{projects.filter(p => p.description && p.description.trim() !== '').length}</div>
+                <p className="text-xs text-muted-foreground">Have descriptions</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Recent Updates</CardTitle>
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{projects.filter(p => {
+                  const today = new Date();
+                  const updateDate = new Date(p.updated_at);
+                  const diffTime = Math.abs(today.getTime() - updateDate.getTime());
+                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                  return diffDays <= 7;
+                }).length}</div>
+                <p className="text-xs text-muted-foreground">Updated this week</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Search and Filters */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Project Directory</CardTitle>
+              <CardDescription>Search and filter projects by various criteria</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder="Search projects by name or code..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Button variant="outline" size="icon">
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Projects Table */}
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Country</TableHead>
+                    <TableHead>Region</TableHead>
+                    <TableHead>City</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Last Updated</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredProjects.map((project) => (
+                    <TableRow key={project.id}>
+                      <TableCell className="font-medium">{project.name}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{project.code}</Badge>
+                      </TableCell>
+                      <TableCell>{project.country}</TableCell>
+                      <TableCell>{project.region}</TableCell>
+                      <TableCell>{project.city}</TableCell>
+                      <TableCell className="max-w-xs truncate">{project.description}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {project.updated_at}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Open menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => openProjectViewDialog(project)}>
+                              <Eye className="mr-2 h-4 w-4" />
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openProjectEditDialog(project)}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit Project
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete Project
+                                </DropdownMenuItem>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Project</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete "{project.name}"? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleProjectDelete(project.id)}
                                     className="bg-red-600 hover:bg-red-700"
                                   >
                                     Delete
@@ -1111,7 +1820,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                     <TableHead>Name</TableHead>
                     <TableHead>Code</TableHead>
                     <TableHead>Country</TableHead>
+                    <TableHead>Region</TableHead>
                     <TableHead>City</TableHead>
+                    <TableHead>Project</TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead>Last Updated</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -1125,7 +1836,11 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                         <Badge variant="outline">{board.code}</Badge>
                       </TableCell>
                       <TableCell>{board.country}</TableCell>
+                      <TableCell>{board.region}</TableCell>
                       <TableCell>{board.city}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{board.project}</Badge>
+                      </TableCell>
                       <TableCell className="max-w-xs truncate">{board.description}</TableCell>
                       <TableCell className="text-muted-foreground">
                         <div className="flex items-center gap-1">
@@ -1250,7 +1965,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
-                    placeholder="Search schools by name, code, or city..."
+                    placeholder="Search schools by name, code, or region..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -1284,7 +1999,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                     <TableHead>Code</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Country</TableHead>
+                    <TableHead>Region</TableHead>
                     <TableHead>City</TableHead>
+                    <TableHead>Project</TableHead>
                     <TableHead>Board</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -1298,7 +2015,11 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                       </TableCell>
                       <TableCell>{getTypeBadge(school.type)}</TableCell>
                       <TableCell>{school.country}</TableCell>
+                      <TableCell>{school.region}</TableCell>
                       <TableCell>{school.city}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{school.project}</Badge>
+                      </TableCell>
                       <TableCell>
                         <Badge variant="outline">{school.board}</Badge>
                       </TableCell>
@@ -1515,6 +2236,204 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
         </DialogContent>
       </Dialog>
 
+      {/* Region Dialogs */}
+      {/* Create Region Dialog */}
+      <Dialog open={isRegionCreateDialogOpen} onOpenChange={setIsRegionCreateDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Create New Region</DialogTitle>
+            <DialogDescription>
+              Add a new region or territory to the system. Fill in the required information below.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Region Name *</Label>
+              <Input
+                id="name"
+                value={regionFormData.name}
+                onChange={(e) => setRegionFormData({ ...regionFormData, name: e.target.value })}
+                placeholder="e.g., California"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="code">Region Code *</Label>
+              <Input
+                id="code"
+                value={regionFormData.code}
+                onChange={(e) => setRegionFormData({ ...regionFormData, code: e.target.value })}
+                placeholder="e.g., LHR"
+                maxLength={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="region-country">Country *</Label>
+              <Select
+                value={regionFormData.country}
+                onValueChange={(value) => setRegionFormData({ ...regionFormData, country: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a country" />
+                </SelectTrigger>
+                <SelectContent>
+                  {countries.map((country) => (
+                    <SelectItem key={country.id} value={country.name}>
+                      {country.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={regionFormData.description}
+                onChange={(e) => setRegionFormData({ ...regionFormData, description: e.target.value })}
+                placeholder="Brief description of the region..."
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsRegionCreateDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleRegionCreate} className="bg-[#8DC63F] hover:bg-[#8DC63F]/90">
+              Create Region
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Region Dialog */}
+      <Dialog open={isRegionEditDialogOpen} onOpenChange={setIsRegionEditDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Region</DialogTitle>
+            <DialogDescription>
+              Update the information for {editingRegion?.name}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Region Name *</Label>
+              <Input
+                id="edit-name"
+                value={regionFormData.name}
+                onChange={(e) => setRegionFormData({ ...regionFormData, name: e.target.value })}
+                placeholder="e.g., California"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-code">Region Code *</Label>
+              <Input
+                id="edit-code"
+                value={regionFormData.code}
+                onChange={(e) => setRegionFormData({ ...regionFormData, code: e.target.value })}
+                placeholder="e.g., LHR"
+                maxLength={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-region-country">Country *</Label>
+              <Select
+                value={regionFormData.country}
+                onValueChange={(value) => setRegionFormData({ ...regionFormData, country: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a country" />
+                </SelectTrigger>
+                <SelectContent>
+                  {countries.map((country) => (
+                    <SelectItem key={country.id} value={country.name}>
+                      {country.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="edit-description">Description</Label>
+              <Textarea
+                id="edit-description"
+                value={regionFormData.description}
+                onChange={(e) => setRegionFormData({ ...regionFormData, description: e.target.value })}
+                placeholder="Brief description of the region..."
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsRegionEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleRegionEdit} className="bg-blue-600 hover:bg-blue-700">
+              Update Region
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Region Dialog */}
+      <Dialog open={isRegionViewDialogOpen} onOpenChange={setIsRegionViewDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Region Details</DialogTitle>
+            <DialogDescription>
+              View detailed information about {viewingRegion?.name}.
+            </DialogDescription>
+          </DialogHeader>
+          {viewingRegion && (
+            <div className="space-y-6 py-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Region Name</Label>
+                    <p className="text-lg font-semibold">{viewingRegion.name}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Region Code</Label>
+                    <Badge variant="outline" className="text-lg">{viewingRegion.code}</Badge>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Country</Label>
+                    <p className="text-lg">{viewingRegion.country}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Created</Label>
+                    <p className="text-lg">{viewingRegion.created_at}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Last Updated</Label>
+                    <p className="text-lg">{viewingRegion.updated_at}</p>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Description</Label>
+                    <p className="text-lg">{viewingRegion.description}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsRegionViewDialogOpen(false)}>
+              Close
+            </Button>
+            {viewingRegion && (
+              <Button onClick={() => {
+                setIsRegionViewDialogOpen(false);
+                openRegionEditDialog(viewingRegion);
+              }} className="bg-blue-600 hover:bg-blue-700">
+                Edit Region
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* City Dialogs */}
       {/* Create City Dialog */}
       <Dialog open={isCityCreateDialogOpen} onOpenChange={setIsCityCreateDialogOpen}>
@@ -1522,26 +2441,26 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
           <DialogHeader>
             <DialogTitle>Create New City</DialogTitle>
             <DialogDescription>
-              Add a new city or territory to the system. Fill in the required information below.
+              Add a new city or urban area to the system. Fill in the required information below.
             </DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name">City Name *</Label>
+              <Label htmlFor="city-name">City Name *</Label>
               <Input
-                id="name"
+                id="city-name"
                 value={cityFormData.name}
                 onChange={(e) => setCityFormData({ ...cityFormData, name: e.target.value })}
-                placeholder="e.g., California"
+                placeholder="e.g., Lahore"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="code">City Code *</Label>
+              <Label htmlFor="city-code">City Code *</Label>
               <Input
-                id="code"
+                id="city-code"
                 value={cityFormData.code}
                 onChange={(e) => setCityFormData({ ...cityFormData, code: e.target.value })}
-                placeholder="e.g., LHR"
+                placeholder="e.g., LHE"
                 maxLength={3}
               />
             </div>
@@ -1563,10 +2482,28 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="city-region">Region *</Label>
+              <Select
+                value={cityFormData.region}
+                onValueChange={(value) => setCityFormData({ ...cityFormData, region: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a region" />
+                </SelectTrigger>
+                <SelectContent>
+                  {regions.map((region) => (
+                    <SelectItem key={region.id} value={region.name}>
+                      {region.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="city-description">Description</Label>
               <Textarea
-                id="description"
+                id="city-description"
                 value={cityFormData.description}
                 onChange={(e) => setCityFormData({ ...cityFormData, description: e.target.value })}
                 placeholder="Brief description of the city..."
@@ -1596,21 +2533,21 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-name">City Name *</Label>
+              <Label htmlFor="edit-city-name">City Name *</Label>
               <Input
-                id="edit-name"
+                id="edit-city-name"
                 value={cityFormData.name}
                 onChange={(e) => setCityFormData({ ...cityFormData, name: e.target.value })}
-                placeholder="e.g., California"
+                placeholder="e.g., Lahore"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-code">City Code *</Label>
+              <Label htmlFor="edit-city-code">City Code *</Label>
               <Input
-                id="edit-code"
+                id="edit-city-code"
                 value={cityFormData.code}
                 onChange={(e) => setCityFormData({ ...cityFormData, code: e.target.value })}
-                placeholder="e.g., LHR"
+                placeholder="e.g., LHE"
                 maxLength={3}
               />
             </div>
@@ -1632,10 +2569,28 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-city-region">Region *</Label>
+              <Select
+                value={cityFormData.region}
+                onValueChange={(value) => setCityFormData({ ...cityFormData, region: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a region" />
+                </SelectTrigger>
+                <SelectContent>
+                  {regions.map((region) => (
+                    <SelectItem key={region.id} value={region.name}>
+                      {region.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="edit-description">Description</Label>
+              <Label htmlFor="edit-city-description">Description</Label>
               <Textarea
-                id="edit-description"
+                id="edit-city-description"
                 value={cityFormData.description}
                 onChange={(e) => setCityFormData({ ...cityFormData, description: e.target.value })}
                 placeholder="Brief description of the city..."
@@ -1680,6 +2635,10 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                     <p className="text-lg">{viewingCity.country}</p>
                   </div>
                   <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Region</Label>
+                    <p className="text-lg">{viewingCity.region}</p>
+                  </div>
+                  <div>
                     <Label className="text-sm font-medium text-muted-foreground">Created</Label>
                     <p className="text-lg">{viewingCity.created_at}</p>
                   </div>
@@ -1707,6 +2666,296 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                 openCityEditDialog(viewingCity);
               }} className="bg-blue-600 hover:bg-blue-700">
                 Edit City
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Project Dialogs */}
+      {/* Create Project Dialog */}
+      <Dialog open={isProjectCreateDialogOpen} onOpenChange={setIsProjectCreateDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Create New Project</DialogTitle>
+            <DialogDescription>
+              Add a new educational project or initiative to the system. Fill in the required information below.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="project-name">Project Name *</Label>
+              <Input
+                id="project-name"
+                value={projectFormData.name}
+                onChange={(e) => setProjectFormData({ ...projectFormData, name: e.target.value })}
+                placeholder="e.g., Digital Learning Initiative"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="project-code">Project Code *</Label>
+              <Input
+                id="project-code"
+                value={projectFormData.code}
+                onChange={(e) => setProjectFormData({ ...projectFormData, code: e.target.value })}
+                placeholder="e.g., DLI-001"
+                maxLength={10}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="project-country">Country *</Label>
+              <Select
+                value={projectFormData.country}
+                onValueChange={(value) => setProjectFormData({ ...projectFormData, country: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a country" />
+                </SelectTrigger>
+                <SelectContent>
+                  {countries.map((country) => (
+                    <SelectItem key={country.id} value={country.name}>
+                      {country.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="project-region">Region *</Label>
+              <Select
+                value={projectFormData.region}
+                onValueChange={(value) => setProjectFormData({ ...projectFormData, region: value })}
+                disabled={!projectFormData.country}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={projectFormData.country ? "Select a region" : "Select country first"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {regions
+                    .filter(region => region.country === projectFormData.country)
+                    .map((region) => (
+                      <SelectItem key={region.id} value={region.name}>
+                        {region.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="project-city">City *</Label>
+              <Select
+                value={projectFormData.city}
+                onValueChange={(value) => setProjectFormData({ ...projectFormData, city: value })}
+                disabled={!projectFormData.region}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={projectFormData.region ? "Select a city" : "Select region first"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {cities
+                    .filter(city => city.region === projectFormData.region && city.country === projectFormData.country)
+                    .map((city) => (
+                      <SelectItem key={city.id} value={city.name}>
+                        {city.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="project-description">Description</Label>
+              <Textarea
+                id="project-description"
+                value={projectFormData.description}
+                onChange={(e) => setProjectFormData({ ...projectFormData, description: e.target.value })}
+                placeholder="Brief description of the project..."
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsProjectCreateDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleProjectCreate} className="bg-[#8DC63F] hover:bg-[#8DC63F]/90">
+              Create Project
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Project Dialog */}
+      <Dialog open={isProjectEditDialogOpen} onOpenChange={setIsProjectEditDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Project</DialogTitle>
+            <DialogDescription>
+              Update the information for {editingProject?.name}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-project-name">Project Name *</Label>
+              <Input
+                id="edit-project-name"
+                value={projectFormData.name}
+                onChange={(e) => setProjectFormData({ ...projectFormData, name: e.target.value })}
+                placeholder="e.g., Digital Learning Initiative"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-project-code">Project Code *</Label>
+              <Input
+                id="edit-project-code"
+                value={projectFormData.code}
+                onChange={(e) => setProjectFormData({ ...projectFormData, code: e.target.value })}
+                placeholder="e.g., DLI-001"
+                maxLength={10}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-project-country">Country *</Label>
+              <Select
+                value={projectFormData.country}
+                onValueChange={(value) => setProjectFormData({ ...projectFormData, country: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a country" />
+                </SelectTrigger>
+                <SelectContent>
+                  {countries.map((country) => (
+                    <SelectItem key={country.id} value={country.name}>
+                      {country.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-project-region">Region *</Label>
+              <Select
+                value={projectFormData.region}
+                onValueChange={(value) => setProjectFormData({ ...projectFormData, region: value })}
+                disabled={!projectFormData.country}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={projectFormData.country ? "Select a region" : "Select country first"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {regions
+                    .filter(region => region.country === projectFormData.country)
+                    .map((region) => (
+                      <SelectItem key={region.id} value={region.name}>
+                        {region.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-project-city">City *</Label>
+              <Select
+                value={projectFormData.city}
+                onValueChange={(value) => setProjectFormData({ ...projectFormData, city: value })}
+                disabled={!projectFormData.region}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={projectFormData.region ? "Select a city" : "Select region first"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {cities
+                    .filter(city => city.region === projectFormData.region && city.country === projectFormData.country)
+                    .map((city) => (
+                      <SelectItem key={city.id} value={city.name}>
+                        {city.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="edit-project-description">Description</Label>
+              <Textarea
+                id="edit-project-description"
+                value={projectFormData.description}
+                onChange={(e) => setProjectFormData({ ...projectFormData, description: e.target.value })}
+                placeholder="Brief description of the project..."
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsProjectEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleProjectEdit} className="bg-blue-600 hover:bg-blue-700">
+              Update Project
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Project Dialog */}
+      <Dialog open={isProjectViewDialogOpen} onOpenChange={setIsProjectViewDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Project Details</DialogTitle>
+            <DialogDescription>
+              View detailed information about {viewingProject?.name}.
+            </DialogDescription>
+          </DialogHeader>
+          {viewingProject && (
+            <div className="space-y-6 py-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Project Name</Label>
+                    <p className="text-lg font-semibold">{viewingProject.name}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Project Code</Label>
+                    <Badge variant="outline" className="text-lg">{viewingProject.code}</Badge>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Country</Label>
+                    <p className="text-lg">{viewingProject.country}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Region</Label>
+                    <p className="text-lg">{viewingProject.region}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">City</Label>
+                    <p className="text-lg">{viewingProject.city}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Created</Label>
+                    <p className="text-lg">{viewingProject.created_at}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Last Updated</Label>
+                    <p className="text-lg">{viewingProject.updated_at}</p>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Description</Label>
+                    <p className="text-lg">{viewingProject.description}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsProjectViewDialogOpen(false)}>
+              Close
+            </Button>
+            {viewingProject && (
+              <Button onClick={() => {
+                setIsProjectViewDialogOpen(false);
+                openProjectEditDialog(viewingProject);
+              }} className="bg-blue-600 hover:bg-blue-700">
+                Edit Project
               </Button>
             )}
           </DialogFooter>
@@ -1762,6 +3011,24 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
               </Select>
             </div>
             <div className="space-y-2">
+              <Label htmlFor="board-region">Region *</Label>
+              <Select
+                value={boardFormData.region}
+                onValueChange={(value) => setBoardFormData({ ...boardFormData, region: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a region" />
+                </SelectTrigger>
+                <SelectContent>
+                  {regions.map((region) => (
+                    <SelectItem key={region.id} value={region.name}>
+                      {region.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="board-city">City *</Label>
               <Select
                 value={boardFormData.city}
@@ -1771,15 +3038,29 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectValue placeholder="Select a city" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Azad Jammu and Kashmir">Azad Jammu and Kashmir</SelectItem>
-                  <SelectItem value="Balochistan">Balochistan</SelectItem>
-                  <SelectItem value="Gilgit-Baltistan">Gilgit-Baltistan</SelectItem>
-                  <SelectItem value="Islamabad Capital Territory">Islamabad Capital Territory</SelectItem>
-                  <SelectItem value="Khyber Pakhtunkhwa">Khyber Pakhtunkhwa</SelectItem>
-                  <SelectItem value="Punjab">Punjab</SelectItem>
-                  <SelectItem value="Sindh">Sindh</SelectItem>
-                  <SelectItem value="Federally Administered Tribal Areas">Federally Administered Tribal Areas</SelectItem>
-                  <SelectItem value="Geneva">Geneva</SelectItem>
+                  {cities.map((city) => (
+                    <SelectItem key={city.id} value={city.name}>
+                      {city.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="board-project">Project *</Label>
+              <Select
+                value={boardFormData.project}
+                onValueChange={(value) => setBoardFormData({ ...boardFormData, project: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a project" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects.map((project) => (
+                    <SelectItem key={project.id} value={project.name}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -1853,6 +3134,24 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
               </Select>
             </div>
             <div className="space-y-2">
+              <Label htmlFor="edit-board-region">Region *</Label>
+              <Select
+                value={boardFormData.region}
+                onValueChange={(value) => setBoardFormData({ ...boardFormData, region: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a region" />
+                </SelectTrigger>
+                <SelectContent>
+                  {regions.map((region) => (
+                    <SelectItem key={region.id} value={region.name}>
+                      {region.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="edit-board-city">City *</Label>
               <Select
                 value={boardFormData.city}
@@ -1862,15 +3161,29 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectValue placeholder="Select a city" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Azad Jammu and Kashmir">Azad Jammu and Kashmir</SelectItem>
-                  <SelectItem value="Balochistan">Balochistan</SelectItem>
-                  <SelectItem value="Gilgit-Baltistan">Gilgit-Baltistan</SelectItem>
-                  <SelectItem value="Islamabad Capital Territory">Islamabad Capital Territory</SelectItem>
-                  <SelectItem value="Khyber Pakhtunkhwa">Khyber Pakhtunkhwa</SelectItem>
-                  <SelectItem value="Punjab">Punjab</SelectItem>
-                  <SelectItem value="Sindh">Sindh</SelectItem>
-                  <SelectItem value="Federally Administered Tribal Areas">Federally Administered Tribal Areas</SelectItem>
-                  <SelectItem value="Geneva">Geneva</SelectItem>
+                  {cities.map((city) => (
+                    <SelectItem key={city.id} value={city.name}>
+                      {city.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-board-project">Project *</Label>
+              <Select
+                value={boardFormData.project}
+                onValueChange={(value) => setBoardFormData({ ...boardFormData, project: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a project" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects.map((project) => (
+                    <SelectItem key={project.id} value={project.name}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -1922,8 +3235,16 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                     <p className="text-lg">{viewingBoard.country}</p>
                   </div>
                   <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Region</Label>
+                    <p className="text-lg">{viewingBoard.region}</p>
+                  </div>
+                  <div>
                     <Label className="text-sm font-medium text-muted-foreground">City</Label>
                     <p className="text-lg">{viewingBoard.city}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Project</Label>
+                    <p className="text-lg">{viewingBoard.project}</p>
                   </div>
                   <div>
                     <Label className="text-sm font-medium text-muted-foreground">Created</Label>
@@ -2024,6 +3345,24 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
               </Select>
             </div>
             <div className="space-y-2">
+              <Label htmlFor="school-region">Region *</Label>
+              <Select
+                value={schoolFormData.region}
+                onValueChange={(value) => setSchoolFormData({ ...schoolFormData, region: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a region" />
+                </SelectTrigger>
+                <SelectContent>
+                  {regions.map((region) => (
+                    <SelectItem key={region.id} value={region.name}>
+                      {region.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="school-city">City *</Label>
               <Select
                 value={schoolFormData.city}
@@ -2036,6 +3375,24 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   {cities.map((city) => (
                     <SelectItem key={city.id} value={city.name}>
                       {city.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="school-project">Project *</Label>
+              <Select
+                value={schoolFormData.project}
+                onValueChange={(value) => setSchoolFormData({ ...schoolFormData, project: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a project" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects.map((project) => (
+                    <SelectItem key={project.id} value={project.name}>
+                      {project.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -2172,6 +3529,24 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
               </Select>
             </div>
             <div className="space-y-2">
+              <Label htmlFor="edit-school-region">Region *</Label>
+              <Select
+                value={schoolFormData.region}
+                onValueChange={(value) => setSchoolFormData({ ...schoolFormData, region: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a region" />
+                </SelectTrigger>
+                <SelectContent>
+                  {regions.map((region) => (
+                    <SelectItem key={region.id} value={region.name}>
+                      {region.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="edit-school-city">City *</Label>
               <Select
                 value={schoolFormData.city}
@@ -2184,6 +3559,24 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   {cities.map((city) => (
                     <SelectItem key={city.id} value={city.name}>
                       {city.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-school-project">Project *</Label>
+              <Select
+                value={schoolFormData.project}
+                onValueChange={(value) => setSchoolFormData({ ...schoolFormData, project: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a project" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects.map((project) => (
+                    <SelectItem key={project.id} value={project.name}>
+                      {project.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -2286,8 +3679,16 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                     <p className="text-lg">{viewingSchool.country}</p>
                   </div>
                   <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Region</Label>
+                    <p className="text-lg">{viewingSchool.region}</p>
+                  </div>
+                  <div>
                     <Label className="text-sm font-medium text-muted-foreground">City</Label>
                     <p className="text-lg">{viewingSchool.city}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Project</Label>
+                    <p className="text-lg">{viewingSchool.project}</p>
                   </div>
                   <div>
                     <Label className="text-sm font-medium text-muted-foreground">Board</Label>

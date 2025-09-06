@@ -122,6 +122,11 @@ interface CourseData {
   category: string;
   language: string;
   level: string;
+  country: string;
+  region: string;
+  city: string;
+  project: string;
+  board: string;
   image?: string;
   requirements: string[];
   learningOutcomes: string[];
@@ -152,6 +157,11 @@ const validateCourseData = (data: CourseData): ValidationErrors => {
   if (!data.category) errors.category = 'Category is required.';
   if (!data.language) errors.language = 'Language is required.';
   if (!data.level) errors.level = 'Level is required.';
+  if (!data.country) errors.country = 'Country is required.';
+  if (!data.region) errors.region = 'Region is required.';
+  if (!data.city) errors.city = 'City is required.';
+  if (!data.project) errors.project = 'Project is required.';
+  if (!data.board) errors.board = 'Board is required.';
 
   if (!data.requirements || data.requirements.length === 0 || data.requirements.every(r => !r.trim())) {
     errors.requirements = 'At least one requirement is required.';
@@ -216,6 +226,51 @@ const MOCK_CLASSES: Class[] = [
     created_at: '2024-01-12',
     updated_at: '2024-01-19'
   }
+];
+
+// Mock Data for Location and Board Selection
+const MOCK_COUNTRIES = [
+  { id: '1', name: 'Pakistan' },
+  { id: '2', name: 'United States' },
+  { id: '3', name: 'United Kingdom' },
+  { id: '4', name: 'Canada' },
+  { id: '5', name: 'Australia' }
+];
+
+const MOCK_REGIONS = [
+  { id: '1', name: 'Lahore', country: 'Pakistan' },
+  { id: '2', name: 'Karachi', country: 'Pakistan' },
+  { id: '3', name: 'New York', country: 'United States' },
+  { id: '4', name: 'California', country: 'United States' },
+  { id: '5', name: 'England', country: 'United Kingdom' },
+  { id: '6', name: 'Scotland', country: 'United Kingdom' }
+];
+
+const MOCK_CITIES = [
+  { id: '1', name: 'Lahore', region: 'Lahore', country: 'Pakistan' },
+  { id: '2', name: 'Karachi', region: 'Karachi', country: 'Pakistan' },
+  { id: '3', name: 'New York City', region: 'New York', country: 'United States' },
+  { id: '4', name: 'Los Angeles', region: 'California', country: 'United States' },
+  { id: '5', name: 'London', region: 'England', country: 'United Kingdom' },
+  { id: '6', name: 'Edinburgh', region: 'Scotland', country: 'United Kingdom' }
+];
+
+const MOCK_BOARDS = [
+  { id: '1', name: 'Federal Board of Intermediate and Secondary Education', country: 'Pakistan' },
+  { id: '2', name: 'Punjab Board of Intermediate and Secondary Education', country: 'Pakistan' },
+  { id: '3', name: 'Cambridge International', country: 'United Kingdom' },
+  { id: '4', name: 'International Baccalaureate', country: 'United Kingdom' },
+  { id: '5', name: 'Advanced Placement', country: 'United States' },
+  { id: '6', name: 'SAT Board', country: 'United States' }
+];
+
+const MOCK_PROJECTS = [
+  { id: '1', name: 'Digital Learning Initiative', country: 'Pakistan', region: 'Lahore', city: 'Lahore' },
+  { id: '2', name: 'Smart Education Hub', country: 'Pakistan', region: 'Karachi', city: 'Karachi' },
+  { id: '3', name: 'Global Learning Network', country: 'United States', region: 'New York', city: 'New York City' },
+  { id: '4', name: 'Future Schools Program', country: 'United Kingdom', region: 'England', city: 'London' },
+  { id: '5', name: 'Tech Education Initiative', country: 'United States', region: 'California', city: 'Los Angeles' },
+  { id: '6', name: 'Innovation in Learning', country: 'United Kingdom', region: 'Scotland', city: 'Edinburgh' }
 ];
 // #endregion
 
@@ -1395,6 +1450,11 @@ const CourseBuilder = () => {
     category: '',
     language: 'English',
     level: 'Beginner',
+    country: '',
+    region: '',
+    city: '',
+    project: '',
+    board: '',
     duration: '',
     requirements: [''],
     learningOutcomes: [''],
@@ -1559,6 +1619,11 @@ const CourseBuilder = () => {
               category: fetchedCategories.find(c => c.id === data.category_id)?.name || '',
               language: fetchedLanguages.find(l => l.id === data.language_id)?.name || '',
               level: fetchedLevels.find(l => l.id === data.level_id)?.name || '',
+              country: data.country || '',
+              region: data.region || '',
+              city: data.city || '',
+              project: data.project || '',
+              board: data.board || '',
               duration: data.duration || '',
               requirements: data.requirements || [''],
               learningOutcomes: data.learning_outcomes || [''],
@@ -3937,6 +4002,239 @@ const CourseBuilder = () => {
                         <div className="flex items-center gap-2 text-red-500 text-sm">
                           <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
                           {validationErrors.level}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Location and Board Information Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Country */}
+                    <div className="space-y-3">
+                      <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                        Country
+                        <span className="text-red-500 ml-1">*</span>
+                      </label>
+                      <Select
+                        value={courseData.country}
+                        onValueChange={(value) => {
+                          setCourseData(prev => ({ ...prev, country: value, region: '', city: '', board: '' }));
+                          handleBlur('country');
+                        }}
+                      >
+                        <SelectTrigger className={cn(
+                          "h-11 border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg",
+                          "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700",
+                          "focus:border-primary focus:ring-4 focus:ring-primary/10",
+                          "text-base font-medium",
+                          validationErrors.country && (touchedFields.country || courseData.id) && 
+                          "border-red-500 focus:border-red-500 focus:ring-red-500/10"
+                        )}>
+                          <SelectValue placeholder="Select country" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl">
+                          {MOCK_COUNTRIES.map((country) => (
+                            <SelectItem 
+                              key={country.id} 
+                              value={country.name}
+                              className="rounded-xl hover:bg-primary/5 hover:text-gray-900 dark:hover:text-white focus:bg-primary/10 focus:text-gray-900 dark:focus:text-white transition-colors"
+                            >
+                              {country.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {validationErrors.country && (touchedFields.country || courseData.id) && (
+                        <div className="flex items-center gap-2 text-red-500 text-sm">
+                          <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                          {validationErrors.country}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Region */}
+                    <div className="space-y-3">
+                      <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                        Region
+                        <span className="text-red-500 ml-1">*</span>
+                      </label>
+                      <Select
+                        value={courseData.region}
+                        onValueChange={(value) => {
+                          setCourseData(prev => ({ ...prev, region: value, city: '', board: '' }));
+                          handleBlur('region');
+                        }}
+                        disabled={!courseData.country}
+                      >
+                        <SelectTrigger className={cn(
+                          "h-11 border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg",
+                          "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700",
+                          "focus:border-primary focus:ring-4 focus:ring-primary/10",
+                          "text-base font-medium",
+                          !courseData.country && "opacity-50 cursor-not-allowed",
+                          validationErrors.region && (touchedFields.region || courseData.id) && 
+                          "border-red-500 focus:border-red-500 focus:ring-red-500/10"
+                        )}>
+                          <SelectValue placeholder={courseData.country ? "Select region" : "Select country first"} />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl">
+                          {MOCK_REGIONS
+                            .filter(region => region.country === courseData.country)
+                            .map((region) => (
+                              <SelectItem 
+                                key={region.id} 
+                                value={region.name}
+                                className="rounded-xl hover:bg-primary/5 hover:text-gray-900 dark:hover:text-white focus:bg-primary/10 focus:text-gray-900 dark:focus:text-white transition-colors"
+                              >
+                                {region.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                      {validationErrors.region && (touchedFields.region || courseData.id) && (
+                        <div className="flex items-center gap-2 text-red-500 text-sm">
+                          <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                          {validationErrors.region}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* City */}
+                    <div className="space-y-3">
+                      <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                        City
+                        <span className="text-red-500 ml-1">*</span>
+                      </label>
+                      <Select
+                        value={courseData.city}
+                        onValueChange={(value) => {
+                          setCourseData(prev => ({ ...prev, city: value, board: '' }));
+                          handleBlur('city');
+                        }}
+                        disabled={!courseData.region}
+                      >
+                        <SelectTrigger className={cn(
+                          "h-11 border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg",
+                          "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700",
+                          "focus:border-primary focus:ring-4 focus:ring-primary/10",
+                          "text-base font-medium",
+                          !courseData.region && "opacity-50 cursor-not-allowed",
+                          validationErrors.city && (touchedFields.city || courseData.id) && 
+                          "border-red-500 focus:border-red-500 focus:ring-red-500/10"
+                        )}>
+                          <SelectValue placeholder={courseData.region ? "Select city" : "Select region first"} />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl">
+                          {MOCK_CITIES
+                            .filter(city => city.region === courseData.region && city.country === courseData.country)
+                            .map((city) => (
+                              <SelectItem 
+                                key={city.id} 
+                                value={city.name}
+                                className="rounded-xl hover:bg-primary/5 hover:text-gray-900 dark:hover:text-white focus:bg-primary/10 focus:text-gray-900 dark:focus:text-white transition-colors"
+                              >
+                                {city.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                      {validationErrors.city && (touchedFields.city || courseData.id) && (
+                        <div className="flex items-center gap-2 text-red-500 text-sm">
+                          <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                          {validationErrors.city}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Board */}
+                                      <div className="space-y-3">
+                    <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                      Project
+                      <span className="text-red-500 ml-1">*</span>
+                    </label>
+                    <Select
+                      value={courseData.project}
+                      onValueChange={(value) => {
+                        setCourseData(prev => ({ ...prev, project: value }));
+                        handleBlur('project');
+                      }}
+                      disabled={!courseData.city}
+                    >
+                      <SelectTrigger className={cn(
+                        "h-11 border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg",
+                        "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700",
+                        "focus:border-primary focus:ring-4 focus:ring-primary/10",
+                        "text-base font-medium",
+                        !courseData.city && "opacity-50 cursor-not-allowed",
+                        validationErrors.project && (touchedFields.project || courseData.id) && 
+                        "border-red-500 focus:border-red-500 focus:ring-red-500/10"
+                      )}>
+                        <SelectValue placeholder={courseData.city ? "Select project" : "Select city first"} />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl">
+                        {MOCK_PROJECTS
+                          .filter(project => project.city === courseData.city && project.region === courseData.region && project.country === courseData.country)
+                          .map((project) => (
+                            <SelectItem 
+                              key={project.id} 
+                              value={project.name}
+                              className="rounded-xl hover:bg-primary/5 hover:text-gray-900 dark:hover:text-white focus:bg-primary/10 focus:text-gray-900 dark:focus:text-white transition-colors"
+                            >
+                              {project.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    {validationErrors.project && (touchedFields.project || courseData.id) && (
+                      <div className="flex items-center gap-2 text-red-500 text-sm">
+                        <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                        {validationErrors.project}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                      Board
+                      <span className="text-red-500 ml-1">*</span>
+                    </label>
+                      <Select
+                        value={courseData.board}
+                        onValueChange={(value) => {
+                          setCourseData(prev => ({ ...prev, board: value }));
+                          handleBlur('board');
+                        }}
+                        disabled={!courseData.project}
+                      >
+                        <SelectTrigger className={cn(
+                          "h-11 border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg",
+                          "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700",
+                          "focus:border-primary focus:ring-4 focus:ring-primary/10",
+                          "text-base font-medium",
+                          !courseData.project && "opacity-50 cursor-not-allowed",
+                          validationErrors.board && (touchedFields.board || courseData.id) && 
+                          "border-red-500 focus:border-red-500 focus:ring-red-500/10"
+                        )}>
+                          <SelectValue placeholder={courseData.project ? "Select board" : "Select project first"} />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl">
+                          {MOCK_BOARDS
+                            .filter(board => board.country === courseData.country)
+                            .map((board) => (
+                              <SelectItem 
+                                key={board.id} 
+                                value={board.name}
+                                className="rounded-xl hover:bg-primary/5 hover:text-gray-900 dark:hover:text-white focus:bg-primary/10 focus:text-gray-900 dark:focus:text-white transition-colors"
+                              >
+                                {board.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                      {validationErrors.board && (touchedFields.board || courseData.id) && (
+                        <div className="flex items-center gap-2 text-red-500 text-sm">
+                          <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                          {validationErrors.board}
                         </div>
                       )}
                     </div>
