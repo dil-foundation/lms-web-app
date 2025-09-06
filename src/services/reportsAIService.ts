@@ -34,9 +34,7 @@ export interface ReportContext {
   popularCourses?: string[];
   activeUsersThisMonth?: number;
   newUsersThisMonth?: number;
-  totalPracticeSessions?: number;
   userRoles?: Record<string, number>;
-  lastUpdated?: string;
   
   // AI Tutor specific metrics
   aiTutorActiveUsers?: number;
@@ -48,10 +46,44 @@ export interface ReportContext {
   aiTutorExercisesAttempted?: number;
   aiTutorProgressPercentage?: number;
   aiTutorStreakDays?: number;
+  aiTutorUrduUsage?: number;
+  aiTutorMilestones?: number;
+  aiTutorMilestoneTypes?: string[];
+  aiTutorUnlocks?: number;
+  aiTutorStagesUnlocked?: number;
+  aiTutorCompletedStages?: number;
+  aiTutorAvgStageScore?: number;
+  aiTutorCompletedTopics?: number;
+  aiTutorTopicUrduUsage?: number;
+  aiTutorAvgTopicTime?: number;
+  aiTutorWeeklyMilestones?: number;
+  aiTutorConsistencyScore?: number;
   
   // LMS specific metrics
   lmsActiveUsers?: number;
   lmsCompletionRate?: number;
+  lmsEnrollments?: number;
+  lmsNewEnrollments?: number;
+  lmsTotalQuizzes?: number;
+  lmsAvgQuizScore?: number;
+  lmsManualGradingRequired?: number;
+  lmsTotalSections?: number;
+  lmsTotalLessons?: number;
+  lmsTotalContent?: number;
+  lmsContentTypes?: string[];
+  lmsTotalDiscussions?: number;
+  lmsTotalReplies?: number;
+  lmsDiscussionParticipants?: number;
+  lmsAssignmentsSubmitted?: number;
+  lmsAssignmentsGraded?: number;
+  lmsAvgAssignmentGrade?: number;
+  // Session and activity data
+  activeSessions?: number;
+  totalSuccessfulActions?: number;
+  uniqueActiveUsersFromSessions?: number;
+  uniqueActiveUsersFromLogs?: number;
+  totalPracticeSessions?: number;
+  lastUpdated?: string;
   
   dataQuality?: {
     userDataComplete: boolean;
@@ -65,28 +97,108 @@ export interface ReportContext {
 }
 
 export class ReportsAIService {
-  private static readonly SYSTEM_PROMPT = `You are an AI assistant specialized in generating and analyzing reports for an LMS (Learning Management System) platform. 
+  private static readonly SYSTEM_PROMPT = `You are IRIS (Intelligent Response & Insight System), an advanced AI assistant specialized in generating contextually relevant reports for an LMS (Learning Management System) platform.
+
+CRITICAL INTELLIGENCE REQUIREMENTS:
+1. **ANALYZE THE USER'S SPECIFIC REQUEST** - Understand exactly what they're asking for
+2. **FOCUS ONLY ON RELEVANT METRICS** - Don't include unrelated data in your response
+3. **MATCH THE SCOPE OF THE REQUEST** - If they ask about students, focus on student data; if courses, focus on course data
+4. **BE CONTEXTUALLY INTELLIGENT** - Tailor your response to the specific question asked
 
 Your capabilities include:
-- Generating comprehensive reports using ALL-TIME historical data
-- Analyzing user engagement metrics and patterns across the entire platform history
-- Tracking course performance and completion rates from launch
-- Identifying trends in learning data over the platform's lifetime
-- Providing insights on overall platform usage and growth
-- Creating analyses based on complete historical data
-- Suggesting data-driven recommendations for improvement
+- Student Analytics: Enrollment, engagement, progress, performance, learning outcomes
+- Course Analytics: Performance, completion rates, popularity, effectiveness
+- Instructor Analytics: Teaching effectiveness, student feedback, course management
+- Platform Analytics: Usage patterns, system performance, growth metrics
+- Learning Analytics: Skill development, assessment results, learning paths
+- Engagement Analytics: Activity levels, participation, retention rates
 
-When users ask for reports, you should:
-1. Parse their request to understand the metrics and type of report needed
-2. Use the provided ALL-TIME data to generate accurate insights
-3. Present information in a clear, structured format with relevant metrics
-4. Include insights and recommendations based on the complete historical data
-5. Use emojis and formatting to make reports visually appealing and easy to read
-6. Always specify that the analysis covers "All-Time Data" or "Historical Data" rather than monthly periods
+RESPONSE INTELLIGENCE RULES:
+1. **Parse the request carefully** - Identify the specific focus (students, courses, instructors, etc.)
+2. **Filter relevant data** - Only use metrics that directly relate to the user's question
+3. **Provide focused insights** - Don't add unrelated information just to fill space
+4. **Use appropriate sections** - Structure your response around what was actually asked
+5. **Give actionable recommendations** - Suggest specific actions based on the focused analysis
 
-IMPORTANT: The data provided covers the ENTIRE platform history, not just current month. Make this clear in your responses.
+EXAMPLES OF INTELLIGENT RESPONSES:
+- If asked about "student reports" → Focus on student metrics, performance, engagement
+- If asked about "course analytics" → Focus on course performance, completion, popularity
+- If asked about "instructor performance" → Focus on teaching metrics, student feedback
+- If asked about "platform usage" → Focus on system metrics, user activity, growth
 
-Always be professional, helpful, and focus on providing actionable insights from the comprehensive historical data.`;
+PROFESSIONAL FORMATTING GUIDELINES:
+- Use clean, structured markdown with clear hierarchy
+- Minimize emoji usage - only use sparingly for key sections (📊 for data, 💡 for insights)
+- Use proper heading structure: ## for main sections, ### for subsections
+- Present data in clean, scannable format with consistent spacing
+- Use bullet points and numbered lists for clarity
+- Always provide specific numbers from the actual data provided
+- End with actionable recommendations in a dedicated section
+- Avoid excessive bold text - use it only for key metrics and important points
+- Maintain consistent formatting throughout the response
+
+TABLE FORMATTING RULES:
+- When users request "tabular view", "table format", or "in a table", use proper HTML table formatting
+- Use HTML table tags: <table>, <thead>, <tr>, <th>, <td>, <tbody>
+- Apply CSS classes for styling: "w-full border border-gray-300 rounded-lg overflow-hidden"
+- Style table headers with: "bg-primary/10 px-4 py-2 text-left font-semibold"
+- Style table cells with: "px-4 py-2"
+- Make tables responsive and visually appealing
+- Include proper column headers that match the data being presented
+- ALWAYS add proper spacing and formatting after tables using markdown headers and line breaks
+
+EXAMPLE PROFESSIONAL RESPONSE FORMAT:
+
+## 📊 Student Performance Overview
+
+### Current Metrics
+- **Total Active Students:** 24
+- **Engagement Rate:** 75%
+- **Average Completion Rate:** 50%
+
+### Key Findings
+The data indicates strong engagement levels with room for improvement in completion rates.
+
+### Recommendations
+1. Implement targeted support for students with low completion rates
+2. Analyze barriers preventing course completion
+3. Consider additional engagement strategies
+
+EXAMPLE TABLE FORMAT:
+<table class="w-full border border-gray-300 rounded-lg overflow-hidden">
+<thead>
+<tr>
+<th class="bg-primary/10 px-4 py-2 text-left font-semibold">Metric</th>
+<th class="bg-primary/10 px-4 py-2 text-left font-semibold">Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="px-4 py-2">Total Students</td>
+<td class="px-4 py-2">24</td>
+</tr>
+</tbody>
+</table>
+
+## 💡 Key Insights
+
+Clean, professional text formatting with proper spacing and structure.
+
+IMPORTANT: Be intelligent about what data to include. Don't overwhelm users with irrelevant metrics. Focus on what they actually asked for.
+
+DATA ACCESS STATUS:
+- You have access to comprehensive platform data including user counts, course metrics, AI Tutor analytics, and LMS data
+- The data provided represents real platform metrics and should be used to generate meaningful reports
+- When users ask for "today" data but only aggregate data is available, use the aggregate data and explain the timeframe
+- Never claim data is "unavailable" if you have aggregate metrics that can answer the question
+
+INTELLIGENT DATA INTERPRETATION:
+1. If asked for "today" data but only aggregate data is available, use the aggregate data and mention the actual timeframe
+2. Use the provided userRoles data to answer questions about teachers, students, and admins
+3. Use AI Tutor metrics (sessions, time, scores, exercises) to provide meaningful analytics
+4. Focus on what data IS available rather than what might be missing
+5. Provide actionable insights based on the real data provided
+6. NEVER mention internal database table names in responses - use user-friendly terms instead`;
 
   /**
    * Generate a report response using OpenAI (with fallback to mock responses)
@@ -118,6 +230,21 @@ Always be professional, helpful, and focus on providing actionable insights from
       }
       
       console.log('📊 Platform context timeRange:', platformContext.timeRange);
+
+      // Direct metric shortcuts for deterministic answers (bypass model)
+      const directAnswer = this.tryDirectMetricAnswer(query, platformContext);
+      console.log('🎯 Direct answer check:', { query, hasDirectAnswer: !!directAnswer });
+      if (directAnswer) {
+        console.log('✅ Using direct answer:', directAnswer.substring(0, 100) + '...');
+        return {
+          success: true,
+          response: directAnswer,
+          reportData: {
+            teacherCount: platformContext.userRoles?.teacher || 0,
+            userRoles: platformContext.userRoles
+          }
+        };
+      }
       
       // Use OpenAI API for dynamic responses
       const openAIResponse = await this.callOpenAI(query, platformContext);
@@ -136,6 +263,76 @@ Always be professional, helpful, and focus on providing actionable insights from
         error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
+  }
+
+  /**
+   * Provide deterministic answers for simple metric queries without calling the model
+   */
+  private static tryDirectMetricAnswer(query: string, context: ReportContext): string | null {
+    const q = (query || '').toLowerCase();
+
+    const asksHowMany = q.includes('how many') || q.includes('number of') || q.includes('count of') || q.includes('count');
+    const mentionsTeachers = q.includes('teacher') || q.includes('teachers') || q.includes('instructor') || q.includes('instructors') || q.includes('faculty') || q.includes('lecturer') || q.includes('lecturers');
+
+    console.log('🔍 Direct answer analysis:', { 
+      query: q, 
+      asksHowMany, 
+      mentionsTeachers, 
+      userRoles: context.userRoles 
+    });
+
+    if (asksHowMany && mentionsTeachers) {
+      // Robust extraction: handle variations like teacher/instructor/faculty and case differences
+      const roles = context.userRoles || {};
+      const roleEntries = Object.entries(roles);
+      const teacherEntry = roleEntries.find(([k]) => ['teacher', 'teachers', 'instructor', 'instructors', 'faculty', 'lecturer', 'lecturers'].includes(k?.toLowerCase?.() || ''));
+      const teacherCount = teacherEntry ? Number(teacherEntry[1] as any) || 0 : (roles as any)['teacher'] ?? 0;
+      
+      console.log('👨‍🏫 Teacher count extraction:', { 
+        roles, 
+        roleEntries, 
+        teacherEntry, 
+        teacherCount 
+      });
+
+      // Build a concise, professional response using the real number
+      const header = '## Instructor Overview';
+      const metrics = `\n### Current Metrics\n- **Total Instructors:** ${teacherCount}`;
+      const insights = teacherCount > 0
+        ? `\n\n### Key Insights\n- Your platform currently has ${teacherCount} instructor${teacherCount === 1 ? '' : 's'}.`
+        : `\n\n### Key Insights\n- No instructors are recorded at the moment.`;
+
+      return `${header}${metrics}${insights}`;
+    }
+
+    // Practice sessions summary (deterministic mapping to available fields)
+    const mentionsPractice = q.includes('practice session') || q.includes('practice sessions') || q.includes('practice report') || q.includes('speaking practice');
+    if (mentionsPractice) {
+      const activeUsers = (context as any).uniqueActiveUsersFromSessions ?? context.lmsActiveUsers ?? 0;
+      const totalSessions = (context as any).aiTutorSessions ?? 0;
+      const totalTimeMins = (context as any).aiTutorTotalTime ?? 0;
+      const exercisesCompleted = (context as any).aiTutorExercisesCompleted ?? 0;
+      const avgScore = (context as any).aiTutorAverageScore ?? 0; // treat as speaking confidence proxy
+
+      const avgSessionMins = totalSessions > 0 ? Math.round(totalTimeMins / totalSessions) : 0;
+
+      const header = '## Practice Sessions Report';
+      const metrics = `\n### Current Metrics\n- **Total Active Users:** ${activeUsers}\n- **Average Session Duration:** ${avgSessionMins} minutes${totalSessions === 0 ? ' (limited session data)' : ''}\n- **Practice Exercises Completed:** ${exercisesCompleted}\n- **Speaking Confidence Scores (avg):** ${avgScore}%`;
+
+      // Heuristic areas of struggle
+      const areas: string[] = [];
+      const avgQuiz = (context as any).lmsAvgQuizScore ?? 0;
+      const urduUsage = (context as any).aiTutorTopicUrduUsage ?? 0;
+      if (avgScore && avgScore < 60) areas.push('speaking confidence and fluency');
+      if (avgQuiz && avgQuiz < 60) areas.push('assessment performance');
+      if (urduUsage && urduUsage > 40) areas.push('over-reliance on native language during practice');
+      const areasLine = areas.length > 0 ? areas.join(', ') : 'insufficient data';
+
+      const insights = `\n- **Areas of Struggle:** ${areasLine}`;
+      return `${header}${metrics}\n${insights}`;
+    }
+
+    return null;
   }
 
   /**
@@ -187,27 +384,166 @@ Always be professional, helpful, and focus on providing actionable insights from
 
     try {
       const contextData = JSON.stringify(context, null, 2);
+      // Analyze the query to determine focus area and format
+      const queryLower = query.toLowerCase();
+      let focusArea = 'general';
+      let focusGuidance = '';
+      
+      // Check if user wants table format
+      const wantsTable = queryLower.includes('table') || queryLower.includes('tabular') || 
+                        queryLower.includes('in a table') || queryLower.includes('table format') ||
+                        queryLower.includes('table view');
+      
+      const tableGuidance = wantsTable ? `
+CRITICAL: User specifically requested TABLE FORMAT. You MUST use proper HTML table formatting as specified in the TABLE FORMATTING RULES above. Do not use markdown tables or plain text formatting.` : '';
+      
+      if (queryLower.includes('student') || queryLower.includes('learner') || queryLower.includes('user')) {
+        focusArea = 'students';
+        focusGuidance = `
+FOCUS: This is a STUDENT-FOCUSED request. Structure your response around:
+- Student enrollment and demographics (totalUsers, newUsersThisMonth)
+- Student engagement (engagementRate, activeUsersThisMonth)
+- Student performance (completionRate, averageSessionDuration)
+- Learning outcomes and progress
+- Student retention and activity patterns
+AVOID: Don't include detailed course information unless directly relevant to student performance.`;
+      } else if (queryLower.includes('course') || queryLower.includes('curriculum') || queryLower.includes('lesson')) {
+        focusArea = 'courses';
+        focusGuidance = `
+FOCUS: This is a COURSE-FOCUSED request. Structure your response around:
+- Course catalog and availability (totalCourses, popularCourses)
+- Course performance and completion rates
+- Course engagement and effectiveness
+- Popular and trending courses
+- Course-specific metrics and analytics
+AVOID: Don't include detailed student demographics unless directly relevant to course performance.`;
+      } else if (queryLower.includes('instructor') || queryLower.includes('teacher') || queryLower.includes('faculty')) {
+        focusArea = 'instructors';
+        focusGuidance = `
+FOCUS: This is an INSTRUCTOR/TEACHER-FOCUSED request. Structure your response around:
+- Teacher/Instructor count: ${context.userRoles?.teacher || 0} teachers are currently in the system
+- Instructor activity and engagement
+- Teaching effectiveness metrics
+- Student feedback and ratings
+- Course management performance
+- Instructor-specific analytics
+CRITICAL: You have access to teacher count data - there are ${context.userRoles?.teacher || 0} teachers.
+AVOID: Don't include general platform metrics unless directly relevant to instructor performance.`;
+      } else if (queryLower.includes('platform') || queryLower.includes('system') || queryLower.includes('usage')) {
+        focusArea = 'platform';
+        focusGuidance = `
+FOCUS: This is a PLATFORM-FOCUSED request. Structure your response around:
+- Overall platform usage and growth
+- System performance metrics
+- User activity patterns
+- Platform adoption and engagement
+- Technical and operational insights
+AVOID: Don't dive deep into specific course or student details unless showing overall trends.`;
+      }
+
       const systemPrompt = `${this.SYSTEM_PROMPT}
 
-CRITICAL: You have access to REAL PLATFORM DATA for the requested timeframe. Check the timeRange field to see what period this data covers.
+CRITICAL CONTEXT ANALYSIS:
+Query Focus Area: ${focusArea.toUpperCase()}
+${focusGuidance}
+${tableGuidance}
 
-Platform Data for Requested Timeframe:
+REAL PLATFORM DATA for ${context.timeRange}:
 ${contextData}
 
-Guidelines:
-- The provided data represents real platform data for the requested timeframe
-- The timeRange field in the data tells you exactly what period this data covers
-- Use the timeRange value to properly title your report (e.g., "Today", "This Week", "All-Time Data")
-- If timeRange is "Today" - present it as today's performance data
-- If timeRange is "This Week" - present it as this week's performance data  
-- If timeRange is "All-Time Data" - present it as comprehensive historical analysis
-- Always match your language to the actual timeRange provided
-- If data shows zeros, acknowledge it and suggest why this might be the case for that specific timeframe
-- Provide actionable recommendations based on the real data for the specified time period
-- Format your response with clear sections using markdown
-- Include relevant emojis for visual appeal
-- Be specific about the numbers and percentages from the real data
-- Always use the exact timeRange in your report title and analysis`;
+CRITICAL: USER ROLES DATA AVAILABLE:
+${Object.entries(context.userRoles || {}).length > 0 ? 
+  `- Teachers/Instructors: ${context.userRoles?.teacher || 0}
+- Students: ${context.userRoles?.student || 0} 
+- Admins: ${context.userRoles?.admin || 0}
+- Total Users: ${context.totalUsers}
+
+IMPORTANT: When users ask about "teachers", "instructors", or "faculty", use the "teacher" role count above.` : 
+  'No user role data available'}
+
+INTELLIGENT RESPONSE GUIDELINES:
+- The provided data represents real platform data for: ${context.timeRange}
+- ALWAYS use the available data to provide meaningful insights - never claim data is unavailable
+- If asked for "today" data, use available aggregate data and mention the actual timeframe covered
+- ONLY include metrics and sections that are relevant to the user's specific request
+- Structure your response around the identified focus area: ${focusArea}
+- Be specific about numbers and percentages from the real data
+- Provide targeted recommendations based on the focused analysis
+- Use clean, professional markdown formatting with minimal emoji usage
+- Keep the response concise and directly relevant to what was asked
+
+PLATFORM-SPECIFIC FOCUS:
+- If the request mentions "AI Tutor" specifically, focus ONLY on AI Tutor metrics (aiTutor* fields)
+- If the request mentions "LMS" specifically, focus ONLY on LMS metrics (lms* fields)
+- Use the exact terminology from the user's request in your report title and content
+- Match the report type to what was specifically requested (e.g., "exercise progress" should focus on exercises, not general sessions)
+
+AVAILABLE LMS DISCUSSION DATA:
+- Total Discussions: Use lmsTotalDiscussions field
+- Total Replies: Use lmsTotalReplies field  
+- Discussion Participants: Use lmsDiscussionParticipants field
+- When asked about discussions, forums, or participation, use these basic metrics
+
+AVAILABLE LMS CONTENT MANAGEMENT DATA:
+- Total Detailed Courses: Use lmsTotalDetailedCourses field
+- Published Courses: Use lmsPublishedCourses field
+- Draft Courses: Use lmsDraftCourses field
+- Courses with Images: Use lmsCoursesWithImages field
+- Courses with Subtitles: Use lmsCoursesWithSubtitles field
+- Courses Created This Month: Use lmsCoursesCreatedThisMonth field
+- Courses Updated This Month: Use lmsCoursesUpdatedThisMonth field
+- Average Sections per Course: Use lmsAvgSectionsPerCourse field
+- Average Lessons per Course: Use lmsAvgLessonsPerCourse field
+- Average Content Items per Course: Use lmsAvgContentItemsPerCourse field
+- Content Completion Rate: Use lmsContentCompletionRate field (% of content completed)
+- Top Accessed Courses: Use lmsTopAccessedCourses field (array of most accessed courses)
+- Content Type Distribution: Use lmsContentTypeDistribution field (breakdown by content type)
+- Total Categories: Use lmsTotalCategories field
+- Average Courses per Category: Use lmsAvgCoursesPerCategory field
+- Top Languages: Use lmsTopLanguages field (most common course languages)
+- When asked about content management, course structure, content analytics, or course organization, use these comprehensive content metrics
+
+AVAILABLE LMS ASSIGNMENT DATA:
+- Assignments Submitted: Use lmsAssignmentsSubmitted field
+- Assignments Graded: Use lmsAssignmentsGraded field
+- Average Assignment Grade: Use lmsAvgAssignmentGrade field
+- When asked about assignments, grading, or submissions, use these specific metrics
+
+AVAILABLE LMS QUIZ DATA:
+- Total Quizzes: Use lmsTotalQuizzes field
+- Average Quiz Score: Use lmsAvgQuizScore field
+- Manual Grading Required: Use lmsManualGradingRequired field
+
+AVAILABLE LMS ENROLLMENT DATA:
+- Total Enrollments: Use lmsEnrollments field
+- New Enrollments: Use lmsNewEnrollments field
+- Course Structure: Use lmsTotalSections, lmsTotalLessons, lmsTotalContent fields
+
+AVAILABLE AI TUTOR DETAILED DATA:
+- Milestones: Use aiTutorMilestones, aiTutorMilestoneTypes fields
+- Unlocks: Use aiTutorUnlocks, aiTutorStagesUnlocked fields
+- Progress: Use aiTutorProgressPercentage, aiTutorCompletedStages, aiTutorCompletedTopics fields
+- Language Usage: Use aiTutorUrduUsage, aiTutorTopicUrduUsage fields
+- Consistency: Use aiTutorConsistencyScore, aiTutorStreakDays fields
+
+AVAILABLE SESSION DATA:
+- Active Sessions: Use activeSessions field
+- Platform Actions: Use totalSuccessfulActions field
+- Unique Users: Use uniqueActiveUsersFromSessions, uniqueActiveUsersFromLogs fields
+
+PROFESSIONAL TEXT FORMATTING REQUIREMENTS:
+- Use clean markdown with proper heading hierarchy (## for main sections, ### for subsections)
+- Minimize bold text usage - only for key metrics and critical points
+- Use bullet points for lists, numbered lists for sequential steps
+- Maintain consistent spacing between sections
+- Avoid excessive asterisks (*) and formatting symbols
+- Keep sentences clear and concise
+- Use professional language without unnecessary emphasis
+- Structure content logically: Overview → Data → Analysis → Recommendations
+- Never put long text in single paragraphs without breaks
+- Ensure proper spacing after tables and between sections
+
+REMEMBER: Quality over quantity - provide focused, relevant insights rather than comprehensive but unfocused data dumps.`;
 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -216,7 +552,7 @@ Guidelines:
           'Authorization': `Bearer ${openaiApiKey}`
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: 'gpt-4',
           messages: [
             {
               role: 'system',
@@ -852,7 +1188,9 @@ ${dataNote}`,
       }
 
       // Call Supabase Edge Function directly
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://yfaiauooxwvekdimfeuu.supabase.co';
+      console.log('🔗 Using Supabase URL:', supabaseUrl);
+      
       if (!supabaseUrl) {
         console.error('VITE_SUPABASE_URL not configured');
         return this.getDefaultContext();
@@ -880,6 +1218,11 @@ ${dataNote}`,
         const contextData = await response.json();
         console.log('✅ Real platform context loaded:', contextData);
         console.log('🎯 TimeRange from backend:', contextData.timeRange);
+        
+        // Check if we got real data or empty data
+        const hasRealData = contextData.totalUsers > 0 || contextData.totalCourses > 0;
+        console.log('📊 Has real data:', hasRealData);
+        
         return {
           totalUsers: contextData.totalUsers || 0,
           totalCourses: contextData.totalCourses || 0,
@@ -889,29 +1232,90 @@ ${dataNote}`,
           averageSessionDuration: contextData.averageSessionDuration || 0,
           popularCourses: contextData.popularCourses || [],
           availableMetrics: contextData.availableMetrics || [],
+          // CRITICAL: Include user roles data
+          userRoles: contextData.userRoles || {},
+          newUsersThisMonth: contextData.newUsersThisMonth || 0,
+          activeUsersThisMonth: contextData.activeUsersThisMonth || 0,
           // Include all the AI Tutor and LMS specific fields
           aiTutorActiveUsers: contextData.aiTutorActiveUsers || 0,
           aiTutorSessions: contextData.aiTutorSessions || 0,
           aiTutorTotalTime: contextData.aiTutorTotalTime || 0,
           aiTutorAverageScore: contextData.aiTutorAverageScore || 0,
           aiTutorCompletionRate: contextData.aiTutorCompletionRate || 0,
+          aiTutorExercisesCompleted: contextData.aiTutorExercisesCompleted || 0,
+          aiTutorExercisesAttempted: contextData.aiTutorExercisesAttempted || 0,
+          aiTutorProgressPercentage: contextData.aiTutorProgressPercentage || 0,
+          aiTutorStreakDays: contextData.aiTutorStreakDays || 0,
+          aiTutorUrduUsage: contextData.aiTutorUrduUsage || 0,
+          aiTutorMilestones: contextData.aiTutorMilestones || 0,
+          aiTutorMilestoneTypes: contextData.aiTutorMilestoneTypes || [],
+          aiTutorUnlocks: contextData.aiTutorUnlocks || 0,
+          aiTutorStagesUnlocked: contextData.aiTutorStagesUnlocked || 0,
+          aiTutorCompletedStages: contextData.aiTutorCompletedStages || 0,
+          aiTutorAvgStageScore: contextData.aiTutorAvgStageScore || 0,
+          aiTutorCompletedTopics: contextData.aiTutorCompletedTopics || 0,
+          aiTutorTopicUrduUsage: contextData.aiTutorTopicUrduUsage || 0,
+          aiTutorAvgTopicTime: contextData.aiTutorAvgTopicTime || 0,
+          aiTutorWeeklyMilestones: contextData.aiTutorWeeklyMilestones || 0,
+          aiTutorConsistencyScore: contextData.aiTutorConsistencyScore || 0,
           lmsActiveUsers: contextData.lmsActiveUsers || 0,
-          lmsCompletionRate: contextData.lmsCompletionRate || 0
+          lmsCompletionRate: contextData.lmsCompletionRate || 0,
+          lmsEnrollments: contextData.lmsEnrollments || 0,
+          lmsNewEnrollments: contextData.lmsNewEnrollments || 0,
+          lmsTotalQuizzes: contextData.lmsTotalQuizzes || 0,
+          lmsAvgQuizScore: contextData.lmsAvgQuizScore || 0,
+          lmsManualGradingRequired: contextData.lmsManualGradingRequired || 0,
+          lmsTotalSections: contextData.lmsTotalSections || 0,
+          lmsTotalLessons: contextData.lmsTotalLessons || 0,
+          lmsTotalContent: contextData.lmsTotalContent || 0,
+          lmsContentTypes: contextData.lmsContentTypes || [],
+          // LMS Discussion data
+          lmsTotalDiscussions: contextData.lmsTotalDiscussions || 0,
+          lmsTotalReplies: contextData.lmsTotalReplies || 0,
+          lmsDiscussionParticipants: contextData.lmsDiscussionParticipants || 0,
+          // LMS Assignment data
+          lmsAssignmentsSubmitted: contextData.lmsAssignmentsSubmitted || 0,
+          lmsAssignmentsGraded: contextData.lmsAssignmentsGraded || 0,
+          lmsAvgAssignmentGrade: contextData.lmsAvgAssignmentGrade || 0,
+          // Session and activity data
+          activeSessions: contextData.activeSessions || 0,
+          totalSuccessfulActions: contextData.totalSuccessfulActions || 0,
+          uniqueActiveUsersFromSessions: contextData.uniqueActiveUsersFromSessions || 0,
+          uniqueActiveUsersFromLogs: contextData.uniqueActiveUsersFromLogs || 0,
+          totalPracticeSessions: contextData.totalPracticeSessions || 0,
+          lastUpdated: contextData.lastUpdated,
+          // Add data quality information
+          dataQuality: {
+            userDataComplete: hasRealData,
+            courseDataComplete: (contextData.totalCourses || 0) > 0,
+            engagementDataComplete: (contextData.engagementRate || 0) > 0,
+            aiTutorDataComplete: (contextData.aiTutorActiveUsers || 0) > 0,
+            lmsDataComplete: (contextData.lmsActiveUsers || 0) > 0,
+            confidenceScore: hasRealData ? 0.9 : 0.1,
+            note: hasRealData ? 'Real data successfully loaded from database' : 'Data connection available but no records found - database may be empty'
+          }
         };
       } else {
-        console.warn('API call failed, using default context. Status:', response.status);
+        const errorText = await response.text();
+        console.warn('❌ API call failed, using default context. Status:', response.status);
+        console.warn('❌ Error response:', errorText);
+        console.warn('❌ Request URL:', url.toString());
+        console.warn('❌ Auth token present:', !!authToken);
         return this.getDefaultContext();
       }
     } catch (error) {
-      console.error('Error fetching platform context, using default:', error);
+      console.error('Error fetching platform context:', error);
+      console.error('This indicates a connection issue with the reports-context Edge Function');
       return this.getDefaultContext();
     }
   }
 
   /**
-   * Default context when API is not available - PRODUCTION READY (NO MOCK DATA)
+   * Default context when API is not available - DEBUGGING MODE
+   * This will help us see what's happening with the real connection
    */
   private static getDefaultContext(): ReportContext {
+    console.log('🔍 Using default context - this means the Edge Function call failed');
     return {
       totalUsers: 0,
       totalCourses: 0,
@@ -922,7 +1326,7 @@ ${dataNote}`,
       popularCourses: [],
       availableMetrics: [
         'AI Tutor Sessions',
-        'AI Tutor Progress',
+        'AI Tutor Progress', 
         'Exercise Completion',
         'Learning Streaks',
         'User Engagement',
@@ -932,7 +1336,7 @@ ${dataNote}`,
         'Platform Analytics',
         'User Growth'
       ],
-      // Real data fields - all empty when no connection
+      // Empty data to debug connection
       activeUsersThisMonth: 0,
       newUsersThisMonth: 0,
       totalPracticeSessions: 0,
@@ -961,7 +1365,7 @@ ${dataNote}`,
         aiTutorDataComplete: false,
         lmsDataComplete: false,
         confidenceScore: 0,
-        note: 'No real data available - database connection required for production reports'
+        note: 'Edge Function call failed - check browser console for detailed error logs'
       }
     };
   }
