@@ -42,7 +42,9 @@ import {
   Mail,
   Eye,
   Save,
-  X
+  X,
+  Sparkles,
+  Clock
 } from 'lucide-react';
 import { APEXService, FAQ_ITEMS, CONTACT_INFO, KNOWLEDGE_BASE } from '@/services/aiAssistantService';
 import { toast } from 'sonner';
@@ -110,19 +112,30 @@ export const APEXAdmin = () => {
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
         <div className="relative p-8 rounded-3xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
-                <Bot className="w-6 h-6 text-primary" />
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
+                <Bot className="w-8 h-8 text-primary" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
-                  AI Assistant Management
+                <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                  APEX (AI-Powered Educational eXperience)
                 </h1>
-                <p className="text-lg text-muted-foreground font-light">
-                  Manage AI Assistant knowledge base and responses
+                <p className="text-sm text-muted-foreground mt-2">
+                  Configure and manage the intelligent AI assistant that helps visitors and users navigate the platform
                 </p>
               </div>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <Badge variant="secondary" className="px-3 py-1 bg-primary/10 text-primary border-primary/20">
+                <Sparkles className="h-3 w-3 mr-1" />
+                AI Powered
+              </Badge>
+              <Badge variant="outline" className="px-3 py-1">
+                <Clock className="h-3 w-3 mr-1" />
+                Always Available
+              </Badge>
             </div>
           </div>
         </div>

@@ -387,7 +387,7 @@ export const ReportsOverview = () => {
               </div>
               <div>
                 <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text', lineHeight: '3rem' }}>
-                  Reports & Analytics
+                  Performance Analytics
                 </h1>
                 <p className="text-lg text-muted-foreground font-light">
                   Monitor platform performance and user engagement
