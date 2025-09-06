@@ -70,11 +70,26 @@ serve(async (req) => {
     // Get timeframe from query parameters
     const url = new URL(req.url);
     const timeframe = url.searchParams.get('timeframe');
+    const list = url.searchParams.get('list'); // e.g., 'students'
+    const search = url.searchParams.get('search') || '';
+    const page = Math.max(1, parseInt(url.searchParams.get('page') || '1'));
+    const pageSize = Math.min(50, Math.max(1, parseInt(url.searchParams.get('pageSize') || '25')));
+    const includeRawProgress = url.searchParams.get('includeRawProgress') === 'true';
+    const includeRawStages = url.searchParams.get('includeRawStages') === 'true';
+    const includeRawTopics = url.searchParams.get('includeRawTopics') === 'true';
     
     console.log('Requested timeframe:', timeframe);
     
-    // Get platform context data with timeframe
-    const contextData = await getPlatformContext(supabase, timeframe)
+    // Get platform context data with timeframe and options
+    const contextData = await getPlatformContext(supabase, timeframe, {
+      list,
+      search,
+      page,
+      pageSize,
+      includeRawProgress,
+      includeRawStages,
+      includeRawTopics,
+    })
 
     return new Response(
       JSON.stringify(contextData),
@@ -101,7 +116,17 @@ serve(async (req) => {
   }
 })
 
-async function getPlatformContext(supabase: any, timeframe?: string | null) {
+type Options = {
+  list?: string | null
+  search?: string
+  page?: number
+  pageSize?: number
+  includeRawProgress?: boolean
+  includeRawStages?: boolean
+  includeRawTopics?: boolean
+}
+
+async function getPlatformContext(supabase: any, timeframe?: string | null, opts: Options = {}) {
   // Declare timeRangeLabel outside try block so it's accessible in catch
   let timeRangeLabel = 'All Time Data';
   
@@ -277,7 +302,7 @@ async function getPlatformContext(supabase: any, timeframe?: string | null) {
       .from('quiz_submissions')
       .select('user_id, course_id, score, submitted_at, manual_grading_required, manual_grading_completed')
 
-    // Discussion engagement (ALL TIME)
+    // Discussion engagement (ALL TIME) - Enhanced for analytics
     const { data: discussions } = await supabase
       .from('discussions')
       .select('id, title, creator_id, course_id, created_at, type')
@@ -285,6 +310,56 @@ async function getPlatformContext(supabase: any, timeframe?: string | null) {
     const { data: discussionReplies } = await supabase
       .from('discussion_replies')
       .select('discussion_id, user_id, created_at')
+
+    // Enhanced content management data (ALL TIME)
+    console.log('📚 Querying enhanced course content data...');
+    
+    // Get detailed course information
+    const { data: detailedCourses, error: coursesError } = await supabase
+      .from('courses')
+      .select('id, title, subtitle, description, status, created_at, updated_at, image_url')
+    
+    console.log('Detailed courses query result:', {
+      count: detailedCourses?.length || 0,
+      error: coursesError?.message || 'none',
+      sample: detailedCourses?.[0] || 'no data'
+    });
+
+    // Get course categories if available
+    let courseCategories = [];
+    try {
+      const { data } = await supabase
+        .from('course_categories')
+        .select('id, name, description, course_count');
+      courseCategories = data || [];
+      console.log('✅ course_categories table accessible:', courseCategories.length);
+    } catch (error) {
+      console.log('❌ course_categories table not accessible:', error.message);
+    }
+
+    // Get course languages if available
+    let courseLanguages = [];
+    try {
+      const { data } = await supabase
+        .from('course_languages')
+        .select('course_id, language_code, language_name');
+      courseLanguages = data || [];
+      console.log('✅ course_languages table accessible:', courseLanguages.length);
+    } catch (error) {
+      console.log('❌ course_languages table not accessible:', error.message);
+    }
+
+    // Get course levels if available
+    let courseLevels = [];
+    try {
+      const { data } = await supabase
+        .from('course_levels')
+        .select('course_id, level_name, difficulty_rating');
+      courseLevels = data || [];
+      console.log('✅ course_levels table accessible:', courseLevels.length);
+    } catch (error) {
+      console.log('❌ course_levels table not accessible:', error.message);
+    }
 
     // Course structure data
     const { data: courseSections } = await supabase
@@ -380,6 +455,111 @@ async function getPlatformContext(supabase: any, timeframe?: string | null) {
     const totalReplies = repliesData.length
     const discussionParticipants = [...new Set(repliesData.map(r => r.user_id))].length
 
+    // Content management analytics
+    const detailedCoursesData = detailedCourses || []
+    const courseCategoriesData = courseCategories || []
+    const courseLanguagesData = courseLanguages || []
+    const courseLevelsData = courseLevels || []
+    
+    console.log('📚 CONTENT MANAGEMENT ANALYTICS DEBUG 📚');
+    console.log('Detailed courses data:', {
+      count: detailedCoursesData.length,
+      sample: detailedCoursesData[0],
+      hasData: detailedCoursesData.length > 0
+    });
+    console.log('Course categories data:', {
+      count: courseCategoriesData.length,
+      sample: courseCategoriesData[0],
+      hasData: courseCategoriesData.length > 0
+    });
+    console.log('Course languages data:', {
+      count: courseLanguagesData.length,
+      sample: courseLanguagesData[0],
+      hasData: courseLanguagesData.length > 0
+    });
+    console.log('📚 END CONTENT DEBUG 📚');
+    
+    // Content structure analysis
+    const totalDetailedCourses = detailedCoursesData.length
+    const publishedCourses = detailedCoursesData.filter(c => c.status === 'Published').length
+    const draftCourses = detailedCoursesData.filter(c => c.status === 'Draft').length
+    const coursesWithImages = detailedCoursesData.filter(c => c.image_url).length
+    const coursesWithSubtitles = detailedCoursesData.filter(c => c.subtitle).length
+    
+    // Content creation trends
+    const thisMonth = new Date();
+    thisMonth.setDate(1);
+    const coursesCreatedThisMonth = detailedCoursesData.filter(c => 
+      new Date(c.created_at) >= thisMonth
+    ).length
+    
+    const coursesUpdatedThisMonth = detailedCoursesData.filter(c => 
+      new Date(c.updated_at) >= thisMonth
+    ).length
+    
+    // Course structure metrics (using existing data)
+    const sectionsData = courseSections || []
+    const lessonsData = courseLessons || []
+    const contentData = lessonContent || []
+    
+    const avgSectionsPerCourse = totalDetailedCourses > 0 ? 
+      Math.round((sectionsData.length / totalDetailedCourses) * 10) / 10 : 0
+    const avgLessonsPerCourse = totalDetailedCourses > 0 ? 
+      Math.round((lessonsData.length / totalDetailedCourses) * 10) / 10 : 0
+    const avgContentItemsPerCourse = totalDetailedCourses > 0 ? 
+      Math.round((contentData.length / totalDetailedCourses) * 10) / 10 : 0
+    
+    // Content completion analysis (using existing progress data)
+    const progressData = lmsCompletionData || []
+    const totalContentProgress = progressData.length
+    const completedContent = progressData.filter(p => p.status === 'completed').length
+    const inProgressContent = progressData.filter(p => p.status === 'in_progress').length
+    const contentCompletionRate = totalContentProgress > 0 ? 
+      Math.round((completedContent / totalContentProgress) * 100) : 0
+    
+    // Most accessed courses (based on progress data)
+    const courseAccessCounts = progressData.reduce((acc: any, progress: any) => {
+      if (progress.course_id) {
+        acc[progress.course_id] = (acc[progress.course_id] || 0) + 1
+      }
+      return acc
+    }, {})
+    
+    const topAccessedCourses = Object.entries(courseAccessCounts)
+      .sort(([,a]: any, [,b]: any) => b - a)
+      .slice(0, 5)
+      .map(([courseId, accessCount]) => {
+        const course = detailedCoursesData.find(c => c.id === courseId)
+        return { 
+          courseId, 
+          title: course?.title || 'Unknown Course',
+          accessCount 
+        }
+      })
+    
+    // Content types analysis
+    const contentTypes = [...new Set(contentData.map(c => c.content_type))].filter(Boolean)
+    const contentTypeDistribution = contentTypes.map(type => ({
+      type,
+      count: contentData.filter(c => c.content_type === type).length
+    }))
+    
+    // Course categories analysis
+    const totalCategories = courseCategoriesData.length
+    const avgCoursesPerCategory = totalCategories > 0 ? 
+      Math.round(courseCategoriesData.reduce((sum, cat) => sum + (cat.course_count || 0), 0) / totalCategories) : 0
+    
+    // Language distribution
+    const languageDistribution = courseLanguagesData.reduce((acc: any, lang: any) => {
+      acc[lang.language_name] = (acc[lang.language_name] || 0) + 1
+      return acc
+    }, {})
+    
+    const topLanguages = Object.entries(languageDistribution)
+      .sort(([,a]: any, [,b]: any) => b - a)
+      .slice(0, 5)
+      .map(([language, count]) => ({ language, count }))
+
     const sessionsData = userSessions || []
     const activeSessions = sessionsData.length
     const uniqueActiveUsers = [...new Set(sessionsData.map(s => s.user_id))].length
@@ -426,9 +606,74 @@ async function getPlatformContext(supabase: any, timeframe?: string | null) {
 
     // Get AI Tutor user progress stats
     const progressStats = progressSummaries || []
-    const avgProgressPercentage = progressStats.length > 0 ?
-      Math.round(progressStats.reduce((sum, p) => sum + (p.overall_progress_percentage || 0), 0) / progressStats.length) : 0
+    
+    // Calculate overall progress percentage using multiple data sources for accuracy
+    let avgProgressPercentage = 0;
+    
+    console.log('Progress calculation debug:', {
+      progressStatsLength: progressStats.length,
+      totalExercisesCompleted,
+      totalExercisesAttempted,
+      stageProgressLength: (stageProgress || []).length
+    });
+    
+    if (progressStats.length > 0) {
+      // First try to use the summary table data
+      const summaryProgressPercentage = Math.round(progressStats.reduce((sum, p) => sum + (p.overall_progress_percentage || 0), 0) / progressStats.length);
+      console.log('Summary progress percentage:', summaryProgressPercentage);
+      
+      // If summary table has meaningful data (> 0), use it
+      if (summaryProgressPercentage > 0) {
+        avgProgressPercentage = summaryProgressPercentage;
+        console.log('Using summary table progress:', avgProgressPercentage);
+      } else {
+        // Fallback: Calculate from stage progress data
+        const stageProgressData = stageProgress || []
+        if (stageProgressData.length > 0) {
+          const avgStageProgress = Math.round(stageProgressData.reduce((sum, s) => sum + (s.progress_percentage || 0), 0) / stageProgressData.length);
+          avgProgressPercentage = avgStageProgress;
+          console.log('Using stage progress:', avgProgressPercentage);
+        } else if (totalExercisesCompleted > 0 && totalExercisesAttempted > 0) {
+          // Final fallback: Calculate from exercise completion ratio
+          avgProgressPercentage = Math.round((totalExercisesCompleted / totalExercisesAttempted) * 100);
+          console.log('Using exercise completion ratio:', avgProgressPercentage);
+        }
+      }
+    } else if (totalExercisesCompleted > 0) {
+      // If no progress summaries but we have exercise data, estimate progress
+      // Assuming roughly 20 exercises per stage and 6 stages total (120 exercises for 100% completion)
+      const estimatedTotalExercises = 120;
+      avgProgressPercentage = Math.min(100, Math.round((totalExercisesCompleted / estimatedTotalExercises) * 100));
+      console.log('Using estimated progress from exercises:', avgProgressPercentage);
+    }
+    
+    console.log('Final avgProgressPercentage:', avgProgressPercentage);
+    
     const totalStreakDays = progressStats.reduce((sum, p) => sum + (p.streak_days || 0), 0)
+
+    // Optional student list (admin/teacher only)
+    let studentList: any[] | undefined = undefined
+    let studentTotal: number | undefined = undefined
+    if (opts.list === 'students') {
+      const from = ((opts.page || 1) - 1) * (opts.pageSize || 25)
+      const to = from + (opts.pageSize || 25) - 1
+
+      let base = supabase
+        .from('profiles')
+        .select('id, first_name, last_name, email, role, created_at', { count: 'exact' })
+        .eq('role', 'student')
+
+      if (opts.search) {
+        const s = `%${opts.search.toLowerCase()}%`
+        base = base.or(
+          `lower(first_name).like.${s},lower(last_name).like.${s},lower(email).like.${s}`
+        )
+      }
+
+      const { data: students, count } = await base.range(from, to)
+      studentList = students || []
+      studentTotal = count || 0
+    }
 
     return {
       totalUsers: totalUsers || 0,
@@ -480,6 +725,24 @@ async function getPlatformContext(supabase: any, timeframe?: string | null) {
       lmsTotalDiscussions: totalDiscussions,
       lmsTotalReplies: totalReplies,
       lmsDiscussionParticipants: discussionParticipants,
+      
+      // Content management analytics
+      lmsTotalDetailedCourses: totalDetailedCourses,
+      lmsPublishedCourses: publishedCourses,
+      lmsDraftCourses: draftCourses,
+      lmsCoursesWithImages: coursesWithImages,
+      lmsCoursesWithSubtitles: coursesWithSubtitles,
+      lmsCoursesCreatedThisMonth: coursesCreatedThisMonth,
+      lmsCoursesUpdatedThisMonth: coursesUpdatedThisMonth,
+      lmsAvgSectionsPerCourse: avgSectionsPerCourse,
+      lmsAvgLessonsPerCourse: avgLessonsPerCourse,
+      lmsAvgContentItemsPerCourse: avgContentItemsPerCourse,
+      lmsContentCompletionRate: contentCompletionRate,
+      lmsTopAccessedCourses: topAccessedCourses,
+      lmsContentTypeDistribution: contentTypeDistribution,
+      lmsTotalCategories: totalCategories,
+      lmsAvgCoursesPerCategory: avgCoursesPerCategory,
+      lmsTopLanguages: topLanguages,
       lmsTotalSections: totalSections,
       lmsTotalLessons: totalLessons,
       lmsTotalContent: totalContent,
@@ -526,7 +789,13 @@ async function getPlatformContext(supabase: any, timeframe?: string | null) {
           (activeSessions > 0 ? 15 : 0)
         )),
         note: 'Comprehensive real data from all AI Tutor and LMS tables'
-      }
+      },
+      // Optional raw data & lists
+      studentList,
+      studentTotal,
+      progressSummariesRaw: opts.includeRawProgress ? (progressSummaries || []) : undefined,
+      stageProgressRaw: opts.includeRawStages ? (stageProgress || []) : undefined,
+      topicProgressRaw: opts.includeRawTopics ? (topicProgress || []) : undefined,
     }
   } catch (error) {
     console.error('Error fetching platform context:', error)
