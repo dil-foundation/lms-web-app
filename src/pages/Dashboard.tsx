@@ -327,13 +327,8 @@ const Dashboard = () => {
                           <Route path="/grade-assignments/:assignmentId/student/:studentId" element={<StudentSubmissionDetail />} />
                           <Route path="/admin-settings" element={<AdminSecurity />} />
                           <Route path="/apex-admin" element={<APEXAdmin />} />
-<<<<<<< HEAD
                           <Route path="/iris" element={<IRISv2 />} />
-                          <Route path="/test-admin-settings" element={<AdminSettings />} />
-=======
-                          <Route path="/iris" element={<IRIS userProfile={finalProfile} />} />
                           <Route path="/test-admin-settings" element={<AdminSecurity />} />
->>>>>>> be1fd61136f663da91e358fcfd31da7f474a84a3
                           <Route path="/security" element={<AdminSecurity />} />
                           <Route path="/integration-apis" element={<IntegrationAPIs userProfile={finalProfile} />} />
                           <Route path="/multitenancy" element={<Multitenancy userProfile={finalProfile} />} />
