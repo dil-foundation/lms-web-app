@@ -98,7 +98,7 @@ export default function ReportsPage() {
       setError(errorMessage);
       toast({
         title: 'Error',
-        description: `Failed to load reports: ${errorMessage}`,
+        description: `Failed to load performance analytics: ${errorMessage}`,
         variant: 'destructive'
       });
     } finally {
@@ -319,7 +319,7 @@ export default function ReportsPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <ContentLoader message="Loading reports..." />
+        <ContentLoader message="Loading performance analytics..." />
       </div>
     );
   }
@@ -337,7 +337,7 @@ export default function ReportsPage() {
               </div>
               <div>
                 <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ backgroundClip: 'text', WebkitBackgroundClip: 'text', lineHeight: '3rem' }}>
-                  Reports & Analytics
+                  Performance Analytics
                 </h1>
                 <p className="text-lg text-muted-foreground font-light">
                   Monitor platform performance and user engagement
@@ -355,7 +355,7 @@ export default function ReportsPage() {
             <div className="flex items-center space-x-2">
               <AlertCircle className="h-5 w-5 text-red-500" />
               <div>
-                <p className="text-sm font-medium text-red-800">Error loading reports data</p>
+                <p className="text-sm font-medium text-red-800">Error loading performance analytics data</p>
                 <p className="text-sm text-red-600">{error}</p>
                 <Button
                   variant="outline"
