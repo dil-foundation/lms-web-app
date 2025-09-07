@@ -141,10 +141,10 @@ jobs:
         # Set no-cache for service worker
         aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/ s3://${{ secrets.S3_BUCKET_NAME }}/ --recursive --metadata-directive REPLACE --cache-control "max-age=0, no-cache, no-store, must-revalidate" --include "service-worker.js"
 
-    - name: Invalidate CloudFront cache
-      if: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
-      run: |
-        aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
+    # - name: Invalidate CloudFront cache
+    #   if:${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+    #   run: |
+    #     aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
 
     - name: Deploy status
       run: |
