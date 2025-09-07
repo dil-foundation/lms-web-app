@@ -53,8 +53,8 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
-    # - name: Run linting
-    #   run: npm run lint
+    - name: Run linting
+      run: npm run lint
 
     - name: Build application
       run: |
@@ -133,18 +133,18 @@ jobs:
         aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_NAME }} --delete
         
         # Set proper cache headers for different file types
-        aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/ s3://${{ secrets.S3_BUCKET_NAME }}/ --recursive --metadata-directive REPLACE --cache-control "max-age=31536000" --exclude "*.html" --exclude "service-worker.js"
+        # aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/ s3://${{ secrets.S3_BUCKET_NAME }}/ --recursive --metadata-directive REPLACE --cache-control "max-age=31536000" --exclude "*.html" --exclude "service-worker.js"
         
         # Set shorter cache for HTML files
-        aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/ s3://${{ secrets.S3_BUCKET_NAME }}/ --recursive --metadata-directive REPLACE --cache-control "max-age=0, no-cache, no-store, must-revalidate" --include "*.html"
+        #aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/ s3://${{ secrets.S3_BUCKET_NAME }}/ --recursive --metadata-directive REPLACE --cache-control "max-age=0, no-cache, no-store, must-revalidate" --include "*.html"
         
         # Set no-cache for service worker
-        aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/ s3://${{ secrets.S3_BUCKET_NAME }}/ --recursive --metadata-directive REPLACE --cache-control "max-age=0, no-cache, no-store, must-revalidate" --include "service-worker.js"
+        aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/ s3://${{ secrets.S3_BUCKET_NAME }}/ --recursive --metadata-directive REPLACE --cache-control "max-age=0, no-cache, no-store, must-revalidate" --include "*.*"
 
-    # - name: Invalidate CloudFront cache
-    #   if: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
-    #   run: |
-    #     aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
+    - name: Invalidate CloudFront cache
+      if: secrets.CLOUDFRONT_DISTRIBUTION_ID != ''
+      run: |
+        aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
 
     - name: Deploy status
       run: |
