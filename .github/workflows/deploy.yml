@@ -1,0 +1,103 @@
+name: Build and Deploy to S3
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  NODE_VERSION: '18'
+  AWS_REGION: 'us-east-1'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run linting
+      run: npm run lint
+
+    - name: Build application
+      run: npm run build:prod
+      env:
+        VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+        VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+        VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        # VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+        # VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+        # VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+        # VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+        # VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+        # VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+        VITE_OPENAI_API_KEY: ${{ secrets.VITE_OPENAI_API_KEY }}
+        VITE_BULK_UPLOAD_XLSX_TEMPLATE_URL: ${{ secrets.VITE_BULK_UPLOAD_XLSX_TEMPLATE_URL }}
+        VITE_AUTH_TOKEN: ${{ secrets.VITE_AUTH_TOKEN }}
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist
+        path: dist/
+        retention-days: 1
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: dist
+        path: dist/
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Deploy to S3
+      run: |
+        # Sync files to S3 bucket
+        aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_NAME }} --delete
+        
+        # Set proper cache headers for different file types
+        aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/ s3://${{ secrets.S3_BUCKET_NAME }}/ --recursive --metadata-directive REPLACE --cache-control "max-age=31536000" --exclude "*.html" --exclude "service-worker.js"
+        
+        # Set shorter cache for HTML files
+        aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/ s3://${{ secrets.S3_BUCKET_NAME }}/ --recursive --metadata-directive REPLACE --cache-control "max-age=0, no-cache, no-store, must-revalidate" --include "*.html"
+        
+        # Set no-cache for service worker
+        aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/ s3://${{ secrets.S3_BUCKET_NAME }}/ --recursive --metadata-directive REPLACE --cache-control "max-age=0, no-cache, no-store, must-revalidate" --include "service-worker.js"
+
+    - name: Invalidate CloudFront cache
+      if: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+      run: |
+        aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
+
+    - name: Deploy status
+      run: |
+        echo "✅ Deployment completed successfully!"
+        echo "🌐 Application URL: https://${{ secrets.S3_BUCKET_NAME }}.s3-website-${{ env.AWS_REGION }}.amazonaws.com"
+        if [ -n "${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}" ]; then
+          echo "🚀 CloudFront URL: https://${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}.cloudfront.net"
+        fi
