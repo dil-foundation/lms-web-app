@@ -1,0 +1,73 @@
+name: Simple Build Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_message:
+        description: 'Test message'
+        required: false
+        default: 'Testing build pipeline'
+        type: string
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Display test info
+      run: |
+        echo "🎯 Test message: ${{ inputs.test_message }}"
+        echo "📅 Triggered at: $(date)"
+        echo "👤 Triggered by: ${{ github.actor }}"
+        echo "🌿 Branch: ${{ github.ref_name }}"
+        echo "📁 Working directory: $(pwd)"
+        echo "📄 Files in root: $(ls -la)"
+
+    - name: Check package.json
+      run: |
+        echo "📦 Package.json exists: $(test -f package.json && echo 'Yes' || echo 'No')"
+        if [ -f package.json ]; then
+          echo "📋 Available scripts:"
+          npm run --silent 2>/dev/null | grep -E "^\s+" || echo "No scripts found"
+        fi
+
+    - name: Install dependencies
+      run: |
+        echo "📥 Installing dependencies..."
+        npm ci
+        echo "✅ Dependencies installed successfully"
+
+    - name: Run linting
+      run: |
+        echo "🔍 Running linting..."
+        npm run lint
+        echo "✅ Linting completed"
+
+    - name: Build application (without env vars)
+      run: |
+        echo "🏗️ Building application..."
+        npm run build:prod
+        echo "✅ Build completed successfully"
+
+    - name: Check build output
+      run: |
+        echo "📁 Build output directory:"
+        ls -la dist/ || echo "No dist directory found"
+        if [ -d dist ]; then
+          echo "📊 Build size:"
+          du -sh dist/
+        fi
+
+    - name: Build success
+      run: |
+        echo "🎉 Build pipeline completed successfully!"
+        echo "✅ All steps passed without errors"
