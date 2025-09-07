@@ -93,10 +93,8 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: |
-      !inputs.skip_deploy && (
-        (github.event_name == 'workflow_dispatch') ||
-        (github.ref == 'refs/heads/main' && github.event_name == 'push')
-      )
+      (github.event_name == 'workflow_dispatch' && !inputs.skip_deploy) ||
+      (github.ref == 'refs/heads/main' && github.event_name == 'push')
     
     steps:
     - name: Checkout code
@@ -142,9 +140,14 @@ jobs:
         aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/ s3://${{ secrets.S3_BUCKET_NAME }}/ --recursive --metadata-directive REPLACE --cache-control "max-age=0, no-cache, no-store, must-revalidate" --include "*.*"
 
     - name: Invalidate CloudFront cache
-      if: secrets.CLOUDFRONT_DISTRIBUTION_ID != ''
       run: |
-        aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
+        if [ -n "${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}" ]; then
+          echo "Invalidating CloudFront cache..."
+          aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
+          echo "✅ CloudFront cache invalidated"
+        else
+          echo "⚠️ CLOUDFRONT_DISTRIBUTION_ID not set, skipping cache invalidation"
+        fi
 
     - name: Deploy status
       run: |
