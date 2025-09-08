@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { QuizRetryService } from '@/services/quizRetryService';
+import { QuizRetryInterface } from '@/components/QuizRetryInterface';
 import { 
   PlayCircle,
   CheckCircle, 
@@ -25,7 +27,8 @@ import {
   Timer,
   Sparkles,
   Calendar,
-  GripVertical
+  GripVertical,
+  Info
 } from 'lucide-react';
 import {
   DndContext,
@@ -458,8 +461,21 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     }
   }, [user, actualCourseId, currentContentItem, currentLesson, markContentAsComplete]);
 
-  const handleQuizSubmit = async () => {
-    if (!user || !currentContentItem || !currentLesson || !course || (currentContentItem.submission && currentContentItem.submission.id)) return;
+  const handleQuizSubmit = async (retryReason?: string) => {
+    if (!user || !currentContentItem || !currentLesson || !course) return;
+    
+    // Check if this is a retry attempt
+    const isRetry = currentContentItem.submission && currentContentItem.submission.id;
+    
+    // For retry attempts, check eligibility first
+    if (isRetry) {
+      const retryEligibility = await QuizRetryService.checkRetryEligibility(user.id, currentContentItem.id);
+      if (!retryEligibility.canRetry) {
+        toast.error("Cannot retry quiz", { description: retryEligibility.reason });
+        return;
+      }
+    }
+    
     const questions = currentContentItem.quiz || [];
     const results: Record<string, boolean> = {};
     let correctAnswers = 0;
@@ -506,6 +522,24 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     // For regular quizzes, we can provide an immediate score
     const finalScore = hasTextAnswers ? null : score;
     
+    // Use the new retry system for creating attempts
+    const attemptResult = await QuizRetryService.createQuizAttempt(
+      user.id,
+      currentContentItem.id,
+      allAnswers,
+      results,
+      finalScore,
+      retryReason,
+      QuizRetryService.getClientIP(),
+      QuizRetryService.getUserAgent()
+    );
+    
+    if (!attemptResult.success) {
+      toast.error("Failed to submit quiz.", { description: attemptResult.error });
+      return;
+    }
+    
+    // Also create the legacy quiz_submissions entry for backward compatibility
     const { data: newSubmission, error } = await supabase.from('quiz_submissions').insert({
         user_id: user.id,
         lesson_content_id: currentContentItem.id,
@@ -517,8 +551,8 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     }).select().single();
     
     if (error) {
-        toast.error("Failed to submit quiz.", { description: error.message });
-        return;
+        console.error("Failed to create legacy submission:", error);
+        // Don't return here as the main attempt was created successfully
     }
     
     // Log quiz submission
@@ -533,11 +567,13 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         {
           content_id: currentContentItem.id,
           lesson_id: currentLesson.id,
-          submission_id: newSubmission.id,
+          submission_id: newSubmission?.id || attemptResult.attemptId,
           score: finalScore,
           has_text_answers: hasTextAnswers,
           correct_answers: correctAnswers,
-          total_questions: questions.length
+          total_questions: questions.length,
+          attempt_number: attemptResult.attemptNumber,
+          is_retry: isRetry
         }
       );
       
@@ -557,6 +593,21 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     
     setQuizResults(results);
     setIsQuizSubmitted(true);
+    
+    // Show appropriate message based on attempt type
+    if (isRetry) {
+      if (attemptResult.requiresApproval) {
+        toast.success("Quiz submitted for review", { 
+          description: "Your retry attempt has been submitted and is pending teacher approval." 
+        });
+      } else {
+        toast.success("Quiz retry submitted", { 
+          description: `This was attempt #${attemptResult.attemptNumber}` 
+        });
+      }
+    } else {
+      toast.success("Quiz submitted successfully!");
+    }
     // Add empty text_answer_grades array to new submission
     const submissionWithGrades = {
       ...newSubmission,
@@ -1087,7 +1138,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
               })}
               {!hasSubmitted && (
                 <Button 
-                  onClick={handleQuizSubmit} 
+                  onClick={() => handleQuizSubmit()} 
                   disabled={questions.length === 0 || questions.some((q: any) => {
                     const userAnswer = userAnswers[q.id];
                     const textAnswer = textAnswers[q.id];
@@ -1121,6 +1172,20 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                      )}
                    </p>
                  </div>
+              )}
+              
+              {/* Quiz Retry Interface */}
+              {hasSubmitted && user && (
+                <QuizRetryInterface
+                  userId={user.id}
+                  lessonContentId={currentContentItem.id}
+                  currentScore={currentContentItem.submission?.score || currentContentItem.submission?.manual_grading_score}
+                  onRetryRequested={(reason) => handleQuizSubmit(reason)}
+                  onRetryApproved={() => {
+                    // Refresh the quiz data when retry is approved
+                    window.location.reload();
+                  }}
+                />
               )}
             </CardContent>
           </Card>

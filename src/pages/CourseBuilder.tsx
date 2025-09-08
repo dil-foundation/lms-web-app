@@ -14,6 +14,7 @@ import { FileUpload } from '@/components/ui/FileUpload';
 import { RichTextEditor } from '@/components/ui/RichTextEditor';
 import { MultiSelect } from '@/components/ui/MultiSelect';
 import { PDFQuizUploader } from '@/components/ui/PDFQuizUploader';
+import { QuizRetrySettings } from '@/components/admin/QuizRetrySettings';
 import {
   DndContext,
   closestCenter,
@@ -692,6 +693,16 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
               <QuizBuilder
                 quiz={item.quiz || { id: '', questions: [] }}
                 onQuizChange={(quiz) => onUpdate(lessonId, item.id, { quiz })}
+              />
+            </div>
+            
+            {/* Quiz Retry Settings */}
+            <div className="mt-6">
+              <QuizRetrySettings
+                lessonContentId={item.id}
+                onSettingsChange={(settings) => {
+                  onUpdate(lessonId, item.id, { retry_settings: settings });
+                }}
               />
             </div>
           </div>
