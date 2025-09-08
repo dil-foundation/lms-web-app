@@ -20,6 +20,8 @@ import {
   Type
 } from 'lucide-react';
 import { MathDrawingCanvas } from './MathDrawingCanvas';
+import { InlineMath, BlockMath } from 'react-katex';
+import 'katex/dist/katex.min.css';
 // import { validateMathExpression } from '@/utils/mathEvaluation';
 
 interface MathExpressionInputProps {
@@ -361,8 +363,8 @@ export const MathExpressionInput: React.FC<MathExpressionInputProps> = ({
               Preview
             </h4>
             <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <div className="text-lg" style={{ fontFamily: 'serif' }}>
-                {value}
+              <div className="text-lg">
+                <InlineMath math={value} />
               </div>
             </div>
           </CardContent>
