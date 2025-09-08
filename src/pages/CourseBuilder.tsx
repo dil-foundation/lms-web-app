@@ -93,6 +93,7 @@ interface LessonContentItem {
   content_path?: string; // For video, attachment, assignment HTML
   quiz?: QuizData; // For quiz type
   due_date?: string; // Due date for assignments and quizzes
+  retry_settings?: any; // Quiz retry settings
 }
 
 interface QuizData {
@@ -103,9 +104,14 @@ interface QuizData {
 interface QuizQuestion {
   id: string;
   question_text: string;
-  question_type: 'single_choice' | 'multiple_choice' | 'text_answer';
+  question_type: 'single_choice' | 'multiple_choice' | 'text_answer' | 'math_expression';
   options: QuestionOption[];
   position: number;
+  // Math-specific fields
+  math_expression?: string;
+  math_tolerance?: number;
+  math_hint?: string;
+  math_allow_drawing?: boolean;
 }
 
 interface QuestionOption {
@@ -701,7 +707,7 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
               <QuizRetrySettings
                 lessonContentId={item.id}
                 onSettingsChange={(settings) => {
-                  onUpdate(lessonId, item.id, { retry_settings: settings });
+                  onUpdate(lessonId, item.id, { retry_settings: settings } as any);
                 }}
               />
             </div>
@@ -1106,7 +1112,7 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
     onQuizChange({ ...quiz, questions: updatedQuestions });
   };
   
-  const updateQuestionType = (qIndex: number, type: 'single_choice' | 'multiple_choice' | 'text_answer') => {
+  const updateQuestionType = (qIndex: number, type: 'single_choice' | 'multiple_choice' | 'text_answer' | 'math_expression') => {
     const updatedQuestions = quiz.questions.map((q, i) => {
       if (i === qIndex) {
         // If switching to single choice and there are multiple correct answers, keep only the first one
@@ -1121,6 +1127,9 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
           }
         } else if (type === 'text_answer') {
           // For text answer questions, we don't need options
+          updatedOptions = [];
+        } else if (type === 'math_expression') {
+          // For math expression questions, we don't need options
           updatedOptions = [];
         }
         return { ...q, question_type: type, options: updatedOptions };
@@ -1185,6 +1194,34 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
       }
       return q;
     });
+    onQuizChange({ ...quiz, questions: updatedQuestions });
+  };
+
+  const updateMathExpression = (qIndex: number, expression: string) => {
+    const updatedQuestions = quiz.questions.map((q, i) => 
+      i === qIndex ? { ...q, math_expression: expression } : q
+    );
+    onQuizChange({ ...quiz, questions: updatedQuestions });
+  };
+
+  const updateMathTolerance = (qIndex: number, tolerance: number) => {
+    const updatedQuestions = quiz.questions.map((q, i) => 
+      i === qIndex ? { ...q, math_tolerance: tolerance } : q
+    );
+    onQuizChange({ ...quiz, questions: updatedQuestions });
+  };
+
+  const updateMathHint = (qIndex: number, hint: string) => {
+    const updatedQuestions = quiz.questions.map((q, i) => 
+      i === qIndex ? { ...q, math_hint: hint } : q
+    );
+    onQuizChange({ ...quiz, questions: updatedQuestions });
+  };
+
+  const updateMathAllowDrawing = (qIndex: number, allowDrawing: boolean) => {
+    const updatedQuestions = quiz.questions.map((q, i) => 
+      i === qIndex ? { ...q, math_allow_drawing: allowDrawing } : q
+    );
     onQuizChange({ ...quiz, questions: updatedQuestions });
   };
   
@@ -1259,7 +1296,7 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
               </Label>
               <Select
                 value={question.question_type}
-                onValueChange={(value: 'single_choice' | 'multiple_choice') => updateQuestionType(qIndex, value)}
+                onValueChange={(value: 'single_choice' | 'multiple_choice' | 'text_answer' | 'math_expression') => updateQuestionType(qIndex, value)}
               >
                 <SelectTrigger className="w-48 h-9 border-2 border-purple-200 dark:border-purple-700 rounded-lg bg-white/60 dark:bg-gray-800/60">
                   <SelectValue />
@@ -1283,6 +1320,12 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
                       Text Answer
                     </div>
                   </SelectItem>
+                  <SelectItem value="math_expression" className="rounded-lg hover:bg-purple-50 hover:text-gray-900 dark:hover:bg-purple-900/20 dark:hover:text-white transition-colors">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-green-500 bg-green-500"></div>
+                      Math Expression
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
               
@@ -1297,26 +1340,33 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
                     <div className="w-3 h-3 border-2 border-purple-500 rounded"></div>
                     <span>Multiple correct answers</span>
                   </>
-                ) : (
+                ) : question.question_type === 'text_answer' ? (
                   <>
                     <div className="w-3 h-3 border-2 border-purple-500 bg-purple-500"></div>
                     <span>Manual grading required</span>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-3 h-3 border-2 border-green-500 bg-green-500"></div>
+                    <span>Mathematical expression</span>
                   </>
                 )}
               </div>
               
               {/* Question Type Badge */}
               <Badge 
-                variant={question.question_type === 'single_choice' ? 'secondary' : question.question_type === 'multiple_choice' ? 'default' : 'outline'}
+                variant={question.question_type === 'single_choice' ? 'secondary' : question.question_type === 'multiple_choice' ? 'default' : question.question_type === 'math_expression' ? 'secondary' : 'outline'}
                 className={`text-xs ${
                   question.question_type === 'single_choice' 
                     ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-700' 
                     : question.question_type === 'multiple_choice'
                     ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-700'
+                    : question.question_type === 'math_expression'
+                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-700'
                     : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 border-orange-200 dark:border-orange-700'
                 }`}
               >
-                {question.question_type === 'single_choice' ? 'Single Choice' : question.question_type === 'multiple_choice' ? 'Multiple Choice' : 'Text Answer'}
+                {question.question_type === 'single_choice' ? 'Single Choice' : question.question_type === 'multiple_choice' ? 'Multiple Choice' : question.question_type === 'math_expression' ? 'Math Expression' : 'Text Answer'}
               </Badge>
             </div>
           </CardHeader>
@@ -1334,6 +1384,84 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
                 </div>
                 <div className="text-xs text-orange-600 dark:text-orange-400">
                   This question will appear in the manual grading queue for teachers
+                </div>
+              </div>
+            ) : question.question_type === 'math_expression' ? (
+              <div className="p-6 bg-gradient-to-r from-green-50 to-green-100/50 dark:from-green-900/10 dark:to-green-800/10 rounded-xl border border-green-200/50 dark:border-green-700/30">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                    <span className="text-sm font-semibold text-green-700 dark:text-green-300">🧮</span>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-green-900 dark:text-green-100">Math Expression Question</h4>
+                    <p className="text-sm text-green-700 dark:text-green-300">Students will input mathematical expressions using LaTeX notation</p>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor={`math-expression-${qIndex}`} className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Expected Answer (LaTeX)
+                    </Label>
+                    <Input
+                      id={`math-expression-${qIndex}`}
+                      value={question.math_expression || ''}
+                      onChange={(e) => updateMathExpression(qIndex, e.target.value)}
+                      placeholder="e.g., \\frac{x^2 + 1}{x - 1}"
+                      className="mt-1 font-mono"
+                    />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Enter the correct mathematical expression in LaTeX format
+                    </p>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor={`math-tolerance-${qIndex}`} className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Tolerance (0.01 = 1%)
+                      </Label>
+                      <Input
+                        id={`math-tolerance-${qIndex}`}
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="1"
+                        value={question.math_tolerance || 0.01}
+                        onChange={(e) => updateMathTolerance(qIndex, parseFloat(e.target.value) || 0.01)}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`math-allow-drawing-${qIndex}`}
+                        checked={question.math_allow_drawing || false}
+                        onChange={(e) => updateMathAllowDrawing(qIndex, e.target.checked)}
+                        className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                      />
+                      <Label htmlFor={`math-allow-drawing-${qIndex}`} className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Allow Drawing
+                      </Label>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor={`math-hint-${qIndex}`} className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Hint (Optional)
+                    </Label>
+                    <Textarea
+                      id={`math-hint-${qIndex}`}
+                      value={question.math_hint || ''}
+                      onChange={(e) => updateMathHint(qIndex, e.target.value)}
+                      placeholder="e.g., Remember to simplify fractions to their lowest terms"
+                      className="mt-1"
+                      rows={2}
+                    />
+                  </div>
+                </div>
+                
+                <div className="text-xs text-green-600 dark:text-green-400 mt-3">
+                  This question will be automatically graded based on mathematical equivalence
                 </div>
               </div>
             ) : (
