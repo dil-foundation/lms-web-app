@@ -293,7 +293,12 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
           if (item.content_type === 'quiz' && item.quiz) {
             processedItem.quiz = item.quiz.map((q: any) => ({
               ...q,
-              question_type: q.question_type || 'single_choice' // Default for backward compatibility
+              question_type: q.question_type || 'single_choice', // Default for backward compatibility
+              // Ensure math fields are included
+              math_expression: q.math_expression || null,
+              math_tolerance: q.math_tolerance || null,
+              math_hint: q.math_hint || null,
+              math_allow_drawing: q.math_allow_drawing || false
             }));
           }
           
@@ -703,7 +708,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       }
       setIsLoading(true);
       try {
-        const { data, error } = await supabase.from('courses').select(`*,sections:course_sections(*,lessons:course_lessons(*,contentItems:course_lesson_content(*,quiz:quiz_questions(*,options:question_options(*)))))`).eq('id', actualCourseId).single();
+        const { data, error } = await supabase.from('courses').select(`*,sections:course_sections(*,lessons:course_lessons(*,contentItems:course_lesson_content(*,quiz:quiz_questions(*,math_expression,math_tolerance,math_hint,math_allow_drawing,options:question_options(*)))))`).eq('id', actualCourseId).single();
         if (error) throw error;
         if (data) {
           for (const section of data.sections) {
@@ -1055,19 +1060,42 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                     </div>
                     
                     {isMathExpression ? (
-                      <MathExpressionInput
-                        questionId={q.id}
-                        value={mathAnswer || ''}
-                        onChange={(value) => setMathAnswers(prev => ({ ...prev, [q.id]: value }))}
-                        disabled={hasSubmitted}
-                        showValidation={!hasSubmitted}
-                        expectedAnswer={q.math_expression}
-                        tolerance={q.math_tolerance}
-                        hint={q.math_hint}
-                        allowDrawing={q.math_allow_drawing || false}
-                        drawingData={mathDrawings[q.id] || ''}
-                        onDrawingChange={(drawingData) => setMathDrawings(prev => ({ ...prev, [q.id]: drawingData }))}
-                      />
+                      <>
+                        {/* Debug logging */}
+                        {console.log('Math question debug:', {
+                          questionId: q.id,
+                          math_allow_drawing: q.math_allow_drawing,
+                          math_expression: q.math_expression,
+                          math_hint: q.math_hint,
+                          question: q
+                        })}
+                        {/* Test database schema */}
+                        {(() => {
+                          // Test if math fields exist in database
+                          supabase
+                            .from('quiz_questions')
+                            .select('id, math_allow_drawing, math_expression, math_hint')
+                            .eq('id', q.id)
+                            .single()
+                            .then(({ data, error }) => {
+                              console.log('Database test for question', q.id, ':', { data, error });
+                            });
+                          return null;
+                        })()}
+                        <MathExpressionInput
+                          questionId={q.id}
+                          value={mathAnswer || ''}
+                          onChange={(value) => setMathAnswers(prev => ({ ...prev, [q.id]: value }))}
+                          disabled={hasSubmitted}
+                          showValidation={!hasSubmitted}
+                          expectedAnswer={q.math_expression}
+                          tolerance={q.math_tolerance}
+                          hint={q.math_hint}
+                          allowDrawing={q.math_allow_drawing || false}
+                          drawingData={mathDrawings[q.id] || ''}
+                          onDrawingChange={(drawingData) => setMathDrawings(prev => ({ ...prev, [q.id]: drawingData }))}
+                        />
+                      </>
                     ) : isTextAnswer ? (
                       <div className="space-y-3">
                         <Textarea
