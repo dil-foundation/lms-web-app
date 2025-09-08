@@ -2560,7 +2560,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                     <Globe className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <p className="text-muted-foreground">No schools found</p>
                     <p className="text-sm text-muted-foreground">
-                      {searchTerm ? 'Try adjusting your search terms' : 'Create your first school to get started'}
+                      {searchTerm || typeFilter !== 'all' ? 'Try adjusting your search terms and filters' : 'Create your first school to get started'}
                     </p>
                   </div>
                 </div>

@@ -28,7 +28,7 @@ export const useCountries = () => {
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 10,
+    limit: 5,
     total: 0,
     totalPages: 0,
     hasNext: false,
@@ -42,7 +42,7 @@ export const useCountries = () => {
       setError(null);
       setIsSearchMode(false);
       
-      const paginationParams = params || { page: 1, limit: 10 };
+      const paginationParams = params || { page: 1, limit: 5 };
       const response = await MultitenancyService.getCountriesPaginated(paginationParams);
       
       setCountries(response.data);
@@ -115,7 +115,7 @@ export const useCountries = () => {
       setError(null);
       setIsSearchMode(true);
       
-      const paginationParams = params || { page: 1, limit: 10 };
+      const paginationParams = params || { page: 1, limit: 5 };
       const response = await MultitenancyService.searchCountriesPaginated(searchTerm, paginationParams);
       
       setCountries(response.data);
@@ -208,7 +208,7 @@ export const useRegions = () => {
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 10,
+    limit: 5,
     total: 0,
     totalPages: 0,
     hasNext: false,
@@ -222,7 +222,7 @@ export const useRegions = () => {
       setError(null);
       setIsSearchMode(false);
       
-      const paginationParams = params || { page: 1, limit: 10 };
+      const paginationParams = params || { page: 1, limit: 5 };
       const response = await MultitenancyService.getRegionsPaginated(paginationParams);
       
       setRegions(response.data);
@@ -295,7 +295,7 @@ export const useRegions = () => {
       setError(null);
       setIsSearchMode(true);
       
-      const paginationParams = params || { page: 1, limit: 10 };
+      const paginationParams = params || { page: 1, limit: 5 };
       const response = await MultitenancyService.searchRegionsPaginated(searchTerm, paginationParams);
       
       setRegions(response.data);
@@ -386,7 +386,7 @@ export const useCities = () => {
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 10,
+    limit: 5,
     total: 0,
     totalPages: 0,
     hasNext: false,
@@ -400,7 +400,7 @@ export const useCities = () => {
       setError(null);
       setIsSearchMode(false);
       
-      const paginationParams = params || { page: 1, limit: 10 };
+      const paginationParams = params || { page: 1, limit: 5 };
       const response = await MultitenancyService.getCitiesPaginated(paginationParams);
       
       setCities(response.data);
@@ -473,7 +473,7 @@ export const useCities = () => {
       setError(null);
       setIsSearchMode(true);
       
-      const paginationParams = params || { page: 1, limit: 10 };
+      const paginationParams = params || { page: 1, limit: 5 };
       const response = await MultitenancyService.searchCitiesPaginated(searchTerm, paginationParams);
       
       setCities(response.data);
@@ -564,7 +564,7 @@ export const useProjects = () => {
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 10,
+    limit: 5,
     total: 0,
     totalPages: 0,
     hasNext: false,
@@ -578,7 +578,7 @@ export const useProjects = () => {
       setError(null);
       setIsSearchMode(false);
       
-      const paginationParams = params || { page: 1, limit: 10 };
+      const paginationParams = params || { page: 1, limit: 5 };
       const response = await MultitenancyService.getProjectsPaginated(paginationParams);
       
       setProjects(response.data);
@@ -651,7 +651,7 @@ export const useProjects = () => {
       setError(null);
       setIsSearchMode(true);
       
-      const paginationParams = params || { page: 1, limit: 10 };
+      const paginationParams = params || { page: 1, limit: 5 };
       const response = await MultitenancyService.searchProjectsPaginated(searchTerm, paginationParams);
       
       setProjects(response.data);
@@ -726,7 +726,7 @@ export const useBoards = () => {
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 10,
+    limit: 5,
     total: 0,
     totalPages: 0,
     hasNext: false,
@@ -740,7 +740,7 @@ export const useBoards = () => {
       setError(null);
       setIsSearchMode(false);
       
-      const paginationParams = params || { page: 1, limit: 10 };
+      const paginationParams = params || { page: 1, limit: 5 };
       const response = await MultitenancyService.getBoardsPaginated(paginationParams);
       
       setBoards(response.data);
@@ -813,7 +813,7 @@ export const useBoards = () => {
       setError(null);
       setIsSearchMode(true);
       
-      const paginationParams = params || { page: 1, limit: 10 };
+      const paginationParams = params || { page: 1, limit: 5 };
       const response = await MultitenancyService.searchBoardsPaginated(searchTerm, paginationParams);
       
       setBoards(response.data);
@@ -888,7 +888,7 @@ export const useSchools = () => {
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 10,
+    limit: 5,
     total: 0,
     totalPages: 0,
     hasNext: false,
@@ -902,7 +902,7 @@ export const useSchools = () => {
       setError(null);
       setIsSearchMode(false);
       
-      const paginationParams = params || { page: 1, limit: 10 };
+      const paginationParams = params || { page: 1, limit: 5 };
       const response = await MultitenancyService.getSchoolsPaginated(paginationParams);
       
       setSchools(response.data);
@@ -975,7 +975,7 @@ export const useSchools = () => {
       setError(null);
       setIsSearchMode(true);
       
-      const paginationParams = params || { page: 1, limit: 10 };
+      const paginationParams = params || { page: 1, limit: 5 };
       const response = await MultitenancyService.searchSchoolsPaginated(searchTerm, paginationParams);
       
       setSchools(response.data);
