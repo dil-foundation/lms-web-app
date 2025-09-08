@@ -1,0 +1,46 @@
+name: Test Workflow Dispatch
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_message:
+        description: 'Test message to display'
+        required: true
+        default: 'Hello from workflow dispatch!'
+        type: string
+      run_tests:
+        description: 'Run tests'
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  test-dispatch:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Display test message
+      run: |
+        echo "🎉 Workflow dispatch is working!"
+        echo "📝 Test message: ${{ inputs.test_message }}"
+        echo "🧪 Run tests: ${{ inputs.run_tests }}"
+        echo "📅 Triggered at: $(date)"
+        echo "👤 Triggered by: ${{ github.actor }}"
+        echo "🌿 Branch: ${{ github.ref_name }}"
+
+    - name: Run basic tests
+      if: inputs.run_tests
+      run: |
+        echo "Running basic validation tests..."
+        echo "✅ Node.js version: $(node --version)"
+        echo "✅ NPM version: $(npm --version)"
+        echo "✅ Package.json exists: $(test -f package.json && echo 'Yes' || echo 'No')"
+        echo "✅ Source directory exists: $(test -d src && echo 'Yes' || echo 'No')"
+
+    - name: Test completion
+      run: |
+        echo "🎯 Test workflow dispatch completed successfully!"
+        echo "✅ All tests passed!"

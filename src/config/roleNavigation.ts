@@ -238,7 +238,13 @@ export const getAICategorizedNavigation = (role: UserRole): NavigationCategory[]
         {
           title: 'ANALYTICS',
           items: [
-            { title: 'Reports & Analytics', path: '/dashboard/ai-reports', icon: BarChart3 },
+            { title: 'Performance Analytics', path: '/dashboard/ai-reports', icon: BarChart3 },
+          ]
+        },
+        {
+          title: 'OBSERVATION',
+          items: [
+            { title: 'Observation Reports', path: '/dashboard/observation-reports', icon: Eye },
           ]
         },
         {

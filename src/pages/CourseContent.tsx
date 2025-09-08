@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { QuizRetryService } from '@/services/quizRetryService';
+import { QuizRetryInterface } from '@/components/QuizRetryInterface';
 import { 
   PlayCircle,
   CheckCircle, 
@@ -24,9 +26,31 @@ import {
   FileText,
   Timer,
   Sparkles,
-  Calendar
+  Calendar,
+  GripVertical,
+  Info
 } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import {
+  CSS,
+} from '@dnd-kit/utilities';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { cn } from '@/lib/utils';
 import AccessLogService from '@/services/accessLogService';
 
@@ -63,6 +87,72 @@ const getContentItemIcon = (item: any, currentContentItemId: string | null) => {
     }
 };
 
+// SortableContentItem component for drag and drop functionality
+interface SortableContentItemProps {
+  item: any;
+  index: number;
+  isActive: boolean;
+  isCompleted: boolean;
+  onNavigate: (item: any) => void;
+  canReorder: boolean;
+}
+
+const SortableContentItem = ({ item, index, isActive, isCompleted, onNavigate, canReorder }: SortableContentItemProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ 
+    id: item.id,
+    disabled: !canReorder // Disable sorting if user can't reorder
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <button
+        onClick={() => onNavigate(item)}
+        className={cn(
+          "w-full text-left p-1.5 rounded text-xs transition-all duration-200 flex items-center space-x-2 group",
+          "hover:bg-muted/20",
+          isActive 
+            ? "bg-primary/10 text-primary font-medium border-l-2 border-primary" 
+            : "text-muted-foreground hover:text-foreground"
+        )}
+      >
+        {canReorder && (
+          <div 
+            {...attributes} 
+            {...listeners}
+            className="flex-shrink-0 p-1 hover:bg-muted/30 rounded cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <GripVertical className="w-3 h-3 text-muted-foreground" />
+          </div>
+        )}
+        <div className="flex-shrink-0">
+          {getContentItemIcon(item, isActive ? item.id : null)}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="truncate">
+            {index + 1}. {item.title}
+          </div>
+        </div>
+        {isCompleted && (
+          <CheckCircle className="w-3 h-3 text-green-500 flex-shrink-0" />
+        )}
+      </button>
+    </div>
+  );
+};
+
 
 
 export const CourseContent = ({ courseId }: CourseContentProps) => {
@@ -75,6 +165,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [openSectionIds, setOpenSectionIds] = useState<string[]>([]);
   const { user } = useAuth();
+  const { profile } = useUserProfile();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const lastUpdateTimeRef = useRef(0);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -85,6 +176,18 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
   const [quizResults, setQuizResults] = useState<Record<string, boolean>>({});
 
   const actualCourseId = courseId || id;
+
+  // Check if user can reorder content (admin and teacher only, and only in draft mode)
+  const canReorderContent = (profile?.role === 'admin' || profile?.role === 'teacher') && 
+                           (course?.status === 'Draft' || course?.status === 'Rejected');
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const { currentModule, currentLesson, currentContentItem } = useMemo(() => {
     if (!course || !currentContentItemId) {
@@ -358,8 +461,21 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     }
   }, [user, actualCourseId, currentContentItem, currentLesson, markContentAsComplete]);
 
-  const handleQuizSubmit = async () => {
-    if (!user || !currentContentItem || !currentLesson || !course || (currentContentItem.submission && currentContentItem.submission.id)) return;
+  const handleQuizSubmit = async (retryReason?: string) => {
+    if (!user || !currentContentItem || !currentLesson || !course) return;
+    
+    // Check if this is a retry attempt
+    const isRetry = currentContentItem.submission && currentContentItem.submission.id;
+    
+    // For retry attempts, check eligibility first
+    if (isRetry) {
+      const retryEligibility = await QuizRetryService.checkRetryEligibility(user.id, currentContentItem.id);
+      if (!retryEligibility.canRetry) {
+        toast.error("Cannot retry quiz", { description: retryEligibility.reason });
+        return;
+      }
+    }
+    
     const questions = currentContentItem.quiz || [];
     const results: Record<string, boolean> = {};
     let correctAnswers = 0;
@@ -406,6 +522,24 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     // For regular quizzes, we can provide an immediate score
     const finalScore = hasTextAnswers ? null : score;
     
+    // Use the new retry system for creating attempts
+    const attemptResult = await QuizRetryService.createQuizAttempt(
+      user.id,
+      currentContentItem.id,
+      allAnswers,
+      results,
+      finalScore,
+      retryReason,
+      QuizRetryService.getClientIP(),
+      QuizRetryService.getUserAgent()
+    );
+    
+    if (!attemptResult.success) {
+      toast.error("Failed to submit quiz.", { description: attemptResult.error });
+      return;
+    }
+    
+    // Also create the legacy quiz_submissions entry for backward compatibility
     const { data: newSubmission, error } = await supabase.from('quiz_submissions').insert({
         user_id: user.id,
         lesson_content_id: currentContentItem.id,
@@ -417,8 +551,8 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     }).select().single();
     
     if (error) {
-        toast.error("Failed to submit quiz.", { description: error.message });
-        return;
+        console.error("Failed to create legacy submission:", error);
+        // Don't return here as the main attempt was created successfully
     }
     
     // Log quiz submission
@@ -433,11 +567,13 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         {
           content_id: currentContentItem.id,
           lesson_id: currentLesson.id,
-          submission_id: newSubmission.id,
+          submission_id: newSubmission?.id || attemptResult.attemptId,
           score: finalScore,
           has_text_answers: hasTextAnswers,
           correct_answers: correctAnswers,
-          total_questions: questions.length
+          total_questions: questions.length,
+          attempt_number: attemptResult.attemptNumber,
+          is_retry: isRetry
         }
       );
       
@@ -457,6 +593,21 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     
     setQuizResults(results);
     setIsQuizSubmitted(true);
+    
+    // Show appropriate message based on attempt type
+    if (isRetry) {
+      if (attemptResult.requiresApproval) {
+        toast.success("Quiz submitted for review", { 
+          description: "Your retry attempt has been submitted and is pending teacher approval." 
+        });
+      } else {
+        toast.success("Quiz retry submitted", { 
+          description: `This was attempt #${attemptResult.attemptNumber}` 
+        });
+      }
+    } else {
+      toast.success("Quiz submitted successfully!");
+    }
     // Add empty text_answer_grades array to new submission
     const submissionWithGrades = {
       ...newSubmission,
@@ -616,6 +767,77 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         if (sectionIdToOpen && !openSectionIds.includes(sectionIdToOpen)) {
             setOpenSectionIds(prev => [...prev, sectionIdToOpen]);
         }
+    }
+  };
+
+  // Handle drag end for content item reordering
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    // Only allow reordering if user has permission and course is in draft mode
+    if (!canReorderContent) {
+      if (course?.status === 'Published') {
+        toast.error('Content reordering is disabled for published courses. Please unpublish the course to make changes.');
+      } else {
+        toast.error('You do not have permission to reorder content items');
+      }
+      return;
+    }
+
+    if (!currentLesson) return;
+
+    const oldIndex = currentLesson.contentItems.findIndex((item: any) => item.id === active.id);
+    const newIndex = currentLesson.contentItems.findIndex((item: any) => item.id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    // Update local state immediately for better UX
+    const newContentItems = arrayMove(currentLesson.contentItems, oldIndex, newIndex);
+    
+    setCourse((prevCourse: any) => {
+      if (!prevCourse) return null;
+      
+      return {
+        ...prevCourse,
+        modules: prevCourse.modules.map((module: any) => ({
+          ...module,
+          lessons: module.lessons.map((lesson: any) => 
+            lesson.id === currentLesson.id 
+              ? { ...lesson, contentItems: newContentItems }
+              : lesson
+          )
+        }))
+      };
+    });
+
+    // Update positions in database
+    try {
+      const updates = newContentItems.map((item: any, index: number) => ({
+        id: item.id,
+        position: index + 1
+      }));
+
+      for (const update of updates) {
+        const { error } = await supabase
+          .from('course_lesson_content')
+          .update({ position: update.position })
+          .eq('id', update.id);
+
+        if (error) {
+          console.error('Error updating content item position:', error);
+          toast.error('Failed to save new order');
+          return;
+        }
+      }
+
+      toast.success('Content order updated successfully');
+    } catch (error) {
+      console.error('Error updating content positions:', error);
+      toast.error('Failed to save new order');
     }
   };
   
@@ -916,7 +1138,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
               })}
               {!hasSubmitted && (
                 <Button 
-                  onClick={handleQuizSubmit} 
+                  onClick={() => handleQuizSubmit()} 
                   disabled={questions.length === 0 || questions.some((q: any) => {
                     const userAnswer = userAnswers[q.id];
                     const textAnswer = textAnswers[q.id];
@@ -950,6 +1172,20 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                      )}
                    </p>
                  </div>
+              )}
+              
+              {/* Quiz Retry Interface */}
+              {hasSubmitted && user && (
+                <QuizRetryInterface
+                  userId={user.id}
+                  lessonContentId={currentContentItem.id}
+                  currentScore={currentContentItem.submission?.score || currentContentItem.submission?.manual_grading_score}
+                  onRetryRequested={(reason) => handleQuizSubmit(reason)}
+                  onRetryApproved={() => {
+                    // Refresh the quiz data when retry is approved
+                    window.location.reload();
+                  }}
+                />
               )}
             </CardContent>
           </Card>
@@ -1133,36 +1369,65 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                                   {/* Show content items for current lesson */}
                                   {isCurrentLesson && (
                                     <div className="ml-4 space-y-0.5">
-                                      {lesson.contentItems.map((item: any, index: number) => {
-                                        const isActive = item.id === currentContentItemId;
-                                        const isCompleted = item.completed;
-                                        
-                                        return (
-                                          <button
-                                            key={item.id}
-                                            onClick={() => handleNavigation(item)}
-                                            className={cn(
-                                              "w-full text-left p-1.5 rounded text-xs transition-all duration-200 flex items-center space-x-2",
-                                              "hover:bg-muted/20",
-                                              isActive 
-                                                ? "bg-primary/10 text-primary font-medium border-l-2 border-primary" 
-                                                : "text-muted-foreground hover:text-foreground"
-                                            )}
+                                      {canReorderContent && (
+                                        <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                                          <GripVertical className="w-3 h-3" />
+                                          <span>Drag to reorder content items</span>
+                                        </div>
+                                      )}
+                                      {!canReorderContent && (profile?.role === 'admin' || profile?.role === 'teacher') && course?.status === 'Published' && (
+                                        <div className="text-xs text-amber-600 dark:text-amber-400 mb-2 flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 rounded-lg border border-amber-200 dark:border-amber-800">
+                                          <Info className="w-3 h-3" />
+                                          <span>Content reordering is disabled for published courses. Unpublish the course to make changes.</span>
+                                        </div>
+                                      )}
+                                      {canReorderContent ? (
+                                        <DndContext
+                                          sensors={sensors}
+                                          collisionDetection={closestCenter}
+                                          onDragEnd={handleDragEnd}
+                                        >
+                                          <SortableContext 
+                                            items={lesson.contentItems.map((item: any) => item.id)}
+                                            strategy={verticalListSortingStrategy}
                                           >
-                                            <div className="flex-shrink-0">
-                                              {getContentItemIcon(item, currentContentItemId)}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                              <div className="truncate">
-                                                {index + 1}. {item.title}
-                                              </div>
-                                            </div>
-                                            {isCompleted && (
-                                              <CheckCircle className="w-3 h-3 text-green-500 flex-shrink-0" />
-                                            )}
-                                          </button>
-                                        );
-                                      })}
+                                            {lesson.contentItems.map((item: any, index: number) => {
+                                              const isActive = item.id === currentContentItemId;
+                                              const isCompleted = item.completed;
+                                              
+                                              return (
+                                                <SortableContentItem
+                                                  key={item.id}
+                                                  item={item}
+                                                  index={index}
+                                                  isActive={isActive}
+                                                  isCompleted={isCompleted}
+                                                  onNavigate={handleNavigation}
+                                                  canReorder={canReorderContent}
+                                                />
+                                              );
+                                            })}
+                                          </SortableContext>
+                                        </DndContext>
+                                      ) : (
+                                        // Render without drag and drop for students
+                                        lesson.contentItems.map((item: any, index: number) => {
+                                          const isActive = item.id === currentContentItemId;
+                                          const isCompleted = item.completed;
+                                          
+                                          return (
+                                            <SortableContentItem
+                                              key={item.id}
+                                              item={item}
+                                              index={index}
+                                              isActive={isActive}
+                                              isCompleted={isCompleted}
+                                              onNavigate={handleNavigation}
+                                              canReorder={false}
+                                            />
+                                          );
+                                        })
+                                      )}
                                     </div>
                                   )}
                                 </div>

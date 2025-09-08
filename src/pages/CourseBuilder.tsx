@@ -14,6 +14,7 @@ import { FileUpload } from '@/components/ui/FileUpload';
 import { RichTextEditor } from '@/components/ui/RichTextEditor';
 import { MultiSelect } from '@/components/ui/MultiSelect';
 import { PDFQuizUploader } from '@/components/ui/PDFQuizUploader';
+import { QuizRetrySettings } from '@/components/admin/QuizRetrySettings';
 import {
   DndContext,
   closestCenter,
@@ -453,9 +454,11 @@ interface LessonContentItemProps {
   onRemove: (lessonId: string, itemId: string) => void;
   isRemovable: boolean;
   courseId: string | undefined;
+  canReorder?: boolean;
+  dragHandleProps?: any;
 }
 
-const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, onRemove, isRemovable, courseId }: LessonContentItemProps) => {
+const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, onRemove, isRemovable, courseId, canReorder = false, dragHandleProps = {} }: LessonContentItemProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [attachmentInfo, setAttachmentInfo] = useState<{ url: string; name: string } | null>(null);
@@ -800,6 +803,16 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
                 onQuizChange={(quiz) => onUpdate(lessonId, item.id, { quiz })}
               />
             </div>
+            
+            {/* Quiz Retry Settings */}
+            <div className="mt-6">
+              <QuizRetrySettings
+                lessonContentId={item.id}
+                onSettingsChange={(settings) => {
+                  onUpdate(lessonId, item.id, { retry_settings: settings });
+                }}
+              />
+            </div>
           </div>
         );
       default:
@@ -831,6 +844,14 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
     <div className={`w-full p-6 rounded-2xl border-2 transition-all duration-300 hover:shadow-xl ${getContentTypeColor(item.content_type)}`}>
       <div className="flex items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-4 flex-1">
+          {canReorder && (
+            <div 
+              {...dragHandleProps}
+              className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/60 dark:bg-black/30 hover:bg-white/80 dark:hover:bg-black/50 cursor-grab active:cursor-grabbing transition-all duration-200 shadow-sm hover:shadow-md"
+            >
+              <GripVertical className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            </div>
+          )}
           <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-white/80 dark:bg-black/40 shadow-sm">
             <span className="text-2xl">{getContentTypeIcon(item.content_type)}</span>
           </div>
@@ -917,10 +938,12 @@ interface LessonContainerProps {
   onUpdateContentItem: (lessonId: string, itemId: string, updatedItem: Partial<LessonContentItem>) => void;
   onRemoveContentItem: (lessonId: string, itemId: string) => void;
   onShowContentTypeSelector: (lessonId: string) => void;
+  canReorderContent: boolean;
+  currentUserRole: 'admin' | 'teacher' | 'student' | null;
+  courseStatus: 'Draft' | 'Published' | 'Under Review' | 'Rejected' | undefined;
 }
 
-const LessonContainer = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, dragHandleProps, onToggleCollapse, courseId, onUpdateContentItem, onRemoveContentItem, onShowContentTypeSelector }: LessonContainerProps) => {
-
+const LessonContainer = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovable, dragHandleProps, onToggleCollapse, courseId, onUpdateContentItem, onRemoveContentItem, onShowContentTypeSelector, canReorderContent, currentUserRole, courseStatus }: LessonContainerProps) => {
   return (
     <>
       <div className="p-6 rounded-2xl bg-gradient-to-br from-card to-card/50 dark:bg-card border-2 border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl space-y-6 transition-all duration-300 group">
@@ -994,19 +1017,53 @@ const LessonContainer = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovab
             {/* Existing Content Items */}
             {lesson.contentItems.length > 0 ? (
               <div className="space-y-4">
-              {lesson.contentItems.map((item) => (
-                <LessonContentItemComponent
-                  key={item.id}
-                  item={item}
-                  lessonId={lesson.id}
-                  sectionId={sectionId}
-                  onUpdate={onUpdateContentItem}
-                  onRemove={onRemoveContentItem}
-                  isRemovable={true}
-                  courseId={courseId}
-                />
-              ))}
-            </div>
+                {canReorderContent && (
+                  <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                    <GripVertical className="w-3 h-3" />
+                    <span>Drag to reorder content items</span>
+                  </div>
+                )}
+                {!canReorderContent && (currentUserRole === 'admin' || currentUserRole === 'teacher') && courseStatus === 'Published' && (
+                  <div className="text-xs text-amber-600 dark:text-amber-400 mb-2 flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 rounded-lg border border-amber-200 dark:border-amber-800">
+                    <Info className="w-3 h-3" />
+                    <span>Content reordering is disabled for published courses. Unpublish the course to make changes.</span>
+                  </div>
+                )}
+                {canReorderContent ? (
+                  <SortableContext 
+                    items={lesson.contentItems.map(item => item.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {lesson.contentItems.map((item) => (
+                      <SortableContentItemComponent
+                        key={item.id}
+                        item={item}
+                        lessonId={lesson.id}
+                        sectionId={sectionId}
+                        onUpdate={onUpdateContentItem}
+                        onRemove={onRemoveContentItem}
+                        isRemovable={true}
+                        courseId={courseId}
+                        canReorder={canReorderContent}
+                      />
+                    ))}
+                  </SortableContext>
+                ) : (
+                  lesson.contentItems.map((item) => (
+                    <LessonContentItemComponent
+                      key={item.id}
+                      item={item}
+                      lessonId={lesson.id}
+                      sectionId={sectionId}
+                      onUpdate={onUpdateContentItem}
+                      onRemove={onRemoveContentItem}
+                      isRemovable={true}
+                      courseId={courseId}
+                      canReorder={false}
+                    />
+                  ))
+                )}
+              </div>
             ) : (
               <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                 <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-full flex items-center justify-center">
@@ -1063,6 +1120,62 @@ const SortableItem = ({ id, children, type, sectionId }: { id: string, children:
     </div>
   );
 };
+// #endregion
+
+// #region SortableContentItem Component
+interface SortableContentItemProps {
+  item: LessonContentItem;
+  lessonId: string;
+  sectionId: string;
+  onUpdate: (lessonId: string, itemId: string, updatedItem: Partial<LessonContentItem>) => void;
+  onRemove: (lessonId: string, itemId: string) => void;
+  isRemovable: boolean;
+  courseId: string | undefined;
+  canReorder: boolean;
+}
+
+const SortableContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, onRemove, isRemovable, courseId, canReorder }: SortableContentItemProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ 
+    id: item.id,
+    disabled: !canReorder,
+    data: {
+      type: 'contentItem',
+      sectionId: sectionId,
+      lessonId: lessonId
+    }
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <LessonContentItemComponent
+        item={item}
+        lessonId={lessonId}
+        sectionId={sectionId}
+        onUpdate={onUpdate}
+        onRemove={onRemove}
+        isRemovable={isRemovable}
+        courseId={courseId}
+        canReorder={canReorder}
+        dragHandleProps={canReorder ? { ...attributes, ...listeners } : {}}
+      />
+    </div>
+  );
+});
+
+SortableContentItemComponent.displayName = "SortableContentItemComponent";
 // #endregion
 
 // #region QuizBuilder Component
@@ -3302,6 +3415,42 @@ const CourseBuilder = () => {
             }
           }
         }
+
+        // Handle content item reordering within a lesson
+        if (activeType === 'contentItem') {
+          const sourceSectionId = active.data.current?.sectionId;
+          const sourceSectionIndex = newSections.findIndex(s => s.id === sourceSectionId);
+          
+          if (sourceSectionIndex > -1) {
+            const sourceSection = newSections[sourceSectionIndex];
+            const sourceLesson = sourceSection.lessons.find(lesson => 
+              lesson.contentItems.some(item => item.id === activeId)
+            );
+            
+            if (sourceLesson) {
+              const oldIndex = sourceLesson.contentItems.findIndex(item => item.id === activeId);
+              const newIndex = sourceLesson.contentItems.findIndex(item => item.id === overId);
+              
+              if (oldIndex !== -1 && newIndex !== -1) {
+                const reorderedContentItems = arrayMove(sourceLesson.contentItems, oldIndex, newIndex);
+                const updatedLesson = {
+                  ...sourceLesson,
+                  contentItems: reorderedContentItems.map((item, index) => ({
+                    ...item,
+                    position: index + 1
+                  }))
+                };
+                
+                newSections[sourceSectionIndex] = {
+                  ...sourceSection,
+                  lessons: sourceSection.lessons.map(lesson => 
+                    lesson.id === sourceLesson.id ? updatedLesson : lesson
+                  )
+                };
+              }
+            }
+          }
+        }
       }
       
       // Restore lesson states if a lesson was dragged
@@ -3527,6 +3676,10 @@ const CourseBuilder = () => {
     currentUserRole === 'admin' ||
     (currentUserRole === 'teacher' && user.id === courseData.authorId && (courseData.status === 'Draft' || courseData.status === 'Rejected'))
   );
+
+  // Check if user can reorder content items (admin and teacher only, and only in draft mode)
+  const canReorderContent = (currentUserRole === 'admin' || currentUserRole === 'teacher') && 
+                           (courseData.status === 'Draft' || courseData.status === 'Rejected');
 
   const isFormValid = Object.keys(validationErrors).length === 0;
 
@@ -4446,6 +4599,9 @@ const CourseBuilder = () => {
                                               onUpdateContentItem={updateContentItem}
                                               onRemoveContentItem={removeContentItem}
                                               onShowContentTypeSelector={handleShowContentTypeSelector}
+                                              canReorderContent={canReorderContent}
+                                              currentUserRole={currentUserRole}
+                                              courseStatus={courseData.status}
                                             />
                                           </div>
                                         )}
@@ -4513,25 +4669,28 @@ const CourseBuilder = () => {
                           </CardHeader>
                         </Card> :
                         <div className="scale-105">
-                                                <LessonContainer
-                          lesson={
-                            courseData.sections
-                              .flatMap(s => s.lessons)
-                              .find(l => l.id === activeId) || { id: '', title: '', overview: '', contentItems: [] }
-                          }
-                          sectionId={
-                            courseData.sections.find(s => s.lessons.some(l => l.id === activeId))?.id || ''
-                          }
-                          onUpdate={() => {}}
-                          onRemove={() => {}}
-                          isRemovable={false}
-                          dragHandleProps={{}}
-                          onToggleCollapse={() => {}}
-                          courseId={courseId}
-                          onUpdateContentItem={() => {}}
-                          onRemoveContentItem={() => {}}
-                          onShowContentTypeSelector={() => {}}
-                        />
+                          <LessonContainer
+                            lesson={
+                              courseData.sections
+                                .flatMap(s => s.lessons)
+                                .find(l => l.id === activeId) || { id: '', title: '', overview: '', contentItems: [] }
+                            }
+                            sectionId={
+                              courseData.sections.find(s => s.lessons.some(l => l.id === activeId))?.id || ''
+                            }
+                            onUpdate={() => {}}
+                            onRemove={() => {}}
+                            isRemovable={false}
+                            dragHandleProps={{}}
+                            onToggleCollapse={() => {}}
+                            courseId={courseId}
+                            onUpdateContentItem={() => {}}
+                            onRemoveContentItem={() => {}}
+                            onShowContentTypeSelector={() => {}}
+                            canReorderContent={true}
+                            currentUserRole={currentUserRole}
+                            courseStatus={courseData.status}
+                          />
                         </div>
                       ) : null}
                     </DragOverlay>

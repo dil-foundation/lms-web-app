@@ -36,6 +36,7 @@ const CourseManagement = lazy(() => import('@/components/admin/CourseManagement'
 const ReportsAnalytics = lazy(() => import('@/components/admin/ReportsAnalytics').then(module => ({ default: module.ReportsAnalytics })));
 const APEXAdmin = lazy(() => import('@/components/admin/AIAssistantAdmin').then(module => ({ default: module.APEXAdmin })));
 const IRIS = lazy(() => import('@/components/admin/AIAdminAssistant').then(module => ({ default: module.IRIS })));
+const IRISv2 = lazy(() => import('@/components/admin/IRISv2').then(module => ({ default: module.IRISv2 })));
 
 const StageZero = lazy(() => import('@/pages/practice/StageZero').then(module => ({ default: module.StageZero })));
 const LessonDetail = lazy(() => import('@/pages/practice/LessonDetail').then(module => ({ default: module.LessonDetail })));
@@ -331,7 +332,7 @@ const Dashboard = () => {
                           <Route path="/grade-assignments/:assignmentId/student/:studentId" element={<StudentSubmissionDetail />} />
                           <Route path="/admin-settings" element={<AdminSecurity />} />
                           <Route path="/apex-admin" element={<APEXAdmin />} />
-                          <Route path="/iris" element={<IRIS userProfile={finalProfile} />} />
+                          <Route path="/iris" element={<IRISv2 />} />
                           <Route path="/test-admin-settings" element={<AdminSecurity />} />
                           <Route path="/security" element={<AdminSecurity />} />
                           <Route path="/integration-apis" element={<IntegrationAPIs userProfile={finalProfile} />} />
