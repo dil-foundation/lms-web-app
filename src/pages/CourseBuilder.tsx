@@ -1684,6 +1684,10 @@ const CourseBuilder = () => {
                     *,
                     quiz:quiz_questions(
                       *,
+                      math_expression,
+                      math_tolerance,
+                      math_hint,
+                      math_allow_drawing,
                       options:question_options(*)
                     )
                   )
@@ -1766,7 +1770,12 @@ const CourseBuilder = () => {
                           const quizQuestions = ci.quiz.map((q: any) => ({
                             ...q,
                             question_type: q.question_type || 'single_choice', // Default for backward compatibility
-                            options: q.options.sort((a: any, b: any) => a.position - b.position)
+                            options: q.options.sort((a: any, b: any) => a.position - b.position),
+                            // Ensure math fields are included
+                            math_expression: q.math_expression || null,
+                            math_tolerance: q.math_tolerance || null,
+                            math_hint: q.math_hint || null,
+                            math_allow_drawing: q.math_allow_drawing || false
                           }));
                           quizData = { id: ci.id, questions: quizQuestions };
                         }
@@ -2250,7 +2259,11 @@ const CourseBuilder = () => {
                         .from('quiz_questions')
                         .update({ 
                           question_text: question.question_text,
-                          question_type: question.question_type
+                          question_type: question.question_type,
+                          math_expression: question.math_expression || null,
+                          math_tolerance: question.math_tolerance || null,
+                          math_hint: question.math_hint || null,
+                          math_allow_drawing: question.math_allow_drawing || false
                         })
                         .eq('id', existingQuestion.id);
                       
@@ -2297,7 +2310,11 @@ const CourseBuilder = () => {
                           lesson_content_id: existingContent.id,
                           question_text: question.question_text,
                           question_type: question.question_type,
-                          position: qIndex
+                          position: qIndex,
+                          math_expression: question.math_expression || null,
+                          math_tolerance: question.math_tolerance || null,
+                          math_hint: question.math_hint || null,
+                          math_allow_drawing: question.math_allow_drawing || false
                         })
                         .select('id')
                         .single();
@@ -2356,7 +2373,11 @@ const CourseBuilder = () => {
                         lesson_content_id: newContent.id,
                         question_text: question.question_text,
                         question_type: question.question_type,
-                        position: qIndex
+                        position: qIndex,
+                        math_expression: question.math_expression || null,
+                        math_tolerance: question.math_tolerance || null,
+                        math_hint: question.math_hint || null,
+                        math_allow_drawing: question.math_allow_drawing || false
                       })
                       .select('id')
                       .single();
@@ -2734,6 +2755,10 @@ const CourseBuilder = () => {
                               question_text: question.question_text,
                               question_type: question.question_type,
                               position: qIndex,
+                              math_expression: question.math_expression || null,
+                              math_tolerance: question.math_tolerance || null,
+                              math_hint: question.math_hint || null,
+                              math_allow_drawing: question.math_allow_drawing || false
                           })
                           .select('id').single();
 

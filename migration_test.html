@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Math Migration Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Math Migration Test</h1>
+    <div id="output"></div>
+    
+    <script>
+        const SUPABASE_URL = 'https://yfaiauooxwvekdimfeuu.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlmYWlhdW9veHd2ZWtkaW1mZXV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU5NzQ4MDAsImV4cCI6MjA1MTU1MDgwMH0.placeholder_key';
+        
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        async function testDatabase() {
+            const output = document.getElementById('output');
+            output.innerHTML = '<p>Testing database schema...</p>';
+            
+            try {
+                // Test if math fields exist
+                const { data, error } = await supabase
+                    .from('quiz_questions')
+                    .select('id, question_type, math_expression, math_tolerance, math_hint, math_allow_drawing')
+                    .limit(1);
+                
+                if (error) {
+                    output.innerHTML += `<p style="color: red;">Error: ${error.message}</p>`;
+                    if (error.message.includes('column') && error.message.includes('does not exist')) {
+                        output.innerHTML += '<p style="color: orange;">The math fields do not exist in the database. You need to apply the migrations.</p>';
+                        output.innerHTML += '<p>Go to your Supabase dashboard and run the SQL from apply_math_migrations.sql</p>';
+                    }
+                } else {
+                    output.innerHTML += `<p style="color: green;">Success! Math fields exist in database.</p>`;
+                    output.innerHTML += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                }
+                
+                // Test a specific question
+                const { data: questionData, error: questionError } = await supabase
+                    .from('quiz_questions')
+                    .select('*')
+                    .eq('question_type', 'math_expression')
+                    .limit(1);
+                
+                if (questionError) {
+                    output.innerHTML += `<p style="color: red;">Error querying math questions: ${questionError.message}</p>`;
+                } else {
+                    output.innerHTML += `<p>Math expression questions found: ${questionData?.length || 0}</p>`;
+                    if (questionData && questionData.length > 0) {
+                        output.innerHTML += `<pre>${JSON.stringify(questionData[0], null, 2)}</pre>`;
+                    }
+                }
+                
+            } catch (err) {
+                output.innerHTML += `<p style="color: red;">Exception: ${err.message}</p>`;
+            }
+        }
+        
+        // Run test when page loads
+        testDatabase();
+    </script>
+</body>
+</html>
