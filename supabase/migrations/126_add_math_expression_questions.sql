@@ -70,9 +70,11 @@ CREATE POLICY "Teachers can view math answers for their courses" ON quiz_math_an
       SELECT 1 FROM quiz_submissions qs
       JOIN course_lesson_content clc ON qs.lesson_content_id = clc.id
       JOIN course_lessons cl ON clc.lesson_id = cl.id
-      JOIN courses c ON cl.course_id = c.id
+      JOIN course_sections cs ON cl.section_id = cs.id
+      JOIN course_members cm ON cs.course_id = cm.course_id
       WHERE qs.id = quiz_math_answers.quiz_submission_id
-      AND c.teacher_id = auth.uid()
+      AND cm.user_id = auth.uid()
+      AND cm.role = 'teacher'
     )
   );
 
