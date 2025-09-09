@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,18 +35,6 @@ interface ChatMessage {
   data?: any;
 }
 
-interface ReportsQuery {
-  type: 'timeline' | 'user' | 'course' | 'engagement' | 'general';
-  parameters: {
-    startDate?: string;
-    endDate?: string;
-    userId?: string;
-    courseId?: string;
-    metric?: string;
-  };
-  query: string;
-}
-
 interface ReportsChatbotProps {
   className?: string;
   minimized?: boolean;
@@ -69,6 +57,14 @@ export const ReportsChatbot: React.FC<ReportsChatbotProps> = ({
       timestamp: new Date()
     }
   ]);
+  
+  // Debug: Log messages changes
+  useEffect(() => {
+    console.log('📝 Messages updated:', messages.length, 'messages');
+    messages.forEach((msg, idx) => {
+      console.log(`Message ${idx}:`, msg.type, msg.content.substring(0, 50) + '...');
+    });
+  }, [messages]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
@@ -84,7 +80,8 @@ export const ReportsChatbot: React.FC<ReportsChatbotProps> = ({
   }, [messages]);
 
   // Function to send a message directly with a prompt
-  const sendMessageWithPrompt = async (prompt: string) => {
+  const sendMessageWithPrompt = useCallback(async (prompt: string) => {
+    console.log('🚀 sendMessageWithPrompt called with:', prompt);
     if (!prompt.trim() || isLoading) return;
 
     const userMessage: ChatMessage = {
@@ -99,7 +96,18 @@ export const ReportsChatbot: React.FC<ReportsChatbotProps> = ({
     setIsLoading(true);
 
     try {
-      const aiResponse = await ReportsAIService.generateReportResponse(prompt);
+      // Convert messages to conversation history format (reduced for token efficiency)
+      const conversationHistory = messages
+        .filter(msg => msg.type !== 'user' || msg.content !== prompt) // Exclude the current message
+        .slice(-3) // Keep only last 3 messages to save tokens
+        .map(msg => ({
+          role: msg.type === 'user' ? 'user' as const : 'assistant' as const,
+          content: msg.content.substring(0, 500) // Truncate long messages
+        }));
+
+      console.log('📝 sendMessageWithPrompt - Sending conversation history:', conversationHistory.length, 'messages');
+      
+      const aiResponse = await ReportsAIService.generateReportResponse(prompt, undefined, conversationHistory);
       
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -128,12 +136,37 @@ export const ReportsChatbot: React.FC<ReportsChatbotProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isLoading, toast, messages]);
+
+  // Reset chat function
+  const handleResetChat = useCallback(() => {
+    // Create a fresh initial message with a new timestamp and ID
+    const initialMessage: ChatMessage = {
+      id: `initial-${Date.now()}`,
+      type: 'assistant',
+      content: 'Hello! I\'m your Reports AI Assistant. Ask me specific questions about your platform\'s data, generate reports for any timeline, and get insights on user engagement and course performance.',
+      timestamp: new Date()
+    };
+    
+    // Force state updates with React's functional updates
+    setMessages(() => [initialMessage]);
+    setInputValue(() => '');
+    setIsLoading(() => false);
+    
+    // Show success message after state updates
+    setTimeout(() => {
+      toast({
+        title: 'Chat Reset',
+        description: 'Conversation has been cleared successfully.',
+      });
+    }, 100);
+  }, [toast]);
 
   // Listen for quick action events from IRISv2
   useEffect(() => {
     const handleQuickAction = (event: CustomEvent) => {
       const { prompt } = event.detail;
+      console.log('🔍 Quick action triggered:', prompt);
       if (prompt) {
         sendMessageWithPrompt(prompt);
       }
@@ -150,140 +183,7 @@ export const ReportsChatbot: React.FC<ReportsChatbotProps> = ({
       window.removeEventListener('quickActionSelected', handleQuickAction as EventListener);
       window.removeEventListener('resetChatRequested', handleResetRequest as EventListener);
     };
-  }, [isLoading, toast]);
-
-  const parseUserQuery = (query: string): ReportsQuery => {
-    const queryLower = query.toLowerCase();
-    
-    // Extract dates
-    const dateRegex = /(\d{4}-\d{2}-\d{2})|(\d{1,2}\/\d{1,2}\/\d{4})|(\d{1,2}-\d{1,2}-\d{4})/g;
-    const dates = query.match(dateRegex);
-    
-    // Determine query type
-    let type: ReportsQuery['type'] = 'general';
-    
-    if (queryLower.includes('user') || queryLower.includes('student') || queryLower.includes('teacher')) {
-      type = 'user';
-    } else if (queryLower.includes('course') || queryLower.includes('lesson')) {
-      type = 'course';
-    } else if (queryLower.includes('engagement') || queryLower.includes('activity')) {
-      type = 'engagement';
-    } else if (dates && dates.length > 0) {
-      type = 'timeline';
-    }
-
-    return {
-      type,
-      parameters: {
-        startDate: dates?.[0],
-        endDate: dates?.[1],
-      },
-      query
-    };
-  };
-
-  const generateReportData = async (parsedQuery: ReportsQuery): Promise<any> => {
-    try {
-      // Generate AI response using OpenAI (it will handle context and timeframe internally)
-      const aiResponse = await ReportsAIService.generateReportResponse(
-        parsedQuery.query
-        // No context parameter - let the service handle timeframe extraction
-      );
-
-      if (aiResponse.success) {
-        return {
-          type: 'ai_generated_report',
-          content: aiResponse.response,
-          data: aiResponse.reportData || {}
-        };
-      } else {
-        throw new Error(aiResponse.error || 'Failed to generate report');
-      }
-    } catch (error) {
-      console.error('Error generating AI report:', error);
-      
-      // Fallback to basic mock data if AI service fails
-      return {
-        type: 'fallback_response',
-        content: `I encountered an issue generating your report for "${parsedQuery.query}". Here's some basic information I can provide:
-
-📊 **Current Platform Status:**
-- Total registered users: 1,250+
-- Active courses: 15
-- Average engagement rate: 78%
-- Course completion rate: 65%
-
-Please try rephrasing your question or contact support if the issue persists.`,
-        data: {
-          totalUsers: 1250,
-          totalCourses: 15,
-          engagementRate: 78,
-          completionRate: 65
-        }
-      };
-    }
-  };
-
-  const formatReportResponse = (reportData: any, originalQuery: string): string => {
-    switch (reportData.type) {
-      case 'ai_generated_report':
-        // Return the AI-generated content directly
-        return reportData.content;
-      
-      case 'fallback_response':
-        // Return fallback content
-        return reportData.content;
-
-      case 'timeline_report':
-        return `📊 **Report for ${reportData.data.timeframe}**
-
-🙋‍♂️ **Total Users**: ${reportData.data.totalUsers.toLocaleString()}
-✨ **New Users**: ${reportData.data.newUsers.toLocaleString()}
-📈 **Engagement Rate**: ${reportData.data.engagement}%
-🎯 **Courses Completed**: ${reportData.data.coursesCompleted.toLocaleString()}
-
-This shows strong growth in user acquisition and course completion rates during your selected timeframe.`;
-
-      case 'user_report':
-        return `👥 **User Analytics Report**
-
-🔥 **Active Users**: ${reportData.data.activeUsers.toLocaleString()}
-🆕 **New Registrations**: ${reportData.data.newRegistrations.toLocaleString()}
-📊 **Average Progress**: ${reportData.data.averageProgress}%
-
-**Top Performers**: ${reportData.data.topPerformers.join(', ')}
-
-Your user base is showing healthy activity levels with consistent progress across courses.`;
-
-      case 'course_report':
-        return `📚 **Course Performance Report**
-
-📖 **Total Courses**: ${reportData.data.totalCourses}
-✅ **Completion Rate**: ${reportData.data.completionRate}%
-⭐ **Average Rating**: ${reportData.data.averageRating}/5.0
-
-**Most Popular Courses**:
-${reportData.data.popularCourses.map((course: string, index: number) => `${index + 1}. ${course}`).join('\n')}
-
-Your courses are performing well with high completion rates and excellent user satisfaction.`;
-
-      case 'engagement_report':
-        return `📱 **Engagement Analytics**
-
-👤 **Daily Active Users**: ${reportData.data.dailyActiveUsers.toLocaleString()}
-⏱️ **Avg Session Duration**: ${reportData.data.sessionDuration} minutes
-🎯 **Interaction Rate**: ${reportData.data.interactionRate}%
-🔄 **Retention Rate**: ${reportData.data.retentionRate}%
-
-Your platform shows excellent user engagement with strong retention metrics.`;
-
-      case 'general_response':
-        return reportData.data.message;
-
-      default:
-        return "I've generated the report based on your query. Is there anything specific you'd like me to explain further?";
-    }
-  };
+  }, [sendMessageWithPrompt, handleResetChat]);
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
@@ -296,26 +196,32 @@ Your platform shows excellent user engagement with strong retention metrics.`;
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const queryText = inputValue.trim();
     setInputValue('');
     setIsLoading(true);
 
     try {
-      // Parse the user query
-      const parsedQuery = parseUserQuery(userMessage.content);
-      
-      // Generate report data (this would call OpenAI API in production)
-      const reportData = await generateReportData(parsedQuery);
-      
-      // Format the response
-      const responseContent = formatReportResponse(reportData, userMessage.content);
+      // Convert messages to conversation history format (reduced for token efficiency)
+      const conversationHistory = messages
+        .filter(msg => msg.type !== 'user' || msg.content !== queryText) // Exclude the current message
+        .slice(-3) // Keep only last 3 messages to save tokens
+        .map(msg => ({
+          role: msg.type === 'user' ? 'user' as const : 'assistant' as const,
+          content: msg.content.substring(0, 500) // Truncate long messages
+        }));
 
+      console.log('📝 Sending conversation history:', conversationHistory.length, 'messages');
+      
+      // Use ReportsAIService directly for consistent behavior
+      const aiResponse = await ReportsAIService.generateReportResponse(queryText, undefined, conversationHistory);
+      
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: responseContent,
+        content: aiResponse.response || 'Sorry, I could not generate a response.',
         timestamp: new Date(),
-        reportData,
-        data: reportData?.data || reportData
+        reportData: aiResponse.reportData,
+        data: aiResponse.reportData
       };
 
       setMessages(prev => [...prev, assistantMessage]);
@@ -425,11 +331,7 @@ Your platform shows excellent user engagement with strong retention metrics.`;
     });
   };
 
-  // Helper function to parse markdown content
-  const parseMarkdownContent = (text: string) => {
-    const lines = text.split('\n');
-    
-    return lines.map((line, lineIndex) => {
+  const processRegularLine = (line: string, lineIndex: number) => {
       // Handle empty lines
       if (line.trim() === '') {
         return <br key={lineIndex} />;
@@ -505,7 +407,288 @@ Your platform shows excellent user engagement with strong retention metrics.`;
           {parseInlineMarkdown(line)}
         </p>
       );
+  };
+
+  // Helper function to parse markdown content
+  const parseMarkdownContent = (text: string) => {
+    const lines = text.split('\n');
+    let result: React.ReactNode[] = [];
+    let tableLines: string[] = [];
+    let inTable = false;
+    
+    const processTable = (tableLines: string[]) => {
+      if (tableLines.length < 2) return null;
+      
+      // First line is headers, second line is separator (ignored), rest are data
+      const headers = tableLines[0].split('|').map(h => h.trim()).filter(h => h);
+      const rows = tableLines.slice(2).map(row => 
+        row.split('|').map(cell => cell.trim()).filter(cell => cell)
+      );
+      
+      return (
+        <div className="my-4 overflow-x-auto">
+          <table className="w-full border border-border rounded-lg overflow-hidden border-collapse">
+            <thead>
+              <tr>
+                {headers.map((header, index) => (
+                  <th key={index} className="border border-border px-4 py-2 bg-muted font-semibold text-foreground text-left">
+                    {parseInlineMarkdown(header)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, rowIndex) => (
+                <tr key={rowIndex}>
+                  {row.map((cell, cellIndex) => (
+                    <td key={cellIndex} className="border border-border px-4 py-2 bg-background text-foreground">
+                      {parseInlineMarkdown(cell)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    };
+    
+    lines.forEach((line, lineIndex) => {
+      // Check if this line looks like a table row
+      const isTableRow = line.includes('|') && line.trim().startsWith('|') && line.trim().endsWith('|');
+      const isTableSeparator = line.includes('|') && line.includes('-');
+      
+      if (isTableRow || isTableSeparator) {
+        if (!inTable) {
+          inTable = true;
+          tableLines = [];
+        }
+        tableLines.push(line);
+      } else {
+        // End of table, process it
+        if (inTable) {
+          const table = processTable(tableLines);
+          if (table) {
+            result.push(<div key={`table-${lineIndex}`}>{table}</div>);
+          }
+          inTable = false;
+          tableLines = [];
+        }
+        
+        // Process regular line
+        result.push(processRegularLine(line, lineIndex));
+      }
     });
+    
+    // Handle table at end of content
+    if (inTable && tableLines.length > 0) {
+      const table = processTable(tableLines);
+      if (table) {
+        result.push(<div key={`table-end`}>{table}</div>);
+      }
+    }
+    
+    return result;
+  };
+
+  // UNIVERSAL list formatter - works for ANY entity type (users, courses, etc.)
+  const formatUserList = (text: string): string => {
+    // Skip formatting for initial greeting messages
+    if (text.includes('Hello! I\'m your Reports AI Assistant') || 
+        text.includes('Ask me specific questions') ||
+        text.length < 50) {
+      return text;
+    }
+    
+    const lines = text.split('\n');
+    let userData: Array<{name: string, email: string, date: string, role?: string}> = [];
+    let courseData: Array<{title: string, subtitle: string, status: string, created: string}> = [];
+    
+    // SMART DETECTION: Extract entity type dynamically from the text
+    const userTypeMatch = text.match(/(\d+)\s+([\w]+)\s+(?:registered|who are|enrolled|not enrolled)/i);
+    const courseMatch = text.match(/(\d+)\s+(courses?|classes?)/i);
+    
+    // Only process if we have clear indicators of list data
+    const hasTableStructure = text.includes('|') && text.includes('---');
+    const hasListKeywords = text.toLowerCase().includes('found') || text.toLowerCase().includes('list') || 
+                           text.toLowerCase().includes('registered') || text.toLowerCase().includes('enrolled');
+    
+    // Skip if this doesn't look like actual data response
+    if (!hasTableStructure && !hasListKeywords && !userTypeMatch && !courseMatch) {
+      return text;
+    }
+    
+    const isUserList = text.toLowerCase().includes('student') || text.toLowerCase().includes('teacher') || 
+                      text.toLowerCase().includes('admin') || text.toLowerCase().includes('user');
+    const isCourseList = text.toLowerCase().includes('course') || text.toLowerCase().includes('class');
+    
+    // ENROLLMENT-SPECIFIC DETECTION
+    const isNotEnrolled = text.toLowerCase().includes('not enrolled') || text.toLowerCase().includes('without') || 
+                         text.toLowerCase().includes('haven\'t enrolled');
+    const isEnrolled = text.toLowerCase().includes('enrolled') && !isNotEnrolled;
+    
+    // ACTIVITY-SPECIFIC DETECTION
+    const isRecentActivity = text.toLowerCase().includes('logged in') || text.toLowerCase().includes('login') ||
+                            (text.toLowerCase().includes('active') && (text.toLowerCase().includes('today') || 
+                             text.toLowerCase().includes('24') || text.toLowerCase().includes('recent')));
+    
+    if (isCourseList && courseMatch) {
+      // COURSE LIST FORMATTING
+      const courseCount = courseMatch[1];
+      const entityType = 'courses';
+      
+      // Extract course data from various formats
+      for (const line of lines) {
+        // Format: | Course Title | Subtitle | Status | Created Date |
+        if (line.includes('|') && !line.includes('Title') && !line.includes('---')) {
+          const parts = line.split('|').map(p => p.trim()).filter(p => p);
+          if (parts.length >= 3) {
+            courseData.push({
+              title: parts[0] || 'Untitled Course',
+              subtitle: parts[1] || 'No description',
+              status: parts[2] || 'Unknown',
+              created: parts[3] || 'Unknown'
+            });
+          }
+        }
+      }
+      
+      if (courseData.length > 0) {
+        let formattedText = `## 📚 Courses Available on the Platform\n\n`;
+        formattedText += `### Summary\n`;
+        formattedText += `Found **${courseData.length} courses** available on the platform.\n\n`;
+        formattedText += `| Course Title | Description | Status | Created Date |\n`;
+        formattedText += `|--------------|-------------|--------|-------------|\n`;
+        
+        for (const course of courseData) {
+          formattedText += `| ${course.title} | ${course.subtitle} | ${course.status} | ${course.created} |\n`;
+        }
+        
+        formattedText += `\n### Recommendations\n`;
+        formattedText += `1. Promote active courses to increase enrollment\n`;
+        formattedText += `2. Review inactive courses for potential updates or archival\n`;
+        formattedText += `3. Monitor course performance and student feedback\n`;
+        
+        return formattedText;
+      }
+    } else if (isUserList) {
+      // USER LIST FORMATTING with enrollment-specific logic
+      const userType = userTypeMatch ? userTypeMatch[2].toLowerCase() : 'users';
+      
+      // DYNAMIC ICONS: Map any user type to appropriate icon
+      const iconMap: {[key: string]: string} = {
+        'teacher': '👨‍🏫', 'teachers': '👨‍🏫',
+        'student': '📚', 'students': '📚', 
+        'admin': '👑', 'admins': '👑',
+        'user': '👥', 'users': '👥'
+      };
+      const icon = iconMap[userType] || '📚';
+      
+      // DYNAMIC TITLE based on enrollment status or activity
+      const capitalizedType = userType.charAt(0).toUpperCase() + userType.slice(1);
+      let title = `${capitalizedType} Registered on the Platform`;
+      
+      if (isRecentActivity) {
+        title = `${capitalizedType} Recently Active on Platform`;
+      } else if (isNotEnrolled) {
+        title = `${capitalizedType} Not Enrolled in Any Course`;
+      } else if (isEnrolled) {
+        title = `${capitalizedType} Enrolled in Courses`;
+      }
+      
+      // Extract user data from various formats
+      for (const line of lines) {
+        // Format: | Arun | Varadharajalu | arunvaradharajalu@gmail.com | 2025-07-09 |
+        if (line.includes('|') && line.includes('@') && !line.includes('First Name')) {
+          const parts = line.split('|').map(p => p.trim()).filter(p => p);
+          if (parts.length >= 4) {
+            const firstName = parts[0];
+            const lastName = parts[1];
+            const email = parts[2];
+            const date = parts[3];
+            const role = parts[4] || 'Registered';
+            
+            userData.push({
+              name: `${firstName} ${lastName}`,
+              email: email,
+              date: date,
+              role: role
+            });
+          }
+        }
+      }
+      
+      // Format the response regardless of whether we have data or not
+      let formattedText = `## ${icon} ${title}\n\n`;
+      formattedText += `### Summary\n`;
+      
+      if (isRecentActivity) {
+        if (userData.length === 0) {
+          formattedText += `**No ${userType} have logged in within the past 24 hours.**\n\n`;
+          formattedText += `This could indicate:\n`;
+          formattedText += `- Low platform engagement\n`;
+          formattedText += `- Users may be accessing during different time periods\n`;
+          formattedText += `- Possible technical issues preventing login\n\n`;
+        } else {
+          formattedText += `Found **${userData.length} ${userType}** who have been active recently (logged in within the past 24 hours).\n\n`;
+        }
+      } else if (isNotEnrolled) {
+        formattedText += `Found **${userData.length} ${userType}** who haven't enrolled in any course yet.\n\n`;
+      } else if (isEnrolled) {
+        formattedText += `Found **${userData.length} ${userType}** who are enrolled in at least one course.\n\n`;
+      } else {
+        formattedText += `Found **${userData.length} ${userType}** who are registered on the platform.\n\n`;
+      }
+      
+      // Create the table only if we have data
+      if (userData.length > 0) {
+        formattedText += `| Name | Email | Registration Date | Status |\n`;
+        formattedText += `|------|-------|-------------------|--------|\n`;
+        
+        for (const user of userData) {
+          let status = user.role || 'Registered';
+          if (isRecentActivity) {
+            status = 'Recently Active';
+          } else if (isNotEnrolled) {
+            status = 'Not Enrolled';
+          } else if (isEnrolled) {
+            status = 'Enrolled';
+          }
+          formattedText += `| ${user.name} | ${user.email} | ${user.date} | ${status} |\n`;
+        }
+      }
+      
+      // ACTIVITY/ENROLLMENT-SPECIFIC RECOMMENDATIONS
+      formattedText += `\n### Recommendations\n`;
+      if (isRecentActivity) {
+        if (userData.length === 0) {
+          formattedText += `1. Review system logs to ensure login tracking is working correctly\n`;
+          formattedText += `2. Consider sending email reminders to encourage platform engagement\n`;
+          formattedText += `3. Check if users are experiencing technical difficulties accessing the platform\n`;
+          formattedText += `4. Consider expanding the time window to see broader user activity patterns\n`;
+        } else {
+          formattedText += `1. Engage with these active users through personalized content and notifications\n`;
+          formattedText += `2. Analyze their activity patterns to optimize platform features\n`;
+          formattedText += `3. Consider sending targeted promotions or course recommendations while they're engaged\n`;
+        }
+      } else if (isNotEnrolled) {
+        formattedText += `1. Send personalized course recommendations to these students\n`;
+        formattedText += `2. Follow up with enrollment assistance and onboarding support\n`;
+        formattedText += `3. Consider targeted marketing campaigns to encourage course enrollment\n`;
+      } else if (isEnrolled) {
+        formattedText += `1. Monitor their progress and engagement levels in enrolled courses\n`;
+        formattedText += `2. Provide additional support for struggling students\n`;
+        formattedText += `3. Consider advanced course recommendations for high performers\n`;
+      } else {
+        formattedText += `1. Send personalized welcome and onboarding communications\n`;
+        formattedText += `2. Provide role-specific training and support materials\n`;
+        formattedText += `3. Monitor engagement levels and platform activity\n`;
+      }
+      
+      return formattedText;
+    }
+    
+    return text; // Return original if no formatting needed
   };
 
   const parseMarkdownToReact = (text: string) => {
@@ -514,11 +697,14 @@ Your platform shows excellent user engagement with strong retention metrics.`;
       return <span>No content available</span>;
     }
     
+    // First, try to format user lists (students, teachers, etc.)
+    const formattedText = formatUserList(text);
+    
     // Check if the text contains HTML tables
-    if (text.includes('<table')) {
+    if (formattedText.includes('<table')) {
       // For mixed HTML and markdown content, we need to process both
       // Split by table tags and process each part
-      const parts = text.split(/(<table[\s\S]*?<\/table>)/);
+      const parts = formattedText.split(/(<table[\s\S]*?<\/table>)/);
       
       return (
         <div className="space-y-4">
@@ -547,7 +733,7 @@ Your platform shows excellent user engagement with strong retention metrics.`;
     }
     
     // For regular markdown content without tables
-    return parseMarkdownContent(text);
+    return parseMarkdownContent(formattedText);
   };
 
   const getQueryType = (query: string): string => {
@@ -566,33 +752,6 @@ Your platform shows excellent user engagement with strong retention metrics.`;
     } else {
       return 'General Report Query';
     }
-  };
-
-  const handleResetChat = () => {
-    console.log('Reset button clicked'); // Debug log
-    
-    // Create a fresh initial message with a new timestamp and ID
-    const initialMessage: ChatMessage = {
-      id: `initial-${Date.now()}`,
-      type: 'assistant',
-      content: 'Hello! I\'m your Reports AI Assistant. Ask me specific questions about your platform\'s data, generate reports for any timeline, and get insights on user engagement and course performance.',
-      timestamp: new Date()
-    };
-    
-    // Force state updates with React's functional updates
-    setMessages(() => [initialMessage]);
-    setInputValue(() => '');
-    setIsLoading(() => false);
-    
-    // Show success message after state updates
-    setTimeout(() => {
-      toast({
-        title: 'Chat Reset',
-        description: 'Conversation has been cleared successfully.',
-      });
-    }, 100);
-    
-    console.log('Reset completed'); // Debug log
   };
 
   if (minimized && onToggleSize) {
@@ -619,7 +778,6 @@ Your platform shows excellent user engagement with strong retention metrics.`;
 
   return (
     <Card className={`w-full h-full flex flex-col overflow-hidden ${className || ''}`}>
-      
       <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="flex-1 px-4 overflow-y-auto scrollbar-hide">
