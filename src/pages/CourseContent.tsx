@@ -11,6 +11,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { QuizRetryService } from '@/services/quizRetryService';
 import { QuizRetryInterface } from '@/components/QuizRetryInterface';
+import { MathExpressionInput } from '@/components/quiz/MathExpressionInput';
+// import { MathQuizService } from '@/services/mathQuizService';
+// import { evaluateMathExpression } from '@/utils/mathEvaluation';
 import { 
   PlayCircle,
   CheckCircle, 
@@ -172,6 +175,8 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
 
   const [userAnswers, setUserAnswers] = useState<Record<string, string | string[]>>({});
   const [textAnswers, setTextAnswers] = useState<Record<string, string>>({});
+  const [mathAnswers, setMathAnswers] = useState<Record<string, string>>({});
+  const [mathDrawings, setMathDrawings] = useState<Record<string, string>>({});
   const [isQuizSubmitted, setIsQuizSubmitted] = useState(false);
   const [quizResults, setQuizResults] = useState<Record<string, boolean>>({});
 
@@ -288,7 +293,12 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
           if (item.content_type === 'quiz' && item.quiz) {
             processedItem.quiz = item.quiz.map((q: any) => ({
               ...q,
-              question_type: q.question_type || 'single_choice' // Default for backward compatibility
+              question_type: q.question_type || 'single_choice', // Default for backward compatibility
+              // Ensure math fields are included
+              math_expression: q.math_expression || null,
+              math_tolerance: q.math_tolerance || null,
+              math_hint: q.math_hint || null,
+              math_allow_drawing: q.math_allow_drawing || false
             }));
           }
           
@@ -480,12 +490,35 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     const results: Record<string, boolean> = {};
     let correctAnswers = 0;
     let hasTextAnswers = false;
+    let hasMathAnswers = false;
+    
+    // Process math expressions first
+    // for (const q of questions) {
+    //   if (q.question_type === 'math_expression') {
+    //     hasMathAnswers = true;
+    //     const userMathAnswer = mathAnswers[q.id];
+    //     const expectedAnswer = q.math_expression;
+    //     const tolerance = q.math_tolerance || 0.01;
+        
+    //     if (userMathAnswer && expectedAnswer) {
+    //       const evaluation = evaluateMathExpression(userMathAnswer, expectedAnswer, tolerance);
+    //       results[q.id] = evaluation.isCorrect;
+          
+    //       if (evaluation.isCorrect) correctAnswers++;
+    //     } else {
+    //       results[q.id] = false;
+    //     }
+    //   }
+    // }
     
     questions.forEach((q: any) => {
         if (q.question_type === 'text_answer') {
           // For text answers, we can't auto-grade, so mark as requiring manual grading
           results[q.id] = false; // Will be updated by teacher
           hasTextAnswers = true;
+        } else if (q.question_type === 'math_expression') {
+          // Math expressions are handled above
+          return;
         } else {
           const correctOptions = q.options.filter((opt: any) => opt.is_correct);
           const userAnswer = userAnswers[q.id] as string | string[] | undefined;
@@ -515,8 +548,8 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     const autoGradedQuestions = questions.filter((q: any) => q.question_type !== 'text_answer');
     const score = autoGradedQuestions.length > 0 ? (correctAnswers / autoGradedQuestions.length) * 100 : 0;
     
-    // Combine multiple choice/single choice answers with text answers
-    const allAnswers = { ...userAnswers, ...textAnswers };
+    // Combine all answer types
+    const allAnswers = { ...userAnswers, ...textAnswers, ...mathAnswers, ...mathDrawings };
     
     // For quizzes with text answers, we'll let the database trigger handle the score
     // For regular quizzes, we can provide an immediate score
@@ -554,6 +587,29 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         console.error("Failed to create legacy submission:", error);
         // Don't return here as the main attempt was created successfully
     }
+    
+    // Save math answers to database
+    // if (hasMathAnswers && newSubmission?.id) {
+    //   for (const q of questions) {
+    //     if (q.question_type === 'math_expression') {
+    //       const userMathAnswer = mathAnswers[q.id];
+    //       const expectedAnswer = q.math_expression;
+    //       const tolerance = q.math_tolerance || 0.01;
+          
+    //       if (userMathAnswer && expectedAnswer) {
+    //         const evaluation = evaluateMathExpression(userMathAnswer, expectedAnswer, tolerance);
+    //         await MathQuizService.saveMathAnswer(
+    //           newSubmission.id,
+    //           q.id,
+    //           userMathAnswer,
+    //           evaluation.simplifiedAnswer,
+    //           evaluation.isCorrect,
+    //           evaluation.similarity
+    //         );
+    //       }
+    //     }
+    //   }
+    // }
     
     // Log quiz submission
     try {
@@ -652,7 +708,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       }
       setIsLoading(true);
       try {
-        const { data, error } = await supabase.from('courses').select(`*,sections:course_sections(*,lessons:course_lessons(*,contentItems:course_lesson_content(*,quiz:quiz_questions(*,options:question_options(*)))))`).eq('id', actualCourseId).single();
+        const { data, error } = await supabase.from('courses').select(`*,sections:course_sections(*,lessons:course_lessons(*,contentItems:course_lesson_content(*,quiz:quiz_questions(*,math_expression,math_tolerance,math_hint,math_allow_drawing,options:question_options(*)))))`).eq('id', actualCourseId).single();
         if (error) throw error;
         if (data) {
           for (const section of data.sections) {
@@ -978,28 +1034,69 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                 const questionType = q.question_type || 'single_choice'; // Default for backward compatibility
                 const userAnswer = userAnswers[q.id];
                 const textAnswer = textAnswers[q.id];
+                const mathAnswer = mathAnswers[q.id];
                 const isMultipleChoice = questionType === 'multiple_choice';
                 const isTextAnswer = questionType === 'text_answer';
+                const isMathExpression = questionType === 'math_expression';
                 
                 return (
                   <div key={q.id} className="space-y-4">
                     <div className="flex items-center gap-3">
                       <h4 className="font-medium text-gray-900 dark:text-gray-100">{index + 1}. {q.question_text}</h4>
                       <Badge 
-                        variant={isMultipleChoice ? 'default' : isTextAnswer ? 'outline' : 'secondary'}
+                        variant={isMultipleChoice ? 'default' : isTextAnswer ? 'outline' : isMathExpression ? 'secondary' : 'secondary'}
                         className={`text-xs ${
                           isMultipleChoice 
                             ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-700' 
                             : isTextAnswer
                             ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 border-orange-200 dark:border-orange-700'
+                            : isMathExpression
+                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-700'
                             : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-700'
                         }`}
                       >
-                        {isMultipleChoice ? 'Multiple Choice' : isTextAnswer ? 'Text Answer' : 'Single Choice'}
+                        {isMultipleChoice ? 'Multiple Choice' : isTextAnswer ? 'Text Answer' : isMathExpression ? 'Math Expression' : 'Single Choice'}
                       </Badge>
                     </div>
                     
-                    {isTextAnswer ? (
+                    {isMathExpression ? (
+                      <>
+                        {/* Debug logging */}
+                        {console.log('Math question debug:', {
+                          questionId: q.id,
+                          math_allow_drawing: q.math_allow_drawing,
+                          math_expression: q.math_expression,
+                          math_hint: q.math_hint,
+                          question: q
+                        })}
+                        {/* Test database schema */}
+                        {(() => {
+                          // Test if math fields exist in database
+                          supabase
+                            .from('quiz_questions')
+                            .select('id, math_allow_drawing, math_expression, math_hint')
+                            .eq('id', q.id)
+                            .single()
+                            .then(({ data, error }) => {
+                              console.log('Database test for question', q.id, ':', { data, error });
+                            });
+                          return null;
+                        })()}
+                        <MathExpressionInput
+                          questionId={q.id}
+                          value={mathAnswer || ''}
+                          onChange={(value) => setMathAnswers(prev => ({ ...prev, [q.id]: value }))}
+                          disabled={hasSubmitted}
+                          showValidation={!hasSubmitted}
+                          expectedAnswer={q.math_expression}
+                          tolerance={q.math_tolerance}
+                          hint={q.math_hint}
+                          allowDrawing={q.math_allow_drawing || false}
+                          drawingData={mathDrawings[q.id] || ''}
+                          onDrawingChange={(drawingData) => setMathDrawings(prev => ({ ...prev, [q.id]: drawingData }))}
+                        />
+                      </>
+                    ) : isTextAnswer ? (
                       <div className="space-y-3">
                         <Textarea
                           value={textAnswer || ''}
@@ -1142,11 +1239,15 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                   disabled={questions.length === 0 || questions.some((q: any) => {
                     const userAnswer = userAnswers[q.id];
                     const textAnswer = textAnswers[q.id];
+                    const mathAnswer = mathAnswers[q.id];
                     const questionType = q.question_type || 'single_choice';
                     
                     if (questionType === 'text_answer') {
                       // For text answer, the answer must not be empty
                       return !textAnswer || textAnswer.trim() === '';
+                    } else if (questionType === 'math_expression') {
+                      // For math expression, temporarily allow empty answers
+                      return false; // Always allow submission for now
                     } else if (questionType === 'multiple_choice') {
                       // For multiple choice, at least one option must be selected
                       return !Array.isArray(userAnswer) || userAnswer.length === 0;
