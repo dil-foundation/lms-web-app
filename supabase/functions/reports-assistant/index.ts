@@ -18,6 +18,17 @@ interface RequestBody {
   max_tokens?: number
 }
 
+interface OpenAIResponse {
+  choices?: Array<{
+    message?: {
+      content?: string
+    }
+  }>
+  usage?: {
+    total_tokens?: number
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -130,7 +141,7 @@ serve(async (req) => {
       )
     }
 
-    const openAIData = await openAIResponse.json()
+    const openAIData: OpenAIResponse = await openAIResponse.json()
     const assistantMessage = openAIData.choices?.[0]?.message?.content
 
     if (!assistantMessage) {
@@ -181,7 +192,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: 'Internal server error',
-        details: error.message 
+        details: error instanceof Error ? error.message : 'Unknown error'
       }),
       { 
         status: 500, 

@@ -32,7 +32,7 @@ import {
 import { ReportsChatbot } from '@/components/reports/ReportsChatbot';
 
 export const IRISv2 = () => {
-  const [selectedPlatform, setSelectedPlatform] = useState<'ai_tutor' | 'lms'>('ai_tutor');
+  const [selectedPlatform, setSelectedPlatform] = useState<'ai_tutor' | 'lms'>('lms');
 
   // Platform-specific quick actions (AI Tutor tables)
   const aiTutorActions = [
@@ -40,37 +40,37 @@ export const IRISv2 = () => {
       title: "Daily Learning Analytics",
       description: "KPIs from daily analytics table",
       icon: BarChart3,
-      prompt: "Generate an AI Tutor focused report on daily learning analytics. ONLY include AI Tutor metrics: active users, practice sessions, total practice time, exercise attempts/completions, average scores, and notable trends. Do not include any LMS course data."
+      prompt: "Show me daily learning analytics for AI Tutor platform"
     },
     {
       title: "Learning Milestones",
       description: "Achievements unlocked by users",
       icon: Trophy,
-      prompt: "Create an AI Tutor milestones report. Focus exclusively on AI Tutor achievements: milestone counts, top achievers, recent milestone types, and recommendations to increase milestone attainment. Exclude LMS course completion data."
+      prompt: "Give me a report on learning milestones and achievements"
     },
     {
       title: "Learning Unlocks",
       description: "Stages/topics users unlocked",
       icon: Unlock,
-      prompt: "Generate an AI Tutor unlocks report. Focus only on AI Tutor content: unlock volume, most unlocked stages/topics, unlock-to-complete ratio, and user cohorts with low unlock rates. Do not include LMS course enrollment data."
+      prompt: "Show me learning unlocks and topic progression"
     },
     {
       title: "Exercise Progress",
       description: "Completion & accuracy by exercise",
       icon: Target,
-      prompt: "Create an AI Tutor Exercise Progress Report. Title the report 'AI Tutor Exercise Progress Report'. Focus exclusively on exercise-specific metrics: individual exercise attempts, exercise completion rates, exercise accuracy percentages, exercise difficulty analysis, and identify specific exercises with highest struggle rates. Include exercise performance breakdown and top 5 exercise improvement areas. Use aiTutorExercisesCompleted, aiTutorExercisesAttempted, and related exercise metrics only."
+      prompt: "Generate exercise progress and completion analytics"
     },
     {
       title: "User Progress Summary",
       description: "Overall learner progression",
       icon: TrendingUp,
-      prompt: "Generate an AI Tutor user progress summary. Focus only on AI Tutor metrics: overall progress percentage, streak days, total practice time, exercises completed, speaking confidence scores, and at-risk users who are stagnating in AI Tutor practice. Exclude LMS course progress."
+      prompt: "Give me a list of students and their progress"
     },
     {
       title: "Weekly Summary",
       description: "Weekly learning highlights",
       icon: Calendar,
-      prompt: "Create an AI Tutor weekly summary. Focus exclusively on AI Tutor activities: weekly active users in practice sessions, total practice sessions, total practice time, exercise completions, consistency scores, and key insights for AI Tutor engagement. Do not include LMS course activities."
+      prompt: "Give me this week's learning analytics summary"
     }
   ];
 
@@ -79,43 +79,37 @@ export const IRISv2 = () => {
       title: "Course Management",
       description: "Create & manage courses",
       icon: BookOpen,
-      color: "blue",
-      prompt: "Show me the course management overview. Include active courses, enrollment numbers, course completion rates, and recommendations for course improvements."
+      prompt: "Give me a list of courses and their enrollment status"
     },
     {
       title: "Student Analytics",
       description: "Track student engagement",
       icon: Users,
-      color: "green",
-      prompt: "Generate a student analytics report. Include login frequency, assignment submission rates, participation levels, and identify at-risk students who need intervention."
+      prompt: "Give me a list of students registered on the platform"
     },
     {
-      title: "Assignment Grading",
-      description: "Review & grade submissions",
-      icon: Award,
-      color: "purple",
-      prompt: "Provide an assignment grading overview. Show pending submissions, grading statistics, average scores by assignment, and identify assignments that may need review."
+      title: "Teacher Overview",
+      description: "Review teacher activity",
+      icon: GraduationCap,
+      prompt: "Give me a list of teachers we have"
     },
     {
-      title: "Discussion Analytics",
-      description: "Track forum engagement",
-      icon: MessageCircle,
-      color: "orange",
-      prompt: "Generate a discussion analytics report. Focus on LMS discussion forums: total discussions, reply rates, participation levels, most active topics, and identify students who need encouragement to participate in discussions."
+      title: "Admin Users",
+      description: "View admin accounts",
+      icon: Shield,
+      prompt: "Show me a list of admin users"
     },
     {
       title: "Learning Outcomes",
       description: "Assess course effectiveness",
       icon: Trophy,
-      color: "indigo",
-      prompt: "Analyze learning outcomes data. Include achievement rates by course objectives, skill development progress, assessment results, and recommendations for curriculum improvements."
+      prompt: "Generate learning outcomes and course effectiveness report"
     },
     {
       title: "Content Management Analytics",
       description: "Analyze course content & structure",
       icon: FileText,
-      color: "emerald",
-      prompt: "Generate a comprehensive Content Management Analytics Report. Title the report 'LMS Content Management Analytics Report'. Focus exclusively on LMS content data: course structure analysis from courses, course_sections, and course_lessons tables, content distribution from course_lesson_content table, content types breakdown, lesson duration analysis, section organization patterns, content completion tracking from user_content_item_progress table, most accessed content items, content engagement rates, content creation trends over time, and identify content gaps or optimization opportunities. Include top 5 content recommendations for improving learning outcomes."
+      prompt: "Show me content management and course structure analytics"
     }
   ];
 

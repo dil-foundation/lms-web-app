@@ -313,9 +313,18 @@ export class ReportExportService {
   }
 
   /**
-   * Generate HTML table from data object
+   * Generate HTML table from data object or markdown content
    */
   private static generateDataTable(data: any): string {
+    // First, try to extract markdown tables from the data content if available
+    if (data && data.markdownContent) {
+      const htmlTables = this.convertMarkdownTablesToHTML(data.markdownContent);
+      if (htmlTables) {
+        return htmlTables;
+      }
+    }
+
+    // Fallback to original key-value table generation
     if (!data || typeof data !== 'object') {
       return '<p>No structured data available for export.</p>';
     }
@@ -335,6 +344,98 @@ export class ReportExportService {
     
     tableHTML += '</tbody></table>';
     return tableHTML;
+  }
+
+  /**
+   * Convert markdown tables to HTML tables (ONLY tables, no other content)
+   */
+  private static convertMarkdownTablesToHTML(markdownContent: string): string {
+    if (!markdownContent || typeof markdownContent !== 'string') {
+      return '';
+    }
+
+    let htmlContent = '';
+    const lines = markdownContent.split('\n');
+    let inTable = false;
+    let tableLines: string[] = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      
+      // Check if this line looks like a table row
+      const isTableRow = line.includes('|') && line.startsWith('|') && line.endsWith('|');
+      const isTableSeparator = line.includes('|') && line.includes('-');
+      
+      if (isTableRow || isTableSeparator) {
+        if (!inTable) {
+          inTable = true;
+          tableLines = [];
+        }
+        tableLines.push(line);
+      } else {
+        // End of table, process it
+        if (inTable) {
+          const htmlTable = this.processMarkdownTable(tableLines);
+          if (htmlTable) {
+            htmlContent += htmlTable + '<br><br>'; // Add spacing between tables
+          }
+          inTable = false;
+          tableLines = [];
+        }
+        
+        // SKIP non-table content - we only want clean tables in PDF
+        // No more raw markdown text in the PDF!
+      }
+    }
+
+    // Handle table at end of content
+    if (inTable && tableLines.length > 0) {
+      const htmlTable = this.processMarkdownTable(tableLines);
+      if (htmlTable) {
+        htmlContent += htmlTable;
+      }
+    }
+
+    return htmlContent;
+  }
+
+  /**
+   * Process a single markdown table and convert to HTML
+   */
+  private static processMarkdownTable(tableLines: string[]): string {
+    if (tableLines.length < 2) return '';
+    
+    // First line is headers, second line is separator (ignored), rest are data
+    const headerLine = tableLines[0];
+    const dataLines = tableLines.slice(2);
+    
+    const headers = headerLine.split('|').map(h => h.trim()).filter(h => h);
+    
+    if (headers.length === 0) return '';
+    
+    let htmlTable = '<table class="data-table"><thead><tr>';
+    
+    // Add headers
+    headers.forEach(header => {
+      htmlTable += `<th>${header}</th>`;
+    });
+    
+    htmlTable += '</tr></thead><tbody>';
+    
+    // Add data rows
+    dataLines.forEach(line => {
+      const cells = line.split('|').map(c => c.trim()).filter(c => c);
+      if (cells.length > 0) {
+        htmlTable += '<tr>';
+        cells.forEach(cell => {
+          htmlTable += `<td>${cell}</td>`;
+        });
+        htmlTable += '</tr>';
+      }
+    });
+    
+    htmlTable += '</tbody></table>';
+    return htmlTable;
   }
 
   /**
@@ -398,8 +499,10 @@ export class ReportExportService {
     // Clean title
     const cleanTitle = title.replace(/[📊📈📚🤖💡🎯]/g, '').trim();
     
-    // Extract summary (everything after the metrics)
+    // Extract clean summary (remove markdown tables and syntax)
     let summary = message.content;
+    
+    // Remove everything after recommendations/insights
     const recommendationsIndex = summary.indexOf('**Recommendations:**');
     const insightsIndex = summary.indexOf('**Insights:**');
     const keyInsightsIndex = summary.indexOf('**Key Insights:**');
@@ -411,14 +514,75 @@ export class ReportExportService {
     } else if (keyInsightsIndex !== -1) {
       summary = summary.substring(0, keyInsightsIndex).trim();
     }
+    
+    // Remove markdown tables from summary (they'll be shown separately as formatted tables)
+    summary = this.removeMarkdownTables(summary);
+    
+    // Clean up markdown syntax
+    summary = this.cleanMarkdownSyntax(summary);
 
     return {
       title: cleanTitle,
       timestamp: message.timestamp || new Date().toLocaleString(),
       query: query,
-      data: message.data || {},
-      summary: summary.replace(/\*\*/g, '').replace(/^\s*[-•]\s*/gm, '').trim()
+      data: {
+        ...message.data || {},
+        markdownContent: message.content // Include the full markdown content for table extraction
+      },
+      summary: summary
     };
+  }
+
+  /**
+   * Remove markdown tables from text
+   */
+  private static removeMarkdownTables(text: string): string {
+    if (!text) return text;
+    
+    const lines = text.split('\n');
+    const cleanLines: string[] = [];
+    let inTable = false;
+    
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+      const isTableRow = trimmedLine.includes('|') && trimmedLine.startsWith('|') && trimmedLine.endsWith('|');
+      const isTableSeparator = trimmedLine.includes('|') && trimmedLine.includes('-');
+      
+      if (isTableRow || isTableSeparator) {
+        inTable = true;
+        // Skip table lines
+      } else {
+        if (inTable) {
+          inTable = false;
+          // Add a line break after table
+          cleanLines.push('');
+        }
+        cleanLines.push(line);
+      }
+    }
+    
+    return cleanLines.join('\n');
+  }
+
+  /**
+   * Clean markdown syntax from text
+   */
+  private static cleanMarkdownSyntax(text: string): string {
+    if (!text) return text;
+    
+    return text
+      // Remove markdown headers (##, ###, etc.)
+      .replace(/^#{1,6}\s+/gm, '')
+      // Remove bold/italic syntax
+      .replace(/\*\*([^*]+)\*\*/g, '$1')
+      .replace(/\*([^*]+)\*/g, '$1')
+      // Remove list markers
+      .replace(/^\s*[-•]\s+/gm, '• ')
+      // Remove extra line breaks
+      .replace(/\n\s*\n\s*\n/g, '\n\n')
+      // Remove emojis
+      .replace(/[📊📈📚🤖💡🎯👥👨‍🏫👑]/g, '')
+      .trim();
   }
 
   /**
