@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,7 @@ import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import AccessLogService from '@/services/accessLogService';
+import { AISafetyEthicsService, AISafetyEthicsSettings, defaultAISafetyEthicsSettings } from '@/services/aiSafetyEthicsService';
 import { 
   Shield, 
   AlertTriangle, 
@@ -39,57 +40,43 @@ interface AISafetyEthicsSettingsProps {
 
 export const AISafetyEthicsSettings = ({ userProfile }: AISafetyEthicsSettingsProps) => {
   const [saving, setSaving] = useState(false);
-  const [settings, setSettings] = useState({
-    // Content Safety
-    contentFiltering: true,
-    toxicityDetection: true,
-    biasDetection: true,
-    inappropriateContentBlocking: true,
-    
-    // Privacy & Data Protection
-    dataEncryption: true,
-    personalDataProtection: true,
-    conversationLogging: true,
-    dataRetentionLimit: 90,
-    
-    // Bias & Fairness
-    genderBiasMonitoring: true,
-    culturalBiasDetection: true,
-    ageAppropriateResponses: true,
-    inclusiveLanguage: true,
-    
-    // Monitoring & Alerts
-    realTimeMonitoring: true,
-    alertThreshold: 75,
-    automaticEscalation: true,
-    adminNotifications: true,
-    
-    // Compliance & Reporting
-    complianceReporting: true,
-    auditTrail: true,
-    incidentReporting: true,
-    regularAssessments: true,
-    
-    // Advanced Safety
-    harmfulContentPrevention: true,
-    misinformationDetection: true,
-    emotionalSafetyChecks: true,
-    contextualSafetyAnalysis: true
-  });
+  const [loading, setLoading] = useState(true);
+  const [settings, setSettings] = useState<AISafetyEthicsSettings>(defaultAISafetyEthicsSettings);
 
-  // Mock data for safety metrics
-  const [safetyMetrics] = useState({
+  const [safetyMetrics, setSafetyMetrics] = useState({
     contentFiltered: 127,
     biasDetected: 23,
     incidentsReported: 5,
     complianceScore: 94
   });
 
+  // Load settings on component mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        setLoading(true);
+        const [loadedSettings, metrics] = await Promise.all([
+          AISafetyEthicsService.getSettings(),
+          AISafetyEthicsService.getSafetyMetrics()
+        ]);
+        setSettings(loadedSettings);
+        setSafetyMetrics(metrics);
+      } catch (error) {
+        console.error('Error loading AI Safety & Ethics settings:', error);
+        toast.error('Failed to load settings. Using defaults.');
+        setSettings(defaultAISafetyEthicsSettings);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSettings();
+  }, []);
+
   const handleSave = async () => {
     setSaving(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await AISafetyEthicsService.saveSettings(settings);
       toast.success('AI Safety & Ethics settings saved successfully');
 
       // Log AI Safety & Ethics settings update
@@ -116,67 +103,56 @@ export const AISafetyEthicsSettings = ({ userProfile }: AISafetyEthicsSettingsPr
         console.error('Error logging AI Safety & Ethics settings update:', logError);
       }
     } catch (error) {
-      toast.error('Failed to save AI Safety & Ethics settings');
+      console.error('Error saving AI Safety & Ethics settings:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to save AI Safety & Ethics settings');
     } finally {
       setSaving(false);
     }
   };
 
   const handleReset = async () => {
-    const defaultSettings = {
-      contentFiltering: true,
-      toxicityDetection: true,
-      biasDetection: true,
-      inappropriateContentBlocking: true,
-      dataEncryption: true,
-      personalDataProtection: true,
-      conversationLogging: true,
-      dataRetentionLimit: 90,
-      genderBiasMonitoring: true,
-      culturalBiasDetection: true,
-      ageAppropriateResponses: true,
-      inclusiveLanguage: true,
-      realTimeMonitoring: true,
-      alertThreshold: 75,
-      automaticEscalation: true,
-      adminNotifications: true,
-      complianceReporting: true,
-      auditTrail: true,
-      incidentReporting: true,
-      regularAssessments: true,
-      harmfulContentPrevention: true,
-      misinformationDetection: true,
-      emotionalSafetyChecks: true,
-      contextualSafetyAnalysis: true
-    };
-    
-    setSettings(defaultSettings);
-    toast.info('AI Safety & Ethics settings reset to defaults');
-
-    // Log AI Safety & Ethics settings reset
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await AccessLogService.logAdminSettingsAction(
-          user.id,
-          user.email || 'unknown@email.com',
-          'reset',
-          'ai_safety_ethics_settings',
-          {
-            content_filtering: defaultSettings.contentFiltering,
-            toxicity_detection: defaultSettings.toxicityDetection,
-            bias_detection: defaultSettings.biasDetection,
-            data_encryption: defaultSettings.dataEncryption,
-            real_time_monitoring: defaultSettings.realTimeMonitoring,
-            alert_threshold: defaultSettings.alertThreshold,
-            compliance_reporting: defaultSettings.complianceReporting
-          }
-        );
+      await AISafetyEthicsService.resetSettings();
+      setSettings(defaultAISafetyEthicsSettings);
+      toast.success('AI Safety & Ethics settings reset to defaults');
+
+      // Log AI Safety & Ethics settings reset
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await AccessLogService.logAdminSettingsAction(
+            user.id,
+            user.email || 'unknown@email.com',
+            'reset',
+            'ai_safety_ethics_settings',
+            {
+              content_filtering: defaultAISafetyEthicsSettings.contentFiltering,
+              toxicity_detection: defaultAISafetyEthicsSettings.toxicityDetection,
+              bias_detection: defaultAISafetyEthicsSettings.biasDetection,
+              data_encryption: defaultAISafetyEthicsSettings.dataEncryption,
+              real_time_monitoring: defaultAISafetyEthicsSettings.realTimeMonitoring,
+              alert_threshold: defaultAISafetyEthicsSettings.alertThreshold,
+              compliance_reporting: defaultAISafetyEthicsSettings.complianceReporting
+            }
+          );
+        }
+      } catch (logError) {
+        console.error('Error logging AI Safety & Ethics settings reset:', logError);
       }
-    } catch (logError) {
-      console.error('Error logging AI Safety & Ethics settings reset:', logError);
+    } catch (error) {
+      console.error('Error resetting AI Safety & Ethics settings:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to reset AI Safety & Ethics settings');
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <span className="ml-2">Loading AI Safety & Ethics settings...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
