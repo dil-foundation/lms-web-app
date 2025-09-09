@@ -10,6 +10,8 @@ export interface Class {
   school_id?: string;
   board_id?: string;
   description: string;
+  max_students?: number;
+  status?: string;
   created_at: string;
   updated_at: string;
 }
@@ -26,6 +28,7 @@ export interface CreateClassData {
   school_id: string;
   board_id: string;
   description?: string;
+  max_students?: number;
   teacher_ids: string[];
   student_ids: string[];
 }
@@ -156,13 +159,21 @@ class ClassService {
         grade: classData.grade,
         school_id: classData.school_id,
         board_id: classData.board_id,
-        description: classData.description || ''
+        description: classData.description || '',
+        max_students: classData.max_students || 30
       })
       .select('id')
       .single();
 
     if (classError) {
-      throw new Error(`Failed to create class: ${classError.message}`);
+      // Check for specific constraint violations
+      if (classError.message.includes('classes_code_key')) {
+        throw new Error('Cannot create class: A class with this code already exists. Please use a different class code.');
+      }
+      if (classError.message.includes('classes_max_students_check')) {
+        throw new Error('Cannot create class: Maximum students must be a positive number greater than 0.');
+      }
+      throw new Error('Failed to create class. Please try again.');
     }
 
     if (!classResult) {
@@ -184,7 +195,7 @@ class ClassService {
         .insert(teacherInserts);
 
       if (teachersError) {
-        throw new Error(`Failed to add teachers to class: ${teachersError.message}`);
+        throw new Error('Failed to assign teachers to class. Please try again.');
       }
     }
 
@@ -201,7 +212,11 @@ class ClassService {
         .insert(studentInserts);
 
       if (studentsError) {
-        throw new Error(`Failed to add students to class: ${studentsError.message}`);
+        // Check for specific constraint violations
+        if (studentsError.message.includes('check_current_students_limit')) {
+          throw new Error('Cannot add students: The number of students exceeds the maximum allowed limit. Please reduce the number of students or increase the maximum student limit.');
+        }
+        throw new Error('Failed to assign students to class. Please try again.');
       }
     }
 
@@ -220,12 +235,20 @@ class ClassService {
         grade: classData.grade,
         school_id: classData.school_id,
         board_id: classData.board_id,
-        description: classData.description || ''
+        description: classData.description || '',
+        max_students: classData.max_students || 30
       })
       .eq('id', classData.id);
 
     if (classError) {
-      throw new Error(`Failed to update class: ${classError.message}`);
+      // Check for specific constraint violations
+      if (classError.message.includes('check_current_students_limit')) {
+        throw new Error('Cannot update class: The number of students exceeds the maximum allowed limit. Please reduce the number of students or increase the maximum student limit.');
+      }
+      if (classError.message.includes('classes_max_students_check')) {
+        throw new Error('Cannot update class: Maximum students must be a positive number greater than 0.');
+      }
+      throw new Error('Failed to update class information. Please try again.');
     }
 
     // Remove existing teachers
@@ -251,7 +274,7 @@ class ClassService {
         .insert(teacherInserts);
 
       if (teachersError) {
-        throw new Error(`Failed to add teachers to class: ${teachersError.message}`);
+        throw new Error('Failed to assign teachers to class. Please try again.');
       }
     }
 
@@ -262,7 +285,7 @@ class ClassService {
       .eq('class_id', classData.id);
 
     if (removeStudentsError) {
-      throw new Error(`Failed to remove existing students: ${removeStudentsError.message}`);
+      throw new Error('Failed to update student assignments. Please try again.');
     }
 
     // Add new students
@@ -278,7 +301,11 @@ class ClassService {
         .insert(studentInserts);
 
       if (studentsError) {
-        throw new Error(`Failed to add students to class: ${studentsError.message}`);
+        // Check for specific constraint violations
+        if (studentsError.message.includes('check_current_students_limit')) {
+          throw new Error('Cannot add students: The number of students exceeds the maximum allowed limit. Please reduce the number of students or increase the maximum student limit.');
+        }
+        throw new Error('Failed to assign students to class. Please try again.');
       }
     }
 
@@ -446,6 +473,7 @@ class ClassService {
       school_id: data.school_id,
       board_id: data.board_id,
       description: data.description || '',
+      max_students: data.max_students || 30,
       teachers,
       students,
       created_at: data.created_at,

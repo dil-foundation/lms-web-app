@@ -41,6 +41,7 @@ const ClassManagement: React.FC = () => {
     school_id: '',
     board_id: '',
     description: '',
+    max_students: '30',
     teachers: [] as string[],
     students: [] as string[]
   });
@@ -75,8 +76,14 @@ const ClassManagement: React.FC = () => {
   };
 
   const handleCreate = async () => {
-    if (!formData.name || !formData.code || !formData.grade || !formData.school_id || !formData.board_id) {
+    if (!formData.name || !formData.code || !formData.grade || !formData.school_id || !formData.board_id || !formData.max_students) {
       toast.error('Please fill in all required fields');
+      return;
+    }
+
+    const maxStudentsNum = parseInt(formData.max_students);
+    if (isNaN(maxStudentsNum) || maxStudentsNum < 1 || maxStudentsNum > 100) {
+      toast.error('Max students must be a valid number between 1 and 100');
       return;
     }
 
@@ -87,6 +94,7 @@ const ClassManagement: React.FC = () => {
       school_id: formData.school_id,
       board_id: formData.board_id,
       description: formData.description,
+      max_students: maxStudentsNum,
       teacher_ids: formData.teachers,
       student_ids: formData.students
     };
@@ -99,8 +107,14 @@ const ClassManagement: React.FC = () => {
   };
 
   const handleEdit = async () => {
-    if (!editingClass || !formData.name || !formData.code || !formData.grade || !formData.school_id || !formData.board_id) {
+    if (!editingClass || !formData.name || !formData.code || !formData.grade || !formData.school_id || !formData.board_id || !formData.max_students) {
       toast.error('Please fill in all required fields');
+      return;
+    }
+
+    const maxStudentsNum = parseInt(formData.max_students);
+    if (isNaN(maxStudentsNum) || maxStudentsNum < 1 || maxStudentsNum > 100) {
+      toast.error('Max students must be a valid number between 1 and 100');
       return;
     }
 
@@ -112,6 +126,7 @@ const ClassManagement: React.FC = () => {
       school_id: formData.school_id,
       board_id: formData.board_id,
       description: formData.description,
+      max_students: maxStudentsNum,
       teacher_ids: formData.teachers,
       student_ids: formData.students
     };
@@ -140,6 +155,7 @@ const ClassManagement: React.FC = () => {
       school_id: cls.school_id || '',
       board_id: cls.board_id || '',
       description: cls.description,
+      max_students: String(cls.max_students || 30),
       teachers: cls.teachers.map(t => t.id),
       students: cls.students.map(s => s.id)
     });
@@ -159,6 +175,7 @@ const ClassManagement: React.FC = () => {
       school_id: '',
       board_id: '',
       description: '',
+      max_students: '30',
       teachers: [],
       students: []
     });
@@ -170,6 +187,38 @@ const ClassManagement: React.FC = () => {
     if (gradeNum <= 8) return <Badge variant="default" className="bg-green-600">Grade {grade}</Badge>;
     if (gradeNum <= 10) return <Badge variant="default" className="bg-yellow-600">Grade {grade}</Badge>;
     return <Badge variant="default" className="bg-purple-600">Grade {grade}</Badge>;
+  };
+
+  // Check if student limit is exceeded
+  const isStudentLimitExceeded = () => {
+    const maxStudentsNum = parseInt(formData.max_students);
+    return !isNaN(maxStudentsNum) && formData.students.length > maxStudentsNum;
+  };
+
+  // Get student limit status message
+  const getStudentLimitStatus = () => {
+    const maxStudentsNum = parseInt(formData.max_students);
+    if (isNaN(maxStudentsNum)) return null;
+    
+    const currentCount = formData.students.length;
+    const remaining = maxStudentsNum - currentCount;
+    
+    if (currentCount > maxStudentsNum) {
+      return {
+        message: `⚠️ Exceeded limit by ${currentCount - maxStudentsNum} students (${currentCount}/${maxStudentsNum})`,
+        className: "text-red-600 font-medium"
+      };
+    } else if (remaining <= 2 && remaining > 0) {
+      return {
+        message: `⚠️ Only ${remaining} spots remaining (${currentCount}/${maxStudentsNum})`,
+        className: "text-yellow-600 font-medium"
+      };
+    } else {
+      return {
+        message: `${currentCount}/${maxStudentsNum} students selected`,
+        className: "text-green-600 font-medium"
+      };
+    }
   };
 
 
@@ -533,6 +582,17 @@ const ClassManagement: React.FC = () => {
                  </SelectContent>
                </Select>
              </div>
+             <div className="space-y-2">
+               <Label htmlFor="max_students">Max Students *</Label>
+               <Input
+                 id="max_students"
+                 type="text"
+                 value={formData.max_students}
+                 onChange={(e) => setFormData({ ...formData, max_students: e.target.value })}
+                 placeholder="e.g., 30"
+               />
+               <p className="text-xs text-muted-foreground">Maximum number of students allowed in this class</p>
+             </div>
 
             
                                         <div className="space-y-2 md:col-span-2">
@@ -580,10 +640,21 @@ const ClassManagement: React.FC = () => {
                      onValueChange={(selectedIds) => handleMembersChange('students', selectedIds)}
                      value={formData.students}
                      placeholder="Search and select students..."
-                     className="min-h-[44px] border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300"
+                     className={`min-h-[44px] border-2 rounded-xl bg-white dark:bg-gray-800 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300 ${
+                       isStudentLimitExceeded() 
+                         ? 'border-red-300 dark:border-red-600' 
+                         : 'border-gray-200 dark:border-gray-700'
+                     }`}
                    />
                  </div>
-                 <p className="text-xs text-muted-foreground">Students can access course content, submit assignments, and track progress</p>
+                 <div className="space-y-1">
+                   <p className="text-xs text-muted-foreground">Students can access course content, submit assignments, and track progress</p>
+                   {getStudentLimitStatus() && (
+                     <p className={`text-xs ${getStudentLimitStatus()?.className}`}>
+                       {getStudentLimitStatus()?.message}
+                     </p>
+                   )}
+                 </div>
                </div>
              </div>
             </div>
@@ -697,6 +768,17 @@ const ClassManagement: React.FC = () => {
                  </SelectContent>
                </Select>
              </div>
+             <div className="space-y-2">
+               <Label htmlFor="edit-max_students">Max Students *</Label>
+               <Input
+                 id="edit-max_students"
+                 type="text"
+                 value={formData.max_students}
+                 onChange={(e) => setFormData({ ...formData, max_students: e.target.value })}
+                 placeholder="e.g., 30"
+               />
+               <p className="text-xs text-muted-foreground">Maximum number of students allowed in this class</p>
+             </div>
 
             
                          <div className="space-y-2 md:col-span-2">
@@ -744,10 +826,21 @@ const ClassManagement: React.FC = () => {
                      onValueChange={(selectedIds) => handleMembersChange('students', selectedIds)}
                      value={formData.students}
                      placeholder="Search and select students..."
-                     className="min-h-[44px] border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300"
+                     className={`min-h-[44px] border-2 rounded-xl bg-white dark:bg-gray-800 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300 ${
+                       isStudentLimitExceeded() 
+                         ? 'border-red-300 dark:border-red-600' 
+                         : 'border-gray-200 dark:border-gray-700'
+                     }`}
                    />
                  </div>
-                 <p className="text-xs text-muted-foreground">Students can access course content, submit assignments, and track progress</p>
+                 <div className="space-y-1">
+                   <p className="text-xs text-muted-foreground">Students can access course content, submit assignments, and track progress</p>
+                   {getStudentLimitStatus() && (
+                     <p className={`text-xs ${getStudentLimitStatus()?.className}`}>
+                       {getStudentLimitStatus()?.message}
+                     </p>
+                   )}
+                 </div>
                </div>
              </div>
             </div>
@@ -794,6 +887,10 @@ const ClassManagement: React.FC = () => {
                   <div>
                     <Label className="text-sm font-medium text-muted-foreground">School</Label>
                     <p className="text-lg">{viewingClass.school}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Max Students</Label>
+                    <p className="text-lg font-semibold text-blue-600">{viewingClass.max_students || 30}</p>
                   </div>
                 </div>
                 
