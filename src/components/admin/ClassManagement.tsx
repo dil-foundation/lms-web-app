@@ -737,11 +737,11 @@ const ClassManagement: React.FC = () => {
                                             </div>
 
                                             <div className="bg-white p-3 rounded border">
-                                              <h5 className="font-medium text-gray-800 mb-3">Delete in this order:</h5>
+                                              <h5 className="font-medium text-gray-800 mb-3">Remove class from courses first:</h5>
                                               <div className="space-y-3">
                                                 {classDependencies.courses.length > 0 && (
                                                   <div>
-                                                    <h6 className="font-medium text-red-700 mb-1">1. Delete {classDependencies.courses.length} Course(s):</h6>
+                                                    <h6 className="font-medium text-red-700 mb-1">1. Remove this class from {classDependencies.courses.length} Course(s):</h6>
                                                     <ul className="text-sm text-gray-600 ml-4 space-y-1">
                                                       {classDependencies.courses.map((course) => (
                                                         <li key={course.id} className="flex items-center">
@@ -751,6 +751,9 @@ const ClassManagement: React.FC = () => {
                                                         </li>
                                                       ))}
                                                     </ul>
+                                                    <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
+                                                      <strong>How to remove:</strong> Go to each course's "Access" tab and remove this class from the enrolled classes list.
+                                                    </div>
                                                   </div>
                                                 )}
                                                 

@@ -2670,10 +2670,10 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                       e.preventDefault();
                                       handleCountryDeleteCheck(country);
                                     }} 
-                                    className="group"
+                                    className="group focus:bg-red-600 focus:text-white hover:bg-red-600 hover:text-white"
                                   >
-                                    <Trash2 className="mr-2 h-4 w-4 text-red-600 group-hover:text-white" />
-                                    <span className="text-red-600 group-hover:text-white">Delete Country</span>
+                                    <Trash2 className="mr-2 h-4 w-4 text-red-600 group-hover:text-white group-focus:text-white" />
+                                    <span className="text-red-600 group-hover:text-white group-focus:text-white">Delete Country</span>
                                 </DropdownMenuItem>
                               </AlertDialogTrigger>
                               <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
@@ -2768,11 +2768,11 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                               </div>
 
                                               <div className="bg-white p-3 rounded border">
-                                                <h5 className="font-medium text-gray-800 mb-3">Delete in this order:</h5>
+                                                <h5 className="font-medium text-gray-800 mb-3">Remove from courses first:</h5>
                                                 <div className="space-y-3">
                                                   {countryDependencies.courses.length > 0 && (
                                                     <div>
-                                                      <h6 className="font-medium text-red-700 mb-1">1. Delete {countryDependencies.courses.length} Course(s):</h6>
+                                                      <h6 className="font-medium text-red-700 mb-1">1. Remove this country from {countryDependencies.courses.length} Course(s):</h6>
                                                       <ul className="text-sm text-gray-600 ml-4 space-y-1">
                                                         {countryDependencies.courses.map((course, index) => (
                                                           <li key={course.id} className="flex items-center">
@@ -2782,6 +2782,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                           </li>
                                                         ))}
                                                       </ul>
+                                                      <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
+                                                        <strong>How to remove:</strong> Go to each course's "Course Details" tab and remove this country from the Countries field.
+                                                      </div>
                                                     </div>
                                                   )}
                                                   
@@ -3155,10 +3158,10 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                       e.preventDefault();
                                       handleRegionDeleteCheck(region);
                                     }} 
-                                    className="group"
+                                    className="group focus:bg-red-600 focus:text-white hover:bg-red-600 hover:text-white"
                                   >
-                                    <Trash2 className="mr-2 h-4 w-4 text-red-600 group-hover:text-white" />
-                                    <span className="text-red-600 group-hover:text-white">Delete Region</span>
+                                    <Trash2 className="mr-2 h-4 w-4 text-red-600 group-hover:text-white group-focus:text-white" />
+                                    <span className="text-red-600 group-hover:text-white group-focus:text-white">Delete Region</span>
                                 </DropdownMenuItem>
                               </AlertDialogTrigger>
                               <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
@@ -3245,11 +3248,11 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                               </div>
 
                                               <div className="bg-white p-3 rounded border">
-                                                <h5 className="font-medium text-gray-800 mb-3">Delete in this order:</h5>
+                                                <h5 className="font-medium text-gray-800 mb-3">Remove from courses first:</h5>
                                                 <div className="space-y-3">
                                                   {regionDependencies.courses.length > 0 && (
                                                     <div>
-                                                      <h6 className="font-medium text-red-700 mb-1">1. Delete {regionDependencies.courses.length} Course(s):</h6>
+                                                      <h6 className="font-medium text-red-700 mb-1">1. Remove this region from {regionDependencies.courses.length} Course(s):</h6>
                                                       <ul className="text-sm text-gray-600 ml-4 space-y-1">
                                                         {regionDependencies.courses.map((course) => (
                                                           <li key={course.id} className="flex items-center">
@@ -3259,6 +3262,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                           </li>
                                                         ))}
                                                       </ul>
+                                                      <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
+                                                        <strong>How to remove:</strong> Go to each course's "Course Details" tab and remove this region from the Regions field.
+                                                      </div>
                                                     </div>
                                                   )}
                                                   
@@ -3617,10 +3623,10 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                       e.preventDefault();
                                       handleCityDeleteCheck(city);
                                     }} 
-                                    className="group"
+                                    className="group focus:bg-red-600 focus:text-white hover:bg-red-600 hover:text-white"
                                   >
-                                    <Trash2 className="mr-2 h-4 w-4 text-red-600 group-hover:text-white" />
-                                    <span className="text-red-600 group-hover:text-white">Delete City</span>
+                                    <Trash2 className="mr-2 h-4 w-4 text-red-600 group-hover:text-white group-focus:text-white" />
+                                    <span className="text-red-600 group-hover:text-white group-focus:text-white">Delete City</span>
                                 </DropdownMenuItem>
                               </AlertDialogTrigger>
                               <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
@@ -3700,11 +3706,11 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                               </div>
 
                                               <div className="bg-white p-3 rounded border">
-                                                <h5 className="font-medium text-gray-800 mb-3">Delete in this order:</h5>
+                                                <h5 className="font-medium text-gray-800 mb-3">Remove from courses first:</h5>
                                                 <div className="space-y-3">
                                                   {cityDependencies.courses.length > 0 && (
                                                     <div>
-                                                      <h6 className="font-medium text-red-700 mb-1">1. Delete {cityDependencies.courses.length} Course(s):</h6>
+                                                      <h6 className="font-medium text-red-700 mb-1">1. Remove this city from {cityDependencies.courses.length} Course(s):</h6>
                                                       <ul className="text-sm text-gray-600 ml-4 space-y-1">
                                                         {cityDependencies.courses.map((course) => (
                                                           <li key={course.id} className="flex items-center">
@@ -3714,6 +3720,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                           </li>
                                                         ))}
                                                       </ul>
+                                                      <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
+                                                        <strong>How to remove:</strong> Go to each course's "Course Details" tab and remove this city from the Cities field.
+                                                      </div>
                                                     </div>
                                                   )}
                                                   
@@ -4058,10 +4067,10 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                       e.preventDefault();
                                       handleProjectDeleteCheck(project);
                                     }} 
-                                    className="group"
+                                    className="group focus:bg-red-600 focus:text-white hover:bg-red-600 hover:text-white"
                                   >
-                                    <Trash2 className="mr-2 h-4 w-4 text-red-600 group-hover:text-white" />
-                                    <span className="text-red-600 group-hover:text-white">Delete Project</span>
+                                    <Trash2 className="mr-2 h-4 w-4 text-red-600 group-hover:text-white group-focus:text-white" />
+                                    <span className="text-red-600 group-hover:text-white group-focus:text-white">Delete Project</span>
                                 </DropdownMenuItem>
                               </AlertDialogTrigger>
                               <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
@@ -4134,11 +4143,11 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                               </div>
 
                                               <div className="bg-white p-3 rounded border">
-                                                <h5 className="font-medium text-gray-800 mb-3">Delete in this order:</h5>
+                                                <h5 className="font-medium text-gray-800 mb-3">Remove from courses first:</h5>
                                                 <div className="space-y-3">
                                                   {projectDependencies.courses.length > 0 && (
                                                     <div>
-                                                      <h6 className="font-medium text-red-700 mb-1">1. Delete {projectDependencies.courses.length} Course(s):</h6>
+                                                      <h6 className="font-medium text-red-700 mb-1">1. Remove this project from {projectDependencies.courses.length} Course(s):</h6>
                                                       <ul className="text-sm text-gray-600 ml-4 space-y-1">
                                                         {projectDependencies.courses.map((course) => (
                                                           <li key={course.id} className="flex items-center">
@@ -4148,6 +4157,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                           </li>
                                                         ))}
                                                       </ul>
+                                                      <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
+                                                        <strong>How to remove:</strong> Go to each course's "Course Details" tab and remove this project from the Projects field.
+                                                      </div>
                                                     </div>
                                                   )}
                                                   
@@ -4478,10 +4490,10 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                       e.preventDefault();
                                       handleBoardDeleteCheck(board);
                                     }} 
-                                    className="group"
+                                    className="group focus:bg-red-600 focus:text-white hover:bg-red-600 hover:text-white"
                                   >
-                                    <Trash2 className="mr-2 h-4 w-4 text-red-600 group-hover:text-white" />
-                                    <span className="text-red-600 group-hover:text-white">Delete Board</span>
+                                    <Trash2 className="mr-2 h-4 w-4 text-red-600 group-hover:text-white group-focus:text-white" />
+                                    <span className="text-red-600 group-hover:text-white group-focus:text-white">Delete Board</span>
                                 </DropdownMenuItem>
                               </AlertDialogTrigger>
                               <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
@@ -4547,11 +4559,11 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                               </div>
 
                                               <div className="bg-white p-3 rounded border">
-                                                <h5 className="font-medium text-gray-800 mb-3">Delete in this order:</h5>
+                                                <h5 className="font-medium text-gray-800 mb-3">Remove from courses first:</h5>
                                                 <div className="space-y-3">
                                                   {boardDependencies.courses.length > 0 && (
                                                     <div>
-                                                      <h6 className="font-medium text-red-700 mb-1">1. Delete {boardDependencies.courses.length} Course(s):</h6>
+                                                      <h6 className="font-medium text-red-700 mb-1">1. Remove this board from {boardDependencies.courses.length} Course(s):</h6>
                                                       <ul className="text-sm text-gray-600 ml-4 space-y-1">
                                                         {boardDependencies.courses.map((course) => (
                                                           <li key={course.id} className="flex items-center">
@@ -4561,6 +4573,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                           </li>
                                                         ))}
                                                       </ul>
+                                                      <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
+                                                        <strong>How to remove:</strong> Go to each course's "Course Details" tab and remove this board from the Boards field.
+                                                      </div>
                                                     </div>
                                                   )}
                                                   
@@ -4879,10 +4894,10 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                       e.preventDefault();
                                       handleSchoolDeleteCheck(school);
                                     }} 
-                                    className="group"
+                                    className="group focus:bg-red-600 focus:text-white hover:bg-red-600 hover:text-white"
                                   >
-                                    <Trash2 className="mr-2 h-4 w-4 text-red-600 group-hover:text-white" />
-                                    <span className="text-red-600 group-hover:text-white">Delete School</span>
+                                    <Trash2 className="mr-2 h-4 w-4 text-red-600 group-hover:text-white group-focus:text-white" />
+                                    <span className="text-red-600 group-hover:text-white group-focus:text-white">Delete School</span>
                                 </DropdownMenuItem>
                               </AlertDialogTrigger>
                               <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
