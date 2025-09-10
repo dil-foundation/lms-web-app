@@ -148,6 +148,11 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     code: '',
     description: ''
   });
+  const [countryValidationErrors, setCountryValidationErrors] = useState({
+    name: '',
+    code: '',
+    description: ''
+  });
   const [countriesStats, setCountriesStats] = useState({
     totalCountries: 0,
     countriesWithDescription: 0,
@@ -166,6 +171,12 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     country: '',
     description: ''
   });
+  const [regionValidationErrors, setRegionValidationErrors] = useState({
+    name: '',
+    code: '',
+    country: '',
+    description: ''
+  });
 
   // Boards specific state
   const [isBoardCreateDialogOpen, setIsBoardCreateDialogOpen] = useState(false);
@@ -174,6 +185,15 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   const [editingBoard, setEditingBoard] = useState<Board | null>(null);
   const [viewingBoard, setViewingBoard] = useState<Board | null>(null);
   const [boardFormData, setBoardFormData] = useState({
+    name: '',
+    code: '',
+    country: '',
+    region: '',
+    city: '',
+    project: '',
+    description: ''
+  });
+  const [boardValidationErrors, setBoardValidationErrors] = useState({
     name: '',
     code: '',
     country: '',
@@ -196,6 +216,13 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     region: '',
     description: ''
   });
+  const [cityValidationErrors, setCityValidationErrors] = useState({
+    name: '',
+    code: '',
+    country: '',
+    region: '',
+    description: ''
+  });
 
   // Projects specific state
   const [isProjectCreateDialogOpen, setIsProjectCreateDialogOpen] = useState(false);
@@ -204,6 +231,14 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [viewingProject, setViewingProject] = useState<Project | null>(null);
   const [projectFormData, setProjectFormData] = useState({
+    name: '',
+    code: '',
+    country: '',
+    region: '',
+    city: '',
+    description: ''
+  });
+  const [projectValidationErrors, setProjectValidationErrors] = useState({
     name: '',
     code: '',
     country: '',
@@ -233,6 +268,569 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     email: '',
     website: ''
   });
+  const [schoolValidationErrors, setSchoolValidationErrors] = useState({
+    name: '',
+    code: '',
+    type: '',
+    address: '',
+    country: '',
+    region: '',
+    city: '',
+    project: '',
+    board: '',
+    phone: '',
+    email: '',
+    website: ''
+  });
+
+  // Country validation functions
+  const validateCountryName = (name: string): string => {
+    if (!name.trim()) {
+      return 'Country name is required';
+    }
+    if (name.trim().length < 2) {
+      return 'Country name must be at least 2 characters';
+    }
+    if (name.trim().length > 100) {
+      return 'Country name must be less than 100 characters';
+    }
+    if (!/^[a-zA-Z\s\-'\.]+$/.test(name.trim())) {
+      return 'Country name can only contain letters, spaces, hyphens, apostrophes, and periods';
+    }
+    return '';
+  };
+
+  const validateCountryCode = (code: string): string => {
+    if (!code.trim()) {
+      return 'Country code is required';
+    }
+    if (code.trim().length < 2) {
+      return 'Country code must be at least 2 characters';
+    }
+    if (code.trim().length > 3) {
+      return 'Country code must be 3 characters or less';
+    }
+    if (!/^[A-Za-z]+$/.test(code.trim())) {
+      return 'Country code can only contain letters';
+    }
+    // Check for duplicates (excluding current country if editing)
+    const existingCountry = countries.find(country => 
+      country.code.toLowerCase() === code.trim().toLowerCase() && 
+      country.id !== editingCountry?.id
+    );
+    if (existingCountry) {
+      return 'A country with this code already exists';
+    }
+    return '';
+  };
+
+  const validateCountryDescription = (description: string): string => {
+    if (description.length > 500) {
+      return 'Description must be less than 500 characters';
+    }
+    return '';
+  };
+
+  const validateCountryForm = (): boolean => {
+    const nameError = validateCountryName(countryFormData.name);
+    const codeError = validateCountryCode(countryFormData.code);
+    const descriptionError = validateCountryDescription(countryFormData.description);
+
+    setCountryValidationErrors({
+      name: nameError,
+      code: codeError,
+      description: descriptionError
+    });
+
+    return !nameError && !codeError && !descriptionError;
+  };
+
+  // Region validation functions
+  const validateRegionName = (name: string): string => {
+    if (!name.trim()) {
+      return 'Region name is required';
+    }
+    if (name.trim().length < 2) {
+      return 'Region name must be at least 2 characters';
+    }
+    if (name.trim().length > 100) {
+      return 'Region name must be less than 100 characters';
+    }
+    if (!/^[a-zA-Z\s\-'\.]+$/.test(name.trim())) {
+      return 'Region name can only contain letters, spaces, hyphens, apostrophes, and periods';
+    }
+    return '';
+  };
+
+  const validateRegionCode = (code: string): string => {
+    if (!code.trim()) {
+      return 'Region code is required';
+    }
+    if (code.trim().length < 2) {
+      return 'Region code must be at least 2 characters';
+    }
+    if (code.trim().length > 10) {
+      return 'Region code must be 10 characters or less';
+    }
+    if (!/^[A-Za-z0-9]+$/.test(code.trim())) {
+      return 'Region code can only contain letters and numbers';
+    }
+    // Check for duplicates (excluding current region if editing)
+    const existingRegion = regions.find(region => 
+      region.code.toLowerCase() === code.trim().toLowerCase() && 
+      region.id !== editingRegion?.id
+    );
+    if (existingRegion) {
+      return 'A region with this code already exists';
+    }
+    return '';
+  };
+
+  const validateRegionCountry = (countryId: string): string => {
+    if (!countryId) {
+      return 'Country is required';
+    }
+    return '';
+  };
+
+  const validateRegionDescription = (description: string): string => {
+    if (description.length > 500) {
+      return 'Description must be less than 500 characters';
+    }
+    return '';
+  };
+
+  const validateRegionForm = (): boolean => {
+    const nameError = validateRegionName(regionFormData.name);
+    const codeError = validateRegionCode(regionFormData.code);
+    const countryError = validateRegionCountry(regionFormData.country);
+    const descriptionError = validateRegionDescription(regionFormData.description);
+
+    setRegionValidationErrors({
+      name: nameError,
+      code: codeError,
+      country: countryError,
+      description: descriptionError
+    });
+
+    return !nameError && !codeError && !countryError && !descriptionError;
+  };
+
+  // City validation functions
+  const validateCityName = (name: string): string => {
+    if (!name.trim()) {
+      return 'City name is required';
+    }
+    if (name.trim().length < 2) {
+      return 'City name must be at least 2 characters';
+    }
+    if (name.trim().length > 100) {
+      return 'City name must be less than 100 characters';
+    }
+    if (!/^[a-zA-Z\s\-'\.]+$/.test(name.trim())) {
+      return 'City name can only contain letters, spaces, hyphens, apostrophes, and periods';
+    }
+    return '';
+  };
+
+  const validateCityCode = (code: string): string => {
+    if (!code.trim()) {
+      return 'City code is required';
+    }
+    if (code.trim().length < 2) {
+      return 'City code must be at least 2 characters';
+    }
+    if (code.trim().length > 10) {
+      return 'City code must be 10 characters or less';
+    }
+    if (!/^[A-Za-z0-9]+$/.test(code.trim())) {
+      return 'City code can only contain letters and numbers';
+    }
+    // Check for duplicates (excluding current city if editing)
+    const existingCity = cities.find(city => 
+      city.code.toLowerCase() === code.trim().toLowerCase() && 
+      city.id !== editingCity?.id
+    );
+    if (existingCity) {
+      return 'A city with this code already exists';
+    }
+    return '';
+  };
+
+  const validateCityCountry = (countryId: string): string => {
+    if (!countryId) {
+      return 'Country is required';
+    }
+    return '';
+  };
+
+  const validateCityRegion = (regionId: string): string => {
+    if (!regionId) {
+      return 'Region is required';
+    }
+    return '';
+  };
+
+  const validateCityDescription = (description: string): string => {
+    if (description.length > 500) {
+      return 'Description must be less than 500 characters';
+    }
+    return '';
+  };
+
+  const validateCityForm = (): boolean => {
+    const nameError = validateCityName(cityFormData.name);
+    const codeError = validateCityCode(cityFormData.code);
+    const countryError = validateCityCountry(cityFormData.country);
+    const regionError = validateCityRegion(cityFormData.region);
+    const descriptionError = validateCityDescription(cityFormData.description);
+
+    setCityValidationErrors({
+      name: nameError,
+      code: codeError,
+      country: countryError,
+      region: regionError,
+      description: descriptionError
+    });
+
+    return !nameError && !codeError && !countryError && !regionError && !descriptionError;
+  };
+
+  // Project validation functions
+  const validateProjectName = (name: string): string => {
+    if (!name.trim()) {
+      return 'Project name is required';
+    }
+    if (name.trim().length < 2) {
+      return 'Project name must be at least 2 characters';
+    }
+    if (name.trim().length > 100) {
+      return 'Project name must be less than 100 characters';
+    }
+    if (!/^[a-zA-Z0-9\s\-'\.]+$/.test(name.trim())) {
+      return 'Project name can only contain letters, numbers, spaces, hyphens, apostrophes, and periods';
+    }
+    return '';
+  };
+
+  const validateProjectCode = (code: string): string => {
+    if (!code.trim()) {
+      return 'Project code is required';
+    }
+    if (code.trim().length < 2) {
+      return 'Project code must be at least 2 characters';
+    }
+    if (code.trim().length > 10) {
+      return 'Project code must be 10 characters or less';
+    }
+    if (!/^[A-Za-z0-9]+$/.test(code.trim())) {
+      return 'Project code can only contain letters and numbers';
+    }
+    // Check for duplicates (excluding current project if editing)
+    const existingProject = projects.find(project => 
+      project.code.toLowerCase() === code.trim().toLowerCase() && 
+      project.id !== editingProject?.id
+    );
+    if (existingProject) {
+      return 'A project with this code already exists';
+    }
+    return '';
+  };
+
+  const validateProjectCountry = (countryId: string): string => {
+    if (!countryId) {
+      return 'Country is required';
+    }
+    return '';
+  };
+
+  const validateProjectRegion = (regionId: string): string => {
+    if (!regionId) {
+      return 'Region is required';
+    }
+    return '';
+  };
+
+  const validateProjectCity = (cityId: string): string => {
+    if (!cityId) {
+      return 'City is required';
+    }
+    return '';
+  };
+
+  const validateProjectDescription = (description: string): string => {
+    if (description.length > 500) {
+      return 'Description must be less than 500 characters';
+    }
+    return '';
+  };
+
+  const validateProjectForm = (): boolean => {
+    const nameError = validateProjectName(projectFormData.name);
+    const codeError = validateProjectCode(projectFormData.code);
+    const countryError = validateProjectCountry(projectFormData.country);
+    const regionError = validateProjectRegion(projectFormData.region);
+    const cityError = validateProjectCity(projectFormData.city);
+    const descriptionError = validateProjectDescription(projectFormData.description);
+
+    setProjectValidationErrors({
+      name: nameError,
+      code: codeError,
+      country: countryError,
+      region: regionError,
+      city: cityError,
+      description: descriptionError
+    });
+
+    return !nameError && !codeError && !countryError && !regionError && !cityError && !descriptionError;
+  };
+
+  // Board validation functions
+  const validateBoardName = (name: string): string => {
+    if (!name.trim()) {
+      return 'Board name is required';
+    }
+    if (name.trim().length < 2) {
+      return 'Board name must be at least 2 characters';
+    }
+    if (name.trim().length > 100) {
+      return 'Board name must be less than 100 characters';
+    }
+    if (!/^[a-zA-Z0-9\s\-'\.]+$/.test(name.trim())) {
+      return 'Board name can only contain letters, numbers, spaces, hyphens, apostrophes, and periods';
+    }
+    return '';
+  };
+
+  const validateBoardCode = (code: string): string => {
+    if (!code.trim()) {
+      return 'Board code is required';
+    }
+    if (code.trim().length < 2) {
+      return 'Board code must be at least 2 characters';
+    }
+    if (code.trim().length > 10) {
+      return 'Board code must be 10 characters or less';
+    }
+    if (!/^[A-Za-z0-9]+$/.test(code.trim())) {
+      return 'Board code can only contain letters and numbers';
+    }
+    // Check for duplicates (excluding current board if editing)
+    const existingBoard = boards.find(board => 
+      board.code.toLowerCase() === code.trim().toLowerCase() && 
+      board.id !== editingBoard?.id
+    );
+    if (existingBoard) {
+      return 'A board with this code already exists';
+    }
+    return '';
+  };
+
+  const validateBoardCountry = (countryId: string): string => {
+    if (!countryId) {
+      return 'Country is required';
+    }
+    return '';
+  };
+
+  const validateBoardRegion = (regionId: string): string => {
+    if (!regionId) {
+      return 'Region is required';
+    }
+    return '';
+  };
+
+  const validateBoardCity = (cityId: string): string => {
+    if (!cityId) {
+      return 'City is required';
+    }
+    return '';
+  };
+
+  const validateBoardProject = (projectId: string): string => {
+    if (!projectId) {
+      return 'Project is required';
+    }
+    return '';
+  };
+
+  const validateBoardDescription = (description: string): string => {
+    if (description.length > 500) {
+      return 'Description must be less than 500 characters';
+    }
+    return '';
+  };
+
+  const validateBoardForm = (): boolean => {
+    const nameError = validateBoardName(boardFormData.name);
+    const codeError = validateBoardCode(boardFormData.code);
+    const countryError = validateBoardCountry(boardFormData.country);
+    const regionError = validateBoardRegion(boardFormData.region);
+    const cityError = validateBoardCity(boardFormData.city);
+    const projectError = validateBoardProject(boardFormData.project);
+    const descriptionError = validateBoardDescription(boardFormData.description);
+
+    setBoardValidationErrors({
+      name: nameError,
+      code: codeError,
+      country: countryError,
+      region: regionError,
+      city: cityError,
+      project: projectError,
+      description: descriptionError
+    });
+
+    return !nameError && !codeError && !countryError && !regionError && !cityError && !projectError && !descriptionError;
+  };
+
+  // School validation functions
+  const validateSchoolName = (name: string): string => {
+    if (!name.trim()) {
+      return 'School name is required';
+    }
+    if (name.trim().length < 2) {
+      return 'School name must be at least 2 characters';
+    }
+    if (name.trim().length > 100) {
+      return 'School name must be less than 100 characters';
+    }
+    if (!/^[a-zA-Z0-9\s\-'\.]+$/.test(name.trim())) {
+      return 'School name can only contain letters, numbers, spaces, hyphens, apostrophes, and periods';
+    }
+    return '';
+  };
+
+  const validateSchoolCode = (code: string): string => {
+    if (!code.trim()) {
+      return 'School code is required';
+    }
+    if (code.trim().length < 2) {
+      return 'School code must be at least 2 characters';
+    }
+    if (code.trim().length > 10) {
+      return 'School code must be 10 characters or less';
+    }
+    if (!/^[A-Za-z0-9]+$/.test(code.trim())) {
+      return 'School code can only contain letters and numbers';
+    }
+    // Check for duplicates (excluding current school if editing)
+    const existingSchool = schools.find(school => 
+      school.code.toLowerCase() === code.trim().toLowerCase() && 
+      school.id !== editingSchool?.id
+    );
+    if (existingSchool) {
+      return 'A school with this code already exists';
+    }
+    return '';
+  };
+
+  const validateSchoolType = (type: string): string => {
+    if (!type) {
+      return 'School type is required';
+    }
+    return '';
+  };
+
+  const validateSchoolAddress = (address: string): string => {
+    if (!address.trim()) {
+      return 'Address is required';
+    }
+    if (address.trim().length < 5) {
+      return 'Address must be at least 5 characters';
+    }
+    if (address.trim().length > 200) {
+      return 'Address must be less than 200 characters';
+    }
+    return '';
+  };
+
+  const validateSchoolCountry = (countryId: string): string => {
+    if (!countryId) {
+      return 'Country is required';
+    }
+    return '';
+  };
+
+  const validateSchoolRegion = (regionId: string): string => {
+    if (!regionId) {
+      return 'Region is required';
+    }
+    return '';
+  };
+
+  const validateSchoolCity = (cityId: string): string => {
+    if (!cityId) {
+      return 'City is required';
+    }
+    return '';
+  };
+
+  const validateSchoolProject = (projectId: string): string => {
+    if (!projectId) {
+      return 'Project is required';
+    }
+    return '';
+  };
+
+  const validateSchoolBoard = (boardId: string): string => {
+    if (!boardId) {
+      return 'Board is required';
+    }
+    return '';
+  };
+
+  const validateSchoolPhone = (phone: string): string => {
+    if (phone.trim() && !/^[\+]?[0-9\s\-\(\)]{10,15}$/.test(phone.trim())) {
+      return 'Please enter a valid phone number';
+    }
+    return '';
+  };
+
+  const validateSchoolEmail = (email: string): string => {
+    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      return 'Please enter a valid email address';
+    }
+    return '';
+  };
+
+  const validateSchoolWebsite = (website: string): string => {
+    if (website.trim() && !/^https?:\/\/.+\..+/.test(website.trim())) {
+      return 'Please enter a valid website URL (starting with http:// or https://)';
+    }
+    return '';
+  };
+
+  const validateSchoolForm = (): boolean => {
+    const nameError = validateSchoolName(schoolFormData.name);
+    const codeError = validateSchoolCode(schoolFormData.code);
+    const typeError = validateSchoolType(schoolFormData.type);
+    const addressError = validateSchoolAddress(schoolFormData.address);
+    const countryError = validateSchoolCountry(schoolFormData.country);
+    const regionError = validateSchoolRegion(schoolFormData.region);
+    const cityError = validateSchoolCity(schoolFormData.city);
+    const projectError = validateSchoolProject(schoolFormData.project);
+    const boardError = validateSchoolBoard(schoolFormData.board);
+    const phoneError = validateSchoolPhone(schoolFormData.phone);
+    const emailError = validateSchoolEmail(schoolFormData.email);
+    const websiteError = validateSchoolWebsite(schoolFormData.website);
+
+    setSchoolValidationErrors({
+      name: nameError,
+      code: codeError,
+      type: typeError,
+      address: addressError,
+      country: countryError,
+      region: regionError,
+      city: cityError,
+      project: projectError,
+      board: boardError,
+      phone: phoneError,
+      email: emailError,
+      website: websiteError
+    });
+
+    return !nameError && !codeError && !typeError && !addressError && !countryError && !regionError && !cityError && !projectError && !boardError && !phoneError && !emailError && !websiteError;
+  };
 
   // Filter functions
   const filteredCountries = countries.filter(country => {
@@ -275,16 +873,17 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
 
   // Countries handlers
   const handleCountryCreate = async () => {
-    if (!countryFormData.name || !countryFormData.code) {
-      toast.error('Please fill in all required fields');
+    // Validate form before submission
+    if (!validateCountryForm()) {
+      toast.error('Please fix the validation errors before submitting');
       return;
     }
 
     try {
       await createCountry({
-      name: countryFormData.name,
-      code: countryFormData.code.toUpperCase(),
-        description: countryFormData.description
+      name: countryFormData.name.trim(),
+      code: countryFormData.code.trim().toUpperCase(),
+        description: countryFormData.description.trim()
       });
     setIsCountryCreateDialogOpen(false);
     resetCountryForm();
@@ -312,26 +911,22 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   };
 
   const handleCountryEdit = async () => {
-    if (!editingCountry || !countryFormData.name || !countryFormData.code) {
-      toast.error('Please fill in all required fields');
+    if (!editingCountry) {
+      toast.error('No country selected for editing');
       return;
     }
 
-    // Check if country code already exists (excluding current country)
-    const existingCountry = countries.find(country => 
-      country.code.toLowerCase() === countryFormData.code.toLowerCase() && 
-      country.id !== editingCountry.id
-    );
-    if (existingCountry) {
-      toast.error('A country with this code already exists. Please choose a different code.');
+    // Validate form before submission
+    if (!validateCountryForm()) {
+      toast.error('Please fix the validation errors before submitting');
       return;
     }
 
     try {
       await updateCountry(editingCountry.id, {
-            name: countryFormData.name,
-            code: countryFormData.code.toUpperCase(),
-        description: countryFormData.description
+            name: countryFormData.name.trim(),
+            code: countryFormData.code.trim().toUpperCase(),
+        description: countryFormData.description.trim()
       });
     setIsCountryEditDialogOpen(false);
     setEditingCountry(null);
@@ -377,6 +972,12 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       code: country.code,
       description: country.description
     });
+    // Clear validation errors when opening edit dialog
+    setCountryValidationErrors({
+      name: '',
+      code: '',
+      description: ''
+    });
     setIsCountryEditDialogOpen(true);
   };
 
@@ -387,6 +988,11 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
 
   const resetCountryForm = () => {
     setCountryFormData({
+      name: '',
+      code: '',
+      description: ''
+    });
+    setCountryValidationErrors({
       name: '',
       code: '',
       description: ''
@@ -444,24 +1050,18 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
 
   // Regions handlers
   const handleRegionCreate = async () => {
-    if (!regionFormData.name || !regionFormData.code || !regionFormData.country) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    // Check if region code already exists
-    const existingRegion = regions.find(region => region.code.toLowerCase() === regionFormData.code.toLowerCase());
-    if (existingRegion) {
-      toast.error('A region with this code already exists. Please choose a different code.');
+    // Validate form before submission
+    if (!validateRegionForm()) {
+      toast.error('Please fix the validation errors before submitting');
       return;
     }
 
     try {
       await createRegion({
-      name: regionFormData.name,
-      code: regionFormData.code.toUpperCase(),
+      name: regionFormData.name.trim(),
+      code: regionFormData.code.trim().toUpperCase(),
         country_id: regionFormData.country,
-        description: regionFormData.description
+        description: regionFormData.description.trim()
       });
     setIsRegionCreateDialogOpen(false);
     resetRegionForm();
@@ -486,27 +1086,23 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   };
 
   const handleRegionEdit = async () => {
-    if (!editingRegion || !regionFormData.name || !regionFormData.code || !regionFormData.country) {
-      toast.error('Please fill in all required fields');
+    if (!editingRegion) {
+      toast.error('No region selected for editing');
       return;
     }
 
-    // Check if region code already exists (excluding current region)
-    const existingRegion = regions.find(region => 
-      region.code.toLowerCase() === regionFormData.code.toLowerCase() && 
-      region.id !== editingRegion.id
-    );
-    if (existingRegion) {
-      toast.error('A region with this code already exists. Please choose a different code.');
+    // Validate form before submission
+    if (!validateRegionForm()) {
+      toast.error('Please fix the validation errors before submitting');
       return;
     }
 
     try {
       await updateRegion(editingRegion.id, {
-        name: regionFormData.name,
-        code: regionFormData.code.toUpperCase(),
+        name: regionFormData.name.trim(),
+        code: regionFormData.code.trim().toUpperCase(),
         country_id: regionFormData.country,
-        description: regionFormData.description
+        description: regionFormData.description.trim()
       });
     setIsRegionEditDialogOpen(false);
     setEditingRegion(null);
@@ -547,6 +1143,13 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       country: region.country_id,
       description: region.description
     });
+    // Clear validation errors when opening edit dialog
+    setRegionValidationErrors({
+      name: '',
+      code: '',
+      country: '',
+      description: ''
+    });
     setIsRegionEditDialogOpen(true);
   };
 
@@ -562,29 +1165,29 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       country: '',
       description: ''
     });
+    setRegionValidationErrors({
+      name: '',
+      code: '',
+      country: '',
+      description: ''
+    });
   };
 
   // Cities handlers
   const handleCityCreate = async () => {
-    if (!cityFormData.name || !cityFormData.code || !cityFormData.country || !cityFormData.region) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    // Check if city code already exists
-    const existingCity = cities.find(city => city.code.toLowerCase() === cityFormData.code.toLowerCase());
-    if (existingCity) {
-      toast.error('A city with this code already exists. Please choose a different code.');
+    // Validate form before submission
+    if (!validateCityForm()) {
+      toast.error('Please fix the validation errors before submitting');
       return;
     }
 
     try {
       await createCity({
-      name: cityFormData.name,
-      code: cityFormData.code.toUpperCase(),
+      name: cityFormData.name.trim(),
+      code: cityFormData.code.trim().toUpperCase(),
         country_id: cityFormData.country,
         region_id: cityFormData.region,
-        description: cityFormData.description
+        description: cityFormData.description.trim()
       });
     setIsCityCreateDialogOpen(false);
     resetCityForm();
@@ -609,28 +1212,24 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   };
 
   const handleCityEdit = async () => {
-    if (!editingCity || !cityFormData.name || !cityFormData.code || !cityFormData.country || !cityFormData.region) {
-      toast.error('Please fill in all required fields');
+    if (!editingCity) {
+      toast.error('No city selected for editing');
       return;
     }
 
-    // Check if city code already exists (excluding current city)
-    const existingCity = cities.find(city => 
-      city.code.toLowerCase() === cityFormData.code.toLowerCase() && 
-      city.id !== editingCity.id
-    );
-    if (existingCity) {
-      toast.error('A city with this code already exists. Please choose a different code.');
+    // Validate form before submission
+    if (!validateCityForm()) {
+      toast.error('Please fix the validation errors before submitting');
       return;
     }
 
     try {
       await updateCity(editingCity.id, {
-        name: cityFormData.name,
-        code: cityFormData.code.toUpperCase(),
+        name: cityFormData.name.trim(),
+        code: cityFormData.code.trim().toUpperCase(),
         country_id: cityFormData.country,
         region_id: cityFormData.region,
-        description: cityFormData.description
+        description: cityFormData.description.trim()
       });
     setIsCityEditDialogOpen(false);
     setEditingCity(null);
@@ -672,6 +1271,14 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       region: city.region_id,
       description: city.description
     });
+    // Clear validation errors when opening edit dialog
+    setCityValidationErrors({
+      name: '',
+      code: '',
+      country: '',
+      region: '',
+      description: ''
+    });
     setIsCityEditDialogOpen(true);
   };
 
@@ -688,30 +1295,31 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       region: '',
       description: ''
     });
+    setCityValidationErrors({
+      name: '',
+      code: '',
+      country: '',
+      region: '',
+      description: ''
+    });
   };
 
   // Projects handlers
   const handleProjectCreate = async () => {
-    if (!projectFormData.name || !projectFormData.code || !projectFormData.country || !projectFormData.region || !projectFormData.city) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    // Check if project code already exists
-    const existingProject = projects.find(project => project.code.toLowerCase() === projectFormData.code.toLowerCase());
-    if (existingProject) {
-      toast.error('A project with this code already exists. Please choose a different code.');
+    // Validate form before submission
+    if (!validateProjectForm()) {
+      toast.error('Please fix the validation errors before submitting');
       return;
     }
 
     try {
       await createProject({
-      name: projectFormData.name,
-      code: projectFormData.code.toUpperCase(),
+      name: projectFormData.name.trim(),
+      code: projectFormData.code.trim().toUpperCase(),
         country_id: projectFormData.country,
         region_id: projectFormData.region,
         city_id: projectFormData.city,
-      description: projectFormData.description,
+      description: projectFormData.description.trim(),
         status: 'active'
       });
     setIsProjectCreateDialogOpen(false);
@@ -737,29 +1345,25 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   };
 
   const handleProjectEdit = async () => {
-    if (!editingProject || !projectFormData.name || !projectFormData.code || !projectFormData.country || !projectFormData.region || !projectFormData.city) {
-      toast.error('Please fill in all required fields');
+    if (!editingProject) {
+      toast.error('No project selected for editing');
       return;
     }
 
-    // Check if project code already exists (excluding current project)
-    const existingProject = projects.find(project => 
-      project.code.toLowerCase() === projectFormData.code.toLowerCase() && 
-      project.id !== editingProject.id
-    );
-    if (existingProject) {
-      toast.error('A project with this code already exists. Please choose a different code.');
+    // Validate form before submission
+    if (!validateProjectForm()) {
+      toast.error('Please fix the validation errors before submitting');
       return;
     }
 
     try {
       await updateProject(editingProject.id, {
-        name: projectFormData.name,
-        code: projectFormData.code.toUpperCase(),
+        name: projectFormData.name.trim(),
+        code: projectFormData.code.trim().toUpperCase(),
         country_id: projectFormData.country,
         region_id: projectFormData.region,
         city_id: projectFormData.city,
-        description: projectFormData.description
+        description: projectFormData.description.trim()
       });
     setIsProjectEditDialogOpen(false);
     setEditingProject(null);
@@ -802,6 +1406,15 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       city: project.city_id,
       description: project.description
     });
+    // Clear validation errors when opening edit dialog
+    setProjectValidationErrors({
+      name: '',
+      code: '',
+      country: '',
+      region: '',
+      city: '',
+      description: ''
+    });
     setIsProjectEditDialogOpen(true);
   };
 
@@ -819,31 +1432,33 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       city: '',
       description: ''
     });
+    setProjectValidationErrors({
+      name: '',
+      code: '',
+      country: '',
+      region: '',
+      city: '',
+      description: ''
+    });
   };
 
   // Boards handlers
   const handleBoardCreate = async () => {
-    if (!boardFormData.name || !boardFormData.code || !boardFormData.country || !boardFormData.region || !boardFormData.city || !boardFormData.project) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    // Check if board code already exists
-    const existingBoard = boards.find(board => board.code.toLowerCase() === boardFormData.code.toLowerCase());
-    if (existingBoard) {
-      toast.error('A board with this code already exists. Please choose a different code.');
+    // Validate form before submission
+    if (!validateBoardForm()) {
+      toast.error('Please fix the validation errors before submitting');
       return;
     }
 
     try {
       await createBoard({
-      name: boardFormData.name,
-      code: boardFormData.code.toUpperCase(),
+      name: boardFormData.name.trim(),
+      code: boardFormData.code.trim().toUpperCase(),
         country_id: boardFormData.country,
         region_id: boardFormData.region,
         city_id: boardFormData.city,
         project_id: boardFormData.project,
-      description: boardFormData.description,
+      description: boardFormData.description.trim(),
         board_type: 'educational',
         status: 'active'
       });
@@ -870,30 +1485,26 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   };
 
   const handleBoardEdit = async () => {
-    if (!editingBoard || !boardFormData.name || !boardFormData.code || !boardFormData.country || !boardFormData.region || !boardFormData.city || !boardFormData.project) {
-      toast.error('Please fill in all required fields');
+    if (!editingBoard) {
+      toast.error('No board selected for editing');
       return;
     }
 
-    // Check if board code already exists (excluding current board)
-    const existingBoard = boards.find(board => 
-      board.code.toLowerCase() === boardFormData.code.toLowerCase() && 
-      board.id !== editingBoard.id
-    );
-    if (existingBoard) {
-      toast.error('A board with this code already exists. Please choose a different code.');
+    // Validate form before submission
+    if (!validateBoardForm()) {
+      toast.error('Please fix the validation errors before submitting');
       return;
     }
 
     try {
       await updateBoard(editingBoard.id, {
-        name: boardFormData.name,
-        code: boardFormData.code.toUpperCase(),
+        name: boardFormData.name.trim(),
+        code: boardFormData.code.trim().toUpperCase(),
         country_id: boardFormData.country,
         region_id: boardFormData.region,
         city_id: boardFormData.city,
         project_id: boardFormData.project,
-        description: boardFormData.description
+        description: boardFormData.description.trim()
       });
     setIsBoardEditDialogOpen(false);
     setEditingBoard(null);
@@ -937,6 +1548,16 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       project: board.project_id,
       description: board.description
     });
+    // Clear validation errors when opening edit dialog
+    setBoardValidationErrors({
+      name: '',
+      code: '',
+      country: '',
+      region: '',
+      city: '',
+      project: '',
+      description: ''
+    });
     setIsBoardEditDialogOpen(true);
   };
 
@@ -955,36 +1576,39 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       project: '',
       description: ''
     });
+    setBoardValidationErrors({
+      name: '',
+      code: '',
+      country: '',
+      region: '',
+      city: '',
+      project: '',
+      description: ''
+    });
   };
 
   // Schools handlers
   const handleSchoolCreate = async () => {
-    if (!schoolFormData.name || !schoolFormData.code || !schoolFormData.type || !schoolFormData.country || !schoolFormData.region || !schoolFormData.city || !schoolFormData.project || !schoolFormData.board) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    // Check if school code already exists
-    const existingSchool = schools.find(school => school.code.toLowerCase() === schoolFormData.code.toLowerCase());
-    if (existingSchool) {
-      toast.error('A school with this code already exists. Please choose a different code.');
+    // Validate form before submission
+    if (!validateSchoolForm()) {
+      toast.error('Please fix the validation errors before submitting');
       return;
     }
 
     try {
       await createSchool({
-      name: schoolFormData.name,
-      code: schoolFormData.code.toUpperCase(),
+      name: schoolFormData.name.trim(),
+      code: schoolFormData.code.trim().toUpperCase(),
         school_type: schoolFormData.type as 'Private' | 'Public' | 'International' | 'Charter' | 'Religious',
         country_id: schoolFormData.country,
         region_id: schoolFormData.region,
         city_id: schoolFormData.city,
         project_id: schoolFormData.project,
         board_id: schoolFormData.board,
-      address: schoolFormData.address,
-      phone: schoolFormData.phone,
-      email: schoolFormData.email,
-      website: schoolFormData.website,
+      address: schoolFormData.address.trim(),
+      phone: schoolFormData.phone.trim(),
+      email: schoolFormData.email.trim(),
+      website: schoolFormData.website.trim(),
         total_students: 0,
         total_teachers: 0,
         total_classes: 0,
@@ -1014,35 +1638,31 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   };
 
   const handleSchoolEdit = async () => {
-    if (!editingSchool || !schoolFormData.name || !schoolFormData.code || !schoolFormData.type || !schoolFormData.country || !schoolFormData.region || !schoolFormData.city || !schoolFormData.project || !schoolFormData.board) {
-      toast.error('Please fill in all required fields');
+    if (!editingSchool) {
+      toast.error('No school selected for editing');
       return;
     }
 
-    // Check if school code already exists (excluding current school)
-    const existingSchool = schools.find(school => 
-      school.code.toLowerCase() === schoolFormData.code.toLowerCase() && 
-      school.id !== editingSchool.id
-    );
-    if (existingSchool) {
-      toast.error('A school with this code already exists. Please choose a different code.');
+    // Validate form before submission
+    if (!validateSchoolForm()) {
+      toast.error('Please fix the validation errors before submitting');
       return;
     }
 
     try {
       await updateSchool(editingSchool.id, {
-            name: schoolFormData.name,
-            code: schoolFormData.code.toUpperCase(),
+            name: schoolFormData.name.trim(),
+            code: schoolFormData.code.trim().toUpperCase(),
         school_type: schoolFormData.type as 'Private' | 'Public' | 'International' | 'Charter' | 'Religious',
         country_id: schoolFormData.country,
         region_id: schoolFormData.region,
         city_id: schoolFormData.city,
         project_id: schoolFormData.project,
         board_id: schoolFormData.board,
-            address: schoolFormData.address,
-            phone: schoolFormData.phone,
-            email: schoolFormData.email,
-        website: schoolFormData.website
+            address: schoolFormData.address.trim(),
+            phone: schoolFormData.phone.trim(),
+            email: schoolFormData.email.trim(),
+        website: schoolFormData.website.trim()
       });
     setIsSchoolEditDialogOpen(false);
     setEditingSchool(null);
@@ -1091,6 +1711,21 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       email: school.email || '',
       website: school.website || ''
     });
+    // Clear validation errors when opening edit dialog
+    setSchoolValidationErrors({
+      name: '',
+      code: '',
+      type: '',
+      address: '',
+      country: '',
+      region: '',
+      city: '',
+      project: '',
+      board: '',
+      phone: '',
+      email: '',
+      website: ''
+    });
     setIsSchoolEditDialogOpen(true);
   };
 
@@ -1101,6 +1736,20 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
 
   const resetSchoolForm = () => {
     setSchoolFormData({
+      name: '',
+      code: '',
+      type: '',
+      address: '',
+      country: '',
+      region: '',
+      city: '',
+      project: '',
+      board: '',
+      phone: '',
+      email: '',
+      website: ''
+    });
+    setSchoolValidationErrors({
       name: '',
       code: '',
       type: '',
@@ -2720,33 +3369,66 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="country-name">Country Name *</Label>
+              <Label htmlFor="country-name" className={countryValidationErrors.name ? 'text-red-500' : ''}>Country Name *</Label>
               <Input
                 id="country-name"
                 value={countryFormData.name}
-                onChange={(e) => setCountryFormData({ ...countryFormData, name: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setCountryFormData({ ...countryFormData, name: value });
+                  // Real-time validation
+                  const error = validateCountryName(value);
+                  setCountryValidationErrors(prev => ({ ...prev, name: error }));
+                }}
                 placeholder="e.g., Pakistan"
+                className={countryValidationErrors.name ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {countryValidationErrors.name && (
+                <p className="text-sm text-red-500">{countryValidationErrors.name}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="country-code">Country Code *</Label>
+              <Label htmlFor="country-code" className={countryValidationErrors.code ? 'text-red-500' : ''}>Country Code *</Label>
               <Input
                 id="country-code"
                 value={countryFormData.code}
-                onChange={(e) => setCountryFormData({ ...countryFormData, code: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value.toUpperCase();
+                  setCountryFormData({ ...countryFormData, code: value });
+                  // Real-time validation
+                  const error = validateCountryCode(value);
+                  setCountryValidationErrors(prev => ({ ...prev, code: error }));
+                }}
                 placeholder="e.g., PK"
                 maxLength={3}
+                className={countryValidationErrors.code ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {countryValidationErrors.code && (
+                <p className="text-sm text-red-500">{countryValidationErrors.code}</p>
+              )}
             </div>
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="country-description">Description</Label>
+              <Label htmlFor="country-description" className={countryValidationErrors.description ? 'text-red-500' : ''}>Description</Label>
               <Textarea
                 id="country-description"
                 value={countryFormData.description}
-                onChange={(e) => setCountryFormData({ ...countryFormData, description: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setCountryFormData({ ...countryFormData, description: value });
+                  // Real-time validation
+                  const error = validateCountryDescription(value);
+                  setCountryValidationErrors(prev => ({ ...prev, description: error }));
+                }}
                 placeholder="Brief description of the country..."
                 rows={3}
+                className={countryValidationErrors.description ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {countryValidationErrors.description && (
+                <p className="text-sm text-red-500">{countryValidationErrors.description}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {countryFormData.description.length}/500 characters
+              </p>
             </div>
           </div>
           <DialogFooter>
@@ -2756,7 +3438,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
             <Button 
               onClick={handleCountryCreate} 
               className="bg-[#8DC63F] hover:bg-[#8DC63F]/90"
-              disabled={countriesLoading}
+              disabled={countriesLoading || !!countryValidationErrors.name || !!countryValidationErrors.code || !!countryValidationErrors.description}
             >
               {countriesLoading ? (
                 <>
@@ -2782,33 +3464,66 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-country-name">Country Name *</Label>
+              <Label htmlFor="edit-country-name" className={countryValidationErrors.name ? 'text-red-500' : ''}>Country Name *</Label>
               <Input
                 id="edit-country-name"
                 value={countryFormData.name}
-                onChange={(e) => setCountryFormData({ ...countryFormData, name: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setCountryFormData({ ...countryFormData, name: value });
+                  // Real-time validation
+                  const error = validateCountryName(value);
+                  setCountryValidationErrors(prev => ({ ...prev, name: error }));
+                }}
                 placeholder="e.g., Pakistan"
+                className={countryValidationErrors.name ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {countryValidationErrors.name && (
+                <p className="text-sm text-red-500">{countryValidationErrors.name}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-country-code">Country Code *</Label>
+              <Label htmlFor="edit-country-code" className={countryValidationErrors.code ? 'text-red-500' : ''}>Country Code *</Label>
               <Input
                 id="edit-country-code"
                 value={countryFormData.code}
-                onChange={(e) => setCountryFormData({ ...countryFormData, code: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value.toUpperCase();
+                  setCountryFormData({ ...countryFormData, code: value });
+                  // Real-time validation
+                  const error = validateCountryCode(value);
+                  setCountryValidationErrors(prev => ({ ...prev, code: error }));
+                }}
                 placeholder="e.g., PK"
                 maxLength={3}
+                className={countryValidationErrors.code ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {countryValidationErrors.code && (
+                <p className="text-sm text-red-500">{countryValidationErrors.code}</p>
+              )}
             </div>
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="edit-country-description">Description</Label>
+              <Label htmlFor="edit-country-description" className={countryValidationErrors.description ? 'text-red-500' : ''}>Description</Label>
               <Textarea
                 id="edit-country-description"
                 value={countryFormData.description}
-                onChange={(e) => setCountryFormData({ ...countryFormData, description: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setCountryFormData({ ...countryFormData, description: value });
+                  // Real-time validation
+                  const error = validateCountryDescription(value);
+                  setCountryValidationErrors(prev => ({ ...prev, description: error }));
+                }}
                 placeholder="Brief description of the country..."
                 rows={3}
+                className={countryValidationErrors.description ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {countryValidationErrors.description && (
+                <p className="text-sm text-red-500">{countryValidationErrors.description}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {countryFormData.description.length}/500 characters
+              </p>
             </div>
           </div>
           <DialogFooter>
@@ -2818,7 +3533,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
             <Button 
               onClick={handleCountryEdit} 
               className="bg-blue-600 hover:bg-blue-700"
-              disabled={countriesLoading}
+              disabled={countriesLoading || !!countryValidationErrors.name || !!countryValidationErrors.code || !!countryValidationErrors.description}
             >
               {countriesLoading ? (
                 <>
@@ -2915,31 +3630,56 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Region Name *</Label>
+              <Label htmlFor="name" className={regionValidationErrors.name ? 'text-red-500' : ''}>Region Name *</Label>
               <Input
                 id="name"
                 value={regionFormData.name}
-                onChange={(e) => setRegionFormData({ ...regionFormData, name: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setRegionFormData({ ...regionFormData, name: value });
+                  // Real-time validation
+                  const error = validateRegionName(value);
+                  setRegionValidationErrors(prev => ({ ...prev, name: error }));
+                }}
                 placeholder="e.g., California"
+                className={regionValidationErrors.name ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {regionValidationErrors.name && (
+                <p className="text-sm text-red-500">{regionValidationErrors.name}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="code">Region Code *</Label>
+              <Label htmlFor="code" className={regionValidationErrors.code ? 'text-red-500' : ''}>Region Code *</Label>
               <Input
                 id="code"
                 value={regionFormData.code}
-                onChange={(e) => setRegionFormData({ ...regionFormData, code: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value.toUpperCase();
+                  setRegionFormData({ ...regionFormData, code: value });
+                  // Real-time validation
+                  const error = validateRegionCode(value);
+                  setRegionValidationErrors(prev => ({ ...prev, code: error }));
+                }}
                 placeholder="e.g., LHR"
-                maxLength={3}
+                maxLength={10}
+                className={regionValidationErrors.code ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {regionValidationErrors.code && (
+                <p className="text-sm text-red-500">{regionValidationErrors.code}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="region-country">Country *</Label>
+              <Label htmlFor="region-country" className={regionValidationErrors.country ? 'text-red-500' : ''}>Country *</Label>
               <Select
                 value={regionFormData.country}
-                onValueChange={(value) => setRegionFormData({ ...regionFormData, country: value })}
+                onValueChange={(value) => {
+                  setRegionFormData({ ...regionFormData, country: value });
+                  // Real-time validation
+                  const error = validateRegionCountry(value);
+                  setRegionValidationErrors(prev => ({ ...prev, country: error }));
+                }}
               >
-                <SelectTrigger id="region-country">
+                <SelectTrigger id="region-country" className={regionValidationErrors.country ? 'border-red-500 focus:border-red-500' : ''}>
                   <SelectValue placeholder="Select a country" />
                 </SelectTrigger>
                 <SelectContent>
@@ -2950,24 +3690,51 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   ))}
                 </SelectContent>
               </Select>
+              {regionValidationErrors.country && (
+                <p className="text-sm text-red-500">{regionValidationErrors.country}</p>
+              )}
             </div>
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description" className={regionValidationErrors.description ? 'text-red-500' : ''}>Description</Label>
               <Textarea
                 id="description"
                 value={regionFormData.description}
-                onChange={(e) => setRegionFormData({ ...regionFormData, description: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setRegionFormData({ ...regionFormData, description: value });
+                  // Real-time validation
+                  const error = validateRegionDescription(value);
+                  setRegionValidationErrors(prev => ({ ...prev, description: error }));
+                }}
                 placeholder="Brief description of the region..."
                 rows={3}
+                className={regionValidationErrors.description ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {regionValidationErrors.description && (
+                <p className="text-sm text-red-500">{regionValidationErrors.description}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {regionFormData.description.length}/500 characters
+              </p>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsRegionCreateDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleRegionCreate} className="bg-[#8DC63F] hover:bg-[#8DC63F]/90">
-              Create Region
+            <Button 
+              onClick={handleRegionCreate} 
+              className="bg-[#8DC63F] hover:bg-[#8DC63F]/90"
+              disabled={regionsLoading || !!regionValidationErrors.name || !!regionValidationErrors.code || !!regionValidationErrors.country || !!regionValidationErrors.description}
+            >
+              {regionsLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Create Region'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -2984,31 +3751,56 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-name">Region Name *</Label>
+              <Label htmlFor="edit-name" className={regionValidationErrors.name ? 'text-red-500' : ''}>Region Name *</Label>
               <Input
                 id="edit-name"
                 value={regionFormData.name}
-                onChange={(e) => setRegionFormData({ ...regionFormData, name: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setRegionFormData({ ...regionFormData, name: value });
+                  // Real-time validation
+                  const error = validateRegionName(value);
+                  setRegionValidationErrors(prev => ({ ...prev, name: error }));
+                }}
                 placeholder="e.g., California"
+                className={regionValidationErrors.name ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {regionValidationErrors.name && (
+                <p className="text-sm text-red-500">{regionValidationErrors.name}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-code">Region Code *</Label>
+              <Label htmlFor="edit-code" className={regionValidationErrors.code ? 'text-red-500' : ''}>Region Code *</Label>
               <Input
                 id="edit-code"
                 value={regionFormData.code}
-                onChange={(e) => setRegionFormData({ ...regionFormData, code: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value.toUpperCase();
+                  setRegionFormData({ ...regionFormData, code: value });
+                  // Real-time validation
+                  const error = validateRegionCode(value);
+                  setRegionValidationErrors(prev => ({ ...prev, code: error }));
+                }}
                 placeholder="e.g., LHR"
-                maxLength={3}
+                maxLength={10}
+                className={regionValidationErrors.code ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {regionValidationErrors.code && (
+                <p className="text-sm text-red-500">{regionValidationErrors.code}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-region-country">Country *</Label>
+              <Label htmlFor="edit-region-country" className={regionValidationErrors.country ? 'text-red-500' : ''}>Country *</Label>
               <Select
                 value={regionFormData.country}
-                onValueChange={(value) => setRegionFormData({ ...regionFormData, country: value })}
+                onValueChange={(value) => {
+                  setRegionFormData({ ...regionFormData, country: value });
+                  // Real-time validation
+                  const error = validateRegionCountry(value);
+                  setRegionValidationErrors(prev => ({ ...prev, country: error }));
+                }}
               >
-                <SelectTrigger id="edit-region-country">
+                <SelectTrigger id="edit-region-country" className={regionValidationErrors.country ? 'border-red-500 focus:border-red-500' : ''}>
                   <SelectValue placeholder="Select a country" />
                 </SelectTrigger>
                 <SelectContent>
@@ -3019,24 +3811,51 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   ))}
                 </SelectContent>
               </Select>
+              {regionValidationErrors.country && (
+                <p className="text-sm text-red-500">{regionValidationErrors.country}</p>
+              )}
             </div>
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="edit-description">Description</Label>
+              <Label htmlFor="edit-description" className={regionValidationErrors.description ? 'text-red-500' : ''}>Description</Label>
               <Textarea
                 id="edit-description"
                 value={regionFormData.description}
-                onChange={(e) => setRegionFormData({ ...regionFormData, description: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setRegionFormData({ ...regionFormData, description: value });
+                  // Real-time validation
+                  const error = validateRegionDescription(value);
+                  setRegionValidationErrors(prev => ({ ...prev, description: error }));
+                }}
                 placeholder="Brief description of the region..."
                 rows={3}
+                className={regionValidationErrors.description ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {regionValidationErrors.description && (
+                <p className="text-sm text-red-500">{regionValidationErrors.description}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {regionFormData.description.length}/500 characters
+              </p>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsRegionEditDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleRegionEdit} className="bg-blue-600 hover:bg-blue-700">
-              Update Region
+            <Button 
+              onClick={handleRegionEdit} 
+              className="bg-blue-600 hover:bg-blue-700"
+              disabled={regionsLoading || !!regionValidationErrors.name || !!regionValidationErrors.code || !!regionValidationErrors.country || !!regionValidationErrors.description}
+            >
+              {regionsLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                'Update Region'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -3128,31 +3947,56 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="city-name">City Name *</Label>
+              <Label htmlFor="city-name" className={cityValidationErrors.name ? 'text-red-500' : ''}>City Name *</Label>
               <Input
                 id="city-name"
                 value={cityFormData.name}
-                onChange={(e) => setCityFormData({ ...cityFormData, name: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setCityFormData({ ...cityFormData, name: value });
+                  // Real-time validation
+                  const error = validateCityName(value);
+                  setCityValidationErrors(prev => ({ ...prev, name: error }));
+                }}
                 placeholder="e.g., Lahore"
+                className={cityValidationErrors.name ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {cityValidationErrors.name && (
+                <p className="text-sm text-red-500">{cityValidationErrors.name}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="city-code">City Code *</Label>
+              <Label htmlFor="city-code" className={cityValidationErrors.code ? 'text-red-500' : ''}>City Code *</Label>
               <Input
                 id="city-code"
                 value={cityFormData.code}
-                onChange={(e) => setCityFormData({ ...cityFormData, code: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value.toUpperCase();
+                  setCityFormData({ ...cityFormData, code: value });
+                  // Real-time validation
+                  const error = validateCityCode(value);
+                  setCityValidationErrors(prev => ({ ...prev, code: error }));
+                }}
                 placeholder="e.g., LHE"
-                maxLength={3}
+                maxLength={10}
+                className={cityValidationErrors.code ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {cityValidationErrors.code && (
+                <p className="text-sm text-red-500">{cityValidationErrors.code}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="city-country">Country *</Label>
+              <Label htmlFor="city-country" className={cityValidationErrors.country ? 'text-red-500' : ''}>Country *</Label>
               <Select
                 value={cityFormData.country}
-                onValueChange={(value) => setCityFormData({ ...cityFormData, country: value, region: '' })}
+                onValueChange={(value) => {
+                  setCityFormData({ ...cityFormData, country: value, region: '' });
+                  // Real-time validation
+                  const error = validateCityCountry(value);
+                  setCityValidationErrors(prev => ({ ...prev, country: error }));
+                }}
               >
-                <SelectTrigger id="city-country">
+                <SelectTrigger id="city-country" className={cityValidationErrors.country ? 'border-red-500 focus:border-red-500' : ''}>
                   <SelectValue placeholder="Select a country" />
                 </SelectTrigger>
                 <SelectContent>
@@ -3163,15 +4007,23 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   ))}
                 </SelectContent>
               </Select>
+              {cityValidationErrors.country && (
+                <p className="text-sm text-red-500">{cityValidationErrors.country}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="city-region">Region *</Label>
+              <Label htmlFor="city-region" className={cityValidationErrors.region ? 'text-red-500' : ''}>Region *</Label>
               <Select
                 value={cityFormData.region}
-                onValueChange={(value) => setCityFormData({ ...cityFormData, region: value })}
+                onValueChange={(value) => {
+                  setCityFormData({ ...cityFormData, region: value });
+                  // Real-time validation
+                  const error = validateCityRegion(value);
+                  setCityValidationErrors(prev => ({ ...prev, region: error }));
+                }}
                 disabled={!cityFormData.country}
               >
-                <SelectTrigger id="city-region">
+                <SelectTrigger id="city-region" className={cityValidationErrors.region ? 'border-red-500 focus:border-red-500' : ''}>
                   <SelectValue placeholder={cityFormData.country ? "Select a region" : "Select country first"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -3184,24 +4036,51 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   ))}
                 </SelectContent>
               </Select>
+              {cityValidationErrors.region && (
+                <p className="text-sm text-red-500">{cityValidationErrors.region}</p>
+              )}
             </div>
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="city-description">Description</Label>
+              <Label htmlFor="city-description" className={cityValidationErrors.description ? 'text-red-500' : ''}>Description</Label>
               <Textarea
                 id="city-description"
                 value={cityFormData.description}
-                onChange={(e) => setCityFormData({ ...cityFormData, description: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setCityFormData({ ...cityFormData, description: value });
+                  // Real-time validation
+                  const error = validateCityDescription(value);
+                  setCityValidationErrors(prev => ({ ...prev, description: error }));
+                }}
                 placeholder="Brief description of the city..."
                 rows={3}
+                className={cityValidationErrors.description ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {cityValidationErrors.description && (
+                <p className="text-sm text-red-500">{cityValidationErrors.description}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {cityFormData.description.length}/500 characters
+              </p>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCityCreateDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleCityCreate} className="bg-[#8DC63F] hover:bg-[#8DC63F]/90">
-              Create City
+            <Button 
+              onClick={handleCityCreate} 
+              className="bg-[#8DC63F] hover:bg-[#8DC63F]/90"
+              disabled={citiesLoading || !!cityValidationErrors.name || !!cityValidationErrors.code || !!cityValidationErrors.country || !!cityValidationErrors.region || !!cityValidationErrors.description}
+            >
+              {citiesLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Create City'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -3218,31 +4097,56 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-city-name">City Name *</Label>
+              <Label htmlFor="edit-city-name" className={cityValidationErrors.name ? 'text-red-500' : ''}>City Name *</Label>
               <Input
                 id="edit-city-name"
                 value={cityFormData.name}
-                onChange={(e) => setCityFormData({ ...cityFormData, name: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setCityFormData({ ...cityFormData, name: value });
+                  // Real-time validation
+                  const error = validateCityName(value);
+                  setCityValidationErrors(prev => ({ ...prev, name: error }));
+                }}
                 placeholder="e.g., Lahore"
+                className={cityValidationErrors.name ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {cityValidationErrors.name && (
+                <p className="text-sm text-red-500">{cityValidationErrors.name}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-city-code">City Code *</Label>
+              <Label htmlFor="edit-city-code" className={cityValidationErrors.code ? 'text-red-500' : ''}>City Code *</Label>
               <Input
                 id="edit-city-code"
                 value={cityFormData.code}
-                onChange={(e) => setCityFormData({ ...cityFormData, code: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value.toUpperCase();
+                  setCityFormData({ ...cityFormData, code: value });
+                  // Real-time validation
+                  const error = validateCityCode(value);
+                  setCityValidationErrors(prev => ({ ...prev, code: error }));
+                }}
                 placeholder="e.g., LHE"
-                maxLength={3}
+                maxLength={10}
+                className={cityValidationErrors.code ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {cityValidationErrors.code && (
+                <p className="text-sm text-red-500">{cityValidationErrors.code}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-city-country">Country *</Label>
+              <Label htmlFor="edit-city-country" className={cityValidationErrors.country ? 'text-red-500' : ''}>Country *</Label>
               <Select
                 value={cityFormData.country}
-                onValueChange={(value) => setCityFormData({ ...cityFormData, country: value, region: '' })}
+                onValueChange={(value) => {
+                  setCityFormData({ ...cityFormData, country: value, region: '' });
+                  // Real-time validation
+                  const error = validateCityCountry(value);
+                  setCityValidationErrors(prev => ({ ...prev, country: error }));
+                }}
               >
-                <SelectTrigger id="edit-city-country">
+                <SelectTrigger id="edit-city-country" className={cityValidationErrors.country ? 'border-red-500 focus:border-red-500' : ''}>
                   <SelectValue placeholder="Select a country" />
                 </SelectTrigger>
                 <SelectContent>
@@ -3253,15 +4157,23 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   ))}
                 </SelectContent>
               </Select>
+              {cityValidationErrors.country && (
+                <p className="text-sm text-red-500">{cityValidationErrors.country}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-city-region">Region *</Label>
+              <Label htmlFor="edit-city-region" className={cityValidationErrors.region ? 'text-red-500' : ''}>Region *</Label>
               <Select
                 value={cityFormData.region}
-                onValueChange={(value) => setCityFormData({ ...cityFormData, region: value })}
+                onValueChange={(value) => {
+                  setCityFormData({ ...cityFormData, region: value });
+                  // Real-time validation
+                  const error = validateCityRegion(value);
+                  setCityValidationErrors(prev => ({ ...prev, region: error }));
+                }}
                 disabled={!cityFormData.country}
               >
-                <SelectTrigger id="edit-city-region">
+                <SelectTrigger id="edit-city-region" className={cityValidationErrors.region ? 'border-red-500 focus:border-red-500' : ''}>
                   <SelectValue placeholder={cityFormData.country ? "Select a region" : "Select country first"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -3274,24 +4186,51 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   ))}
                 </SelectContent>
               </Select>
+              {cityValidationErrors.region && (
+                <p className="text-sm text-red-500">{cityValidationErrors.region}</p>
+              )}
             </div>
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="edit-city-description">Description</Label>
+              <Label htmlFor="edit-city-description" className={cityValidationErrors.description ? 'text-red-500' : ''}>Description</Label>
               <Textarea
                 id="edit-city-description"
                 value={cityFormData.description}
-                onChange={(e) => setCityFormData({ ...cityFormData, description: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setCityFormData({ ...cityFormData, description: value });
+                  // Real-time validation
+                  const error = validateCityDescription(value);
+                  setCityValidationErrors(prev => ({ ...prev, description: error }));
+                }}
                 placeholder="Brief description of the city..."
                 rows={3}
+                className={cityValidationErrors.description ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {cityValidationErrors.description && (
+                <p className="text-sm text-red-500">{cityValidationErrors.description}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {cityFormData.description.length}/500 characters
+              </p>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCityEditDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleCityEdit} className="bg-blue-600 hover:bg-blue-700">
-              Update City
+            <Button 
+              onClick={handleCityEdit} 
+              className="bg-blue-600 hover:bg-blue-700"
+              disabled={citiesLoading || !!cityValidationErrors.name || !!cityValidationErrors.code || !!cityValidationErrors.country || !!cityValidationErrors.region || !!cityValidationErrors.description}
+            >
+              {citiesLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                'Update City'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -3387,31 +4326,56 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="project-name">Project Name *</Label>
+              <Label htmlFor="project-name" className={projectValidationErrors.name ? 'text-red-500' : ''}>Project Name *</Label>
               <Input
                 id="project-name"
                 value={projectFormData.name}
-                onChange={(e) => setProjectFormData({ ...projectFormData, name: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setProjectFormData({ ...projectFormData, name: value });
+                  // Real-time validation
+                  const error = validateProjectName(value);
+                  setProjectValidationErrors(prev => ({ ...prev, name: error }));
+                }}
                 placeholder="e.g., Digital Learning Initiative"
+                className={projectValidationErrors.name ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {projectValidationErrors.name && (
+                <p className="text-sm text-red-500">{projectValidationErrors.name}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="project-code">Project Code *</Label>
+              <Label htmlFor="project-code" className={projectValidationErrors.code ? 'text-red-500' : ''}>Project Code *</Label>
               <Input
                 id="project-code"
                 value={projectFormData.code}
-                onChange={(e) => setProjectFormData({ ...projectFormData, code: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value.toUpperCase();
+                  setProjectFormData({ ...projectFormData, code: value });
+                  // Real-time validation
+                  const error = validateProjectCode(value);
+                  setProjectValidationErrors(prev => ({ ...prev, code: error }));
+                }}
                 placeholder="e.g., DLI-001"
                 maxLength={10}
+                className={projectValidationErrors.code ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {projectValidationErrors.code && (
+                <p className="text-sm text-red-500">{projectValidationErrors.code}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="project-country">Country *</Label>
+              <Label htmlFor="project-country" className={projectValidationErrors.country ? 'text-red-500' : ''}>Country *</Label>
               <Select
                 value={projectFormData.country}
-                onValueChange={(value) => setProjectFormData({ ...projectFormData, country: value, region: '', city: '' })}
+                onValueChange={(value) => {
+                  setProjectFormData({ ...projectFormData, country: value, region: '', city: '' });
+                  // Real-time validation
+                  const error = validateProjectCountry(value);
+                  setProjectValidationErrors(prev => ({ ...prev, country: error }));
+                }}
               >
-                <SelectTrigger id="project-country">
+                <SelectTrigger id="project-country" className={projectValidationErrors.country ? 'border-red-500 focus:border-red-500' : ''}>
                   <SelectValue placeholder="Select a country" />
                 </SelectTrigger>
                 <SelectContent>
@@ -3422,15 +4386,23 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   ))}
                 </SelectContent>
               </Select>
+              {projectValidationErrors.country && (
+                <p className="text-sm text-red-500">{projectValidationErrors.country}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="project-region">Region *</Label>
+              <Label htmlFor="project-region" className={projectValidationErrors.region ? 'text-red-500' : ''}>Region *</Label>
               <Select
                 value={projectFormData.region}
-                onValueChange={(value) => setProjectFormData({ ...projectFormData, region: value, city: '' })}
+                onValueChange={(value) => {
+                  setProjectFormData({ ...projectFormData, region: value, city: '' });
+                  // Real-time validation
+                  const error = validateProjectRegion(value);
+                  setProjectValidationErrors(prev => ({ ...prev, region: error }));
+                }}
                 disabled={!projectFormData.country}
               >
-                <SelectTrigger id="project-region">
+                <SelectTrigger id="project-region" className={projectValidationErrors.region ? 'border-red-500 focus:border-red-500' : ''}>
                   <SelectValue placeholder={projectFormData.country ? "Select a region" : "Select country first"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -3443,15 +4415,23 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                     ))}
                 </SelectContent>
               </Select>
+              {projectValidationErrors.region && (
+                <p className="text-sm text-red-500">{projectValidationErrors.region}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="project-city">City *</Label>
+              <Label htmlFor="project-city" className={projectValidationErrors.city ? 'text-red-500' : ''}>City *</Label>
               <Select
                 value={projectFormData.city}
-                onValueChange={(value) => setProjectFormData({ ...projectFormData, city: value })}
+                onValueChange={(value) => {
+                  setProjectFormData({ ...projectFormData, city: value });
+                  // Real-time validation
+                  const error = validateProjectCity(value);
+                  setProjectValidationErrors(prev => ({ ...prev, city: error }));
+                }}
                 disabled={!projectFormData.region}
               >
-                <SelectTrigger id="project-city">
+                <SelectTrigger id="project-city" className={projectValidationErrors.city ? 'border-red-500 focus:border-red-500' : ''}>
                   <SelectValue placeholder={projectFormData.region ? "Select a city" : "Select region first"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -3464,24 +4444,51 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                     ))}
                 </SelectContent>
               </Select>
+              {projectValidationErrors.city && (
+                <p className="text-sm text-red-500">{projectValidationErrors.city}</p>
+              )}
             </div>
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="project-description">Description</Label>
+              <Label htmlFor="project-description" className={projectValidationErrors.description ? 'text-red-500' : ''}>Description</Label>
               <Textarea
                 id="project-description"
                 value={projectFormData.description}
-                onChange={(e) => setProjectFormData({ ...projectFormData, description: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setProjectFormData({ ...projectFormData, description: value });
+                  // Real-time validation
+                  const error = validateProjectDescription(value);
+                  setProjectValidationErrors(prev => ({ ...prev, description: error }));
+                }}
                 placeholder="Brief description of the project..."
                 rows={3}
+                className={projectValidationErrors.description ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {projectValidationErrors.description && (
+                <p className="text-sm text-red-500">{projectValidationErrors.description}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {projectFormData.description.length}/500 characters
+              </p>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsProjectCreateDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleProjectCreate} className="bg-[#8DC63F] hover:bg-[#8DC63F]/90">
-              Create Project
+            <Button 
+              onClick={handleProjectCreate} 
+              className="bg-[#8DC63F] hover:bg-[#8DC63F]/90"
+              disabled={projectsLoading || !!projectValidationErrors.name || !!projectValidationErrors.code || !!projectValidationErrors.country || !!projectValidationErrors.region || !!projectValidationErrors.city || !!projectValidationErrors.description}
+            >
+              {projectsLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Create Project'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -3498,31 +4505,56 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-project-name">Project Name *</Label>
+              <Label htmlFor="edit-project-name" className={projectValidationErrors.name ? 'text-red-500' : ''}>Project Name *</Label>
               <Input
                 id="edit-project-name"
                 value={projectFormData.name}
-                onChange={(e) => setProjectFormData({ ...projectFormData, name: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setProjectFormData({ ...projectFormData, name: value });
+                  // Real-time validation
+                  const error = validateProjectName(value);
+                  setProjectValidationErrors(prev => ({ ...prev, name: error }));
+                }}
                 placeholder="e.g., Digital Learning Initiative"
+                className={projectValidationErrors.name ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {projectValidationErrors.name && (
+                <p className="text-sm text-red-500">{projectValidationErrors.name}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-project-code">Project Code *</Label>
+              <Label htmlFor="edit-project-code" className={projectValidationErrors.code ? 'text-red-500' : ''}>Project Code *</Label>
               <Input
                 id="edit-project-code"
                 value={projectFormData.code}
-                onChange={(e) => setProjectFormData({ ...projectFormData, code: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value.toUpperCase();
+                  setProjectFormData({ ...projectFormData, code: value });
+                  // Real-time validation
+                  const error = validateProjectCode(value);
+                  setProjectValidationErrors(prev => ({ ...prev, code: error }));
+                }}
                 placeholder="e.g., DLI-001"
                 maxLength={10}
+                className={projectValidationErrors.code ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {projectValidationErrors.code && (
+                <p className="text-sm text-red-500">{projectValidationErrors.code}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-project-country">Country *</Label>
+              <Label htmlFor="edit-project-country" className={projectValidationErrors.country ? 'text-red-500' : ''}>Country *</Label>
               <Select
                 value={projectFormData.country}
-                onValueChange={(value) => setProjectFormData({ ...projectFormData, country: value, region: '', city: '' })}
+                onValueChange={(value) => {
+                  setProjectFormData({ ...projectFormData, country: value, region: '', city: '' });
+                  // Real-time validation
+                  const error = validateProjectCountry(value);
+                  setProjectValidationErrors(prev => ({ ...prev, country: error }));
+                }}
               >
-                <SelectTrigger id="edit-project-country">
+                <SelectTrigger id="edit-project-country" className={projectValidationErrors.country ? 'border-red-500 focus:border-red-500' : ''}>
                   <SelectValue placeholder="Select a country" />
                 </SelectTrigger>
                 <SelectContent>
@@ -3533,15 +4565,23 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   ))}
                 </SelectContent>
               </Select>
+              {projectValidationErrors.country && (
+                <p className="text-sm text-red-500">{projectValidationErrors.country}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-project-region">Region *</Label>
+              <Label htmlFor="edit-project-region" className={projectValidationErrors.region ? 'text-red-500' : ''}>Region *</Label>
               <Select
                 value={projectFormData.region}
-                onValueChange={(value) => setProjectFormData({ ...projectFormData, region: value, city: '' })}
+                onValueChange={(value) => {
+                  setProjectFormData({ ...projectFormData, region: value, city: '' });
+                  // Real-time validation
+                  const error = validateProjectRegion(value);
+                  setProjectValidationErrors(prev => ({ ...prev, region: error }));
+                }}
                 disabled={!projectFormData.country}
               >
-                <SelectTrigger id="edit-project-region">
+                <SelectTrigger id="edit-project-region" className={projectValidationErrors.region ? 'border-red-500 focus:border-red-500' : ''}>
                   <SelectValue placeholder={projectFormData.country ? "Select a region" : "Select country first"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -3554,15 +4594,23 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                     ))}
                 </SelectContent>
               </Select>
+              {projectValidationErrors.region && (
+                <p className="text-sm text-red-500">{projectValidationErrors.region}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-project-city">City *</Label>
+              <Label htmlFor="edit-project-city" className={projectValidationErrors.city ? 'text-red-500' : ''}>City *</Label>
               <Select
                 value={projectFormData.city}
-                onValueChange={(value) => setProjectFormData({ ...projectFormData, city: value })}
+                onValueChange={(value) => {
+                  setProjectFormData({ ...projectFormData, city: value });
+                  // Real-time validation
+                  const error = validateProjectCity(value);
+                  setProjectValidationErrors(prev => ({ ...prev, city: error }));
+                }}
                 disabled={!projectFormData.region}
               >
-                <SelectTrigger id="edit-project-city">
+                <SelectTrigger id="edit-project-city" className={projectValidationErrors.city ? 'border-red-500 focus:border-red-500' : ''}>
                   <SelectValue placeholder={projectFormData.region ? "Select a city" : "Select region first"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -3575,24 +4623,51 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                     ))}
                 </SelectContent>
               </Select>
+              {projectValidationErrors.city && (
+                <p className="text-sm text-red-500">{projectValidationErrors.city}</p>
+              )}
             </div>
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="edit-project-description">Description</Label>
+              <Label htmlFor="edit-project-description" className={projectValidationErrors.description ? 'text-red-500' : ''}>Description</Label>
               <Textarea
                 id="edit-project-description"
                 value={projectFormData.description}
-                onChange={(e) => setProjectFormData({ ...projectFormData, description: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setProjectFormData({ ...projectFormData, description: value });
+                  // Real-time validation
+                  const error = validateProjectDescription(value);
+                  setProjectValidationErrors(prev => ({ ...prev, description: error }));
+                }}
                 placeholder="Brief description of the project..."
                 rows={3}
+                className={projectValidationErrors.description ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {projectValidationErrors.description && (
+                <p className="text-sm text-red-500">{projectValidationErrors.description}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {projectFormData.description.length}/500 characters
+              </p>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsProjectEditDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleProjectEdit} className="bg-blue-600 hover:bg-blue-700">
-              Update Project
+            <Button 
+              onClick={handleProjectEdit} 
+              className="bg-blue-600 hover:bg-blue-700"
+              disabled={projectsLoading || !!projectValidationErrors.name || !!projectValidationErrors.code || !!projectValidationErrors.country || !!projectValidationErrors.region || !!projectValidationErrors.city || !!projectValidationErrors.description}
+            >
+              {projectsLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                'Update Project'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -3692,31 +4767,56 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="board-name">Board Name *</Label>
+              <Label htmlFor="board-name" className={boardValidationErrors.name ? 'text-red-500' : ''}>Board Name *</Label>
               <Input
                 id="board-name"
                 value={boardFormData.name}
-                onChange={(e) => setBoardFormData({ ...boardFormData, name: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setBoardFormData({ ...boardFormData, name: value });
+                  // Real-time validation
+                  const error = validateBoardName(value);
+                  setBoardValidationErrors(prev => ({ ...prev, name: error }));
+                }}
                 placeholder="e.g., Central Board of Secondary Education"
+                className={boardValidationErrors.name ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {boardValidationErrors.name && (
+                <p className="text-sm text-red-500">{boardValidationErrors.name}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="board-code">Board Code *</Label>
+              <Label htmlFor="board-code" className={boardValidationErrors.code ? 'text-red-500' : ''}>Board Code *</Label>
               <Input
                 id="board-code"
                 value={boardFormData.code}
-                onChange={(e) => setBoardFormData({ ...boardFormData, code: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value.toUpperCase();
+                  setBoardFormData({ ...boardFormData, code: value });
+                  // Real-time validation
+                  const error = validateBoardCode(value);
+                  setBoardValidationErrors(prev => ({ ...prev, code: error }));
+                }}
                 placeholder="e.g., CBSE"
                 maxLength={10}
+                className={boardValidationErrors.code ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {boardValidationErrors.code && (
+                <p className="text-sm text-red-500">{boardValidationErrors.code}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="board-country">Country *</Label>
+              <Label htmlFor="board-country" className={boardValidationErrors.country ? 'text-red-500' : ''}>Country *</Label>
               <Select
                 value={boardFormData.country}
-                onValueChange={(value) => setBoardFormData({ ...boardFormData, country: value, region: '', city: '', project: '' })}
+                onValueChange={(value) => {
+                  setBoardFormData({ ...boardFormData, country: value, region: '', city: '', project: '' });
+                  // Real-time validation
+                  const error = validateBoardCountry(value);
+                  setBoardValidationErrors(prev => ({ ...prev, country: error }));
+                }}
               >
-                <SelectTrigger id="board-country">
+                <SelectTrigger id="board-country" className={boardValidationErrors.country ? 'border-red-500 focus:border-red-500' : ''}>
                   <SelectValue placeholder="Select a country" />
                 </SelectTrigger>
                 <SelectContent>
@@ -3727,15 +4827,23 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   ))}
                 </SelectContent>
               </Select>
+              {boardValidationErrors.country && (
+                <p className="text-sm text-red-500">{boardValidationErrors.country}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="board-region">Region *</Label>
+              <Label htmlFor="board-region" className={boardValidationErrors.region ? 'text-red-500' : ''}>Region *</Label>
               <Select
                 value={boardFormData.region}
-                onValueChange={(value) => setBoardFormData({ ...boardFormData, region: value, city: '', project: '' })}
+                onValueChange={(value) => {
+                  setBoardFormData({ ...boardFormData, region: value, city: '', project: '' });
+                  // Real-time validation
+                  const error = validateBoardRegion(value);
+                  setBoardValidationErrors(prev => ({ ...prev, region: error }));
+                }}
                 disabled={!boardFormData.country}
               >
-                <SelectTrigger id="board-region">
+                <SelectTrigger id="board-region" className={boardValidationErrors.region ? 'border-red-500 focus:border-red-500' : ''}>
                   <SelectValue placeholder={boardFormData.country ? "Select a region" : "Select country first"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -3748,15 +4856,23 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   ))}
                 </SelectContent>
               </Select>
+              {boardValidationErrors.region && (
+                <p className="text-sm text-red-500">{boardValidationErrors.region}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="board-city">City *</Label>
+              <Label htmlFor="board-city" className={boardValidationErrors.city ? 'text-red-500' : ''}>City *</Label>
               <Select
                 value={boardFormData.city}
-                onValueChange={(value) => setBoardFormData({ ...boardFormData, city: value, project: '' })}
+                onValueChange={(value) => {
+                  setBoardFormData({ ...boardFormData, city: value, project: '' });
+                  // Real-time validation
+                  const error = validateBoardCity(value);
+                  setBoardValidationErrors(prev => ({ ...prev, city: error }));
+                }}
                 disabled={!boardFormData.region}
               >
-                <SelectTrigger id="board-city">
+                <SelectTrigger id="board-city" className={boardValidationErrors.city ? 'border-red-500 focus:border-red-500' : ''}>
                   <SelectValue placeholder={boardFormData.region ? "Select a city" : "Select region first"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -3769,15 +4885,23 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   ))}
                 </SelectContent>
               </Select>
+              {boardValidationErrors.city && (
+                <p className="text-sm text-red-500">{boardValidationErrors.city}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="board-project">Project *</Label>
+              <Label htmlFor="board-project" className={boardValidationErrors.project ? 'text-red-500' : ''}>Project *</Label>
               <Select
                 value={boardFormData.project}
-                onValueChange={(value) => setBoardFormData({ ...boardFormData, project: value })}
+                onValueChange={(value) => {
+                  setBoardFormData({ ...boardFormData, project: value });
+                  // Real-time validation
+                  const error = validateBoardProject(value);
+                  setBoardValidationErrors(prev => ({ ...prev, project: error }));
+                }}
                 disabled={!boardFormData.city}
               >
-                <SelectTrigger id="board-project">
+                <SelectTrigger id="board-project" className={boardValidationErrors.project ? 'border-red-500 focus:border-red-500' : ''}>
                   <SelectValue placeholder={boardFormData.city ? "Select a project" : "Select city first"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -3790,24 +4914,51 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   ))}
                 </SelectContent>
               </Select>
+              {boardValidationErrors.project && (
+                <p className="text-sm text-red-500">{boardValidationErrors.project}</p>
+              )}
             </div>
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="board-description">Description</Label>
+              <Label htmlFor="board-description" className={boardValidationErrors.description ? 'text-red-500' : ''}>Description</Label>
               <Textarea
                 id="board-description"
                 value={boardFormData.description}
-                onChange={(e) => setBoardFormData({ ...boardFormData, description: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setBoardFormData({ ...boardFormData, description: value });
+                  // Real-time validation
+                  const error = validateBoardDescription(value);
+                  setBoardValidationErrors(prev => ({ ...prev, description: error }));
+                }}
                 placeholder="Brief description of the board..."
                 rows={3}
+                className={boardValidationErrors.description ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {boardValidationErrors.description && (
+                <p className="text-sm text-red-500">{boardValidationErrors.description}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {boardFormData.description.length}/500 characters
+              </p>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsBoardCreateDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleBoardCreate} className="bg-[#8DC63F] hover:bg-[#8DC63F]/90">
-              Create Board
+            <Button 
+              onClick={handleBoardCreate} 
+              className="bg-[#8DC63F] hover:bg-[#8DC63F]/90"
+              disabled={boardsLoading || !!boardValidationErrors.name || !!boardValidationErrors.code || !!boardValidationErrors.country || !!boardValidationErrors.region || !!boardValidationErrors.city || !!boardValidationErrors.project || !!boardValidationErrors.description}
+            >
+              {boardsLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Create Board'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -3824,31 +4975,56 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-board-name">Board Name *</Label>
+              <Label htmlFor="edit-board-name" className={boardValidationErrors.name ? 'text-red-500' : ''}>Board Name *</Label>
               <Input
                 id="edit-board-name"
                 value={boardFormData.name}
-                onChange={(e) => setBoardFormData({ ...boardFormData, name: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setBoardFormData({ ...boardFormData, name: value });
+                  // Real-time validation
+                  const error = validateBoardName(value);
+                  setBoardValidationErrors(prev => ({ ...prev, name: error }));
+                }}
                 placeholder="e.g., Central Board of Secondary Education"
+                className={boardValidationErrors.name ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {boardValidationErrors.name && (
+                <p className="text-sm text-red-500">{boardValidationErrors.name}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-board-code">Board Code *</Label>
+              <Label htmlFor="edit-board-code" className={boardValidationErrors.code ? 'text-red-500' : ''}>Board Code *</Label>
               <Input
                 id="edit-board-code"
                 value={boardFormData.code}
-                onChange={(e) => setBoardFormData({ ...boardFormData, code: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value.toUpperCase();
+                  setBoardFormData({ ...boardFormData, code: value });
+                  // Real-time validation
+                  const error = validateBoardCode(value);
+                  setBoardValidationErrors(prev => ({ ...prev, code: error }));
+                }}
                 placeholder="e.g., CBSE"
                 maxLength={10}
+                className={boardValidationErrors.code ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {boardValidationErrors.code && (
+                <p className="text-sm text-red-500">{boardValidationErrors.code}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-board-country">Country *</Label>
+              <Label htmlFor="edit-board-country" className={boardValidationErrors.country ? 'text-red-500' : ''}>Country *</Label>
               <Select
                 value={boardFormData.country}
-                onValueChange={(value) => setBoardFormData({ ...boardFormData, country: value, region: '', city: '', project: '' })}
+                onValueChange={(value) => {
+                  setBoardFormData({ ...boardFormData, country: value, region: '', city: '', project: '' });
+                  // Real-time validation
+                  const error = validateBoardCountry(value);
+                  setBoardValidationErrors(prev => ({ ...prev, country: error }));
+                }}
               >
-                <SelectTrigger id="edit-board-country">
+                <SelectTrigger id="edit-board-country" className={boardValidationErrors.country ? 'border-red-500 focus:border-red-500' : ''}>
                   <SelectValue placeholder="Select a country" />
                 </SelectTrigger>
                 <SelectContent>
@@ -3859,15 +5035,23 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   ))}
                 </SelectContent>
               </Select>
+              {boardValidationErrors.country && (
+                <p className="text-sm text-red-500">{boardValidationErrors.country}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-board-region">Region *</Label>
+              <Label htmlFor="edit-board-region" className={boardValidationErrors.region ? 'text-red-500' : ''}>Region *</Label>
               <Select
                 value={boardFormData.region}
-                onValueChange={(value) => setBoardFormData({ ...boardFormData, region: value, city: '', project: '' })}
+                onValueChange={(value) => {
+                  setBoardFormData({ ...boardFormData, region: value, city: '', project: '' });
+                  // Real-time validation
+                  const error = validateBoardRegion(value);
+                  setBoardValidationErrors(prev => ({ ...prev, region: error }));
+                }}
                 disabled={!boardFormData.country}
               >
-                <SelectTrigger id="edit-board-region">
+                <SelectTrigger id="edit-board-region" className={boardValidationErrors.region ? 'border-red-500 focus:border-red-500' : ''}>
                   <SelectValue placeholder={boardFormData.country ? "Select a region" : "Select country first"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -3880,15 +5064,23 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   ))}
                 </SelectContent>
               </Select>
+              {boardValidationErrors.region && (
+                <p className="text-sm text-red-500">{boardValidationErrors.region}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-board-city">City *</Label>
+              <Label htmlFor="edit-board-city" className={boardValidationErrors.city ? 'text-red-500' : ''}>City *</Label>
               <Select
                 value={boardFormData.city}
-                onValueChange={(value) => setBoardFormData({ ...boardFormData, city: value, project: '' })}
+                onValueChange={(value) => {
+                  setBoardFormData({ ...boardFormData, city: value, project: '' });
+                  // Real-time validation
+                  const error = validateBoardCity(value);
+                  setBoardValidationErrors(prev => ({ ...prev, city: error }));
+                }}
                 disabled={!boardFormData.region}
               >
-                <SelectTrigger id="edit-board-city">
+                <SelectTrigger id="edit-board-city" className={boardValidationErrors.city ? 'border-red-500 focus:border-red-500' : ''}>
                   <SelectValue placeholder={boardFormData.region ? "Select a city" : "Select region first"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -3901,15 +5093,23 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   ))}
                 </SelectContent>
               </Select>
+              {boardValidationErrors.city && (
+                <p className="text-sm text-red-500">{boardValidationErrors.city}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-board-project">Project *</Label>
+              <Label htmlFor="edit-board-project" className={boardValidationErrors.project ? 'text-red-500' : ''}>Project *</Label>
               <Select
                 value={boardFormData.project}
-                onValueChange={(value) => setBoardFormData({ ...boardFormData, project: value })}
+                onValueChange={(value) => {
+                  setBoardFormData({ ...boardFormData, project: value });
+                  // Real-time validation
+                  const error = validateBoardProject(value);
+                  setBoardValidationErrors(prev => ({ ...prev, project: error }));
+                }}
                 disabled={!boardFormData.city}
               >
-                <SelectTrigger id="edit-board-project">
+                <SelectTrigger id="edit-board-project" className={boardValidationErrors.project ? 'border-red-500 focus:border-red-500' : ''}>
                   <SelectValue placeholder={boardFormData.city ? "Select a project" : "Select city first"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -3922,24 +5122,51 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   ))}
                 </SelectContent>
               </Select>
+              {boardValidationErrors.project && (
+                <p className="text-sm text-red-500">{boardValidationErrors.project}</p>
+              )}
             </div>
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="edit-board-description">Description</Label>
+              <Label htmlFor="edit-board-description" className={boardValidationErrors.description ? 'text-red-500' : ''}>Description</Label>
               <Textarea
                 id="edit-board-description"
                 value={boardFormData.description}
-                onChange={(e) => setBoardFormData({ ...boardFormData, description: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setBoardFormData({ ...boardFormData, description: value });
+                  // Real-time validation
+                  const error = validateBoardDescription(value);
+                  setBoardValidationErrors(prev => ({ ...prev, description: error }));
+                }}
                 placeholder="Brief description of the board..."
                 rows={3}
+                className={boardValidationErrors.description ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {boardValidationErrors.description && (
+                <p className="text-sm text-red-500">{boardValidationErrors.description}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {boardFormData.description.length}/500 characters
+              </p>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsBoardEditDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleBoardEdit} className="bg-blue-600 hover:bg-blue-700">
-              Update Board
+            <Button 
+              onClick={handleBoardEdit} 
+              className="bg-blue-600 hover:bg-blue-700"
+              disabled={boardsLoading || !!boardValidationErrors.name || !!boardValidationErrors.code || !!boardValidationErrors.country || !!boardValidationErrors.region || !!boardValidationErrors.city || !!boardValidationErrors.project || !!boardValidationErrors.description}
+            >
+              {boardsLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                'Update Board'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -4043,31 +5270,56 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4 max-h-[60vh] overflow-y-auto">
             <div className="space-y-2">
-              <Label htmlFor="school-name">School Name *</Label>
+              <Label htmlFor="school-name" className={schoolValidationErrors.name ? 'text-red-500' : ''}>School Name *</Label>
               <Input
                 id="school-name"
                 value={schoolFormData.name}
-                onChange={(e) => setSchoolFormData({ ...schoolFormData, name: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSchoolFormData({ ...schoolFormData, name: value });
+                  // Real-time validation
+                  const error = validateSchoolName(value);
+                  setSchoolValidationErrors(prev => ({ ...prev, name: error }));
+                }}
                 placeholder="e.g., Beaconhouse School System"
+                className={schoolValidationErrors.name ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {schoolValidationErrors.name && (
+                <p className="text-sm text-red-500">{schoolValidationErrors.name}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="school-code">School Code *</Label>
+              <Label htmlFor="school-code" className={schoolValidationErrors.code ? 'text-red-500' : ''}>School Code *</Label>
               <Input
                 id="school-code"
                 value={schoolFormData.code}
-                onChange={(e) => setSchoolFormData({ ...schoolFormData, code: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value.toUpperCase();
+                  setSchoolFormData({ ...schoolFormData, code: value });
+                  // Real-time validation
+                  const error = validateSchoolCode(value);
+                  setSchoolValidationErrors(prev => ({ ...prev, code: error }));
+                }}
                 placeholder="e.g., BSS-001"
                 maxLength={10}
+                className={schoolValidationErrors.code ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {schoolValidationErrors.code && (
+                <p className="text-sm text-red-500">{schoolValidationErrors.code}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="school-type">School Type *</Label>
+              <Label htmlFor="school-type" className={schoolValidationErrors.type ? 'text-red-500' : ''}>School Type *</Label>
               <Select
                 value={schoolFormData.type}
-                onValueChange={(value) => setSchoolFormData({ ...schoolFormData, type: value })}
+                onValueChange={(value) => {
+                  setSchoolFormData({ ...schoolFormData, type: value });
+                  // Real-time validation
+                  const error = validateSchoolType(value);
+                  setSchoolValidationErrors(prev => ({ ...prev, type: error }));
+                }}
               >
-                <SelectTrigger id="school-type">
+                <SelectTrigger id="school-type" className={schoolValidationErrors.type ? 'border-red-500 focus:border-red-500' : ''}>
                   <SelectValue placeholder="Select school type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -4076,14 +5328,22 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectItem value="International">International</SelectItem>
                 </SelectContent>
               </Select>
+              {schoolValidationErrors.type && (
+                <p className="text-sm text-red-500">{schoolValidationErrors.type}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="school-country">Country *</Label>
+              <Label htmlFor="school-country" className={schoolValidationErrors.country ? 'text-red-500' : ''}>Country *</Label>
               <Select
                 value={schoolFormData.country}
-                onValueChange={(value) => setSchoolFormData({ ...schoolFormData, country: value, region: '', city: '', project: '', board: '' })}
+                onValueChange={(value) => {
+                  setSchoolFormData({ ...schoolFormData, country: value, region: '', city: '', project: '', board: '' });
+                  // Real-time validation
+                  const error = validateSchoolCountry(value);
+                  setSchoolValidationErrors(prev => ({ ...prev, country: error }));
+                }}
               >
-                <SelectTrigger id="school-country">
+                <SelectTrigger id="school-country" className={schoolValidationErrors.country ? 'border-red-500 focus:border-red-500' : ''}>
                   <SelectValue placeholder="Select a country" />
                 </SelectTrigger>
                 <SelectContent>
@@ -4094,15 +5354,23 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   ))}
                 </SelectContent>
               </Select>
+              {schoolValidationErrors.country && (
+                <p className="text-sm text-red-500">{schoolValidationErrors.country}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="school-region">Region *</Label>
+              <Label htmlFor="school-region" className={schoolValidationErrors.region ? 'text-red-500' : ''}>Region *</Label>
               <Select
                 value={schoolFormData.region}
-                onValueChange={(value) => setSchoolFormData({ ...schoolFormData, region: value, city: '', project: '', board: '' })}
+                onValueChange={(value) => {
+                  setSchoolFormData({ ...schoolFormData, region: value, city: '', project: '', board: '' });
+                  // Real-time validation
+                  const error = validateSchoolRegion(value);
+                  setSchoolValidationErrors(prev => ({ ...prev, region: error }));
+                }}
                 disabled={!schoolFormData.country}
               >
-                <SelectTrigger id="school-region">
+                <SelectTrigger id="school-region" className={schoolValidationErrors.region ? 'border-red-500 focus:border-red-500' : ''}>
                   <SelectValue placeholder={schoolFormData.country ? "Select a region" : "Select country first"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -4115,15 +5383,23 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   ))}
                 </SelectContent>
               </Select>
+              {schoolValidationErrors.region && (
+                <p className="text-sm text-red-500">{schoolValidationErrors.region}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="school-city">City *</Label>
+              <Label htmlFor="school-city" className={schoolValidationErrors.city ? 'text-red-500' : ''}>City *</Label>
               <Select
                 value={schoolFormData.city}
-                onValueChange={(value) => setSchoolFormData({ ...schoolFormData, city: value, project: '', board: '' })}
+                onValueChange={(value) => {
+                  setSchoolFormData({ ...schoolFormData, city: value, project: '', board: '' });
+                  // Real-time validation
+                  const error = validateSchoolCity(value);
+                  setSchoolValidationErrors(prev => ({ ...prev, city: error }));
+                }}
                 disabled={!schoolFormData.region}
               >
-                <SelectTrigger id="school-city">
+                <SelectTrigger id="school-city" className={schoolValidationErrors.city ? 'border-red-500 focus:border-red-500' : ''}>
                   <SelectValue placeholder={schoolFormData.region ? "Select a city" : "Select region first"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -4136,15 +5412,23 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   ))}
                 </SelectContent>
               </Select>
+              {schoolValidationErrors.city && (
+                <p className="text-sm text-red-500">{schoolValidationErrors.city}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="school-project">Project *</Label>
+              <Label htmlFor="school-project" className={schoolValidationErrors.project ? 'text-red-500' : ''}>Project *</Label>
               <Select
                 value={schoolFormData.project}
-                onValueChange={(value) => setSchoolFormData({ ...schoolFormData, project: value, board: '' })}
+                onValueChange={(value) => {
+                  setSchoolFormData({ ...schoolFormData, project: value, board: '' });
+                  // Real-time validation
+                  const error = validateSchoolProject(value);
+                  setSchoolValidationErrors(prev => ({ ...prev, project: error }));
+                }}
                 disabled={!schoolFormData.city}
               >
-                <SelectTrigger id="school-project">
+                <SelectTrigger id="school-project" className={schoolValidationErrors.project ? 'border-red-500 focus:border-red-500' : ''}>
                   <SelectValue placeholder={schoolFormData.city ? "Select a project" : "Select city first"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -4157,15 +5441,23 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   ))}
                 </SelectContent>
               </Select>
+              {schoolValidationErrors.project && (
+                <p className="text-sm text-red-500">{schoolValidationErrors.project}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="school-board">Board *</Label>
+              <Label htmlFor="school-board" className={schoolValidationErrors.board ? 'text-red-500' : ''}>Board *</Label>
               <Select
                 value={schoolFormData.board}
-                onValueChange={(value) => setSchoolFormData({ ...schoolFormData, board: value })}
+                onValueChange={(value) => {
+                  setSchoolFormData({ ...schoolFormData, board: value });
+                  // Real-time validation
+                  const error = validateSchoolBoard(value);
+                  setSchoolValidationErrors(prev => ({ ...prev, board: error }));
+                }}
                 disabled={!schoolFormData.project}
               >
-                <SelectTrigger id="school-board">
+                <SelectTrigger id="school-board" className={schoolValidationErrors.board ? 'border-red-500 focus:border-red-500' : ''}>
                   <SelectValue placeholder={schoolFormData.project ? "Select a board" : "Select project first"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -4178,52 +5470,109 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                     ))}
                 </SelectContent>
               </Select>
+              {schoolValidationErrors.board && (
+                <p className="text-sm text-red-500">{schoolValidationErrors.board}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="school-phone">Phone</Label>
+              <Label htmlFor="school-phone" className={schoolValidationErrors.phone ? 'text-red-500' : ''}>Phone</Label>
               <Input
                 id="school-phone"
                 value={schoolFormData.phone}
-                onChange={(e) => setSchoolFormData({ ...schoolFormData, phone: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSchoolFormData({ ...schoolFormData, phone: value });
+                  // Real-time validation
+                  const error = validateSchoolPhone(value);
+                  setSchoolValidationErrors(prev => ({ ...prev, phone: error }));
+                }}
                 placeholder="e.g., +92-42-1234567"
+                className={schoolValidationErrors.phone ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {schoolValidationErrors.phone && (
+                <p className="text-sm text-red-500">{schoolValidationErrors.phone}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="school-email">Email</Label>
+              <Label htmlFor="school-email" className={schoolValidationErrors.email ? 'text-red-500' : ''}>Email</Label>
               <Input
                 id="school-email"
                 type="email"
                 value={schoolFormData.email}
-                onChange={(e) => setSchoolFormData({ ...schoolFormData, email: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSchoolFormData({ ...schoolFormData, email: value });
+                  // Real-time validation
+                  const error = validateSchoolEmail(value);
+                  setSchoolValidationErrors(prev => ({ ...prev, email: error }));
+                }}
                 placeholder="e.g., info@school.edu.pk"
+                className={schoolValidationErrors.email ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {schoolValidationErrors.email && (
+                <p className="text-sm text-red-500">{schoolValidationErrors.email}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="school-website">Website</Label>
+              <Label htmlFor="school-website" className={schoolValidationErrors.website ? 'text-red-500' : ''}>Website</Label>
               <Input
                 id="school-website"
                 value={schoolFormData.website}
-                onChange={(e) => setSchoolFormData({ ...schoolFormData, website: e.target.value })}
-                placeholder="e.g., www.school.edu.pk"
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSchoolFormData({ ...schoolFormData, website: value });
+                  // Real-time validation
+                  const error = validateSchoolWebsite(value);
+                  setSchoolValidationErrors(prev => ({ ...prev, website: error }));
+                }}
+                placeholder="e.g., https://www.school.edu.pk"
+                className={schoolValidationErrors.website ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {schoolValidationErrors.website && (
+                <p className="text-sm text-red-500">{schoolValidationErrors.website}</p>
+              )}
             </div>
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="school-address">Address</Label>
+              <Label htmlFor="school-address" className={schoolValidationErrors.address ? 'text-red-500' : ''}>Address *</Label>
               <Textarea
                 id="school-address"
                 value={schoolFormData.address}
-                onChange={(e) => setSchoolFormData({ ...schoolFormData, address: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSchoolFormData({ ...schoolFormData, address: value });
+                  // Real-time validation
+                  const error = validateSchoolAddress(value);
+                  setSchoolValidationErrors(prev => ({ ...prev, address: error }));
+                }}
                 placeholder="Full address of the school..."
                 rows={3}
+                className={schoolValidationErrors.address ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {schoolValidationErrors.address && (
+                <p className="text-sm text-red-500">{schoolValidationErrors.address}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {schoolFormData.address.length}/200 characters
+              </p>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsSchoolCreateDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSchoolCreate} className="bg-[#8DC63F] hover:bg-[#8DC63F]/90">
-              Create School
+            <Button 
+              onClick={handleSchoolCreate} 
+              className="bg-[#8DC63F] hover:bg-[#8DC63F]/90"
+              disabled={schoolsLoading || !!schoolValidationErrors.name || !!schoolValidationErrors.code || !!schoolValidationErrors.type || !!schoolValidationErrors.address || !!schoolValidationErrors.country || !!schoolValidationErrors.region || !!schoolValidationErrors.city || !!schoolValidationErrors.project || !!schoolValidationErrors.board || !!schoolValidationErrors.phone || !!schoolValidationErrors.email || !!schoolValidationErrors.website}
+            >
+              {schoolsLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Create School'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -4240,31 +5589,56 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4 max-h-[60vh] overflow-y-auto">
             <div className="space-y-2">
-              <Label htmlFor="edit-school-name">School Name *</Label>
+              <Label htmlFor="edit-school-name" className={schoolValidationErrors.name ? 'text-red-500' : ''}>School Name *</Label>
               <Input
                 id="edit-school-name"
                 value={schoolFormData.name}
-                onChange={(e) => setSchoolFormData({ ...schoolFormData, name: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSchoolFormData({ ...schoolFormData, name: value });
+                  // Real-time validation
+                  const error = validateSchoolName(value);
+                  setSchoolValidationErrors(prev => ({ ...prev, name: error }));
+                }}
                 placeholder="e.g., Beaconhouse School System"
+                className={schoolValidationErrors.name ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {schoolValidationErrors.name && (
+                <p className="text-sm text-red-500">{schoolValidationErrors.name}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-school-code">School Code *</Label>
+              <Label htmlFor="edit-school-code" className={schoolValidationErrors.code ? 'text-red-500' : ''}>School Code *</Label>
               <Input
                 id="edit-school-code"
                 value={schoolFormData.code}
-                onChange={(e) => setSchoolFormData({ ...schoolFormData, code: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value.toUpperCase();
+                  setSchoolFormData({ ...schoolFormData, code: value });
+                  // Real-time validation
+                  const error = validateSchoolCode(value);
+                  setSchoolValidationErrors(prev => ({ ...prev, code: error }));
+                }}
                 placeholder="e.g., BSS-001"
                 maxLength={10}
+                className={schoolValidationErrors.code ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {schoolValidationErrors.code && (
+                <p className="text-sm text-red-500">{schoolValidationErrors.code}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-school-type">School Type *</Label>
+              <Label htmlFor="edit-school-type" className={schoolValidationErrors.type ? 'text-red-500' : ''}>School Type *</Label>
               <Select
                 value={schoolFormData.type}
-                onValueChange={(value) => setSchoolFormData({ ...schoolFormData, type: value })}
+                onValueChange={(value) => {
+                  setSchoolFormData({ ...schoolFormData, type: value });
+                  // Real-time validation
+                  const error = validateSchoolType(value);
+                  setSchoolValidationErrors(prev => ({ ...prev, type: error }));
+                }}
               >
-                <SelectTrigger id="edit-school-type">
+                <SelectTrigger id="edit-school-type" className={schoolValidationErrors.type ? 'border-red-500 focus:border-red-500' : ''}>
                   <SelectValue placeholder="Select school type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -4273,14 +5647,22 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectItem value="International">International</SelectItem>
                 </SelectContent>
               </Select>
+              {schoolValidationErrors.type && (
+                <p className="text-sm text-red-500">{schoolValidationErrors.type}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-school-country">Country *</Label>
+              <Label htmlFor="edit-school-country" className={schoolValidationErrors.country ? 'text-red-500' : ''}>Country *</Label>
               <Select
                 value={schoolFormData.country}
-                onValueChange={(value) => setSchoolFormData({ ...schoolFormData, country: value, region: '', city: '', project: '', board: '' })}
+                onValueChange={(value) => {
+                  setSchoolFormData({ ...schoolFormData, country: value, region: '', city: '', project: '', board: '' });
+                  // Real-time validation
+                  const error = validateSchoolCountry(value);
+                  setSchoolValidationErrors(prev => ({ ...prev, country: error }));
+                }}
               >
-                <SelectTrigger id="edit-school-country">
+                <SelectTrigger id="edit-school-country" className={schoolValidationErrors.country ? 'border-red-500 focus:border-red-500' : ''}>
                   <SelectValue placeholder="Select a country" />
                 </SelectTrigger>
                 <SelectContent>
@@ -4291,15 +5673,23 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   ))}
                 </SelectContent>
               </Select>
+              {schoolValidationErrors.country && (
+                <p className="text-sm text-red-500">{schoolValidationErrors.country}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-school-region">Region *</Label>
+              <Label htmlFor="edit-school-region" className={schoolValidationErrors.region ? 'text-red-500' : ''}>Region *</Label>
               <Select
                 value={schoolFormData.region}
-                onValueChange={(value) => setSchoolFormData({ ...schoolFormData, region: value, city: '', project: '', board: '' })}
+                onValueChange={(value) => {
+                  setSchoolFormData({ ...schoolFormData, region: value, city: '', project: '', board: '' });
+                  // Real-time validation
+                  const error = validateSchoolRegion(value);
+                  setSchoolValidationErrors(prev => ({ ...prev, region: error }));
+                }}
                 disabled={!schoolFormData.country}
               >
-                <SelectTrigger id="edit-school-region">
+                <SelectTrigger id="edit-school-region" className={schoolValidationErrors.region ? 'border-red-500 focus:border-red-500' : ''}>
                   <SelectValue placeholder={schoolFormData.country ? "Select a region" : "Select country first"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -4312,15 +5702,23 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   ))}
                 </SelectContent>
               </Select>
+              {schoolValidationErrors.region && (
+                <p className="text-sm text-red-500">{schoolValidationErrors.region}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-school-city">City *</Label>
+              <Label htmlFor="edit-school-city" className={schoolValidationErrors.city ? 'text-red-500' : ''}>City *</Label>
               <Select
                 value={schoolFormData.city}
-                onValueChange={(value) => setSchoolFormData({ ...schoolFormData, city: value, project: '', board: '' })}
+                onValueChange={(value) => {
+                  setSchoolFormData({ ...schoolFormData, city: value, project: '', board: '' });
+                  // Real-time validation
+                  const error = validateSchoolCity(value);
+                  setSchoolValidationErrors(prev => ({ ...prev, city: error }));
+                }}
                 disabled={!schoolFormData.region}
               >
-                <SelectTrigger id="edit-school-city">
+                <SelectTrigger id="edit-school-city" className={schoolValidationErrors.city ? 'border-red-500 focus:border-red-500' : ''}>
                   <SelectValue placeholder={schoolFormData.region ? "Select a city" : "Select region first"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -4333,15 +5731,23 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   ))}
                 </SelectContent>
               </Select>
+              {schoolValidationErrors.city && (
+                <p className="text-sm text-red-500">{schoolValidationErrors.city}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-school-project">Project *</Label>
+              <Label htmlFor="edit-school-project" className={schoolValidationErrors.project ? 'text-red-500' : ''}>Project *</Label>
               <Select
                 value={schoolFormData.project}
-                onValueChange={(value) => setSchoolFormData({ ...schoolFormData, project: value, board: '' })}
+                onValueChange={(value) => {
+                  setSchoolFormData({ ...schoolFormData, project: value, board: '' });
+                  // Real-time validation
+                  const error = validateSchoolProject(value);
+                  setSchoolValidationErrors(prev => ({ ...prev, project: error }));
+                }}
                 disabled={!schoolFormData.city}
               >
-                <SelectTrigger id="edit-school-project">
+                <SelectTrigger id="edit-school-project" className={schoolValidationErrors.project ? 'border-red-500 focus:border-red-500' : ''}>
                   <SelectValue placeholder={schoolFormData.city ? "Select a project" : "Select city first"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -4354,15 +5760,23 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   ))}
                 </SelectContent>
               </Select>
+              {schoolValidationErrors.project && (
+                <p className="text-sm text-red-500">{schoolValidationErrors.project}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-school-board">Board *</Label>
+              <Label htmlFor="edit-school-board" className={schoolValidationErrors.board ? 'text-red-500' : ''}>Board *</Label>
               <Select
                 value={schoolFormData.board}
-                onValueChange={(value) => setSchoolFormData({ ...schoolFormData, board: value })}
+                onValueChange={(value) => {
+                  setSchoolFormData({ ...schoolFormData, board: value });
+                  // Real-time validation
+                  const error = validateSchoolBoard(value);
+                  setSchoolValidationErrors(prev => ({ ...prev, board: error }));
+                }}
                 disabled={!schoolFormData.project}
               >
-                <SelectTrigger id="edit-school-board">
+                <SelectTrigger id="edit-school-board" className={schoolValidationErrors.board ? 'border-red-500 focus:border-red-500' : ''}>
                   <SelectValue placeholder={schoolFormData.project ? "Select a board" : "Select project first"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -4375,52 +5789,109 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                     ))}
                 </SelectContent>
               </Select>
+              {schoolValidationErrors.board && (
+                <p className="text-sm text-red-500">{schoolValidationErrors.board}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-school-phone">Phone</Label>
+              <Label htmlFor="edit-school-phone" className={schoolValidationErrors.phone ? 'text-red-500' : ''}>Phone</Label>
               <Input
                 id="edit-school-phone"
                 value={schoolFormData.phone}
-                onChange={(e) => setSchoolFormData({ ...schoolFormData, phone: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSchoolFormData({ ...schoolFormData, phone: value });
+                  // Real-time validation
+                  const error = validateSchoolPhone(value);
+                  setSchoolValidationErrors(prev => ({ ...prev, phone: error }));
+                }}
                 placeholder="e.g., +92-42-1234567"
+                className={schoolValidationErrors.phone ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {schoolValidationErrors.phone && (
+                <p className="text-sm text-red-500">{schoolValidationErrors.phone}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-school-email">Email</Label>
+              <Label htmlFor="edit-school-email" className={schoolValidationErrors.email ? 'text-red-500' : ''}>Email</Label>
               <Input
                 id="edit-school-email"
                 type="email"
                 value={schoolFormData.email}
-                onChange={(e) => setSchoolFormData({ ...schoolFormData, email: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSchoolFormData({ ...schoolFormData, email: value });
+                  // Real-time validation
+                  const error = validateSchoolEmail(value);
+                  setSchoolValidationErrors(prev => ({ ...prev, email: error }));
+                }}
                 placeholder="e.g., info@school.edu.pk"
+                className={schoolValidationErrors.email ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {schoolValidationErrors.email && (
+                <p className="text-sm text-red-500">{schoolValidationErrors.email}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-school-website">Website</Label>
+              <Label htmlFor="edit-school-website" className={schoolValidationErrors.website ? 'text-red-500' : ''}>Website</Label>
               <Input
                 id="edit-school-website"
                 value={schoolFormData.website}
-                onChange={(e) => setSchoolFormData({ ...schoolFormData, website: e.target.value })}
-                placeholder="e.g., www.school.edu.pk"
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSchoolFormData({ ...schoolFormData, website: value });
+                  // Real-time validation
+                  const error = validateSchoolWebsite(value);
+                  setSchoolValidationErrors(prev => ({ ...prev, website: error }));
+                }}
+                placeholder="e.g., https://www.school.edu.pk"
+                className={schoolValidationErrors.website ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {schoolValidationErrors.website && (
+                <p className="text-sm text-red-500">{schoolValidationErrors.website}</p>
+              )}
             </div>
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="edit-school-address">Address</Label>
+              <Label htmlFor="edit-school-address" className={schoolValidationErrors.address ? 'text-red-500' : ''}>Address *</Label>
               <Textarea
                 id="edit-school-address"
                 value={schoolFormData.address}
-                onChange={(e) => setSchoolFormData({ ...schoolFormData, address: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSchoolFormData({ ...schoolFormData, address: value });
+                  // Real-time validation
+                  const error = validateSchoolAddress(value);
+                  setSchoolValidationErrors(prev => ({ ...prev, address: error }));
+                }}
                 placeholder="Full address of the school..."
                 rows={3}
+                className={schoolValidationErrors.address ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {schoolValidationErrors.address && (
+                <p className="text-sm text-red-500">{schoolValidationErrors.address}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {schoolFormData.address.length}/200 characters
+              </p>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsSchoolEditDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSchoolEdit} className="bg-blue-600 hover:bg-blue-700">
-              Update School
+            <Button 
+              onClick={handleSchoolEdit} 
+              className="bg-blue-600 hover:bg-blue-700"
+              disabled={schoolsLoading || !!schoolValidationErrors.name || !!schoolValidationErrors.code || !!schoolValidationErrors.type || !!schoolValidationErrors.address || !!schoolValidationErrors.country || !!schoolValidationErrors.region || !!schoolValidationErrors.city || !!schoolValidationErrors.project || !!schoolValidationErrors.board || !!schoolValidationErrors.phone || !!schoolValidationErrors.email || !!schoolValidationErrors.website}
+            >
+              {schoolsLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                'Update School'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -74,6 +74,15 @@ const ClassManagement: React.FC = () => {
     teachers: [] as string[],
     students: [] as string[]
   });
+  const [validationErrors, setValidationErrors] = useState({
+    name: '',
+    code: '',
+    grade: '',
+    school_id: '',
+    board_id: '',
+    description: '',
+    max_students: ''
+  });
 
   // Use schools hook with board filtering - must be after formData declaration
   const { schools, loading: schoolsLoading } = useSchools(formData.board_id);
@@ -101,26 +110,20 @@ const ClassManagement: React.FC = () => {
   };
 
   const handleCreate = async () => {
-    if (!formData.name || !formData.code || !formData.grade || !formData.school_id || !formData.board_id || !formData.max_students) {
-      toast.error('Please fill in all required fields');
+    // Validate form before submission
+    if (!validateClassForm()) {
+      toast.error('Please fix the validation errors before submitting');
       return;
     }
-
-    const maxStudentsNum = parseInt(formData.max_students);
-    if (isNaN(maxStudentsNum) || maxStudentsNum < 1 || maxStudentsNum > 100) {
-      toast.error('Max students must be a valid number between 1 and 100');
-      return;
-    }
-
 
     const classData: CreateClassData = {
-      name: formData.name,
-      code: formData.code.toUpperCase(),
+      name: formData.name.trim(),
+      code: formData.code.trim().toUpperCase(),
       grade: formData.grade,
       school_id: formData.school_id,
       board_id: formData.board_id,
-      description: formData.description,
-      max_students: maxStudentsNum,
+      description: formData.description.trim(),
+      max_students: parseInt(formData.max_students.trim()),
       teacher_ids: formData.teachers,
       student_ids: formData.students
     };
@@ -134,26 +137,26 @@ const ClassManagement: React.FC = () => {
   };
 
   const handleEdit = async () => {
-    if (!editingClass || !formData.name || !formData.code || !formData.grade || !formData.school_id || !formData.board_id || !formData.max_students) {
-      toast.error('Please fill in all required fields');
+    if (!editingClass) {
+      toast.error('No class selected for editing');
       return;
     }
 
-    const maxStudentsNum = parseInt(formData.max_students);
-    if (isNaN(maxStudentsNum) || maxStudentsNum < 1 || maxStudentsNum > 100) {
-      toast.error('Max students must be a valid number between 1 and 100');
+    // Validate form before submission
+    if (!validateClassForm()) {
+      toast.error('Please fix the validation errors before submitting');
       return;
     }
 
     const classData: UpdateClassData = {
       id: editingClass.id,
-      name: formData.name,
-      code: formData.code.toUpperCase(),
+      name: formData.name.trim(),
+      code: formData.code.trim().toUpperCase(),
       grade: formData.grade,
       school_id: formData.school_id,
       board_id: formData.board_id,
-      description: formData.description,
-      max_students: maxStudentsNum,
+      description: formData.description.trim(),
+      max_students: parseInt(formData.max_students.trim()),
       teacher_ids: formData.teachers,
       student_ids: formData.students
     };
@@ -187,6 +190,16 @@ const ClassManagement: React.FC = () => {
       teachers: cls.teachers.map(t => t.id),
       students: cls.students.map(s => s.id)
     });
+    // Clear validation errors when opening edit dialog
+    setValidationErrors({
+      name: '',
+      code: '',
+      grade: '',
+      school_id: '',
+      board_id: '',
+      description: '',
+      max_students: ''
+    });
     setIsEditDialogOpen(true);
   };
 
@@ -206,6 +219,15 @@ const ClassManagement: React.FC = () => {
       max_students: '30',
       teachers: [],
       students: []
+    });
+    setValidationErrors({
+      name: '',
+      code: '',
+      grade: '',
+      school_id: '',
+      board_id: '',
+      description: '',
+      max_students: ''
     });
   };
 
@@ -247,6 +269,118 @@ const ClassManagement: React.FC = () => {
         className: "text-green-600 font-medium"
       };
     }
+  };
+
+  // Class validation functions
+  const validateClassName = (name: string): string => {
+    if (!name.trim()) {
+      return 'Class name is required';
+    }
+    if (name.trim().length < 2) {
+      return 'Class name must be at least 2 characters';
+    }
+    if (name.trim().length > 100) {
+      return 'Class name must be less than 100 characters';
+    }
+    if (!/^[a-zA-Z0-9\s\-'\.]+$/.test(name.trim())) {
+      return 'Class name can only contain letters, numbers, spaces, hyphens, apostrophes, and periods';
+    }
+    return '';
+  };
+
+  const validateClassCode = (code: string): string => {
+    if (!code.trim()) {
+      return 'Class code is required';
+    }
+    if (code.trim().length < 2) {
+      return 'Class code must be at least 2 characters';
+    }
+    if (code.trim().length > 10) {
+      return 'Class code must be 10 characters or less';
+    }
+    if (!/^[A-Za-z0-9\-]+$/.test(code.trim())) {
+      return 'Class code can only contain letters, numbers, and hyphens';
+    }
+    // Check for duplicates (excluding current class if editing)
+    const existingClass = classes.find(cls => 
+      cls.code.toLowerCase() === code.trim().toLowerCase() && 
+      cls.id !== editingClass?.id
+    );
+    if (existingClass) {
+      return 'A class with this code already exists';
+    }
+    return '';
+  };
+
+  const validateClassGrade = (grade: string): string => {
+    if (!grade) {
+      return 'Grade is required';
+    }
+    const gradeNum = parseInt(grade);
+    if (isNaN(gradeNum) || gradeNum < 1 || gradeNum > 12) {
+      return 'Grade must be between 1 and 12';
+    }
+    return '';
+  };
+
+  const validateClassBoard = (boardId: string): string => {
+    if (!boardId) {
+      return 'Board is required';
+    }
+    return '';
+  };
+
+  const validateClassSchool = (schoolId: string): string => {
+    if (!schoolId) {
+      return 'School is required';
+    }
+    return '';
+  };
+
+  const validateClassMaxStudents = (maxStudents: string): string => {
+    if (!maxStudents.trim()) {
+      return 'Max students is required';
+    }
+    const maxStudentsNum = parseInt(maxStudents.trim());
+    if (isNaN(maxStudentsNum)) {
+      return 'Max students must be a valid number';
+    }
+    if (maxStudentsNum < 1) {
+      return 'Max students must be at least 1';
+    }
+    if (maxStudentsNum > 100) {
+      return 'Max students must be 100 or less';
+    }
+    return '';
+  };
+
+  const validateClassDescription = (description: string): string => {
+    if (description.trim().length > 500) {
+      return 'Description must be less than 500 characters';
+    }
+    return '';
+  };
+
+  const validateClassForm = (): boolean => {
+    const nameError = validateClassName(formData.name);
+    const codeError = validateClassCode(formData.code);
+    const gradeError = validateClassGrade(formData.grade);
+    const boardError = validateClassBoard(formData.board_id);
+    const schoolError = validateClassSchool(formData.school_id);
+    const maxStudentsError = validateClassMaxStudents(formData.max_students);
+    const descriptionError = validateClassDescription(formData.description);
+
+    setValidationErrors({
+      name: nameError,
+      code: codeError,
+      grade: gradeError,
+      board_id: boardError,
+      school_id: schoolError,
+      max_students: maxStudentsError,
+      description: descriptionError
+    });
+
+    return !nameError && !codeError && !gradeError && !boardError && !schoolError && !maxStudentsError && !descriptionError;
   };
 
   // Pagination handlers
@@ -588,31 +722,56 @@ const ClassManagement: React.FC = () => {
           <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Class Name *</Label>
+              <Label htmlFor="name" className={validationErrors.name ? 'text-red-500' : ''}>Class Name *</Label>
               <Input
                 id="name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setFormData({ ...formData, name: value });
+                  // Real-time validation
+                  const error = validateClassName(value);
+                  setValidationErrors(prev => ({ ...prev, name: error }));
+                }}
                 placeholder="e.g., Class 10A"
+                className={validationErrors.name ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {validationErrors.name && (
+                <p className="text-sm text-red-500">{validationErrors.name}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="code">Class Code *</Label>
+              <Label htmlFor="code" className={validationErrors.code ? 'text-red-500' : ''}>Class Code *</Label>
               <Input
                 id="code"
                 value={formData.code}
-                onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value.toUpperCase();
+                  setFormData({ ...formData, code: value });
+                  // Real-time validation
+                  const error = validateClassCode(value);
+                  setValidationErrors(prev => ({ ...prev, code: error }));
+                }}
                 placeholder="e.g., C10A-001"
                 maxLength={10}
+                className={validationErrors.code ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {validationErrors.code && (
+                <p className="text-sm text-red-500">{validationErrors.code}</p>
+              )}
             </div>
                          <div className="space-y-2">
-               <Label htmlFor="grade">Grade *</Label>
+               <Label htmlFor="grade" className={validationErrors.grade ? 'text-red-500' : ''}>Grade *</Label>
                <Select
                  value={formData.grade}
-                 onValueChange={(value) => setFormData({ ...formData, grade: value })}
+                 onValueChange={(value) => {
+                   setFormData({ ...formData, grade: value });
+                   // Real-time validation
+                   const error = validateClassGrade(value);
+                   setValidationErrors(prev => ({ ...prev, grade: error }));
+                 }}
                >
-                 <SelectTrigger>
+                 <SelectTrigger className={validationErrors.grade ? 'border-red-500 focus:border-red-500' : ''}>
                    <SelectValue placeholder="Select grade" />
                  </SelectTrigger>
                  <SelectContent>
@@ -630,14 +789,22 @@ const ClassManagement: React.FC = () => {
                    <SelectItem value="12">Grade 12</SelectItem>
                  </SelectContent>
                </Select>
+               {validationErrors.grade && (
+                 <p className="text-sm text-red-500">{validationErrors.grade}</p>
+               )}
              </div>
              <div className="space-y-2">
-               <Label htmlFor="board">Board *</Label>
+               <Label htmlFor="board" className={validationErrors.board_id ? 'text-red-500' : ''}>Board *</Label>
                <Select
                  value={formData.board_id}
-                 onValueChange={handleBoardChange}
+                 onValueChange={(boardId) => {
+                   handleBoardChange(boardId);
+                   // Real-time validation
+                   const error = validateClassBoard(boardId);
+                   setValidationErrors(prev => ({ ...prev, board_id: error }));
+                 }}
                >
-                 <SelectTrigger>
+                 <SelectTrigger className={validationErrors.board_id ? 'border-red-500 focus:border-red-500' : ''}>
                    <SelectValue placeholder="Select board" />
                  </SelectTrigger>
                  <SelectContent>
@@ -648,15 +815,23 @@ const ClassManagement: React.FC = () => {
                    ))}
                  </SelectContent>
                </Select>
+               {validationErrors.board_id && (
+                 <p className="text-sm text-red-500">{validationErrors.board_id}</p>
+               )}
              </div>
              <div className="space-y-2">
-               <Label htmlFor="school">School *</Label>
+               <Label htmlFor="school" className={validationErrors.school_id ? 'text-red-500' : ''}>School *</Label>
                <Select
                  value={formData.school_id}
-                 onValueChange={(value) => setFormData({ ...formData, school_id: value })}
+                 onValueChange={(value) => {
+                   setFormData({ ...formData, school_id: value });
+                   // Real-time validation
+                   const error = validateClassSchool(value);
+                   setValidationErrors(prev => ({ ...prev, school_id: error }));
+                 }}
                  disabled={!formData.board_id}
                >
-                 <SelectTrigger className={!formData.board_id ? "opacity-50 cursor-not-allowed" : ""}>
+                 <SelectTrigger className={`${!formData.board_id ? "opacity-50 cursor-not-allowed" : ""} ${validationErrors.school_id ? 'border-red-500 focus:border-red-500' : ''}`}>
                    <SelectValue placeholder={!formData.board_id ? "Select a board first" : "Select school"} />
                  </SelectTrigger>
                  <SelectContent>
@@ -673,29 +848,55 @@ const ClassManagement: React.FC = () => {
                    )}
                  </SelectContent>
                </Select>
+               {validationErrors.school_id && (
+                 <p className="text-sm text-red-500">{validationErrors.school_id}</p>
+               )}
              </div>
              <div className="space-y-2">
-               <Label htmlFor="max_students">Max Students *</Label>
+               <Label htmlFor="max_students" className={validationErrors.max_students ? 'text-red-500' : ''}>Max Students *</Label>
                <Input
                  id="max_students"
                  type="text"
                  value={formData.max_students}
-                 onChange={(e) => setFormData({ ...formData, max_students: e.target.value })}
+                 onChange={(e) => {
+                   const value = e.target.value;
+                   setFormData({ ...formData, max_students: value });
+                   // Real-time validation
+                   const error = validateClassMaxStudents(value);
+                   setValidationErrors(prev => ({ ...prev, max_students: error }));
+                 }}
                  placeholder="e.g., 30"
+                 className={validationErrors.max_students ? 'border-red-500 focus:border-red-500' : ''}
                />
                <p className="text-xs text-muted-foreground">Maximum number of students allowed in this class</p>
+               {validationErrors.max_students && (
+                 <p className="text-sm text-red-500">{validationErrors.max_students}</p>
+               )}
              </div>
 
             
                                         <div className="space-y-2 md:col-span-2">
-                 <Label htmlFor="description">Description</Label>
+                 <Label htmlFor="description" className={validationErrors.description ? 'text-red-500' : ''}>Description</Label>
                  <Textarea
                    id="description"
                    value={formData.description}
-                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                   onChange={(e) => {
+                     const value = e.target.value;
+                     setFormData({ ...formData, description: value });
+                     // Real-time validation
+                     const error = validateClassDescription(value);
+                     setValidationErrors(prev => ({ ...prev, description: error }));
+                   }}
                    placeholder="Class description and focus areas..."
                    rows={3}
+                   className={validationErrors.description ? 'border-red-500 focus:border-red-500' : ''}
                  />
+                 {validationErrors.description && (
+                   <p className="text-sm text-red-500">{validationErrors.description}</p>
+                 )}
+                 <p className="text-xs text-muted-foreground">
+                   {formData.description.length}/500 characters
+                 </p>
                </div>
 
              {/* Access Management Section */}
@@ -755,8 +956,19 @@ const ClassManagement: React.FC = () => {
             <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleCreate} className="bg-green-600 hover:bg-green-700">
-              Create Class
+            <Button 
+              onClick={handleCreate} 
+              className="bg-green-600 hover:bg-green-700"
+              disabled={loading || !!validationErrors.name || !!validationErrors.code || !!validationErrors.grade || !!validationErrors.board_id || !!validationErrors.school_id || !!validationErrors.max_students || !!validationErrors.description}
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Creating...
+                </>
+              ) : (
+                'Create Class'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -774,31 +986,56 @@ const ClassManagement: React.FC = () => {
           <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-name">Class Name *</Label>
+              <Label htmlFor="edit-name" className={validationErrors.name ? 'text-red-500' : ''}>Class Name *</Label>
               <Input
                 id="edit-name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setFormData({ ...formData, name: value });
+                  // Real-time validation
+                  const error = validateClassName(value);
+                  setValidationErrors(prev => ({ ...prev, name: error }));
+                }}
                 placeholder="e.g., Class 10A"
+                className={validationErrors.name ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {validationErrors.name && (
+                <p className="text-sm text-red-500">{validationErrors.name}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-code">Class Code *</Label>
+              <Label htmlFor="edit-code" className={validationErrors.code ? 'text-red-500' : ''}>Class Code *</Label>
               <Input
                 id="edit-code"
                 value={formData.code}
-                onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value.toUpperCase();
+                  setFormData({ ...formData, code: value });
+                  // Real-time validation
+                  const error = validateClassCode(value);
+                  setValidationErrors(prev => ({ ...prev, code: error }));
+                }}
                 placeholder="e.g., C10A-001"
                 maxLength={10}
+                className={validationErrors.code ? 'border-red-500 focus:border-red-500' : ''}
               />
+              {validationErrors.code && (
+                <p className="text-sm text-red-500">{validationErrors.code}</p>
+              )}
             </div>
                          <div className="space-y-2">
-               <Label htmlFor="edit-grade">Grade *</Label>
+               <Label htmlFor="edit-grade" className={validationErrors.grade ? 'text-red-500' : ''}>Grade *</Label>
                <Select
                  value={formData.grade}
-                 onValueChange={(value) => setFormData({ ...formData, grade: value })}
+                 onValueChange={(value) => {
+                   setFormData({ ...formData, grade: value });
+                   // Real-time validation
+                   const error = validateClassGrade(value);
+                   setValidationErrors(prev => ({ ...prev, grade: error }));
+                 }}
                >
-                 <SelectTrigger>
+                 <SelectTrigger className={validationErrors.grade ? 'border-red-500 focus:border-red-500' : ''}>
                    <SelectValue placeholder="Select grade" />
                  </SelectTrigger>
                  <SelectContent>
@@ -816,14 +1053,22 @@ const ClassManagement: React.FC = () => {
                    <SelectItem value="12">Grade 12</SelectItem>
                  </SelectContent>
                </Select>
+               {validationErrors.grade && (
+                 <p className="text-sm text-red-500">{validationErrors.grade}</p>
+               )}
              </div>
              <div className="space-y-2">
-               <Label htmlFor="edit-board">Board *</Label>
+               <Label htmlFor="edit-board" className={validationErrors.board_id ? 'text-red-500' : ''}>Board *</Label>
                <Select
                  value={formData.board_id}
-                 onValueChange={handleBoardChange}
+                 onValueChange={(boardId) => {
+                   handleBoardChange(boardId);
+                   // Real-time validation
+                   const error = validateClassBoard(boardId);
+                   setValidationErrors(prev => ({ ...prev, board_id: error }));
+                 }}
                >
-                 <SelectTrigger>
+                 <SelectTrigger className={validationErrors.board_id ? 'border-red-500 focus:border-red-500' : ''}>
                    <SelectValue placeholder="Select board" />
                  </SelectTrigger>
                  <SelectContent>
@@ -834,15 +1079,23 @@ const ClassManagement: React.FC = () => {
                    ))}
                  </SelectContent>
                </Select>
+               {validationErrors.board_id && (
+                 <p className="text-sm text-red-500">{validationErrors.board_id}</p>
+               )}
              </div>
              <div className="space-y-2">
-               <Label htmlFor="edit-school">School *</Label>
+               <Label htmlFor="edit-school" className={validationErrors.school_id ? 'text-red-500' : ''}>School *</Label>
                <Select
                  value={formData.school_id}
-                 onValueChange={(value) => setFormData({ ...formData, school_id: value })}
+                 onValueChange={(value) => {
+                   setFormData({ ...formData, school_id: value });
+                   // Real-time validation
+                   const error = validateClassSchool(value);
+                   setValidationErrors(prev => ({ ...prev, school_id: error }));
+                 }}
                  disabled={!formData.board_id}
                >
-                 <SelectTrigger className={!formData.board_id ? "opacity-50 cursor-not-allowed" : ""}>
+                 <SelectTrigger className={`${!formData.board_id ? "opacity-50 cursor-not-allowed" : ""} ${validationErrors.school_id ? 'border-red-500 focus:border-red-500' : ''}`}>
                    <SelectValue placeholder={!formData.board_id ? "Select a board first" : "Select school"} />
                  </SelectTrigger>
                  <SelectContent>
@@ -859,29 +1112,55 @@ const ClassManagement: React.FC = () => {
                    )}
                  </SelectContent>
                </Select>
+               {validationErrors.school_id && (
+                 <p className="text-sm text-red-500">{validationErrors.school_id}</p>
+               )}
              </div>
              <div className="space-y-2">
-               <Label htmlFor="edit-max_students">Max Students *</Label>
+               <Label htmlFor="edit-max_students" className={validationErrors.max_students ? 'text-red-500' : ''}>Max Students *</Label>
                <Input
                  id="edit-max_students"
                  type="text"
                  value={formData.max_students}
-                 onChange={(e) => setFormData({ ...formData, max_students: e.target.value })}
+                 onChange={(e) => {
+                   const value = e.target.value;
+                   setFormData({ ...formData, max_students: value });
+                   // Real-time validation
+                   const error = validateClassMaxStudents(value);
+                   setValidationErrors(prev => ({ ...prev, max_students: error }));
+                 }}
                  placeholder="e.g., 30"
+                 className={validationErrors.max_students ? 'border-red-500 focus:border-red-500' : ''}
                />
                <p className="text-xs text-muted-foreground">Maximum number of students allowed in this class</p>
+               {validationErrors.max_students && (
+                 <p className="text-sm text-red-500">{validationErrors.max_students}</p>
+               )}
              </div>
 
             
                          <div className="space-y-2 md:col-span-2">
-               <Label htmlFor="edit-description">Description</Label>
+               <Label htmlFor="edit-description" className={validationErrors.description ? 'text-red-500' : ''}>Description</Label>
                <Textarea
                  id="edit-description"
                  value={formData.description}
-                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                 onChange={(e) => {
+                   const value = e.target.value;
+                   setFormData({ ...formData, description: value });
+                   // Real-time validation
+                   const error = validateClassDescription(value);
+                   setValidationErrors(prev => ({ ...prev, description: error }));
+                 }}
                  placeholder="Class description and focus areas..."
                  rows={3}
+                 className={validationErrors.description ? 'border-red-500 focus:border-red-500' : ''}
                />
+               {validationErrors.description && (
+                 <p className="text-sm text-red-500">{validationErrors.description}</p>
+               )}
+               <p className="text-xs text-muted-foreground">
+                 {formData.description.length}/500 characters
+               </p>
              </div>
 
              {/* Access Management Section */}
@@ -941,8 +1220,19 @@ const ClassManagement: React.FC = () => {
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleEdit} className="bg-blue-600 hover:bg-blue-700">
-              Update Class
+            <Button 
+              onClick={handleEdit} 
+              className="bg-blue-600 hover:bg-blue-700"
+              disabled={loading || !!validationErrors.name || !!validationErrors.code || !!validationErrors.grade || !!validationErrors.board_id || !!validationErrors.school_id || !!validationErrors.max_students || !!validationErrors.description}
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Updating...
+                </>
+              ) : (
+                'Update Class'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
