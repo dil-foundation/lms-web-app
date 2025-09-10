@@ -138,6 +138,7 @@ interface CourseData {
   city_ids: string[];
   project_ids: string[];
   board_ids: string[];
+  school_ids: string[];
   class_ids: string[];
   image?: string;
   requirements: string[];
@@ -174,6 +175,7 @@ const validateCourseData = (data: CourseData): ValidationErrors => {
   if (!data.city_ids || data.city_ids.length === 0) errors.city_ids = 'At least one city is required.';
   if (!data.project_ids || data.project_ids.length === 0) errors.project_ids = 'At least one project is required.';
   if (!data.board_ids || data.board_ids.length === 0) errors.board_ids = 'At least one board is required.';
+  if (!data.school_ids || data.school_ids.length === 0) errors.school_ids = 'At least one school is required.';
 
   if (!data.requirements || data.requirements.length === 0 || data.requirements.every(r => !r.trim())) {
     errors.requirements = 'At least one requirement is required.';
@@ -287,6 +289,38 @@ interface Board {
   description?: string;
   board_type: string;
   status: string;
+}
+
+interface School {
+  id: string;
+  name: string;
+  code: string;
+  school_type: string;
+  country_id: string;
+  region_id: string;
+  city_id: string;
+  project_id: string;
+  board_id: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  principal_name?: string;
+  principal_email?: string;
+  principal_phone?: string;
+  established_year?: number;
+  total_students?: number;
+  total_teachers?: number;
+  total_classes?: number;
+  facilities?: string[];
+  curriculum?: string[];
+  languages_offered?: string[];
+  status: string;
+  accreditation_status?: string;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: string;
+  updated_by?: string;
 }
 // #endregion
 
@@ -1692,6 +1726,7 @@ const CourseBuilder = () => {
   const [cities, setCities] = useState<City[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [boards, setBoards] = useState<Board[]>([]);
+  const [schools, setSchools] = useState<School[]>([]);
   const [isLoadingHierarchicalData, setIsLoadingHierarchicalData] = useState(false);
   
   // Class management state
@@ -1715,8 +1750,6 @@ const CourseBuilder = () => {
   // Selected classes for course enrollment
   const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
   
-  // School filter for class selection
-  const [selectedSchoolFilter, setSelectedSchoolFilter] = useState<string>('all');
 
   // Class management hooks
   const { classes: dbClasses, loading: classesLoading, stats: classStats, createClass, updateClass, deleteClass, refetch: refetchClasses } = useClasses();
@@ -1725,13 +1758,6 @@ const CourseBuilder = () => {
   const { boards: classBoards, loading: classBoardsLoading } = useBoards();
   const { schools: classSchools, loading: classSchoolsLoading } = useSchools(classFormData.board_id);
   
-  // Filter classes based on selected school (if any)
-  const filteredClasses = useMemo(() => {
-    if (selectedSchoolFilter === 'all') {
-      return dbClasses;
-    }
-    return dbClasses.filter(cls => cls.school_id === selectedSchoolFilter);
-  }, [dbClasses, selectedSchoolFilter]);
   
   // Filter classes to show only selected ones
   const enrolledClasses = dbClasses.filter(cls => selectedClasses.includes(cls.id));
@@ -1742,20 +1768,6 @@ const CourseBuilder = () => {
   console.log('Debug - enrolledClasses count:', enrolledClasses.length);
   console.log('Debug - enrolledClasses:', enrolledClasses);
 
-  // Handle school filter change
-  const handleSchoolFilterChange = (schoolId: string) => {
-    setSelectedSchoolFilter(schoolId);
-    // Only reset selected classes if we're not loading an existing course
-    if (!courseId || courseId === 'new') {
-      setSelectedClasses([]);
-      // Clear course teachers and students
-      setCourseData(prev => ({
-        ...prev,
-        teachers: [],
-        students: []
-      }));
-    }
-  };
 
   // Handle class selection for course enrollment
   const handleClassSelection = (classIds: string[]) => {
@@ -1815,6 +1827,7 @@ const CourseBuilder = () => {
     city_ids: [],
     project_ids: [],
     board_ids: [],
+    school_ids: [],
     class_ids: [],
     duration: '',
     requirements: [''],
@@ -1841,9 +1854,13 @@ const CourseBuilder = () => {
     review_feedback: '',
   }));
 
-  // Schools for course class filtering (based on course's selected boards)
-  // For now, we'll use the first selected board for school filtering
-  const { schools: courseSchools, loading: courseSchoolsLoading } = useSchools(courseData.board_ids[0] || '');
+  // Filter classes based on selected schools
+  const filteredClasses = useMemo(() => {
+    if (courseData.school_ids.length === 0) {
+      return [];
+    }
+    return dbClasses.filter(cls => courseData.school_ids.includes(cls.school_id));
+  }, [dbClasses, courseData.school_ids]);
 
   const handleBlur = (field: keyof ValidationErrors) => {
     setTouchedFields(prev => ({ ...prev, [field]: true }));
@@ -1875,11 +1892,10 @@ const CourseBuilder = () => {
     }
   }, [selectedClassesMembersHash]);
 
-  // Reset school filter when boards change (only for new courses)
+  // Reset selected classes when schools change (only for new courses)
   useEffect(() => {
     // Only reset if we're creating a new course, not loading an existing one
     if (!courseId || courseId === 'new') {
-      setSelectedSchoolFilter('all');
       setSelectedClasses([]);
       setCourseData(prev => ({
         ...prev,
@@ -1887,7 +1903,7 @@ const CourseBuilder = () => {
         students: []
       }));
     }
-  }, [courseData.board_ids, courseId]);
+  }, [courseData.school_ids, courseId]);
 
   // Functions to fetch hierarchical data from database
   const fetchCountries = async () => {
@@ -2003,6 +2019,31 @@ const CourseBuilder = () => {
     }
   };
 
+  const fetchSchools = async (boardId: string): Promise<School[]> => {
+    if (!boardId) {
+      setSchools([]);
+      return [];
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from('schools')
+        .select('id, name, code, school_type, country_id, region_id, city_id, project_id, board_id, address, phone, email, website, principal_name, principal_email, principal_phone, established_year, total_students, total_teachers, total_classes, facilities, curriculum, languages_offered, status, accreditation_status, created_at, updated_at, created_by, updated_by')
+        .eq('board_id', boardId)
+        .eq('status', 'active')
+        .order('name');
+      
+      if (error) throw error;
+      const schools = data || [];
+      setSchools(schools);
+      return schools;
+    } catch (error) {
+      console.error('Error fetching schools:', error);
+      toast.error('Failed to load schools');
+      return [];
+    }
+  };
+
   // Cascading dropdown handlers
   const handleCountryChange = async (countryIds: string[]) => {
     setCourseData(prev => ({ 
@@ -2011,12 +2052,14 @@ const CourseBuilder = () => {
       region_ids: [],
       city_ids: [],
       project_ids: [],
-      board_ids: []
+      board_ids: [],
+      school_ids: []
     }));
     setRegions([]);
     setCities([]);
     setProjects([]);
     setBoards([]);
+    setSchools([]);
     
     if (countryIds.length > 0) {
       // Fetch regions for all selected countries
@@ -2035,11 +2078,13 @@ const CourseBuilder = () => {
       region_ids: regionIds,
       city_ids: [],
       project_ids: [],
-      board_ids: []
+      board_ids: [],
+      school_ids: []
     }));
     setCities([]);
     setProjects([]);
     setBoards([]);
+    setSchools([]);
     
     if (regionIds.length > 0) {
       // Fetch cities for all selected regions
@@ -2057,10 +2102,12 @@ const CourseBuilder = () => {
       ...prev, 
       city_ids: cityIds,
       project_ids: [],
-      board_ids: []
+      board_ids: [],
+      school_ids: []
     }));
     setProjects([]);
     setBoards([]);
+    setSchools([]);
     
     if (cityIds.length > 0) {
       // Fetch projects for all selected cities
@@ -2077,9 +2124,11 @@ const CourseBuilder = () => {
     setCourseData(prev => ({ 
       ...prev, 
       project_ids: projectIds,
-      board_ids: []
+      board_ids: [],
+      school_ids: []
     }));
     setBoards([]);
+    setSchools([]);
     
     if (projectIds.length > 0) {
       // Fetch boards for all selected projects
@@ -2092,10 +2141,29 @@ const CourseBuilder = () => {
     }
   };
 
-  const handleBoardChange = (boardIds: string[]) => {
+  const handleBoardChange = async (boardIds: string[]) => {
     setCourseData(prev => ({ 
       ...prev, 
-      board_ids: boardIds
+      board_ids: boardIds,
+      school_ids: []
+    }));
+    setSchools([]);
+    
+    if (boardIds.length > 0) {
+      // Fetch schools for all selected boards
+      const allSchools: School[] = [];
+      for (const boardId of boardIds) {
+        const schools = await fetchSchools(boardId);
+        allSchools.push(...schools);
+      }
+      setSchools(allSchools);
+    }
+  };
+
+  const handleSchoolChange = (schoolIds: string[]) => {
+    setCourseData(prev => ({ 
+      ...prev, 
+      school_ids: schoolIds
     }));
   };
 
@@ -2413,6 +2481,7 @@ const CourseBuilder = () => {
               city_ids: data.city_ids || [],
               project_ids: data.project_ids || [],
               board_ids: data.board_ids || [],
+              school_ids: data.school_ids || [],
               class_ids: data.class_ids || [],
               duration: data.duration || '',
               requirements: data.requirements || [''],
@@ -2502,6 +2571,15 @@ const CourseBuilder = () => {
               }
               setBoards(allBoards);
             }
+            if (finalCourseData.board_ids.length > 0) {
+              // Fetch schools for all selected boards
+              const allSchools: School[] = [];
+              for (const boardId of finalCourseData.board_ids) {
+                const schools = await fetchSchools(boardId);
+                allSchools.push(...schools);
+              }
+              setSchools(allSchools);
+            }
           }
         }
       } catch (error: any) {
@@ -2581,6 +2659,7 @@ const CourseBuilder = () => {
       city_ids: courseToSave.city_ids,
       project_ids: courseToSave.project_ids,
       board_ids: courseToSave.board_ids,
+      school_ids: courseToSave.school_ids,
       class_ids: courseToSave.class_ids,
     };
 
@@ -2771,6 +2850,7 @@ const CourseBuilder = () => {
       city_ids: courseToSave.city_ids,
       project_ids: courseToSave.project_ids,
       board_ids: courseToSave.board_ids,
+      school_ids: courseToSave.school_ids,
       class_ids: courseToSave.class_ids,
     };
 
@@ -3401,6 +3481,7 @@ const CourseBuilder = () => {
       city_ids: courseToSave.city_ids,
       project_ids: courseToSave.project_ids,
       board_ids: courseToSave.board_ids,
+      school_ids: courseToSave.school_ids,
       class_ids: courseToSave.class_ids,
     };
 
@@ -5074,6 +5155,38 @@ const CourseBuilder = () => {
                         </div>
                       )}
                     </div>
+
+                    {/* Schools */}
+                    <div className="space-y-3">
+                      <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                        Schools
+                        <span className="text-red-500 ml-1">*</span>
+                      </label>
+                      <div className={courseData.board_ids.length === 0 ? "opacity-50 pointer-events-none" : ""}>
+                        <MultiSelect
+                          options={schools.map(school => ({
+                            value: school.id,
+                            label: school.name,
+                            subLabel: `${school.school_type} • ${school.code}`,
+                            imageUrl: undefined
+                          }))}
+                          onValueChange={handleSchoolChange}
+                          value={courseData.school_ids}
+                          placeholder={courseData.board_ids.length > 0 ? "Search and select schools..." : "Select boards first"}
+                          className={cn(
+                            "min-h-[44px] border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300",
+                            validationErrors.school_ids && (touchedFields.school_ids || courseData.id) && 
+                            "border-red-500 focus:border-red-500 focus:ring-red-500/10"
+                          )}
+                        />
+                      </div>
+                      {validationErrors.school_ids && (touchedFields.school_ids || courseData.id) && (
+                        <div className="flex items-center gap-2 text-red-500 text-sm">
+                          <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                          {validationErrors.school_ids}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Course Duration */}
@@ -5581,44 +5694,6 @@ const CourseBuilder = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="p-6 space-y-4">
-                  {/* School Filter */}
-                  {courseData.board_ids.length > 0 && (
-                    <div className="space-y-3">
-                      <label className="block text-sm font-semibold text-gray-900 dark:text-white">
-                        Filter by School (Optional)
-                      </label>
-                      <div className="relative">
-                        <Select
-                          value={selectedSchoolFilter}
-                          onValueChange={handleSchoolFilterChange}
-                        >
-                          <SelectTrigger className="min-h-[44px] border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300">
-                            <SelectValue placeholder="All schools" />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl">
-                            <SelectItem 
-                              value="all" 
-                              className="rounded-xl hover:bg-primary/5 hover:text-gray-900 dark:hover:text-white focus:bg-primary/10 focus:text-gray-900 dark:focus:text-white transition-colors"
-                            >
-                              All schools
-                            </SelectItem>
-                            {courseSchools.map((school) => (
-                              <SelectItem 
-                                key={school.id} 
-                                value={school.id}
-                                className="rounded-xl hover:bg-primary/5 hover:text-gray-900 dark:hover:text-white focus:bg-primary/10 focus:text-gray-900 dark:focus:text-white transition-colors"
-                              >
-                                {school.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Filter classes by school to narrow down your selection. Leave empty to see all classes from the selected board.
-                      </p>
-                    </div>
-                  )}
 
                   {/* Select Classes for Course Enrollment */}
                   <div className="space-y-3">
@@ -5626,7 +5701,7 @@ const CourseBuilder = () => {
                       Select Classes for Course Enrollment
                     </label>
                     <div className="relative">
-                      <div className={courseData.board_ids.length === 0 ? "opacity-50 pointer-events-none" : ""}>
+                      <div className={courseData.school_ids.length === 0 ? "opacity-50 pointer-events-none" : ""}>
                         <MultiSelect
                           options={filteredClasses.map(cls => ({
                             value: cls.id,
@@ -5636,15 +5711,15 @@ const CourseBuilder = () => {
                           }))}
                           onValueChange={handleClassSelection}
                           value={selectedClasses}
-                          placeholder={courseData.board_ids.length > 0 ? "Search and select classes to enroll for this course..." : "Select boards first to see available classes"}
+                          placeholder={courseData.school_ids.length > 0 ? "Search and select classes to enroll for this course..." : "Select schools first to see available classes"}
                           className="min-h-[44px] border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300"
                         />
                       </div>
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {courseData.board_ids.length > 0 
+                      {courseData.school_ids.length > 0 
                         ? "Choose which classes will have access to this course. Students and teachers from selected classes will be automatically enrolled."
-                        : "Please select boards first to see available classes for enrollment."
+                        : "Please select schools first to see available classes for enrollment."
                       }
                     </p>
                   </div>
