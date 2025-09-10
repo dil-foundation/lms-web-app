@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import ClassService, { ClassWithMembers, CreateClassData, UpdateClassData, ClassStats } from '@/services/classService';
+import ClassService, { ClassWithMembers, CreateClassData, UpdateClassData, ClassStats, ClassPaginationParams, ClassPaginationResult } from '@/services/classService';
 
 export const useClasses = () => {
   const [classes, setClasses] = useState<ClassWithMembers[]>([]);
@@ -114,6 +114,41 @@ export const useClasses = () => {
     getClassById,
     refetch: fetchClasses,
     refetchStats: fetchStats
+  };
+};
+
+export const useClassesPaginated = (params: ClassPaginationParams) => {
+  const [paginationResult, setPaginationResult] = useState<ClassPaginationResult>({
+    classes: [],
+    totalCount: 0,
+    totalPages: 0,
+    currentPage: 1,
+    hasNextPage: false,
+    hasPreviousPage: false
+  });
+  const [loading, setLoading] = useState(true);
+
+  const fetchClassesPaginated = useCallback(async (paginationParams: ClassPaginationParams) => {
+    try {
+      setLoading(true);
+      const result = await ClassService.getClassesPaginated(paginationParams);
+      setPaginationResult(result);
+    } catch (error: any) {
+      toast.error('Failed to load classes', { description: error.message });
+      console.error('Error fetching classes:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchClassesPaginated(params);
+  }, [fetchClassesPaginated, params.page, params.limit, params.search, params.grade, params.school, params.board]);
+
+  return {
+    ...paginationResult,
+    loading,
+    refetch: () => fetchClassesPaginated(params)
   };
 };
 

@@ -14,28 +14,54 @@ import { MultiSelect } from '@/components/ui/MultiSelect';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Search, Plus, BookOpen, Edit, Trash2, Eye, RefreshCw, Users, MoreHorizontal, MapPin, GraduationCap } from 'lucide-react';
 import { toast } from 'sonner';
-import { useClasses, useTeachers, useStudents, useBoards, useSchools } from '@/hooks/useClasses';
+import { useClasses, useClassesPaginated, useTeachers, useStudents, useBoards, useSchools } from '@/hooks/useClasses';
 import { ClassWithMembers, CreateClassData, UpdateClassData } from '@/services/classService';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 
 const ClassManagement: React.FC = () => {
-  // Use custom hooks for data management
-  const { classes, loading, stats, createClass, updateClass, deleteClass } = useClasses();
-  const { user } = useAuth();
-  const { teachers, loading: teachersLoading } = useTeachers();
-  const { students, loading: studentsLoading } = useStudents();
-  const { boards, loading: boardsLoading } = useBoards();
-
+  // Pagination and filter state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
   const [gradeFilter, setGradeFilter] = useState('all');
   const [schoolFilter, setSchoolFilter] = useState('all');
+  const [boardFilter, setBoardFilter] = useState('all');
+  
+  // Dialog state
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<ClassWithMembers | null>(null);
   const [viewingClass, setViewingClass] = useState<ClassWithMembers | null>(null);
+
+  // Use paginated classes hook
+  const paginationParams = {
+    page: currentPage,
+    limit: itemsPerPage,
+    search: searchTerm,
+    grade: gradeFilter,
+    school: schoolFilter,
+    board: boardFilter
+  };
+  
+  const { 
+    classes, 
+    loading, 
+    totalCount, 
+    totalPages, 
+    hasNextPage, 
+    hasPreviousPage,
+    refetch: refetchClasses 
+  } = useClassesPaginated(paginationParams);
+  
+  // Use other hooks for stats and form data
+  const { stats, createClass, updateClass, deleteClass } = useClasses();
+  const { user } = useAuth();
+  const { teachers, loading: teachersLoading } = useTeachers();
+  const { students, loading: studentsLoading } = useStudents();
+  const { boards, loading: boardsLoading } = useBoards();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -52,14 +78,10 @@ const ClassManagement: React.FC = () => {
   // Use schools hook with board filtering - must be after formData declaration
   const { schools, loading: schoolsLoading } = useSchools(formData.board_id);
 
-
-  const filteredClasses = classes.filter(cls => {
-    const matchesSearch = cls.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         cls.code.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesGrade = gradeFilter === 'all' || !gradeFilter || cls.grade === gradeFilter;
-    const matchesSchool = schoolFilter === 'all' || !schoolFilter || cls.school === schoolFilter;
-    return matchesSearch && matchesGrade && matchesSchool;
-  });
+  // Reset to first page when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, gradeFilter, schoolFilter, boardFilter]);
 
   // Handle member changes (teachers/students)
   const handleMembersChange = (role: 'teachers' | 'students', selectedIds: string[]) => {
@@ -107,6 +129,7 @@ const ClassManagement: React.FC = () => {
     if (result) {
       setIsCreateDialogOpen(false);
       resetForm();
+      refetchClasses(); // Refresh paginated data
     }
   };
 
@@ -140,13 +163,14 @@ const ClassManagement: React.FC = () => {
       setIsEditDialogOpen(false);
       setEditingClass(null);
       resetForm();
+      refetchClasses(); // Refresh paginated data
     }
   };
 
   const handleDelete = async (classId: string) => {
     const success = await deleteClass(classId);
     if (success) {
-      // The hook will handle updating the UI
+      refetchClasses(); // Refresh paginated data
     }
   };
 
@@ -223,6 +247,23 @@ const ClassManagement: React.FC = () => {
         className: "text-green-600 font-medium"
       };
     }
+  };
+
+  // Pagination handlers
+  const handlePreviousPage = () => {
+    if (hasPreviousPage) {
+      setCurrentPage(prev => prev - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (hasNextPage) {
+      setCurrentPage(prev => prev + 1);
+    }
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
   };
 
 
@@ -347,23 +388,35 @@ const ClassManagement: React.FC = () => {
               </SelectContent>
             </Select>
 
+            <Select value={boardFilter} onValueChange={setBoardFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="All Boards" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Boards</SelectItem>
+                {boards.map((board) => (
+                  <SelectItem key={board.id} value={board.id}>
+                    {board.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             <Select value={schoolFilter} onValueChange={setSchoolFilter}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="All Schools" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Schools</SelectItem>
-                {classes.map((cls) => cls.school).filter((school, index, self) => 
-                  self.indexOf(school) === index
-                ).map((school) => (
-                  <SelectItem key={school} value={school}>
-                    {school}
+                {schools.map((school) => (
+                  <SelectItem key={school.id} value={school.id}>
+                    {school.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
-            <Button variant="outline" size="icon">
+            <Button variant="outline" size="icon" onClick={refetchClasses}>
               <RefreshCw className="h-4 w-4" />
             </Button>
           </div>
@@ -373,20 +426,21 @@ const ClassManagement: React.FC = () => {
       {/* Classes Table */}
       <Card>
         <CardContent className="p-0">
-          {filteredClasses.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Class Name</TableHead>
-                  <TableHead>Code</TableHead>
-                  <TableHead>Grade</TableHead>
-                  <TableHead>School</TableHead>
-                  <TableHead>Board</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredClasses.map((cls) => (
+          {classes.length > 0 ? (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Class Name</TableHead>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Grade</TableHead>
+                    <TableHead>School</TableHead>
+                    <TableHead>Board</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {classes.map((cls) => (
                   <TableRow key={cls.id}>
                     <TableCell className="font-medium">{cls.name}</TableCell>
                     <TableCell>
@@ -447,9 +501,53 @@ const ClassManagement: React.FC = () => {
                       </DropdownMenu>
                     </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                  ))}
+                </TableBody>
+              </Table>
+              
+              {/* Pagination */}
+              {totalCount > 0 && (
+                <div className="flex items-center justify-center space-x-2 py-4 border-t">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handlePreviousPage}
+                    disabled={currentPage === 1}
+                    className="text-sm"
+                  >
+                    &lt; Previous
+                  </Button>
+                  
+                  <div className="flex items-center space-x-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <Button
+                        key={page}
+                        variant={currentPage === page ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => handlePageChange(page)}
+                        className={`w-8 h-8 p-0 text-sm ${
+                          currentPage === page 
+                            ? "bg-gray-200 text-gray-900 hover:bg-gray-300" 
+                            : "hover:bg-gray-100"
+                        }`}
+                      >
+                        {page}
+                      </Button>
+                    ))}
+                  </div>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleNextPage}
+                    disabled={currentPage === totalPages}
+                    className="text-sm"
+                  >
+                    Next &gt;
+                  </Button>
+                </div>
+              )}
+            </>
           ) : (
             <div className="flex flex-col items-center justify-center py-12 px-6">
               <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
@@ -459,12 +557,12 @@ const ClassManagement: React.FC = () => {
                 No classes found
               </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-6 max-w-md">
-                {searchTerm || gradeFilter !== 'all' || schoolFilter !== 'all' 
+                {searchTerm || gradeFilter !== 'all' || schoolFilter !== 'all' || boardFilter !== 'all'
                   ? 'No classes match your current search and filter criteria. Try adjusting your filters.'
                   : 'Create your first class to get started with class management.'
                 }
               </p>
-              {(!searchTerm && gradeFilter === 'all' && schoolFilter === 'all') && (
+              {(!searchTerm && gradeFilter === 'all' && schoolFilter === 'all' && boardFilter === 'all') && (
                 <Button 
                   onClick={() => setIsCreateDialogOpen(true)}
                   className="bg-green-600 hover:bg-green-700"

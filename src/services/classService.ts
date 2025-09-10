@@ -45,6 +45,24 @@ export interface ClassStats {
   totalStudents: number;
 }
 
+export interface ClassPaginationParams {
+  page: number;
+  limit: number;
+  search?: string;
+  grade?: string;
+  school?: string;
+  board?: string;
+}
+
+export interface ClassPaginationResult {
+  classes: ClassWithMembers[];
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
 class ClassService {
   // Get all classes with their members
   async getClasses(): Promise<ClassWithMembers[]> {
@@ -93,6 +111,97 @@ class ClassService {
     }
 
     return data?.map(this.transformClassData) || [];
+  }
+
+  // Get classes with pagination, search, and filtering
+  async getClassesPaginated(params: ClassPaginationParams): Promise<ClassPaginationResult> {
+    const { page, limit, search, grade, school, board } = params;
+    const offset = (page - 1) * limit;
+
+    // Build the query
+    let query = supabase
+      .from('classes')
+      .select(`
+        *,
+        boards (
+          id,
+          name,
+          code
+        ),
+        schools (
+          id,
+          name,
+          code
+        ),
+        class_teachers (
+          teacher_id,
+          is_primary,
+          profiles (
+            id,
+            first_name,
+            last_name,
+            email,
+            avatar_url
+          )
+        ),
+        class_students (
+          student_id,
+          student_number,
+          seat_number,
+          profiles (
+            id,
+            first_name,
+            last_name,
+            email,
+            avatar_url
+          )
+        )
+      `, { count: 'exact' });
+
+    // Apply search filter
+    if (search && search.trim()) {
+      query = query.or(`name.ilike.%${search}%,code.ilike.%${search}%`);
+    }
+
+    // Apply grade filter
+    if (grade && grade !== 'all') {
+      query = query.eq('grade', grade);
+    }
+
+    // Apply school filter (need to join with schools table)
+    if (school && school !== 'all') {
+      query = query.eq('school_id', school);
+    }
+
+    // Apply board filter
+    if (board && board !== 'all') {
+      query = query.eq('board_id', board);
+    }
+
+    // Apply pagination and ordering
+    query = query
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      throw new Error(`Failed to fetch classes: ${error.message}`);
+    }
+
+    const totalCount = count || 0;
+    const totalPages = Math.ceil(totalCount / limit);
+    const hasNextPage = page < totalPages;
+    const hasPreviousPage = page > 1;
+
+    return {
+      classes: data?.map(this.transformClassData) || [],
+      totalCount,
+      totalPages,
+      currentPage: page,
+      hasNextPage,
+      hasPreviousPage
+    };
   }
 
   // Get a single class by ID
