@@ -574,8 +574,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     if (code.trim().length > 10) {
       return 'Project code must be 10 characters or less';
     }
-    if (!/^[A-Za-z0-9]+$/.test(code.trim())) {
-      return 'Project code can only contain letters and numbers';
+    if (!/^[A-Za-z0-9\-]+$/.test(code.trim())) {
+      return 'Project code can only contain letters, numbers, and hyphens';
     }
     // Check for duplicates (excluding current project if editing)
     const existingProject = projects.find(project => 
@@ -761,8 +761,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     if (code.trim().length > 10) {
       return 'School code must be 10 characters or less';
     }
-    if (!/^[A-Za-z0-9]+$/.test(code.trim())) {
-      return 'School code can only contain letters and numbers';
+    if (!/^[A-Za-z0-9\-]+$/.test(code.trim())) {
+      return 'School code can only contain letters, numbers, and hyphens';
     }
     // Check for duplicates (excluding current school if editing)
     const existingSchool = schools.find(school => 
