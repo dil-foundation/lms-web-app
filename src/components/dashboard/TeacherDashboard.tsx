@@ -31,7 +31,8 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  Filter
+  Filter,
+  X
 } from 'lucide-react';
 import { ContentLoader } from '@/components/ContentLoader';
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
@@ -622,100 +623,147 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                   <DrawerContent>
                     <div className="mx-auto w-full max-w-4xl">
                       <DrawerHeader>
-                        <DrawerTitle>Filter Dashboard Data</DrawerTitle>
-                        <DrawerDescription>Apply filters to refine the data shown on the dashboard.</DrawerDescription>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <DrawerTitle>Filter Dashboard Data</DrawerTitle>
+                            <DrawerDescription>Apply filters to refine the data shown on the dashboard.</DrawerDescription>
+                          </div>
+                          <DrawerClose asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400">
+                              <X className="h-4 w-4" />
+                              <span className="sr-only">Close</span>
+                            </Button>
+                          </DrawerClose>
+                        </div>
                       </DrawerHeader>
                       <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {/* Age Group / Grade Level */}
+                        {/* Country */}
                         <div className="space-y-2">
-                          <Label htmlFor="age-group">Age Group / Grade Level</Label>
+                          <Label htmlFor="country">Country</Label>
                           <Select>
-                            <SelectTrigger id="age-group">
-                              <SelectValue placeholder="Select age group" />
+                            <SelectTrigger id="country">
+                              <SelectValue placeholder="Select country" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="primary">Primary (Grades 1-5)</SelectItem>
-                              <SelectItem value="middle">Middle (Grades 6-8)</SelectItem>
-                              <SelectItem value="high">High School (Grades 9-12)</SelectItem>
-                              <SelectItem value="university">University</SelectItem>
+                              <SelectItem value="all">All Countries</SelectItem>
+                              <SelectItem value="pakistan">Pakistan</SelectItem>
+                              <SelectItem value="india">India</SelectItem>
+                              <SelectItem value="bangladesh">Bangladesh</SelectItem>
+                              <SelectItem value="sri-lanka">Sri Lanka</SelectItem>
+                              <SelectItem value="nepal">Nepal</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
 
-                        {/* Location */}
+                        {/* Region */}
                         <div className="space-y-2">
-                          <Label htmlFor="location">Location</Label>
+                          <Label htmlFor="region">Region</Label>
                           <Select>
-                            <SelectTrigger id="location">
-                              <SelectValue placeholder="Select location type" />
+                            <SelectTrigger id="region">
+                              <SelectValue placeholder="Select region" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="province">Province</SelectItem>
-                              <SelectItem value="city">City</SelectItem>
-                              <SelectItem value="rural">Rural</SelectItem>
-                              <SelectItem value="urban">Urban</SelectItem>
+                              <SelectItem value="all">All Regions</SelectItem>
+                              <SelectItem value="punjab">Punjab</SelectItem>
+                              <SelectItem value="sindh">Sindh</SelectItem>
+                              <SelectItem value="kpk">Khyber Pakhtunkhwa</SelectItem>
+                              <SelectItem value="balochistan">Balochistan</SelectItem>
+                              <SelectItem value="gilgit">Gilgit-Baltistan</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
 
-                        {/* Language Proficiency */}
+                        {/* City */}
                         <div className="space-y-2">
-                          <Label htmlFor="language-proficiency">Language Proficiency</Label>
+                          <Label htmlFor="city">City</Label>
                           <Select>
-                            <SelectTrigger id="language-proficiency">
-                              <SelectValue placeholder="Select proficiency" />
+                            <SelectTrigger id="city">
+                              <SelectValue placeholder="Select city" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="beginner">Beginner</SelectItem>
-                              <SelectItem value="intermediate">Intermediate</SelectItem>
-                              <SelectItem value="advanced">Advanced</SelectItem>
+                              <SelectItem value="all">All Cities</SelectItem>
+                              <SelectItem value="karachi">Karachi</SelectItem>
+                              <SelectItem value="lahore">Lahore</SelectItem>
+                              <SelectItem value="islamabad">Islamabad</SelectItem>
+                              <SelectItem value="rawalpindi">Rawalpindi</SelectItem>
+                              <SelectItem value="faisalabad">Faisalabad</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
 
-                        {/* School Type */}
+                        {/* Project */}
                         <div className="space-y-2">
-                          <Label htmlFor="school-type">School Type</Label>
+                          <Label htmlFor="project">Project</Label>
                           <Select>
-                            <SelectTrigger id="school-type">
-                              <SelectValue placeholder="Select school type" />
+                            <SelectTrigger id="project">
+                              <SelectValue placeholder="Select project" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="private">Private</SelectItem>
-                              <SelectItem value="public">Public</SelectItem>
-                              <SelectItem value="madarsa">Madarsa</SelectItem>
-                              <SelectItem value="homeschool">Homeschool</SelectItem>
+                              <SelectItem value="all">All Projects</SelectItem>
+                              <SelectItem value="dil-ai">DIL AI Learning</SelectItem>
+                              <SelectItem value="english-mastery">English Mastery</SelectItem>
+                              <SelectItem value="stem-education">STEM Education</SelectItem>
+                              <SelectItem value="digital-literacy">Digital Literacy</SelectItem>
+                              <SelectItem value="teacher-training">Teacher Training</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
 
-                        {/* Course Level */}
+                        {/* Board */}
                         <div className="space-y-2">
-                          <Label htmlFor="course-level">Course Level</Label>
+                          <Label htmlFor="board">Board</Label>
                           <Select>
-                            <SelectTrigger id="course-level">
-                              <SelectValue placeholder="Select course level" />
+                            <SelectTrigger id="board">
+                              <SelectValue placeholder="Select board" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="beginner">Beginner</SelectItem>
-                              <SelectItem value="intermediate">Intermediate</SelectItem>
-                              <SelectItem value="advanced">Advanced</SelectItem>
+                              <SelectItem value="all">All Boards</SelectItem>
+                              <SelectItem value="federal">Federal Board</SelectItem>
+                              <SelectItem value="punjab-board">Punjab Board</SelectItem>
+                              <SelectItem value="sindh-board">Sindh Board</SelectItem>
+                              <SelectItem value="kpk-board">KPK Board</SelectItem>
+                              <SelectItem value="balochistan-board">Balochistan Board</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
 
-                        {/* Subject */}
+                        {/* Schools */}
                         <div className="space-y-2">
-                          <Label htmlFor="subject">Subject</Label>
+                          <Label htmlFor="schools">Schools</Label>
                           <Select>
-                            <SelectTrigger id="subject">
-                              <SelectValue placeholder="Select subject" />
+                            <SelectTrigger id="schools">
+                              <SelectValue placeholder="Select school" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="english">English</SelectItem>
-                              <SelectItem value="math">Mathematics</SelectItem>
-                              <SelectItem value="science">Science</SelectItem>
-                              <SelectItem value="social-studies">Social Studies</SelectItem>
+                              <SelectItem value="all">All Schools</SelectItem>
+                              <SelectItem value="dil-primary">DIL Primary School</SelectItem>
+                              <SelectItem value="dil-secondary">DIL Secondary School</SelectItem>
+                              <SelectItem value="dil-high">DIL High School</SelectItem>
+                              <SelectItem value="community-school">Community School</SelectItem>
+                              <SelectItem value="public-school">Public School</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Class */}
+                        <div className="space-y-2">
+                          <Label htmlFor="class">Class</Label>
+                          <Select>
+                            <SelectTrigger id="class">
+                              <SelectValue placeholder="Select class" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Classes</SelectItem>
+                              <SelectItem value="grade-1">Grade 1</SelectItem>
+                              <SelectItem value="grade-2">Grade 2</SelectItem>
+                              <SelectItem value="grade-3">Grade 3</SelectItem>
+                              <SelectItem value="grade-4">Grade 4</SelectItem>
+                              <SelectItem value="grade-5">Grade 5</SelectItem>
+                              <SelectItem value="grade-6">Grade 6</SelectItem>
+                              <SelectItem value="grade-7">Grade 7</SelectItem>
+                              <SelectItem value="grade-8">Grade 8</SelectItem>
+                              <SelectItem value="grade-9">Grade 9</SelectItem>
+                              <SelectItem value="grade-10">Grade 10</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
