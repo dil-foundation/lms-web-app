@@ -43,7 +43,7 @@ BEGIN
   END IF;
 
   -- Update the published course's main details from the draft
-  -- INCLUDING the new fields: country_ids, region_ids, city_ids, project_ids, board_ids, class_ids
+  -- INCLUDING the new fields: country_ids, region_ids, city_ids, project_ids, board_ids, class_ids, school_ids
   UPDATE public.courses
   SET
       title = draft.title,
@@ -62,6 +62,7 @@ BEGIN
       city_ids = draft.city_ids,
       project_ids = draft.project_ids,
       board_ids = draft.board_ids,
+      school_ids = draft.school_ids,
       class_ids = draft.class_ids,
       updated_at = now()
   FROM public.courses AS draft
@@ -242,7 +243,7 @@ END;
 $$;
 
 -- Add comment to document the function
-COMMENT ON FUNCTION publish_draft(uuid, uuid) IS 'Safely synchronizes content from a draft course to a published course, preserving student progress and including all metadata fields (country_ids, region_ids, city_ids, project_ids, board_ids, class_ids)';
+COMMENT ON FUNCTION publish_draft(uuid, uuid) IS 'Safely synchronizes content from a draft course to a published course, preserving student progress and including all metadata fields (country_ids, region_ids, city_ids, project_ids, board_ids, school_ids, class_ids)';
 
 -- Grant execute permissions
 GRANT EXECUTE ON FUNCTION publish_draft(uuid, uuid) TO authenticated;
