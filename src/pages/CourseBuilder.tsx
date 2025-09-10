@@ -1709,6 +1709,11 @@ const CourseBuilder = () => {
   const [isRejectionDialogOpen, setIsRejectionDialogOpen] = useState(false);
   const [rejectionFeedback, setRejectionFeedback] = useState("");
   const [persistentFeedback, setPersistentFeedback] = useState<string | null>(null);
+  const [isSchoolRemovalDialogOpen, setIsSchoolRemovalDialogOpen] = useState(false);
+  const [schoolsToRemove, setSchoolsToRemove] = useState<string[]>([]);
+  const [affectedClasses, setAffectedClasses] = useState<ClassWithMembers[]>([]);
+  const [affectedTeachers, setAffectedTeachers] = useState<{ id: string; name: string; email: string; avatar_url?: string }[]>([]);
+  const [affectedStudents, setAffectedStudents] = useState<{ id: string; name: string; email: string; avatar_url?: string }[]>([]);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const preDragLessonStatesRef = useRef<Record<string, boolean>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -2161,10 +2166,85 @@ const CourseBuilder = () => {
   };
 
   const handleSchoolChange = (schoolIds: string[]) => {
-    setCourseData(prev => ({ 
-      ...prev, 
-      school_ids: schoolIds
-    }));
+    const currentSchoolIds = courseData.school_ids;
+    const removedSchoolIds = currentSchoolIds.filter(id => !schoolIds.includes(id));
+    
+    // If schools are being removed, show confirmation dialog
+    if (removedSchoolIds.length > 0) {
+      // Find affected classes, teachers, and students
+      const affectedClassesList = dbClasses.filter(cls => 
+        removedSchoolIds.includes(cls.school_id) && selectedClasses.includes(cls.id)
+      );
+      
+      const allAffectedTeachers = affectedClassesList.flatMap(cls => cls.teachers);
+      const allAffectedStudents = affectedClassesList.flatMap(cls => cls.students);
+      
+      // Remove duplicates
+      const uniqueAffectedTeachers = allAffectedTeachers.filter((teacher, index, self) => 
+        index === self.findIndex(t => t.id === teacher.id)
+      );
+      const uniqueAffectedStudents = allAffectedStudents.filter((student, index, self) => 
+        index === self.findIndex(s => s.id === student.id)
+      );
+      
+      // Set the data for the confirmation dialog
+      setSchoolsToRemove(removedSchoolIds);
+      setAffectedClasses(affectedClassesList);
+      setAffectedTeachers(uniqueAffectedTeachers);
+      setAffectedStudents(uniqueAffectedStudents);
+      setIsSchoolRemovalDialogOpen(true);
+    } else {
+      // No schools being removed, proceed normally
+      setCourseData(prev => ({ 
+        ...prev, 
+        school_ids: schoolIds
+      }));
+    }
+  };
+
+  // Handle school removal confirmation
+  const handleConfirmSchoolRemoval = () => {
+    // Remove affected classes from selected classes
+    const affectedClassIds = affectedClasses.map(cls => cls.id);
+    const updatedSelectedClasses = selectedClasses.filter(id => !affectedClassIds.includes(id));
+    setSelectedClasses(updatedSelectedClasses);
+    
+    // Update course data with new school IDs and class IDs
+    setCourseData(prev => {
+      const updatedTeachers = prev.teachers.filter(teacher => 
+        !affectedTeachers.some(affected => affected.id === teacher.id)
+      );
+      const updatedStudents = prev.students.filter(student => 
+        !affectedStudents.some(affected => affected.id === student.id)
+      );
+      
+      return {
+        ...prev,
+        school_ids: courseData.school_ids.filter(id => !schoolsToRemove.includes(id)),
+        class_ids: updatedSelectedClasses,
+        teachers: updatedTeachers,
+        students: updatedStudents
+      };
+    });
+    
+    // Close dialog and reset state
+    setIsSchoolRemovalDialogOpen(false);
+    setSchoolsToRemove([]);
+    setAffectedClasses([]);
+    setAffectedTeachers([]);
+    setAffectedStudents([]);
+    
+    toast.success(`Removed ${schoolsToRemove.length} school(s) and associated classes, teachers, and students.`);
+  };
+
+  // Handle school removal cancellation
+  const handleCancelSchoolRemoval = () => {
+    // Close dialog and reset state without making changes
+    setIsSchoolRemovalDialogOpen(false);
+    setSchoolsToRemove([]);
+    setAffectedClasses([]);
+    setAffectedTeachers([]);
+    setAffectedStudents([]);
   };
 
   // Class management handlers
@@ -6754,6 +6834,127 @@ const CourseBuilder = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* School Removal Confirmation Dialog */}
+      <AlertDialog open={isSchoolRemovalDialogOpen} onOpenChange={setIsSchoolRemovalDialogOpen}>
+        <AlertDialogContent className="max-w-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className={`flex items-center gap-2 ${affectedClasses.length === 0 && affectedTeachers.length === 0 && affectedStudents.length === 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <AlertTriangle className="h-5 w-5" />
+              Confirm School Removal
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-600 dark:text-gray-300">
+              {affectedClasses.length === 0 && affectedTeachers.length === 0 && affectedStudents.length === 0 
+                ? "Removing these schools will not affect any classes, teachers, or students in the course access tab."
+                : "Removing these schools will also remove the associated classes, teachers, and students from the course access tab."
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className="space-y-4">
+            {/* Schools to be removed */}
+            <div>
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                Schools to be removed ({schoolsToRemove.length}):
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {schoolsToRemove.map(schoolId => {
+                  const school = schools.find(s => s.id === schoolId);
+                  return school ? (
+                    <Badge key={schoolId} variant="destructive" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                      {school.name}
+                    </Badge>
+                  ) : null;
+                })}
+              </div>
+            </div>
+
+            {/* Affected classes */}
+            {affectedClasses.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Classes that will be removed ({affectedClasses.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto space-y-1">
+                  {affectedClasses.map(cls => (
+                    <div key={cls.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">{cls.name}</span>
+                      <Badge variant="outline" className="text-xs">
+                        {cls.teachers.length} teachers, {cls.students.length} students
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Affected teachers */}
+            {affectedTeachers.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Teachers that will be removed ({affectedTeachers.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto flex flex-wrap gap-2">
+                  {affectedTeachers.map(teacher => (
+                    <Badge key={teacher.id} variant="outline" className="bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400 border-orange-200 dark:border-orange-700">
+                      {teacher.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Affected students */}
+            {affectedStudents.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Students that will be removed ({affectedStudents.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto flex flex-wrap gap-2">
+                  {affectedStudents.map(student => (
+                    <Badge key={student.id} variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200 dark:border-blue-700">
+                      {student.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Warning or Safe message */}
+            {affectedClasses.length === 0 && affectedTeachers.length === 0 && affectedStudents.length === 0 ? (
+              <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-md">
+                <p className="text-sm text-green-800 dark:text-green-200">
+                  <strong>Safe to remove:</strong> No classes, teachers, or students will be affected by removing these schools.
+                </p>
+              </div>
+            ) : (
+              <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-md">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                  <strong>Warning:</strong> This action cannot be undone. All selected classes, teachers, and students will be permanently removed from the course access tab.
+                </p>
+              </div>
+            )}
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelSchoolRemoval}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmSchoolRemoval}
+              className={affectedClasses.length === 0 && affectedTeachers.length === 0 && affectedStudents.length === 0 
+                ? "bg-green-600 hover:bg-green-700 text-white" 
+                : "bg-red-600 hover:bg-red-700 text-white"
+              }
+            >
+              {affectedClasses.length === 0 && affectedTeachers.length === 0 && affectedStudents.length === 0 
+                ? "Remove Schools" 
+                : "Remove Schools & Associated Data"
+              }
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
     </div>
   );
