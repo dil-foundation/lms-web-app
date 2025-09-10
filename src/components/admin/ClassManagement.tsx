@@ -16,11 +16,14 @@ import { Search, Plus, BookOpen, Edit, Trash2, Eye, RefreshCw, Users, MoreHorizo
 import { toast } from 'sonner';
 import { useClasses, useTeachers, useStudents, useBoards, useSchools } from '@/hooks/useClasses';
 import { ClassWithMembers, CreateClassData, UpdateClassData } from '@/services/classService';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 
 const ClassManagement: React.FC = () => {
   // Use custom hooks for data management
   const { classes, loading, stats, createClass, updateClass, deleteClass } = useClasses();
+  const { user } = useAuth();
   const { teachers, loading: teachersLoading } = useTeachers();
   const { students, loading: studentsLoading } = useStudents();
   const { boards, loading: boardsLoading } = useBoards();
@@ -86,6 +89,7 @@ const ClassManagement: React.FC = () => {
       toast.error('Max students must be a valid number between 1 and 100');
       return;
     }
+
 
     const classData: CreateClassData = {
       name: formData.name,
@@ -257,7 +261,7 @@ const ClassManagement: React.FC = () => {
       </div>
 
              {/* Summary Cards */}
-       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
          <Card>
            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
              <CardTitle className="text-sm font-medium">Total Classes</CardTitle>
@@ -291,16 +295,6 @@ const ClassManagement: React.FC = () => {
            </CardContent>
          </Card>
 
-         <Card>
-           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-             <CardTitle className="text-sm font-medium">Total Teachers</CardTitle>
-             <Users className="h-4 w-4 text-muted-foreground" />
-           </CardHeader>
-           <CardContent>
-             <div className="text-2xl font-bold">{stats.totalTeachers}</div>
-             <p className="text-xs text-muted-foreground">Unique teachers</p>
-           </CardContent>
-         </Card>
 
          <Card>
            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import CourseClassSyncService from './courseClassSyncService';
 
 export interface Class {
   id: string;
@@ -41,7 +42,6 @@ export interface ClassStats {
   totalClasses: number;
   totalSchools: number;
   totalBoards: number;
-  totalTeachers: number;
   totalStudents: number;
 }
 
@@ -150,6 +150,13 @@ class ClassService {
 
   // Create a new class
   async createClass(classData: CreateClassData): Promise<ClassWithMembers> {
+    // Get current user ID
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
+
     // First, create the class
     const { data: classResult, error: classError } = await supabase
       .from('classes')
@@ -160,7 +167,9 @@ class ClassService {
         school_id: classData.school_id,
         board_id: classData.board_id,
         description: classData.description || '',
-        max_students: classData.max_students || 30
+        max_students: classData.max_students || 30,
+        created_by: user.id,
+        updated_by: user.id
       })
       .select('id')
       .single();
@@ -226,6 +235,21 @@ class ClassService {
 
   // Update an existing class
   async updateClass(classData: UpdateClassData): Promise<ClassWithMembers> {
+    // Get current user ID
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
+    // Get the current class data to track member changes
+    const currentClass = await this.getClassById(classData.id);
+    if (!currentClass) {
+      throw new Error('Class not found');
+    }
+
+    const oldTeacherIds = currentClass.teachers.map(t => t.id);
+    const oldStudentIds = currentClass.students.map(s => s.id);
+
     // First, update the class basic info
     const { error: classError } = await supabase
       .from('classes')
@@ -236,7 +260,8 @@ class ClassService {
         school_id: classData.school_id,
         board_id: classData.board_id,
         description: classData.description || '',
-        max_students: classData.max_students || 30
+        max_students: classData.max_students || 30,
+        updated_by: user.id
       })
       .eq('id', classData.id);
 
@@ -309,12 +334,48 @@ class ClassService {
       }
     }
 
+    // Sync course members if there were changes
+    try {
+      const memberChanges = await CourseClassSyncService.getClassMemberChanges(
+        classData.id,
+        oldTeacherIds,
+        classData.teacher_ids,
+        oldStudentIds,
+        classData.student_ids
+      );
+
+      // Only sync if there were actual changes
+      const hasChanges = memberChanges.addedTeachers.length > 0 || 
+                        memberChanges.removedTeachers.length > 0 ||
+                        memberChanges.addedStudents.length > 0 || 
+                        memberChanges.removedStudents.length > 0;
+
+      if (hasChanges) {
+        console.log('Syncing course members due to class member changes:', memberChanges);
+        await CourseClassSyncService.syncCourseMembers([memberChanges]);
+      }
+    } catch (syncError) {
+      // Log the error but don't fail the class update
+      console.error('Error syncing course members:', syncError);
+      // You might want to show a warning to the user here
+    }
+
     // Fetch the updated class with all its data
     return this.getClassById(classData.id);
   }
 
   // Delete a class
   async deleteClass(id: string): Promise<void> {
+    // Get the current class data to track member changes before deletion
+    const currentClass = await this.getClassById(id);
+    if (!currentClass) {
+      throw new Error('Class not found');
+    }
+
+    const oldTeacherIds = currentClass.teachers.map(t => t.id);
+    const oldStudentIds = currentClass.students.map(s => s.id);
+
+    // Delete the class
     const { error } = await supabase
       .from('classes')
       .delete()
@@ -322,6 +383,28 @@ class ClassService {
 
     if (error) {
       throw new Error(`Failed to delete class: ${error.message}`);
+    }
+
+    // Sync course members after class deletion
+    try {
+      const memberChanges = await CourseClassSyncService.getClassMemberChanges(
+        id,
+        oldTeacherIds,
+        [], // No new teachers after deletion
+        oldStudentIds,
+        []  // No new students after deletion
+      );
+
+      // Only sync if there were members in the deleted class
+      const hasChanges = oldTeacherIds.length > 0 || oldStudentIds.length > 0;
+
+      if (hasChanges) {
+        console.log('Syncing course members due to class deletion:', memberChanges);
+        await CourseClassSyncService.syncCourseMembers([memberChanges]);
+      }
+    } catch (syncError) {
+      // Log the error but don't fail the class deletion
+      console.error('Error syncing course members after class deletion:', syncError);
     }
   }
 
@@ -338,22 +421,11 @@ class ClassService {
         console.warn('Failed to fetch from class_statistics view:', statsError);
       }
 
-      // Get total teachers count separately
-      const { data: teachersData, error: teachersError } = await supabase
-        .from('profiles')
-        .select('id', { count: 'exact', head: true })
-        .eq('role', 'teacher');
-
-      if (teachersError) {
-        console.warn('Failed to fetch teachers count:', teachersError);
-      }
-
       // Map the view data to our interface
       return {
         totalClasses: statsData?.total_classes || 0,
         totalSchools: statsData?.schools_with_classes || 0,
         totalBoards: statsData?.boards_with_classes || 0,
-        totalTeachers: teachersData?.length || 0,
         totalStudents: statsData?.total_enrolled_students || 0
       };
     } catch (error: any) {

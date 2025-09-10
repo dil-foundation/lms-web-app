@@ -9,7 +9,6 @@ export const useClasses = () => {
     totalClasses: 0,
     totalSchools: 0,
     totalBoards: 0,
-    totalTeachers: 0,
     totalStudents: 0
   });
   const [statsLoading, setStatsLoading] = useState(true);

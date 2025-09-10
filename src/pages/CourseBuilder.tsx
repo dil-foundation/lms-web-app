@@ -3395,6 +3395,13 @@ const CourseBuilder = () => {
       learning_outcomes: courseToSave.learningOutcomes.filter(o => o.trim() !== ''),
       status: courseToSave.status,
       published_course_id: courseToSave.published_course_id,
+      // Store all selected IDs as arrays
+      country_ids: courseToSave.country_ids,
+      region_ids: courseToSave.region_ids,
+      city_ids: courseToSave.city_ids,
+      project_ids: courseToSave.project_ids,
+      board_ids: courseToSave.board_ids,
+      class_ids: courseToSave.class_ids,
     };
 
     let savedCourse: { id: string } | null = null;
@@ -5624,7 +5631,7 @@ const CourseBuilder = () => {
                           options={filteredClasses.map(cls => ({
                             value: cls.id,
                             label: cls.name,
-                            subLabel: `${cls.grade} • ${cls.code} • ${cls.teachers.length} Teachers • ${cls.students.length} Students`,
+                            subLabel: `${cls.school} • Grade ${cls.grade} • ${cls.code} • ${cls.teachers.length} Teachers • ${cls.students.length} Students`,
                             imageUrl: undefined
                           }))}
                           onValueChange={handleClassSelection}
@@ -5672,6 +5679,9 @@ const CourseBuilder = () => {
                                   {getGradeBadge(classItem.grade)}
                                   <Badge variant="outline" className="text-xs">
                                     {classItem.code}
+                                  </Badge>
+                                  <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                                    {classItem.school}
                                   </Badge>
                                 </div>
                               </div>
@@ -6064,7 +6074,7 @@ const CourseBuilder = () => {
                         <div className="space-y-3">
                           <h4 className="font-semibold text-blue-900 dark:text-blue-100 flex items-center gap-2 text-sm">
                             <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                            Classes ({classes.length})
+                            Classes ({enrolledClasses.length})
                           </h4>
                           <ul className="text-xs text-blue-800 dark:text-blue-200 space-y-1">
                             <li>• Organize students into groups</li>
