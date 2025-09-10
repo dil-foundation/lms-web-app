@@ -35,6 +35,13 @@ const ClassManagement: React.FC = () => {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<ClassWithMembers | null>(null);
   const [viewingClass, setViewingClass] = useState<ClassWithMembers | null>(null);
+  
+  // Class deletion dependency state
+  const [classDependencies, setClassDependencies] = useState<{
+    courses: any[];
+  } | null>(null);
+  const [isCheckingClassDependencies, setIsCheckingClassDependencies] = useState(false);
+  const [classToDelete, setClassToDelete] = useState<ClassWithMembers | null>(null);
 
   // Use paginated classes hook
   const paginationParams = {
@@ -168,6 +175,72 @@ const ClassManagement: React.FC = () => {
       resetForm();
       refetchClasses(); // Refresh paginated data
     }
+  };
+
+  // Class dependency checking functions
+  const checkClassDependencies = async (classId: string) => {
+    const dependencies = {
+      courses: [] as any[]
+    };
+
+    try {
+      // Check courses (directly linked via class_ids array)
+      const { data: coursesData, error: coursesError } = await supabase
+        .from('courses')
+        .select('id, title, status')
+        .contains('class_ids', [classId]);
+      
+      if (!coursesError && coursesData) {
+        dependencies.courses = coursesData;
+      }
+
+      return dependencies;
+    } catch (error) {
+      console.error('Error checking class dependencies:', error);
+      return dependencies;
+    }
+  };
+
+  const handleClassDeleteCheck = async (cls: ClassWithMembers) => {
+    setClassToDelete(cls);
+    setIsCheckingClassDependencies(true);
+    setClassDependencies(null);
+
+    try {
+      // Check dependencies
+      const dependencies = await checkClassDependencies(cls.id);
+      setClassDependencies(dependencies);
+    } catch (error) {
+      console.error('Error checking class dependencies:', error);
+      toast.error('Failed to check dependencies. Please try again.');
+    } finally {
+      setIsCheckingClassDependencies(false);
+    }
+  };
+
+  const handleClassDeleteConfirm = async () => {
+    if (!classToDelete) return;
+
+    try {
+      const success = await deleteClass(classToDelete.id);
+      if (success) {
+        toast.success('Class deleted successfully');
+        refetchClasses(); // Refresh paginated data
+        
+        // Reset state
+        setClassToDelete(null);
+        setClassDependencies(null);
+      }
+    } catch (error) {
+      console.error('Error deleting class:', error);
+      toast.error('Failed to delete class. Please try again.');
+    }
+  };
+
+  const handleClassDeleteCancel = () => {
+    setClassToDelete(null);
+    setClassDependencies(null);
+    setIsCheckingClassDependencies(false);
   };
 
   const handleDelete = async (classId: string) => {
@@ -606,27 +679,118 @@ const ClassManagement: React.FC = () => {
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <DropdownMenuItem 
-                              onSelect={(e) => e.preventDefault()}
+                              onSelect={(e) => {
+                                e.preventDefault();
+                                handleClassDeleteCheck(cls);
+                              }}
                               className="text-red-600 hover:text-white hover:bg-red-600 focus:text-white focus:bg-red-600"
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
                               Delete Class
                             </DropdownMenuItem>
                           </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
+                            <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+                              <AlertDialogHeader className="flex-shrink-0">
                                 <AlertDialogTitle>Delete Class</AlertDialogTitle>
                                 <AlertDialogDescription>
                                   Are you sure you want to delete "{cls.name}"? This action cannot be undone.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              
+                              {/* Scrollable Content Area */}
+                              <div className="flex-1 overflow-y-auto min-h-0">
+                                {/* Dependency Information */}
+                                {isCheckingClassDependencies && (
+                                  <div className="flex items-center justify-center py-8">
+                                    <div className="text-center">
+                                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-4"></div>
+                                      <p className="text-muted-foreground">Checking dependencies...</p>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {classDependencies && !isCheckingClassDependencies && (
+                                  <div className="py-4">
+                                    {(() => {
+                                      const totalDependencies = classDependencies.courses.length;
+
+                                      if (totalDependencies > 0) {
+                                        return (
+                                          <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                                            <div className="flex items-center mb-2">
+                                              <div className="w-6 h-6 bg-red-600 rounded-full flex items-center justify-center mr-3">
+                                                <span className="text-white text-sm font-bold">!</span>
+                                              </div>
+                                              <h4 className="font-semibold text-red-800">Cannot Delete Class</h4>
+                                            </div>
+                                            <p className="text-red-700 mb-3">
+                                              This class is linked to the following entities:
+                                            </p>
+                                            
+                                            <div className="grid grid-cols-2 gap-2 mb-4">
+                                              {classDependencies.courses.length > 0 && (
+                                                <div className="flex items-center text-sm">
+                                                  <Badge variant="outline" className="mr-2">Courses</Badge>
+                                                  <span className="font-medium">{classDependencies.courses.length}</span>
+                                                </div>
+                                              )}
+                                            </div>
+
+                                            <div className="bg-white p-3 rounded border">
+                                              <h5 className="font-medium text-gray-800 mb-3">Delete in this order:</h5>
+                                              <div className="space-y-3">
+                                                {classDependencies.courses.length > 0 && (
+                                                  <div>
+                                                    <h6 className="font-medium text-red-700 mb-1">1. Delete {classDependencies.courses.length} Course(s):</h6>
+                                                    <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                      {classDependencies.courses.map((course) => (
+                                                        <li key={course.id} className="flex items-center">
+                                                          <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                                                          <span className="font-medium">{course.title}</span>
+                                                          <Badge variant="outline" className="ml-2 text-xs">{course.status}</Badge>
+                                                        </li>
+                                                      ))}
+                                                    </ul>
+                                                  </div>
+                                                )}
+                                                
+                                                <div className="pt-2 border-t border-gray-200">
+                                                  <h6 className="font-medium text-gray-800">2. Then delete the class</h6>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        );
+                                      } else {
+                                        return (
+                                          <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                                            <div className="flex items-center">
+                                              <div className="w-6 h-6 bg-green-600 rounded-full flex items-center justify-center mr-3">
+                                                <span className="text-white text-sm font-bold">✓</span>
+                                              </div>
+                                              <h4 className="font-semibold text-green-800">Safe to Delete</h4>
+                                            </div>
+                                            <p className="text-green-700 mt-2">
+                                              This class has no linked entities and can be safely deleted.
+                                            </p>
+                                          </div>
+                                        );
+                                      }
+                                    })()}
+                                  </div>
+                                )}
+                              </div>
+
+                              <AlertDialogFooter className="flex-shrink-0 border-t pt-4">
+                                <AlertDialogCancel onClick={handleClassDeleteCancel}>Cancel</AlertDialogCancel>
                                 <AlertDialogAction
-                                  onClick={() => handleDelete(cls.id)}
+                                  onClick={handleClassDeleteConfirm}
                                   className="bg-red-600 hover:bg-red-700"
+                                  disabled={isCheckingClassDependencies || (classDependencies && (
+                                    classDependencies.courses.length
+                                  ) > 0)}
                                 >
-                                  Delete
+                                  {isCheckingClassDependencies ? 'Checking...' : 'Delete'}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>

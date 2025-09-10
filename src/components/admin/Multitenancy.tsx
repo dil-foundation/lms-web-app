@@ -14,8 +14,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search, Plus, MapPin, Building2, GraduationCap, Edit, Trash2, Eye, RefreshCw, Calendar, FileText, MoreHorizontal, Phone, Mail, Globe, Users2, Building, FolderOpen, Loader2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCountries, useRegions, useCities, useProjects, useBoards, useSchools } from '@/hooks/useMultitenancy';
-import { Country as CountryType, CountryInsert, RegionInsert, CityInsert, ProjectInsert, BoardInsert, SchoolInsert, Region, City, Project, Board, School } from '@/services/multitenancyService';
+import { Country as CountryType, CountryInsert, RegionInsert, CityInsert, ProjectInsert, BoardInsert, SchoolInsert, Region, City, Project, Board, School, MultitenancyService } from '@/services/multitenancyService';
 import { ContentLoader } from '@/components/ContentLoader';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MultitenancyProps {
   userProfile: {
@@ -158,6 +159,56 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     countriesWithDescription: 0,
     recentUpdates: 0
   });
+  const [countryDependencies, setCountryDependencies] = useState<{
+    regions: any[];
+    cities: any[];
+    projects: any[];
+    boards: any[];
+    schools: any[];
+    classes: any[];
+    courses: any[];
+  } | null>(null);
+  const [isCheckingDependencies, setIsCheckingDependencies] = useState(false);
+  const [countryToDelete, setCountryToDelete] = useState<CountryType | null>(null);
+  const [regionDependencies, setRegionDependencies] = useState<{
+    cities: any[];
+    projects: any[];
+    boards: any[];
+    schools: any[];
+    classes: any[];
+    courses: any[];
+  } | null>(null);
+  const [isCheckingRegionDependencies, setIsCheckingRegionDependencies] = useState(false);
+  const [regionToDelete, setRegionToDelete] = useState<Region | null>(null);
+  const [cityDependencies, setCityDependencies] = useState<{
+    projects: any[];
+    boards: any[];
+    schools: any[];
+    classes: any[];
+    courses: any[];
+  } | null>(null);
+  const [isCheckingCityDependencies, setIsCheckingCityDependencies] = useState(false);
+  const [cityToDelete, setCityToDelete] = useState<City | null>(null);
+  const [projectDependencies, setProjectDependencies] = useState<{
+    boards: any[];
+    schools: any[];
+    classes: any[];
+    courses: any[];
+  } | null>(null);
+  const [isCheckingProjectDependencies, setIsCheckingProjectDependencies] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+  const [boardDependencies, setBoardDependencies] = useState<{
+    schools: any[];
+    classes: any[];
+    courses: any[];
+  } | null>(null);
+  const [isCheckingBoardDependencies, setIsCheckingBoardDependencies] = useState(false);
+  const [boardToDelete, setBoardToDelete] = useState<Board | null>(null);
+  const [schoolDependencies, setSchoolDependencies] = useState<{
+    classes: any[];
+  } | null>(null);
+  const [isCheckingSchoolDependencies, setIsCheckingSchoolDependencies] = useState(false);
+  const [schoolToDelete, setSchoolToDelete] = useState<School | null>(null);
 
   // Regions specific state
   const [isRegionCreateDialogOpen, setIsRegionCreateDialogOpen] = useState(false);
@@ -954,15 +1005,636 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     }
   };
 
-  const handleCountryDelete = async (countryId: string) => {
+  // Country dependency checking functions
+  const checkCountryDependencies = async (countryId: string) => {
+    const dependencies = {
+      regions: [] as any[],
+      cities: [] as any[],
+      projects: [] as any[],
+      boards: [] as any[],
+      schools: [] as any[],
+      classes: [] as any[],
+      courses: [] as any[]
+    };
+
     try {
-      await deleteCountry(countryId);
+      // Check regions directly
+      const { data: regionsData, error: regionsError } = await supabase
+        .from('regions')
+        .select('id, name, code')
+        .eq('country_id', countryId);
+      
+      if (!regionsError && regionsData) {
+        dependencies.regions = regionsData;
+      }
+
+      // Check cities (through regions)
+      for (const region of dependencies.regions) {
+        const { data: citiesData, error: citiesError } = await supabase
+          .from('cities')
+          .select('id, name, code, region_id')
+          .eq('region_id', region.id);
+        
+        if (!citiesError && citiesData) {
+          dependencies.cities.push(...citiesData);
+        }
+      }
+
+      // Check projects (through cities)
+      for (const city of dependencies.cities) {
+        const { data: projectsData, error: projectsError } = await supabase
+          .from('projects')
+          .select('id, name, code, city_id')
+          .eq('city_id', city.id);
+        
+        if (!projectsError && projectsData) {
+          dependencies.projects.push(...projectsData);
+        }
+      }
+
+      // Check boards (through projects)
+      for (const project of dependencies.projects) {
+        const { data: boardsData, error: boardsError } = await supabase
+          .from('boards')
+          .select('id, name, code, project_id')
+          .eq('project_id', project.id);
+        
+        if (!boardsError && boardsData) {
+          dependencies.boards.push(...boardsData);
+        }
+      }
+
+      // Check schools (through boards)
+      for (const board of dependencies.boards) {
+        const { data: schoolsData, error: schoolsError } = await supabase
+          .from('schools')
+          .select('id, name, code, board_id')
+          .eq('board_id', board.id);
+        
+        if (!schoolsError && schoolsData) {
+          dependencies.schools.push(...schoolsData);
+        }
+      }
+
+      // Check classes (through schools)
+      for (const school of dependencies.schools) {
+        const { data: classesData, error: classesError } = await supabase
+          .from('classes')
+          .select('id, name, code, grade, school_id')
+          .eq('school_id', school.id);
+        
+        if (!classesError && classesData) {
+          dependencies.classes.push(...classesData);
+        }
+      }
+
+      // Check courses (directly linked via country_ids array)
+      const { data: coursesData, error: coursesError } = await supabase
+        .from('courses')
+        .select('id, title, status')
+        .contains('country_ids', [countryId]);
+      
+      if (!coursesError && coursesData) {
+        dependencies.courses = coursesData;
+      }
+
+      return dependencies;
+    } catch (error) {
+      console.error('Error checking country dependencies:', error);
+      return dependencies;
+    }
+  };
+
+
+  const handleCountryDeleteCheck = async (country: CountryType) => {
+    setCountryToDelete(country);
+    setIsCheckingDependencies(true);
+    setCountryDependencies(null);
+
+    try {
+      // Check dependencies
+      const dependencies = await checkCountryDependencies(country.id);
+      setCountryDependencies(dependencies);
+    } catch (error) {
+      console.error('Error checking country dependencies:', error);
+      toast.error('Failed to check dependencies. Please try again.');
+    } finally {
+      setIsCheckingDependencies(false);
+    }
+  };
+
+  const handleCountryDeleteConfirm = async () => {
+    if (!countryToDelete) return;
+
+    try {
+      await deleteCountry(countryToDelete.id);
       // Refresh statistics
       const stats = await getCountriesWithStats();
       setCountriesStats(stats);
+      toast.success('Country deleted successfully');
+      
+      // Reset state
+      setCountryToDelete(null);
+      setCountryDependencies(null);
     } catch (error) {
-      // Error is already handled in the hook
+      console.error('Error deleting country:', error);
+      toast.error('Failed to delete country. Please try again.');
     }
+  };
+
+  const handleCountryDeleteCancel = () => {
+    setCountryToDelete(null);
+    setCountryDependencies(null);
+    setIsCheckingDependencies(false);
+  };
+
+  // Region dependency checking functions
+  const checkRegionDependencies = async (regionId: string) => {
+    const dependencies = {
+      cities: [] as any[],
+      projects: [] as any[],
+      boards: [] as any[],
+      schools: [] as any[],
+      classes: [] as any[],
+      courses: [] as any[]
+    };
+
+    try {
+      // Check cities directly
+      const { data: citiesData, error: citiesError } = await supabase
+        .from('cities')
+        .select('id, name, code, region_id')
+        .eq('region_id', regionId);
+      
+      if (!citiesError && citiesData) {
+        dependencies.cities = citiesData;
+      }
+
+      // Check projects (through cities)
+      for (const city of dependencies.cities) {
+        const { data: projectsData, error: projectsError } = await supabase
+          .from('projects')
+          .select('id, name, code, city_id')
+          .eq('city_id', city.id);
+        
+        if (!projectsError && projectsData) {
+          dependencies.projects.push(...projectsData);
+        }
+      }
+
+      // Check boards (through projects)
+      for (const project of dependencies.projects) {
+        const { data: boardsData, error: boardsError } = await supabase
+          .from('boards')
+          .select('id, name, code, project_id')
+          .eq('project_id', project.id);
+        
+        if (!boardsError && boardsData) {
+          dependencies.boards.push(...boardsData);
+        }
+      }
+
+      // Check schools (through boards)
+      for (const board of dependencies.boards) {
+        const { data: schoolsData, error: schoolsError } = await supabase
+          .from('schools')
+          .select('id, name, code, board_id')
+          .eq('board_id', board.id);
+        
+        if (!schoolsError && schoolsData) {
+          dependencies.schools.push(...schoolsData);
+        }
+      }
+
+      // Check classes (through schools)
+      for (const school of dependencies.schools) {
+        const { data: classesData, error: classesError } = await supabase
+          .from('classes')
+          .select('id, name, code, grade, school_id')
+          .eq('school_id', school.id);
+        
+        if (!classesError && classesData) {
+          dependencies.classes.push(...classesData);
+        }
+      }
+
+      // Check courses (directly linked via region_ids array)
+      const { data: coursesData, error: coursesError } = await supabase
+        .from('courses')
+        .select('id, title, status')
+        .contains('region_ids', [regionId]);
+      
+      if (!coursesError && coursesData) {
+        dependencies.courses = coursesData;
+      }
+
+      return dependencies;
+    } catch (error) {
+      console.error('Error checking region dependencies:', error);
+      return dependencies;
+    }
+  };
+
+  const handleRegionDeleteCheck = async (region: Region) => {
+    setRegionToDelete(region);
+    setIsCheckingRegionDependencies(true);
+    setRegionDependencies(null);
+
+    try {
+      // Check dependencies
+      const dependencies = await checkRegionDependencies(region.id);
+      setRegionDependencies(dependencies);
+    } catch (error) {
+      console.error('Error checking region dependencies:', error);
+      toast.error('Failed to check dependencies. Please try again.');
+    } finally {
+      setIsCheckingRegionDependencies(false);
+    }
+  };
+
+  const handleRegionDeleteConfirm = async () => {
+    if (!regionToDelete) return;
+
+    try {
+      await deleteRegion(regionToDelete.id);
+      toast.success('Region deleted successfully');
+      
+      // Reset state
+      setRegionToDelete(null);
+      setRegionDependencies(null);
+    } catch (error) {
+      console.error('Error deleting region:', error);
+      toast.error('Failed to delete region. Please try again.');
+    }
+  };
+
+  const handleRegionDeleteCancel = () => {
+    setRegionToDelete(null);
+    setRegionDependencies(null);
+    setIsCheckingRegionDependencies(false);
+  };
+
+  // City dependency checking functions
+  const checkCityDependencies = async (cityId: string) => {
+    const dependencies = {
+      projects: [] as any[],
+      boards: [] as any[],
+      schools: [] as any[],
+      classes: [] as any[],
+      courses: [] as any[]
+    };
+
+    try {
+      // Check projects directly
+      const { data: projectsData, error: projectsError } = await supabase
+        .from('projects')
+        .select('id, name, code, city_id')
+        .eq('city_id', cityId);
+      
+      if (!projectsError && projectsData) {
+        dependencies.projects = projectsData;
+      }
+
+      // Check boards (through projects)
+      for (const project of dependencies.projects) {
+        const { data: boardsData, error: boardsError } = await supabase
+          .from('boards')
+          .select('id, name, code, project_id')
+          .eq('project_id', project.id);
+        
+        if (!boardsError && boardsData) {
+          dependencies.boards.push(...boardsData);
+        }
+      }
+
+      // Check schools (through boards)
+      for (const board of dependencies.boards) {
+        const { data: schoolsData, error: schoolsError } = await supabase
+          .from('schools')
+          .select('id, name, code, board_id')
+          .eq('board_id', board.id);
+        
+        if (!schoolsError && schoolsData) {
+          dependencies.schools.push(...schoolsData);
+        }
+      }
+
+      // Check classes (through schools)
+      for (const school of dependencies.schools) {
+        const { data: classesData, error: classesError } = await supabase
+          .from('classes')
+          .select('id, name, code, grade, school_id')
+          .eq('school_id', school.id);
+        
+        if (!classesError && classesData) {
+          dependencies.classes.push(...classesData);
+        }
+      }
+
+      // Check courses (directly linked via city_ids array)
+      const { data: coursesData, error: coursesError } = await supabase
+        .from('courses')
+        .select('id, title, status')
+        .contains('city_ids', [cityId]);
+      
+      if (!coursesError && coursesData) {
+        dependencies.courses = coursesData;
+      }
+
+      return dependencies;
+    } catch (error) {
+      console.error('Error checking city dependencies:', error);
+      return dependencies;
+    }
+  };
+
+  const handleCityDeleteCheck = async (city: City) => {
+    setCityToDelete(city);
+    setIsCheckingCityDependencies(true);
+    setCityDependencies(null);
+
+    try {
+      // Check dependencies
+      const dependencies = await checkCityDependencies(city.id);
+      setCityDependencies(dependencies);
+    } catch (error) {
+      console.error('Error checking city dependencies:', error);
+      toast.error('Failed to check dependencies. Please try again.');
+    } finally {
+      setIsCheckingCityDependencies(false);
+    }
+  };
+
+  const handleCityDeleteConfirm = async () => {
+    if (!cityToDelete) return;
+
+    try {
+      await deleteCity(cityToDelete.id);
+      toast.success('City deleted successfully');
+      
+      // Reset state
+      setCityToDelete(null);
+      setCityDependencies(null);
+    } catch (error) {
+      console.error('Error deleting city:', error);
+      toast.error('Failed to delete city. Please try again.');
+    }
+  };
+
+  const handleCityDeleteCancel = () => {
+    setCityToDelete(null);
+    setCityDependencies(null);
+    setIsCheckingCityDependencies(false);
+  };
+
+  // Project dependency checking functions
+  const checkProjectDependencies = async (projectId: string) => {
+    const dependencies = {
+      boards: [] as any[],
+      schools: [] as any[],
+      classes: [] as any[],
+      courses: [] as any[]
+    };
+
+    try {
+      // Check boards directly
+      const { data: boardsData, error: boardsError } = await supabase
+        .from('boards')
+        .select('id, name, code, project_id')
+        .eq('project_id', projectId);
+      
+      if (!boardsError && boardsData) {
+        dependencies.boards = boardsData;
+      }
+
+      // Check schools (through boards)
+      for (const board of dependencies.boards) {
+        const { data: schoolsData, error: schoolsError } = await supabase
+          .from('schools')
+          .select('id, name, code, board_id')
+          .eq('board_id', board.id);
+        
+        if (!schoolsError && schoolsData) {
+          dependencies.schools.push(...schoolsData);
+        }
+      }
+
+      // Check classes (through schools)
+      for (const school of dependencies.schools) {
+        const { data: classesData, error: classesError } = await supabase
+          .from('classes')
+          .select('id, name, code, grade, school_id')
+          .eq('school_id', school.id);
+        
+        if (!classesError && classesData) {
+          dependencies.classes.push(...classesData);
+        }
+      }
+
+      // Check courses (directly linked via project_ids array)
+      const { data: coursesData, error: coursesError } = await supabase
+        .from('courses')
+        .select('id, title, status')
+        .contains('project_ids', [projectId]);
+      
+      if (!coursesError && coursesData) {
+        dependencies.courses = coursesData;
+      }
+
+      return dependencies;
+    } catch (error) {
+      console.error('Error checking project dependencies:', error);
+      return dependencies;
+    }
+  };
+
+  const handleProjectDeleteCheck = async (project: Project) => {
+    setProjectToDelete(project);
+    setIsCheckingProjectDependencies(true);
+    setProjectDependencies(null);
+
+    try {
+      // Check dependencies
+      const dependencies = await checkProjectDependencies(project.id);
+      setProjectDependencies(dependencies);
+    } catch (error) {
+      console.error('Error checking project dependencies:', error);
+      toast.error('Failed to check dependencies. Please try again.');
+    } finally {
+      setIsCheckingProjectDependencies(false);
+    }
+  };
+
+  const handleProjectDeleteConfirm = async () => {
+    if (!projectToDelete) return;
+
+    try {
+      await deleteProject(projectToDelete.id);
+      toast.success('Project deleted successfully');
+      
+      // Reset state
+      setProjectToDelete(null);
+      setProjectDependencies(null);
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      toast.error('Failed to delete project. Please try again.');
+    }
+  };
+
+  const handleProjectDeleteCancel = () => {
+    setProjectToDelete(null);
+    setProjectDependencies(null);
+    setIsCheckingProjectDependencies(false);
+  };
+
+  // Board dependency checking functions
+  const checkBoardDependencies = async (boardId: string) => {
+    const dependencies = {
+      schools: [] as any[],
+      classes: [] as any[],
+      courses: [] as any[]
+    };
+
+    try {
+      // Check schools directly
+      const { data: schoolsData, error: schoolsError } = await supabase
+        .from('schools')
+        .select('id, name, code, board_id')
+        .eq('board_id', boardId);
+      
+      if (!schoolsError && schoolsData) {
+        dependencies.schools = schoolsData;
+      }
+
+      // Check classes (through schools)
+      for (const school of dependencies.schools) {
+        const { data: classesData, error: classesError } = await supabase
+          .from('classes')
+          .select('id, name, code, grade, school_id')
+          .eq('school_id', school.id);
+        
+        if (!classesError && classesData) {
+          dependencies.classes.push(...classesData);
+        }
+      }
+
+      // Check courses (directly linked via board_ids array)
+      const { data: coursesData, error: coursesError } = await supabase
+        .from('courses')
+        .select('id, title, status')
+        .contains('board_ids', [boardId]);
+      
+      if (!coursesError && coursesData) {
+        dependencies.courses = coursesData;
+      }
+
+      return dependencies;
+    } catch (error) {
+      console.error('Error checking board dependencies:', error);
+      return dependencies;
+    }
+  };
+
+  const handleBoardDeleteCheck = async (board: Board) => {
+    setBoardToDelete(board);
+    setIsCheckingBoardDependencies(true);
+    setBoardDependencies(null);
+
+    try {
+      // Check dependencies
+      const dependencies = await checkBoardDependencies(board.id);
+      setBoardDependencies(dependencies);
+    } catch (error) {
+      console.error('Error checking board dependencies:', error);
+      toast.error('Failed to check dependencies. Please try again.');
+    } finally {
+      setIsCheckingBoardDependencies(false);
+    }
+  };
+
+  const handleBoardDeleteConfirm = async () => {
+    if (!boardToDelete) return;
+
+    try {
+      await deleteBoard(boardToDelete.id);
+      toast.success('Board deleted successfully');
+      
+      // Reset state
+      setBoardToDelete(null);
+      setBoardDependencies(null);
+    } catch (error) {
+      console.error('Error deleting board:', error);
+      toast.error('Failed to delete board. Please try again.');
+    }
+  };
+
+  const handleBoardDeleteCancel = () => {
+    setBoardToDelete(null);
+    setBoardDependencies(null);
+    setIsCheckingBoardDependencies(false);
+  };
+
+  // School dependency checking functions
+  const checkSchoolDependencies = async (schoolId: string) => {
+    const dependencies = {
+      classes: [] as any[]
+    };
+
+    try {
+      // Check classes directly
+      const { data: classesData, error: classesError } = await supabase
+        .from('classes')
+        .select('id, name, code, grade, school_id')
+        .eq('school_id', schoolId);
+      
+      if (!classesError && classesData) {
+        dependencies.classes = classesData;
+      }
+
+      return dependencies;
+    } catch (error) {
+      console.error('Error checking school dependencies:', error);
+      return dependencies;
+    }
+  };
+
+  const handleSchoolDeleteCheck = async (school: School) => {
+    setSchoolToDelete(school);
+    setIsCheckingSchoolDependencies(true);
+    setSchoolDependencies(null);
+
+    try {
+      // Check dependencies
+      const dependencies = await checkSchoolDependencies(school.id);
+      setSchoolDependencies(dependencies);
+    } catch (error) {
+      console.error('Error checking school dependencies:', error);
+      toast.error('Failed to check dependencies. Please try again.');
+    } finally {
+      setIsCheckingSchoolDependencies(false);
+    }
+  };
+
+  const handleSchoolDeleteConfirm = async () => {
+    if (!schoolToDelete) return;
+
+    try {
+      await deleteSchool(schoolToDelete.id);
+      toast.success('School deleted successfully');
+      
+      // Reset state
+      setSchoolToDelete(null);
+      setSchoolDependencies(null);
+    } catch (error) {
+      console.error('Error deleting school:', error);
+      toast.error('Failed to delete school. Please try again.');
+    }
+  };
+
+  const handleSchoolDeleteCancel = () => {
+    setSchoolToDelete(null);
+    setSchoolDependencies(null);
+    setIsCheckingSchoolDependencies(false);
   };
 
   const openCountryEditDialog = (country: CountryType) => {
@@ -1993,25 +2665,260 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                             <DropdownMenuSeparator />
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="group">
+                                  <DropdownMenuItem 
+                                    onSelect={(e) => {
+                                      e.preventDefault();
+                                      handleCountryDeleteCheck(country);
+                                    }} 
+                                    className="group"
+                                  >
                                     <Trash2 className="mr-2 h-4 w-4 text-red-600 group-hover:text-white" />
                                     <span className="text-red-600 group-hover:text-white">Delete Country</span>
                                 </DropdownMenuItem>
                               </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
+                              <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+                                <AlertDialogHeader className="flex-shrink-0">
                                     <AlertDialogTitle className="text-red-600">Delete Country</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                      Are you sure you want to delete "{country.name}"? This action cannot be undone and will also delete all associated regions, cities, projects, boards, and schools.
+                                      Are you sure you want to delete "{country.name}"? This action cannot be undone.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                
+                                {/* Scrollable Content Area */}
+                                <div className="flex-1 overflow-y-auto min-h-0">
+                                  {/* Dependency Information */}
+                                  {isCheckingDependencies && (
+                                    <div className="flex items-center justify-center py-8">
+                                      <div className="text-center">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-4"></div>
+                                        <p className="text-muted-foreground">Checking dependencies...</p>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {countryDependencies && !isCheckingDependencies && (
+                                    <div className="py-4">
+                                    {(() => {
+                                      const totalDependencies = 
+                                        countryDependencies.regions.length + 
+                                        countryDependencies.cities.length + 
+                                        countryDependencies.projects.length + 
+                                        countryDependencies.boards.length + 
+                                        countryDependencies.schools.length + 
+                                        countryDependencies.classes.length +
+                                        countryDependencies.courses.length;
+
+                                      if (totalDependencies > 0) {
+                                        return (
+                                          <div className="space-y-4">
+                                            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                                              <div className="flex items-center mb-2">
+                                                <div className="w-6 h-6 bg-red-600 rounded-full flex items-center justify-center mr-3">
+                                                  <span className="text-white text-sm font-bold">!</span>
+                                                </div>
+                                                <h4 className="font-semibold text-red-800">Cannot Delete Country</h4>
+                                              </div>
+                                              <p className="text-red-700 mb-3">
+                                                This country is linked to the following entities:
+                                              </p>
+                                              
+                                              <div className="grid grid-cols-2 gap-2 mb-4">
+                                                {countryDependencies.regions.length > 0 && (
+                                                  <div className="flex items-center text-sm">
+                                                    <Badge variant="outline" className="mr-2">Regions</Badge>
+                                                    <span className="font-medium">{countryDependencies.regions.length}</span>
+                                                  </div>
+                                                )}
+                                                {countryDependencies.cities.length > 0 && (
+                                                  <div className="flex items-center text-sm">
+                                                    <Badge variant="outline" className="mr-2">Cities</Badge>
+                                                    <span className="font-medium">{countryDependencies.cities.length}</span>
+                                                  </div>
+                                                )}
+                                                {countryDependencies.projects.length > 0 && (
+                                                  <div className="flex items-center text-sm">
+                                                    <Badge variant="outline" className="mr-2">Projects</Badge>
+                                                    <span className="font-medium">{countryDependencies.projects.length}</span>
+                                                  </div>
+                                                )}
+                                                {countryDependencies.boards.length > 0 && (
+                                                  <div className="flex items-center text-sm">
+                                                    <Badge variant="outline" className="mr-2">Boards</Badge>
+                                                    <span className="font-medium">{countryDependencies.boards.length}</span>
+                                                  </div>
+                                                )}
+                                                {countryDependencies.schools.length > 0 && (
+                                                  <div className="flex items-center text-sm">
+                                                    <Badge variant="outline" className="mr-2">Schools</Badge>
+                                                    <span className="font-medium">{countryDependencies.schools.length}</span>
+                                                  </div>
+                                                )}
+                                                {countryDependencies.classes.length > 0 && (
+                                                  <div className="flex items-center text-sm">
+                                                    <Badge variant="outline" className="mr-2">Classes</Badge>
+                                                    <span className="font-medium">{countryDependencies.classes.length}</span>
+                                                  </div>
+                                                )}
+                                                {countryDependencies.courses.length > 0 && (
+                                                  <div className="flex items-center text-sm">
+                                                    <Badge variant="outline" className="mr-2">Courses</Badge>
+                                                    <span className="font-medium">{countryDependencies.courses.length}</span>
+                                                  </div>
+                                                )}
+                                              </div>
+
+                                              <div className="bg-white p-3 rounded border">
+                                                <h5 className="font-medium text-gray-800 mb-3">Delete in this order:</h5>
+                                                <div className="space-y-3">
+                                                  {countryDependencies.courses.length > 0 && (
+                                                    <div>
+                                                      <h6 className="font-medium text-red-700 mb-1">1. Delete {countryDependencies.courses.length} Course(s):</h6>
+                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                        {countryDependencies.courses.map((course, index) => (
+                                                          <li key={course.id} className="flex items-center">
+                                                            <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                                                            <span className="font-medium">{course.title}</span>
+                                                            <Badge variant="outline" className="ml-2 text-xs">{course.status}</Badge>
+                                                          </li>
+                                                        ))}
+                                                      </ul>
+                                                    </div>
+                                                  )}
+                                                  
+                                                  {countryDependencies.classes.length > 0 && (
+                                                    <div>
+                                                      <h6 className="font-medium text-red-700 mb-1">2. Delete {countryDependencies.classes.length} Class(es):</h6>
+                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                        {countryDependencies.classes.map((cls, index) => (
+                                                          <li key={cls.id} className="flex items-center">
+                                                            <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                                                            <span className="font-medium">{cls.name}</span>
+                                                            <Badge variant="outline" className="ml-2 text-xs">Grade {cls.grade}</Badge>
+                                                          </li>
+                                                        ))}
+                                                      </ul>
+                                                    </div>
+                                                  )}
+                                                  
+                                                  {countryDependencies.schools.length > 0 && (
+                                                    <div>
+                                                      <h6 className="font-medium text-red-700 mb-1">3. Delete {countryDependencies.schools.length} School(s):</h6>
+                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                        {countryDependencies.schools.map((school, index) => (
+                                                          <li key={school.id} className="flex items-center">
+                                                            <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                                                            <span className="font-medium">{school.name}</span>
+                                                            <Badge variant="outline" className="ml-2 text-xs">{school.code}</Badge>
+                                                          </li>
+                                                        ))}
+                                                      </ul>
+                                                    </div>
+                                                  )}
+                                                  
+                                                  {countryDependencies.boards.length > 0 && (
+                                                    <div>
+                                                      <h6 className="font-medium text-red-700 mb-1">4. Delete {countryDependencies.boards.length} Board(s):</h6>
+                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                        {countryDependencies.boards.map((board, index) => (
+                                                          <li key={board.id} className="flex items-center">
+                                                            <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                                                            <span className="font-medium">{board.name}</span>
+                                                            <Badge variant="outline" className="ml-2 text-xs">{board.code}</Badge>
+                                                          </li>
+                                                        ))}
+                                                      </ul>
+                                                    </div>
+                                                  )}
+                                                  
+                                                  {countryDependencies.projects.length > 0 && (
+                                                    <div>
+                                                      <h6 className="font-medium text-red-700 mb-1">5. Delete {countryDependencies.projects.length} Project(s):</h6>
+                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                        {countryDependencies.projects.map((project, index) => (
+                                                          <li key={project.id} className="flex items-center">
+                                                            <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                                                            <span className="font-medium">{project.name}</span>
+                                                            <Badge variant="outline" className="ml-2 text-xs">{project.code}</Badge>
+                                                          </li>
+                                                        ))}
+                                                      </ul>
+                                                    </div>
+                                                  )}
+                                                  
+                                                  {countryDependencies.cities.length > 0 && (
+                                                    <div>
+                                                      <h6 className="font-medium text-red-700 mb-1">6. Delete {countryDependencies.cities.length} City(ies):</h6>
+                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                        {countryDependencies.cities.map((city, index) => (
+                                                          <li key={city.id} className="flex items-center">
+                                                            <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                                                            <span className="font-medium">{city.name}</span>
+                                                            <Badge variant="outline" className="ml-2 text-xs">{city.code}</Badge>
+                                                          </li>
+                                                        ))}
+                                                      </ul>
+                                                    </div>
+                                                  )}
+                                                  
+                                                  {countryDependencies.regions.length > 0 && (
+                                                    <div>
+                                                      <h6 className="font-medium text-red-700 mb-1">7. Delete {countryDependencies.regions.length} Region(s):</h6>
+                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                        {countryDependencies.regions.map((region, index) => (
+                                                          <li key={region.id} className="flex items-center">
+                                                            <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                                                            <span className="font-medium">{region.name}</span>
+                                                            <Badge variant="outline" className="ml-2 text-xs">{region.code}</Badge>
+                                                          </li>
+                                                        ))}
+                                                      </ul>
+                                                    </div>
+                                                  )}
+                                                  
+                                                  <div className="pt-2 border-t border-gray-200">
+                                                    <h6 className="font-medium text-gray-800">8. Then delete the country</h6>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        );
+                                      } else {
+                                        return (
+                                          <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                                            <div className="flex items-center">
+                                              <div className="w-6 h-6 bg-green-600 rounded-full flex items-center justify-center mr-3">
+                                                <span className="text-white text-sm font-bold">✓</span>
+                                              </div>
+                                              <h4 className="font-semibold text-green-800">Safe to Delete</h4>
+                                            </div>
+                                            <p className="text-green-700 mt-2">
+                                              This country has no linked entities and can be safely deleted.
+                                            </p>
+                                          </div>
+                                        );
+                                      }
+                                    })()}
+                                    </div>
+                                  )}
+                                </div>
+
+                                <AlertDialogFooter className="flex-shrink-0 border-t pt-4">
+                                  <AlertDialogCancel onClick={handleCountryDeleteCancel}>Cancel</AlertDialogCancel>
                                   <AlertDialogAction
-                                    onClick={() => handleCountryDelete(country.id)}
+                                    onClick={handleCountryDeleteConfirm}
                                     className="bg-red-600 hover:bg-red-700"
+                                    disabled={isCheckingDependencies || (countryDependencies && (
+                                      countryDependencies.regions.length + 
+                                      countryDependencies.cities.length + 
+                                      countryDependencies.projects.length + 
+                                      countryDependencies.boards.length + 
+                                      countryDependencies.schools.length + 
+                                      countryDependencies.classes.length +
+                                      countryDependencies.courses.length
+                                    ) > 0)}
                                   >
-                                    Delete
+                                    {isCheckingDependencies ? 'Checking...' : 'Delete'}
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
@@ -2243,25 +3150,235 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                             <DropdownMenuSeparator />
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="group">
+                                  <DropdownMenuItem 
+                                    onSelect={(e) => {
+                                      e.preventDefault();
+                                      handleRegionDeleteCheck(region);
+                                    }} 
+                                    className="group"
+                                  >
                                     <Trash2 className="mr-2 h-4 w-4 text-red-600 group-hover:text-white" />
                                     <span className="text-red-600 group-hover:text-white">Delete Region</span>
                                 </DropdownMenuItem>
                               </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
+                              <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+                                <AlertDialogHeader className="flex-shrink-0">
                                     <AlertDialogTitle className="text-red-600">Delete Region</AlertDialogTitle>
                                   <AlertDialogDescription>
                                     Are you sure you want to delete "{region.name}"? This action cannot be undone.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                
+                                {/* Scrollable Content Area */}
+                                <div className="flex-1 overflow-y-auto min-h-0">
+                                  {/* Dependency Information */}
+                                  {isCheckingRegionDependencies && (
+                                    <div className="flex items-center justify-center py-8">
+                                      <div className="text-center">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-4"></div>
+                                        <p className="text-muted-foreground">Checking dependencies...</p>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {regionDependencies && !isCheckingRegionDependencies && (
+                                    <div className="py-4">
+                                      {(() => {
+                                        const totalDependencies = 
+                                          regionDependencies.cities.length + 
+                                          regionDependencies.projects.length + 
+                                          regionDependencies.boards.length + 
+                                          regionDependencies.schools.length + 
+                                          regionDependencies.classes.length +
+                                          regionDependencies.courses.length;
+
+                                        if (totalDependencies > 0) {
+                                          return (
+                                            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                                              <div className="flex items-center mb-2">
+                                                <div className="w-6 h-6 bg-red-600 rounded-full flex items-center justify-center mr-3">
+                                                  <span className="text-white text-sm font-bold">!</span>
+                                                </div>
+                                                <h4 className="font-semibold text-red-800">Cannot Delete Region</h4>
+                                              </div>
+                                              <p className="text-red-700 mb-3">
+                                                This region is linked to the following entities:
+                                              </p>
+                                              
+                                              <div className="grid grid-cols-2 gap-2 mb-4">
+                                                {regionDependencies.cities.length > 0 && (
+                                                  <div className="flex items-center text-sm">
+                                                    <Badge variant="outline" className="mr-2">Cities</Badge>
+                                                    <span className="font-medium">{regionDependencies.cities.length}</span>
+                                                  </div>
+                                                )}
+                                                {regionDependencies.projects.length > 0 && (
+                                                  <div className="flex items-center text-sm">
+                                                    <Badge variant="outline" className="mr-2">Projects</Badge>
+                                                    <span className="font-medium">{regionDependencies.projects.length}</span>
+                                                  </div>
+                                                )}
+                                                {regionDependencies.boards.length > 0 && (
+                                                  <div className="flex items-center text-sm">
+                                                    <Badge variant="outline" className="mr-2">Boards</Badge>
+                                                    <span className="font-medium">{regionDependencies.boards.length}</span>
+                                                  </div>
+                                                )}
+                                                {regionDependencies.schools.length > 0 && (
+                                                  <div className="flex items-center text-sm">
+                                                    <Badge variant="outline" className="mr-2">Schools</Badge>
+                                                    <span className="font-medium">{regionDependencies.schools.length}</span>
+                                                  </div>
+                                                )}
+                                                {regionDependencies.classes.length > 0 && (
+                                                  <div className="flex items-center text-sm">
+                                                    <Badge variant="outline" className="mr-2">Classes</Badge>
+                                                    <span className="font-medium">{regionDependencies.classes.length}</span>
+                                                  </div>
+                                                )}
+                                                {regionDependencies.courses.length > 0 && (
+                                                  <div className="flex items-center text-sm">
+                                                    <Badge variant="outline" className="mr-2">Courses</Badge>
+                                                    <span className="font-medium">{regionDependencies.courses.length}</span>
+                                                  </div>
+                                                )}
+                                              </div>
+
+                                              <div className="bg-white p-3 rounded border">
+                                                <h5 className="font-medium text-gray-800 mb-3">Delete in this order:</h5>
+                                                <div className="space-y-3">
+                                                  {regionDependencies.courses.length > 0 && (
+                                                    <div>
+                                                      <h6 className="font-medium text-red-700 mb-1">1. Delete {regionDependencies.courses.length} Course(s):</h6>
+                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                        {regionDependencies.courses.map((course) => (
+                                                          <li key={course.id} className="flex items-center">
+                                                            <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                                                            <span className="font-medium">{course.title}</span>
+                                                            <Badge variant="outline" className="ml-2 text-xs">{course.status}</Badge>
+                                                          </li>
+                                                        ))}
+                                                      </ul>
+                                                    </div>
+                                                  )}
+                                                  
+                                                  {regionDependencies.classes.length > 0 && (
+                                                    <div>
+                                                      <h6 className="font-medium text-red-700 mb-1">2. Delete {regionDependencies.classes.length} Class(es):</h6>
+                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                        {regionDependencies.classes.map((cls) => (
+                                                          <li key={cls.id} className="flex items-center">
+                                                            <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                                                            <span className="font-medium">{cls.name}</span>
+                                                            <Badge variant="outline" className="ml-2 text-xs">Grade {cls.grade}</Badge>
+                                                          </li>
+                                                        ))}
+                                                      </ul>
+                                                    </div>
+                                                  )}
+                                                  
+                                                  {regionDependencies.schools.length > 0 && (
+                                                    <div>
+                                                      <h6 className="font-medium text-red-700 mb-1">3. Delete {regionDependencies.schools.length} School(s):</h6>
+                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                        {regionDependencies.schools.map((school) => (
+                                                          <li key={school.id} className="flex items-center">
+                                                            <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                                                            <span className="font-medium">{school.name}</span>
+                                                            <Badge variant="outline" className="ml-2 text-xs">{school.code}</Badge>
+                                                          </li>
+                                                        ))}
+                                                      </ul>
+                                                    </div>
+                                                  )}
+                                                  
+                                                  {regionDependencies.boards.length > 0 && (
+                                                    <div>
+                                                      <h6 className="font-medium text-red-700 mb-1">4. Delete {regionDependencies.boards.length} Board(s):</h6>
+                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                        {regionDependencies.boards.map((board) => (
+                                                          <li key={board.id} className="flex items-center">
+                                                            <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                                                            <span className="font-medium">{board.name}</span>
+                                                            <Badge variant="outline" className="ml-2 text-xs">{board.code}</Badge>
+                                                          </li>
+                                                        ))}
+                                                      </ul>
+                                                    </div>
+                                                  )}
+                                                  
+                                                  {regionDependencies.projects.length > 0 && (
+                                                    <div>
+                                                      <h6 className="font-medium text-red-700 mb-1">5. Delete {regionDependencies.projects.length} Project(s):</h6>
+                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                        {regionDependencies.projects.map((project) => (
+                                                          <li key={project.id} className="flex items-center">
+                                                            <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                                                            <span className="font-medium">{project.name}</span>
+                                                            <Badge variant="outline" className="ml-2 text-xs">{project.code}</Badge>
+                                                          </li>
+                                                        ))}
+                                                      </ul>
+                                                    </div>
+                                                  )}
+                                                  
+                                                  {regionDependencies.cities.length > 0 && (
+                                                    <div>
+                                                      <h6 className="font-medium text-red-700 mb-1">6. Delete {regionDependencies.cities.length} City(ies):</h6>
+                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                        {regionDependencies.cities.map((city) => (
+                                                          <li key={city.id} className="flex items-center">
+                                                            <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                                                            <span className="font-medium">{city.name}</span>
+                                                            <Badge variant="outline" className="ml-2 text-xs">{city.code}</Badge>
+                                                          </li>
+                                                        ))}
+                                                      </ul>
+                                                    </div>
+                                                  )}
+                                                  
+                                                  <div className="pt-2 border-t border-gray-200">
+                                                    <h6 className="font-medium text-gray-800">7. Then delete the region</h6>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          );
+                                        } else {
+                                          return (
+                                            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                                              <div className="flex items-center">
+                                                <div className="w-6 h-6 bg-green-600 rounded-full flex items-center justify-center mr-3">
+                                                  <span className="text-white text-sm font-bold">✓</span>
+                                                </div>
+                                                <h4 className="font-semibold text-green-800">Safe to Delete</h4>
+                                              </div>
+                                              <p className="text-green-700 mt-2">
+                                                This region has no linked entities and can be safely deleted.
+                                              </p>
+                                            </div>
+                                          );
+                                        }
+                                      })()}
+                                    </div>
+                                  )}
+                                </div>
+
+                                <AlertDialogFooter className="flex-shrink-0 border-t pt-4">
+                                  <AlertDialogCancel onClick={handleRegionDeleteCancel}>Cancel</AlertDialogCancel>
                                   <AlertDialogAction
-                                    onClick={() => handleRegionDelete(region.id)}
+                                    onClick={handleRegionDeleteConfirm}
                                     className="bg-red-600 hover:bg-red-700"
+                                    disabled={isCheckingRegionDependencies || (regionDependencies && (
+                                      regionDependencies.cities.length + 
+                                      regionDependencies.projects.length + 
+                                      regionDependencies.boards.length + 
+                                      regionDependencies.schools.length + 
+                                      regionDependencies.classes.length +
+                                      regionDependencies.courses.length
+                                    ) > 0)}
                                   >
-                                    Delete
+                                    {isCheckingRegionDependencies ? 'Checking...' : 'Delete'}
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
@@ -2495,25 +3612,212 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                             <DropdownMenuSeparator />
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="group">
+                                  <DropdownMenuItem 
+                                    onSelect={(e) => {
+                                      e.preventDefault();
+                                      handleCityDeleteCheck(city);
+                                    }} 
+                                    className="group"
+                                  >
                                     <Trash2 className="mr-2 h-4 w-4 text-red-600 group-hover:text-white" />
                                     <span className="text-red-600 group-hover:text-white">Delete City</span>
                                 </DropdownMenuItem>
                               </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
+                              <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+                                <AlertDialogHeader className="flex-shrink-0">
                                     <AlertDialogTitle className="text-red-600">Delete City</AlertDialogTitle>
                                   <AlertDialogDescription>
                                     Are you sure you want to delete "{city.name}"? This action cannot be undone.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                
+                                {/* Scrollable Content Area */}
+                                <div className="flex-1 overflow-y-auto min-h-0">
+                                  {/* Dependency Information */}
+                                  {isCheckingCityDependencies && (
+                                    <div className="flex items-center justify-center py-8">
+                                      <div className="text-center">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-4"></div>
+                                        <p className="text-muted-foreground">Checking dependencies...</p>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {cityDependencies && !isCheckingCityDependencies && (
+                                    <div className="py-4">
+                                      {(() => {
+                                        const totalDependencies = 
+                                          cityDependencies.projects.length + 
+                                          cityDependencies.boards.length + 
+                                          cityDependencies.schools.length + 
+                                          cityDependencies.classes.length +
+                                          cityDependencies.courses.length;
+
+                                        if (totalDependencies > 0) {
+                                          return (
+                                            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                                              <div className="flex items-center mb-2">
+                                                <div className="w-6 h-6 bg-red-600 rounded-full flex items-center justify-center mr-3">
+                                                  <span className="text-white text-sm font-bold">!</span>
+                                                </div>
+                                                <h4 className="font-semibold text-red-800">Cannot Delete City</h4>
+                                              </div>
+                                              <p className="text-red-700 mb-3">
+                                                This city is linked to the following entities:
+                                              </p>
+                                              
+                                              <div className="grid grid-cols-2 gap-2 mb-4">
+                                                {cityDependencies.projects.length > 0 && (
+                                                  <div className="flex items-center text-sm">
+                                                    <Badge variant="outline" className="mr-2">Projects</Badge>
+                                                    <span className="font-medium">{cityDependencies.projects.length}</span>
+                                                  </div>
+                                                )}
+                                                {cityDependencies.boards.length > 0 && (
+                                                  <div className="flex items-center text-sm">
+                                                    <Badge variant="outline" className="mr-2">Boards</Badge>
+                                                    <span className="font-medium">{cityDependencies.boards.length}</span>
+                                                  </div>
+                                                )}
+                                                {cityDependencies.schools.length > 0 && (
+                                                  <div className="flex items-center text-sm">
+                                                    <Badge variant="outline" className="mr-2">Schools</Badge>
+                                                    <span className="font-medium">{cityDependencies.schools.length}</span>
+                                                  </div>
+                                                )}
+                                                {cityDependencies.classes.length > 0 && (
+                                                  <div className="flex items-center text-sm">
+                                                    <Badge variant="outline" className="mr-2">Classes</Badge>
+                                                    <span className="font-medium">{cityDependencies.classes.length}</span>
+                                                  </div>
+                                                )}
+                                                {cityDependencies.courses.length > 0 && (
+                                                  <div className="flex items-center text-sm">
+                                                    <Badge variant="outline" className="mr-2">Courses</Badge>
+                                                    <span className="font-medium">{cityDependencies.courses.length}</span>
+                                                  </div>
+                                                )}
+                                              </div>
+
+                                              <div className="bg-white p-3 rounded border">
+                                                <h5 className="font-medium text-gray-800 mb-3">Delete in this order:</h5>
+                                                <div className="space-y-3">
+                                                  {cityDependencies.courses.length > 0 && (
+                                                    <div>
+                                                      <h6 className="font-medium text-red-700 mb-1">1. Delete {cityDependencies.courses.length} Course(s):</h6>
+                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                        {cityDependencies.courses.map((course) => (
+                                                          <li key={course.id} className="flex items-center">
+                                                            <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                                                            <span className="font-medium">{course.title}</span>
+                                                            <Badge variant="outline" className="ml-2 text-xs">{course.status}</Badge>
+                                                          </li>
+                                                        ))}
+                                                      </ul>
+                                                    </div>
+                                                  )}
+                                                  
+                                                  {cityDependencies.classes.length > 0 && (
+                                                    <div>
+                                                      <h6 className="font-medium text-red-700 mb-1">2. Delete {cityDependencies.classes.length} Class(es):</h6>
+                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                        {cityDependencies.classes.map((cls) => (
+                                                          <li key={cls.id} className="flex items-center">
+                                                            <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                                                            <span className="font-medium">{cls.name}</span>
+                                                            <Badge variant="outline" className="ml-2 text-xs">Grade {cls.grade}</Badge>
+                                                          </li>
+                                                        ))}
+                                                      </ul>
+                                                    </div>
+                                                  )}
+                                                  
+                                                  {cityDependencies.schools.length > 0 && (
+                                                    <div>
+                                                      <h6 className="font-medium text-red-700 mb-1">3. Delete {cityDependencies.schools.length} School(s):</h6>
+                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                        {cityDependencies.schools.map((school) => (
+                                                          <li key={school.id} className="flex items-center">
+                                                            <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                                                            <span className="font-medium">{school.name}</span>
+                                                            <Badge variant="outline" className="ml-2 text-xs">{school.code}</Badge>
+                                                          </li>
+                                                        ))}
+                                                      </ul>
+                                                    </div>
+                                                  )}
+                                                  
+                                                  {cityDependencies.boards.length > 0 && (
+                                                    <div>
+                                                      <h6 className="font-medium text-red-700 mb-1">4. Delete {cityDependencies.boards.length} Board(s):</h6>
+                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                        {cityDependencies.boards.map((board) => (
+                                                          <li key={board.id} className="flex items-center">
+                                                            <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                                                            <span className="font-medium">{board.name}</span>
+                                                            <Badge variant="outline" className="ml-2 text-xs">{board.code}</Badge>
+                                                          </li>
+                                                        ))}
+                                                      </ul>
+                                                    </div>
+                                                  )}
+                                                  
+                                                  {cityDependencies.projects.length > 0 && (
+                                                    <div>
+                                                      <h6 className="font-medium text-red-700 mb-1">5. Delete {cityDependencies.projects.length} Project(s):</h6>
+                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                        {cityDependencies.projects.map((project) => (
+                                                          <li key={project.id} className="flex items-center">
+                                                            <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                                                            <span className="font-medium">{project.name}</span>
+                                                            <Badge variant="outline" className="ml-2 text-xs">{project.code}</Badge>
+                                                          </li>
+                                                        ))}
+                                                      </ul>
+                                                    </div>
+                                                  )}
+                                                  
+                                                  <div className="pt-2 border-t border-gray-200">
+                                                    <h6 className="font-medium text-gray-800">6. Then delete the city</h6>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          );
+                                        } else {
+                                          return (
+                                            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                                              <div className="flex items-center">
+                                                <div className="w-6 h-6 bg-green-600 rounded-full flex items-center justify-center mr-3">
+                                                  <span className="text-white text-sm font-bold">✓</span>
+                                                </div>
+                                                <h4 className="font-semibold text-green-800">Safe to Delete</h4>
+                                              </div>
+                                              <p className="text-green-700 mt-2">
+                                                This city has no linked entities and can be safely deleted.
+                                              </p>
+                                            </div>
+                                          );
+                                        }
+                                      })()}
+                                    </div>
+                                  )}
+                                </div>
+
+                                <AlertDialogFooter className="flex-shrink-0 border-t pt-4">
+                                  <AlertDialogCancel onClick={handleCityDeleteCancel}>Cancel</AlertDialogCancel>
                                   <AlertDialogAction
-                                    onClick={() => handleCityDelete(city.id)}
+                                    onClick={handleCityDeleteConfirm}
                                     className="bg-red-600 hover:bg-red-700"
+                                    disabled={isCheckingCityDependencies || (cityDependencies && (
+                                      cityDependencies.projects.length + 
+                                      cityDependencies.boards.length + 
+                                      cityDependencies.schools.length + 
+                                      cityDependencies.classes.length +
+                                      cityDependencies.courses.length
+                                    ) > 0)}
                                   >
-                                    Delete
+                                    {isCheckingCityDependencies ? 'Checking...' : 'Delete'}
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
@@ -2749,25 +4053,189 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                             <DropdownMenuSeparator />
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="group">
+                                  <DropdownMenuItem 
+                                    onSelect={(e) => {
+                                      e.preventDefault();
+                                      handleProjectDeleteCheck(project);
+                                    }} 
+                                    className="group"
+                                  >
                                     <Trash2 className="mr-2 h-4 w-4 text-red-600 group-hover:text-white" />
                                     <span className="text-red-600 group-hover:text-white">Delete Project</span>
                                 </DropdownMenuItem>
                               </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
+                              <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+                                <AlertDialogHeader className="flex-shrink-0">
                                     <AlertDialogTitle className="text-red-600">Delete Project</AlertDialogTitle>
                                   <AlertDialogDescription>
                                     Are you sure you want to delete "{project.name}"? This action cannot be undone.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                
+                                {/* Scrollable Content Area */}
+                                <div className="flex-1 overflow-y-auto min-h-0">
+                                  {/* Dependency Information */}
+                                  {isCheckingProjectDependencies && (
+                                    <div className="flex items-center justify-center py-8">
+                                      <div className="text-center">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-4"></div>
+                                        <p className="text-muted-foreground">Checking dependencies...</p>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {projectDependencies && !isCheckingProjectDependencies && (
+                                    <div className="py-4">
+                                      {(() => {
+                                        const totalDependencies = 
+                                          projectDependencies.boards.length + 
+                                          projectDependencies.schools.length + 
+                                          projectDependencies.classes.length +
+                                          projectDependencies.courses.length;
+
+                                        if (totalDependencies > 0) {
+                                          return (
+                                            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                                              <div className="flex items-center mb-2">
+                                                <div className="w-6 h-6 bg-red-600 rounded-full flex items-center justify-center mr-3">
+                                                  <span className="text-white text-sm font-bold">!</span>
+                                                </div>
+                                                <h4 className="font-semibold text-red-800">Cannot Delete Project</h4>
+                                              </div>
+                                              <p className="text-red-700 mb-3">
+                                                This project is linked to the following entities:
+                                              </p>
+                                              
+                                              <div className="grid grid-cols-2 gap-2 mb-4">
+                                                {projectDependencies.boards.length > 0 && (
+                                                  <div className="flex items-center text-sm">
+                                                    <Badge variant="outline" className="mr-2">Boards</Badge>
+                                                    <span className="font-medium">{projectDependencies.boards.length}</span>
+                                                  </div>
+                                                )}
+                                                {projectDependencies.schools.length > 0 && (
+                                                  <div className="flex items-center text-sm">
+                                                    <Badge variant="outline" className="mr-2">Schools</Badge>
+                                                    <span className="font-medium">{projectDependencies.schools.length}</span>
+                                                  </div>
+                                                )}
+                                                {projectDependencies.classes.length > 0 && (
+                                                  <div className="flex items-center text-sm">
+                                                    <Badge variant="outline" className="mr-2">Classes</Badge>
+                                                    <span className="font-medium">{projectDependencies.classes.length}</span>
+                                                  </div>
+                                                )}
+                                                {projectDependencies.courses.length > 0 && (
+                                                  <div className="flex items-center text-sm">
+                                                    <Badge variant="outline" className="mr-2">Courses</Badge>
+                                                    <span className="font-medium">{projectDependencies.courses.length}</span>
+                                                  </div>
+                                                )}
+                                              </div>
+
+                                              <div className="bg-white p-3 rounded border">
+                                                <h5 className="font-medium text-gray-800 mb-3">Delete in this order:</h5>
+                                                <div className="space-y-3">
+                                                  {projectDependencies.courses.length > 0 && (
+                                                    <div>
+                                                      <h6 className="font-medium text-red-700 mb-1">1. Delete {projectDependencies.courses.length} Course(s):</h6>
+                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                        {projectDependencies.courses.map((course) => (
+                                                          <li key={course.id} className="flex items-center">
+                                                            <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                                                            <span className="font-medium">{course.title}</span>
+                                                            <Badge variant="outline" className="ml-2 text-xs">{course.status}</Badge>
+                                                          </li>
+                                                        ))}
+                                                      </ul>
+                                                    </div>
+                                                  )}
+                                                  
+                                                  {projectDependencies.classes.length > 0 && (
+                                                    <div>
+                                                      <h6 className="font-medium text-red-700 mb-1">2. Delete {projectDependencies.classes.length} Class(es):</h6>
+                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                        {projectDependencies.classes.map((cls) => (
+                                                          <li key={cls.id} className="flex items-center">
+                                                            <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                                                            <span className="font-medium">{cls.name}</span>
+                                                            <Badge variant="outline" className="ml-2 text-xs">Grade {cls.grade}</Badge>
+                                                          </li>
+                                                        ))}
+                                                      </ul>
+                                                    </div>
+                                                  )}
+                                                  
+                                                  {projectDependencies.schools.length > 0 && (
+                                                    <div>
+                                                      <h6 className="font-medium text-red-700 mb-1">3. Delete {projectDependencies.schools.length} School(s):</h6>
+                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                        {projectDependencies.schools.map((school) => (
+                                                          <li key={school.id} className="flex items-center">
+                                                            <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                                                            <span className="font-medium">{school.name}</span>
+                                                            <Badge variant="outline" className="ml-2 text-xs">{school.code}</Badge>
+                                                          </li>
+                                                        ))}
+                                                      </ul>
+                                                    </div>
+                                                  )}
+                                                  
+                                                  {projectDependencies.boards.length > 0 && (
+                                                    <div>
+                                                      <h6 className="font-medium text-red-700 mb-1">4. Delete {projectDependencies.boards.length} Board(s):</h6>
+                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                        {projectDependencies.boards.map((board) => (
+                                                          <li key={board.id} className="flex items-center">
+                                                            <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                                                            <span className="font-medium">{board.name}</span>
+                                                            <Badge variant="outline" className="ml-2 text-xs">{board.code}</Badge>
+                                                          </li>
+                                                        ))}
+                                                      </ul>
+                                                    </div>
+                                                  )}
+                                                  
+                                                  <div className="pt-2 border-t border-gray-200">
+                                                    <h6 className="font-medium text-gray-800">5. Then delete the project</h6>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          );
+                                        } else {
+                                          return (
+                                            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                                              <div className="flex items-center">
+                                                <div className="w-6 h-6 bg-green-600 rounded-full flex items-center justify-center mr-3">
+                                                  <span className="text-white text-sm font-bold">✓</span>
+                                                </div>
+                                                <h4 className="font-semibold text-green-800">Safe to Delete</h4>
+                                              </div>
+                                              <p className="text-green-700 mt-2">
+                                                This project has no linked entities and can be safely deleted.
+                                              </p>
+                                            </div>
+                                          );
+                                        }
+                                      })()}
+                                    </div>
+                                  )}
+                                </div>
+
+                                <AlertDialogFooter className="flex-shrink-0 border-t pt-4">
+                                  <AlertDialogCancel onClick={handleProjectDeleteCancel}>Cancel</AlertDialogCancel>
                                   <AlertDialogAction
-                                    onClick={() => handleProjectDelete(project.id)}
+                                    onClick={handleProjectDeleteConfirm}
                                     className="bg-red-600 hover:bg-red-700"
+                                    disabled={isCheckingProjectDependencies || (projectDependencies && (
+                                      projectDependencies.boards.length + 
+                                      projectDependencies.schools.length + 
+                                      projectDependencies.classes.length +
+                                      projectDependencies.courses.length
+                                    ) > 0)}
                                   >
-                                    Delete
+                                    {isCheckingProjectDependencies ? 'Checking...' : 'Delete'}
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
@@ -3005,25 +4473,166 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                             <DropdownMenuSeparator />
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="group">
+                                  <DropdownMenuItem 
+                                    onSelect={(e) => {
+                                      e.preventDefault();
+                                      handleBoardDeleteCheck(board);
+                                    }} 
+                                    className="group"
+                                  >
                                     <Trash2 className="mr-2 h-4 w-4 text-red-600 group-hover:text-white" />
                                     <span className="text-red-600 group-hover:text-white">Delete Board</span>
                                 </DropdownMenuItem>
                               </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
+                              <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+                                <AlertDialogHeader className="flex-shrink-0">
                                     <AlertDialogTitle className="text-red-600">Delete Board</AlertDialogTitle>
                                   <AlertDialogDescription>
                                     Are you sure you want to delete "{board.name}"? This action cannot be undone.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                
+                                {/* Scrollable Content Area */}
+                                <div className="flex-1 overflow-y-auto min-h-0">
+                                  {/* Dependency Information */}
+                                  {isCheckingBoardDependencies && (
+                                    <div className="flex items-center justify-center py-8">
+                                      <div className="text-center">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-4"></div>
+                                        <p className="text-muted-foreground">Checking dependencies...</p>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {boardDependencies && !isCheckingBoardDependencies && (
+                                    <div className="py-4">
+                                      {(() => {
+                                        const totalDependencies = 
+                                          boardDependencies.schools.length + 
+                                          boardDependencies.classes.length +
+                                          boardDependencies.courses.length;
+
+                                        if (totalDependencies > 0) {
+                                          return (
+                                            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                                              <div className="flex items-center mb-2">
+                                                <div className="w-6 h-6 bg-red-600 rounded-full flex items-center justify-center mr-3">
+                                                  <span className="text-white text-sm font-bold">!</span>
+                                                </div>
+                                                <h4 className="font-semibold text-red-800">Cannot Delete Board</h4>
+                                              </div>
+                                              <p className="text-red-700 mb-3">
+                                                This board is linked to the following entities:
+                                              </p>
+                                              
+                                              <div className="grid grid-cols-2 gap-2 mb-4">
+                                                {boardDependencies.schools.length > 0 && (
+                                                  <div className="flex items-center text-sm">
+                                                    <Badge variant="outline" className="mr-2">Schools</Badge>
+                                                    <span className="font-medium">{boardDependencies.schools.length}</span>
+                                                  </div>
+                                                )}
+                                                {boardDependencies.classes.length > 0 && (
+                                                  <div className="flex items-center text-sm">
+                                                    <Badge variant="outline" className="mr-2">Classes</Badge>
+                                                    <span className="font-medium">{boardDependencies.classes.length}</span>
+                                                  </div>
+                                                )}
+                                                {boardDependencies.courses.length > 0 && (
+                                                  <div className="flex items-center text-sm">
+                                                    <Badge variant="outline" className="mr-2">Courses</Badge>
+                                                    <span className="font-medium">{boardDependencies.courses.length}</span>
+                                                  </div>
+                                                )}
+                                              </div>
+
+                                              <div className="bg-white p-3 rounded border">
+                                                <h5 className="font-medium text-gray-800 mb-3">Delete in this order:</h5>
+                                                <div className="space-y-3">
+                                                  {boardDependencies.courses.length > 0 && (
+                                                    <div>
+                                                      <h6 className="font-medium text-red-700 mb-1">1. Delete {boardDependencies.courses.length} Course(s):</h6>
+                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                        {boardDependencies.courses.map((course) => (
+                                                          <li key={course.id} className="flex items-center">
+                                                            <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                                                            <span className="font-medium">{course.title}</span>
+                                                            <Badge variant="outline" className="ml-2 text-xs">{course.status}</Badge>
+                                                          </li>
+                                                        ))}
+                                                      </ul>
+                                                    </div>
+                                                  )}
+                                                  
+                                                  {boardDependencies.classes.length > 0 && (
+                                                    <div>
+                                                      <h6 className="font-medium text-red-700 mb-1">2. Delete {boardDependencies.classes.length} Class(es):</h6>
+                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                        {boardDependencies.classes.map((cls) => (
+                                                          <li key={cls.id} className="flex items-center">
+                                                            <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                                                            <span className="font-medium">{cls.name}</span>
+                                                            <Badge variant="outline" className="ml-2 text-xs">Grade {cls.grade}</Badge>
+                                                          </li>
+                                                        ))}
+                                                      </ul>
+                                                    </div>
+                                                  )}
+                                                  
+                                                  {boardDependencies.schools.length > 0 && (
+                                                    <div>
+                                                      <h6 className="font-medium text-red-700 mb-1">3. Delete {boardDependencies.schools.length} School(s):</h6>
+                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                        {boardDependencies.schools.map((school) => (
+                                                          <li key={school.id} className="flex items-center">
+                                                            <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                                                            <span className="font-medium">{school.name}</span>
+                                                            <Badge variant="outline" className="ml-2 text-xs">{school.code}</Badge>
+                                                          </li>
+                                                        ))}
+                                                      </ul>
+                                                    </div>
+                                                  )}
+                                                  
+                                                  <div className="pt-2 border-t border-gray-200">
+                                                    <h6 className="font-medium text-gray-800">4. Then delete the board</h6>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          );
+                                        } else {
+                                          return (
+                                            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                                              <div className="flex items-center">
+                                                <div className="w-6 h-6 bg-green-600 rounded-full flex items-center justify-center mr-3">
+                                                  <span className="text-white text-sm font-bold">✓</span>
+                                                </div>
+                                                <h4 className="font-semibold text-green-800">Safe to Delete</h4>
+                                              </div>
+                                              <p className="text-green-700 mt-2">
+                                                This board has no linked entities and can be safely deleted.
+                                              </p>
+                                            </div>
+                                          );
+                                        }
+                                      })()}
+                                    </div>
+                                  )}
+                                </div>
+
+                                <AlertDialogFooter className="flex-shrink-0 border-t pt-4">
+                                  <AlertDialogCancel onClick={handleBoardDeleteCancel}>Cancel</AlertDialogCancel>
                                   <AlertDialogAction
-                                    onClick={() => handleBoardDelete(board.id)}
+                                    onClick={handleBoardDeleteConfirm}
                                     className="bg-red-600 hover:bg-red-700"
+                                    disabled={isCheckingBoardDependencies || (boardDependencies && (
+                                      boardDependencies.schools.length + 
+                                      boardDependencies.classes.length +
+                                      boardDependencies.courses.length
+                                    ) > 0)}
                                   >
-                                    Delete
+                                    {isCheckingBoardDependencies ? 'Checking...' : 'Delete'}
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
@@ -3265,25 +4874,119 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                             <DropdownMenuSeparator />
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="group">
+                                  <DropdownMenuItem 
+                                    onSelect={(e) => {
+                                      e.preventDefault();
+                                      handleSchoolDeleteCheck(school);
+                                    }} 
+                                    className="group"
+                                  >
                                     <Trash2 className="mr-2 h-4 w-4 text-red-600 group-hover:text-white" />
                                     <span className="text-red-600 group-hover:text-white">Delete School</span>
                                 </DropdownMenuItem>
                               </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
+                              <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+                                <AlertDialogHeader className="flex-shrink-0">
                                     <AlertDialogTitle className="text-red-600">Delete School</AlertDialogTitle>
                                   <AlertDialogDescription>
                                     Are you sure you want to delete "{school.name}"? This action cannot be undone.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                
+                                {/* Scrollable Content Area */}
+                                <div className="flex-1 overflow-y-auto min-h-0">
+                                  {/* Dependency Information */}
+                                  {isCheckingSchoolDependencies && (
+                                    <div className="flex items-center justify-center py-8">
+                                      <div className="text-center">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-4"></div>
+                                        <p className="text-muted-foreground">Checking dependencies...</p>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {schoolDependencies && !isCheckingSchoolDependencies && (
+                                    <div className="py-4">
+                                      {(() => {
+                                        const totalDependencies = schoolDependencies.classes.length;
+
+                                        if (totalDependencies > 0) {
+                                          return (
+                                            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                                              <div className="flex items-center mb-2">
+                                                <div className="w-6 h-6 bg-red-600 rounded-full flex items-center justify-center mr-3">
+                                                  <span className="text-white text-sm font-bold">!</span>
+                                                </div>
+                                                <h4 className="font-semibold text-red-800">Cannot Delete School</h4>
+                                              </div>
+                                              <p className="text-red-700 mb-3">
+                                                This school is linked to the following entities:
+                                              </p>
+                                              
+                                              <div className="grid grid-cols-2 gap-2 mb-4">
+                                                {schoolDependencies.classes.length > 0 && (
+                                                  <div className="flex items-center text-sm">
+                                                    <Badge variant="outline" className="mr-2">Classes</Badge>
+                                                    <span className="font-medium">{schoolDependencies.classes.length}</span>
+                                                  </div>
+                                                )}
+                                              </div>
+
+                                              <div className="bg-white p-3 rounded border">
+                                                <h5 className="font-medium text-gray-800 mb-3">Delete in this order:</h5>
+                                                <div className="space-y-3">
+                                                  {schoolDependencies.classes.length > 0 && (
+                                                    <div>
+                                                      <h6 className="font-medium text-red-700 mb-1">1. Delete {schoolDependencies.classes.length} Class(es):</h6>
+                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                        {schoolDependencies.classes.map((cls) => (
+                                                          <li key={cls.id} className="flex items-center">
+                                                            <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                                                            <span className="font-medium">{cls.name}</span>
+                                                            <Badge variant="outline" className="ml-2 text-xs">Grade {cls.grade}</Badge>
+                                                          </li>
+                                                        ))}
+                                                      </ul>
+                                                    </div>
+                                                  )}
+                                                  
+                                                  <div className="pt-2 border-t border-gray-200">
+                                                    <h6 className="font-medium text-gray-800">2. Then delete the school</h6>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          );
+                                        } else {
+                                          return (
+                                            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                                              <div className="flex items-center">
+                                                <div className="w-6 h-6 bg-green-600 rounded-full flex items-center justify-center mr-3">
+                                                  <span className="text-white text-sm font-bold">✓</span>
+                                                </div>
+                                                <h4 className="font-semibold text-green-800">Safe to Delete</h4>
+                                              </div>
+                                              <p className="text-green-700 mt-2">
+                                                This school has no linked entities and can be safely deleted.
+                                              </p>
+                                            </div>
+                                          );
+                                        }
+                                      })()}
+                                    </div>
+                                  )}
+                                </div>
+
+                                <AlertDialogFooter className="flex-shrink-0 border-t pt-4">
+                                  <AlertDialogCancel onClick={handleSchoolDeleteCancel}>Cancel</AlertDialogCancel>
                                   <AlertDialogAction
-                                    onClick={() => handleSchoolDelete(school.id)}
+                                    onClick={handleSchoolDeleteConfirm}
                                     className="bg-red-600 hover:bg-red-700"
+                                    disabled={isCheckingSchoolDependencies || (schoolDependencies && (
+                                      schoolDependencies.classes.length
+                                    ) > 0)}
                                   >
-                                    Delete
+                                    {isCheckingSchoolDependencies ? 'Checking...' : 'Delete'}
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
