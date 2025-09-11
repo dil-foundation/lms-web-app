@@ -216,8 +216,8 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
       <div ref={combinedRef} className="relative w-full" {...props}>
         <div
           className={cn(
-            'flex flex-wrap gap-1 rounded-md border border-input p-1',
-            { 'ring-2 ring-ring': isFocused }
+            'flex flex-wrap gap-1 rounded-md border border-input bg-background px-3 py-2 min-h-10 dark:bg-background dark:border-border',
+            { 'ring-2 ring-ring ring-offset-2': isFocused }
           )}
           onClick={() => {
             inputRef.current?.focus();
@@ -268,12 +268,9 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
           return createPortal(
       <div 
         ref={dropdownRef}
-        className="rounded-md border bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-xl border-gray-200 dark:border-gray-700"
+        className="rounded-md border bg-popover text-popover-foreground shadow-xl border-border dark:bg-popover dark:text-popover-foreground dark:border-border"
         style={{
           ...dropdownStyle,
-          backgroundColor: 'white',
-          border: '1px solid #e5e7eb',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
           pointerEvents: 'auto',
           position: 'fixed',
           zIndex: 999999 // Even higher z-index

@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Plus, MapPin, Building2, GraduationCap, Edit, Trash2, Eye, RefreshCw, Calendar, FileText, MoreHorizontal, Phone, Mail, Globe, Users2, Building, FolderOpen, Loader2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Search, Plus, MapPin, Building2, GraduationCap, Edit, Trash2, Eye, RefreshCw, Calendar, FileText, MoreHorizontal, Phone, Mail, Globe, Users2, Building, FolderOpen, Loader2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Sparkles, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCountries, useRegions, useCities, useProjects, useBoards, useSchools } from '@/hooks/useMultitenancy';
 import { Country as CountryType, CountryInsert, RegionInsert, CityInsert, ProjectInsert, BoardInsert, SchoolInsert, Region, City, Project, Board, School, MultitenancyService } from '@/services/multitenancyService';
@@ -574,8 +574,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     if (code.trim().length > 10) {
       return 'Project code must be 10 characters or less';
     }
-    if (!/^[A-Za-z0-9]+$/.test(code.trim())) {
-      return 'Project code can only contain letters and numbers';
+    if (!/^[A-Za-z0-9\-]+$/.test(code.trim())) {
+      return 'Project code can only contain letters, numbers, and hyphens';
     }
     // Check for duplicates (excluding current project if editing)
     const existingProject = projects.find(project => 
@@ -761,8 +761,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     if (code.trim().length > 10) {
       return 'School code must be 10 characters or less';
     }
-    if (!/^[A-Za-z0-9]+$/.test(code.trim())) {
-      return 'School code can only contain letters and numbers';
+    if (!/^[A-Za-z0-9\-]+$/.test(code.trim())) {
+      return 'School code can only contain letters, numbers, and hyphens';
     }
     // Check for duplicates (excluding current school if editing)
     const existingSchool = schools.find(school => 
@@ -2454,10 +2454,35 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-[#8DC63F]">Multitenancy Management</h1>
-          <p className="text-muted-foreground">Manage organizational hierarchy: countries, regions, boards, and schools</p>
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
+        <div className="relative p-8 rounded-3xl">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
+                <Globe className="w-8 h-8 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                  Multitenancy Management
+                </h1>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Manage organizational hierarchy: countries, regions, boards, and schools
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <Badge variant="secondary" className="px-3 py-1 bg-primary/10 text-primary border-primary/20">
+                <Sparkles className="h-3 w-3 mr-1" />
+                Global Management
+              </Badge>
+              <Badge variant="outline" className="px-3 py-1">
+                <Clock className="h-3 w-3 mr-1" />
+                Live Data
+              </Badge>
+            </div>
+          </div>
         </div>
       </div>
 
