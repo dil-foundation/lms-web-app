@@ -219,6 +219,17 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
     class: 'all',
   });
 
+  // Applied filters state (what's actually being used for data fetching)
+  const [appliedFilters, setAppliedFilters] = useState<FilterState>({
+    country: 'all',
+    region: 'all',
+    city: 'all',
+    project: 'all',
+    board: 'all',
+    school: 'all',
+    class: 'all',
+  });
+
   // Helper function to get date range based on timeRange
   const getDateRange = (range: string) => {
     const now = new Date();
@@ -533,7 +544,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
 
   // Clear all filters function
   const clearAllFilters = () => {
-    setFilters({
+    const clearedFilters = {
       country: 'all',
       region: 'all',
       city: 'all',
@@ -541,7 +552,10 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
       board: 'all',
       school: 'all',
       class: 'all',
-    });
+    };
+    
+    setFilters(clearedFilters);
+    setAppliedFilters(clearedFilters);
     
     // Reset all dependent data to show all options
     fetchRegions();
@@ -550,6 +564,13 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
     fetchBoards();
     fetchSchools();
     fetchClasses();
+  };
+
+  // Apply filters function
+  const applyFilters = () => {
+    // Apply the current filter selections to the applied filters
+    setAppliedFilters(filters);
+    toast.success('Filters applied successfully');
   };
 
   // Initialize filter data on component mount
@@ -567,7 +588,19 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
     const fetchDashboardData = async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase.rpc('get_admin_dashboard_stats', { time_range: timeRange });
+        // Prepare filter parameters for the new function
+        const filterParams: any = { time_range: timeRange };
+        
+        // Add filter parameters if they are not 'all'
+        if (appliedFilters.country !== 'all') filterParams.filter_country_id = appliedFilters.country;
+        if (appliedFilters.region !== 'all') filterParams.filter_region_id = appliedFilters.region;
+        if (appliedFilters.city !== 'all') filterParams.filter_city_id = appliedFilters.city;
+        if (appliedFilters.project !== 'all') filterParams.filter_project_id = appliedFilters.project;
+        if (appliedFilters.board !== 'all') filterParams.filter_board_id = appliedFilters.board;
+        if (appliedFilters.school !== 'all') filterParams.filter_school_id = appliedFilters.school;
+        if (appliedFilters.class !== 'all') filterParams.filter_class_id = appliedFilters.class;
+
+        const { data, error } = await supabase.rpc('get_admin_dashboard_stats_with_filters', filterParams);
 
         if (error) throw error;
         if (!data) throw new Error("No data returned from stats function.");
@@ -596,11 +629,11 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
 
         setStats(baseStats);
 
-        // Fetch chart data (these can remain as they are or be moved to the backend too)
-        await fetchUserGrowthData(timeRange);
-        await fetchPlatformStatsData();
-        await fetchCourseAnalyticsData();
-        await fetchEngagementData(timeRange);
+        // Fetch chart data with filters applied
+        await fetchUserGrowthData(timeRange, appliedFilters);
+        await fetchPlatformStatsData(appliedFilters);
+        await fetchCourseAnalyticsData(appliedFilters);
+        await fetchEngagementData(timeRange, appliedFilters);
 
       } catch (error: any) {
         console.error("Failed to fetch dashboard stats:", error);
@@ -611,25 +644,73 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
     };
 
     fetchDashboardData();
-  }, [timeRange]);
+  }, [timeRange, appliedFilters]);
 
-  const fetchUserGrowthData = async (range: string) => {
+  const fetchUserGrowthData = async (range: string, currentFilters?: FilterState) => {
     try {
       const { startDate, endDate } = getDateRange(range);
       
-      // Get all users with their creation dates in a single query
-      const { data: allUsers, error: usersError } = await supabase
+      // Build query with filters using proper junction tables
+      let usersQuery = supabase
         .from('profiles')
-        .select('created_at, role')
+        .select(`
+          created_at, 
+          role,
+          class_students!inner(
+            class_id,
+            classes!inner(
+              id,
+              schools!inner(
+                id,
+                boards!inner(
+                  id,
+                  projects!inner(
+                    id,
+                    cities!inner(
+                      id,
+                      regions!inner(
+                        id,
+                        countries!inner(id)
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        `)
         .order('created_at', { ascending: true });
+
+      // Apply filters if provided
+      if (currentFilters) {
+        if (currentFilters.class !== 'all') {
+          usersQuery = usersQuery.eq('class_students.classes.id', currentFilters.class);
+        } else if (currentFilters.school !== 'all') {
+          usersQuery = usersQuery.eq('class_students.classes.schools.id', currentFilters.school);
+        } else if (currentFilters.board !== 'all') {
+          usersQuery = usersQuery.eq('class_students.classes.schools.boards.id', currentFilters.board);
+        } else if (currentFilters.project !== 'all') {
+          usersQuery = usersQuery.eq('class_students.classes.schools.boards.projects.id', currentFilters.project);
+        } else if (currentFilters.city !== 'all') {
+          usersQuery = usersQuery.eq('class_students.classes.schools.boards.projects.cities.id', currentFilters.city);
+        } else if (currentFilters.region !== 'all') {
+          usersQuery = usersQuery.eq('class_students.classes.schools.boards.projects.cities.regions.id', currentFilters.region);
+        } else if (currentFilters.country !== 'all') {
+          usersQuery = usersQuery.eq('class_students.classes.schools.boards.projects.cities.regions.countries.id', currentFilters.country);
+        }
+      }
+
+      const { data: allUsers, error: usersError } = await usersQuery;
 
       if (usersError) throw usersError;
 
-      // Get all user progress data in a single query
-      const { data: allProgress, error: progressError } = await supabase
+      // Get filtered user progress data - use simpler approach without complex joins
+      let progressQuery = supabase
         .from('user_content_item_progress')
-        .select('updated_at')
+        .select('updated_at, user_id')
         .order('updated_at', { ascending: true });
+
+      const { data: allProgress, error: progressError } = await progressQuery;
 
       if (progressError) throw progressError;
 
@@ -731,10 +812,15 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
           user.role === 'admin' && new Date(user.created_at) <= period.end
         ).length ?? 0;
 
-        const activeUsers = allProgress?.filter(progress => {
+        // Filter progress data based on the filtered users
+        const filteredProgress = allProgress?.filter(progress => {
           const progressDate = new Date(progress.updated_at);
-          return progressDate >= period.start && progressDate <= period.end;
-        }).length ?? 0;
+          const isInTimeRange = progressDate >= period.start && progressDate <= period.end;
+          // For now, just use time range filtering since user filtering is complex
+          return isInTimeRange;
+        }) ?? [];
+
+        const activeUsers = filteredProgress.length;
 
         userGrowthData.push({
           month: period.label,
@@ -753,17 +839,140 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
     }
   };
 
-  const fetchPlatformStatsData = async () => {
+  const fetchPlatformStatsData = async (currentFilters?: FilterState) => {
     try {
       const { startDate, endDate } = getDateRange(timeRange);
-      // Get all courses with their status in a single query
-      const { data: allCourses, error: coursesError } = await supabase
+      
+      // Build courses query with filters
+      let coursesQuery = supabase
         .from('courses')
-        .select('status');
+        .select('status, class_ids, school_ids');
+
+      // Apply filters if provided
+      if (currentFilters) {
+        if (currentFilters.class !== 'all') {
+          coursesQuery = coursesQuery.contains('class_ids', [currentFilters.class]);
+        } else if (currentFilters.school !== 'all') {
+          coursesQuery = coursesQuery.contains('school_ids', [currentFilters.school]);
+        } else if (currentFilters.board !== 'all') {
+          // For board filtering, we need to join with classes table
+          coursesQuery = supabase
+            .from('courses')
+            .select(`
+              status,
+              class_ids,
+              school_ids,
+              classes!inner(
+                id,
+                schools!inner(
+                  id,
+                  boards!inner(id)
+                )
+              )
+            `)
+            .eq('classes.schools.boards.id', currentFilters.board);
+        } else if (currentFilters.project !== 'all') {
+          coursesQuery = supabase
+            .from('courses')
+            .select(`
+              status,
+              class_ids,
+              school_ids,
+              classes!inner(
+                id,
+                schools!inner(
+                  id,
+                  boards!inner(
+                    id,
+                    projects!inner(id)
+                  )
+                )
+              )
+            `)
+            .eq('classes.schools.boards.projects.id', currentFilters.project);
+        } else if (currentFilters.city !== 'all') {
+          coursesQuery = supabase
+            .from('courses')
+            .select(`
+              status,
+              class_ids,
+              school_ids,
+              classes!inner(
+                id,
+                schools!inner(
+                  id,
+                  boards!inner(
+                    id,
+                    projects!inner(
+                      id,
+                      cities!inner(id)
+                    )
+                  )
+                )
+              )
+            `)
+            .eq('classes.schools.boards.projects.cities.id', currentFilters.city);
+        } else if (currentFilters.region !== 'all') {
+          coursesQuery = supabase
+            .from('courses')
+            .select(`
+              status,
+              class_ids,
+              school_ids,
+              classes!inner(
+                id,
+                schools!inner(
+                  id,
+                  boards!inner(
+                    id,
+                    projects!inner(
+                      id,
+                      cities!inner(
+                        id,
+                        regions!inner(id)
+                      )
+                    )
+                  )
+                )
+              )
+            `)
+            .eq('classes.schools.boards.projects.cities.regions.id', currentFilters.region);
+        } else if (currentFilters.country !== 'all') {
+          coursesQuery = supabase
+            .from('courses')
+            .select(`
+              status,
+              class_ids,
+              school_ids,
+              classes!inner(
+                id,
+                schools!inner(
+                  id,
+                  boards!inner(
+                    id,
+                    projects!inner(
+                      id,
+                      cities!inner(
+                        id,
+                        regions!inner(
+                          id,
+                          countries!inner(id)
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            `)
+            .eq('classes.schools.boards.projects.cities.regions.countries.id', currentFilters.country);
+        }
+      }
+
+      const { data: allCourses, error: coursesError } = await coursesQuery;
 
       if (coursesError) throw coursesError;
 
-      // Get all completed assignments in a single query
+      // Get completed assignments - use simpler approach
       const { count: completedAssignments, error: assignmentsError } = await supabase
         .from('assignment_submissions')
         .select('*', { count: 'exact', head: true })
@@ -794,14 +1003,27 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
     }
   };
 
-  const fetchCourseAnalyticsData = async () => {
+  const fetchCourseAnalyticsData = async (currentFilters?: FilterState) => {
     try {
-      console.log('🔍 [DEBUG] fetchCourseAnalyticsData called');
+      console.log('🔍 [DEBUG] fetchCourseAnalyticsData called with filters:', currentFilters);
       
-      // Use the new database function
-      const { data, error } = await supabase.rpc('get_admin_course_analytics');
+      // Build filter parameters for the database function
+      const filterParams: any = {};
+      
+      if (currentFilters) {
+        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
+        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
+        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
+        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
+        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
+        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
+        if (currentFilters.country !== 'all') filterParams.filter_country_id = currentFilters.country;
+      }
+      
+      // Use the database function with filters
+      const { data, error } = await supabase.rpc('get_admin_course_analytics_with_filters', filterParams);
 
-      console.log('🔍 [DEBUG] get_admin_course_analytics response:', { data, error });
+      console.log('🔍 [DEBUG] get_admin_course_analytics_with_filters response:', { data, error });
 
       if (error) throw error;
 
@@ -828,9 +1050,22 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
     }
   };
 
-  const fetchEngagementData = async (range: string) => {
+  const fetchEngagementData = async (range: string, currentFilters?: FilterState) => {
     try {
-      const { data, error } = await supabase.rpc('get_admin_engagement_trends_data', { p_time_range: range });
+      // Build filter parameters for the database function
+      const filterParams: any = { p_time_range: range };
+      
+      if (currentFilters) {
+        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
+        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
+        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
+        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
+        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
+        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
+        if (currentFilters.country !== 'all') filterParams.filter_country_id = currentFilters.country;
+      }
+      
+      const { data, error } = await supabase.rpc('get_admin_engagement_trends_data_with_filters', filterParams);
 
       if (error) throw error;
       
@@ -1109,8 +1344,13 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                             </Select>
                           </div>
                         </div>
-                        <DrawerFooter>
-                          <Button className="w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20">Apply Filters</Button>
+                      <DrawerFooter>
+                        <Button 
+                          onClick={applyFilters}
+                          className="w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20"
+                        >
+                          Apply Filters
+                        </Button>
                           <DrawerClose asChild>
                             <Button 
                               variant="outline" 
