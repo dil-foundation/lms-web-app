@@ -61,7 +61,7 @@ export const UserProfileSection = ({}: UserProfileSectionProps = {}) => {
   console.log('Combined key:', combinedRefreshKey);
   
   return (
-    <div className="flex items-center space-x-3 p-4">
+    <div className="flex items-center space-x-3 p-4 flex-shrink-0">
       <Avatar className="h-10 w-10" key={`avatar-sidebar-${combinedRefreshKey}`}>
         <AvatarImage 
           src={profile.avatar_url && profile.avatar_url !== 'null' ? `${profile.avatar_url}?${cacheParam}` : undefined} 
