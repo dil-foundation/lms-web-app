@@ -65,6 +65,7 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
     const [dropdownStyle, setDropdownStyle] = React.useState<React.CSSProperties>({});
     const inputRef = React.useRef<HTMLInputElement>(null);
     const containerRef = React.useRef<HTMLDivElement>(null);
+    const dropdownRef = React.useRef<HTMLDivElement>(null);
 
     const calculateDropdownPosition = React.useCallback(() => {
       if (!containerRef.current) return;
@@ -73,44 +74,49 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
       const viewportHeight = window.innerHeight;
       const spaceBelow = viewportHeight - rect.bottom;
       const spaceAbove = rect.top;
-      const dropdownMinHeight = 120; // Minimum height needed for dropdown
+      
+
       const dropdownMaxHeight = 240; // Maximum height we want
+      let top: number;
+      let height: number;
 
-      let position: 'bottom' | 'top' = 'bottom';
-      let height = dropdownMaxHeight;
-      let top = rect.bottom + 8; // 8px gap below
-
-      // Check if there's enough space below
-      if (spaceBelow >= dropdownMinHeight) {
-        position = 'bottom';
-        height = Math.min(dropdownMaxHeight, spaceBelow - 20); // 20px buffer
+      // Simple logic: try to position below first, then above
+      if (spaceBelow >= 200) {
+        // Enough space below - position below
         top = rect.bottom + 8;
-      } else if (spaceAbove >= dropdownMinHeight) {
-        position = 'top';
-        height = Math.min(dropdownMaxHeight, spaceAbove - 20); // 20px buffer
-        top = rect.top - height - 8; // 8px gap above
+        height = Math.min(dropdownMaxHeight, spaceBelow - 20);
+      } else if (spaceAbove >= 200) {
+        // Not enough space below, but enough above - position above
+        height = Math.min(dropdownMaxHeight, spaceAbove - 20);
+        top = rect.top - height - 8;
       } else {
-        // Not enough space in either direction, use the larger space
-        if (spaceBelow >= spaceAbove) {
-          position = 'bottom';
-          height = Math.max(100, spaceBelow - 20);
+        // Not enough space in either direction - use available space
+        if (spaceBelow > spaceAbove) {
           top = rect.bottom + 8;
+          height = Math.max(100, spaceBelow - 20);
         } else {
-          position = 'top';
           height = Math.max(100, spaceAbove - 20);
           top = rect.top - height - 8;
         }
       }
 
-      setDropdownPosition(position);
+      // Ensure dropdown stays within viewport bounds
+      const minTop = 10;
+      const maxTop = viewportHeight - height - 10;
+      top = Math.max(minTop, Math.min(top, maxTop));
+
+      setDropdownPosition('bottom'); // Always set to bottom for simplicity
       setMaxHeight(height);
-      setDropdownStyle({
-        position: 'fixed',
-        top: `${top}px`,
-        left: `${rect.left}px`,
-        width: `${rect.width}px`,
-        zIndex: 9999,
-      });
+      
+        const style = {
+          position: 'fixed' as const,
+          top: `${top}px`,
+          left: `${rect.left}px`,
+          width: `${rect.width}px`,
+          zIndex: 100000, // Higher than dialog z-index (99999)
+          pointerEvents: 'auto' as const, // Ensure dropdown can receive mouse events
+        };
+        setDropdownStyle(style);
     }, []);
 
     const handleInputKeyDown = (
@@ -148,12 +154,16 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
     };
 
     const handleBlur = () => {
-      // We need a small delay to allow the select action to be processed
+      // We need a delay to allow the select action to be processed
       setTimeout(() => {
-        if (!inputRef.current?.contains(document.activeElement)) {
+        // Check if the active element is within our dropdown
+        const activeElement = document.activeElement;
+        
+        if (!inputRef.current?.contains(activeElement) && 
+            !dropdownRef.current?.contains(activeElement)) {
           setIsPopoverOpen(false);
         }
-      }, 100);
+      }, 200); // Increased delay
       setIsFocused(false);
     };
 
@@ -191,6 +201,7 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
           option.subLabel?.toLowerCase().includes(inputValue.toLowerCase()))
     );
 
+
     // Combine refs
     const combinedRef = React.useCallback((node: HTMLDivElement) => {
       containerRef.current = node;
@@ -208,7 +219,9 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
             'flex flex-wrap gap-1 rounded-md border border-input p-1',
             { 'ring-2 ring-ring': isFocused }
           )}
-          onClick={() => inputRef.current?.focus()}
+          onClick={() => {
+            inputRef.current?.focus();
+          }}
         >
           {value.map((selectedValue) => {
             const option = options.find((o) => o.value === selectedValue);
@@ -249,20 +262,38 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
             className="ml-2 flex-1 bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none"
           />
         </div>
-        {isPopoverOpen && filteredOptions.length > 0 && createPortal(
-          <div 
-            className="rounded-md border bg-popover text-popover-foreground shadow-lg"
-            style={dropdownStyle}
-          >
-            <ul 
-              className="overflow-auto p-1"
-              style={{ maxHeight: `${maxHeight}px` }}
-            >
-              {filteredOptions.map((option) => (
+        {(() => {
+          return isPopoverOpen && filteredOptions.length > 0;
+        })() && (() => {
+          return createPortal(
+      <div 
+        ref={dropdownRef}
+        className="rounded-md border bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-xl border-gray-200 dark:border-gray-700"
+        style={{
+          ...dropdownStyle,
+          backgroundColor: 'white',
+          border: '1px solid #e5e7eb',
+          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+          pointerEvents: 'auto',
+          position: 'fixed',
+          zIndex: 999999 // Even higher z-index
+        }}
+        data-testid="multiselect-dropdown"
+        onMouseDown={(e) => {
+          e.preventDefault(); // Prevent input blur
+          e.stopPropagation(); // Stop event bubbling
+        }}
+      >
+              <ul 
+                className="overflow-auto p-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800"
+                style={{ maxHeight: `${maxHeight}px` }}
+              >
+                {filteredOptions.map((option) => (
                 <li
                   key={option.value}
                   onMouseDown={(e) => {
                     e.preventDefault();
+                    e.stopPropagation();
                     handleSelectOption(option.value);
                   }}
                   className="cursor-pointer rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground group"
@@ -279,10 +310,11 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                   </div>
                 </li>
               ))}
-            </ul>
-          </div>,
-          document.body
-        )}
+              </ul>
+            </div>,
+            document.body
+          );
+        })()}
       </div>
     );
   }

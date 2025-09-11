@@ -8,7 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Save, Eye, Upload, Plus, GripVertical, X, ChevronDown, ChevronUp, BookOpen, Info, UploadCloud, FileText } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Upload, Plus, GripVertical, X, ChevronDown, ChevronUp, BookOpen, Info, UploadCloud, FileText, RefreshCw, Calendar, Edit } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { FileUpload } from '@/components/ui/FileUpload';
 import { RichTextEditor } from '@/components/ui/RichTextEditor';
@@ -35,7 +36,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import React, { useRef } from 'react'; // Added missing import for React
+import React, { useRef, useMemo } from 'react'; // Added missing import for React
 import { supabase } from '@/integrations/supabase/client';
 import { FileIcon } from 'lucide-react';
 import {
@@ -47,6 +48,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import {
   Dialog,
@@ -68,6 +70,8 @@ import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { TimePicker } from "@/components/ui/time-picker";
 import { DatePicker } from "@/components/ui/date-picker";
+import { useClasses, useTeachers, useStudents, useBoards, useSchools } from '@/hooks/useClasses';
+import { ClassWithMembers, CreateClassData, UpdateClassData } from '@/services/classService';
 
 // #region Interfaces
 interface CourseSection {
@@ -129,6 +133,13 @@ interface CourseData {
   category: string;
   language: string;
   level: string;
+  country_ids: string[];
+  region_ids: string[];
+  city_ids: string[];
+  project_ids: string[];
+  board_ids: string[];
+  school_ids: string[];
+  class_ids: string[];
   image?: string;
   requirements: string[];
   learningOutcomes: string[];
@@ -159,6 +170,12 @@ const validateCourseData = (data: CourseData): ValidationErrors => {
   if (!data.category) errors.category = 'Category is required.';
   if (!data.language) errors.language = 'Language is required.';
   if (!data.level) errors.level = 'Level is required.';
+  if (!data.country_ids || data.country_ids.length === 0) errors.country_ids = 'At least one country is required.';
+  if (!data.region_ids || data.region_ids.length === 0) errors.region_ids = 'At least one region is required.';
+  if (!data.city_ids || data.city_ids.length === 0) errors.city_ids = 'At least one city is required.';
+  if (!data.project_ids || data.project_ids.length === 0) errors.project_ids = 'At least one project is required.';
+  if (!data.board_ids || data.board_ids.length === 0) errors.board_ids = 'At least one board is required.';
+  if (!data.school_ids || data.school_ids.length === 0) errors.school_ids = 'At least one school is required.';
 
   if (!data.requirements || data.requirements.length === 0 || data.requirements.every(r => !r.trim())) {
     errors.requirements = 'At least one requirement is required.';
@@ -184,6 +201,127 @@ const MOCK_USER_DATABASE = [
 
 const MOCK_TEACHERS_FOR_SELECT = MOCK_USER_DATABASE.filter(u => u.role === 'teacher').map(u => ({ label: `${u.name} (${u.email})`, value: u.id }));
 const MOCK_STUDENTS_FOR_SELECT = MOCK_USER_DATABASE.filter(u => u.role === 'student').map(u => ({ label: `${u.name} (${u.email})`, value: u.id }));
+
+// Mock Classes Data
+const MOCK_CLASSES: Class[] = [
+  {
+    id: 'class-1',
+    name: 'Advanced Mathematics',
+    description: 'Advanced calculus and linear algebra for engineering students',
+    schedule: 'Mon, Wed, Fri 10:00 AM - 11:30 AM',
+    capacity: 30,
+    enrolled_students: 24,
+    teacher: { id: 'inst1', name: 'Dr. Evelyn Reed', email: 'e.reed@example.com' },
+    status: 'active',
+    created_at: '2024-01-15',
+    updated_at: '2024-01-20'
+  },
+  {
+    id: 'class-2',
+    name: 'Introduction to Programming',
+    description: 'Basic programming concepts using Python',
+    schedule: 'Tue, Thu 2:00 PM - 3:30 PM',
+    capacity: 25,
+    enrolled_students: 25,
+    teacher: { id: 'inst2', name: 'Mr. David Chen', email: 'd.chen@example.com' },
+    status: 'active',
+    created_at: '2024-01-10',
+    updated_at: '2024-01-18'
+  },
+  {
+    id: 'class-3',
+    name: 'Data Structures & Algorithms',
+    description: 'Comprehensive study of data structures and algorithmic problem solving',
+    schedule: 'Mon, Wed 1:00 PM - 2:30 PM',
+    capacity: 20,
+    enrolled_students: 18,
+    teacher: { id: 'inst3', name: 'Prof. Ana Silva', email: 'a.silva@example.com' },
+    status: 'active',
+    created_at: '2024-01-12',
+    updated_at: '2024-01-19'
+  }
+];
+
+// Database interfaces for hierarchical data
+interface Country {
+  id: string;
+  name: string;
+  code: string;
+  description?: string;
+}
+
+interface Region {
+  id: string;
+  name: string;
+  code: string;
+  country_id: string;
+  description?: string;
+}
+
+interface City {
+  id: string;
+  name: string;
+  code: string;
+  country_id: string;
+  region_id: string;
+  description?: string;
+}
+
+interface Project {
+  id: string;
+  name: string;
+  code: string;
+  country_id: string;
+  region_id: string;
+  city_id: string;
+  description?: string;
+  status: string;
+}
+
+interface Board {
+  id: string;
+  name: string;
+  code: string;
+  country_id: string;
+  region_id: string;
+  city_id: string;
+  project_id: string;
+  description?: string;
+  board_type: string;
+  status: string;
+}
+
+interface School {
+  id: string;
+  name: string;
+  code: string;
+  school_type: string;
+  country_id: string;
+  region_id: string;
+  city_id: string;
+  project_id: string;
+  board_id: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  principal_name?: string;
+  principal_email?: string;
+  principal_phone?: string;
+  established_year?: number;
+  total_students?: number;
+  total_teachers?: number;
+  total_classes?: number;
+  facilities?: string[];
+  curriculum?: string[];
+  languages_offered?: string[];
+  status: string;
+  accreditation_status?: string;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: string;
+  updated_by?: string;
+}
 // #endregion
 
 interface Profile {
@@ -193,6 +331,19 @@ interface Profile {
   email: string;
   role: 'admin' | 'teacher' | 'student';
   avatar_url?: string;
+}
+
+interface Class {
+  id: string;
+  name: string;
+  description: string;
+  schedule: string;
+  capacity: number;
+  enrolled_students: number;
+  teacher: { id: string; name: string; email: string; avatar_url?: string };
+  status: 'active' | 'inactive' | 'completed';
+  created_at: string;
+  updated_at: string;
 }
 
 // #region LessonItem Component
@@ -1558,6 +1709,61 @@ const CourseBuilder = () => {
   const [isRejectionDialogOpen, setIsRejectionDialogOpen] = useState(false);
   const [rejectionFeedback, setRejectionFeedback] = useState("");
   const [persistentFeedback, setPersistentFeedback] = useState<string | null>(null);
+  const [isSchoolRemovalDialogOpen, setIsSchoolRemovalDialogOpen] = useState(false);
+  const [schoolsToRemove, setSchoolsToRemove] = useState<string[]>([]);
+  const [affectedClasses, setAffectedClasses] = useState<ClassWithMembers[]>([]);
+  const [affectedTeachers, setAffectedTeachers] = useState<{ id: string; name: string; email: string; avatar_url?: string }[]>([]);
+  const [affectedStudents, setAffectedStudents] = useState<{ id: string; name: string; email: string; avatar_url?: string }[]>([]);
+  
+  // Hierarchical removal dialog states
+  const [isCountryRemovalDialogOpen, setIsCountryRemovalDialogOpen] = useState(false);
+  const [countriesToRemove, setCountriesToRemove] = useState<string[]>([]);
+  const [affectedRegions, setAffectedRegions] = useState<Region[]>([]);
+  const [affectedCities, setAffectedCities] = useState<City[]>([]);
+  const [affectedProjects, setAffectedProjects] = useState<Project[]>([]);
+  const [affectedBoards, setAffectedBoards] = useState<Board[]>([]);
+  const [affectedSchools, setAffectedSchools] = useState<School[]>([]);
+  const [affectedClassesFromHierarchy, setAffectedClassesFromHierarchy] = useState<ClassWithMembers[]>([]);
+  const [affectedTeachersFromHierarchy, setAffectedTeachersFromHierarchy] = useState<{ id: string; name: string; email: string; avatar_url?: string }[]>([]);
+  const [affectedStudentsFromHierarchy, setAffectedStudentsFromHierarchy] = useState<{ id: string; name: string; email: string; avatar_url?: string }[]>([]);
+  
+  // Region removal dialog states
+  const [isRegionRemovalDialogOpen, setIsRegionRemovalDialogOpen] = useState(false);
+  const [regionsToRemove, setRegionsToRemove] = useState<string[]>([]);
+  const [affectedCitiesFromRegion, setAffectedCitiesFromRegion] = useState<City[]>([]);
+  const [affectedProjectsFromRegion, setAffectedProjectsFromRegion] = useState<Project[]>([]);
+  const [affectedBoardsFromRegion, setAffectedBoardsFromRegion] = useState<Board[]>([]);
+  const [affectedSchoolsFromRegion, setAffectedSchoolsFromRegion] = useState<School[]>([]);
+  const [affectedClassesFromRegion, setAffectedClassesFromRegion] = useState<ClassWithMembers[]>([]);
+  const [affectedTeachersFromRegion, setAffectedTeachersFromRegion] = useState<{ id: string; name: string; email: string; avatar_url?: string }[]>([]);
+  const [affectedStudentsFromRegion, setAffectedStudentsFromRegion] = useState<{ id: string; name: string; email: string; avatar_url?: string }[]>([]);
+  
+  // City removal dialog states
+  const [isCityRemovalDialogOpen, setIsCityRemovalDialogOpen] = useState(false);
+  const [citiesToRemove, setCitiesToRemove] = useState<string[]>([]);
+  const [affectedProjectsFromCity, setAffectedProjectsFromCity] = useState<Project[]>([]);
+  const [affectedBoardsFromCity, setAffectedBoardsFromCity] = useState<Board[]>([]);
+  const [affectedSchoolsFromCity, setAffectedSchoolsFromCity] = useState<School[]>([]);
+  const [affectedClassesFromCity, setAffectedClassesFromCity] = useState<ClassWithMembers[]>([]);
+  const [affectedTeachersFromCity, setAffectedTeachersFromCity] = useState<{ id: string; name: string; email: string; avatar_url?: string }[]>([]);
+  const [affectedStudentsFromCity, setAffectedStudentsFromCity] = useState<{ id: string; name: string; email: string; avatar_url?: string }[]>([]);
+  
+  // Project removal dialog states
+  const [isProjectRemovalDialogOpen, setIsProjectRemovalDialogOpen] = useState(false);
+  const [projectsToRemove, setProjectsToRemove] = useState<string[]>([]);
+  const [affectedBoardsFromProject, setAffectedBoardsFromProject] = useState<Board[]>([]);
+  const [affectedSchoolsFromProject, setAffectedSchoolsFromProject] = useState<School[]>([]);
+  const [affectedClassesFromProject, setAffectedClassesFromProject] = useState<ClassWithMembers[]>([]);
+  const [affectedTeachersFromProject, setAffectedTeachersFromProject] = useState<{ id: string; name: string; email: string; avatar_url?: string }[]>([]);
+  const [affectedStudentsFromProject, setAffectedStudentsFromProject] = useState<{ id: string; name: string; email: string; avatar_url?: string }[]>([]);
+  
+  // Board removal dialog states
+  const [isBoardRemovalDialogOpen, setIsBoardRemovalDialogOpen] = useState(false);
+  const [boardsToRemove, setBoardsToRemove] = useState<string[]>([]);
+  const [affectedSchoolsFromBoard, setAffectedSchoolsFromBoard] = useState<School[]>([]);
+  const [affectedClassesFromBoard, setAffectedClassesFromBoard] = useState<ClassWithMembers[]>([]);
+  const [affectedTeachersFromBoard, setAffectedTeachersFromBoard] = useState<{ id: string; name: string; email: string; avatar_url?: string }[]>([]);
+  const [affectedStudentsFromBoard, setAffectedStudentsFromBoard] = useState<{ id: string; name: string; email: string; avatar_url?: string }[]>([]);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const preDragLessonStatesRef = useRef<Record<string, boolean>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -1568,6 +1774,94 @@ const CourseBuilder = () => {
   const [allStudents, setAllStudents] = useState<{ label: string; value: string; }[]>([]);
   const [userProfiles, setUserProfiles] = useState<Profile[]>([]);
   const [currentUserRole, setCurrentUserRole] = useState<'student' | 'teacher' | 'admin' | null>(null);
+  
+  // Hierarchical data state
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [regions, setRegions] = useState<Region[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [boards, setBoards] = useState<Board[]>([]);
+  const [schools, setSchools] = useState<School[]>([]);
+  const [isLoadingHierarchicalData, setIsLoadingHierarchicalData] = useState(false);
+  
+  // Class management state
+  const [isClassCreateDialogOpen, setIsClassCreateDialogOpen] = useState(false);
+  const [isClassEditDialogOpen, setIsClassEditDialogOpen] = useState(false);
+  const [isClassViewDialogOpen, setIsClassViewDialogOpen] = useState(false);
+  const [editingClass, setEditingClass] = useState<ClassWithMembers | null>(null);
+  const [viewingClass, setViewingClass] = useState<ClassWithMembers | null>(null);
+  const [classFormData, setClassFormData] = useState({
+    name: '',
+    code: '',
+    grade: '',
+    school_id: '',
+    board_id: '',
+    description: '',
+    max_students: '30',
+    teachers: [] as string[],
+    students: [] as string[]
+  });
+  
+  // Selected classes for course enrollment
+  const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
+  
+
+  // Class management hooks
+  const { classes: dbClasses, loading: classesLoading, stats: classStats, createClass, updateClass, deleteClass, refetch: refetchClasses } = useClasses();
+  const { teachers: classTeachers, loading: classTeachersLoading } = useTeachers();
+  const { students: classStudents, loading: classStudentsLoading } = useStudents();
+  const { boards: classBoards, loading: classBoardsLoading } = useBoards();
+  const { schools: classSchools, loading: classSchoolsLoading } = useSchools(classFormData.board_id);
+  
+  
+  // Filter classes to show only selected ones
+  const enrolledClasses = dbClasses.filter(cls => selectedClasses.includes(cls.id));
+  
+  // Debug: Log enrolled classes info
+  console.log('Debug - selectedClasses:', selectedClasses);
+  console.log('Debug - dbClasses count:', dbClasses.length);
+  console.log('Debug - enrolledClasses count:', enrolledClasses.length);
+  console.log('Debug - enrolledClasses:', enrolledClasses);
+
+
+  // Handle class selection for course enrollment
+  const handleClassSelection = (classIds: string[]) => {
+    setSelectedClasses(classIds);
+    
+    // Update course data with selected class IDs
+    setCourseData(prev => ({
+      ...prev,
+      class_ids: classIds
+    }));
+    
+    // Get all teachers and students from selected classes
+    const selectedClassObjects = dbClasses.filter(cls => classIds.includes(cls.id));
+    const allTeachers = selectedClassObjects.flatMap(cls => cls.teachers);
+    const allStudents = selectedClassObjects.flatMap(cls => cls.students);
+    
+    // Remove duplicates based on ID
+    const uniqueTeachers = allTeachers.filter((teacher, index, self) => 
+      index === self.findIndex(t => t.id === teacher.id)
+    );
+    const uniqueStudents = allStudents.filter((student, index, self) => 
+      index === self.findIndex(s => s.id === student.id)
+    );
+    
+    // Update course data with teachers and students from selected classes
+    setCourseData(prev => ({
+      ...prev,
+      teachers: uniqueTeachers,
+      students: uniqueStudents
+    }));
+  };
+
+  // Refresh course teachers and students from enrolled classes
+  const refreshCourseMembers = () => {
+    if (selectedClasses.length > 0) {
+      handleClassSelection(selectedClasses);
+    }
+  };
+  
   const [isUploading, setIsUploading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [touchedFields, setTouchedFields] = useState<Partial<Record<keyof ValidationErrors, boolean>>>({});
@@ -1575,6 +1869,7 @@ const CourseBuilder = () => {
   const [isLoadingPage, setIsLoadingPage] = useState(true);
   const [showContentTypeSelector, setShowContentTypeSelector] = useState(false);
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
+  const [classes, setClasses] = useState<Class[]>(MOCK_CLASSES);
   const [courseData, setCourseData] = useState<CourseData>(() => ({
     title: '',
     subtitle: '',
@@ -1582,6 +1877,13 @@ const CourseBuilder = () => {
     category: '',
     language: 'English',
     level: 'Beginner',
+    country_ids: [],
+    region_ids: [],
+    city_ids: [],
+    project_ids: [],
+    board_ids: [],
+    school_ids: [],
+    class_ids: [],
     duration: '',
     requirements: [''],
     learningOutcomes: [''],
@@ -1607,6 +1909,14 @@ const CourseBuilder = () => {
     review_feedback: '',
   }));
 
+  // Filter classes based on selected schools
+  const filteredClasses = useMemo(() => {
+    if (courseData.school_ids.length === 0) {
+      return [];
+    }
+    return dbClasses.filter(cls => courseData.school_ids.includes(cls.school_id));
+  }, [dbClasses, courseData.school_ids]);
+
   const handleBlur = (field: keyof ValidationErrors) => {
     setTouchedFields(prev => ({ ...prev, [field]: true }));
   };
@@ -1616,32 +1926,1108 @@ const CourseBuilder = () => {
     setValidationErrors(validateCourseData(courseData));
   }, [courseData]);
 
+  // Create a hash of the selected classes' member data to detect changes
+  const selectedClassesMembersHash = useMemo(() => {
+    if (selectedClasses.length === 0 || dbClasses.length === 0) return '';
+    
+    const selectedClassObjects = dbClasses.filter(cls => selectedClasses.includes(cls.id));
+    const hashData = selectedClassObjects.map(cls => ({
+      id: cls.id,
+      teachers: cls.teachers.map(t => t.id).sort(),
+      students: cls.students.map(s => s.id).sort()
+    }));
+    
+    return JSON.stringify(hashData);
+  }, [selectedClasses, dbClasses]);
+  
+  // Effect to detect member changes in selected classes and refresh course members
+  useEffect(() => {
+    if (selectedClasses.length > 0 && dbClasses.length > 0) {
+      refreshCourseMembers();
+    }
+  }, [selectedClassesMembersHash]);
+
+  // Reset selected classes when schools change (only for new courses)
+  useEffect(() => {
+    // Only reset if we're creating a new course, not loading an existing one
+    if (!courseId || courseId === 'new') {
+      setSelectedClasses([]);
+      setCourseData(prev => ({
+        ...prev,
+        teachers: [],
+        students: []
+      }));
+    }
+  }, [courseData.school_ids, courseId]);
+
+  // Functions to fetch hierarchical data from database
+  const fetchCountries = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('countries')
+        .select('id, name, code, description')
+        .order('name');
+      
+      if (error) throw error;
+      setCountries(data || []);
+    } catch (error) {
+      console.error('Error fetching countries:', error);
+      toast.error('Failed to load countries');
+    }
+  };
+
+  const fetchRegions = async (countryId: string): Promise<Region[]> => {
+    if (!countryId) {
+      setRegions([]);
+      return [];
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from('regions')
+        .select('id, name, code, country_id, description')
+        .eq('country_id', countryId)
+        .order('name');
+      
+      if (error) throw error;
+      const regions = data || [];
+      setRegions(regions);
+      return regions;
+    } catch (error) {
+      console.error('Error fetching regions:', error);
+      toast.error('Failed to load regions');
+      return [];
+    }
+  };
+
+  const fetchCities = async (regionId: string): Promise<City[]> => {
+    if (!regionId) {
+      setCities([]);
+      return [];
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from('cities')
+        .select('id, name, code, country_id, region_id, description')
+        .eq('region_id', regionId)
+        .order('name');
+      
+      if (error) throw error;
+      const cities = data || [];
+      setCities(cities);
+      return cities;
+    } catch (error) {
+      console.error('Error fetching cities:', error);
+      toast.error('Failed to load cities');
+      return [];
+    }
+  };
+
+  const fetchProjects = async (cityId: string): Promise<Project[]> => {
+    if (!cityId) {
+      setProjects([]);
+      return [];
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('id, name, code, country_id, region_id, city_id, description, status')
+        .eq('city_id', cityId)
+        .eq('status', 'active')
+        .order('name');
+      
+      if (error) throw error;
+      const projects = data || [];
+      setProjects(projects);
+      return projects;
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+      toast.error('Failed to load projects');
+      return [];
+    }
+  };
+
+  const fetchBoards = async (projectId: string): Promise<Board[]> => {
+    if (!projectId) {
+      setBoards([]);
+      return [];
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from('boards')
+        .select('id, name, code, country_id, region_id, city_id, project_id, description, board_type, status')
+        .eq('project_id', projectId)
+        .eq('status', 'active')
+        .order('name');
+      
+      if (error) throw error;
+      const boards = data || [];
+      setBoards(boards);
+      return boards;
+    } catch (error) {
+      console.error('Error fetching boards:', error);
+      toast.error('Failed to load boards');
+      return [];
+    }
+  };
+
+  const fetchSchools = async (boardId: string): Promise<School[]> => {
+    if (!boardId) {
+      setSchools([]);
+      return [];
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from('schools')
+        .select('id, name, code, school_type, country_id, region_id, city_id, project_id, board_id, address, phone, email, website, principal_name, principal_email, principal_phone, established_year, total_students, total_teachers, total_classes, facilities, curriculum, languages_offered, status, accreditation_status, created_at, updated_at, created_by, updated_by')
+        .eq('board_id', boardId)
+        .eq('status', 'active')
+        .order('name');
+      
+      if (error) throw error;
+      const schools = data || [];
+      setSchools(schools);
+      return schools;
+    } catch (error) {
+      console.error('Error fetching schools:', error);
+      toast.error('Failed to load schools');
+      return [];
+    }
+  };
+
+  // Cascading dropdown handlers
+  const handleCountryChange = async (countryIds: string[]) => {
+    const currentCountryIds = courseData.country_ids;
+    const removedCountryIds = currentCountryIds.filter(id => !countryIds.includes(id));
+    
+    if (removedCountryIds.length > 0) {
+      // Find all affected data from the hierarchy
+      const affectedRegionsList = regions.filter(region => 
+        removedCountryIds.includes(region.country_id) && courseData.region_ids.includes(region.id)
+      );
+      const affectedCitiesList = cities.filter(city => 
+        removedCountryIds.includes(city.country_id) && courseData.city_ids.includes(city.id)
+      );
+      const affectedProjectsList = projects.filter(project => 
+        removedCountryIds.includes(project.country_id) && courseData.project_ids.includes(project.id)
+      );
+      const affectedBoardsList = boards.filter(board => 
+        removedCountryIds.includes(board.country_id) && courseData.board_ids.includes(board.id)
+      );
+      const affectedSchoolsList = schools.filter(school => 
+        removedCountryIds.includes(school.country_id) && courseData.school_ids.includes(school.id)
+      );
+      const affectedClassesList = dbClasses.filter(cls => 
+        selectedClasses.includes(cls.id) && 
+        (affectedSchoolsList.some(school => school.id === cls.school_id) || 
+         affectedBoardsList.some(board => board.id === cls.board_id))
+      );
+      
+      const allAffectedTeachers = affectedClassesList.flatMap(cls => cls.teachers);
+      const allAffectedStudents = affectedClassesList.flatMap(cls => cls.students);
+      
+      // Remove duplicates
+      const uniqueAffectedTeachers = allAffectedTeachers.filter((teacher, index, self) => 
+        index === self.findIndex(t => t.id === teacher.id)
+      );
+      const uniqueAffectedStudents = allAffectedStudents.filter((student, index, self) => 
+        index === self.findIndex(s => s.id === student.id)
+      );
+      
+      // Set the data for the confirmation dialog
+      setCountriesToRemove(removedCountryIds);
+      setAffectedRegions(affectedRegionsList);
+      setAffectedCities(affectedCitiesList);
+      setAffectedProjects(affectedProjectsList);
+      setAffectedBoards(affectedBoardsList);
+      setAffectedSchools(affectedSchoolsList);
+      setAffectedClassesFromHierarchy(affectedClassesList);
+      setAffectedTeachersFromHierarchy(uniqueAffectedTeachers);
+      setAffectedStudentsFromHierarchy(uniqueAffectedStudents);
+      setIsCountryRemovalDialogOpen(true);
+    } else {
+      setCourseData(prev => ({ 
+        ...prev, 
+        country_ids: countryIds,
+        region_ids: [],
+        city_ids: [],
+        project_ids: [],
+        board_ids: [],
+        school_ids: []
+      }));
+      setRegions([]);
+      setCities([]);
+      setProjects([]);
+      setBoards([]);
+      setSchools([]);
+    }
+    
+    if (countryIds.length > 0) {
+      // Fetch regions for all selected countries
+      const allRegions: Region[] = [];
+      for (const countryId of countryIds) {
+        const regions = await fetchRegions(countryId);
+        allRegions.push(...regions);
+      }
+      setRegions(allRegions);
+    }
+  };
+
+  const handleRegionChange = async (regionIds: string[]) => {
+    const currentRegionIds = courseData.region_ids;
+    const removedRegionIds = currentRegionIds.filter(id => !regionIds.includes(id));
+    
+    if (removedRegionIds.length > 0) {
+      // Find all affected data from the hierarchy
+      const affectedCitiesList = cities.filter(city => 
+        removedRegionIds.includes(city.region_id) && courseData.city_ids.includes(city.id)
+      );
+      const affectedProjectsList = projects.filter(project => 
+        removedRegionIds.includes(project.region_id) && courseData.project_ids.includes(project.id)
+      );
+      const affectedBoardsList = boards.filter(board => 
+        removedRegionIds.includes(board.region_id) && courseData.board_ids.includes(board.id)
+      );
+      const affectedSchoolsList = schools.filter(school => 
+        removedRegionIds.includes(school.region_id) && courseData.school_ids.includes(school.id)
+      );
+      const affectedClassesList = dbClasses.filter(cls => 
+        selectedClasses.includes(cls.id) && 
+        (affectedSchoolsList.some(school => school.id === cls.school_id) || 
+         affectedBoardsList.some(board => board.id === cls.board_id))
+      );
+      
+      const allAffectedTeachers = affectedClassesList.flatMap(cls => cls.teachers);
+      const allAffectedStudents = affectedClassesList.flatMap(cls => cls.students);
+      
+      // Remove duplicates
+      const uniqueAffectedTeachers = allAffectedTeachers.filter((teacher, index, self) => 
+        index === self.findIndex(t => t.id === teacher.id)
+      );
+      const uniqueAffectedStudents = allAffectedStudents.filter((student, index, self) => 
+        index === self.findIndex(s => s.id === student.id)
+      );
+      
+      // Set the data for the confirmation dialog
+      setRegionsToRemove(removedRegionIds);
+      setAffectedCitiesFromRegion(affectedCitiesList);
+      setAffectedProjectsFromRegion(affectedProjectsList);
+      setAffectedBoardsFromRegion(affectedBoardsList);
+      setAffectedSchoolsFromRegion(affectedSchoolsList);
+      setAffectedClassesFromRegion(affectedClassesList);
+      setAffectedTeachersFromRegion(uniqueAffectedTeachers);
+      setAffectedStudentsFromRegion(uniqueAffectedStudents);
+      setIsRegionRemovalDialogOpen(true);
+    } else {
+      setCourseData(prev => ({ 
+        ...prev, 
+        region_ids: regionIds,
+        city_ids: [],
+        project_ids: [],
+        board_ids: [],
+        school_ids: []
+      }));
+      setCities([]);
+      setProjects([]);
+      setBoards([]);
+      setSchools([]);
+    }
+    
+    if (regionIds.length > 0) {
+      // Fetch cities for all selected regions
+      const allCities: City[] = [];
+      for (const regionId of regionIds) {
+        const cities = await fetchCities(regionId);
+        allCities.push(...cities);
+      }
+      setCities(allCities);
+    }
+  };
+
+  const handleCityChange = async (cityIds: string[]) => {
+    const currentCityIds = courseData.city_ids;
+    const removedCityIds = currentCityIds.filter(id => !cityIds.includes(id));
+    
+    if (removedCityIds.length > 0) {
+      // Find all affected data from the hierarchy
+      const affectedProjectsList = projects.filter(project => 
+        removedCityIds.includes(project.city_id) && courseData.project_ids.includes(project.id)
+      );
+      const affectedBoardsList = boards.filter(board => 
+        removedCityIds.includes(board.city_id) && courseData.board_ids.includes(board.id)
+      );
+      const affectedSchoolsList = schools.filter(school => 
+        removedCityIds.includes(school.city_id) && courseData.school_ids.includes(school.id)
+      );
+      const affectedClassesList = dbClasses.filter(cls => 
+        selectedClasses.includes(cls.id) && 
+        (affectedSchoolsList.some(school => school.id === cls.school_id) || 
+         affectedBoardsList.some(board => board.id === cls.board_id))
+      );
+      
+      const allAffectedTeachers = affectedClassesList.flatMap(cls => cls.teachers);
+      const allAffectedStudents = affectedClassesList.flatMap(cls => cls.students);
+      
+      // Remove duplicates
+      const uniqueAffectedTeachers = allAffectedTeachers.filter((teacher, index, self) => 
+        index === self.findIndex(t => t.id === teacher.id)
+      );
+      const uniqueAffectedStudents = allAffectedStudents.filter((student, index, self) => 
+        index === self.findIndex(s => s.id === student.id)
+      );
+      
+      // Set the data for the confirmation dialog
+      setCitiesToRemove(removedCityIds);
+      setAffectedProjectsFromCity(affectedProjectsList);
+      setAffectedBoardsFromCity(affectedBoardsList);
+      setAffectedSchoolsFromCity(affectedSchoolsList);
+      setAffectedClassesFromCity(affectedClassesList);
+      setAffectedTeachersFromCity(uniqueAffectedTeachers);
+      setAffectedStudentsFromCity(uniqueAffectedStudents);
+      setIsCityRemovalDialogOpen(true);
+    } else {
+      setCourseData(prev => ({ 
+        ...prev, 
+        city_ids: cityIds,
+        project_ids: [],
+        board_ids: [],
+        school_ids: []
+      }));
+      setProjects([]);
+      setBoards([]);
+      setSchools([]);
+    }
+    
+    if (cityIds.length > 0) {
+      // Fetch projects for all selected cities
+      const allProjects: Project[] = [];
+      for (const cityId of cityIds) {
+        const projects = await fetchProjects(cityId);
+        allProjects.push(...projects);
+      }
+      setProjects(allProjects);
+    }
+  };
+
+  const handleProjectChange = async (projectIds: string[]) => {
+    const currentProjectIds = courseData.project_ids;
+    const removedProjectIds = currentProjectIds.filter(id => !projectIds.includes(id));
+    
+    if (removedProjectIds.length > 0) {
+      // Find all affected data from the hierarchy
+      const affectedBoardsList = boards.filter(board => 
+        removedProjectIds.includes(board.project_id) && courseData.board_ids.includes(board.id)
+      );
+      const affectedSchoolsList = schools.filter(school => 
+        removedProjectIds.includes(school.project_id) && courseData.school_ids.includes(school.id)
+      );
+      const affectedClassesList = dbClasses.filter(cls => 
+        selectedClasses.includes(cls.id) && 
+        (affectedSchoolsList.some(school => school.id === cls.school_id) || 
+         affectedBoardsList.some(board => board.id === cls.board_id))
+      );
+      
+      const allAffectedTeachers = affectedClassesList.flatMap(cls => cls.teachers);
+      const allAffectedStudents = affectedClassesList.flatMap(cls => cls.students);
+      
+      // Remove duplicates
+      const uniqueAffectedTeachers = allAffectedTeachers.filter((teacher, index, self) => 
+        index === self.findIndex(t => t.id === teacher.id)
+      );
+      const uniqueAffectedStudents = allAffectedStudents.filter((student, index, self) => 
+        index === self.findIndex(s => s.id === student.id)
+      );
+      
+      // Set the data for the confirmation dialog
+      setProjectsToRemove(removedProjectIds);
+      setAffectedBoardsFromProject(affectedBoardsList);
+      setAffectedSchoolsFromProject(affectedSchoolsList);
+      setAffectedClassesFromProject(affectedClassesList);
+      setAffectedTeachersFromProject(uniqueAffectedTeachers);
+      setAffectedStudentsFromProject(uniqueAffectedStudents);
+      setIsProjectRemovalDialogOpen(true);
+    } else {
+      setCourseData(prev => ({ 
+        ...prev, 
+        project_ids: projectIds,
+        board_ids: [],
+        school_ids: []
+      }));
+      setBoards([]);
+      setSchools([]);
+    }
+    
+    if (projectIds.length > 0) {
+      // Fetch boards for all selected projects
+      const allBoards: Board[] = [];
+      for (const projectId of projectIds) {
+        const boards = await fetchBoards(projectId);
+        allBoards.push(...boards);
+      }
+      setBoards(allBoards);
+    }
+  };
+
+  const handleBoardChange = async (boardIds: string[]) => {
+    const currentBoardIds = courseData.board_ids;
+    const removedBoardIds = currentBoardIds.filter(id => !boardIds.includes(id));
+    
+    if (removedBoardIds.length > 0) {
+      // Find all affected data from the hierarchy
+      const affectedSchoolsList = schools.filter(school => 
+        removedBoardIds.includes(school.board_id) && courseData.school_ids.includes(school.id)
+      );
+      const affectedClassesList = dbClasses.filter(cls => 
+        selectedClasses.includes(cls.id) && 
+        (affectedSchoolsList.some(school => school.id === cls.school_id) || 
+         removedBoardIds.includes(cls.board_id))
+      );
+      
+      const allAffectedTeachers = affectedClassesList.flatMap(cls => cls.teachers);
+      const allAffectedStudents = affectedClassesList.flatMap(cls => cls.students);
+      
+      // Remove duplicates
+      const uniqueAffectedTeachers = allAffectedTeachers.filter((teacher, index, self) => 
+        index === self.findIndex(t => t.id === teacher.id)
+      );
+      const uniqueAffectedStudents = allAffectedStudents.filter((student, index, self) => 
+        index === self.findIndex(s => s.id === student.id)
+      );
+      
+      // Set the data for the confirmation dialog
+      setBoardsToRemove(removedBoardIds);
+      setAffectedSchoolsFromBoard(affectedSchoolsList);
+      setAffectedClassesFromBoard(affectedClassesList);
+      setAffectedTeachersFromBoard(uniqueAffectedTeachers);
+      setAffectedStudentsFromBoard(uniqueAffectedStudents);
+      setIsBoardRemovalDialogOpen(true);
+    } else {
+      setCourseData(prev => ({ 
+        ...prev, 
+        board_ids: boardIds,
+        school_ids: []
+      }));
+      setSchools([]);
+    }
+    
+    if (boardIds.length > 0) {
+      // Fetch schools for all selected boards
+      const allSchools: School[] = [];
+      for (const boardId of boardIds) {
+        const schools = await fetchSchools(boardId);
+        allSchools.push(...schools);
+      }
+      setSchools(allSchools);
+    }
+  };
+
+  const handleSchoolChange = (schoolIds: string[]) => {
+    const currentSchoolIds = courseData.school_ids;
+    const removedSchoolIds = currentSchoolIds.filter(id => !schoolIds.includes(id));
+    
+    // If schools are being removed, show confirmation dialog
+    if (removedSchoolIds.length > 0) {
+      // Find affected classes, teachers, and students
+      const affectedClassesList = dbClasses.filter(cls => 
+        removedSchoolIds.includes(cls.school_id) && selectedClasses.includes(cls.id)
+      );
+      
+      const allAffectedTeachers = affectedClassesList.flatMap(cls => cls.teachers);
+      const allAffectedStudents = affectedClassesList.flatMap(cls => cls.students);
+      
+      // Remove duplicates
+      const uniqueAffectedTeachers = allAffectedTeachers.filter((teacher, index, self) => 
+        index === self.findIndex(t => t.id === teacher.id)
+      );
+      const uniqueAffectedStudents = allAffectedStudents.filter((student, index, self) => 
+        index === self.findIndex(s => s.id === student.id)
+      );
+      
+      // Set the data for the confirmation dialog
+      setSchoolsToRemove(removedSchoolIds);
+      setAffectedClasses(affectedClassesList);
+      setAffectedTeachers(uniqueAffectedTeachers);
+      setAffectedStudents(uniqueAffectedStudents);
+      setIsSchoolRemovalDialogOpen(true);
+    } else {
+      // No schools being removed, proceed normally
+      setCourseData(prev => ({ 
+        ...prev, 
+        school_ids: schoolIds
+      }));
+    }
+  };
+
+  // Handle school removal confirmation
+  const handleConfirmSchoolRemoval = () => {
+    // Remove affected classes from selected classes
+    const affectedClassIds = affectedClasses.map(cls => cls.id);
+    const updatedSelectedClasses = selectedClasses.filter(id => !affectedClassIds.includes(id));
+    setSelectedClasses(updatedSelectedClasses);
+    
+    // Update course data with new school IDs and class IDs
+    setCourseData(prev => {
+      const updatedTeachers = prev.teachers.filter(teacher => 
+        !affectedTeachers.some(affected => affected.id === teacher.id)
+      );
+      const updatedStudents = prev.students.filter(student => 
+        !affectedStudents.some(affected => affected.id === student.id)
+      );
+      
+      return {
+        ...prev,
+        school_ids: courseData.school_ids.filter(id => !schoolsToRemove.includes(id)),
+        class_ids: updatedSelectedClasses,
+        teachers: updatedTeachers,
+        students: updatedStudents
+      };
+    });
+    
+    // Close dialog and reset state
+    setIsSchoolRemovalDialogOpen(false);
+    setSchoolsToRemove([]);
+    setAffectedClasses([]);
+    setAffectedTeachers([]);
+    setAffectedStudents([]);
+    
+    toast.success(`Removed ${schoolsToRemove.length} school(s) and associated classes, teachers, and students.`);
+  };
+
+  // Handle school removal cancellation
+  const handleCancelSchoolRemoval = () => {
+    // Close dialog and reset state without making changes
+    setIsSchoolRemovalDialogOpen(false);
+    setSchoolsToRemove([]);
+    setAffectedClasses([]);
+    setAffectedTeachers([]);
+    setAffectedStudents([]);
+  };
+
+  // Handle country removal confirmation
+  const handleConfirmCountryRemoval = () => {
+    // Remove affected classes from selected classes
+    const affectedClassIds = affectedClassesFromHierarchy.map(cls => cls.id);
+    const updatedSelectedClasses = selectedClasses.filter(id => !affectedClassIds.includes(id));
+    setSelectedClasses(updatedSelectedClasses);
+    
+    // Update course data with new country IDs and remove only affected items
+    setCourseData(prev => {
+      const updatedTeachers = prev.teachers.filter(teacher => 
+        !affectedTeachersFromHierarchy.some(affected => affected.id === teacher.id)
+      );
+      const updatedStudents = prev.students.filter(student => 
+        !affectedStudentsFromHierarchy.some(affected => affected.id === student.id)
+      );
+      
+      // Get IDs of affected items to remove
+      const affectedRegionIds = affectedRegions.map(region => region.id);
+      const affectedCityIds = affectedCities.map(city => city.id);
+      const affectedProjectIds = affectedProjects.map(project => project.id);
+      const affectedBoardIds = affectedBoards.map(board => board.id);
+      const affectedSchoolIds = affectedSchools.map(school => school.id);
+      
+      return {
+        ...prev,
+        country_ids: courseData.country_ids.filter(id => !countriesToRemove.includes(id)),
+        region_ids: prev.region_ids.filter(id => !affectedRegionIds.includes(id)),
+        city_ids: prev.city_ids.filter(id => !affectedCityIds.includes(id)),
+        project_ids: prev.project_ids.filter(id => !affectedProjectIds.includes(id)),
+        board_ids: prev.board_ids.filter(id => !affectedBoardIds.includes(id)),
+        school_ids: prev.school_ids.filter(id => !affectedSchoolIds.includes(id)),
+        class_ids: updatedSelectedClasses,
+        teachers: updatedTeachers,
+        students: updatedStudents
+      };
+    });
+    
+    // Update state arrays to remove affected items
+    setRegions(prev => prev.filter(region => !affectedRegions.some(affected => affected.id === region.id)));
+    setCities(prev => prev.filter(city => !affectedCities.some(affected => affected.id === city.id)));
+    setProjects(prev => prev.filter(project => !affectedProjects.some(affected => affected.id === project.id)));
+    setBoards(prev => prev.filter(board => !affectedBoards.some(affected => affected.id === board.id)));
+    setSchools(prev => prev.filter(school => !affectedSchools.some(affected => affected.id === school.id)));
+    
+    // Close dialog and reset state
+    setIsCountryRemovalDialogOpen(false);
+    setCountriesToRemove([]);
+    setAffectedRegions([]);
+    setAffectedCities([]);
+    setAffectedProjects([]);
+    setAffectedBoards([]);
+    setAffectedSchools([]);
+    setAffectedClassesFromHierarchy([]);
+    setAffectedTeachersFromHierarchy([]);
+    setAffectedStudentsFromHierarchy([]);
+    
+    toast.success(`Removed ${countriesToRemove.length} country/countries and associated data.`);
+  };
+
+  // Handle country removal cancellation
+  const handleCancelCountryRemoval = () => {
+    // Close dialog and reset state without making changes
+    setIsCountryRemovalDialogOpen(false);
+    setCountriesToRemove([]);
+    setAffectedRegions([]);
+    setAffectedCities([]);
+    setAffectedProjects([]);
+    setAffectedBoards([]);
+    setAffectedSchools([]);
+    setAffectedClassesFromHierarchy([]);
+    setAffectedTeachersFromHierarchy([]);
+    setAffectedStudentsFromHierarchy([]);
+  };
+
+  // Handle region removal confirmation
+  const handleConfirmRegionRemoval = () => {
+    // Remove affected classes from selected classes
+    const affectedClassIds = affectedClassesFromRegion.map(cls => cls.id);
+    const updatedSelectedClasses = selectedClasses.filter(id => !affectedClassIds.includes(id));
+    setSelectedClasses(updatedSelectedClasses);
+    
+    // Update course data with new region IDs and remove only affected items
+    setCourseData(prev => {
+      const updatedTeachers = prev.teachers.filter(teacher => 
+        !affectedTeachersFromRegion.some(affected => affected.id === teacher.id)
+      );
+      const updatedStudents = prev.students.filter(student => 
+        !affectedStudentsFromRegion.some(affected => affected.id === student.id)
+      );
+      
+      // Get IDs of affected items to remove
+      const affectedCityIds = affectedCitiesFromRegion.map(city => city.id);
+      const affectedProjectIds = affectedProjectsFromRegion.map(project => project.id);
+      const affectedBoardIds = affectedBoardsFromRegion.map(board => board.id);
+      const affectedSchoolIds = affectedSchoolsFromRegion.map(school => school.id);
+      
+      return {
+        ...prev,
+        region_ids: courseData.region_ids.filter(id => !regionsToRemove.includes(id)),
+        city_ids: prev.city_ids.filter(id => !affectedCityIds.includes(id)),
+        project_ids: prev.project_ids.filter(id => !affectedProjectIds.includes(id)),
+        board_ids: prev.board_ids.filter(id => !affectedBoardIds.includes(id)),
+        school_ids: prev.school_ids.filter(id => !affectedSchoolIds.includes(id)),
+        class_ids: updatedSelectedClasses,
+        teachers: updatedTeachers,
+        students: updatedStudents
+      };
+    });
+    
+    // Update state arrays to remove affected items
+    setCities(prev => prev.filter(city => !affectedCitiesFromRegion.some(affected => affected.id === city.id)));
+    setProjects(prev => prev.filter(project => !affectedProjectsFromRegion.some(affected => affected.id === project.id)));
+    setBoards(prev => prev.filter(board => !affectedBoardsFromRegion.some(affected => affected.id === board.id)));
+    setSchools(prev => prev.filter(school => !affectedSchoolsFromRegion.some(affected => affected.id === school.id)));
+    
+    // Close dialog and reset state
+    setIsRegionRemovalDialogOpen(false);
+    setRegionsToRemove([]);
+    setAffectedCitiesFromRegion([]);
+    setAffectedProjectsFromRegion([]);
+    setAffectedBoardsFromRegion([]);
+    setAffectedSchoolsFromRegion([]);
+    setAffectedClassesFromRegion([]);
+    setAffectedTeachersFromRegion([]);
+    setAffectedStudentsFromRegion([]);
+    
+    toast.success(`Removed ${regionsToRemove.length} region(s) and associated data.`);
+  };
+
+  // Handle region removal cancellation
+  const handleCancelRegionRemoval = () => {
+    // Close dialog and reset state without making changes
+    setIsRegionRemovalDialogOpen(false);
+    setRegionsToRemove([]);
+    setAffectedCitiesFromRegion([]);
+    setAffectedProjectsFromRegion([]);
+    setAffectedBoardsFromRegion([]);
+    setAffectedSchoolsFromRegion([]);
+    setAffectedClassesFromRegion([]);
+    setAffectedTeachersFromRegion([]);
+    setAffectedStudentsFromRegion([]);
+  };
+
+  // Handle city removal confirmation
+  const handleConfirmCityRemoval = () => {
+    // Remove affected classes from selected classes
+    const affectedClassIds = affectedClassesFromCity.map(cls => cls.id);
+    const updatedSelectedClasses = selectedClasses.filter(id => !affectedClassIds.includes(id));
+    setSelectedClasses(updatedSelectedClasses);
+    
+    // Update course data with new city IDs and remove only affected items
+    setCourseData(prev => {
+      const updatedTeachers = prev.teachers.filter(teacher => 
+        !affectedTeachersFromCity.some(affected => affected.id === teacher.id)
+      );
+      const updatedStudents = prev.students.filter(student => 
+        !affectedStudentsFromCity.some(affected => affected.id === student.id)
+      );
+      
+      // Get IDs of affected items to remove
+      const affectedProjectIds = affectedProjectsFromCity.map(project => project.id);
+      const affectedBoardIds = affectedBoardsFromCity.map(board => board.id);
+      const affectedSchoolIds = affectedSchoolsFromCity.map(school => school.id);
+      
+      return {
+        ...prev,
+        city_ids: courseData.city_ids.filter(id => !citiesToRemove.includes(id)),
+        project_ids: prev.project_ids.filter(id => !affectedProjectIds.includes(id)),
+        board_ids: prev.board_ids.filter(id => !affectedBoardIds.includes(id)),
+        school_ids: prev.school_ids.filter(id => !affectedSchoolIds.includes(id)),
+        class_ids: updatedSelectedClasses,
+        teachers: updatedTeachers,
+        students: updatedStudents
+      };
+    });
+    
+    // Update state arrays to remove affected items
+    setProjects(prev => prev.filter(project => !affectedProjectsFromCity.some(affected => affected.id === project.id)));
+    setBoards(prev => prev.filter(board => !affectedBoardsFromCity.some(affected => affected.id === board.id)));
+    setSchools(prev => prev.filter(school => !affectedSchoolsFromCity.some(affected => affected.id === school.id)));
+    
+    // Close dialog and reset state
+    setIsCityRemovalDialogOpen(false);
+    setCitiesToRemove([]);
+    setAffectedProjectsFromCity([]);
+    setAffectedBoardsFromCity([]);
+    setAffectedSchoolsFromCity([]);
+    setAffectedClassesFromCity([]);
+    setAffectedTeachersFromCity([]);
+    setAffectedStudentsFromCity([]);
+    
+    toast.success(`Removed ${citiesToRemove.length} city/cities and associated data.`);
+  };
+
+  // Handle city removal cancellation
+  const handleCancelCityRemoval = () => {
+    // Close dialog and reset state without making changes
+    setIsCityRemovalDialogOpen(false);
+    setCitiesToRemove([]);
+    setAffectedProjectsFromCity([]);
+    setAffectedBoardsFromCity([]);
+    setAffectedSchoolsFromCity([]);
+    setAffectedClassesFromCity([]);
+    setAffectedTeachersFromCity([]);
+    setAffectedStudentsFromCity([]);
+  };
+
+  // Handle project removal confirmation
+  const handleConfirmProjectRemoval = () => {
+    // Remove affected classes from selected classes
+    const affectedClassIds = affectedClassesFromProject.map(cls => cls.id);
+    const updatedSelectedClasses = selectedClasses.filter(id => !affectedClassIds.includes(id));
+    setSelectedClasses(updatedSelectedClasses);
+    
+    // Update course data with new project IDs and remove only affected items
+    setCourseData(prev => {
+      const updatedTeachers = prev.teachers.filter(teacher => 
+        !affectedTeachersFromProject.some(affected => affected.id === teacher.id)
+      );
+      const updatedStudents = prev.students.filter(student => 
+        !affectedStudentsFromProject.some(affected => affected.id === student.id)
+      );
+      
+      // Get IDs of affected items to remove
+      const affectedBoardIds = affectedBoardsFromProject.map(board => board.id);
+      const affectedSchoolIds = affectedSchoolsFromProject.map(school => school.id);
+      
+      return {
+        ...prev,
+        project_ids: courseData.project_ids.filter(id => !projectsToRemove.includes(id)),
+        board_ids: prev.board_ids.filter(id => !affectedBoardIds.includes(id)),
+        school_ids: prev.school_ids.filter(id => !affectedSchoolIds.includes(id)),
+        class_ids: updatedSelectedClasses,
+        teachers: updatedTeachers,
+        students: updatedStudents
+      };
+    });
+    
+    // Update state arrays to remove affected items
+    setBoards(prev => prev.filter(board => !affectedBoardsFromProject.some(affected => affected.id === board.id)));
+    setSchools(prev => prev.filter(school => !affectedSchoolsFromProject.some(affected => affected.id === school.id)));
+    
+    // Close dialog and reset state
+    setIsProjectRemovalDialogOpen(false);
+    setProjectsToRemove([]);
+    setAffectedBoardsFromProject([]);
+    setAffectedSchoolsFromProject([]);
+    setAffectedClassesFromProject([]);
+    setAffectedTeachersFromProject([]);
+    setAffectedStudentsFromProject([]);
+    
+    toast.success(`Removed ${projectsToRemove.length} project(s) and associated data.`);
+  };
+
+  // Handle project removal cancellation
+  const handleCancelProjectRemoval = () => {
+    // Close dialog and reset state without making changes
+    setIsProjectRemovalDialogOpen(false);
+    setProjectsToRemove([]);
+    setAffectedBoardsFromProject([]);
+    setAffectedSchoolsFromProject([]);
+    setAffectedClassesFromProject([]);
+    setAffectedTeachersFromProject([]);
+    setAffectedStudentsFromProject([]);
+  };
+
+  // Handle board removal confirmation
+  const handleConfirmBoardRemoval = () => {
+    // Remove affected classes from selected classes
+    const affectedClassIds = affectedClassesFromBoard.map(cls => cls.id);
+    const updatedSelectedClasses = selectedClasses.filter(id => !affectedClassIds.includes(id));
+    setSelectedClasses(updatedSelectedClasses);
+    
+    // Update course data with new board IDs and remove only affected items
+    setCourseData(prev => {
+      const updatedTeachers = prev.teachers.filter(teacher => 
+        !affectedTeachersFromBoard.some(affected => affected.id === teacher.id)
+      );
+      const updatedStudents = prev.students.filter(student => 
+        !affectedStudentsFromBoard.some(affected => affected.id === student.id)
+      );
+      
+      // Get IDs of affected items to remove
+      const affectedSchoolIds = affectedSchoolsFromBoard.map(school => school.id);
+      
+      return {
+        ...prev,
+        board_ids: courseData.board_ids.filter(id => !boardsToRemove.includes(id)),
+        school_ids: prev.school_ids.filter(id => !affectedSchoolIds.includes(id)),
+        class_ids: updatedSelectedClasses,
+        teachers: updatedTeachers,
+        students: updatedStudents
+      };
+    });
+    
+    // Update state arrays to remove affected items
+    setSchools(prev => prev.filter(school => !affectedSchoolsFromBoard.some(affected => affected.id === school.id)));
+    
+    // Close dialog and reset state
+    setIsBoardRemovalDialogOpen(false);
+    setBoardsToRemove([]);
+    setAffectedSchoolsFromBoard([]);
+    setAffectedClassesFromBoard([]);
+    setAffectedTeachersFromBoard([]);
+    setAffectedStudentsFromBoard([]);
+    
+    toast.success(`Removed ${boardsToRemove.length} board(s) and associated data.`);
+  };
+
+  // Handle board removal cancellation
+  const handleCancelBoardRemoval = () => {
+    // Close dialog and reset state without making changes
+    setIsBoardRemovalDialogOpen(false);
+    setBoardsToRemove([]);
+    setAffectedSchoolsFromBoard([]);
+    setAffectedClassesFromBoard([]);
+    setAffectedTeachersFromBoard([]);
+    setAffectedStudentsFromBoard([]);
+  };
+
+  // Class management handlers
+  const handleClassMembersChange = (role: 'teachers' | 'students', selectedIds: string[]) => {
+    setClassFormData(prev => ({
+      ...prev,
+      [role]: selectedIds
+    }));
+  };
+
+  const handleClassBoardChange = (boardId: string) => {
+    setClassFormData(prev => ({
+      ...prev,
+      board_id: boardId,
+      school_id: '' // Reset school selection when board changes
+    }));
+  };
+
+  const handleClassCreate = async () => {
+    if (!classFormData.name || !classFormData.code || !classFormData.grade || !classFormData.school_id || !classFormData.board_id || !classFormData.max_students) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    const maxStudentsNum = parseInt(classFormData.max_students);
+    if (isNaN(maxStudentsNum) || maxStudentsNum < 1 || maxStudentsNum > 100) {
+      toast.error('Max students must be a valid number between 1 and 100');
+      return;
+    }
+
+    const classData: CreateClassData = {
+      name: classFormData.name,
+      code: classFormData.code.toUpperCase(),
+      grade: classFormData.grade,
+      school_id: classFormData.school_id,
+      board_id: classFormData.board_id,
+      description: classFormData.description,
+      max_students: maxStudentsNum,
+      teacher_ids: classFormData.teachers,
+      student_ids: classFormData.students
+    };
+
+    const result = await createClass(classData);
+    if (result) {
+      setIsClassCreateDialogOpen(false);
+      resetClassForm();
+      
+      // Note: The newly created class will be available in the dropdown for selection
+      // Users can then select it to automatically add its teachers and students
+    }
+  };
+
+  const handleClassEdit = async () => {
+    if (!editingClass || !classFormData.name || !classFormData.code || !classFormData.grade || !classFormData.school_id || !classFormData.board_id || !classFormData.max_students) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    const maxStudentsNum = parseInt(classFormData.max_students);
+    if (isNaN(maxStudentsNum) || maxStudentsNum < 1 || maxStudentsNum > 100) {
+      toast.error('Max students must be a valid number between 1 and 100');
+      return;
+    }
+
+    const classData: UpdateClassData = {
+      id: editingClass.id,
+      name: classFormData.name,
+      code: classFormData.code.toUpperCase(),
+      grade: classFormData.grade,
+      school_id: classFormData.school_id,
+      board_id: classFormData.board_id,
+      description: classFormData.description,
+      max_students: maxStudentsNum,
+      teacher_ids: classFormData.teachers,
+      student_ids: classFormData.students
+    };
+
+    const result = await updateClass(classData);
+    if (result) {
+      setIsClassEditDialogOpen(false);
+      setEditingClass(null);
+      resetClassForm();
+    }
+  };
+
+  const handleClassDelete = async (classId: string) => {
+    const success = await deleteClass(classId);
+    if (success) {
+      // Remove the deleted class from selected classes if it was enrolled
+      if (selectedClasses.includes(classId)) {
+        const newSelectedClasses = selectedClasses.filter(id => id !== classId);
+        setSelectedClasses(newSelectedClasses);
+        // Immediately update course members since we're removing the class
+        handleClassSelection(newSelectedClasses);
+      }
+    }
+  };
+
+  const openClassEditDialog = (cls: ClassWithMembers) => {
+    setEditingClass(cls);
+    setClassFormData({
+      name: cls.name,
+      code: cls.code,
+      grade: cls.grade,
+      school_id: cls.school_id || '',
+      board_id: cls.board_id || '',
+      description: cls.description,
+      max_students: String(cls.max_students || 30),
+      teachers: cls.teachers.map(t => t.id),
+      students: cls.students.map(s => s.id)
+    });
+    setIsClassEditDialogOpen(true);
+  };
+
+  const openClassViewDialog = (cls: ClassWithMembers) => {
+    setViewingClass(cls);
+    setIsClassViewDialogOpen(true);
+  };
+
+  const resetClassForm = () => {
+    setClassFormData({
+      name: '',
+      code: '',
+      grade: '',
+      school_id: '',
+      board_id: '',
+      description: '',
+      max_students: '30',
+      teachers: [],
+      students: []
+    });
+  };
+
+  const getGradeBadge = (grade: string) => {
+    const gradeNum = parseInt(grade);
+    if (gradeNum <= 5) return <Badge variant="default" className="bg-blue-600">Grade {grade}</Badge>;
+    if (gradeNum <= 8) return <Badge variant="default" className="bg-green-600">Grade {grade}</Badge>;
+    if (gradeNum <= 10) return <Badge variant="default" className="bg-yellow-600">Grade {grade}</Badge>;
+    return <Badge variant="default" className="bg-purple-600">Grade {grade}</Badge>;
+  };
+
+  // Check if student limit is exceeded
+  const isStudentLimitExceeded = () => {
+    const maxStudentsNum = parseInt(classFormData.max_students);
+    return !isNaN(maxStudentsNum) && classFormData.students.length > maxStudentsNum;
+  };
+
+  // Get student limit status message
+  const getStudentLimitStatus = () => {
+    const maxStudentsNum = parseInt(classFormData.max_students);
+    if (isNaN(maxStudentsNum)) return null;
+    
+    const currentCount = classFormData.students.length;
+    const remaining = maxStudentsNum - currentCount;
+    
+    if (currentCount > maxStudentsNum) {
+      return {
+        message: `⚠️ Exceeded limit by ${currentCount - maxStudentsNum} students (${currentCount}/${maxStudentsNum})`,
+        className: "text-red-600 font-medium"
+      };
+    } else if (remaining <= 2 && remaining > 0) {
+      return {
+        message: `⚠️ Only ${remaining} spots remaining (${currentCount}/${maxStudentsNum})`,
+        className: "text-yellow-600 font-medium"
+      };
+    } else {
+      return {
+        message: `${currentCount}/${maxStudentsNum} students selected`,
+        className: "text-green-600 font-medium"
+      };
+    }
+  };
+
   useEffect(() => {
         const initializeCourseBuilder = async () => {
       setIsLoadingPage(true);
       try {
-        const [usersRes, catRes, langRes, levelRes] = await Promise.all([
+        const [usersRes, catRes, langRes, levelRes, countriesRes] = await Promise.all([
           supabase.from('profiles').select('*'),
           supabase.from('course_categories').select('id, name'),
           supabase.from('course_languages').select('id, name'),
           supabase.from('course_levels').select('id, name'),
+          supabase.from('countries').select('id, name, code, description').order('name'),
         ]);
 
         if (usersRes.error) throw usersRes.error;
         if (catRes.error) throw catRes.error;
         if (langRes.error) throw langRes.error;
         if (levelRes.error) throw levelRes.error;
+        if (countriesRes.error) throw countriesRes.error;
         
         const fetchedProfiles = usersRes.data as Profile[];
         
         const fetchedCategories = catRes.data as { id: number; name: string; }[];
         const fetchedLanguages = langRes.data as { id: number; name: string; }[];
         const fetchedLevels = levelRes.data as { id: number; name: string; }[];
+        const fetchedCountries = countriesRes.data as Country[];
 
         setUserProfiles(fetchedProfiles);
         setCategories(fetchedCategories);
         setLanguages(fetchedLanguages);
         setLevels(fetchedLevels);
+        setCountries(fetchedCountries);
         
         const teachers = fetchedProfiles
           .filter(p => p.role === 'teacher')
@@ -1750,6 +3136,13 @@ const CourseBuilder = () => {
               category: fetchedCategories.find(c => c.id === data.category_id)?.name || '',
               language: fetchedLanguages.find(l => l.id === data.language_id)?.name || '',
               level: fetchedLevels.find(l => l.id === data.level_id)?.name || '',
+              country_ids: data.country_ids || [],
+              region_ids: data.region_ids || [],
+              city_ids: data.city_ids || [],
+              project_ids: data.project_ids || [],
+              board_ids: data.board_ids || [],
+              school_ids: data.school_ids || [],
+              class_ids: data.class_ids || [],
               duration: data.duration || '',
               requirements: data.requirements || [''],
               learningOutcomes: data.learning_outcomes || [''],
@@ -1794,6 +3187,59 @@ const CourseBuilder = () => {
               students: courseStudents,
             };
             setCourseData(finalCourseData);
+            setSelectedClasses(finalCourseData.class_ids || []);
+            
+            // Force reload classes to ensure enrolled classes are available
+            if (finalCourseData.class_ids && finalCourseData.class_ids.length > 0) {
+              refetchClasses();
+            }
+            
+            // Load hierarchical data if course has location data
+            if (finalCourseData.country_ids.length > 0) {
+              // Fetch regions for all selected countries
+              const allRegions: Region[] = [];
+              for (const countryId of finalCourseData.country_ids) {
+                const regions = await fetchRegions(countryId);
+                allRegions.push(...regions);
+              }
+              setRegions(allRegions);
+            }
+            if (finalCourseData.region_ids.length > 0) {
+              // Fetch cities for all selected regions
+              const allCities: City[] = [];
+              for (const regionId of finalCourseData.region_ids) {
+                const cities = await fetchCities(regionId);
+                allCities.push(...cities);
+              }
+              setCities(allCities);
+            }
+            if (finalCourseData.city_ids.length > 0) {
+              // Fetch projects for all selected cities
+              const allProjects: Project[] = [];
+              for (const cityId of finalCourseData.city_ids) {
+                const projects = await fetchProjects(cityId);
+                allProjects.push(...projects);
+              }
+              setProjects(allProjects);
+            }
+            if (finalCourseData.project_ids.length > 0) {
+              // Fetch boards for all selected projects
+              const allBoards: Board[] = [];
+              for (const projectId of finalCourseData.project_ids) {
+                const boards = await fetchBoards(projectId);
+                allBoards.push(...boards);
+              }
+              setBoards(allBoards);
+            }
+            if (finalCourseData.board_ids.length > 0) {
+              // Fetch schools for all selected boards
+              const allSchools: School[] = [];
+              for (const boardId of finalCourseData.board_ids) {
+                const schools = await fetchSchools(boardId);
+                allSchools.push(...schools);
+              }
+              setSchools(allSchools);
+            }
           }
         }
       } catch (error: any) {
@@ -1867,6 +3313,14 @@ const CourseBuilder = () => {
       learning_outcomes: courseToSave.learningOutcomes.filter(o => o.trim() !== ''),
       status: courseToSave.status,
       published_course_id: courseToSave.published_course_id,
+      // Store all selected IDs as arrays
+      country_ids: courseToSave.country_ids,
+      region_ids: courseToSave.region_ids,
+      city_ids: courseToSave.city_ids,
+      project_ids: courseToSave.project_ids,
+      board_ids: courseToSave.board_ids,
+      school_ids: courseToSave.school_ids,
+      class_ids: courseToSave.class_ids,
     };
 
     let savedCourse: { id: string } | null = null;
@@ -2050,6 +3504,14 @@ const CourseBuilder = () => {
       learning_outcomes: courseToSave.learningOutcomes.filter(o => o.trim() !== ''),
       status: courseToSave.status,
       published_course_id: courseToSave.published_course_id,
+      // Store all selected IDs as arrays
+      country_ids: courseToSave.country_ids,
+      region_ids: courseToSave.region_ids,
+      city_ids: courseToSave.city_ids,
+      project_ids: courseToSave.project_ids,
+      board_ids: courseToSave.board_ids,
+      school_ids: courseToSave.school_ids,
+      class_ids: courseToSave.class_ids,
     };
 
     let savedCourse: { id: string } | null = null;
@@ -2673,6 +4135,14 @@ const CourseBuilder = () => {
       learning_outcomes: courseToSave.learningOutcomes.filter(o => o.trim() !== ''),
       status: courseToSave.status,
       published_course_id: courseToSave.published_course_id,
+      // Store all selected IDs as arrays
+      country_ids: courseToSave.country_ids,
+      region_ids: courseToSave.region_ids,
+      city_ids: courseToSave.city_ids,
+      project_ids: courseToSave.project_ids,
+      board_ids: courseToSave.board_ids,
+      school_ids: courseToSave.school_ids,
+      class_ids: courseToSave.class_ids,
     };
 
     let savedCourse: { id: string } | null = null;
@@ -3834,14 +5304,6 @@ const CourseBuilder = () => {
                 {courseData.status === 'Published' ? (
                   <>
                     <Button 
-                      onClick={handleSaveDraftClick} 
-                      disabled={isSaving}
-                      className="h-9 px-4 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
-                    >
-                       <Save className="w-4 h-4 mr-2" />
-                       {saveAction === 'draft' ? 'Creating...' : 'Create New Draft'}
-                     </Button>
-                    <Button 
                       onClick={handleUnpublishClick} 
                       className="h-9 px-4 rounded-xl bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5" 
                       disabled={isSaving}
@@ -4189,6 +5651,199 @@ const CourseBuilder = () => {
                         <div className="flex items-center gap-2 text-red-500 text-sm">
                           <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
                           {validationErrors.level}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Location and Board Information Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Country */}
+                    <div className="space-y-3">
+                      <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                        Countries
+                        <span className="text-red-500 ml-1">*</span>
+                      </label>
+                      <MultiSelect
+                        options={countries.map(country => ({
+                          value: country.id,
+                          label: country.name,
+                          subLabel: country.description || '',
+                          imageUrl: undefined
+                        }))}
+                        onValueChange={handleCountryChange}
+                        value={courseData.country_ids}
+                        placeholder="Search and select countries..."
+                        className={cn(
+                          "min-h-[44px] border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300",
+                          validationErrors.country_ids && (touchedFields.country_ids || courseData.id) && 
+                          "border-red-500 focus:border-red-500 focus:ring-red-500/10"
+                        )}
+                      />
+                      {validationErrors.country_ids && (touchedFields.country_ids || courseData.id) && (
+                        <div className="flex items-center gap-2 text-red-500 text-sm">
+                          <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                          {validationErrors.country_ids}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Region */}
+                    <div className="space-y-3">
+                      <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                        Regions
+                        <span className="text-red-500 ml-1">*</span>
+                      </label>
+                      <div className={courseData.country_ids.length === 0 ? "opacity-50 pointer-events-none" : ""}>
+                        <MultiSelect
+                          options={regions.map(region => ({
+                            value: region.id,
+                            label: region.name,
+                            subLabel: region.description || '',
+                            imageUrl: undefined
+                          }))}
+                          onValueChange={handleRegionChange}
+                          value={courseData.region_ids}
+                          placeholder={courseData.country_ids.length > 0 ? "Search and select regions..." : "Select countries first"}
+                          className={cn(
+                            "min-h-[44px] border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300",
+                            validationErrors.region_ids && (touchedFields.region_ids || courseData.id) && 
+                            "border-red-500 focus:border-red-500 focus:ring-red-500/10"
+                          )}
+                        />
+                      </div>
+                      {validationErrors.region_ids && (touchedFields.region_ids || courseData.id) && (
+                        <div className="flex items-center gap-2 text-red-500 text-sm">
+                          <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                          {validationErrors.region_ids}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* City */}
+                    <div className="space-y-3">
+                      <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                        Cities
+                        <span className="text-red-500 ml-1">*</span>
+                      </label>
+                      <div className={courseData.region_ids.length === 0 ? "opacity-50 pointer-events-none" : ""}>
+                        <MultiSelect
+                          options={cities.map(city => ({
+                            value: city.id,
+                            label: city.name,
+                            subLabel: city.description || '',
+                            imageUrl: undefined
+                          }))}
+                          onValueChange={handleCityChange}
+                          value={courseData.city_ids}
+                          placeholder={courseData.region_ids.length > 0 ? "Search and select cities..." : "Select regions first"}
+                          className={cn(
+                            "min-h-[44px] border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300",
+                            validationErrors.city_ids && (touchedFields.city_ids || courseData.id) && 
+                            "border-red-500 focus:border-red-500 focus:ring-red-500/10"
+                          )}
+                        />
+                      </div>
+                      {validationErrors.city_ids && (touchedFields.city_ids || courseData.id) && (
+                        <div className="flex items-center gap-2 text-red-500 text-sm">
+                          <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                          {validationErrors.city_ids}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Project */}
+                    <div className="space-y-3">
+                      <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                        Projects
+                        <span className="text-red-500 ml-1">*</span>
+                      </label>
+                      <div className={courseData.city_ids.length === 0 ? "opacity-50 pointer-events-none" : ""}>
+                        <MultiSelect
+                          options={projects.map(project => ({
+                            value: project.id,
+                            label: project.name,
+                            subLabel: project.description || '',
+                            imageUrl: undefined
+                          }))}
+                          onValueChange={handleProjectChange}
+                          value={courseData.project_ids}
+                          placeholder={courseData.city_ids.length > 0 ? "Search and select projects..." : "Select cities first"}
+                          className={cn(
+                            "min-h-[44px] border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300",
+                            validationErrors.project_ids && (touchedFields.project_ids || courseData.id) && 
+                            "border-red-500 focus:border-red-500 focus:ring-red-500/10"
+                          )}
+                        />
+                      </div>
+                      {validationErrors.project_ids && (touchedFields.project_ids || courseData.id) && (
+                        <div className="flex items-center gap-2 text-red-500 text-sm">
+                          <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                          {validationErrors.project_ids}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Board */}
+                    <div className="space-y-3">
+                      <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                        Boards
+                        <span className="text-red-500 ml-1">*</span>
+                      </label>
+                      <div className={courseData.project_ids.length === 0 ? "opacity-50 pointer-events-none" : ""}>
+                        <MultiSelect
+                          options={boards.map(board => ({
+                            value: board.id,
+                            label: board.name,
+                            subLabel: board.description || '',
+                            imageUrl: undefined
+                          }))}
+                          onValueChange={handleBoardChange}
+                          value={courseData.board_ids}
+                          placeholder={courseData.project_ids.length > 0 ? "Search and select boards..." : "Select projects first"}
+                          className={cn(
+                            "min-h-[44px] border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300",
+                            validationErrors.board_ids && (touchedFields.board_ids || courseData.id) && 
+                            "border-red-500 focus:border-red-500 focus:ring-red-500/10"
+                          )}
+                        />
+                      </div>
+                      {validationErrors.board_ids && (touchedFields.board_ids || courseData.id) && (
+                        <div className="flex items-center gap-2 text-red-500 text-sm">
+                          <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                          {validationErrors.board_ids}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Schools */}
+                    <div className="space-y-3">
+                      <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                        Schools
+                        <span className="text-red-500 ml-1">*</span>
+                      </label>
+                      <div className={courseData.board_ids.length === 0 ? "opacity-50 pointer-events-none" : ""}>
+                        <MultiSelect
+                          options={schools.map(school => ({
+                            value: school.id,
+                            label: school.name,
+                            subLabel: `${school.school_type} • ${school.code}`,
+                            imageUrl: undefined
+                          }))}
+                          onValueChange={handleSchoolChange}
+                          value={courseData.school_ids}
+                          placeholder={courseData.board_ids.length > 0 ? "Search and select schools..." : "Select boards first"}
+                          className={cn(
+                            "min-h-[44px] border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300",
+                            validationErrors.school_ids && (touchedFields.school_ids || courseData.id) && 
+                            "border-red-500 focus:border-red-500 focus:ring-red-500/10"
+                          )}
+                        />
+                      </div>
+                      {validationErrors.school_ids && (touchedFields.school_ids || courseData.id) && (
+                        <div className="flex items-center gap-2 text-red-500 text-sm">
+                          <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                          {validationErrors.school_ids}
                         </div>
                       )}
                     </div>
@@ -4665,6 +6320,217 @@ const CourseBuilder = () => {
             </TabsContent>
 
             <TabsContent value="access" className="space-y-6">
+              {/* Classes Management Card */}
+              <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-card to-card/50 dark:bg-card">
+                <CardHeader className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 pb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl flex items-center justify-center">
+                        <BookOpen className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 dark:from-white dark:via-gray-100 dark:to-gray-200 bg-clip-text text-transparent">
+                          Manage Classes
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Organize students into classes with specific schedules and teachers
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-700">
+                        {enrolledClasses.length} Classes
+                      </Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsClassCreateDialogOpen(true)}
+                        className="h-8 px-3 text-xs bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-700 rounded-lg"
+                      >
+                        <Plus className="w-3 h-3 mr-1" />
+                        Add Class
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-6 space-y-4">
+
+                  {/* Select Classes for Course Enrollment */}
+                  <div className="space-y-3">
+                    <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                      Select Classes for Course Enrollment
+                    </label>
+                    <div className="relative">
+                      <div className={courseData.school_ids.length === 0 ? "opacity-50 pointer-events-none" : ""}>
+                        <MultiSelect
+                          options={filteredClasses.map(cls => ({
+                            value: cls.id,
+                            label: cls.name,
+                            subLabel: `${cls.school} • Grade ${cls.grade} • ${cls.code} • ${cls.teachers.length} Teachers • ${cls.students.length} Students`,
+                            imageUrl: undefined
+                          }))}
+                          onValueChange={handleClassSelection}
+                          value={selectedClasses}
+                          placeholder={courseData.school_ids.length > 0 ? "Search and select classes to enroll for this course..." : "Select schools first to see available classes"}
+                          className="min-h-[44px] border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {courseData.school_ids.length > 0 
+                        ? "Choose which classes will have access to this course. Students and teachers from selected classes will be automatically enrolled."
+                        : "Please select schools first to see available classes for enrollment."
+                      }
+                    </p>
+                  </div>
+
+                  {/* Classes List */}
+                  {classesLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                      <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">Loading classes...</span>
+                    </div>
+                  ) : enrolledClasses.length > 0 || selectedClasses.length > 0 ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
+                          Enrolled Classes
+                        </h4>
+                      </div>
+                      
+                      {/* Classes Grid */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {enrolledClasses.map(classItem => (
+                          <div key={classItem.id} className="group p-4 bg-gradient-to-r from-purple-50/50 to-purple-100/50 dark:from-purple-900/10 dark:to-purple-800/10 rounded-xl border border-purple-200/50 dark:border-purple-700/30 hover:border-purple-300 dark:hover:border-purple-600 transition-all duration-300 hover:scale-[1.02]">
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex-1 min-w-0">
+                                <h5 className="font-semibold text-gray-900 dark:text-white text-sm truncate mb-1">
+                                  {classItem.name}
+                                </h5>
+                                <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 mb-2">
+                                  {classItem.description}
+                                </p>
+                                <div className="flex items-center gap-2 mb-2">
+                                  {getGradeBadge(classItem.grade)}
+                                  <Badge variant="outline" className="text-xs">
+                                    {classItem.code}
+                                  </Badge>
+                                  <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                                    {classItem.school}
+                                  </Badge>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1 ml-2">
+                                <Badge 
+                                  variant={classItem.status === 'active' ? 'default' : 'secondary'}
+                                  className={`text-xs ${
+                                    classItem.status === 'active' 
+                                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' 
+                                      : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+                                  }`}
+                                >
+                                  {classItem.status}
+                                </Badge>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    const newSelectedClasses = selectedClasses.filter(id => id !== classItem.id);
+                                    handleClassSelection(newSelectedClasses);
+                                  }}
+                                  className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 rounded-lg"
+                                  title="Remove from enrolled classes"
+                                >
+                                  <X className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            </div>
+                            
+                            {/* Class Stats */}
+                            <div className="flex items-center justify-between text-xs">
+                              <div className="flex items-center gap-4">
+                                <span className="text-gray-600 dark:text-gray-400">
+                                  {classItem.teachers.length} Teachers
+                                </span>
+                                <span className="text-gray-600 dark:text-gray-400">
+                                  {classItem.students.length} Students
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openClassViewDialog(classItem)}
+                                  className="h-6 px-2 text-xs text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/20 rounded-lg"
+                                >
+                                  <Eye className="w-3 h-3 mr-1" />
+                                  View
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openClassEditDialog(classItem)}
+                                  className="h-6 px-2 text-xs text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/20 rounded-lg"
+                                >
+                                  <Edit className="w-3 h-3 mr-1" />
+                                  Edit
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {/* Show missing classes if any */}
+                      {selectedClasses.length > enrolledClasses.length && (
+                        <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
+                          <div className="flex items-center gap-2 text-yellow-800 dark:text-yellow-200">
+                            <AlertTriangle className="w-4 h-4" />
+                            <span className="text-sm font-medium">Some enrolled classes could not be loaded</span>
+                          </div>
+                          <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
+                            Class IDs: {selectedClasses.filter(id => !enrolledClasses.some(cls => cls.id === id)).join(', ')}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                      <div className="w-16 h-16 mx-auto mb-3 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                        <BookOpen className="w-8 h-8" />
+                      </div>
+                      <p className="text-sm font-medium mb-1">No classes enrolled yet</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">
+                        {dbClasses.length > 0 
+                          ? "Select classes from the dropdown above to enroll them for this course"
+                          : "Create your first class to organize students"
+                        }
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Class Management Info */}
+                  <div className="mt-6 p-4 bg-gradient-to-r from-purple-50/50 to-indigo-50/50 dark:from-purple-900/10 dark:to-indigo-900/10 rounded-xl border border-purple-200/50 dark:border-purple-700/30">
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Info className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <div className="space-y-2">
+                        <h4 className="font-semibold text-purple-900 dark:text-purple-100 text-sm">
+                          Class Management Benefits
+                        </h4>
+                        <ul className="text-xs text-purple-800 dark:text-purple-200 space-y-1">
+                          <li>• Organize students into manageable groups with specific schedules</li>
+                          <li>• Assign dedicated teachers to each class for better instruction</li>
+                          <li>• Track enrollment capacity and manage class sizes</li>
+                          <li>• Monitor class-specific progress and engagement</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Teachers Management Card */}
               <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-card to-card/50 dark:bg-card">
                 <CardHeader className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 pb-4">
@@ -4913,7 +6779,7 @@ const CourseBuilder = () => {
                         </p>
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="space-y-3">
                           <h4 className="font-semibold text-blue-900 dark:text-blue-100 flex items-center gap-2 text-sm">
                             <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
@@ -4937,6 +6803,19 @@ const CourseBuilder = () => {
                             <li>• Submit assignments and take quizzes</li>
                             <li>• Track learning progress</li>
                             <li>• Participate in discussions</li>
+                          </ul>
+                        </div>
+
+                        <div className="space-y-3">
+                          <h4 className="font-semibold text-blue-900 dark:text-blue-100 flex items-center gap-2 text-sm">
+                            <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                            Classes ({enrolledClasses.length})
+                          </h4>
+                          <ul className="text-xs text-blue-800 dark:text-blue-200 space-y-1">
+                            <li>• Organize students into groups</li>
+                            <li>• Set specific schedules and capacity</li>
+                            <li>• Assign dedicated teachers</li>
+                            <li>• Track class-specific progress</li>
                           </ul>
                         </div>
                       </div>
@@ -5042,6 +6921,1411 @@ const CourseBuilder = () => {
         />
       )}
 
+      {/* Create Class Dialog */}
+      <Dialog open={isClassCreateDialogOpen} onOpenChange={setIsClassCreateDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle>Create New Class</DialogTitle>
+            <DialogDescription>
+              Add a new class or academic section to the system. Fill in the required information below.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="class-name">Class Name *</Label>
+                <Input
+                  id="class-name"
+                  value={classFormData.name}
+                  onChange={(e) => setClassFormData({ ...classFormData, name: e.target.value })}
+                  placeholder="e.g., Class 10A"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="class-code">Class Code *</Label>
+                <Input
+                  id="class-code"
+                  value={classFormData.code}
+                  onChange={(e) => setClassFormData({ ...classFormData, code: e.target.value })}
+                  placeholder="e.g., C10A-001"
+                  maxLength={10}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="class-grade">Grade *</Label>
+                <Select
+                  value={classFormData.grade}
+                  onValueChange={(value) => setClassFormData({ ...classFormData, grade: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select grade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Grade 1</SelectItem>
+                    <SelectItem value="2">Grade 2</SelectItem>
+                    <SelectItem value="3">Grade 3</SelectItem>
+                    <SelectItem value="4">Grade 4</SelectItem>
+                    <SelectItem value="5">Grade 5</SelectItem>
+                    <SelectItem value="6">Grade 6</SelectItem>
+                    <SelectItem value="7">Grade 7</SelectItem>
+                    <SelectItem value="8">Grade 8</SelectItem>
+                    <SelectItem value="9">Grade 9</SelectItem>
+                    <SelectItem value="10">Grade 10</SelectItem>
+                    <SelectItem value="11">Grade 11</SelectItem>
+                    <SelectItem value="12">Grade 12</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="class-board">Board *</Label>
+                <Select
+                  value={classFormData.board_id}
+                  onValueChange={handleClassBoardChange}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select board" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {classBoards.map((board) => (
+                      <SelectItem key={board.id} value={board.id}>
+                        {board.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="class-school">School *</Label>
+                <Select
+                  value={classFormData.school_id}
+                  onValueChange={(value) => setClassFormData({ ...classFormData, school_id: value })}
+                  disabled={!classFormData.board_id}
+                >
+                  <SelectTrigger className={!classFormData.board_id ? "opacity-50 cursor-not-allowed" : ""}>
+                    <SelectValue placeholder={!classFormData.board_id ? "Select a board first" : "Select school"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {classSchools.length > 0 ? (
+                      classSchools.map((school) => (
+                        <SelectItem key={school.id} value={school.id}>
+                          {school.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="" disabled>
+                        {classFormData.board_id ? "No schools found for this board" : "Select a board first"}
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="class-max-students">Max Students *</Label>
+                <Input
+                  id="class-max-students"
+                  type="text"
+                  value={classFormData.max_students}
+                  onChange={(e) => setClassFormData({ ...classFormData, max_students: e.target.value })}
+                  placeholder="e.g., 30"
+                />
+                <p className="text-xs text-muted-foreground">Maximum number of students allowed in this class</p>
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="class-description">Description</Label>
+                <Textarea
+                  id="class-description"
+                  value={classFormData.description}
+                  onChange={(e) => setClassFormData({ ...classFormData, description: e.target.value })}
+                  placeholder="Class description and focus areas..."
+                  rows={3}
+                />
+              </div>
+
+              {/* Access Management Section */}
+              <div className="space-y-4 md:col-span-2">
+                <div className="space-y-2">
+                  <Label>Manage Teachers</Label>
+                  <div className="space-y-2">
+                    <MultiSelect
+                      options={classTeachers.map(teacher => ({
+                        value: teacher.id,
+                        label: teacher.name,
+                        subLabel: teacher.email,
+                        imageUrl: teacher.avatar_url
+                      }))}
+                      onValueChange={(selectedIds) => handleClassMembersChange('teachers', selectedIds)}
+                      value={classFormData.teachers}
+                      placeholder="Search and select teachers..."
+                      className="min-h-[44px] border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Teachers can edit course content, manage students, and view analytics</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Manage Students</Label>
+                  <div className="space-y-2">
+                    <MultiSelect
+                      options={classStudents.map(student => ({
+                        value: student.id,
+                        label: student.name,
+                        subLabel: student.email,
+                        imageUrl: student.avatar_url
+                      }))}
+                      onValueChange={(selectedIds) => handleClassMembersChange('students', selectedIds)}
+                      value={classFormData.students}
+                      placeholder="Search and select students..."
+                      className={`min-h-[44px] border-2 rounded-xl bg-white dark:bg-gray-800 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300 ${
+                        isStudentLimitExceeded() 
+                          ? 'border-red-300 dark:border-red-600' 
+                          : 'border-gray-200 dark:border-gray-700'
+                      }`}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Students can access course content, submit assignments, and track progress</p>
+                    {getStudentLimitStatus() && (
+                      <p className={`text-xs ${getStudentLimitStatus()?.className}`}>
+                        {getStudentLimitStatus()?.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="flex-shrink-0">
+            <Button variant="outline" onClick={() => setIsClassCreateDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleClassCreate} className="bg-green-600 hover:bg-green-700">
+              Create Class
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Class Dialog */}
+      <Dialog open={isClassEditDialogOpen} onOpenChange={setIsClassEditDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle>Edit Class</DialogTitle>
+            <DialogDescription>
+              Update the information for {editingClass?.name}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-class-name">Class Name *</Label>
+                <Input
+                  id="edit-class-name"
+                  value={classFormData.name}
+                  onChange={(e) => setClassFormData({ ...classFormData, name: e.target.value })}
+                  placeholder="e.g., Class 10A"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-class-code">Class Code *</Label>
+                <Input
+                  id="edit-class-code"
+                  value={classFormData.code}
+                  onChange={(e) => setClassFormData({ ...classFormData, code: e.target.value })}
+                  placeholder="e.g., C10A-001"
+                  maxLength={10}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-class-grade">Grade *</Label>
+                <Select
+                  value={classFormData.grade}
+                  onValueChange={(value) => setClassFormData({ ...classFormData, grade: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select grade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Grade 1</SelectItem>
+                    <SelectItem value="2">Grade 2</SelectItem>
+                    <SelectItem value="3">Grade 3</SelectItem>
+                    <SelectItem value="4">Grade 4</SelectItem>
+                    <SelectItem value="5">Grade 5</SelectItem>
+                    <SelectItem value="6">Grade 6</SelectItem>
+                    <SelectItem value="7">Grade 7</SelectItem>
+                    <SelectItem value="8">Grade 8</SelectItem>
+                    <SelectItem value="9">Grade 9</SelectItem>
+                    <SelectItem value="10">Grade 10</SelectItem>
+                    <SelectItem value="11">Grade 11</SelectItem>
+                    <SelectItem value="12">Grade 12</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-class-board">Board *</Label>
+                <Select
+                  value={classFormData.board_id}
+                  onValueChange={handleClassBoardChange}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select board" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {classBoards.map((board) => (
+                      <SelectItem key={board.id} value={board.id}>
+                        {board.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-class-school">School *</Label>
+                <Select
+                  value={classFormData.school_id}
+                  onValueChange={(value) => setClassFormData({ ...classFormData, school_id: value })}
+                  disabled={!classFormData.board_id}
+                >
+                  <SelectTrigger className={!classFormData.board_id ? "opacity-50 cursor-not-allowed" : ""}>
+                    <SelectValue placeholder={!classFormData.board_id ? "Select a board first" : "Select school"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {classSchools.length > 0 ? (
+                      classSchools.map((school) => (
+                        <SelectItem key={school.id} value={school.id}>
+                          {school.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="" disabled>
+                        {classFormData.board_id ? "No schools found for this board" : "Select a board first"}
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-class-max-students">Max Students *</Label>
+                <Input
+                  id="edit-class-max-students"
+                  type="text"
+                  value={classFormData.max_students}
+                  onChange={(e) => setClassFormData({ ...classFormData, max_students: e.target.value })}
+                  placeholder="e.g., 30"
+                />
+                <p className="text-xs text-muted-foreground">Maximum number of students allowed in this class</p>
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="edit-class-description">Description</Label>
+                <Textarea
+                  id="edit-class-description"
+                  value={classFormData.description}
+                  onChange={(e) => setClassFormData({ ...classFormData, description: e.target.value })}
+                  placeholder="Class description and focus areas..."
+                  rows={3}
+                />
+              </div>
+
+              {/* Access Management Section */}
+              <div className="space-y-4 md:col-span-2">
+                <div className="space-y-2">
+                  <Label>Manage Teachers</Label>
+                  <div className="space-y-2">
+                    <MultiSelect
+                      options={classTeachers.map(teacher => ({
+                        value: teacher.id,
+                        label: teacher.name,
+                        subLabel: teacher.email,
+                        imageUrl: teacher.avatar_url
+                      }))}
+                      onValueChange={(selectedIds) => handleClassMembersChange('teachers', selectedIds)}
+                      value={classFormData.teachers}
+                      placeholder="Search and select teachers..."
+                      className="min-h-[44px] border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Teachers can edit course content, manage students, and view analytics</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Manage Students</Label>
+                  <div className="space-y-2">
+                    <MultiSelect
+                      options={classStudents.map(student => ({
+                        value: student.id,
+                        label: student.name,
+                        subLabel: student.email,
+                        imageUrl: student.avatar_url
+                      }))}
+                      onValueChange={(selectedIds) => handleClassMembersChange('students', selectedIds)}
+                      value={classFormData.students}
+                      placeholder="Search and select students..."
+                      className={`min-h-[44px] border-2 rounded-xl bg-white dark:bg-gray-800 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300 ${
+                        isStudentLimitExceeded() 
+                          ? 'border-red-300 dark:border-red-600' 
+                          : 'border-gray-200 dark:border-gray-700'
+                      }`}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Students can access course content, submit assignments, and track progress</p>
+                    {getStudentLimitStatus() && (
+                      <p className={`text-xs ${getStudentLimitStatus()?.className}`}>
+                        {getStudentLimitStatus()?.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="flex-shrink-0">
+            <Button variant="outline" onClick={() => setIsClassEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleClassEdit} className="bg-blue-600 hover:bg-blue-700">
+              Update Class
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Class Dialog */}
+      <Dialog open={isClassViewDialogOpen} onOpenChange={setIsClassViewDialogOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Class Details</DialogTitle>
+            <DialogDescription>
+              View detailed information about {viewingClass?.name}.
+            </DialogDescription>
+          </DialogHeader>
+          {viewingClass && (
+            <div className="space-y-6 py-4">
+              {/* Basic Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Class Name</Label>
+                    <p className="text-lg font-semibold">{viewingClass.name}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Class Code</Label>
+                    <div className="mt-1">
+                      <Badge variant="outline" className="text-sm">{viewingClass.code}</Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Grade</Label>
+                    <div className="mt-1">{getGradeBadge(viewingClass.grade)}</div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">School</Label>
+                    <p className="text-lg">{viewingClass.school}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Max Students</Label>
+                    <p className="text-lg font-semibold text-blue-600">{viewingClass.max_students || 30}</p>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Board</Label>
+                    <div className="mt-1">
+                      <Badge variant="outline" className="text-sm">{viewingClass.board}</Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Created</Label>
+                    <p className="text-sm text-muted-foreground">{new Date(viewingClass.created_at).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Last Updated</Label>
+                    <p className="text-sm text-muted-foreground">{new Date(viewingClass.updated_at).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Description */}
+              {viewingClass.description && (
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Description</Label>
+                  <p className="text-sm mt-1 p-3 bg-gray-50 dark:bg-gray-800 rounded-md">{viewingClass.description}</p>
+                </div>
+              )}
+
+              {/* Members Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Teachers ({viewingClass.teachers.length})</Label>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {viewingClass.teachers.length > 0 ? (
+                      viewingClass.teachers.map((teacher, index) => (
+                        <Badge key={index} variant="default" className="bg-green-600 text-white">
+                          {teacher.name}
+                        </Badge>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground italic">No teachers assigned</p>
+                    )}
+                  </div>
+                </div>
+                
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Students ({viewingClass.students.length})</Label>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {viewingClass.students.length > 0 ? (
+                      viewingClass.students.map((student, index) => (
+                        <Badge key={index} variant="outline" className="border-blue-300 text-blue-700">
+                          {student.name}
+                        </Badge>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground italic">No students enrolled</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsClassViewDialogOpen(false)}>
+              Close
+            </Button>
+            {viewingClass && (
+              <Button onClick={() => {
+                setIsClassViewDialogOpen(false);
+                openClassEditDialog(viewingClass);
+              }} className="bg-blue-600 hover:bg-blue-700">
+                Edit Class
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* School Removal Confirmation Dialog */}
+      <AlertDialog open={isSchoolRemovalDialogOpen} onOpenChange={setIsSchoolRemovalDialogOpen}>
+        <AlertDialogContent className="max-w-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-blue-600">
+              <AlertTriangle className="h-5 w-5" />
+              Confirm School Removal
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-600 dark:text-gray-300">
+              {affectedClasses.length === 0 && affectedTeachers.length === 0 && affectedStudents.length === 0 
+                ? "Removing these schools will not affect any classes, teachers, or students in the course access tab."
+                : "Removing these schools will also remove the associated classes, teachers, and students from the course access tab."
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className="max-h-[60vh] overflow-y-auto space-y-4 pr-2">
+            {/* Schools to be removed */}
+            <div>
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                Schools to be removed ({schoolsToRemove.length}):
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {schoolsToRemove.map(schoolId => {
+                  const school = schools.find(s => s.id === schoolId);
+                  return school ? (
+                    <Badge key={schoolId} variant="destructive" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                      {school.name}
+                    </Badge>
+                  ) : null;
+                })}
+              </div>
+            </div>
+
+            {/* Affected classes */}
+            {affectedClasses.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Classes that will be removed ({affectedClasses.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto space-y-1">
+                  {affectedClasses.map(cls => (
+                    <div key={cls.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">{cls.name}</span>
+                      <Badge variant="outline" className="text-xs">
+                        {cls.teachers.length} teachers, {cls.students.length} students
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Affected teachers */}
+            {affectedTeachers.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Teachers that will be removed ({affectedTeachers.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto flex flex-wrap gap-2">
+                  {affectedTeachers.map(teacher => (
+                    <Badge key={teacher.id} variant="outline" className="bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400 border-orange-200 dark:border-orange-700">
+                      {teacher.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Affected students */}
+            {affectedStudents.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Students that will be removed ({affectedStudents.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto flex flex-wrap gap-2">
+                  {affectedStudents.map(student => (
+                    <Badge key={student.id} variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200 dark:border-blue-700">
+                      {student.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Safe removal message (only shown when no data is affected) */}
+            {affectedClasses.length === 0 && affectedTeachers.length === 0 && affectedStudents.length === 0 && (
+              <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-md">
+                <p className="text-sm text-green-800 dark:text-green-200">
+                  <strong>Safe to remove:</strong> No classes, teachers, or students will be affected by removing these schools.
+                </p>
+              </div>
+            )}
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelSchoolRemoval}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmSchoolRemoval}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {affectedClasses.length === 0 && affectedTeachers.length === 0 && affectedStudents.length === 0 
+                ? "Remove Schools" 
+                : "Remove Schools & Associated Data"
+              }
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Country Removal Confirmation Dialog */}
+      <AlertDialog open={isCountryRemovalDialogOpen} onOpenChange={setIsCountryRemovalDialogOpen}>
+        <AlertDialogContent className="max-w-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-blue-600">
+              <AlertTriangle className="h-5 w-5" />
+              Confirm Country Removal
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-600 dark:text-gray-300">
+              {affectedRegions.length === 0 && affectedCities.length === 0 && affectedProjects.length === 0 && affectedBoards.length === 0 && affectedSchools.length === 0 && affectedClassesFromHierarchy.length === 0
+                ? "Removing these countries will not affect any regions, cities, projects, boards, schools, classes, teachers, or students in the course access tab."
+                : "Removing these countries will also remove the associated regions, cities, projects, boards, schools, classes, teachers, and students from the course access tab."
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className="max-h-[60vh] overflow-y-auto space-y-4 pr-2">
+            {/* Countries to be removed */}
+            <div>
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                Countries to be removed ({countriesToRemove.length}):
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {countriesToRemove.map(countryId => {
+                  const country = countries.find(c => c.id === countryId);
+                  return country ? (
+                    <Badge key={countryId} variant="destructive" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                      {country.name}
+                    </Badge>
+                  ) : null;
+                })}
+              </div>
+            </div>
+
+            {/* Affected regions */}
+            {affectedRegions.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Regions that will be removed ({affectedRegions.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto flex flex-wrap gap-2">
+                  {affectedRegions.map(region => (
+                    <Badge key={region.id} variant="outline" className="bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400 border-purple-200 dark:border-purple-700">
+                      {region.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Affected cities */}
+            {affectedCities.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Cities that will be removed ({affectedCities.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto flex flex-wrap gap-2">
+                  {affectedCities.map(city => (
+                    <Badge key={city.id} variant="outline" className="bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400 border-indigo-200 dark:border-indigo-700">
+                      {city.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Affected projects */}
+            {affectedProjects.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Projects that will be removed ({affectedProjects.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto flex flex-wrap gap-2">
+                  {affectedProjects.map(project => (
+                    <Badge key={project.id} variant="outline" className="bg-teal-50 text-teal-700 dark:bg-teal-900/20 dark:text-teal-400 border-teal-200 dark:border-teal-700">
+                      {project.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Affected boards */}
+            {affectedBoards.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Boards that will be removed ({affectedBoards.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto flex flex-wrap gap-2">
+                  {affectedBoards.map(board => (
+                    <Badge key={board.id} variant="outline" className="bg-cyan-50 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-400 border-cyan-200 dark:border-cyan-700">
+                      {board.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Affected schools */}
+            {affectedSchools.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Schools that will be removed ({affectedSchools.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto flex flex-wrap gap-2">
+                  {affectedSchools.map(school => (
+                    <Badge key={school.id} variant="outline" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 border-emerald-200 dark:border-emerald-700">
+                      {school.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Affected classes */}
+            {affectedClassesFromHierarchy.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Classes that will be removed ({affectedClassesFromHierarchy.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto space-y-1">
+                  {affectedClassesFromHierarchy.map(cls => (
+                    <div key={cls.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">{cls.name}</span>
+                      <Badge variant="outline" className="text-xs">
+                        {cls.teachers.length} teachers, {cls.students.length} students
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Affected teachers */}
+            {affectedTeachersFromHierarchy.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Teachers that will be removed ({affectedTeachersFromHierarchy.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto flex flex-wrap gap-2">
+                  {affectedTeachersFromHierarchy.map(teacher => (
+                    <Badge key={teacher.id} variant="outline" className="bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400 border-orange-200 dark:border-orange-700">
+                      {teacher.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Affected students */}
+            {affectedStudentsFromHierarchy.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Students that will be removed ({affectedStudentsFromHierarchy.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto flex flex-wrap gap-2">
+                  {affectedStudentsFromHierarchy.map(student => (
+                    <Badge key={student.id} variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200 dark:border-blue-700">
+                      {student.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Safe removal message (only shown when no data is affected) */}
+            {affectedRegions.length === 0 && affectedCities.length === 0 && affectedProjects.length === 0 && affectedBoards.length === 0 && affectedSchools.length === 0 && affectedClassesFromHierarchy.length === 0 && affectedTeachersFromHierarchy.length === 0 && affectedStudentsFromHierarchy.length === 0 && (
+              <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-md">
+                <p className="text-sm text-green-800 dark:text-green-200">
+                  <strong>Safe to remove:</strong> No regions, cities, projects, boards, schools, classes, teachers, or students will be affected by removing these countries.
+                </p>
+              </div>
+            )}
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelCountryRemoval}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmCountryRemoval}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {affectedRegions.length === 0 && affectedCities.length === 0 && affectedProjects.length === 0 && affectedBoards.length === 0 && affectedSchools.length === 0 && affectedClassesFromHierarchy.length === 0
+                ? "Remove Countries" 
+                : "Remove Countries & Associated Data"
+              }
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Region Removal Confirmation Dialog */}
+      <AlertDialog open={isRegionRemovalDialogOpen} onOpenChange={setIsRegionRemovalDialogOpen}>
+        <AlertDialogContent className="max-w-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-blue-600">
+              <AlertTriangle className="h-5 w-5" />
+              Confirm Region Removal
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-600 dark:text-gray-300">
+              {affectedCitiesFromRegion.length === 0 && affectedProjectsFromRegion.length === 0 && affectedBoardsFromRegion.length === 0 && affectedSchoolsFromRegion.length === 0 && affectedClassesFromRegion.length === 0
+                ? "Removing these regions will not affect any cities, projects, boards, schools, classes, teachers, or students in the course access tab."
+                : "Removing these regions will also remove the associated cities, projects, boards, schools, classes, teachers, and students from the course access tab."
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className="max-h-[60vh] overflow-y-auto space-y-4 pr-2">
+            {/* Regions to be removed */}
+            <div>
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                Regions to be removed ({regionsToRemove.length}):
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {regionsToRemove.map(regionId => {
+                  const region = regions.find(r => r.id === regionId);
+                  return region ? (
+                    <Badge key={regionId} variant="destructive" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                      {region.name}
+                    </Badge>
+                  ) : null;
+                })}
+              </div>
+            </div>
+
+            {/* Affected cities */}
+            {affectedCitiesFromRegion.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Cities that will be removed ({affectedCitiesFromRegion.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto flex flex-wrap gap-2">
+                  {affectedCitiesFromRegion.map(city => (
+                    <Badge key={city.id} variant="outline" className="bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400 border-indigo-200 dark:border-indigo-700">
+                      {city.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Affected projects */}
+            {affectedProjectsFromRegion.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Projects that will be removed ({affectedProjectsFromRegion.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto flex flex-wrap gap-2">
+                  {affectedProjectsFromRegion.map(project => (
+                    <Badge key={project.id} variant="outline" className="bg-teal-50 text-teal-700 dark:bg-teal-900/20 dark:text-teal-400 border-teal-200 dark:border-teal-700">
+                      {project.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Affected boards */}
+            {affectedBoardsFromRegion.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Boards that will be removed ({affectedBoardsFromRegion.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto flex flex-wrap gap-2">
+                  {affectedBoardsFromRegion.map(board => (
+                    <Badge key={board.id} variant="outline" className="bg-cyan-50 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-400 border-cyan-200 dark:border-cyan-700">
+                      {board.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Affected schools */}
+            {affectedSchoolsFromRegion.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Schools that will be removed ({affectedSchoolsFromRegion.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto flex flex-wrap gap-2">
+                  {affectedSchoolsFromRegion.map(school => (
+                    <Badge key={school.id} variant="outline" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 border-emerald-200 dark:border-emerald-700">
+                      {school.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Affected classes */}
+            {affectedClassesFromRegion.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Classes that will be removed ({affectedClassesFromRegion.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto space-y-1">
+                  {affectedClassesFromRegion.map(cls => (
+                    <div key={cls.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">{cls.name}</span>
+                      <Badge variant="outline" className="text-xs">
+                        {cls.teachers.length} teachers, {cls.students.length} students
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Affected teachers */}
+            {affectedTeachersFromRegion.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Teachers that will be removed ({affectedTeachersFromRegion.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto flex flex-wrap gap-2">
+                  {affectedTeachersFromRegion.map(teacher => (
+                    <Badge key={teacher.id} variant="outline" className="bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400 border-orange-200 dark:border-orange-700">
+                      {teacher.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Affected students */}
+            {affectedStudentsFromRegion.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Students that will be removed ({affectedStudentsFromRegion.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto flex flex-wrap gap-2">
+                  {affectedStudentsFromRegion.map(student => (
+                    <Badge key={student.id} variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200 dark:border-blue-700">
+                      {student.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Safe removal message (only shown when no data is affected) */}
+            {affectedCitiesFromRegion.length === 0 && affectedProjectsFromRegion.length === 0 && affectedBoardsFromRegion.length === 0 && affectedSchoolsFromRegion.length === 0 && affectedClassesFromRegion.length === 0 && affectedTeachersFromRegion.length === 0 && affectedStudentsFromRegion.length === 0 && (
+              <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-md">
+                <p className="text-sm text-green-800 dark:text-green-200">
+                  <strong>Safe to remove:</strong> No cities, projects, boards, schools, classes, teachers, or students will be affected by removing these regions.
+                </p>
+              </div>
+            )}
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelRegionRemoval}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmRegionRemoval}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {affectedCitiesFromRegion.length === 0 && affectedProjectsFromRegion.length === 0 && affectedBoardsFromRegion.length === 0 && affectedSchoolsFromRegion.length === 0 && affectedClassesFromRegion.length === 0
+                ? "Remove Regions" 
+                : "Remove Regions & Associated Data"
+              }
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* City Removal Confirmation Dialog */}
+      <AlertDialog open={isCityRemovalDialogOpen} onOpenChange={setIsCityRemovalDialogOpen}>
+        <AlertDialogContent className="max-w-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-blue-600">
+              <AlertTriangle className="h-5 w-5" />
+              Confirm City Removal
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-600 dark:text-gray-300">
+              {affectedProjectsFromCity.length === 0 && affectedBoardsFromCity.length === 0 && affectedSchoolsFromCity.length === 0 && affectedClassesFromCity.length === 0
+                ? "Removing these cities will not affect any projects, boards, schools, classes, teachers, or students in the course access tab."
+                : "Removing these cities will also remove the associated projects, boards, schools, classes, teachers, and students from the course access tab."
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className="max-h-[60vh] overflow-y-auto space-y-4 pr-2">
+            {/* Cities to be removed */}
+            <div>
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                Cities to be removed ({citiesToRemove.length}):
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {citiesToRemove.map(cityId => {
+                  const city = cities.find(c => c.id === cityId);
+                  return city ? (
+                    <Badge key={cityId} variant="destructive" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                      {city.name}
+                    </Badge>
+                  ) : null;
+                })}
+              </div>
+            </div>
+
+            {/* Affected projects */}
+            {affectedProjectsFromCity.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Projects that will be removed ({affectedProjectsFromCity.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto flex flex-wrap gap-2">
+                  {affectedProjectsFromCity.map(project => (
+                    <Badge key={project.id} variant="outline" className="bg-teal-50 text-teal-700 dark:bg-teal-900/20 dark:text-teal-400 border-teal-200 dark:border-teal-700">
+                      {project.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Affected boards */}
+            {affectedBoardsFromCity.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Boards that will be removed ({affectedBoardsFromCity.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto flex flex-wrap gap-2">
+                  {affectedBoardsFromCity.map(board => (
+                    <Badge key={board.id} variant="outline" className="bg-cyan-50 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-400 border-cyan-200 dark:border-cyan-700">
+                      {board.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Affected schools */}
+            {affectedSchoolsFromCity.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Schools that will be removed ({affectedSchoolsFromCity.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto flex flex-wrap gap-2">
+                  {affectedSchoolsFromCity.map(school => (
+                    <Badge key={school.id} variant="outline" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 border-emerald-200 dark:border-emerald-700">
+                      {school.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Affected classes */}
+            {affectedClassesFromCity.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Classes that will be removed ({affectedClassesFromCity.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto space-y-1">
+                  {affectedClassesFromCity.map(cls => (
+                    <div key={cls.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">{cls.name}</span>
+                      <Badge variant="outline" className="text-xs">
+                        {cls.teachers.length} teachers, {cls.students.length} students
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Affected teachers */}
+            {affectedTeachersFromCity.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Teachers that will be removed ({affectedTeachersFromCity.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto flex flex-wrap gap-2">
+                  {affectedTeachersFromCity.map(teacher => (
+                    <Badge key={teacher.id} variant="outline" className="bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400 border-orange-200 dark:border-orange-700">
+                      {teacher.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Affected students */}
+            {affectedStudentsFromCity.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Students that will be removed ({affectedStudentsFromCity.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto flex flex-wrap gap-2">
+                  {affectedStudentsFromCity.map(student => (
+                    <Badge key={student.id} variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200 dark:border-blue-700">
+                      {student.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Safe removal message (only shown when no data is affected) */}
+            {affectedProjectsFromCity.length === 0 && affectedBoardsFromCity.length === 0 && affectedSchoolsFromCity.length === 0 && affectedClassesFromCity.length === 0 && affectedTeachersFromCity.length === 0 && affectedStudentsFromCity.length === 0 && (
+              <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-md">
+                <p className="text-sm text-green-800 dark:text-green-200">
+                  <strong>Safe to remove:</strong> No projects, boards, schools, classes, teachers, or students will be affected by removing these cities.
+                </p>
+              </div>
+            )}
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelCityRemoval}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmCityRemoval}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {affectedProjectsFromCity.length === 0 && affectedBoardsFromCity.length === 0 && affectedSchoolsFromCity.length === 0 && affectedClassesFromCity.length === 0
+                ? "Remove Cities" 
+                : "Remove Cities & Associated Data"
+              }
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Project Removal Confirmation Dialog */}
+      <AlertDialog open={isProjectRemovalDialogOpen} onOpenChange={setIsProjectRemovalDialogOpen}>
+        <AlertDialogContent className="max-w-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-blue-600">
+              <AlertTriangle className="h-5 w-5" />
+              Confirm Project Removal
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-600 dark:text-gray-300">
+              {affectedBoardsFromProject.length === 0 && affectedSchoolsFromProject.length === 0 && affectedClassesFromProject.length === 0
+                ? "Removing these projects will not affect any boards, schools, classes, teachers, or students in the course access tab."
+                : "Removing these projects will also remove the associated boards, schools, classes, teachers, and students from the course access tab."
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className="max-h-[60vh] overflow-y-auto space-y-4 pr-2">
+            {/* Projects to be removed */}
+            <div>
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                Projects to be removed ({projectsToRemove.length}):
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {projectsToRemove.map(projectId => {
+                  const project = projects.find(p => p.id === projectId);
+                  return project ? (
+                    <Badge key={projectId} variant="destructive" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                      {project.name}
+                    </Badge>
+                  ) : null;
+                })}
+              </div>
+            </div>
+
+            {/* Affected boards */}
+            {affectedBoardsFromProject.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Boards that will be removed ({affectedBoardsFromProject.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto flex flex-wrap gap-2">
+                  {affectedBoardsFromProject.map(board => (
+                    <Badge key={board.id} variant="outline" className="bg-cyan-50 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-400 border-cyan-200 dark:border-cyan-700">
+                      {board.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Affected schools */}
+            {affectedSchoolsFromProject.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Schools that will be removed ({affectedSchoolsFromProject.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto flex flex-wrap gap-2">
+                  {affectedSchoolsFromProject.map(school => (
+                    <Badge key={school.id} variant="outline" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 border-emerald-200 dark:border-emerald-700">
+                      {school.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Affected classes */}
+            {affectedClassesFromProject.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Classes that will be removed ({affectedClassesFromProject.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto space-y-1">
+                  {affectedClassesFromProject.map(cls => (
+                    <div key={cls.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">{cls.name}</span>
+                      <Badge variant="outline" className="text-xs">
+                        {cls.teachers.length} teachers, {cls.students.length} students
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Affected teachers */}
+            {affectedTeachersFromProject.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Teachers that will be removed ({affectedTeachersFromProject.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto flex flex-wrap gap-2">
+                  {affectedTeachersFromProject.map(teacher => (
+                    <Badge key={teacher.id} variant="outline" className="bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400 border-orange-200 dark:border-orange-700">
+                      {teacher.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Affected students */}
+            {affectedStudentsFromProject.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Students that will be removed ({affectedStudentsFromProject.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto flex flex-wrap gap-2">
+                  {affectedStudentsFromProject.map(student => (
+                    <Badge key={student.id} variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200 dark:border-blue-700">
+                      {student.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Safe removal message (only shown when no data is affected) */}
+            {affectedBoardsFromProject.length === 0 && affectedSchoolsFromProject.length === 0 && affectedClassesFromProject.length === 0 && affectedTeachersFromProject.length === 0 && affectedStudentsFromProject.length === 0 && (
+              <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-md">
+                <p className="text-sm text-green-800 dark:text-green-200">
+                  <strong>Safe to remove:</strong> No boards, schools, classes, teachers, or students will be affected by removing these projects.
+                </p>
+              </div>
+            )}
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelProjectRemoval}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmProjectRemoval}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {affectedBoardsFromProject.length === 0 && affectedSchoolsFromProject.length === 0 && affectedClassesFromProject.length === 0
+                ? "Remove Projects" 
+                : "Remove Projects & Associated Data"
+              }
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Board Removal Confirmation Dialog */}
+      <AlertDialog open={isBoardRemovalDialogOpen} onOpenChange={setIsBoardRemovalDialogOpen}>
+        <AlertDialogContent className="max-w-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-blue-600">
+              <AlertTriangle className="h-5 w-5" />
+              Confirm Board Removal
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-600 dark:text-gray-300">
+              {affectedSchoolsFromBoard.length === 0 && affectedClassesFromBoard.length === 0
+                ? "Removing these boards will not affect any schools, classes, teachers, or students in the course access tab."
+                : "Removing these boards will also remove the associated schools, classes, teachers, and students from the course access tab."
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className="max-h-[60vh] overflow-y-auto space-y-4 pr-2">
+            {/* Boards to be removed */}
+            <div>
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                Boards to be removed ({boardsToRemove.length}):
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {boardsToRemove.map(boardId => {
+                  const board = boards.find(b => b.id === boardId);
+                  return board ? (
+                    <Badge key={boardId} variant="destructive" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                      {board.name}
+                    </Badge>
+                  ) : null;
+                })}
+              </div>
+            </div>
+
+            {/* Affected schools */}
+            {affectedSchoolsFromBoard.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Schools that will be removed ({affectedSchoolsFromBoard.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto flex flex-wrap gap-2">
+                  {affectedSchoolsFromBoard.map(school => (
+                    <Badge key={school.id} variant="outline" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 border-emerald-200 dark:border-emerald-700">
+                      {school.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Affected classes */}
+            {affectedClassesFromBoard.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Classes that will be removed ({affectedClassesFromBoard.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto space-y-1">
+                  {affectedClassesFromBoard.map(cls => (
+                    <div key={cls.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">{cls.name}</span>
+                      <Badge variant="outline" className="text-xs">
+                        {cls.teachers.length} teachers, {cls.students.length} students
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Affected teachers */}
+            {affectedTeachersFromBoard.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Teachers that will be removed ({affectedTeachersFromBoard.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto flex flex-wrap gap-2">
+                  {affectedTeachersFromBoard.map(teacher => (
+                    <Badge key={teacher.id} variant="outline" className="bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400 border-orange-200 dark:border-orange-700">
+                      {teacher.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Affected students */}
+            {affectedStudentsFromBoard.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Students that will be removed ({affectedStudentsFromBoard.length}):
+                </h4>
+                <div className="max-h-32 overflow-y-auto flex flex-wrap gap-2">
+                  {affectedStudentsFromBoard.map(student => (
+                    <Badge key={student.id} variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200 dark:border-blue-700">
+                      {student.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Safe removal message (only shown when no data is affected) */}
+            {affectedSchoolsFromBoard.length === 0 && affectedClassesFromBoard.length === 0 && affectedTeachersFromBoard.length === 0 && affectedStudentsFromBoard.length === 0 && (
+              <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-md">
+                <p className="text-sm text-green-800 dark:text-green-200">
+                  <strong>Safe to remove:</strong> No schools, classes, teachers, or students will be affected by removing these boards.
+                </p>
+              </div>
+            )}
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelBoardRemoval}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmBoardRemoval}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {affectedSchoolsFromBoard.length === 0 && affectedClassesFromBoard.length === 0
+                ? "Remove Boards" 
+                : "Remove Boards & Associated Data"
+              }
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
     </div>
   );
