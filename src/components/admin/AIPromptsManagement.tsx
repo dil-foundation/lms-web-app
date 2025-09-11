@@ -183,7 +183,7 @@ const AIPromptsManagement: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">AI Prompts Management</h1>
           <p className="text-muted-foreground">
-            Manage dynamic AI prompts for IRIS - No more hardcoded patterns!
+            Manage dynamic AI prompts for the AI Assistant - No more hardcoded patterns!
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -298,7 +298,7 @@ const AIPromptsManagement: React.FC = () => {
               <p className="text-blue-700 text-sm">
                 This system implements ChatGPT's suggestion for dynamic AI prompt management. 
                 Prompts are stored in the database and can be updated without code deployment. 
-                IRIS now uses true AI intelligence instead of hardcoded pattern matching.
+                The AI Assistant now uses true AI intelligence instead of hardcoded pattern matching.
               </p>
             </div>
           </div>

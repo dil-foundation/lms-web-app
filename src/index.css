@@ -14,6 +14,47 @@
   display: none;  /* Safari and Chrome */
 }
 
+/* Custom scrollbar styles */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thumb-gray-300::-webkit-scrollbar-thumb {
+  background-color: rgb(209 213 219);
+  border-radius: 3px;
+}
+
+.scrollbar-track-gray-100::-webkit-scrollbar-track {
+  background-color: rgb(243 244 246);
+  border-radius: 3px;
+}
+
+.scrollbar-thumb-gray-300:hover::-webkit-scrollbar-thumb,
+.hover\:scrollbar-thumb-gray-400:hover::-webkit-scrollbar-thumb {
+  background-color: rgb(156 163 175);
+}
+
+/* Dark mode scrollbar styles */
+@media (prefers-color-scheme: dark) {
+  .scrollbar-thumb-gray-300::-webkit-scrollbar-thumb {
+    background-color: rgb(75 85 99);
+  }
+  
+  .scrollbar-track-gray-100::-webkit-scrollbar-track {
+    background-color: rgb(31 41 55);
+  }
+  
+  .scrollbar-thumb-gray-300:hover::-webkit-scrollbar-thumb,
+  .hover\:scrollbar-thumb-gray-400:hover::-webkit-scrollbar-thumb {
+    background-color: rgb(107 114 128);
+  }
+}
+
 /* AI Assistant Pulsing Animation */
 @keyframes ai-pulse {
   0% {

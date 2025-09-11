@@ -69,7 +69,7 @@ export const IRIS: React.FC<IRISProps> = ({ userProfile }) => {
     {
       id: '1',
       type: 'assistant',
-      content: `Hello ${userProfile?.first_name || 'Administrator'}! I'm IRIS (Intelligent Response & Insight System), your AI-powered platform management assistant. I'm here to help you with user analytics, course management, system optimization, and comprehensive insights. What would you like assistance with today?`,
+      content: `Hello ${userProfile?.first_name || 'Administrator'}! I'm your AI-powered platform management assistant. I'm here to help you with user analytics, course management, system optimization, and comprehensive insights. The system is currently being updated with new functionality.`,
       timestamp: new Date(),
       category: 'general',
       suggestions: [
@@ -136,173 +136,7 @@ export const IRIS: React.FC<IRISProps> = ({ userProfile }) => {
     }
   ];
 
-  const syntheticResponses: Record<string, string> = {
-    'user analytics': `Here's your user analytics overview:
-
-📊 **User Growth Trends**
-• Total Users: 2,847 (+12% this month)
-• Active Users (30 days): 1,923 (67.6%)
-• New Registrations: 342 this week
-• User Retention Rate: 78.3%
-
-🎯 **Engagement Metrics**
-• Average Session Duration: 24 minutes
-• Course Completion Rate: 68.4%
-• Discussion Participation: 45.2%
-• Mobile Usage: 62% of total traffic
-
-📈 **Top Performing Areas**
-• AI Learning Module: 89% completion rate
-• Discussion Forums: High engagement
-• Assessment Tools: 92% satisfaction
-
-💡 **Recommendations**
-• Focus on mobile optimization (62% of users)
-• Implement gamification for course completion
-• Expand AI learning features based on high engagement`,
-
-    'course management': `Course Management Insights:
-
-📚 **Course Performance**
-• Total Courses: 47 active courses
-• Average Completion Rate: 68.4%
-• Most Popular: "AI-Powered Learning Fundamentals"
-• Least Engaged: "Advanced Analytics" (needs review)
-
-🎯 **Content Quality Metrics**
-• Video Content: 4.2/5 average rating
-• Interactive Elements: 87% completion rate
-• Assessment Accuracy: 94.2%
-• Student Feedback: 4.6/5 overall
-
-🔧 **Management Recommendations**
-• Update outdated course materials (3 courses flagged)
-• Add more interactive elements to low-engagement courses
-• Implement adaptive learning paths
-• Consider micro-learning modules for better retention
-
-📊 **Instructor Performance**
-• Top Instructors: Dr. Sarah Chen, Prof. Michael Rodriguez
-• Average Response Time: 4.2 hours
-• Student Satisfaction: 4.7/5`,
-
-    'system health': `System Health Report:
-
-✅ **Overall Status: HEALTHY**
-• Uptime: 99.97% (last 30 days)
-• Response Time: 1.2s average
-• Error Rate: 0.03%
-• Database Performance: Optimal
-
-🔍 **Performance Metrics**
-• Server Load: 34% (normal range)
-• Memory Usage: 67% (healthy)
-• Storage: 78% utilized
-• CDN Performance: 98.5% cache hit rate
-
-⚠️ **Attention Areas**
-• Database backup scheduled for tonight
-• SSL certificate expires in 45 days
-• Consider scaling storage (78% full)
-
-🚀 **Optimization Opportunities**
-• Implement Redis caching for better performance
-• Enable Gzip compression for static assets
-• Consider CDN expansion for global users`,
-
-    'security overview': `Security Status Report:
-
-🔒 **Security Score: 94/100**
-
-✅ **Active Protections**
-• Multi-factor authentication: 89% adoption
-• SSL/TLS encryption: Active
-• Rate limiting: Configured
-• SQL injection protection: Active
-• XSS protection: Enabled
-
-📊 **Security Metrics**
-• Failed login attempts: 23 (last 24h)
-• Suspicious activities: 2 (investigated)
-• Security scans: All passed
-• Vulnerability assessments: Up to date
-
-🛡️ **Recommendations**
-• Enable advanced threat detection
-• Implement automated security monitoring
-• Schedule quarterly security audits
-• Update security policies documentation
-
-🔍 **Recent Security Events**
-• 2 blocked brute force attempts
-• 1 suspicious API access (resolved)
-• All systems operating normally`,
-
-    'generate report': `Comprehensive Platform Report:
-
-📊 **Executive Summary**
-• Platform Status: Excellent
-• User Growth: +12% month-over-month
-• System Performance: 99.97% uptime
-• Security Score: 94/100
-
-👥 **User Analytics**
-• Total Users: 2,847
-• Active Users: 1,923 (67.6%)
-• New Registrations: 342/week
-• Retention Rate: 78.3%
-
-📚 **Course Performance**
-• Total Courses: 47
-• Completion Rate: 68.4%
-• Student Satisfaction: 4.6/5
-• Instructor Performance: 4.7/5
-
-🔧 **System Metrics**
-• Uptime: 99.97%
-• Response Time: 1.2s
-• Error Rate: 0.03%
-• Storage: 78% utilized
-
-💡 **Key Recommendations**
-1. Focus on mobile optimization
-2. Implement gamification features
-3. Expand AI learning capabilities
-4. Schedule security audit
-5. Plan storage expansion`,
-
-    'optimization tips': `AI-Powered Optimization Recommendations:
-
-🚀 **Performance Optimizations**
-• Implement lazy loading for course content
-• Enable browser caching for static assets
-• Optimize database queries (3 slow queries identified)
-• Consider implementing a CDN for global users
-
-📱 **Mobile Experience**
-• 62% of users access via mobile
-• Optimize touch interactions
-• Implement progressive web app features
-• Reduce mobile page load times
-
-🎯 **User Experience**
-• Add personalized learning paths
-• Implement smart notifications
-• Create interactive course previews
-• Add social learning features
-
-📊 **Analytics & Insights**
-• Set up advanced user behavior tracking
-• Implement A/B testing framework
-• Create predictive analytics for course success
-• Add real-time dashboard updates
-
-🔧 **Technical Improvements**
-• Implement microservices architecture
-• Add automated testing pipeline
-• Set up monitoring and alerting
-• Consider containerization for scalability`
-  };
+  // Synthetic responses removed - ready for new implementation
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -326,43 +160,25 @@ export const IRIS: React.FC<IRISProps> = ({ userProfile }) => {
     setInputValue('');
     setIsLoading(true);
 
-    // Simulate AI response with synthetic data
+    // Placeholder for new IRIS implementation
     setTimeout(() => {
-      const lowerContent = content.toLowerCase();
-      let response = '';
-
-      // Find matching response based on keywords
-      for (const [key, value] of Object.entries(syntheticResponses)) {
-        if (lowerContent.includes(key)) {
-          response = value;
-          break;
-        }
-      }
-
-      // Default response if no specific match
-      if (!response) {
-        response = `I understand you're asking about "${content}". As IRIS (Intelligent Response & Insight System), I can help you with:
-
-🔍 **User Management**: Analytics, user behavior, registration trends
-📚 **Course Management**: Performance metrics, content optimization
-📊 **Analytics & Reports**: Comprehensive platform insights
-🔒 **Security & System**: Health monitoring, security status
-⚡ **Optimization**: Performance improvements, UX enhancements
-
-Could you be more specific about what you'd like to know? I can provide detailed insights on any of these areas.`;
-      }
-
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: response,
+        content: `Thank you for your message: "${content}". 
+
+The AI assistant system is currently being reimplemented with new functionality. This placeholder response confirms that the UI is working and ready for the new implementation.
+
+🔧 **Status**: Implementation in progress
+📝 **Message received**: ${content}
+⏰ **Timestamp**: ${new Date().toLocaleString()}`,
         timestamp: new Date(),
         category: 'general'
       };
 
       setMessages(prev => [...prev, assistantMessage]);
       setIsLoading(false);
-    }, 1500);
+    }, 1000);
   };
 
   const handleQuickAction = (action: QuickAction) => {
@@ -430,7 +246,7 @@ Could you be more specific about what you'd like to know? I can provide detailed
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="chat" className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
-            IRIS Chat
+            AI Chat
           </TabsTrigger>
           <TabsTrigger value="quick-actions" className="flex items-center gap-2">
             <Zap className="h-4 w-4" />
@@ -446,7 +262,7 @@ Could you be more specific about what you'd like to know? I can provide detailed
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center gap-2">
                     <Bot className="h-5 w-5 text-primary" />
-                    IRIS Chat Interface
+                    AI Chat Interface
                   </CardTitle>
                 </CardHeader>
                                  <CardContent className="flex-1 flex flex-col p-0">
@@ -530,7 +346,7 @@ Could you be more specific about what you'd like to know? I can provide detailed
                       <Input
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
-                        placeholder="Ask IRIS anything about platform management..."
+                        placeholder="Ask about platform management..."
                         className="flex-1"
                         onKeyPress={(e) => e.key === 'Enter' && handleSendMessage(inputValue)}
                         disabled={isLoading}

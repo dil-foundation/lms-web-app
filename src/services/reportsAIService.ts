@@ -114,7 +114,7 @@ export interface ReportContext {
 }
 
 export class ReportsAIService {
-  private static readonly SYSTEM_PROMPT = `You are IRIS, an AI assistant for educational platform analytics.
+  private static readonly SYSTEM_PROMPT = `You are a Reports AI Assistant for educational platform analytics.
 
 RULES:
 - Use ONLY data from <CONTEXT>
@@ -752,7 +752,7 @@ Keep responses concise with specific metrics and recommendations.`;
       } else if (mentionsCourses) {
         return `## Course Help\n\n### Available Course Features\n- **Course Enrollment**: Browse and enroll in available courses\n- **Content Access**: View lessons, assignments, and materials\n- **Progress Tracking**: Monitor your completion status\n- **Discussions**: Participate in course forums\n\n### Getting Course Information\n- Ask me "Show me course analytics"\n- Request "What courses are available?"\n- Ask "How many students are enrolled?"\n\n### Course Management (Instructors)\n- Create and publish courses\n- Manage enrollments\n- Grade assignments and quizzes\n- Track student progress`;
       } else {
-        return `## IRIS Help Guide\n\n### What I Can Do\n- **User Analytics**: Show student, teacher, and admin information\n- **Performance Reports**: Display grades, scores, and completion rates\n- **Activity Tracking**: Monitor logins and platform usage\n- **Course Analytics**: Enrollment, completion, and engagement data\n- **AI Tutor Reports**: Learning progress and milestone tracking\n\n### How to Ask Questions\n- Be specific: "Show me today's active students"\n- Use natural language: "How many teachers do we have?"\n- Ask for comparisons: "Compare this month vs last month"\n- Request details: "Give me user performance data"\n\n### Example Queries\n- "Who logged in today?"\n- "Show me all students"\n- "What's the average quiz score?"\n- "How many courses are published?"\n- "Give me AI Tutor analytics"`;
+        return `## Reports AI Help Guide\n\n### What I Can Do\n- **User Analytics**: Show student, teacher, and admin information\n- **Performance Reports**: Display grades, scores, and completion rates\n- **Activity Tracking**: Monitor logins and platform usage\n- **Course Analytics**: Enrollment, completion, and engagement data\n- **AI Tutor Reports**: Learning progress and milestone tracking\n\n### How to Ask Questions\n- Be specific: "Show me today's active students"\n- Use natural language: "How many teachers do we have?"\n- Ask for comparisons: "Compare this month vs last month"\n- Request details: "Give me user performance data"\n\n### Example Queries\n- "Who logged in today?"\n- "Show me all students"\n- "What's the average quiz score?"\n- "How many courses are published?"\n- "Give me AI Tutor analytics"`;
       }
     }
 

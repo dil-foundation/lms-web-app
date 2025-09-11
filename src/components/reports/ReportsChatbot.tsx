@@ -17,7 +17,7 @@ import {
   FileSpreadsheet,
   ChevronDown
 } from 'lucide-react';
-import { ReportsAIService, ReportContext } from '@/services/reportsAIService';
+// ReportsAIService import removed - new implementation coming
 import { ReportExportService, ExportFormat } from '@/services/reportExportService';
 import {
   DropdownMenu,
@@ -53,7 +53,7 @@ export const ReportsChatbot: React.FC<ReportsChatbotProps> = ({
     {
       id: '1',
       type: 'assistant',
-      content: 'Hello! I\'m your Reports AI Assistant. Ask me specific questions about your platform\'s data, generate reports for any timeline, and get insights on user engagement and course performance.',
+      content: 'Hello! I\'m your Reports AI Assistant. The reporting system is being updated with new functionality.',
       timestamp: new Date()
     }
   ]);
@@ -212,16 +212,14 @@ export const ReportsChatbot: React.FC<ReportsChatbotProps> = ({
 
       console.log('📝 Sending conversation history:', conversationHistory.length, 'messages');
       
-      // Use ReportsAIService directly for consistent behavior
-      const aiResponse = await ReportsAIService.generateReportResponse(queryText, undefined, conversationHistory);
-      
+      // Placeholder for new reporting implementation
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: aiResponse.response || 'Sorry, I could not generate a response.',
+        content: `Report request received: "${queryText}"\n\nThe reporting system is being reimplemented. This placeholder confirms your request was processed.\n\n🔄 Status: Implementation in progress\n📝 Query: ${queryText}\n⏰ Time: ${new Date().toLocaleString()}`,
         timestamp: new Date(),
-        reportData: aiResponse.reportData,
-        data: aiResponse.reportData
+        reportData: null,
+        data: null
       };
 
       setMessages(prev => [...prev, assistantMessage]);
