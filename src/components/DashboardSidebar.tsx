@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { Menu, X } from 'lucide-react';
 import { getCategorizedNavigation, type UserRole } from '@/config/roleNavigation';
 import { UserProfileSection } from '@/components/sidebar/UserProfileSection';
@@ -117,52 +116,50 @@ export const DashboardSidebar = ({
 
       {/* Desktop Layout */}
       <div className="hidden md:flex min-h-full w-full">
-        <div className="w-72 flex-shrink-0">
-          <Sidebar className="border-r border-border bg-background h-full">
+        <div className="w-72 flex-shrink-0 fixed left-0 top-20 h-[calc(100vh-5rem)] bg-background border-r border-border z-40">
+          <div className="flex flex-col h-full">
             <UserProfileSection />
-            <SidebarContent>
-              {navigationCategories.map(category => (
-                <SidebarGroup key={category.title}>
-                  <SidebarGroupLabel className="mb-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{category.title}</SidebarGroupLabel>
-                  <SidebarGroupContent>
-                    <SidebarMenu>
+            <div className="flex-1 overflow-y-auto px-2 pb-4">
+              <nav className="space-y-2">
+                {navigationCategories.map(category => (
+                  <div key={category.title} className="mb-6">
+                    <div className="px-4 pt-4 pb-3">
+                      <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{category.title}</h3>
+                    </div>
+                    <div className="space-y-1">
                       {category.items.map(item => (
-                        <SidebarMenuItem key={item.path}>
-                          <SidebarMenuButton asChild>
-                            <NavLink
-                              to={item.path}
-                              end={item.path === '/dashboard'}
-                              onClick={() => setIsMobileMenuOpen(false)}
-                            >
-                              {({ isActive }) => (
-                                <div className={`flex items-center space-x-3 px-3 py-2 mx-2 rounded-lg transition-all duration-200 ${
-                                  isActive 
-                                    ? 'bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary font-medium shadow-sm' 
-                                    : 'text-foreground hover:bg-primary/10 dark:hover:bg-primary/20 hover:text-primary dark:hover:text-primary'
-                                }`}>
-                                  <item.icon className="h-5 w-5" />
-                                  <span className="font-medium">{item.title}</span>
-                                  {item.badge && (
-                                    <span className="ml-auto bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded-full">
-                                      {item.badge}
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                            </NavLink>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
+                        <NavLink
+                          key={item.path}
+                          to={item.path}
+                          end={item.path === '/dashboard'}
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className={({ isActive }) => 
+                            `flex items-center space-x-3 px-3 py-2 mx-2 rounded-lg transition-all duration-200 ${
+                              isActive 
+                                ? 'bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary font-medium shadow-sm' 
+                                : 'text-foreground hover:bg-primary/10 dark:hover:bg-primary/20 hover:text-primary dark:hover:text-primary'
+                            }`
+                          }
+                        >
+                          <item.icon className="h-5 w-5" />
+                          <span className="font-medium">{item.title}</span>
+                          {item.badge && (
+                            <span className="ml-auto bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded-full">
+                              {item.badge}
+                            </span>
+                          )}
+                        </NavLink>
                       ))}
-                    </SidebarMenu>
-                  </SidebarGroupContent>
-                </SidebarGroup>
-              ))}
-            </SidebarContent>
-          </Sidebar>
+                    </div>
+                  </div>
+                ))}
+              </nav>
+            </div>
+          </div>
         </div>
         
         {/* Desktop Main Content */}
-        <main className="flex-1 min-h-0 bg-background w-full max-w-7xl mx-auto overflow-auto">
+        <main className="flex-1 min-h-0 bg-background w-full max-w-7xl mx-auto overflow-auto ml-72">
           <div className="w-full h-full px-4 py-6">
             {children}
           </div>
