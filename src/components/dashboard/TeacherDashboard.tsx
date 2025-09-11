@@ -75,6 +75,78 @@ const chartConfig = {
   comments: { label: 'Comments', color: '#10B981' },
 };
 
+// Filter data interfaces
+interface Country {
+  id: string;
+  name: string;
+  code: string;
+}
+
+interface Region {
+  id: string;
+  name: string;
+  code: string;
+  country_id: string;
+}
+
+interface City {
+  id: string;
+  name: string;
+  code: string;
+  country_id: string;
+  region_id: string;
+}
+
+interface Project {
+  id: string;
+  name: string;
+  code: string;
+  country_id: string;
+  region_id: string;
+  city_id: string;
+}
+
+interface Board {
+  id: string;
+  name: string;
+  code: string;
+  country_id: string;
+  region_id: string;
+  city_id: string;
+  project_id: string;
+}
+
+interface School {
+  id: string;
+  name: string;
+  code: string;
+  school_type: string;
+  country_id: string;
+  region_id: string;
+  city_id: string;
+  project_id: string;
+  board_id: string;
+}
+
+interface Class {
+  id: string;
+  name: string;
+  code: string;
+  grade: string;
+  school_id: string;
+  board_id: string;
+}
+
+interface FilterState {
+  country: string;
+  region: string;
+  city: string;
+  project: string;
+  board: string;
+  school: string;
+  class: string;
+}
+
 export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -96,6 +168,37 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     excellent_students: number;
     not_started_students: number;
   } | null>(null);
+
+  // Filter data states
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [regions, setRegions] = useState<Region[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [boards, setBoards] = useState<Board[]>([]);
+  const [schools, setSchools] = useState<School[]>([]);
+  const [classes, setClasses] = useState<Class[]>([]);
+
+  // Filter loading states
+  const [filterLoading, setFilterLoading] = useState({
+    countries: false,
+    regions: false,
+    cities: false,
+    projects: false,
+    boards: false,
+    schools: false,
+    classes: false,
+  });
+
+  // Filter values state
+  const [filters, setFilters] = useState<FilterState>({
+    country: 'all',
+    region: 'all',
+    city: 'all',
+    project: 'all',
+    board: 'all',
+    school: 'all',
+    class: 'all',
+  });
 
   // Helper function to get date range based on timeRange
   const getDateRange = (range: string) => {
@@ -130,7 +233,316 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     return { startDate, endDate: now };
   };
 
+  // Filter data fetching functions
+  const fetchCountries = async () => {
+    setFilterLoading(prev => ({ ...prev, countries: true }));
+    try {
+      const { data, error } = await supabase
+        .from('countries')
+        .select('id, name, code')
+        .order('name', { ascending: true });
 
+      if (error) throw error;
+      setCountries(data || []);
+    } catch (error) {
+      console.error('Failed to fetch countries:', error);
+      toast.error('Failed to load countries');
+    } finally {
+      setFilterLoading(prev => ({ ...prev, countries: false }));
+    }
+  };
+
+  const fetchRegions = async (countryId?: string) => {
+    setFilterLoading(prev => ({ ...prev, regions: true }));
+    try {
+      let query = supabase
+        .from('regions')
+        .select('id, name, code, country_id')
+        .order('name', { ascending: true });
+
+      if (countryId && countryId !== 'all') {
+        query = query.eq('country_id', countryId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      setRegions(data || []);
+    } catch (error) {
+      console.error('Failed to fetch regions:', error);
+      toast.error('Failed to load regions');
+    } finally {
+      setFilterLoading(prev => ({ ...prev, regions: false }));
+    }
+  };
+
+  const fetchCities = async (countryId?: string, regionId?: string) => {
+    setFilterLoading(prev => ({ ...prev, cities: true }));
+    try {
+      let query = supabase
+        .from('cities')
+        .select('id, name, code, country_id, region_id')
+        .order('name', { ascending: true });
+
+      if (countryId && countryId !== 'all') {
+        query = query.eq('country_id', countryId);
+      }
+      if (regionId && regionId !== 'all') {
+        query = query.eq('region_id', regionId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      setCities(data || []);
+    } catch (error) {
+      console.error('Failed to fetch cities:', error);
+      toast.error('Failed to load cities');
+    } finally {
+      setFilterLoading(prev => ({ ...prev, cities: false }));
+    }
+  };
+
+  const fetchProjects = async (countryId?: string, regionId?: string, cityId?: string) => {
+    setFilterLoading(prev => ({ ...prev, projects: true }));
+    try {
+      let query = supabase
+        .from('projects')
+        .select('id, name, code, country_id, region_id, city_id')
+        .order('name', { ascending: true });
+
+      if (countryId && countryId !== 'all') {
+        query = query.eq('country_id', countryId);
+      }
+      if (regionId && regionId !== 'all') {
+        query = query.eq('region_id', regionId);
+      }
+      if (cityId && cityId !== 'all') {
+        query = query.eq('city_id', cityId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      setProjects(data || []);
+    } catch (error) {
+      console.error('Failed to fetch projects:', error);
+      toast.error('Failed to load projects');
+    } finally {
+      setFilterLoading(prev => ({ ...prev, projects: false }));
+    }
+  };
+
+  const fetchBoards = async (countryId?: string, regionId?: string, cityId?: string, projectId?: string) => {
+    setFilterLoading(prev => ({ ...prev, boards: true }));
+    try {
+      let query = supabase
+        .from('boards')
+        .select('id, name, code, country_id, region_id, city_id, project_id')
+        .order('name', { ascending: true });
+
+      if (countryId && countryId !== 'all') {
+        query = query.eq('country_id', countryId);
+      }
+      if (regionId && regionId !== 'all') {
+        query = query.eq('region_id', regionId);
+      }
+      if (cityId && cityId !== 'all') {
+        query = query.eq('city_id', cityId);
+      }
+      if (projectId && projectId !== 'all') {
+        query = query.eq('project_id', projectId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      setBoards(data || []);
+    } catch (error) {
+      console.error('Failed to fetch boards:', error);
+      toast.error('Failed to load boards');
+    } finally {
+      setFilterLoading(prev => ({ ...prev, boards: false }));
+    }
+  };
+
+  const fetchSchools = async (countryId?: string, regionId?: string, cityId?: string, projectId?: string, boardId?: string) => {
+    setFilterLoading(prev => ({ ...prev, schools: true }));
+    try {
+      let query = supabase
+        .from('schools')
+        .select('id, name, code, school_type, country_id, region_id, city_id, project_id, board_id')
+        .order('name', { ascending: true });
+
+      if (countryId && countryId !== 'all') {
+        query = query.eq('country_id', countryId);
+      }
+      if (regionId && regionId !== 'all') {
+        query = query.eq('region_id', regionId);
+      }
+      if (cityId && cityId !== 'all') {
+        query = query.eq('city_id', cityId);
+      }
+      if (projectId && projectId !== 'all') {
+        query = query.eq('project_id', projectId);
+      }
+      if (boardId && boardId !== 'all') {
+        query = query.eq('board_id', boardId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      setSchools(data || []);
+    } catch (error) {
+      console.error('Failed to fetch schools:', error);
+      toast.error('Failed to load schools');
+    } finally {
+      setFilterLoading(prev => ({ ...prev, schools: false }));
+    }
+  };
+
+  const fetchClasses = async (schoolId?: string, boardId?: string) => {
+    setFilterLoading(prev => ({ ...prev, classes: true }));
+    try {
+      let query = supabase
+        .from('classes')
+        .select('id, name, code, grade, school_id, board_id')
+        .order('grade', { ascending: true });
+
+      if (schoolId && schoolId !== 'all') {
+        query = query.eq('school_id', schoolId);
+      }
+      if (boardId && boardId !== 'all') {
+        query = query.eq('board_id', boardId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      setClasses(data || []);
+    } catch (error) {
+      console.error('Failed to fetch classes:', error);
+      toast.error('Failed to load classes');
+    } finally {
+      setFilterLoading(prev => ({ ...prev, classes: false }));
+    }
+  };
+
+  // Filter change handlers with cascading logic
+  const handleFilterChange = (filterType: keyof FilterState, value: string) => {
+    setFilters(prev => {
+      const newFilters = { ...prev, [filterType]: value };
+      
+      // Reset dependent filters when parent changes
+      switch (filterType) {
+        case 'country':
+          newFilters.region = 'all';
+          newFilters.city = 'all';
+          newFilters.project = 'all';
+          newFilters.board = 'all';
+          newFilters.school = 'all';
+          newFilters.class = 'all';
+          break;
+        case 'region':
+          newFilters.city = 'all';
+          newFilters.project = 'all';
+          newFilters.board = 'all';
+          newFilters.school = 'all';
+          newFilters.class = 'all';
+          break;
+        case 'city':
+          newFilters.project = 'all';
+          newFilters.board = 'all';
+          newFilters.school = 'all';
+          newFilters.class = 'all';
+          break;
+        case 'project':
+          newFilters.board = 'all';
+          newFilters.school = 'all';
+          newFilters.class = 'all';
+          break;
+        case 'board':
+          newFilters.school = 'all';
+          newFilters.class = 'all';
+          break;
+        case 'school':
+          newFilters.class = 'all';
+          break;
+      }
+      
+      return newFilters;
+    });
+
+    // Fetch dependent data based on the change
+    switch (filterType) {
+      case 'country':
+        fetchRegions(value !== 'all' ? value : undefined);
+        fetchCities(value !== 'all' ? value : undefined);
+        fetchProjects(value !== 'all' ? value : undefined);
+        fetchBoards(value !== 'all' ? value : undefined);
+        fetchSchools(value !== 'all' ? value : undefined);
+        fetchClasses();
+        break;
+      case 'region':
+        fetchCities(filters.country !== 'all' ? filters.country : undefined, value !== 'all' ? value : undefined);
+        fetchProjects(filters.country !== 'all' ? filters.country : undefined, value !== 'all' ? value : undefined);
+        fetchBoards(filters.country !== 'all' ? filters.country : undefined, value !== 'all' ? value : undefined);
+        fetchSchools(filters.country !== 'all' ? filters.country : undefined, value !== 'all' ? value : undefined);
+        fetchClasses();
+        break;
+      case 'city':
+        fetchProjects(filters.country !== 'all' ? filters.country : undefined, filters.region !== 'all' ? filters.region : undefined, value !== 'all' ? value : undefined);
+        fetchBoards(filters.country !== 'all' ? filters.country : undefined, filters.region !== 'all' ? filters.region : undefined, value !== 'all' ? value : undefined);
+        fetchSchools(filters.country !== 'all' ? filters.country : undefined, filters.region !== 'all' ? filters.region : undefined, value !== 'all' ? value : undefined);
+        fetchClasses();
+        break;
+      case 'project':
+        fetchBoards(filters.country !== 'all' ? filters.country : undefined, filters.region !== 'all' ? filters.region : undefined, filters.city !== 'all' ? filters.city : undefined, value !== 'all' ? value : undefined);
+        fetchSchools(filters.country !== 'all' ? filters.country : undefined, filters.region !== 'all' ? filters.region : undefined, filters.city !== 'all' ? filters.city : undefined, value !== 'all' ? value : undefined);
+        fetchClasses();
+        break;
+      case 'board':
+        fetchSchools(filters.country !== 'all' ? filters.country : undefined, filters.region !== 'all' ? filters.region : undefined, filters.city !== 'all' ? filters.city : undefined, filters.project !== 'all' ? filters.project : undefined, value !== 'all' ? value : undefined);
+        fetchClasses(undefined, value !== 'all' ? value : undefined);
+        break;
+      case 'school':
+        fetchClasses(value !== 'all' ? value : undefined, filters.board !== 'all' ? filters.board : undefined);
+        break;
+    }
+  };
+
+  // Clear all filters function
+  const clearAllFilters = () => {
+    setFilters({
+      country: 'all',
+      region: 'all',
+      city: 'all',
+      project: 'all',
+      board: 'all',
+      school: 'all',
+      class: 'all',
+    });
+    
+    // Reset all dependent data to show all options
+    fetchRegions();
+    fetchCities();
+    fetchProjects();
+    fetchBoards();
+    fetchSchools();
+    fetchClasses();
+  };
+
+  // Initialize filter data on component mount
+  useEffect(() => {
+    fetchCountries();
+    fetchRegions();
+    fetchCities();
+    fetchProjects();
+    fetchBoards();
+    fetchSchools();
+    fetchClasses();
+  }, []);
 
   useEffect(() => {
     const fetchTeacherData = async () => {
@@ -640,17 +1052,21 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                         {/* Country */}
                         <div className="space-y-2">
                           <Label htmlFor="country">Country</Label>
-                          <Select>
+                          <Select 
+                            value={filters.country} 
+                            onValueChange={(value) => handleFilterChange('country', value)}
+                            disabled={filterLoading.countries}
+                          >
                             <SelectTrigger id="country">
-                              <SelectValue placeholder="Select country" />
+                              <SelectValue placeholder={filterLoading.countries ? "Loading..." : "Select country"} />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="all">All Countries</SelectItem>
-                              <SelectItem value="pakistan">Pakistan</SelectItem>
-                              <SelectItem value="india">India</SelectItem>
-                              <SelectItem value="bangladesh">Bangladesh</SelectItem>
-                              <SelectItem value="sri-lanka">Sri Lanka</SelectItem>
-                              <SelectItem value="nepal">Nepal</SelectItem>
+                              {countries.map((country) => (
+                                <SelectItem key={country.id} value={country.id}>
+                                  {country.name}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </div>
@@ -658,17 +1074,21 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                         {/* Region */}
                         <div className="space-y-2">
                           <Label htmlFor="region">Region</Label>
-                          <Select>
+                          <Select 
+                            value={filters.region} 
+                            onValueChange={(value) => handleFilterChange('region', value)}
+                            disabled={filterLoading.regions}
+                          >
                             <SelectTrigger id="region">
-                              <SelectValue placeholder="Select region" />
+                              <SelectValue placeholder={filterLoading.regions ? "Loading..." : "Select region"} />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="all">All Regions</SelectItem>
-                              <SelectItem value="punjab">Punjab</SelectItem>
-                              <SelectItem value="sindh">Sindh</SelectItem>
-                              <SelectItem value="kpk">Khyber Pakhtunkhwa</SelectItem>
-                              <SelectItem value="balochistan">Balochistan</SelectItem>
-                              <SelectItem value="gilgit">Gilgit-Baltistan</SelectItem>
+                              {regions.map((region) => (
+                                <SelectItem key={region.id} value={region.id}>
+                                  {region.name}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </div>
@@ -676,17 +1096,21 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                         {/* City */}
                         <div className="space-y-2">
                           <Label htmlFor="city">City</Label>
-                          <Select>
+                          <Select 
+                            value={filters.city} 
+                            onValueChange={(value) => handleFilterChange('city', value)}
+                            disabled={filterLoading.cities}
+                          >
                             <SelectTrigger id="city">
-                              <SelectValue placeholder="Select city" />
+                              <SelectValue placeholder={filterLoading.cities ? "Loading..." : "Select city"} />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="all">All Cities</SelectItem>
-                              <SelectItem value="karachi">Karachi</SelectItem>
-                              <SelectItem value="lahore">Lahore</SelectItem>
-                              <SelectItem value="islamabad">Islamabad</SelectItem>
-                              <SelectItem value="rawalpindi">Rawalpindi</SelectItem>
-                              <SelectItem value="faisalabad">Faisalabad</SelectItem>
+                              {cities.map((city) => (
+                                <SelectItem key={city.id} value={city.id}>
+                                  {city.name}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </div>
@@ -694,17 +1118,21 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                         {/* Project */}
                         <div className="space-y-2">
                           <Label htmlFor="project">Project</Label>
-                          <Select>
+                          <Select 
+                            value={filters.project} 
+                            onValueChange={(value) => handleFilterChange('project', value)}
+                            disabled={filterLoading.projects}
+                          >
                             <SelectTrigger id="project">
-                              <SelectValue placeholder="Select project" />
+                              <SelectValue placeholder={filterLoading.projects ? "Loading..." : "Select project"} />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="all">All Projects</SelectItem>
-                              <SelectItem value="dil-ai">DIL AI Learning</SelectItem>
-                              <SelectItem value="english-mastery">English Mastery</SelectItem>
-                              <SelectItem value="stem-education">STEM Education</SelectItem>
-                              <SelectItem value="digital-literacy">Digital Literacy</SelectItem>
-                              <SelectItem value="teacher-training">Teacher Training</SelectItem>
+                              {projects.map((project) => (
+                                <SelectItem key={project.id} value={project.id}>
+                                  {project.name}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </div>
@@ -712,17 +1140,21 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                         {/* Board */}
                         <div className="space-y-2">
                           <Label htmlFor="board">Board</Label>
-                          <Select>
+                          <Select 
+                            value={filters.board} 
+                            onValueChange={(value) => handleFilterChange('board', value)}
+                            disabled={filterLoading.boards}
+                          >
                             <SelectTrigger id="board">
-                              <SelectValue placeholder="Select board" />
+                              <SelectValue placeholder={filterLoading.boards ? "Loading..." : "Select board"} />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="all">All Boards</SelectItem>
-                              <SelectItem value="federal">Federal Board</SelectItem>
-                              <SelectItem value="punjab-board">Punjab Board</SelectItem>
-                              <SelectItem value="sindh-board">Sindh Board</SelectItem>
-                              <SelectItem value="kpk-board">KPK Board</SelectItem>
-                              <SelectItem value="balochistan-board">Balochistan Board</SelectItem>
+                              {boards.map((board) => (
+                                <SelectItem key={board.id} value={board.id}>
+                                  {board.name}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </div>
@@ -730,17 +1162,21 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                         {/* Schools */}
                         <div className="space-y-2">
                           <Label htmlFor="schools">Schools</Label>
-                          <Select>
+                          <Select 
+                            value={filters.school} 
+                            onValueChange={(value) => handleFilterChange('school', value)}
+                            disabled={filterLoading.schools}
+                          >
                             <SelectTrigger id="schools">
-                              <SelectValue placeholder="Select school" />
+                              <SelectValue placeholder={filterLoading.schools ? "Loading..." : "Select school"} />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="all">All Schools</SelectItem>
-                              <SelectItem value="dil-primary">DIL Primary School</SelectItem>
-                              <SelectItem value="dil-secondary">DIL Secondary School</SelectItem>
-                              <SelectItem value="dil-high">DIL High School</SelectItem>
-                              <SelectItem value="community-school">Community School</SelectItem>
-                              <SelectItem value="public-school">Public School</SelectItem>
+                              {schools.map((school) => (
+                                <SelectItem key={school.id} value={school.id}>
+                                  {school.name} ({school.school_type})
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </div>
@@ -748,22 +1184,21 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                         {/* Class */}
                         <div className="space-y-2">
                           <Label htmlFor="class">Class</Label>
-                          <Select>
+                          <Select 
+                            value={filters.class} 
+                            onValueChange={(value) => handleFilterChange('class', value)}
+                            disabled={filterLoading.classes}
+                          >
                             <SelectTrigger id="class">
-                              <SelectValue placeholder="Select class" />
+                              <SelectValue placeholder={filterLoading.classes ? "Loading..." : "Select class"} />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="all">All Classes</SelectItem>
-                              <SelectItem value="grade-1">Grade 1</SelectItem>
-                              <SelectItem value="grade-2">Grade 2</SelectItem>
-                              <SelectItem value="grade-3">Grade 3</SelectItem>
-                              <SelectItem value="grade-4">Grade 4</SelectItem>
-                              <SelectItem value="grade-5">Grade 5</SelectItem>
-                              <SelectItem value="grade-6">Grade 6</SelectItem>
-                              <SelectItem value="grade-7">Grade 7</SelectItem>
-                              <SelectItem value="grade-8">Grade 8</SelectItem>
-                              <SelectItem value="grade-9">Grade 9</SelectItem>
-                              <SelectItem value="grade-10">Grade 10</SelectItem>
+                              {classes.map((classItem) => (
+                                <SelectItem key={classItem.id} value={classItem.id}>
+                                  {classItem.name} (Grade {classItem.grade})
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </div>
@@ -771,7 +1206,13 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                       <DrawerFooter>
                         <Button className="w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20">Apply Filters</Button>
                         <DrawerClose asChild>
-                          <Button variant="outline" className="w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary">Clear All</Button>
+                          <Button 
+                            variant="outline" 
+                            onClick={clearAllFilters}
+                            className="w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
+                          >
+                            Clear All
+                          </Button>
                         </DrawerClose>
                       </DrawerFooter>
                     </div>
