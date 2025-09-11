@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Search, Plus, BookCheck, Edit, Trash2, Eye, RefreshCw, Calendar, MoreHorizontal, Hash, Tag, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Plus, BookCheck, Edit, Trash2, Eye, RefreshCw, Calendar, MoreHorizontal, Hash, Tag, Loader2, ChevronLeft, ChevronRight, Sparkles, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { CourseCategoriesService, CourseCategory, PaginatedResponse, PaginationParams, SearchParams } from '@/services/courseCategoriesService';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -195,18 +195,43 @@ export const CourseCategories = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-[#8DC63F]">Course Categories</h1>
-          <p className="text-muted-foreground">Manage course categories and organize your educational content</p>
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
+        <div className="relative p-8 rounded-3xl">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
+                <BookCheck className="w-8 h-8 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                  Course Categories
+                </h1>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Manage course categories and organize your educational content
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <Badge variant="secondary" className="px-3 py-1 bg-primary/10 text-primary border-primary/20">
+                <Sparkles className="h-3 w-3 mr-1" />
+                Content Management
+              </Badge>
+              <Badge variant="outline" className="px-3 py-1">
+                <Clock className="h-3 w-3 mr-1" />
+                Live Data
+              </Badge>
+              <Button
+                onClick={() => setIsCreateDialogOpen(true)}
+                className="bg-[#8DC63F] hover:bg-[#7AB82F] text-white"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create Category
+              </Button>
+            </div>
+          </div>
         </div>
-        <Button
-          onClick={() => setIsCreateDialogOpen(true)}
-          className="bg-[#8DC63F] hover:bg-[#8DC63F]/90"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Create Category
-        </Button>
       </div>
 
       {/* Summary Cards */}

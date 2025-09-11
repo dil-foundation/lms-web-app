@@ -87,7 +87,7 @@ const CourseCard = ({ course, onDelete }: { course: Course, onDelete: (course: C
   );
 
     return (
-    <Card className="bg-card border border-border">
+    <Card className="bg-card border border-border flex flex-col h-full">
       <CardHeader className="p-0 relative">
         <img src={course.imageUrl} alt={course.title} className="w-full h-40 object-cover rounded-t-lg" />
         <Badge
@@ -102,7 +102,7 @@ const CourseCard = ({ course, onDelete }: { course: Course, onDelete: (course: C
           {course.status}
       </Badge>
       </CardHeader>
-      <CardContent className="p-4 space-y-2">
+      <CardContent className="p-4 space-y-2 flex-grow">
         <h3 className="font-semibold text-lg">{course.title}</h3>
         <p className="text-sm text-muted-foreground">by {course.authorName}</p>
         <div className="flex justify-between text-sm text-muted-foreground">
@@ -114,7 +114,7 @@ const CourseCard = ({ course, onDelete }: { course: Course, onDelete: (course: C
           <span>{course.totalStudents} students</span>
         </div>
       </CardContent>
-      <CardFooter className="p-4 pt-0">
+      <CardFooter className="p-4 pt-0 mt-auto">
         <Button 
           onClick={() => navigate(`/dashboard/courses/builder/${course.id}`)}
           className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-3 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:scale-105 rounded-xl"

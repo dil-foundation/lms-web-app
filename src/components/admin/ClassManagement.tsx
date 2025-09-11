@@ -12,7 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { MultiSelect } from '@/components/ui/MultiSelect';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Search, Plus, BookOpen, Edit, Trash2, Eye, RefreshCw, Users, MoreHorizontal, MapPin, GraduationCap } from 'lucide-react';
+import { Search, Plus, BookOpen, Edit, Trash2, Eye, RefreshCw, Users, MoreHorizontal, MapPin, GraduationCap, Clock, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { useClasses, useClassesPaginated, useTeachers, useStudents, useBoards, useSchools } from '@/hooks/useClasses';
 import { ClassWithMembers, CreateClassData, UpdateClassData } from '@/services/classService';
@@ -305,11 +305,7 @@ const ClassManagement: React.FC = () => {
   };
 
   const getGradeBadge = (grade: string) => {
-    const gradeNum = parseInt(grade);
-    if (gradeNum <= 5) return <Badge variant="default" className="bg-blue-600">Grade {grade}</Badge>;
-    if (gradeNum <= 8) return <Badge variant="default" className="bg-green-600">Grade {grade}</Badge>;
-    if (gradeNum <= 10) return <Badge variant="default" className="bg-yellow-600">Grade {grade}</Badge>;
-    return <Badge variant="default" className="bg-purple-600">Grade {grade}</Badge>;
+    return <Badge variant="default" className="bg-[#8DC63F] hover:bg-[#7AB82F] text-white">Grade {grade}</Badge>;
   };
 
   // Check if student limit is exceeded
@@ -329,17 +325,17 @@ const ClassManagement: React.FC = () => {
     if (currentCount > maxStudentsNum) {
       return {
         message: `⚠️ Exceeded limit by ${currentCount - maxStudentsNum} students (${currentCount}/${maxStudentsNum})`,
-        className: "text-red-600 font-medium"
+        className: "text-destructive font-medium"
       };
     } else if (remaining <= 2 && remaining > 0) {
       return {
         message: `⚠️ Only ${remaining} spots remaining (${currentCount}/${maxStudentsNum})`,
-        className: "text-yellow-600 font-medium"
+        className: "text-yellow-600 dark:text-yellow-400 font-medium"
       };
     } else {
       return {
         message: `${currentCount}/${maxStudentsNum} students selected`,
-        className: "text-green-600 font-medium"
+        className: "text-[#8DC63F] dark:text-[#8DC63F] font-medium"
       };
     }
   };
@@ -492,19 +488,42 @@ const ClassManagement: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-green-600">Class Management</h1>
-          <p className="text-muted-foreground">Manage all classes and academic sections in the system</p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            onClick={() => setIsCreateDialogOpen(true)}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Create Class
-          </Button>
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
+        <div className="relative p-8 rounded-3xl">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
+                <GraduationCap className="w-8 h-8 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                  Class Management
+                </h1>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Manage all classes and academic sections in the system
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <Badge variant="secondary" className="px-3 py-1 bg-primary/10 text-primary border-primary/20">
+                <BookOpen className="h-3 w-3 mr-1" />
+                Academic Management
+              </Badge>
+              <Badge variant="outline" className="px-3 py-1">
+                <Clock className="h-3 w-3 mr-1" />
+                Live Data
+              </Badge>
+              <Button
+                onClick={() => setIsCreateDialogOpen(true)}
+                className="bg-[#8DC63F] hover:bg-[#7AB82F] text-white"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create Class
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -575,34 +594,34 @@ const ClassManagement: React.FC = () => {
             </div>
 
             <Select value={gradeFilter} onValueChange={setGradeFilter}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-40 bg-background border-border hover:border-primary/30 focus:border-primary dark:bg-background dark:border-border">
                 <SelectValue placeholder="All Grades" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Grades</SelectItem>
-                <SelectItem value="1">Grade 1</SelectItem>
-                <SelectItem value="2">Grade 2</SelectItem>
-                <SelectItem value="3">Grade 3</SelectItem>
-                <SelectItem value="4">Grade 4</SelectItem>
-                <SelectItem value="5">Grade 5</SelectItem>
-                <SelectItem value="6">Grade 6</SelectItem>
-                <SelectItem value="7">Grade 7</SelectItem>
-                <SelectItem value="8">Grade 8</SelectItem>
-                <SelectItem value="9">Grade 9</SelectItem>
-                <SelectItem value="10">Grade 10</SelectItem>
-                <SelectItem value="11">Grade 11</SelectItem>
-                <SelectItem value="12">Grade 12</SelectItem>
+              <SelectContent className="bg-popover border-border dark:bg-popover dark:border-border">
+                <SelectItem value="all" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">All Grades</SelectItem>
+                <SelectItem value="1" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 1</SelectItem>
+                <SelectItem value="2" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 2</SelectItem>
+                <SelectItem value="3" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 3</SelectItem>
+                <SelectItem value="4" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 4</SelectItem>
+                <SelectItem value="5" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 5</SelectItem>
+                <SelectItem value="6" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 6</SelectItem>
+                <SelectItem value="7" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 7</SelectItem>
+                <SelectItem value="8" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 8</SelectItem>
+                <SelectItem value="9" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 9</SelectItem>
+                <SelectItem value="10" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 10</SelectItem>
+                <SelectItem value="11" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 11</SelectItem>
+                <SelectItem value="12" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 12</SelectItem>
               </SelectContent>
             </Select>
 
             <Select value={boardFilter} onValueChange={setBoardFilter}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-40 bg-background border-border hover:border-primary/30 focus:border-primary dark:bg-background dark:border-border">
                 <SelectValue placeholder="All Boards" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Boards</SelectItem>
+              <SelectContent className="bg-popover border-border dark:bg-popover dark:border-border">
+                <SelectItem value="all" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">All Boards</SelectItem>
                 {boards.map((board) => (
-                  <SelectItem key={board.id} value={board.id}>
+                  <SelectItem key={board.id} value={board.id} className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">
                     {board.name}
                   </SelectItem>
                 ))}
@@ -610,13 +629,13 @@ const ClassManagement: React.FC = () => {
             </Select>
 
             <Select value={schoolFilter} onValueChange={setSchoolFilter}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-40 bg-background border-border hover:border-primary/30 focus:border-primary dark:bg-background dark:border-border">
                 <SelectValue placeholder="All Schools" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Schools</SelectItem>
+              <SelectContent className="bg-popover border-border dark:bg-popover dark:border-border">
+                <SelectItem value="all" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">All Schools</SelectItem>
                 {schools.map((school) => (
-                  <SelectItem key={school.id} value={school.id}>
+                  <SelectItem key={school.id} value={school.id} className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">
                     {school.name}
                   </SelectItem>
                 ))}
@@ -808,43 +827,64 @@ const ClassManagement: React.FC = () => {
               
               {/* Pagination */}
               {totalCount > 0 && (
-                <div className="flex items-center justify-center space-x-2 py-4 border-t">
+                <div className="flex items-center justify-center gap-2 py-4 border-t">
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
                     onClick={handlePreviousPage}
                     disabled={currentPage === 1}
-                    className="text-sm"
                   >
-                    &lt; Previous
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Previous
                   </Button>
                   
-                  <div className="flex items-center space-x-1">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <div className="flex items-center gap-1">
+                    {totalPages > 1 ? (
+                      Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+                        
+                        return (
+                          <Button
+                            key={pageNum}
+                            variant={currentPage === pageNum ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => handlePageChange(pageNum)}
+                            disabled={loading}
+                            className="w-8 h-8 p-0"
+                          >
+                            {pageNum}
+                          </Button>
+                        );
+                      })
+                    ) : (
                       <Button
-                        key={page}
-                        variant={currentPage === page ? "default" : "ghost"}
+                        variant="default"
                         size="sm"
-                        onClick={() => handlePageChange(page)}
-                        className={`w-8 h-8 p-0 text-sm ${
-                          currentPage === page 
-                            ? "bg-gray-200 text-gray-900 hover:bg-gray-300" 
-                            : "hover:bg-gray-100"
-                        }`}
+                        disabled
+                        className="w-8 h-8 p-0"
                       >
-                        {page}
+                        1
                       </Button>
-                    ))}
+                    )}
                   </div>
                   
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
                     onClick={handleNextPage}
                     disabled={currentPage === totalPages}
-                    className="text-sm"
                   >
-                    Next &gt;
+                    Next
+                    <ChevronRight className="h-4 w-4 ml-1" />
                   </Button>
                 </div>
               )}
@@ -866,7 +906,7 @@ const ClassManagement: React.FC = () => {
               {(!searchTerm && gradeFilter === 'all' && schoolFilter === 'all' && boardFilter === 'all') && (
                 <Button 
                   onClick={() => setIsCreateDialogOpen(true)}
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-[#8DC63F] hover:bg-[#7AB82F] text-white"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Create Class
@@ -938,22 +978,22 @@ const ClassManagement: React.FC = () => {
                    setValidationErrors(prev => ({ ...prev, grade: error }));
                  }}
                >
-                 <SelectTrigger className={validationErrors.grade ? 'border-red-500 focus:border-red-500' : ''}>
+                 <SelectTrigger className={`bg-background border-border hover:border-primary/30 focus:border-primary dark:bg-background dark:border-border ${validationErrors.grade ? 'border-red-500 focus:border-red-500 dark:border-red-500' : ''}`}>
                    <SelectValue placeholder="Select grade" />
                  </SelectTrigger>
-                 <SelectContent>
-                   <SelectItem value="1">Grade 1</SelectItem>
-                   <SelectItem value="2">Grade 2</SelectItem>
-                   <SelectItem value="3">Grade 3</SelectItem>
-                   <SelectItem value="4">Grade 4</SelectItem>
-                   <SelectItem value="5">Grade 5</SelectItem>
-                   <SelectItem value="6">Grade 6</SelectItem>
-                   <SelectItem value="7">Grade 7</SelectItem>
-                   <SelectItem value="8">Grade 8</SelectItem>
-                   <SelectItem value="9">Grade 9</SelectItem>
-                   <SelectItem value="10">Grade 10</SelectItem>
-                   <SelectItem value="11">Grade 11</SelectItem>
-                   <SelectItem value="12">Grade 12</SelectItem>
+                 <SelectContent className="bg-popover border-border dark:bg-popover dark:border-border">
+                   <SelectItem value="1" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 1</SelectItem>
+                   <SelectItem value="2" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 2</SelectItem>
+                   <SelectItem value="3" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 3</SelectItem>
+                   <SelectItem value="4" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 4</SelectItem>
+                   <SelectItem value="5" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 5</SelectItem>
+                   <SelectItem value="6" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 6</SelectItem>
+                   <SelectItem value="7" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 7</SelectItem>
+                   <SelectItem value="8" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 8</SelectItem>
+                   <SelectItem value="9" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 9</SelectItem>
+                   <SelectItem value="10" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 10</SelectItem>
+                   <SelectItem value="11" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 11</SelectItem>
+                   <SelectItem value="12" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 12</SelectItem>
                  </SelectContent>
                </Select>
                {validationErrors.grade && (
@@ -971,12 +1011,12 @@ const ClassManagement: React.FC = () => {
                    setValidationErrors(prev => ({ ...prev, board_id: error }));
                  }}
                >
-                 <SelectTrigger className={validationErrors.board_id ? 'border-red-500 focus:border-red-500' : ''}>
+                 <SelectTrigger className={`bg-background border-border hover:border-primary/30 focus:border-primary dark:bg-background dark:border-border ${validationErrors.board_id ? 'border-red-500 focus:border-red-500 dark:border-red-500' : ''}`}>
                    <SelectValue placeholder="Select board" />
                  </SelectTrigger>
-                 <SelectContent>
+                 <SelectContent className="bg-popover border-border dark:bg-popover dark:border-border">
                    {boards.map((board) => (
-                     <SelectItem key={board.id} value={board.id}>
+                     <SelectItem key={board.id} value={board.id} className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">
                        {board.name}
                      </SelectItem>
                    ))}
@@ -998,18 +1038,18 @@ const ClassManagement: React.FC = () => {
                  }}
                  disabled={!formData.board_id}
                >
-                 <SelectTrigger className={`${!formData.board_id ? "opacity-50 cursor-not-allowed" : ""} ${validationErrors.school_id ? 'border-red-500 focus:border-red-500' : ''}`}>
+                 <SelectTrigger className={`bg-background border-border hover:border-primary/30 focus:border-primary dark:bg-background dark:border-border ${!formData.board_id ? "opacity-50 cursor-not-allowed" : ""} ${validationErrors.school_id ? 'border-red-500 focus:border-red-500 dark:border-red-500' : ''}`}>
                    <SelectValue placeholder={!formData.board_id ? "Select a board first" : "Select school"} />
                  </SelectTrigger>
-                 <SelectContent>
+                 <SelectContent className="bg-popover border-border dark:bg-popover dark:border-border">
                    {schools.length > 0 ? (
                      schools.map((school) => (
-                       <SelectItem key={school.id} value={school.id}>
+                       <SelectItem key={school.id} value={school.id} className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">
                          {school.name}
                        </SelectItem>
                      ))
                    ) : (
-                     <SelectItem value="" disabled>
+                     <SelectItem value="" disabled className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">
                        {formData.board_id ? "No schools found for this board" : "Select a board first"}
                      </SelectItem>
                    )}
@@ -1125,7 +1165,7 @@ const ClassManagement: React.FC = () => {
             </Button>
             <Button 
               onClick={handleCreate} 
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-[#8DC63F] hover:bg-[#7AB82F] text-white"
               disabled={loading || !!validationErrors.name || !!validationErrors.code || !!validationErrors.grade || !!validationErrors.board_id || !!validationErrors.school_id || !!validationErrors.max_students || !!validationErrors.description}
             >
               {loading ? (
@@ -1202,22 +1242,22 @@ const ClassManagement: React.FC = () => {
                    setValidationErrors(prev => ({ ...prev, grade: error }));
                  }}
                >
-                 <SelectTrigger className={validationErrors.grade ? 'border-red-500 focus:border-red-500' : ''}>
+                 <SelectTrigger className={`bg-background border-border hover:border-primary/30 focus:border-primary dark:bg-background dark:border-border ${validationErrors.grade ? 'border-red-500 focus:border-red-500 dark:border-red-500' : ''}`}>
                    <SelectValue placeholder="Select grade" />
                  </SelectTrigger>
-                 <SelectContent>
-                   <SelectItem value="1">Grade 1</SelectItem>
-                   <SelectItem value="2">Grade 2</SelectItem>
-                   <SelectItem value="3">Grade 3</SelectItem>
-                   <SelectItem value="4">Grade 4</SelectItem>
-                   <SelectItem value="5">Grade 5</SelectItem>
-                   <SelectItem value="6">Grade 6</SelectItem>
-                   <SelectItem value="7">Grade 7</SelectItem>
-                   <SelectItem value="8">Grade 8</SelectItem>
-                   <SelectItem value="9">Grade 9</SelectItem>
-                   <SelectItem value="10">Grade 10</SelectItem>
-                   <SelectItem value="11">Grade 11</SelectItem>
-                   <SelectItem value="12">Grade 12</SelectItem>
+                 <SelectContent className="bg-popover border-border dark:bg-popover dark:border-border">
+                   <SelectItem value="1" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 1</SelectItem>
+                   <SelectItem value="2" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 2</SelectItem>
+                   <SelectItem value="3" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 3</SelectItem>
+                   <SelectItem value="4" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 4</SelectItem>
+                   <SelectItem value="5" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 5</SelectItem>
+                   <SelectItem value="6" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 6</SelectItem>
+                   <SelectItem value="7" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 7</SelectItem>
+                   <SelectItem value="8" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 8</SelectItem>
+                   <SelectItem value="9" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 9</SelectItem>
+                   <SelectItem value="10" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 10</SelectItem>
+                   <SelectItem value="11" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 11</SelectItem>
+                   <SelectItem value="12" className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">Grade 12</SelectItem>
                  </SelectContent>
                </Select>
                {validationErrors.grade && (
@@ -1235,12 +1275,12 @@ const ClassManagement: React.FC = () => {
                    setValidationErrors(prev => ({ ...prev, board_id: error }));
                  }}
                >
-                 <SelectTrigger className={validationErrors.board_id ? 'border-red-500 focus:border-red-500' : ''}>
+                 <SelectTrigger className={`bg-background border-border hover:border-primary/30 focus:border-primary dark:bg-background dark:border-border ${validationErrors.board_id ? 'border-red-500 focus:border-red-500 dark:border-red-500' : ''}`}>
                    <SelectValue placeholder="Select board" />
                  </SelectTrigger>
-                 <SelectContent>
+                 <SelectContent className="bg-popover border-border dark:bg-popover dark:border-border">
                    {boards.map((board) => (
-                     <SelectItem key={board.id} value={board.id}>
+                     <SelectItem key={board.id} value={board.id} className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">
                        {board.name}
                      </SelectItem>
                    ))}
@@ -1262,18 +1302,18 @@ const ClassManagement: React.FC = () => {
                  }}
                  disabled={!formData.board_id}
                >
-                 <SelectTrigger className={`${!formData.board_id ? "opacity-50 cursor-not-allowed" : ""} ${validationErrors.school_id ? 'border-red-500 focus:border-red-500' : ''}`}>
+                 <SelectTrigger className={`bg-background border-border hover:border-primary/30 focus:border-primary dark:bg-background dark:border-border ${!formData.board_id ? "opacity-50 cursor-not-allowed" : ""} ${validationErrors.school_id ? 'border-red-500 focus:border-red-500 dark:border-red-500' : ''}`}>
                    <SelectValue placeholder={!formData.board_id ? "Select a board first" : "Select school"} />
                  </SelectTrigger>
-                 <SelectContent>
+                 <SelectContent className="bg-popover border-border dark:bg-popover dark:border-border">
                    {schools.length > 0 ? (
                      schools.map((school) => (
-                       <SelectItem key={school.id} value={school.id}>
+                       <SelectItem key={school.id} value={school.id} className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">
                          {school.name}
                        </SelectItem>
                      ))
                    ) : (
-                     <SelectItem value="" disabled>
+                     <SelectItem value="" disabled className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">
                        {formData.board_id ? "No schools found for this board" : "Select a board first"}
                      </SelectItem>
                    )}
