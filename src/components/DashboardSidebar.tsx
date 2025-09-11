@@ -159,8 +159,8 @@ export const DashboardSidebar = ({
         </div>
         
         {/* Desktop Main Content */}
-        <main className="flex-1 min-h-0 bg-background w-full max-w-7xl mx-auto overflow-auto ml-72">
-          <div className="w-full h-full px-4 py-6">
+        <main className="flex-1 min-h-0 bg-background overflow-auto ml-72">
+          <div className="w-full max-w-7xl mx-auto h-full px-4 py-6">
             {children}
           </div>
         </main>
