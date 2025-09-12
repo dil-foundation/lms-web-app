@@ -19,6 +19,17 @@ export interface KeyMetricsData {
   teachersPercentage: number;
 }
 
+// Filter parameters interface
+export interface DashboardFilters {
+  countryId?: string;
+  regionId?: string;
+  cityId?: string;
+  projectId?: string;
+  boardId?: string;
+  schoolId?: string;
+  classId?: string;
+}
+
 export interface LearnUsageData {
   today: number;
   thisWeek: number;
@@ -66,17 +77,17 @@ class AdminDashboardService {
     this.requestCache.set(cacheKey, { data, timestamp: Date.now() });
   }
 
-  async getAllOverviewData(timeRange: string = 'all_time'): Promise<{
+  async getAllOverviewData(timeRange: string = 'all_time', filters?: DashboardFilters): Promise<{
     overview: DashboardOverviewData;
     keyMetrics: KeyMetricsData;
     learnUsage: LearnUsageData;
     mostAccessedLessons: MostAccessedLessonsData;
   }> {
     try {
-      console.log('🔄 Fetching all admin dashboard data with timeRange:', timeRange);
+      console.log('🔄 Fetching all admin dashboard data with timeRange:', timeRange, 'filters:', filters);
       
       // Check cache first
-      const cacheKey = this.getCacheKey('admin_overview', { timeRange });
+      const cacheKey = this.getCacheKey('admin_overview', { timeRange, filters });
       const cachedData = this.getCachedData(cacheKey);
       if (cachedData) {
         return cachedData;
@@ -94,10 +105,10 @@ class AdminDashboardService {
       
       // Fetch all data in parallel for better performance
       const [overview, keyMetrics, learnUsage, mostAccessedLessons] = await Promise.all([
-        this.fetchDashboardOverview(timeRange, this.currentController.signal),
-        this.fetchKeyMetrics(timeRange, this.currentController.signal),
-        this.fetchLearnUsage(timeRange, this.currentController.signal),
-        this.fetchMostAccessedLessons(timeRange, this.currentController.signal),
+        this.fetchDashboardOverview(timeRange, filters, this.currentController.signal),
+        this.fetchKeyMetrics(timeRange, filters, this.currentController.signal),
+        this.fetchLearnUsage(timeRange, filters, this.currentController.signal),
+        this.fetchMostAccessedLessons(timeRange, filters, this.currentController.signal),
       ]);
 
       const result = {
@@ -128,7 +139,7 @@ class AdminDashboardService {
   }
 
   // Implement fetch functions directly in the class to avoid closure issues
-  private async fetchDashboardOverview(timeRange: string, signal?: AbortSignal): Promise<DashboardOverviewData> {
+  private async fetchDashboardOverview(timeRange: string, filters?: DashboardFilters, signal?: AbortSignal): Promise<DashboardOverviewData> {
     try {
       // Use provided signal or create a new one
       const controller = signal ? null : new AbortController();
@@ -140,10 +151,21 @@ class AdminDashboardService {
         }
       }, 15000); // Increased timeout to 15 seconds
 
-      console.log('🔍 Fetching dashboard overview data with timeRange:', timeRange);
+      console.log('🔍 Fetching dashboard overview data with timeRange:', timeRange, 'filters:', filters);
 
       const url = new URL(`${BASE_API_URL}${API_ENDPOINTS.ADMIN_DASHBOARD_OVERVIEW}`);
       url.searchParams.append('time_range', timeRange);
+      
+      // Add filter parameters if provided
+      if (filters) {
+        if (filters.countryId) url.searchParams.append('country_id', filters.countryId);
+        if (filters.regionId) url.searchParams.append('region_id', filters.regionId);
+        if (filters.cityId) url.searchParams.append('city_id', filters.cityId);
+        if (filters.projectId) url.searchParams.append('project_id', filters.projectId);
+        if (filters.boardId) url.searchParams.append('board_id', filters.boardId);
+        if (filters.schoolId) url.searchParams.append('school_id', filters.schoolId);
+        if (filters.classId) url.searchParams.append('class_id', filters.classId);
+      }
 
       const response = await fetch(url.toString(), {
         method: 'GET',
@@ -200,7 +222,7 @@ class AdminDashboardService {
     }
   }
 
-  private async fetchKeyMetrics(timeRange: string, signal?: AbortSignal): Promise<KeyMetricsData> {
+  private async fetchKeyMetrics(timeRange: string, filters?: DashboardFilters, signal?: AbortSignal): Promise<KeyMetricsData> {
     try {
       // Use provided signal or create a new one
       const controller = signal ? null : new AbortController();
@@ -212,10 +234,21 @@ class AdminDashboardService {
         }
       }, 15000); // Increased timeout to 15 seconds
 
-      console.log('🔍 Fetching key metrics data with timeRange:', timeRange);
+      console.log('🔍 Fetching key metrics data with timeRange:', timeRange, 'filters:', filters);
 
       const url = new URL(`${BASE_API_URL}${API_ENDPOINTS.ADMIN_DASHBOARD_KEY_METRICS}`);
       url.searchParams.append('time_range', timeRange);
+      
+      // Add filter parameters if provided
+      if (filters) {
+        if (filters.countryId) url.searchParams.append('country_id', filters.countryId);
+        if (filters.regionId) url.searchParams.append('region_id', filters.regionId);
+        if (filters.cityId) url.searchParams.append('city_id', filters.cityId);
+        if (filters.projectId) url.searchParams.append('project_id', filters.projectId);
+        if (filters.boardId) url.searchParams.append('board_id', filters.boardId);
+        if (filters.schoolId) url.searchParams.append('school_id', filters.schoolId);
+        if (filters.classId) url.searchParams.append('class_id', filters.classId);
+      }
 
       const response = await fetch(url.toString(), {
         method: 'GET',
@@ -270,7 +303,7 @@ class AdminDashboardService {
     }
   }
 
-  private async fetchLearnUsage(timeRange: string, signal?: AbortSignal): Promise<LearnUsageData> {
+  private async fetchLearnUsage(timeRange: string, filters?: DashboardFilters, signal?: AbortSignal): Promise<LearnUsageData> {
     try {
       // Use provided signal or create a new one
       const controller = signal ? null : new AbortController();
@@ -282,10 +315,21 @@ class AdminDashboardService {
         }
       }, 15000); // Increased timeout to 15 seconds
 
-      console.log('🔍 Fetching learn usage data with timeRange:', timeRange);
+      console.log('🔍 Fetching learn usage data with timeRange:', timeRange, 'filters:', filters);
 
       const url = new URL(`${BASE_API_URL}${API_ENDPOINTS.ADMIN_DASHBOARD_LEARN_USAGE}`);
       url.searchParams.append('time_range', timeRange);
+      
+      // Add filter parameters if provided
+      if (filters) {
+        if (filters.countryId) url.searchParams.append('country_id', filters.countryId);
+        if (filters.regionId) url.searchParams.append('region_id', filters.regionId);
+        if (filters.cityId) url.searchParams.append('city_id', filters.cityId);
+        if (filters.projectId) url.searchParams.append('project_id', filters.projectId);
+        if (filters.boardId) url.searchParams.append('board_id', filters.boardId);
+        if (filters.schoolId) url.searchParams.append('school_id', filters.schoolId);
+        if (filters.classId) url.searchParams.append('class_id', filters.classId);
+      }
 
       const response = await fetch(url.toString(), {
         method: 'GET',
@@ -341,7 +385,7 @@ class AdminDashboardService {
     }
   }
 
-  private async fetchMostAccessedLessons(timeRange: string, signal?: AbortSignal): Promise<MostAccessedLessonsData> {
+  private async fetchMostAccessedLessons(timeRange: string, filters?: DashboardFilters, signal?: AbortSignal): Promise<MostAccessedLessonsData> {
     try {
       // Use provided signal or create a new one
       const controller = signal ? null : new AbortController();
@@ -353,10 +397,21 @@ class AdminDashboardService {
         }
       }, 15000); // Increased timeout to 15 seconds
 
-      console.log('🔍 Fetching most accessed lessons data with timeRange:', timeRange);
+      console.log('🔍 Fetching most accessed lessons data with timeRange:', timeRange, 'filters:', filters);
 
       const url = new URL(`${BASE_API_URL}${API_ENDPOINTS.ADMIN_DASHBOARD_MOST_ACCESSED_LESSONS}`);
       url.searchParams.append('time_range', timeRange);
+      
+      // Add filter parameters if provided
+      if (filters) {
+        if (filters.countryId) url.searchParams.append('country_id', filters.countryId);
+        if (filters.regionId) url.searchParams.append('region_id', filters.regionId);
+        if (filters.cityId) url.searchParams.append('city_id', filters.cityId);
+        if (filters.projectId) url.searchParams.append('project_id', filters.projectId);
+        if (filters.boardId) url.searchParams.append('board_id', filters.boardId);
+        if (filters.schoolId) url.searchParams.append('school_id', filters.schoolId);
+        if (filters.classId) url.searchParams.append('class_id', filters.classId);
+      }
 
       const response = await fetch(url.toString(), {
         method: 'GET',

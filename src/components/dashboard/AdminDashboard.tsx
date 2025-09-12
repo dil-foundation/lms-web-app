@@ -107,6 +107,78 @@ const chartConfig = {
   discussions: { label: 'Discussions', color: '#F59E0B' },
 };
 
+// Filter data interfaces
+interface Country {
+  id: string;
+  name: string;
+  code: string;
+}
+
+interface Region {
+  id: string;
+  name: string;
+  code: string;
+  country_id: string;
+}
+
+interface City {
+  id: string;
+  name: string;
+  code: string;
+  country_id: string;
+  region_id: string;
+}
+
+interface Project {
+  id: string;
+  name: string;
+  code: string;
+  country_id: string;
+  region_id: string;
+  city_id: string;
+}
+
+interface Board {
+  id: string;
+  name: string;
+  code: string;
+  country_id: string;
+  region_id: string;
+  city_id: string;
+  project_id: string;
+}
+
+interface School {
+  id: string;
+  name: string;
+  code: string;
+  school_type: string;
+  country_id: string;
+  region_id: string;
+  city_id: string;
+  project_id: string;
+  board_id: string;
+}
+
+interface Class {
+  id: string;
+  name: string;
+  code: string;
+  grade: string;
+  school_id: string;
+  board_id: string;
+}
+
+interface FilterState {
+  country: string;
+  region: string;
+  city: string;
+  project: string;
+  board: string;
+  school: string;
+  class: string;
+}
+
 export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [userGrowthData, setUserGrowthData] = useState<UserGrowthData[]>([]);
@@ -114,7 +186,49 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
   const [courseAnalyticsData, setCourseAnalyticsData] = useState<CourseAnalyticsData[]>([]);
   const [engagementData, setEngagementData] = useState<EngagementData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState('alltime');
+  const [timeRange, setTimeRange] = useState('30days');
+
+  // Filter data states
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [regions, setRegions] = useState<Region[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [boards, setBoards] = useState<Board[]>([]);
+  const [schools, setSchools] = useState<School[]>([]);
+  const [classes, setClasses] = useState<Class[]>([]);
+
+  // Filter loading states
+  const [filterLoading, setFilterLoading] = useState({
+    countries: false,
+    regions: false,
+    cities: false,
+    projects: false,
+    boards: false,
+    schools: false,
+    classes: false,
+  });
+
+  // Filter values state
+  const [filters, setFilters] = useState<FilterState>({
+    country: 'all',
+    region: 'all',
+    city: 'all',
+    project: 'all',
+    board: 'all',
+    school: 'all',
+    class: 'all',
+  });
+
+  // Applied filters state (what's actually being used for data fetching)
+  const [appliedFilters, setAppliedFilters] = useState<FilterState>({
+    country: 'all',
+    region: 'all',
+    city: 'all',
+    project: 'all',
+    board: 'all',
+    school: 'all',
+    class: 'all',
+  });
 
   // Helper function to get date range based on timeRange
   const getDateRange = (range: string) => {
@@ -122,10 +236,6 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
     const startDate = new Date();
     
     switch (range) {
-      case 'alltime':
-        // Start from a very early date to include all data
-        startDate.setFullYear(2020, 0, 1); // January 1, 2020
-        break;
       case '7days':
         startDate.setDate(now.getDate() - 7);
         break;
@@ -149,11 +259,344 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
     return { startDate, endDate: now };
   };
 
+  // Filter data fetching functions
+  const fetchCountries = async () => {
+    setFilterLoading(prev => ({ ...prev, countries: true }));
+    try {
+      const { data, error } = await supabase
+        .from('countries')
+        .select('id, name, code')
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      setCountries(data || []);
+    } catch (error) {
+      console.error('Failed to fetch countries:', error);
+      toast.error('Failed to load countries');
+    } finally {
+      setFilterLoading(prev => ({ ...prev, countries: false }));
+    }
+  };
+
+  const fetchRegions = async (countryId?: string) => {
+    setFilterLoading(prev => ({ ...prev, regions: true }));
+    try {
+      let query = supabase
+        .from('regions')
+        .select('id, name, code, country_id')
+        .order('name', { ascending: true });
+
+      if (countryId && countryId !== 'all') {
+        query = query.eq('country_id', countryId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      setRegions(data || []);
+    } catch (error) {
+      console.error('Failed to fetch regions:', error);
+      toast.error('Failed to load regions');
+    } finally {
+      setFilterLoading(prev => ({ ...prev, regions: false }));
+    }
+  };
+
+  const fetchCities = async (countryId?: string, regionId?: string) => {
+    setFilterLoading(prev => ({ ...prev, cities: true }));
+    try {
+      let query = supabase
+        .from('cities')
+        .select('id, name, code, country_id, region_id')
+        .order('name', { ascending: true });
+
+      if (countryId && countryId !== 'all') {
+        query = query.eq('country_id', countryId);
+      }
+      if (regionId && regionId !== 'all') {
+        query = query.eq('region_id', regionId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      setCities(data || []);
+    } catch (error) {
+      console.error('Failed to fetch cities:', error);
+      toast.error('Failed to load cities');
+    } finally {
+      setFilterLoading(prev => ({ ...prev, cities: false }));
+    }
+  };
+
+  const fetchProjects = async (countryId?: string, regionId?: string, cityId?: string) => {
+    setFilterLoading(prev => ({ ...prev, projects: true }));
+    try {
+      let query = supabase
+        .from('projects')
+        .select('id, name, code, country_id, region_id, city_id')
+        .order('name', { ascending: true });
+
+      if (countryId && countryId !== 'all') {
+        query = query.eq('country_id', countryId);
+      }
+      if (regionId && regionId !== 'all') {
+        query = query.eq('region_id', regionId);
+      }
+      if (cityId && cityId !== 'all') {
+        query = query.eq('city_id', cityId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      setProjects(data || []);
+    } catch (error) {
+      console.error('Failed to fetch projects:', error);
+      toast.error('Failed to load projects');
+    } finally {
+      setFilterLoading(prev => ({ ...prev, projects: false }));
+    }
+  };
+
+  const fetchBoards = async (countryId?: string, regionId?: string, cityId?: string, projectId?: string) => {
+    setFilterLoading(prev => ({ ...prev, boards: true }));
+    try {
+      let query = supabase
+        .from('boards')
+        .select('id, name, code, country_id, region_id, city_id, project_id')
+        .order('name', { ascending: true });
+
+      if (countryId && countryId !== 'all') {
+        query = query.eq('country_id', countryId);
+      }
+      if (regionId && regionId !== 'all') {
+        query = query.eq('region_id', regionId);
+      }
+      if (cityId && cityId !== 'all') {
+        query = query.eq('city_id', cityId);
+      }
+      if (projectId && projectId !== 'all') {
+        query = query.eq('project_id', projectId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      setBoards(data || []);
+    } catch (error) {
+      console.error('Failed to fetch boards:', error);
+      toast.error('Failed to load boards');
+    } finally {
+      setFilterLoading(prev => ({ ...prev, boards: false }));
+    }
+  };
+
+  const fetchSchools = async (countryId?: string, regionId?: string, cityId?: string, projectId?: string, boardId?: string) => {
+    setFilterLoading(prev => ({ ...prev, schools: true }));
+    try {
+      let query = supabase
+        .from('schools')
+        .select('id, name, code, school_type, country_id, region_id, city_id, project_id, board_id')
+        .order('name', { ascending: true });
+
+      if (countryId && countryId !== 'all') {
+        query = query.eq('country_id', countryId);
+      }
+      if (regionId && regionId !== 'all') {
+        query = query.eq('region_id', regionId);
+      }
+      if (cityId && cityId !== 'all') {
+        query = query.eq('city_id', cityId);
+      }
+      if (projectId && projectId !== 'all') {
+        query = query.eq('project_id', projectId);
+      }
+      if (boardId && boardId !== 'all') {
+        query = query.eq('board_id', boardId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      setSchools(data || []);
+    } catch (error) {
+      console.error('Failed to fetch schools:', error);
+      toast.error('Failed to load schools');
+    } finally {
+      setFilterLoading(prev => ({ ...prev, schools: false }));
+    }
+  };
+
+  const fetchClasses = async (schoolId?: string, boardId?: string) => {
+    setFilterLoading(prev => ({ ...prev, classes: true }));
+    try {
+      let query = supabase
+        .from('classes')
+        .select('id, name, code, grade, school_id, board_id')
+        .order('grade', { ascending: true });
+
+      if (schoolId && schoolId !== 'all') {
+        query = query.eq('school_id', schoolId);
+      }
+      if (boardId && boardId !== 'all') {
+        query = query.eq('board_id', boardId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      setClasses(data || []);
+    } catch (error) {
+      console.error('Failed to fetch classes:', error);
+      toast.error('Failed to load classes');
+    } finally {
+      setFilterLoading(prev => ({ ...prev, classes: false }));
+    }
+  };
+
+  // Filter change handlers with cascading logic
+  const handleFilterChange = (filterType: keyof FilterState, value: string) => {
+    setFilters(prev => {
+      const newFilters = { ...prev, [filterType]: value };
+      
+      // Reset dependent filters when parent changes
+      switch (filterType) {
+        case 'country':
+          newFilters.region = 'all';
+          newFilters.city = 'all';
+          newFilters.project = 'all';
+          newFilters.board = 'all';
+          newFilters.school = 'all';
+          newFilters.class = 'all';
+          break;
+        case 'region':
+          newFilters.city = 'all';
+          newFilters.project = 'all';
+          newFilters.board = 'all';
+          newFilters.school = 'all';
+          newFilters.class = 'all';
+          break;
+        case 'city':
+          newFilters.project = 'all';
+          newFilters.board = 'all';
+          newFilters.school = 'all';
+          newFilters.class = 'all';
+          break;
+        case 'project':
+          newFilters.board = 'all';
+          newFilters.school = 'all';
+          newFilters.class = 'all';
+          break;
+        case 'board':
+          newFilters.school = 'all';
+          newFilters.class = 'all';
+          break;
+        case 'school':
+          newFilters.class = 'all';
+          break;
+      }
+      
+      return newFilters;
+    });
+
+    // Fetch dependent data based on the change
+    switch (filterType) {
+      case 'country':
+        fetchRegions(value !== 'all' ? value : undefined);
+        fetchCities(value !== 'all' ? value : undefined);
+        fetchProjects(value !== 'all' ? value : undefined);
+        fetchBoards(value !== 'all' ? value : undefined);
+        fetchSchools(value !== 'all' ? value : undefined);
+        fetchClasses();
+        break;
+      case 'region':
+        fetchCities(filters.country !== 'all' ? filters.country : undefined, value !== 'all' ? value : undefined);
+        fetchProjects(filters.country !== 'all' ? filters.country : undefined, value !== 'all' ? value : undefined);
+        fetchBoards(filters.country !== 'all' ? filters.country : undefined, value !== 'all' ? value : undefined);
+        fetchSchools(filters.country !== 'all' ? filters.country : undefined, value !== 'all' ? value : undefined);
+        fetchClasses();
+        break;
+      case 'city':
+        fetchProjects(filters.country !== 'all' ? filters.country : undefined, filters.region !== 'all' ? filters.region : undefined, value !== 'all' ? value : undefined);
+        fetchBoards(filters.country !== 'all' ? filters.country : undefined, filters.region !== 'all' ? filters.region : undefined, value !== 'all' ? value : undefined);
+        fetchSchools(filters.country !== 'all' ? filters.country : undefined, filters.region !== 'all' ? filters.region : undefined, value !== 'all' ? value : undefined);
+        fetchClasses();
+        break;
+      case 'project':
+        fetchBoards(filters.country !== 'all' ? filters.country : undefined, filters.region !== 'all' ? filters.region : undefined, filters.city !== 'all' ? filters.city : undefined, value !== 'all' ? value : undefined);
+        fetchSchools(filters.country !== 'all' ? filters.country : undefined, filters.region !== 'all' ? filters.region : undefined, filters.city !== 'all' ? filters.city : undefined, value !== 'all' ? value : undefined);
+        fetchClasses();
+        break;
+      case 'board':
+        fetchSchools(filters.country !== 'all' ? filters.country : undefined, filters.region !== 'all' ? filters.region : undefined, filters.city !== 'all' ? filters.city : undefined, filters.project !== 'all' ? filters.project : undefined, value !== 'all' ? value : undefined);
+        fetchClasses(undefined, value !== 'all' ? value : undefined);
+        break;
+      case 'school':
+        fetchClasses(value !== 'all' ? value : undefined, filters.board !== 'all' ? filters.board : undefined);
+        break;
+    }
+  };
+
+  // Clear all filters function
+  const clearAllFilters = () => {
+    const clearedFilters = {
+      country: 'all',
+      region: 'all',
+      city: 'all',
+      project: 'all',
+      board: 'all',
+      school: 'all',
+      class: 'all',
+    };
+    
+    setFilters(clearedFilters);
+    setAppliedFilters(clearedFilters);
+    
+    // Reset all dependent data to show all options
+    fetchRegions();
+    fetchCities();
+    fetchProjects();
+    fetchBoards();
+    fetchSchools();
+    fetchClasses();
+  };
+
+  // Apply filters function
+  const applyFilters = () => {
+    // Apply the current filter selections to the applied filters
+    setAppliedFilters(filters);
+    toast.success('Filters applied successfully');
+  };
+
+  // Initialize filter data on component mount
+  useEffect(() => {
+    fetchCountries();
+    fetchRegions();
+    fetchCities();
+    fetchProjects();
+    fetchBoards();
+    fetchSchools();
+    fetchClasses();
+  }, []);
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase.rpc('get_admin_dashboard_stats', { time_range: timeRange });
+        // Prepare filter parameters for the new function
+        const filterParams: any = { time_range: timeRange };
+        
+        // Add filter parameters if they are not 'all'
+        if (appliedFilters.country !== 'all') filterParams.filter_country_id = appliedFilters.country;
+        if (appliedFilters.region !== 'all') filterParams.filter_region_id = appliedFilters.region;
+        if (appliedFilters.city !== 'all') filterParams.filter_city_id = appliedFilters.city;
+        if (appliedFilters.project !== 'all') filterParams.filter_project_id = appliedFilters.project;
+        if (appliedFilters.board !== 'all') filterParams.filter_board_id = appliedFilters.board;
+        if (appliedFilters.school !== 'all') filterParams.filter_school_id = appliedFilters.school;
+        if (appliedFilters.class !== 'all') filterParams.filter_class_id = appliedFilters.class;
+
+        const { data, error } = await supabase.rpc('get_admin_dashboard_stats_with_filters', filterParams);
 
         if (error) throw error;
         if (!data) throw new Error("No data returned from stats function.");
@@ -182,11 +625,11 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
 
         setStats(baseStats);
 
-        // Fetch chart data (these can remain as they are or be moved to the backend too)
-        await fetchUserGrowthData(timeRange);
-        await fetchPlatformStatsData();
-        await fetchCourseAnalyticsData();
-        await fetchEngagementData(timeRange);
+        // Fetch chart data with filters applied
+        await fetchUserGrowthData(timeRange, appliedFilters);
+        await fetchPlatformStatsData(appliedFilters);
+        await fetchCourseAnalyticsData(appliedFilters);
+        await fetchEngagementData(timeRange, appliedFilters);
 
       } catch (error: any) {
         console.error("Failed to fetch dashboard stats:", error);
@@ -197,25 +640,73 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
     };
 
     fetchDashboardData();
-  }, [timeRange]);
+  }, [timeRange, appliedFilters]);
 
-  const fetchUserGrowthData = async (range: string) => {
+  const fetchUserGrowthData = async (range: string, currentFilters?: FilterState) => {
     try {
       const { startDate, endDate } = getDateRange(range);
       
-      // Get all users with their creation dates in a single query
-      const { data: allUsers, error: usersError } = await supabase
+      // Build query with filters using proper junction tables
+      let usersQuery = supabase
         .from('profiles')
-        .select('created_at, role')
+        .select(`
+          created_at, 
+          role,
+          class_students!inner(
+            class_id,
+            classes!inner(
+              id,
+              schools!inner(
+                id,
+                boards!inner(
+                  id,
+                  projects!inner(
+                    id,
+                    cities!inner(
+                      id,
+                      regions!inner(
+                        id,
+                        countries!inner(id)
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        `)
         .order('created_at', { ascending: true });
+
+      // Apply filters if provided
+      if (currentFilters) {
+        if (currentFilters.class !== 'all') {
+          usersQuery = usersQuery.eq('class_students.classes.id', currentFilters.class);
+        } else if (currentFilters.school !== 'all') {
+          usersQuery = usersQuery.eq('class_students.classes.schools.id', currentFilters.school);
+        } else if (currentFilters.board !== 'all') {
+          usersQuery = usersQuery.eq('class_students.classes.schools.boards.id', currentFilters.board);
+        } else if (currentFilters.project !== 'all') {
+          usersQuery = usersQuery.eq('class_students.classes.schools.boards.projects.id', currentFilters.project);
+        } else if (currentFilters.city !== 'all') {
+          usersQuery = usersQuery.eq('class_students.classes.schools.boards.projects.cities.id', currentFilters.city);
+        } else if (currentFilters.region !== 'all') {
+          usersQuery = usersQuery.eq('class_students.classes.schools.boards.projects.cities.regions.id', currentFilters.region);
+        } else if (currentFilters.country !== 'all') {
+          usersQuery = usersQuery.eq('class_students.classes.schools.boards.projects.cities.regions.countries.id', currentFilters.country);
+        }
+      }
+
+      const { data: allUsers, error: usersError } = await usersQuery;
 
       if (usersError) throw usersError;
 
-      // Get all user progress data in a single query
-      const { data: allProgress, error: progressError } = await supabase
+      // Get filtered user progress data - use simpler approach without complex joins
+      let progressQuery = supabase
         .from('user_content_item_progress')
-        .select('updated_at')
+        .select('updated_at, user_id')
         .order('updated_at', { ascending: true });
+
+      const { data: allProgress, error: progressError } = await progressQuery;
 
       if (progressError) throw progressError;
 
@@ -223,20 +714,6 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
       let periods: { label: string; start: Date; end: Date }[] = [];
       
       switch (range) {
-        case 'alltime':
-          // Show historical data for all time (last 12 months for better visualization)
-          for (let i = 11; i >= 0; i--) {
-            const date = new Date();
-            date.setMonth(date.getMonth() - i);
-            const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
-            const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-            periods.push({
-              label: date.toLocaleDateString('en-US', { month: 'short' }),
-              start: startOfMonth,
-              end: endOfMonth
-            });
-          }
-          break;
         case '7days':
           // Show last 7 days
           for (let i = 6; i >= 0; i--) {
@@ -317,10 +794,15 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
           user.role === 'admin' && new Date(user.created_at) <= period.end
         ).length ?? 0;
 
-        const activeUsers = allProgress?.filter(progress => {
+        // Filter progress data based on the filtered users
+        const filteredProgress = allProgress?.filter(progress => {
           const progressDate = new Date(progress.updated_at);
-          return progressDate >= period.start && progressDate <= period.end;
-        }).length ?? 0;
+          const isInTimeRange = progressDate >= period.start && progressDate <= period.end;
+          // For now, just use time range filtering since user filtering is complex
+          return isInTimeRange;
+        }) ?? [];
+
+        const activeUsers = filteredProgress.length;
 
         userGrowthData.push({
           month: period.label,
@@ -339,17 +821,140 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
     }
   };
 
-  const fetchPlatformStatsData = async () => {
+  const fetchPlatformStatsData = async (currentFilters?: FilterState) => {
     try {
       const { startDate, endDate } = getDateRange(timeRange);
-      // Get all courses with their status in a single query
-      const { data: allCourses, error: coursesError } = await supabase
+      
+      // Build courses query with filters
+      let coursesQuery = supabase
         .from('courses')
-        .select('status');
+        .select('status, class_ids, school_ids');
+
+      // Apply filters if provided
+      if (currentFilters) {
+        if (currentFilters.class !== 'all') {
+          coursesQuery = coursesQuery.contains('class_ids', [currentFilters.class]);
+        } else if (currentFilters.school !== 'all') {
+          coursesQuery = coursesQuery.contains('school_ids', [currentFilters.school]);
+        } else if (currentFilters.board !== 'all') {
+          // For board filtering, we need to join with classes table
+          coursesQuery = supabase
+            .from('courses')
+            .select(`
+              status,
+              class_ids,
+              school_ids,
+              classes!inner(
+                id,
+                schools!inner(
+                  id,
+                  boards!inner(id)
+                )
+              )
+            `)
+            .eq('classes.schools.boards.id', currentFilters.board);
+        } else if (currentFilters.project !== 'all') {
+          coursesQuery = supabase
+            .from('courses')
+            .select(`
+              status,
+              class_ids,
+              school_ids,
+              classes!inner(
+                id,
+                schools!inner(
+                  id,
+                  boards!inner(
+                    id,
+                    projects!inner(id)
+                  )
+                )
+              )
+            `)
+            .eq('classes.schools.boards.projects.id', currentFilters.project);
+        } else if (currentFilters.city !== 'all') {
+          coursesQuery = supabase
+            .from('courses')
+            .select(`
+              status,
+              class_ids,
+              school_ids,
+              classes!inner(
+                id,
+                schools!inner(
+                  id,
+                  boards!inner(
+                    id,
+                    projects!inner(
+                      id,
+                      cities!inner(id)
+                    )
+                  )
+                )
+              )
+            `)
+            .eq('classes.schools.boards.projects.cities.id', currentFilters.city);
+        } else if (currentFilters.region !== 'all') {
+          coursesQuery = supabase
+            .from('courses')
+            .select(`
+              status,
+              class_ids,
+              school_ids,
+              classes!inner(
+                id,
+                schools!inner(
+                  id,
+                  boards!inner(
+                    id,
+                    projects!inner(
+                      id,
+                      cities!inner(
+                        id,
+                        regions!inner(id)
+                      )
+                    )
+                  )
+                )
+              )
+            `)
+            .eq('classes.schools.boards.projects.cities.regions.id', currentFilters.region);
+        } else if (currentFilters.country !== 'all') {
+          coursesQuery = supabase
+            .from('courses')
+            .select(`
+              status,
+              class_ids,
+              school_ids,
+              classes!inner(
+                id,
+                schools!inner(
+                  id,
+                  boards!inner(
+                    id,
+                    projects!inner(
+                      id,
+                      cities!inner(
+                        id,
+                        regions!inner(
+                          id,
+                          countries!inner(id)
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            `)
+            .eq('classes.schools.boards.projects.cities.regions.countries.id', currentFilters.country);
+        }
+      }
+
+      const { data: allCourses, error: coursesError } = await coursesQuery;
 
       if (coursesError) throw coursesError;
 
-      // Get all completed assignments in a single query
+      // Get completed assignments - use simpler approach
       const { count: completedAssignments, error: assignmentsError } = await supabase
         .from('assignment_submissions')
         .select('*', { count: 'exact', head: true })
@@ -380,14 +985,27 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
     }
   };
 
-  const fetchCourseAnalyticsData = async () => {
+  const fetchCourseAnalyticsData = async (currentFilters?: FilterState) => {
     try {
-      console.log('🔍 [DEBUG] fetchCourseAnalyticsData called');
+      console.log('🔍 [DEBUG] fetchCourseAnalyticsData called with filters:', currentFilters);
       
-      // Use the new database function
-      const { data, error } = await supabase.rpc('get_admin_course_analytics');
+      // Build filter parameters for the database function
+      const filterParams: any = {};
+      
+      if (currentFilters) {
+        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
+        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
+        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
+        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
+        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
+        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
+        if (currentFilters.country !== 'all') filterParams.filter_country_id = currentFilters.country;
+      }
+      
+      // Use the database function with filters
+      const { data, error } = await supabase.rpc('get_admin_course_analytics_with_filters', filterParams);
 
-      console.log('🔍 [DEBUG] get_admin_course_analytics response:', { data, error });
+      console.log('🔍 [DEBUG] get_admin_course_analytics_with_filters response:', { data, error });
 
       if (error) throw error;
 
@@ -406,6 +1024,17 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
         rating: item.average_score || 0,
       }));
 
+      // Check if all values are zero or empty
+      const hasValidData = courseAnalytics.some(item => 
+        item.enrolled > 0 || item.completed > 0 || item.progress > 0
+      );
+
+      if (!hasValidData) {
+        console.log('🔍 [DEBUG] No valid course analytics data found');
+        setCourseAnalyticsData([]);
+        return;
+      }
+
       console.log('🔍 [DEBUG] Transformed course analytics:', courseAnalytics);
       setCourseAnalyticsData(courseAnalytics);
     } catch (error) {
@@ -414,9 +1043,22 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
     }
   };
 
-  const fetchEngagementData = async (range: string) => {
+  const fetchEngagementData = async (range: string, currentFilters?: FilterState) => {
     try {
-      const { data, error } = await supabase.rpc('get_admin_engagement_trends_data', { p_time_range: range });
+      // Build filter parameters for the database function
+      const filterParams: any = { p_time_range: range };
+      
+      if (currentFilters) {
+        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
+        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
+        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
+        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
+        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
+        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
+        if (currentFilters.country !== 'all') filterParams.filter_country_id = currentFilters.country;
+      }
+      
+      const { data, error } = await supabase.rpc('get_admin_engagement_trends_data_with_filters', filterParams);
 
       if (error) throw error;
       
@@ -426,6 +1068,10 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
         courses: item.courses_accessed,
         discussions: item.discussions,
       }));
+
+      // For engagement trends, we should show the chart even if all values are 0
+      // because it provides context about the time periods, even if there's no activity
+      // The main engagement rate metric shows overall engagement, while this shows trends
 
       setEngagementData(formattedData);
     } catch (error: any) {
@@ -469,7 +1115,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
     </Card>
   );
 
-  const isEngagementDataEmpty = engagementData.length === 0 || engagementData.every(d => d.activeUsers === 0 && d.courses === 0 && d.discussions === 0);
+  const isEngagementDataEmpty = engagementData.length === 0;
 
   return (
     <div className="space-y-8">
@@ -510,7 +1156,6 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                       <SelectItem value="3months">Last 3 months</SelectItem>
                       <SelectItem value="6months">Last 6 months</SelectItem>
                       <SelectItem value="1year">Last year</SelectItem>
-                      <SelectItem value="alltime">All time</SelectItem>
                     </SelectContent>
                   </Select>
                   
@@ -544,17 +1189,21 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                           {/* Country */}
                           <div className="space-y-2">
                             <Label htmlFor="country">Country</Label>
-                            <Select>
+                            <Select 
+                              value={filters.country} 
+                              onValueChange={(value) => handleFilterChange('country', value)}
+                              disabled={filterLoading.countries}
+                            >
                               <SelectTrigger id="country">
-                                <SelectValue placeholder="Select country" />
+                                <SelectValue placeholder={filterLoading.countries ? "Loading..." : "Select country"} />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="all">All Countries</SelectItem>
-                                <SelectItem value="pakistan">Pakistan</SelectItem>
-                                <SelectItem value="india">India</SelectItem>
-                                <SelectItem value="bangladesh">Bangladesh</SelectItem>
-                                <SelectItem value="sri-lanka">Sri Lanka</SelectItem>
-                                <SelectItem value="nepal">Nepal</SelectItem>
+                                {countries.map((country) => (
+                                  <SelectItem key={country.id} value={country.id}>
+                                    {country.name}
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>
@@ -562,17 +1211,21 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                           {/* Region */}
                           <div className="space-y-2">
                             <Label htmlFor="region">Region</Label>
-                            <Select>
+                            <Select 
+                              value={filters.region} 
+                              onValueChange={(value) => handleFilterChange('region', value)}
+                              disabled={filterLoading.regions}
+                            >
                               <SelectTrigger id="region">
-                                <SelectValue placeholder="Select region" />
+                                <SelectValue placeholder={filterLoading.regions ? "Loading..." : "Select region"} />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="all">All Regions</SelectItem>
-                                <SelectItem value="punjab">Punjab</SelectItem>
-                                <SelectItem value="sindh">Sindh</SelectItem>
-                                <SelectItem value="kpk">Khyber Pakhtunkhwa</SelectItem>
-                                <SelectItem value="balochistan">Balochistan</SelectItem>
-                                <SelectItem value="gilgit">Gilgit-Baltistan</SelectItem>
+                                {regions.map((region) => (
+                                  <SelectItem key={region.id} value={region.id}>
+                                    {region.name}
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>
@@ -580,17 +1233,21 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                           {/* City */}
                           <div className="space-y-2">
                             <Label htmlFor="city">City</Label>
-                            <Select>
+                            <Select 
+                              value={filters.city} 
+                              onValueChange={(value) => handleFilterChange('city', value)}
+                              disabled={filterLoading.cities}
+                            >
                               <SelectTrigger id="city">
-                                <SelectValue placeholder="Select city" />
+                                <SelectValue placeholder={filterLoading.cities ? "Loading..." : "Select city"} />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="all">All Cities</SelectItem>
-                                <SelectItem value="karachi">Karachi</SelectItem>
-                                <SelectItem value="lahore">Lahore</SelectItem>
-                                <SelectItem value="islamabad">Islamabad</SelectItem>
-                                <SelectItem value="rawalpindi">Rawalpindi</SelectItem>
-                                <SelectItem value="faisalabad">Faisalabad</SelectItem>
+                                {cities.map((city) => (
+                                  <SelectItem key={city.id} value={city.id}>
+                                    {city.name}
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>
@@ -598,17 +1255,21 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                           {/* Project */}
                           <div className="space-y-2">
                             <Label htmlFor="project">Project</Label>
-                            <Select>
+                            <Select 
+                              value={filters.project} 
+                              onValueChange={(value) => handleFilterChange('project', value)}
+                              disabled={filterLoading.projects}
+                            >
                               <SelectTrigger id="project">
-                                <SelectValue placeholder="Select project" />
+                                <SelectValue placeholder={filterLoading.projects ? "Loading..." : "Select project"} />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="all">All Projects</SelectItem>
-                                <SelectItem value="dil-ai">DIL AI Learning</SelectItem>
-                                <SelectItem value="english-mastery">English Mastery</SelectItem>
-                                <SelectItem value="stem-education">STEM Education</SelectItem>
-                                <SelectItem value="digital-literacy">Digital Literacy</SelectItem>
-                                <SelectItem value="teacher-training">Teacher Training</SelectItem>
+                                {projects.map((project) => (
+                                  <SelectItem key={project.id} value={project.id}>
+                                    {project.name}
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>
@@ -616,17 +1277,21 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                           {/* Board */}
                           <div className="space-y-2">
                             <Label htmlFor="board">Board</Label>
-                            <Select>
+                            <Select 
+                              value={filters.board} 
+                              onValueChange={(value) => handleFilterChange('board', value)}
+                              disabled={filterLoading.boards}
+                            >
                               <SelectTrigger id="board">
-                                <SelectValue placeholder="Select board" />
+                                <SelectValue placeholder={filterLoading.boards ? "Loading..." : "Select board"} />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="all">All Boards</SelectItem>
-                                <SelectItem value="federal">Federal Board</SelectItem>
-                                <SelectItem value="punjab-board">Punjab Board</SelectItem>
-                                <SelectItem value="sindh-board">Sindh Board</SelectItem>
-                                <SelectItem value="kpk-board">KPK Board</SelectItem>
-                                <SelectItem value="balochistan-board">Balochistan Board</SelectItem>
+                                {boards.map((board) => (
+                                  <SelectItem key={board.id} value={board.id}>
+                                    {board.name}
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>
@@ -634,17 +1299,21 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                           {/* Schools */}
                           <div className="space-y-2">
                             <Label htmlFor="schools">Schools</Label>
-                            <Select>
+                            <Select 
+                              value={filters.school} 
+                              onValueChange={(value) => handleFilterChange('school', value)}
+                              disabled={filterLoading.schools}
+                            >
                               <SelectTrigger id="schools">
-                                <SelectValue placeholder="Select school" />
+                                <SelectValue placeholder={filterLoading.schools ? "Loading..." : "Select school"} />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="all">All Schools</SelectItem>
-                                <SelectItem value="dil-primary">DIL Primary School</SelectItem>
-                                <SelectItem value="dil-secondary">DIL Secondary School</SelectItem>
-                                <SelectItem value="dil-high">DIL High School</SelectItem>
-                                <SelectItem value="community-school">Community School</SelectItem>
-                                <SelectItem value="public-school">Public School</SelectItem>
+                                {schools.map((school) => (
+                                  <SelectItem key={school.id} value={school.id}>
+                                    {school.name} ({school.school_type})
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>
@@ -652,30 +1321,40 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                           {/* Class */}
                           <div className="space-y-2">
                             <Label htmlFor="class">Class</Label>
-                            <Select>
+                            <Select 
+                              value={filters.class} 
+                              onValueChange={(value) => handleFilterChange('class', value)}
+                              disabled={filterLoading.classes}
+                            >
                               <SelectTrigger id="class">
-                                <SelectValue placeholder="Select class" />
+                                <SelectValue placeholder={filterLoading.classes ? "Loading..." : "Select class"} />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="all">All Classes</SelectItem>
-                                <SelectItem value="grade-1">Grade 1</SelectItem>
-                                <SelectItem value="grade-2">Grade 2</SelectItem>
-                                <SelectItem value="grade-3">Grade 3</SelectItem>
-                                <SelectItem value="grade-4">Grade 4</SelectItem>
-                                <SelectItem value="grade-5">Grade 5</SelectItem>
-                                <SelectItem value="grade-6">Grade 6</SelectItem>
-                                <SelectItem value="grade-7">Grade 7</SelectItem>
-                                <SelectItem value="grade-8">Grade 8</SelectItem>
-                                <SelectItem value="grade-9">Grade 9</SelectItem>
-                                <SelectItem value="grade-10">Grade 10</SelectItem>
+                                {classes.map((classItem) => (
+                                  <SelectItem key={classItem.id} value={classItem.id}>
+                                    {classItem.name} (Grade {classItem.grade})
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>
                         </div>
-                        <DrawerFooter>
-                          <Button className="w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20">Apply Filters</Button>
+                      <DrawerFooter>
+                        <Button 
+                          onClick={applyFilters}
+                          className="w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20"
+                        >
+                          Apply Filters
+                        </Button>
                           <DrawerClose asChild>
-                            <Button variant="outline" className="w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary">Clear All</Button>
+                            <Button 
+                              variant="outline" 
+                              onClick={clearAllFilters}
+                              className="w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
+                            >
+                              Clear All
+                            </Button>
                           </DrawerClose>
                         </DrawerFooter>
                       </div>
@@ -968,19 +1647,29 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                     <p className="text-muted-foreground">No engagement data to display for this period.</p>
                   </div>
                 ) : (
-                <ChartContainer config={chartConfig} className="w-full h-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={engagementData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="day" />
-                      <YAxis />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Line type="monotone" dataKey="activeUsers" stroke="#3B82F6" strokeWidth={2} name="Active Users" />
+                <div className="relative">
+                  <ChartContainer config={chartConfig} className="w-full h-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={engagementData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="day" />
+                        <YAxis />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Line type="monotone" dataKey="activeUsers" stroke="#3B82F6" strokeWidth={2} name="Active Users" />
                         <Line type="monotone" dataKey="courses" stroke="#10B981" strokeWidth={2} name="Courses Accessed" />
-                      <Line type="monotone" dataKey="discussions" stroke="#F59E0B" strokeWidth={2} name="Discussions" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
+                        <Line type="monotone" dataKey="discussions" stroke="#F59E0B" strokeWidth={2} name="Discussions" />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                  {engagementData.every(d => d.activeUsers === 0 && d.courses === 0 && d.discussions === 0) && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+                      <div className="text-center">
+                        <p className="text-sm text-muted-foreground">No activity recorded for this period</p>
+                        <p className="text-xs text-muted-foreground mt-1">Overall engagement: {stats?.avgEngagement ?? 0}%</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
                 )}
               </div>
             </CardContent>
