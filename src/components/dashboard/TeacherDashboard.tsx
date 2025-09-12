@@ -200,6 +200,17 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     class: 'all',
   });
 
+  // Applied filters state (what's actually being used for data fetching)
+  const [appliedFilters, setAppliedFilters] = useState<FilterState>({
+    country: 'all',
+    region: 'all',
+    city: 'all',
+    project: 'all',
+    board: 'all',
+    school: 'all',
+    class: 'all',
+  });
+
   // Helper function to get date range based on timeRange
   const getDateRange = (range: string) => {
     const now = new Date();
@@ -514,7 +525,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
 
   // Clear all filters function
   const clearAllFilters = () => {
-    setFilters({
+    const clearedFilters = {
       country: 'all',
       region: 'all',
       city: 'all',
@@ -522,7 +533,10 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       board: 'all',
       school: 'all',
       class: 'all',
-    });
+    };
+    
+    setFilters(clearedFilters);
+    setAppliedFilters(clearedFilters);
     
     // Reset all dependent data to show all options
     fetchRegions();
@@ -531,6 +545,13 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     fetchBoards();
     fetchSchools();
     fetchClasses();
+  };
+
+  // Apply filters function
+  const applyFilters = () => {
+    // Apply the current filter selections to the applied filters
+    setAppliedFilters(filters);
+    toast.success('Filters applied successfully');
   };
 
   // Initialize filter data on component mount
@@ -609,11 +630,22 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         const assignmentLessonIds = assignmentLessons.map(l => l.id);
 
 
-        // 4. Fetch teacher-specific stats using the new engagement metrics function
-        const { data: engagementMetrics, error: engagementError } = await supabase.rpc('get_teacher_engagement_metrics', {
+        // 4. Fetch teacher-specific stats using the new engagement metrics function with filters
+        const filterParams: any = {
           p_teacher_id: userProfile.id,
           p_time_range: timeRange
-        });
+        };
+        
+        // Add filter parameters if they are not 'all'
+        if (appliedFilters.country !== 'all') filterParams.filter_country_id = appliedFilters.country;
+        if (appliedFilters.region !== 'all') filterParams.filter_region_id = appliedFilters.region;
+        if (appliedFilters.city !== 'all') filterParams.filter_city_id = appliedFilters.city;
+        if (appliedFilters.project !== 'all') filterParams.filter_project_id = appliedFilters.project;
+        if (appliedFilters.board !== 'all') filterParams.filter_board_id = appliedFilters.board;
+        if (appliedFilters.school !== 'all') filterParams.filter_school_id = appliedFilters.school;
+        if (appliedFilters.class !== 'all') filterParams.filter_class_id = appliedFilters.class;
+
+        const { data: engagementMetrics, error: engagementError } = await supabase.rpc('get_teacher_engagement_metrics_with_filters', filterParams);
 
         if (engagementError) throw engagementError;
 
@@ -681,15 +713,15 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         setStats(baseStats);
 
 
-        await fetchStudentEngagementData(courseIds, timeRange);
-        await fetchCoursePerformanceData(courseIds);
-        await fetchStudentProgressData(courseIds);
+        await fetchStudentEngagementData(courseIds, timeRange, appliedFilters);
+        await fetchCoursePerformanceData(courseIds, appliedFilters);
+        await fetchStudentProgressData(courseIds, appliedFilters);
         
 
-        await fetchCourseCompletionTrends(courseIds, timeRange);
-        await fetchQuizScoresData(courseIds);
-        await fetchEngagementTrendsData(courseIds, timeRange);
-        await fetchStudentStatusCounts(courseIds);
+        await fetchCourseCompletionTrends(courseIds, timeRange, appliedFilters);
+        await fetchQuizScoresData(courseIds, appliedFilters);
+        await fetchEngagementTrendsData(courseIds, timeRange, appliedFilters);
+        await fetchStudentStatusCounts(courseIds, appliedFilters);
 
       } catch (error: any) {
         console.error("Failed to fetch teacher dashboard stats:", error);
@@ -700,17 +732,29 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     };
 
     fetchTeacherData();
-  }, [userProfile, timeRange]);
+  }, [userProfile, timeRange, appliedFilters]);
 
-  const fetchStudentEngagementData = async (courseIds: string[], range: string) => {
+  const fetchStudentEngagementData = async (courseIds: string[], range: string, currentFilters?: FilterState) => {
     try {
 
       
-      // Use the dynamic SQL function
-      const { data, error } = await supabase.rpc('get_student_engagement_trends', {
-        teacher_id: userProfile.id,
-        time_range: range
-      });
+      // Use the dynamic SQL function with filters
+      const filterParams: any = {
+        p_teacher_id: userProfile.id,
+        p_time_range: range
+      };
+      
+      if (currentFilters) {
+        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
+        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
+        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
+        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
+        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
+        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
+        if (currentFilters.country !== 'all') filterParams.filter_country_id = currentFilters.country;
+      }
+
+      const { data, error } = await supabase.rpc('get_student_engagement_trends_with_filters', filterParams);
 
 
 
@@ -729,6 +773,15 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         timeSpent: item.time_spent
       }));
 
+      // Check if all values are zero or empty
+      const hasValidData = engagementData.some(item => 
+        item.activeStudents > 0 || item.completionRate > 0 || item.timeSpent > 0
+      );
+
+      if (!hasValidData) {
+        setStudentEngagementData([]);
+        return;
+      }
 
       setStudentEngagementData(engagementData);
     } catch (error) {
@@ -737,21 +790,32 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     }
   };
 
-  const fetchCoursePerformanceData = async (courseIds: string[]) => {
+  const fetchCoursePerformanceData = async (courseIds: string[], currentFilters?: FilterState) => {
     try {
 
       
-      // Use the dynamic SQL function
-      const { data, error } = await supabase.rpc('get_course_performance_data', {
+      // Use the dynamic SQL function with filters
+      const filterParams: any = {
         p_teacher_id: userProfile.id
-      });
+      };
+      
+      if (currentFilters) {
+        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
+        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
+        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
+        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
+        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
+        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
+        if (currentFilters.country !== 'all') filterParams.filter_country_id = currentFilters.country;
+      }
+
+      const { data, error } = await supabase.rpc('get_course_performance_data_with_filters', filterParams);
 
 
 
       if (error) throw error;
 
       if (!data || data.length === 0) {
-
         setCoursePerformanceData([]);
         return;
       }
@@ -765,6 +829,15 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         avgRating: item.average_score
       }));
 
+      // Check if all values are zero or empty
+      const hasValidData = coursePerformance.some(item => 
+        item.enrolled > 0 || item.completed > 0 || item.inProgress > 0
+      );
+
+      if (!hasValidData) {
+        setCoursePerformanceData([]);
+        return;
+      }
 
       setCoursePerformanceData(coursePerformance);
     } catch (error) {
@@ -773,11 +846,24 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     }
   };
 
-  const fetchStudentProgressData = async (courseIds: string[]) => {
+  const fetchStudentProgressData = async (courseIds: string[], currentFilters?: FilterState) => {
     try {
-      const { data, error } = await supabase.rpc('get_student_progress_distribution', {
+      // Use the filtered version of the function
+      const filterParams: any = {
         p_teacher_id: userProfile.id
-      });
+      };
+      
+      if (currentFilters) {
+        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
+        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
+        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
+        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
+        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
+        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
+        if (currentFilters.country !== 'all') filterParams.filter_country_id = currentFilters.country;
+      }
+
+      const { data, error } = await supabase.rpc('get_student_progress_distribution_with_filters', filterParams);
 
       if (error) throw error;
 
@@ -792,6 +878,14 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         color: item.color_code
       }));
 
+      // Check if all values are zero or empty
+      const hasValidData = progressDistribution.some(item => item.value > 0);
+
+      if (!hasValidData) {
+        setStudentProgressData([]);
+        return;
+      }
+
       setStudentProgressData(progressDistribution);
     } catch (error) {
       console.error("Failed to fetch student progress data:", error);
@@ -799,22 +893,29 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     }
   };
 
-  const fetchCourseCompletionTrends = async (courseIds: string[], range: string) => {
+  const fetchCourseCompletionTrends = async (courseIds: string[], range: string, currentFilters?: FilterState) => {
     try {
-
+      // Use the filtered version of the function
+      const filterParams: any = {
+        p_teacher_id: userProfile.id,
+        p_time_range: range
+      };
       
-      // Use the dynamic SQL function
-      const { data, error } = await supabase.rpc('get_course_completion_trends', {
-        teacher_id: userProfile.id,
-        time_range: range
-      });
+      if (currentFilters) {
+        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
+        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
+        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
+        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
+        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
+        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
+        if (currentFilters.country !== 'all') filterParams.filter_country_id = currentFilters.country;
+      }
 
-
+      const { data, error } = await supabase.rpc('get_course_completion_trends_with_filters', filterParams);
 
       if (error) throw error;
 
       if (!data || data.length === 0) {
-
         setCourseCompletionTrends([]);
         return;
       }
@@ -825,7 +926,6 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         ...item.course_data
       }));
 
-
       setCourseCompletionTrends(trendsData);
     } catch (error) {
       console.error("Failed to fetch course completion trends:", error);
@@ -833,26 +933,29 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     }
   };
 
-  const fetchQuizScoresData = async (courseIds: string[]) => {
+  const fetchQuizScoresData = async (courseIds: string[], currentFilters?: FilterState) => {
     try {
-
+      // Use the filtered version of the function
+      const filterParams: any = {
+        p_teacher_id: userProfile.id
+      };
       
-      // Use the dynamic SQL function
-      const { data, error } = await supabase.rpc('get_quiz_performance_data', {
-        teacher_id: userProfile.id
-      });
+      if (currentFilters) {
+        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
+        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
+        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
+        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
+        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
+        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
+        if (currentFilters.country !== 'all') filterParams.filter_country_id = currentFilters.country;
+      }
 
-
+      const { data, error } = await supabase.rpc('get_quiz_performance_data_with_filters', filterParams);
 
       if (error) throw error;
 
       if (!data || data.length === 0) {
-
-        // Create fallback data to show chart structure
-        const fallbackData = [
-          { quiz: 'No Quizzes Available', avgScore: 0, attempts: 0, passRate: 0 }
-        ];
-        setQuizScoresData(fallbackData);
+        setQuizScoresData([]);
         return;
       }
 
@@ -864,29 +967,34 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         passRate: item.pass_rate
       }));
 
-
       setQuizScoresData(quizData);
     } catch (error) {
       console.error("Failed to fetch quiz scores data:", error);
-      // Create fallback data on error
-      const fallbackData = [
-        { quiz: 'No Quizzes Available', avgScore: 0, attempts: 0, passRate: 0 }
-      ];
-      setQuizScoresData(fallbackData);
+      setQuizScoresData([]);
     }
   };
 
-  const fetchEngagementTrendsData = async (courseIds: string[], range: string) => {
+  const fetchEngagementTrendsData = async (courseIds: string[], range: string, currentFilters?: FilterState) => {
     try {
-
-      
-      // Use the dynamic SQL function
-      const { data, error } = await supabase.rpc('get_engagement_trends_data', {
+      // Use the filtered version of the function
+      const filterParams: any = {
         p_teacher_id: userProfile.id,
         p_time_range: range
-      });
+      };
+      
+      if (currentFilters) {
+        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
+        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
+        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
+        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
+        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
+        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
+        if (currentFilters.country !== 'all') filterParams.filter_country_id = currentFilters.country;
+      }
 
-      console.log('🔍 [DEBUG] get_engagement_trends_data response:', { data, error });
+      const { data, error } = await supabase.rpc('get_engagement_trends_data_with_filters', filterParams);
+
+      console.log('🔍 [DEBUG] get_engagement_trends_data_with_filters response:', { data, error });
 
       if (error) throw error;
 
@@ -903,6 +1011,17 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         quizzes: item.quizzes_count,
       }));
 
+      // Check if all values are zero or empty
+      const hasValidData = trendsData.some(item => 
+        item.assignments > 0 || item.quizzes > 0
+      );
+
+      if (!hasValidData) {
+        console.log('🔍 [DEBUG] No valid engagement trends data found, setting empty array');
+        setEngagementTrendsData([]);
+        return;
+      }
+
       console.log('🔍 [DEBUG] Transformed engagement trends data:', trendsData);
       setEngagementTrendsData(trendsData);
     } catch (error) {
@@ -911,16 +1030,28 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     }
   };
 
-  const fetchStudentStatusCounts = async (courseIds: string[]) => {
+  const fetchStudentStatusCounts = async (courseIds: string[], currentFilters?: FilterState) => {
     try {
       console.log('🔍 [DEBUG] fetchStudentStatusCounts called with:', { courseIds, teacherId: userProfile.id });
       
-      // Use the new SQL function
-      const { data, error } = await supabase.rpc('get_student_status_counts', {
+      // Use the filtered version of the function
+      const filterParams: any = {
         p_teacher_id: userProfile.id
-      });
+      };
+      
+      if (currentFilters) {
+        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
+        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
+        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
+        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
+        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
+        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
+        if (currentFilters.country !== 'all') filterParams.filter_country_id = currentFilters.country;
+      }
 
-      console.log('🔍 [DEBUG] get_student_status_counts response:', { data, error });
+      const { data, error } = await supabase.rpc('get_student_status_counts_with_filters', filterParams);
+
+      console.log('🔍 [DEBUG] get_student_status_counts_with_filters response:', { data, error });
 
       if (error) throw error;
 
@@ -1204,7 +1335,12 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                         </div>
                       </div>
                       <DrawerFooter>
-                        <Button className="w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20">Apply Filters</Button>
+                        <Button 
+                          onClick={applyFilters}
+                          className="w-full transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20"
+                        >
+                          Apply Filters
+                        </Button>
                         <DrawerClose asChild>
                           <Button 
                             variant="outline" 
@@ -1362,6 +1498,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                   </CardHeader>
                   <CardContent>
                     <div className="h-[400px]">
+                      {coursePerformanceData.length > 0 ? (
                       <ChartContainer config={chartConfig} className="w-full h-full">
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart data={coursePerformanceData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
@@ -1382,6 +1519,11 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                           </BarChart>
                         </ResponsiveContainer>
                       </ChartContainer>
+                      ) : (
+                        <div className="flex items-center justify-center h-full">
+                          <p className="text-muted-foreground">No course performance data to display.</p>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -1400,6 +1542,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                   </CardHeader>
                   <CardContent>
                     <div className="h-[400px]">
+                      {engagementTrendsData.length > 0 ? (
                       <ChartContainer config={chartConfig} className="w-full h-full">
                         <ResponsiveContainer width="100%" height="100%">
                           <AreaChart data={engagementTrendsData}>
@@ -1437,6 +1580,11 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                           </AreaChart>
                         </ResponsiveContainer>
                       </ChartContainer>
+                      ) : (
+                        <div className="flex items-center justify-center h-full">
+                          <p className="text-muted-foreground">No engagement trends data to display for this period.</p>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

@@ -1042,6 +1042,17 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
         rating: item.average_score || 0,
       }));
 
+      // Check if all values are zero or empty
+      const hasValidData = courseAnalytics.some(item => 
+        item.enrolled > 0 || item.completed > 0 || item.progress > 0
+      );
+
+      if (!hasValidData) {
+        console.log('🔍 [DEBUG] No valid course analytics data found');
+        setCourseAnalyticsData([]);
+        return;
+      }
+
       console.log('🔍 [DEBUG] Transformed course analytics:', courseAnalytics);
       setCourseAnalyticsData(courseAnalytics);
     } catch (error) {
@@ -1075,6 +1086,10 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
         courses: item.courses_accessed,
         discussions: item.discussions,
       }));
+
+      // For engagement trends, we should show the chart even if all values are 0
+      // because it provides context about the time periods, even if there's no activity
+      // The main engagement rate metric shows overall engagement, while this shows trends
 
       setEngagementData(formattedData);
     } catch (error: any) {
@@ -1118,7 +1133,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
     </Card>
   );
 
-  const isEngagementDataEmpty = engagementData.length === 0 || engagementData.every(d => d.activeUsers === 0 && d.courses === 0 && d.discussions === 0);
+  const isEngagementDataEmpty = engagementData.length === 0;
 
   return (
     <div className="space-y-8">
@@ -1651,19 +1666,29 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                     <p className="text-muted-foreground">No engagement data to display for this period.</p>
                   </div>
                 ) : (
-                <ChartContainer config={chartConfig} className="w-full h-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={engagementData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="day" />
-                      <YAxis />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Line type="monotone" dataKey="activeUsers" stroke="#3B82F6" strokeWidth={2} name="Active Users" />
+                <div className="relative">
+                  <ChartContainer config={chartConfig} className="w-full h-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={engagementData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="day" />
+                        <YAxis />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Line type="monotone" dataKey="activeUsers" stroke="#3B82F6" strokeWidth={2} name="Active Users" />
                         <Line type="monotone" dataKey="courses" stroke="#10B981" strokeWidth={2} name="Courses Accessed" />
-                      <Line type="monotone" dataKey="discussions" stroke="#F59E0B" strokeWidth={2} name="Discussions" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
+                        <Line type="monotone" dataKey="discussions" stroke="#F59E0B" strokeWidth={2} name="Discussions" />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                  {engagementData.every(d => d.activeUsers === 0 && d.courses === 0 && d.discussions === 0) && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+                      <div className="text-center">
+                        <p className="text-sm text-muted-foreground">No activity recorded for this period</p>
+                        <p className="text-xs text-muted-foreground mt-1">Overall engagement: {stats?.avgEngagement ?? 0}%</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
                 )}
               </div>
             </CardContent>
