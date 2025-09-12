@@ -150,7 +150,7 @@ interface FilterState {
 export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState('alltime');
+  const [timeRange, setTimeRange] = useState('30days');
   const [studentEngagementData, setStudentEngagementData] = useState<any[]>([]);
   const [coursePerformanceData, setCoursePerformanceData] = useState<any[]>([]);
   const [studentProgressData, setStudentProgressData] = useState<any[]>([]);
@@ -217,10 +217,6 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     const startDate = new Date();
     
     switch (range) {
-      case 'alltime':
-        // Start from a very early date to include all data
-        startDate.setFullYear(2020, 0, 1); // January 1, 2020
-        break;
       case '7days':
         startDate.setDate(now.getDate() - 7);
         break;
@@ -659,26 +655,17 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
           { count: totalCourses, error: totalCoursesError },
         ] = await Promise.all([
           // Published courses by this teacher
-          timeRange === 'alltime'
-            ? supabase.from('courses')
-                .select('*', { count: 'exact', head: true })
-                .in('id', courseIds)
-                .eq('status', 'Published')
-            : supabase.from('courses')
-                .select('*', { count: 'exact', head: true })
-                .in('id', courseIds)
-                .eq('status', 'Published')
-                .gte('created_at', startDate.toISOString()),
+          supabase.from('courses')
+            .select('*', { count: 'exact', head: true })
+            .in('id', courseIds)
+            .eq('status', 'Published')
+            .gte('created_at', startDate.toISOString()),
           
           // Total courses by this teacher
-          timeRange === 'alltime'
-            ? supabase.from('courses')
-                .select('*', { count: 'exact', head: true })
-                .in('id', courseIds)
-            : supabase.from('courses')
-                .select('*', { count: 'exact', head: true })
-                .in('id', courseIds)
-                .gte('created_at', startDate.toISOString()),
+          supabase.from('courses')
+            .select('*', { count: 'exact', head: true })
+            .in('id', courseIds)
+            .gte('created_at', startDate.toISOString()),
         ]);
 
         if (coursesError) throw coursesError;
@@ -1144,7 +1131,6 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                     <SelectValue placeholder="Time range" />
                   </SelectTrigger>
                   <SelectContent>
-                        <SelectItem value="alltime">All Time</SelectItem>
                         <SelectItem value="7days">Last 7 days</SelectItem>
                         <SelectItem value="30days">Last 30 days</SelectItem>
                     <SelectItem value="3months">Last 3 months</SelectItem>

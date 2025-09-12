@@ -186,7 +186,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
   const [courseAnalyticsData, setCourseAnalyticsData] = useState<CourseAnalyticsData[]>([]);
   const [engagementData, setEngagementData] = useState<EngagementData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState('alltime');
+  const [timeRange, setTimeRange] = useState('30days');
 
   // Filter data states
   const [countries, setCountries] = useState<Country[]>([]);
@@ -236,10 +236,6 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
     const startDate = new Date();
     
     switch (range) {
-      case 'alltime':
-        // Start from a very early date to include all data
-        startDate.setFullYear(2020, 0, 1); // January 1, 2020
-        break;
       case '7days':
         startDate.setDate(now.getDate() - 7);
         break;
@@ -718,20 +714,6 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
       let periods: { label: string; start: Date; end: Date }[] = [];
       
       switch (range) {
-        case 'alltime':
-          // Show historical data for all time (last 12 months for better visualization)
-          for (let i = 11; i >= 0; i--) {
-            const date = new Date();
-            date.setMonth(date.getMonth() - i);
-            const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
-            const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-            periods.push({
-              label: date.toLocaleDateString('en-US', { month: 'short' }),
-              start: startOfMonth,
-              end: endOfMonth
-            });
-          }
-          break;
         case '7days':
           // Show last 7 days
           for (let i = 6; i >= 0; i--) {
@@ -1174,7 +1156,6 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                       <SelectItem value="3months">Last 3 months</SelectItem>
                       <SelectItem value="6months">Last 6 months</SelectItem>
                       <SelectItem value="1year">Last year</SelectItem>
-                      <SelectItem value="alltime">All time</SelectItem>
                     </SelectContent>
                   </Select>
                   
