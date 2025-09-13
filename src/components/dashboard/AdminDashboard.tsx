@@ -1201,7 +1201,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                                 <SelectItem value="all">All Countries</SelectItem>
                                 {countries.map((country) => (
                                   <SelectItem key={country.id} value={country.id}>
-                                    {country.name}
+                                    {country.name} ({country.code})
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -1223,7 +1223,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                                 <SelectItem value="all">All Regions</SelectItem>
                                 {regions.map((region) => (
                                   <SelectItem key={region.id} value={region.id}>
-                                    {region.name}
+                                    {region.name} ({region.code})
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -1245,7 +1245,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                                 <SelectItem value="all">All Cities</SelectItem>
                                 {cities.map((city) => (
                                   <SelectItem key={city.id} value={city.id}>
-                                    {city.name}
+                                    {city.name} ({city.code})
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -1267,7 +1267,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                                 <SelectItem value="all">All Projects</SelectItem>
                                 {projects.map((project) => (
                                   <SelectItem key={project.id} value={project.id}>
-                                    {project.name}
+                                    {project.name} ({project.code})
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -1289,7 +1289,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                                 <SelectItem value="all">All Boards</SelectItem>
                                 {boards.map((board) => (
                                   <SelectItem key={board.id} value={board.id}>
-                                    {board.name}
+                                    {board.name} ({board.code})
                                   </SelectItem>
                                 ))}
                               </SelectContent>
