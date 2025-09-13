@@ -40,6 +40,10 @@ import { toast } from "sonner"
 import { Skeleton } from "../ui/skeleton"
 import { EmptyState } from "../EmptyState"
 import { useAuth } from "@/hooks/useAuth"
+import { useViewPreferences } from '@/contexts/ViewPreferencesContext'
+import { ViewToggle } from '@/components/ui/ViewToggle'
+import { CourseTileView } from '@/components/course/CourseTileView'
+import { CourseListView } from '@/components/course/CourseListView'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -130,6 +134,7 @@ const CourseCard = ({ course, onDelete }: { course: Course, onDelete: (course: C
 const CourseManagement = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { preferences, setTeacherCourseView } = useViewPreferences();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -611,11 +616,43 @@ const CourseManagement = () => {
                 <ContentLoader message="Loading courses..." />
             </div>
           ) : courses.length > 0 ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {courses.map(course => (
-                <CourseCard key={course.id} course={course} onDelete={setCourseToDelete} />
-              ))}
+            <div className="space-y-6">
+              {/* View Toggle */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold text-foreground">Courses</h2>
+                  <p className="text-sm text-muted-foreground">Switch between different views to manage your courses</p>
                 </div>
+                <ViewToggle
+                  currentView={preferences.teacherCourseView}
+                  onViewChange={setTeacherCourseView}
+                  availableViews={['card', 'tile', 'list']}
+                />
+              </div>
+
+              {/* Course Display based on selected view */}
+              {preferences.teacherCourseView === 'card' && (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {courses.map(course => (
+                    <CourseCard key={course.id} course={course} onDelete={setCourseToDelete} />
+                  ))}
+                </div>
+              )}
+
+              {preferences.teacherCourseView === 'tile' && (
+                <CourseTileView
+                  courses={courses}
+                  onDelete={setCourseToDelete}
+                />
+              )}
+
+              {preferences.teacherCourseView === 'list' && (
+                <CourseListView
+                  courses={courses}
+                  onDelete={setCourseToDelete}
+                />
+              )}
+            </div>
           ) : (
             <div className="text-center py-12">
               <EmptyState

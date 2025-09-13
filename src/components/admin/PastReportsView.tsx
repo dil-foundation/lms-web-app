@@ -18,6 +18,9 @@ import {
   Plus,
   Clock,
 } from 'lucide-react';
+import { ViewToggle } from '@/components/ui/ViewToggle';
+import { ObservationReportsViews } from './ObservationReportsViews';
+import { useViewPreferences } from '@/contexts/ViewPreferencesContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -188,12 +191,15 @@ const ReportCard = ({
 
 export const PastReportsView = ({ onBack, onViewReport }: PastReportsViewProps) => {
   const { reports, deleteReport, isLoading, error, getStatistics } = useObservationReports();
+  const { preferences, setObservationReportsView } = useViewPreferences();
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [schoolFilter, setSchoolFilter] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
   const [statistics, setStatistics] = useState({
     totalReports: 0,
     thisWeekReports: 0,
@@ -393,6 +399,17 @@ export const PastReportsView = ({ onBack, onViewReport }: PastReportsViewProps) 
 
     return filtered;
   }, [reports, searchQuery, roleFilter, schoolFilter, sortBy]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredAndSortedReports.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedReports = filteredAndSortedReports.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, roleFilter, schoolFilter, sortBy]);
 
   // Get unique roles and schools for filters
   const uniqueRoles = Array.from(new Set(reports.map(r => r.observerRole)));
@@ -686,11 +703,27 @@ export const PastReportsView = ({ onBack, onViewReport }: PastReportsViewProps) 
                   </SelectContent>
                 </Select>
               </div>
+
             </CardContent>
           </Card>
 
+          {/* View Toggle Section */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-foreground">Reports</h3>
+              <span className="text-sm text-muted-foreground">
+                ({filteredAndSortedReports.length} {filteredAndSortedReports.length === 1 ? 'report' : 'reports'})
+              </span>
+            </div>
+            <ViewToggle
+              currentView={preferences.observationReportsView}
+              onViewChange={setObservationReportsView}
+              availableViews={['card', 'tile', 'list']}
+            />
+          </div>
+
           {/* Reports List */}
-          {filteredAndSortedReports.length === 0 ? (
+          {paginatedReports.length === 0 ? (
             <Card className="bg-gradient-to-br from-card to-primary/5 dark:bg-card border-2 border-dashed border-primary/20">
               <CardContent className="text-center py-16">
                 <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl flex items-center justify-center mx-auto mb-6">
@@ -717,19 +750,65 @@ export const PastReportsView = ({ onBack, onViewReport }: PastReportsViewProps) 
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-4">
-              {filteredAndSortedReports.map((report) => (
-                <ReportCard
-                  key={report.id}
-                  report={report}
-                  onView={() => handleViewReport(report)}
-                  onDownload={() => handleDownloadReport(report)}
-                  onDelete={() => handleDeleteReport(report)}
-                  isDeleting={deletingId === report.id}
-                  isDownloading={downloadingId === report.id}
-                />
-              ))}
-            </div>
+            <>
+              <ObservationReportsViews
+                reports={paginatedReports}
+                viewMode={preferences.observationReportsView}
+                onView={handleViewReport}
+                onDownload={handleDownloadReport}
+                onDelete={handleDeleteReport}
+                isDeleting={(reportId) => deletingId === reportId}
+                isDownloading={(reportId) => downloadingId === reportId}
+              />
+              
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-6">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">
+                      Showing {startIndex + 1} to {Math.min(endIndex, filteredAndSortedReports.length)} of {filteredAndSortedReports.length} reports
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(1)}
+                      disabled={currentPage === 1}
+                    >
+                      First
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(currentPage - 1)}
+                      disabled={currentPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-sm text-muted-foreground px-4">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(totalPages)}
+                      disabled={currentPage === totalPages}
+                    >
+                      Last
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </>
       )}

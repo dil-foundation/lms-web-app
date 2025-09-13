@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Save, Eye, Upload, Plus, GripVertical, X, ChevronDown, ChevronUp, BookOpen, Info, UploadCloud, FileText, RefreshCw, Calendar, Edit } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Upload, Plus, GripVertical, X, ChevronDown, ChevronUp, BookOpen, Info, UploadCloud, FileText, RefreshCw, Calendar, Edit, Sparkles } from 'lucide-react';
 import { AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { FileUpload } from '@/components/ui/FileUpload';
@@ -16,6 +16,7 @@ import { RichTextEditor } from '@/components/ui/RichTextEditor';
 import { MultiSelect } from '@/components/ui/MultiSelect';
 import { PDFQuizUploader } from '@/components/ui/PDFQuizUploader';
 import { QuizRetrySettings } from '@/components/admin/QuizRetrySettings';
+import { AIThumbnailGenerator } from '@/components/course/AIThumbnailGenerator';
 import {
   DndContext,
   closestCenter,
@@ -1586,7 +1587,7 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
                       <input
                         type="checkbox"
                         id={`math-allow-drawing-${qIndex}`}
-                        checked={question.math_allow_drawing || false}
+                        checked={question.math_allow_drawing === true}
                         onChange={(e) => updateMathAllowDrawing(qIndex, e.target.checked)}
                         className="rounded border-gray-300 text-green-600 focus:ring-green-500"
                       />
@@ -2960,7 +2961,7 @@ const CourseBuilder = () => {
 
   const getGradeBadge = (grade: string) => {
     const gradeNum = parseInt(grade);
-    if (gradeNum <= 5) return <Badge variant="default" className="bg-blue-600">Grade {grade}</Badge>;
+    if (gradeNum <= 5) return <Badge variant="default" className="bg-blue-600 text-white">Grade {grade}</Badge>;
     if (gradeNum <= 8) return <Badge variant="default" className="bg-green-600">Grade {grade}</Badge>;
     if (gradeNum <= 10) return <Badge variant="default" className="bg-yellow-600">Grade {grade}</Badge>;
     return <Badge variant="default" className="bg-purple-600">Grade {grade}</Badge>;
@@ -3168,7 +3169,7 @@ const CourseBuilder = () => {
                             math_expression: q.math_expression || null,
                             math_tolerance: q.math_tolerance || null,
                             math_hint: q.math_hint || null,
-                            math_allow_drawing: q.math_allow_drawing || false
+                            math_allow_drawing: q.math_allow_drawing === true
                           }));
                           quizData = { id: ci.id, questions: quizQuestions };
                         }
@@ -3397,6 +3398,7 @@ const CourseBuilder = () => {
 
             if (item.content_type === 'quiz' && item.quiz) {
                 for (const [qIndex, question] of item.quiz.questions.entries()) {
+                  // Math question processing
                     const { data: savedQuestion, error: qError } = await supabase
                         .from('quiz_questions')
                         .insert({
@@ -3404,6 +3406,10 @@ const CourseBuilder = () => {
                             question_text: question.question_text,
                             question_type: question.question_type,
                             position: qIndex,
+                            math_expression: question.math_expression || null,
+                            math_tolerance: question.math_tolerance || null,
+                            math_hint: question.math_hint || null,
+                            math_allow_drawing: question.math_allow_drawing === true
                         })
                         .select('id').single();
 
@@ -3725,7 +3731,7 @@ const CourseBuilder = () => {
                           math_expression: question.math_expression || null,
                           math_tolerance: question.math_tolerance || null,
                           math_hint: question.math_hint || null,
-                          math_allow_drawing: question.math_allow_drawing || false
+                          math_allow_drawing: question.math_allow_drawing === true
                         })
                         .eq('id', existingQuestion.id);
                       
@@ -3776,7 +3782,7 @@ const CourseBuilder = () => {
                           math_expression: question.math_expression || null,
                           math_tolerance: question.math_tolerance || null,
                           math_hint: question.math_hint || null,
-                          math_allow_drawing: question.math_allow_drawing || false
+                          math_allow_drawing: question.math_allow_drawing === true
                         })
                         .select('id')
                         .single();
@@ -4228,7 +4234,7 @@ const CourseBuilder = () => {
                               math_expression: question.math_expression || null,
                               math_tolerance: question.math_tolerance || null,
                               math_hint: question.math_hint || null,
-                              math_allow_drawing: question.math_allow_drawing || false
+                              math_allow_drawing: question.math_allow_drawing === true
                           })
                           .select('id').single();
 
@@ -5930,6 +5936,37 @@ const CourseBuilder = () => {
                   )}
                 </CardContent>
               </Card>
+
+              {/* AI Thumbnail Generator */}
+              <Card className="border-2 border-dashed border-primary/20 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 dark:from-primary/10 dark:via-transparent dark:to-primary/10">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center">
+                      <Sparkles className="w-6 h-6 text-primary" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
+                        AI Thumbnail Generator
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Let AI create a professional thumbnail based on your course content
+                      </p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-8">
+                  <AIThumbnailGenerator
+                    courseId={courseData.id || ''}
+                    courseTitle={courseData.title}
+                    courseDescription={courseData.description}
+                    currentThumbnail={courseData.image}
+                    onThumbnailGenerated={(imageUrl) => {
+                      setCourseData(prev => ({ ...prev, image: imageUrl }));
+                      toast.success('AI thumbnail applied to your course!');
+                    }}
+                  />
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="curriculum" className="space-y-8">
@@ -7282,7 +7319,7 @@ const CourseBuilder = () => {
             <Button variant="outline" onClick={() => setIsClassEditDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleClassEdit} className="bg-blue-600 hover:bg-blue-700">
+            <Button onClick={handleClassEdit} className="bg-blue-600 hover:bg-blue-700 text-white">
               Update Class
             </Button>
           </DialogFooter>
@@ -7407,7 +7444,7 @@ const CourseBuilder = () => {
               <Button onClick={() => {
                 setIsClassViewDialogOpen(false);
                 openClassEditDialog(viewingClass);
-              }} className="bg-blue-600 hover:bg-blue-700">
+              }} className="bg-blue-600 hover:bg-blue-700 text-white">
                 Edit Class
               </Button>
             )}

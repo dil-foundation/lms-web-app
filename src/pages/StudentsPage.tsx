@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useViewPreferences } from '@/contexts/ViewPreferencesContext';
+import { ViewToggle } from '@/components/ui/ViewToggle';
+import { StudentTileView } from '@/components/student/StudentTileView';
+import { StudentListView } from '@/components/student/StudentListView';
+import { StudentCardView } from '@/components/student/StudentCardView';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -77,6 +82,14 @@ interface AvailableStudent {
   avatar_url?: string;
 }
 
+interface Profile {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string;
+  avatar_url?: string;
+}
+
 interface AvailableCourse {
   id: string;
   title: string;
@@ -110,9 +123,14 @@ const getStatusBadgeVariant = (status: string) => {
 
 const getLastActiveText = (lastActiveDate: string): string => {
   try {
-    if (!lastActiveDate) return 'Never';
+    if (!lastActiveDate || lastActiveDate === 'null' || lastActiveDate === 'undefined') return 'Never';
+    
     const now = new Date();
     const lastActive = new Date(lastActiveDate);
+    
+    // Check if the date is valid
+    if (isNaN(lastActive.getTime())) return 'Never';
+    
     const diffInHours = Math.floor((now.getTime() - lastActive.getTime()) / (1000 * 60 * 60));
     
     if (diffInHours < 1) return 'Just now';
@@ -122,6 +140,9 @@ const getLastActiveText = (lastActiveDate: string): string => {
     if (diffInDays < 30) return `${diffInDays} days ago`;
     
     const diffInMonths = Math.floor(diffInDays / 30);
+    // Ensure diffInMonths is a valid number
+    if (isNaN(diffInMonths) || diffInMonths < 0) return 'Never';
+    
     return `${diffInMonths} months ago`;
   } catch {
     return 'Never';
@@ -131,6 +152,7 @@ const getLastActiveText = (lastActiveDate: string): string => {
 export default function StudentsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { preferences, setTeacherStudentView } = useViewPreferences();
   
   // State
   const [searchTerm, setSearchTerm] = useState('');
@@ -419,7 +441,7 @@ export default function StudentsPage() {
 
       if (profilesError) throw profilesError;
 
-      const students: AvailableStudent[] = (allProfiles || []).map(profile => {
+      const students: AvailableStudent[] = (allProfiles || []).map((profile: Profile) => {
         const firstName = profile.first_name || 'Unknown';
         const lastName = profile.last_name || 'Student';
         const fullName = `${firstName} ${lastName}`.trim();
@@ -871,101 +893,208 @@ export default function StudentsPage() {
             </div>
           </div>
 
-          {/* Students Table */}
-          <div className="rounded-md border border-border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Student</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="hidden md:table-cell">Joined</TableHead>
-                  <TableHead className="hidden md:table-cell">Last Active</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isTableLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="h-48">
-                      <ContentLoader message="Loading students..." />
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredStudents.map((student) => (
-                    <TableRow key={student.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center space-x-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage 
-                              src={student.avatar_url} 
-                              alt={student.name}
-                            />
-                            <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                              {student.avatar}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium">{student.name}</div>
-                            <div className="text-sm text-muted-foreground">{student.email}</div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getStatusBadgeVariant(student.status)}>
-                          {student.status.charAt(0).toUpperCase() + student.status.slice(1)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell text-muted-foreground">
-                        {formatDate(student.enrolledDate)}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <span className="text-sm text-muted-foreground">
-                          {student.lastActive}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800">
-                              <span className="sr-only">Open menu</span>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedStudent(student);
-                                setModalMode('view');
-                                setIsProfileModalOpen(true);
-                              }}
-                            >
-                              <Eye className="mr-2 h-4 w-4" />
-                              View Profile
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedStudent(student);
-                                setEditableStudent({
-                                  id: student.id,
-                                  firstName: student.firstName,
-                                  lastName: student.lastName,
-                                  grade: student.grade
-                                });
-                                setModalMode('edit');
-                                setIsProfileModalOpen(true);
-                              }}
-                            >
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit Profile
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
+          {/* View Toggle and Students Display */}
+          <div className="space-y-6">
+            {/* View Toggle */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-foreground">Students</h2>
+                <p className="text-sm text-muted-foreground">Switch between different views to manage your students</p>
+              </div>
+              <ViewToggle
+                currentView={preferences.teacherStudentView}
+                onViewChange={setTeacherStudentView}
+                availableViews={['card', 'tile', 'list']}
+              />
+            </div>
+
+            {/* Students Display based on selected view */}
+            {isTableLoading ? (
+              <div className="h-48 flex items-center justify-center">
+                <ContentLoader message="Loading students..." />
+              </div>
+            ) : (
+              <>
+                {preferences.teacherStudentView === 'card' && (
+                  <StudentCardView
+                    students={filteredStudents.map(student => ({
+                      id: student.id,
+                      firstName: student.firstName,
+                      lastName: student.lastName,
+                      email: student.email,
+                      avatar_url: student.avatar_url,
+                      status: student.status as 'active' | 'inactive',
+                      joinedDate: formatDate(student.enrolledDate),
+                      lastActive: student.lastActive,
+                      grade: student.grade
+                    }))}
+                    onStudentClick={(student) => {
+                      const originalStudent = filteredStudents.find(s => s.id === student.id);
+                      if (originalStudent) {
+                        setSelectedStudent(originalStudent);
+                        setModalMode('view');
+                        setIsProfileModalOpen(true);
+                      }
+                    }}
+                    onMessage={(student) => {
+                      // Handle message functionality
+                    }}
+                    onViewProfile={(student) => {
+                      const originalStudent = filteredStudents.find(s => s.id === student.id);
+                      if (originalStudent) {
+                        setSelectedStudent(originalStudent);
+                        setModalMode('view');
+                        setIsProfileModalOpen(true);
+                      }
+                    }}
+                    onGrade={(student) => {
+                      // Handle grade functionality
+                    }}
+                    onEdit={(student) => {
+                      const originalStudent = filteredStudents.find(s => s.id === student.id);
+                      if (originalStudent) {
+                        setSelectedStudent(originalStudent);
+                        setEditableStudent({
+                          id: originalStudent.id,
+                          firstName: originalStudent.firstName,
+                          lastName: originalStudent.lastName,
+                          grade: originalStudent.grade
+                        });
+                        setModalMode('edit');
+                        setIsProfileModalOpen(true);
+                      }
+                    }}
+                    onRemove={(student) => {
+                      // Handle remove functionality
+                    }}
+                  />
                 )}
-              </TableBody>
-            </Table>
+
+                {preferences.teacherStudentView === 'tile' && (
+                  <StudentTileView
+                    students={filteredStudents.map(student => ({
+                      id: student.id,
+                      name: student.name,
+                      firstName: student.firstName,
+                      lastName: student.lastName,
+                      email: student.email,
+                      avatar: student.avatar,
+                      avatar_url: student.avatar_url,
+                      status: student.status as 'active' | 'inactive',
+                      enrolledDate: formatDate(student.enrolledDate),
+                      lastActive: student.lastActive,
+                      grade: student.grade,
+                      course: student.course,
+                      progress: student.progress
+                    }))}
+                    onStudentClick={(student) => {
+                      setSelectedStudent(student);
+                      setModalMode('view');
+                      setIsProfileModalOpen(true);
+                    }}
+                    onMessage={(student) => {
+                      // Handle message functionality
+                      toast({
+                        title: "Message",
+                        description: `Messaging ${student.name}...`,
+                      });
+                    }}
+                    onViewProfile={(student) => {
+                      setSelectedStudent(student);
+                      setModalMode('view');
+                      setIsProfileModalOpen(true);
+                    }}
+                    onGrade={(student) => {
+                      // Handle grade functionality
+                      toast({
+                        title: "Grade",
+                        description: `Grading ${student.name}...`,
+                      });
+                    }}
+                    onEdit={(student) => {
+                      setSelectedStudent(student);
+                      setEditableStudent({
+                        id: student.id,
+                        firstName: student.firstName,
+                        lastName: student.lastName,
+                        grade: student.grade
+                      });
+                      setModalMode('edit');
+                      setIsProfileModalOpen(true);
+                    }}
+                    onRemove={(student) => {
+                      // Handle remove functionality
+                      toast({
+                        title: "Remove Student",
+                        description: `Removing ${student.name}...`,
+                      });
+                    }}
+                  />
+                )}
+
+                {preferences.teacherStudentView === 'list' && (
+                  <StudentListView
+                    students={filteredStudents.map(student => ({
+                      id: student.id,
+                      name: student.name,
+                      firstName: student.firstName,
+                      lastName: student.lastName,
+                      email: student.email,
+                      avatar: student.avatar,
+                      avatar_url: student.avatar_url,
+                      status: student.status as 'active' | 'inactive',
+                      enrolledDate: formatDate(student.enrolledDate),
+                      lastActive: student.lastActive,
+                      grade: student.grade,
+                      course: student.course,
+                      progress: student.progress
+                    }))}
+                    onStudentClick={(student) => {
+                      setSelectedStudent(student);
+                      setModalMode('view');
+                      setIsProfileModalOpen(true);
+                    }}
+                    onMessage={(student) => {
+                      // Handle message functionality
+                      toast({
+                        title: "Message",
+                        description: `Messaging ${student.name}...`,
+                      });
+                    }}
+                    onViewProfile={(student) => {
+                      setSelectedStudent(student);
+                      setModalMode('view');
+                      setIsProfileModalOpen(true);
+                    }}
+                    onGrade={(student) => {
+                      // Handle grade functionality
+                      toast({
+                        title: "Grade",
+                        description: `Grading ${student.name}...`,
+                      });
+                    }}
+                    onEdit={(student) => {
+                      setSelectedStudent(student);
+                      setEditableStudent({
+                        id: student.id,
+                        firstName: student.firstName,
+                        lastName: student.lastName,
+                        grade: student.grade
+                      });
+                      setModalMode('edit');
+                      setIsProfileModalOpen(true);
+                    }}
+                    onRemove={(student) => {
+                      // Handle remove functionality
+                      toast({
+                        title: "Remove Student",
+                        description: `Removing ${student.name}...`,
+                      });
+                    }}
+                  />
+                )}
+              </>
+            )}
           </div>
           
           {/* Pagination */}
