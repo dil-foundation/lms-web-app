@@ -137,6 +137,12 @@ interface Class {
   board_id: string;
 }
 
+interface Grade {
+  id: string;
+  name: string;
+  code: string;
+}
+
 interface FilterState {
   country: string;
   region: string;
@@ -144,6 +150,7 @@ interface FilterState {
   project: string;
   board: string;
   school: string;
+  grade: string;
   class: string;
 }
 
@@ -176,6 +183,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [boards, setBoards] = useState<Board[]>([]);
   const [schools, setSchools] = useState<School[]>([]);
+  const [grades, setGrades] = useState<Grade[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
 
   // Filter loading states
@@ -186,6 +194,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     projects: false,
     boards: false,
     schools: false,
+    grades: false,
     classes: false,
   });
 
@@ -197,6 +206,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     project: 'all',
     board: 'all',
     school: 'all',
+    grade: 'all',
     class: 'all',
   });
 
@@ -208,6 +218,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     project: 'all',
     board: 'all',
     school: 'all',
+    grade: 'all',
     class: 'all',
   });
 
@@ -409,7 +420,35 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     }
   };
 
-  const fetchClasses = async (schoolId?: string, boardId?: string) => {
+  const fetchGrades = async () => {
+    setFilterLoading(prev => ({ ...prev, grades: true }));
+    try {
+      // Static grades 1-12 as per classes table schema
+      const staticGrades: Grade[] = [
+        { id: '1', name: 'Grade 1', code: 'G1' },
+        { id: '2', name: 'Grade 2', code: 'G2' },
+        { id: '3', name: 'Grade 3', code: 'G3' },
+        { id: '4', name: 'Grade 4', code: 'G4' },
+        { id: '5', name: 'Grade 5', code: 'G5' },
+        { id: '6', name: 'Grade 6', code: 'G6' },
+        { id: '7', name: 'Grade 7', code: 'G7' },
+        { id: '8', name: 'Grade 8', code: 'G8' },
+        { id: '9', name: 'Grade 9', code: 'G9' },
+        { id: '10', name: 'Grade 10', code: 'G10' },
+        { id: '11', name: 'Grade 11', code: 'G11' },
+        { id: '12', name: 'Grade 12', code: 'G12' },
+      ];
+      
+      setGrades(staticGrades);
+    } catch (error) {
+      console.error('Failed to load grades:', error);
+      toast.error('Failed to load grades');
+    } finally {
+      setFilterLoading(prev => ({ ...prev, grades: false }));
+    }
+  };
+
+  const fetchClasses = async (schoolId?: string, boardId?: string, gradeId?: string) => {
     setFilterLoading(prev => ({ ...prev, classes: true }));
     try {
       let query = supabase
@@ -422,6 +461,9 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       }
       if (boardId && boardId !== 'all') {
         query = query.eq('board_id', boardId);
+      }
+      if (gradeId && gradeId !== 'all') {
+        query = query.eq('grade', gradeId);
       }
 
       const { data, error } = await query;
@@ -449,6 +491,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
           newFilters.project = 'all';
           newFilters.board = 'all';
           newFilters.school = 'all';
+          newFilters.grade = 'all';
           newFilters.class = 'all';
           break;
         case 'region':
@@ -456,24 +499,32 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
           newFilters.project = 'all';
           newFilters.board = 'all';
           newFilters.school = 'all';
+          newFilters.grade = 'all';
           newFilters.class = 'all';
           break;
         case 'city':
           newFilters.project = 'all';
           newFilters.board = 'all';
           newFilters.school = 'all';
+          newFilters.grade = 'all';
           newFilters.class = 'all';
           break;
         case 'project':
           newFilters.board = 'all';
           newFilters.school = 'all';
+          newFilters.grade = 'all';
           newFilters.class = 'all';
           break;
         case 'board':
           newFilters.school = 'all';
+          newFilters.grade = 'all';
           newFilters.class = 'all';
           break;
         case 'school':
+          newFilters.grade = 'all';
+          newFilters.class = 'all';
+          break;
+        case 'grade':
           newFilters.class = 'all';
           break;
       }
@@ -489,32 +540,41 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         fetchProjects(value !== 'all' ? value : undefined);
         fetchBoards(value !== 'all' ? value : undefined);
         fetchSchools(value !== 'all' ? value : undefined);
-        fetchClasses();
+        fetchGrades();
+        fetchClasses(undefined, undefined, filters.grade !== 'all' ? filters.grade : undefined);
         break;
       case 'region':
         fetchCities(filters.country !== 'all' ? filters.country : undefined, value !== 'all' ? value : undefined);
         fetchProjects(filters.country !== 'all' ? filters.country : undefined, value !== 'all' ? value : undefined);
         fetchBoards(filters.country !== 'all' ? filters.country : undefined, value !== 'all' ? value : undefined);
         fetchSchools(filters.country !== 'all' ? filters.country : undefined, value !== 'all' ? value : undefined);
-        fetchClasses();
+        fetchGrades();
+        fetchClasses(undefined, undefined, filters.grade !== 'all' ? filters.grade : undefined);
         break;
       case 'city':
         fetchProjects(filters.country !== 'all' ? filters.country : undefined, filters.region !== 'all' ? filters.region : undefined, value !== 'all' ? value : undefined);
         fetchBoards(filters.country !== 'all' ? filters.country : undefined, filters.region !== 'all' ? filters.region : undefined, value !== 'all' ? value : undefined);
         fetchSchools(filters.country !== 'all' ? filters.country : undefined, filters.region !== 'all' ? filters.region : undefined, value !== 'all' ? value : undefined);
-        fetchClasses();
+        fetchGrades();
+        fetchClasses(undefined, undefined, filters.grade !== 'all' ? filters.grade : undefined);
         break;
       case 'project':
         fetchBoards(filters.country !== 'all' ? filters.country : undefined, filters.region !== 'all' ? filters.region : undefined, filters.city !== 'all' ? filters.city : undefined, value !== 'all' ? value : undefined);
         fetchSchools(filters.country !== 'all' ? filters.country : undefined, filters.region !== 'all' ? filters.region : undefined, filters.city !== 'all' ? filters.city : undefined, value !== 'all' ? value : undefined);
-        fetchClasses();
+        fetchGrades();
+        fetchClasses(undefined, undefined, filters.grade !== 'all' ? filters.grade : undefined);
         break;
       case 'board':
         fetchSchools(filters.country !== 'all' ? filters.country : undefined, filters.region !== 'all' ? filters.region : undefined, filters.city !== 'all' ? filters.city : undefined, filters.project !== 'all' ? filters.project : undefined, value !== 'all' ? value : undefined);
-        fetchClasses(undefined, value !== 'all' ? value : undefined);
+        fetchGrades();
+        fetchClasses(undefined, value !== 'all' ? value : undefined, filters.grade !== 'all' ? filters.grade : undefined);
         break;
       case 'school':
-        fetchClasses(value !== 'all' ? value : undefined, filters.board !== 'all' ? filters.board : undefined);
+        fetchGrades();
+        fetchClasses(value !== 'all' ? value : undefined, filters.board !== 'all' ? filters.board : undefined, filters.grade !== 'all' ? filters.grade : undefined);
+        break;
+      case 'grade':
+        fetchClasses(filters.school !== 'all' ? filters.school : undefined, filters.board !== 'all' ? filters.board : undefined, value !== 'all' ? value : undefined);
         break;
     }
   };
@@ -528,6 +588,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       project: 'all',
       board: 'all',
       school: 'all',
+      grade: 'all',
       class: 'all',
     };
     
@@ -540,6 +601,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     fetchProjects();
     fetchBoards();
     fetchSchools();
+    fetchGrades();
     fetchClasses();
   };
 
@@ -558,6 +620,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     fetchProjects();
     fetchBoards();
     fetchSchools();
+    fetchGrades();
     fetchClasses();
   }, []);
 
@@ -1292,6 +1355,28 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                               {schools.map((school) => (
                                 <SelectItem key={school.id} value={school.id}>
                                   {school.name} ({school.school_type})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Grade */}
+                        <div className="space-y-2">
+                          <Label htmlFor="grade">Grade</Label>
+                          <Select 
+                            value={filters.grade} 
+                            onValueChange={(value) => handleFilterChange('grade', value)}
+                            disabled={filterLoading.grades}
+                          >
+                            <SelectTrigger id="grade">
+                              <SelectValue placeholder={filterLoading.grades ? "Loading..." : "Select grade"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Grades</SelectItem>
+                              {grades.map((grade) => (
+                                <SelectItem key={grade.id} value={grade.id}>
+                                  {grade.name}
                                 </SelectItem>
                               ))}
                             </SelectContent>

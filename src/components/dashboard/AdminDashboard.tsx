@@ -169,6 +169,12 @@ interface Class {
   board_id: string;
 }
 
+interface Grade {
+  id: string;
+  name: string;
+  code: string;
+}
+
 interface FilterState {
   country: string;
   region: string;
@@ -176,6 +182,7 @@ interface FilterState {
   project: string;
   board: string;
   school: string;
+  grade: string;
   class: string;
 }
 
@@ -195,6 +202,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [boards, setBoards] = useState<Board[]>([]);
   const [schools, setSchools] = useState<School[]>([]);
+  const [grades, setGrades] = useState<Grade[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
 
   // Filter loading states
@@ -205,6 +213,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
     projects: false,
     boards: false,
     schools: false,
+    grades: false,
     classes: false,
   });
 
@@ -216,6 +225,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
     project: 'all',
     board: 'all',
     school: 'all',
+    grade: 'all',
     class: 'all',
   });
 
@@ -227,6 +237,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
     project: 'all',
     board: 'all',
     school: 'all',
+    grade: 'all',
     class: 'all',
   });
 
@@ -428,7 +439,35 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
     }
   };
 
-  const fetchClasses = async (schoolId?: string, boardId?: string) => {
+  const fetchGrades = async () => {
+    setFilterLoading(prev => ({ ...prev, grades: true }));
+    try {
+      // Static grades 1-12 as per classes table schema
+      const staticGrades: Grade[] = [
+        { id: '1', name: 'Grade 1', code: 'G1' },
+        { id: '2', name: 'Grade 2', code: 'G2' },
+        { id: '3', name: 'Grade 3', code: 'G3' },
+        { id: '4', name: 'Grade 4', code: 'G4' },
+        { id: '5', name: 'Grade 5', code: 'G5' },
+        { id: '6', name: 'Grade 6', code: 'G6' },
+        { id: '7', name: 'Grade 7', code: 'G7' },
+        { id: '8', name: 'Grade 8', code: 'G8' },
+        { id: '9', name: 'Grade 9', code: 'G9' },
+        { id: '10', name: 'Grade 10', code: 'G10' },
+        { id: '11', name: 'Grade 11', code: 'G11' },
+        { id: '12', name: 'Grade 12', code: 'G12' },
+      ];
+      
+      setGrades(staticGrades);
+    } catch (error) {
+      console.error('Failed to load grades:', error);
+      toast.error('Failed to load grades');
+    } finally {
+      setFilterLoading(prev => ({ ...prev, grades: false }));
+    }
+  };
+
+  const fetchClasses = async (schoolId?: string, boardId?: string, gradeId?: string) => {
     setFilterLoading(prev => ({ ...prev, classes: true }));
     try {
       let query = supabase
@@ -441,6 +480,9 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
       }
       if (boardId && boardId !== 'all') {
         query = query.eq('board_id', boardId);
+      }
+      if (gradeId && gradeId !== 'all') {
+        query = query.eq('grade', gradeId);
       }
 
       const { data, error } = await query;
@@ -468,6 +510,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
           newFilters.project = 'all';
           newFilters.board = 'all';
           newFilters.school = 'all';
+          newFilters.grade = 'all';
           newFilters.class = 'all';
           break;
         case 'region':
@@ -475,24 +518,32 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
           newFilters.project = 'all';
           newFilters.board = 'all';
           newFilters.school = 'all';
+          newFilters.grade = 'all';
           newFilters.class = 'all';
           break;
         case 'city':
           newFilters.project = 'all';
           newFilters.board = 'all';
           newFilters.school = 'all';
+          newFilters.grade = 'all';
           newFilters.class = 'all';
           break;
         case 'project':
           newFilters.board = 'all';
           newFilters.school = 'all';
+          newFilters.grade = 'all';
           newFilters.class = 'all';
           break;
         case 'board':
           newFilters.school = 'all';
+          newFilters.grade = 'all';
           newFilters.class = 'all';
           break;
         case 'school':
+          newFilters.grade = 'all';
+          newFilters.class = 'all';
+          break;
+        case 'grade':
           newFilters.class = 'all';
           break;
       }
@@ -508,32 +559,41 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
         fetchProjects(value !== 'all' ? value : undefined);
         fetchBoards(value !== 'all' ? value : undefined);
         fetchSchools(value !== 'all' ? value : undefined);
-        fetchClasses();
+        fetchGrades();
+        fetchClasses(undefined, undefined, filters.grade !== 'all' ? filters.grade : undefined);
         break;
       case 'region':
         fetchCities(filters.country !== 'all' ? filters.country : undefined, value !== 'all' ? value : undefined);
         fetchProjects(filters.country !== 'all' ? filters.country : undefined, value !== 'all' ? value : undefined);
         fetchBoards(filters.country !== 'all' ? filters.country : undefined, value !== 'all' ? value : undefined);
         fetchSchools(filters.country !== 'all' ? filters.country : undefined, value !== 'all' ? value : undefined);
-        fetchClasses();
+        fetchGrades();
+        fetchClasses(undefined, undefined, filters.grade !== 'all' ? filters.grade : undefined);
         break;
       case 'city':
         fetchProjects(filters.country !== 'all' ? filters.country : undefined, filters.region !== 'all' ? filters.region : undefined, value !== 'all' ? value : undefined);
         fetchBoards(filters.country !== 'all' ? filters.country : undefined, filters.region !== 'all' ? filters.region : undefined, value !== 'all' ? value : undefined);
         fetchSchools(filters.country !== 'all' ? filters.country : undefined, filters.region !== 'all' ? filters.region : undefined, value !== 'all' ? value : undefined);
-        fetchClasses();
+        fetchGrades();
+        fetchClasses(undefined, undefined, filters.grade !== 'all' ? filters.grade : undefined);
         break;
       case 'project':
         fetchBoards(filters.country !== 'all' ? filters.country : undefined, filters.region !== 'all' ? filters.region : undefined, filters.city !== 'all' ? filters.city : undefined, value !== 'all' ? value : undefined);
         fetchSchools(filters.country !== 'all' ? filters.country : undefined, filters.region !== 'all' ? filters.region : undefined, filters.city !== 'all' ? filters.city : undefined, value !== 'all' ? value : undefined);
-        fetchClasses();
+        fetchGrades();
+        fetchClasses(undefined, undefined, filters.grade !== 'all' ? filters.grade : undefined);
         break;
       case 'board':
         fetchSchools(filters.country !== 'all' ? filters.country : undefined, filters.region !== 'all' ? filters.region : undefined, filters.city !== 'all' ? filters.city : undefined, filters.project !== 'all' ? filters.project : undefined, value !== 'all' ? value : undefined);
-        fetchClasses(undefined, value !== 'all' ? value : undefined);
+        fetchGrades();
+        fetchClasses(undefined, value !== 'all' ? value : undefined, filters.grade !== 'all' ? filters.grade : undefined);
         break;
       case 'school':
-        fetchClasses(value !== 'all' ? value : undefined, filters.board !== 'all' ? filters.board : undefined);
+        fetchGrades();
+        fetchClasses(value !== 'all' ? value : undefined, filters.board !== 'all' ? filters.board : undefined, filters.grade !== 'all' ? filters.grade : undefined);
+        break;
+      case 'grade':
+        fetchClasses(filters.school !== 'all' ? filters.school : undefined, filters.board !== 'all' ? filters.board : undefined, value !== 'all' ? value : undefined);
         break;
     }
   };
@@ -547,6 +607,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
       project: 'all',
       board: 'all',
       school: 'all',
+      grade: 'all',
       class: 'all',
     };
     
@@ -559,6 +620,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
     fetchProjects();
     fetchBoards();
     fetchSchools();
+    fetchGrades();
     fetchClasses();
   };
 
@@ -577,6 +639,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
     fetchProjects();
     fetchBoards();
     fetchSchools();
+    fetchGrades();
     fetchClasses();
   }, []);
 
@@ -594,6 +657,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
         if (appliedFilters.project !== 'all') filterParams.filter_project_id = appliedFilters.project;
         if (appliedFilters.board !== 'all') filterParams.filter_board_id = appliedFilters.board;
         if (appliedFilters.school !== 'all') filterParams.filter_school_id = appliedFilters.school;
+        if (appliedFilters.grade !== 'all') filterParams.filter_grade = appliedFilters.grade;
         if (appliedFilters.class !== 'all') filterParams.filter_class_id = appliedFilters.class;
 
         const { data, error } = await supabase.rpc('get_admin_dashboard_stats_with_filters', filterParams);
@@ -644,177 +708,41 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
 
   const fetchUserGrowthData = async (range: string, currentFilters?: FilterState) => {
     try {
-      const { startDate, endDate } = getDateRange(range);
+      // Build filter parameters for the database function
+      const filterParams: any = { p_time_range: range };
       
-      // Build query with filters using proper junction tables
-      let usersQuery = supabase
-        .from('profiles')
-        .select(`
-          created_at, 
-          role,
-          class_students!inner(
-            class_id,
-            classes!inner(
-              id,
-              schools!inner(
-                id,
-                boards!inner(
-                  id,
-                  projects!inner(
-                    id,
-                    cities!inner(
-                      id,
-                      regions!inner(
-                        id,
-                        countries!inner(id)
-                      )
-                    )
-                  )
-                )
-              )
-            )
-          )
-        `)
-        .order('created_at', { ascending: true });
-
-      // Apply filters if provided
       if (currentFilters) {
-        if (currentFilters.class !== 'all') {
-          usersQuery = usersQuery.eq('class_students.classes.id', currentFilters.class);
-        } else if (currentFilters.school !== 'all') {
-          usersQuery = usersQuery.eq('class_students.classes.schools.id', currentFilters.school);
-        } else if (currentFilters.board !== 'all') {
-          usersQuery = usersQuery.eq('class_students.classes.schools.boards.id', currentFilters.board);
-        } else if (currentFilters.project !== 'all') {
-          usersQuery = usersQuery.eq('class_students.classes.schools.boards.projects.id', currentFilters.project);
-        } else if (currentFilters.city !== 'all') {
-          usersQuery = usersQuery.eq('class_students.classes.schools.boards.projects.cities.id', currentFilters.city);
-        } else if (currentFilters.region !== 'all') {
-          usersQuery = usersQuery.eq('class_students.classes.schools.boards.projects.cities.regions.id', currentFilters.region);
-        } else if (currentFilters.country !== 'all') {
-          usersQuery = usersQuery.eq('class_students.classes.schools.boards.projects.cities.regions.countries.id', currentFilters.country);
-        }
+        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
+        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
+        if (currentFilters.grade !== 'all') filterParams.filter_grade = currentFilters.grade;
+        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
+        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
+        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
+        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
+        if (currentFilters.country !== 'all') filterParams.filter_country_id = currentFilters.country;
       }
-
-      const { data: allUsers, error: usersError } = await usersQuery;
-
-      if (usersError) throw usersError;
-
-      // Get filtered user progress data - use simpler approach without complex joins
-      let progressQuery = supabase
-        .from('user_content_item_progress')
-        .select('updated_at, user_id')
-        .order('updated_at', { ascending: true });
-
-      const { data: allProgress, error: progressError } = await progressQuery;
-
-      if (progressError) throw progressError;
-
-      // Generate appropriate time periods based on range
-      let periods: { label: string; start: Date; end: Date }[] = [];
       
-      switch (range) {
-        case '7days':
-          // Show last 7 days
-          for (let i = 6; i >= 0; i--) {
-            const date = new Date();
-            date.setDate(date.getDate() - i);
-            const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-            const endOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
-            periods.push({
-              label: date.toLocaleDateString('en-US', { weekday: 'short' }),
-              start: startOfDay,
-              end: endOfDay
-            });
-          }
-          break;
-        case '30days':
-          // Show last 4 weeks
-          for (let i = 3; i >= 0; i--) {
-            const date = new Date();
-            date.setDate(date.getDate() - (i * 7));
-            const startOfWeek = new Date(date.getFullYear(), date.getMonth(), date.getDate() - date.getDay());
-            const endOfWeek = new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000);
-            periods.push({
-              label: `Week ${4 - i}`,
-              start: startOfWeek,
-              end: endOfWeek
-            });
-          }
-          break;
-        case '3months':
-        case '6months':
-        case '1year':
-          // Show months
-          const monthCount = range === '3months' ? 3 : range === '6months' ? 6 : 12;
-          for (let i = monthCount - 1; i >= 0; i--) {
-            const date = new Date();
-            date.setMonth(date.getMonth() - i);
-            const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
-            const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-            periods.push({
-              label: date.toLocaleDateString('en-US', { month: 'short' }),
-              start: startOfMonth,
-              end: endOfMonth
-            });
-          }
-          break;
-        default:
-          // Default to 7 days
-          for (let i = 6; i >= 0; i--) {
-            const date = new Date();
-            date.setDate(date.getDate() - i);
-            const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-            const endOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
-            periods.push({
-              label: date.toLocaleDateString('en-US', { weekday: 'short' }),
-              start: startOfDay,
-              end: endOfDay
-            });
-          }
+      // Use the database function with filters
+      const { data, error } = await supabase.rpc('get_admin_user_growth_trends_with_filters', filterParams);
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        setUserGrowthData([]);
+        return;
       }
 
-      const userGrowthData: UserGrowthData[] = [];
+      // Transform the data to match the expected format
+      const userGrowthData: UserGrowthData[] = data.map((item: any) => ({
+        month: item.period_label,
+        users: item.total_users,
+        teachers: item.teachers,
+        students: item.students,
+        admins: item.admins,
+        active: item.active_users,
+      }));
 
-      for (const period of periods) {
-        // Calculate counts from the fetched data
-        const totalUsers = allUsers?.filter(user => 
-          new Date(user.created_at) <= period.end
-        ).length ?? 0;
-
-        const teachers = allUsers?.filter(user => 
-          user.role === 'teacher' && new Date(user.created_at) <= period.end
-        ).length ?? 0;
-
-        const students = allUsers?.filter(user => 
-          user.role === 'student' && new Date(user.created_at) <= period.end
-        ).length ?? 0;
-
-        const admins = allUsers?.filter(user => 
-          user.role === 'admin' && new Date(user.created_at) <= period.end
-        ).length ?? 0;
-
-        // Filter progress data based on the filtered users
-        const filteredProgress = allProgress?.filter(progress => {
-          const progressDate = new Date(progress.updated_at);
-          const isInTimeRange = progressDate >= period.start && progressDate <= period.end;
-          // For now, just use time range filtering since user filtering is complex
-          return isInTimeRange;
-        }) ?? [];
-
-        const activeUsers = filteredProgress.length;
-
-        userGrowthData.push({
-          month: period.label,
-          users: totalUsers,
-          teachers,
-          students,
-          admins,
-          active: activeUsers || Math.round(totalUsers * 0.7),
-        });
-      }
-
-        setUserGrowthData(userGrowthData);
+      setUserGrowthData(userGrowthData);
     } catch (error) {
       console.error("Failed to fetch user growth data:", error);
       setUserGrowthData([]);
@@ -823,162 +751,41 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
 
   const fetchPlatformStatsData = async (currentFilters?: FilterState) => {
     try {
-      const { startDate, endDate } = getDateRange(timeRange);
+      // Build filter parameters for the database function
+      const filterParams: any = {};
       
-      // Build courses query with filters
-      let coursesQuery = supabase
-        .from('courses')
-        .select('status, class_ids, school_ids');
-
-      // Apply filters if provided
       if (currentFilters) {
-        if (currentFilters.class !== 'all') {
-          coursesQuery = coursesQuery.contains('class_ids', [currentFilters.class]);
-        } else if (currentFilters.school !== 'all') {
-          coursesQuery = coursesQuery.contains('school_ids', [currentFilters.school]);
-        } else if (currentFilters.board !== 'all') {
-          // For board filtering, we need to join with classes table
-          coursesQuery = supabase
-            .from('courses')
-            .select(`
-              status,
-              class_ids,
-              school_ids,
-              classes!inner(
-                id,
-                schools!inner(
-                  id,
-                  boards!inner(id)
-                )
-              )
-            `)
-            .eq('classes.schools.boards.id', currentFilters.board);
-        } else if (currentFilters.project !== 'all') {
-          coursesQuery = supabase
-            .from('courses')
-            .select(`
-              status,
-              class_ids,
-              school_ids,
-              classes!inner(
-                id,
-                schools!inner(
-                  id,
-                  boards!inner(
-                    id,
-                    projects!inner(id)
-                  )
-                )
-              )
-            `)
-            .eq('classes.schools.boards.projects.id', currentFilters.project);
-        } else if (currentFilters.city !== 'all') {
-          coursesQuery = supabase
-            .from('courses')
-            .select(`
-              status,
-              class_ids,
-              school_ids,
-              classes!inner(
-                id,
-                schools!inner(
-                  id,
-                  boards!inner(
-                    id,
-                    projects!inner(
-                      id,
-                      cities!inner(id)
-                    )
-                  )
-                )
-              )
-            `)
-            .eq('classes.schools.boards.projects.cities.id', currentFilters.city);
-        } else if (currentFilters.region !== 'all') {
-          coursesQuery = supabase
-            .from('courses')
-            .select(`
-              status,
-              class_ids,
-              school_ids,
-              classes!inner(
-                id,
-                schools!inner(
-                  id,
-                  boards!inner(
-                    id,
-                    projects!inner(
-                      id,
-                      cities!inner(
-                        id,
-                        regions!inner(id)
-                      )
-                    )
-                  )
-                )
-              )
-            `)
-            .eq('classes.schools.boards.projects.cities.regions.id', currentFilters.region);
-        } else if (currentFilters.country !== 'all') {
-          coursesQuery = supabase
-            .from('courses')
-            .select(`
-              status,
-              class_ids,
-              school_ids,
-              classes!inner(
-                id,
-                schools!inner(
-                  id,
-                  boards!inner(
-                    id,
-                    projects!inner(
-                      id,
-                      cities!inner(
-                        id,
-                        regions!inner(
-                          id,
-                          countries!inner(id)
-                        )
-                      )
-                    )
-                  )
-                )
-              )
-            `)
-            .eq('classes.schools.boards.projects.cities.regions.countries.id', currentFilters.country);
-        }
+        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
+        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
+        if (currentFilters.grade !== 'all') filterParams.filter_grade = currentFilters.grade;
+        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
+        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
+        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
+        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
+        if (currentFilters.country !== 'all') filterParams.filter_country_id = currentFilters.country;
+      }
+      
+      // Use the database function with filters
+      const { data, error } = await supabase.rpc('get_admin_platform_stats_with_filters', filterParams);
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        setPlatformStatsData([]);
+        return;
       }
 
-      const { data: allCourses, error: coursesError } = await coursesQuery;
-
-      if (coursesError) throw coursesError;
-
-      // Get completed assignments - use simpler approach
-      const { count: completedAssignments, error: assignmentsError } = await supabase
-        .from('assignment_submissions')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'completed');
-
-      if (assignmentsError) throw assignmentsError;
-
-      // Calculate counts from the fetched data
-      const activeCourses = allCourses?.filter(course => course.status === 'Published').length ?? 0;
-      const draftCourses = allCourses?.filter(course => course.status === 'Draft').length ?? 0;
-      const archivedCourses = allCourses?.filter(course => course.status === 'Archived').length ?? 0;
-      const completedCourses = Math.min(completedAssignments ?? 0, activeCourses);
-
-      const platformStats: PlatformStatsData[] = [
-        { name: 'Active Courses', value: activeCourses, color: '#3B82F6' },
-        { name: 'Draft Courses', value: draftCourses, color: '#F59E0B' },
-        { name: 'Archived Courses', value: archivedCourses, color: '#6B7280' },
-        { name: 'Completed Courses', value: completedCourses, color: '#10B981' },
-      ];
+      // Transform the data to match the expected format
+      const platformStats: PlatformStatsData[] = data.map((item: any) => ({
+        name: item.stat_name,
+        value: item.stat_value,
+        color: item.stat_color,
+      }));
 
       // Filter out zero values and ensure we have at least one non-zero value
       const nonZeroStats = platformStats.filter(stat => stat.value > 0);
       
-        setPlatformStatsData(nonZeroStats);
+      setPlatformStatsData(nonZeroStats);
     } catch (error) {
       console.error("Failed to fetch platform stats data:", error);
       setPlatformStatsData([]);
@@ -995,6 +802,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
       if (currentFilters) {
         if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
         if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
+        if (currentFilters.grade !== 'all') filterParams.filter_grade = currentFilters.grade;
         if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
         if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
         if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
@@ -1051,6 +859,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
       if (currentFilters) {
         if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
         if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
+        if (currentFilters.grade !== 'all') filterParams.filter_grade = currentFilters.grade;
         if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
         if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
         if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
@@ -1116,6 +925,21 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
   );
 
   const isEngagementDataEmpty = engagementData.length === 0;
+
+  // Helper functions to check if data has meaningful values
+  const hasUserGrowthData = userGrowthData.length > 0 && userGrowthData.some(item => 
+    item.users > 0 || item.teachers > 0 || item.students > 0 || item.admins > 0 || item.active > 0
+  );
+
+  const hasPlatformStatsData = platformStatsData.length > 0 && platformStatsData.some(item => item.value > 0);
+
+  const hasEngagementData = engagementData.length > 0 && engagementData.some(item => 
+    item.activeUsers > 0 || item.courses > 0 || item.discussions > 0
+  );
+
+  const hasCourseAnalyticsData = courseAnalyticsData.length > 0 && courseAnalyticsData.some(item => 
+    item.enrolled > 0 || item.completed > 0 || item.progress > 0
+  );
 
   return (
     <div className="space-y-8">
@@ -1318,6 +1142,28 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                             </Select>
                           </div>
 
+                          {/* Grade */}
+                          <div className="space-y-2">
+                            <Label htmlFor="grade">Grade</Label>
+                            <Select 
+                              value={filters.grade} 
+                              onValueChange={(value) => handleFilterChange('grade', value)}
+                              disabled={filterLoading.grades}
+                            >
+                              <SelectTrigger id="grade">
+                                <SelectValue placeholder={filterLoading.grades ? "Loading..." : "Select grade"} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All Grades</SelectItem>
+                                {grades.map((grade) => (
+                                  <SelectItem key={grade.id} value={grade.id}>
+                                    {grade.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
                           {/* Class */}
                           <div className="space-y-2">
                             <Label htmlFor="class">Class</Label>
@@ -1425,7 +1271,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
               </CardHeader>
               <CardContent>
                 <div className="h-[300px]">
-                  {userGrowthData.length > 0 ? (
+                  {hasUserGrowthData ? (
                   <ChartContainer config={chartConfig} className="w-full h-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={userGrowthData}>
@@ -1475,7 +1321,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
               </CardHeader>
               <CardContent>
                 <div className="h-[300px]">
-                  {platformStatsData.length > 0 ? (
+                  {hasPlatformStatsData ? (
                   <ChartContainer config={chartConfig} className="w-full h-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
@@ -1516,7 +1362,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
               </CardHeader>
               <CardContent>
                 <div className="h-[300px]">
-                  {userGrowthData.length > 0 ? (
+                  {hasUserGrowthData ? (
                   <ChartContainer config={chartConfig} className="w-full h-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={userGrowthData}>
@@ -1606,7 +1452,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
             </CardHeader>
             <CardContent>
               <div className="h-[400px]">
-                {courseAnalyticsData.length > 0 ? (
+                {hasCourseAnalyticsData ? (
                 <ChartContainer config={chartConfig} className="w-full h-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={courseAnalyticsData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
@@ -1642,7 +1488,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
             </CardHeader>
             <CardContent>
               <div className="h-[400px]">
-                {isEngagementDataEmpty ? (
+                {!hasEngagementData ? (
                   <div className="flex items-center justify-center h-full">
                     <p className="text-muted-foreground">No engagement data to display for this period.</p>
                   </div>

@@ -1,18 +1,19 @@
 -- Updated Admin Dashboard Stats Function with Filter Integration
 -- This function provides comprehensive dashboard metrics with location and school hierarchy filtering
 
--- Drop the existing function first to allow parameter name changes
-DROP FUNCTION IF EXISTS public.get_admin_dashboard_stats_with_filters(text, uuid, uuid, uuid, uuid, uuid, uuid, uuid);
+-- Drop all existing versions of the function first to allow parameter name changes
+DROP FUNCTION IF EXISTS public.get_admin_dashboard_stats_with_filters CASCADE;
 
 CREATE OR REPLACE FUNCTION public.get_admin_dashboard_stats_with_filters(
-  time_range TEXT,
+  time_range TEXT DEFAULT '30days',
   filter_country_id UUID DEFAULT NULL,
   filter_region_id UUID DEFAULT NULL,
   filter_city_id UUID DEFAULT NULL,
   filter_project_id UUID DEFAULT NULL,
   filter_board_id UUID DEFAULT NULL,
   filter_school_id UUID DEFAULT NULL,
-  filter_class_id UUID DEFAULT NULL
+  filter_class_id UUID DEFAULT NULL,
+  filter_grade TEXT DEFAULT NULL
 )
 RETURNS TABLE(
     total_users INTEGER,
@@ -80,30 +81,42 @@ BEGIN
       AND (filter_board_id IS NULL OR b.id = filter_board_id)
       AND (filter_school_id IS NULL OR s.id = filter_school_id)
       AND (filter_class_id IS NULL OR cl.id = filter_class_id)
+      AND (filter_grade IS NULL OR cl.grade = filter_grade)
       -- Include users who are not in any class (admins, etc.)
       OR (p.role = 'admin' AND filter_country_id IS NULL AND filter_region_id IS NULL AND filter_city_id IS NULL 
-          AND filter_project_id IS NULL AND filter_board_id IS NULL AND filter_school_id IS NULL AND filter_class_id IS NULL)
+          AND filter_project_id IS NULL AND filter_board_id IS NULL AND filter_school_id IS NULL AND filter_class_id IS NULL AND filter_grade IS NULL)
   ),
   course_counts AS (
     SELECT 
       COUNT(*) as total_courses,
       COUNT(CASE WHEN c.status = 'Published' THEN 1 END) as active_courses
     FROM courses c
-    LEFT JOIN classes cl ON cl.id = ANY(c.class_ids)
-    LEFT JOIN schools s ON s.id = ANY(c.school_ids)
-    LEFT JOIN boards b ON cl.board_id = b.id
-    LEFT JOIN projects pr ON b.project_id = pr.id
-    LEFT JOIN cities ci ON pr.city_id = ci.id
-    LEFT JOIN regions r ON ci.region_id = r.id
-    LEFT JOIN countries co ON r.country_id = co.id
     WHERE 
-      (filter_country_id IS NULL OR co.id = filter_country_id)
-      AND (filter_region_id IS NULL OR r.id = filter_region_id)
-      AND (filter_city_id IS NULL OR ci.id = filter_city_id)
-      AND (filter_project_id IS NULL OR pr.id = filter_project_id)
-      AND (filter_board_id IS NULL OR b.id = filter_board_id)
-      AND (filter_school_id IS NULL OR filter_school_id = ANY(c.school_ids))
-      AND (filter_class_id IS NULL OR filter_class_id = ANY(c.class_ids))
+      -- When no filters are applied, show all courses
+      (filter_country_id IS NULL AND filter_region_id IS NULL AND filter_city_id IS NULL 
+       AND filter_project_id IS NULL AND filter_board_id IS NULL AND filter_school_id IS NULL 
+       AND filter_class_id IS NULL AND filter_grade IS NULL)
+      -- When filters are applied, check hierarchy
+      OR EXISTS (
+        SELECT 1 FROM classes cl 
+        LEFT JOIN schools s ON cl.school_id = s.id
+        LEFT JOIN boards b ON s.board_id = b.id
+        LEFT JOIN projects pr ON b.project_id = pr.id
+        LEFT JOIN cities ci ON pr.city_id = ci.id
+        LEFT JOIN regions r ON ci.region_id = r.id
+        LEFT JOIN countries co ON r.country_id = co.id
+        WHERE cl.id = ANY(c.class_ids)
+          AND (filter_country_id IS NULL OR co.id = filter_country_id)
+          AND (filter_region_id IS NULL OR r.id = filter_region_id)
+          AND (filter_city_id IS NULL OR ci.id = filter_city_id)
+          AND (filter_project_id IS NULL OR pr.id = filter_project_id)
+          AND (filter_board_id IS NULL OR b.id = filter_board_id)
+          AND (filter_school_id IS NULL OR s.id = filter_school_id)
+          AND (filter_class_id IS NULL OR cl.id = filter_class_id)
+          AND (filter_grade IS NULL OR cl.grade = filter_grade)
+      )
+      -- Also include courses that match school filters directly
+      OR (filter_school_id IS NOT NULL AND filter_school_id = ANY(c.school_ids))
   ),
   assignment_stats AS (
     SELECT 
@@ -129,9 +142,10 @@ BEGIN
         AND (filter_board_id IS NULL OR b.id = filter_board_id)
         AND (filter_school_id IS NULL OR s.id = filter_school_id)
         AND (filter_class_id IS NULL OR cl.id = filter_class_id)
+        AND (filter_grade IS NULL OR cl.grade = filter_grade)
         -- Include assignments from users not in any class (admins, etc.)
         OR (p.role = 'admin' AND filter_country_id IS NULL AND filter_region_id IS NULL AND filter_city_id IS NULL 
-            AND filter_project_id IS NULL AND filter_board_id IS NULL AND filter_school_id IS NULL AND filter_class_id IS NULL)
+            AND filter_project_id IS NULL AND filter_board_id IS NULL AND filter_school_id IS NULL AND filter_class_id IS NULL AND filter_grade IS NULL)
       )
   ),
   discussion_stats AS (
@@ -158,9 +172,10 @@ BEGIN
         AND (filter_board_id IS NULL OR b.id = filter_board_id)
         AND (filter_school_id IS NULL OR s.id = filter_school_id)
         AND (filter_class_id IS NULL OR cl.id = filter_class_id)
+        AND (filter_grade IS NULL OR cl.grade = filter_grade)
         -- Include discussions from users not in any class (admins, etc.)
         OR (p.role = 'admin' AND filter_country_id IS NULL AND filter_region_id IS NULL AND filter_city_id IS NULL 
-            AND filter_project_id IS NULL AND filter_board_id IS NULL AND filter_school_id IS NULL AND filter_class_id IS NULL)
+            AND filter_project_id IS NULL AND filter_board_id IS NULL AND filter_school_id IS NULL AND filter_class_id IS NULL AND filter_grade IS NULL)
       )
   ),
   engagement_stats AS (
@@ -188,9 +203,10 @@ BEGIN
         AND (filter_board_id IS NULL OR b.id = filter_board_id)
         AND (filter_school_id IS NULL OR s.id = filter_school_id)
         AND (filter_class_id IS NULL OR cl.id = filter_class_id)
+        AND (filter_grade IS NULL OR cl.grade = filter_grade)
         -- Include engagement from users not in any class (admins, etc.)
         OR (p.role = 'admin' AND filter_country_id IS NULL AND filter_region_id IS NULL AND filter_city_id IS NULL 
-            AND filter_project_id IS NULL AND filter_board_id IS NULL AND filter_school_id IS NULL AND filter_class_id IS NULL)
+            AND filter_project_id IS NULL AND filter_board_id IS NULL AND filter_school_id IS NULL AND filter_class_id IS NULL AND filter_grade IS NULL)
       )
   ),
   course_completion_stats AS (
@@ -216,6 +232,11 @@ BEGIN
         AND (filter_board_id IS NULL OR b.id = filter_board_id)
         AND (filter_school_id IS NULL OR filter_school_id = ANY(c.school_ids))
         AND (filter_class_id IS NULL OR filter_class_id = ANY(c.class_ids))
+        AND (filter_grade IS NULL OR EXISTS (
+          SELECT 1 FROM classes cl2 
+          WHERE cl2.id = ANY(c.class_ids) 
+          AND cl2.grade = filter_grade
+        ))
       GROUP BY c.id
     ),
     user_course_completions AS (
@@ -243,9 +264,10 @@ BEGIN
           AND (filter_board_id IS NULL OR b.id = filter_board_id)
           AND (filter_school_id IS NULL OR s.id = filter_school_id)
           AND (filter_class_id IS NULL OR cl.id = filter_class_id)
+          AND (filter_grade IS NULL OR cl.grade = filter_grade)
           -- Include completions from users not in any class (admins, etc.)
           OR (p.role = 'admin' AND filter_country_id IS NULL AND filter_region_id IS NULL AND filter_city_id IS NULL 
-              AND filter_project_id IS NULL AND filter_board_id IS NULL AND filter_school_id IS NULL AND filter_class_id IS NULL)
+              AND filter_project_id IS NULL AND filter_board_id IS NULL AND filter_school_id IS NULL AND filter_class_id IS NULL AND filter_grade IS NULL)
         )
       GROUP BY ucp.user_id, ucp.course_id
     ),
@@ -266,7 +288,6 @@ BEGIN
       LEFT JOIN cities c ON pr.city_id = c.id
       LEFT JOIN regions r ON c.region_id = r.id
       LEFT JOIN countries co ON r.country_id = co.id
-      JOIN (SELECT DISTINCT ucp.user_id FROM public.user_content_item_progress ucp WHERE ucp.updated_at BETWEEN date_start AND date_end) as active_users ON cm.user_id = active_users.user_id
       JOIN course_content_counts ccc ON cm.course_id = ccc.course_id
       LEFT JOIN user_course_completions ucc ON cm.user_id = ucc.user_id AND cm.course_id = ucc.course_id
       WHERE cm.role = 'student'
@@ -278,13 +299,14 @@ BEGIN
           AND (filter_board_id IS NULL OR b.id = filter_board_id)
           AND (filter_school_id IS NULL OR s.id = filter_school_id)
           AND (filter_class_id IS NULL OR cl.id = filter_class_id)
+          AND (filter_grade IS NULL OR cl.grade = filter_grade)
           -- Include enrollments from users not in any class (admins, etc.)
           OR (p.role = 'admin' AND filter_country_id IS NULL AND filter_region_id IS NULL AND filter_city_id IS NULL 
-              AND filter_project_id IS NULL AND filter_board_id IS NULL AND filter_school_id IS NULL AND filter_class_id IS NULL)
+              AND filter_project_id IS NULL AND filter_board_id IS NULL AND filter_school_id IS NULL AND filter_class_id IS NULL AND filter_grade IS NULL)
         )
     )
     SELECT
-      COALESCE(AVG( (ep.completed_items::DECIMAL * 100) / ep.total_items ), 0) as rate
+      COALESCE(AVG( LEAST( (ep.completed_items::DECIMAL * 100) / ep.total_items, 100) ), 0) as rate
     FROM enrollment_progress ep
   )
   SELECT 
@@ -334,10 +356,10 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Grant execute permission to authenticated users
-GRANT EXECUTE ON FUNCTION public.get_admin_dashboard_stats_with_filters TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_admin_dashboard_stats_with_filters(text, uuid, uuid, uuid, uuid, uuid, uuid, uuid, text) TO authenticated;
 
 -- Add comment for documentation
-COMMENT ON FUNCTION public.get_admin_dashboard_stats_with_filters IS 
+COMMENT ON FUNCTION public.get_admin_dashboard_stats_with_filters(text, uuid, uuid, uuid, uuid, uuid, uuid, uuid, text) IS 
 'Returns comprehensive admin dashboard statistics with optional filtering by location and school hierarchy. 
-Parameters: time_range (7days|30days|3months|6months|1year|alltime), and optional UUID filters for filter_country_id, filter_region_id, filter_city_id, filter_project_id, filter_board_id, filter_school_id, and filter_class_id. 
+Parameters: time_range (7days|30days|3months|6months|1year|alltime), and optional UUID filters for filter_country_id, filter_region_id, filter_city_id, filter_project_id, filter_board_id, filter_school_id, filter_class_id, and filter_grade (1-12). 
 Returns 16 metrics including user counts, course stats, engagement rates, and completion percentages.';
