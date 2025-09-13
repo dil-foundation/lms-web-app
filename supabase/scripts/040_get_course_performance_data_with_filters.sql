@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS get_course_performance_data_with_filters(uuid, uuid, uuid, uuid, uuid, uuid, uuid, uuid);
+DROP FUNCTION IF EXISTS get_course_performance_data_with_filters CASCADE;
 
 CREATE OR REPLACE FUNCTION get_course_performance_data_with_filters(
     p_teacher_id UUID,
@@ -8,6 +8,7 @@ CREATE OR REPLACE FUNCTION get_course_performance_data_with_filters(
     filter_project_id UUID DEFAULT NULL,
     filter_board_id UUID DEFAULT NULL,
     filter_school_id UUID DEFAULT NULL,
+    filter_grade TEXT DEFAULT NULL,
     filter_class_id UUID DEFAULT NULL
 )
 RETURNS TABLE(
@@ -51,6 +52,7 @@ BEGIN
     AND (filter_project_id IS NULL OR pr.id = filter_project_id)
     AND (filter_board_id IS NULL OR b.id = filter_board_id)
     AND (filter_school_id IS NULL OR s.id = filter_school_id)
+    AND (filter_grade IS NULL OR cl.grade = filter_grade)
     AND (filter_class_id IS NULL OR cl.id = filter_class_id)
   ),
   students_in_courses AS (
@@ -170,3 +172,6 @@ BEGIN
   ORDER BY c.title;
 END;
 $$;
+
+GRANT EXECUTE ON FUNCTION get_course_performance_data_with_filters(uuid, uuid, uuid, uuid, uuid, uuid, uuid, text, uuid) TO authenticated;
+COMMENT ON FUNCTION get_course_performance_data_with_filters(uuid, uuid, uuid, uuid, uuid, uuid, uuid, text, uuid) IS 'Get course performance data with hierarchical and grade filtering';

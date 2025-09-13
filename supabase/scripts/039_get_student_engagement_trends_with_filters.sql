@@ -1,14 +1,15 @@
-DROP FUNCTION IF EXISTS get_student_engagement_trends_with_filters(uuid, text, uuid, uuid, uuid, uuid, uuid, uuid, uuid);
+DROP FUNCTION IF EXISTS get_student_engagement_trends_with_filters CASCADE;
 
 CREATE OR REPLACE FUNCTION get_student_engagement_trends_with_filters(
     p_teacher_id UUID,
-    p_time_range TEXT,
+    p_time_range TEXT DEFAULT '30days',
     filter_country_id UUID DEFAULT NULL,
     filter_region_id UUID DEFAULT NULL,
     filter_city_id UUID DEFAULT NULL,
     filter_project_id UUID DEFAULT NULL,
     filter_board_id UUID DEFAULT NULL,
     filter_school_id UUID DEFAULT NULL,
+    filter_grade TEXT DEFAULT NULL,
     filter_class_id UUID DEFAULT NULL
 )
 RETURNS TABLE (
@@ -101,6 +102,7 @@ BEGIN
         AND (filter_project_id IS NULL OR pr.id = filter_project_id)
         AND (filter_board_id IS NULL OR b.id = filter_board_id)
         AND (filter_school_id IS NULL OR s.id = filter_school_id)
+        AND (filter_grade IS NULL OR cl.grade = filter_grade)
         AND (filter_class_id IS NULL OR cl.id = filter_class_id)
     ),
     activity_data AS (
@@ -130,3 +132,6 @@ BEGIN
     ORDER BY tp.period_start;
 END;
 $$;
+
+GRANT EXECUTE ON FUNCTION get_student_engagement_trends_with_filters(uuid, text, uuid, uuid, uuid, uuid, uuid, uuid, text, uuid) TO authenticated;
+COMMENT ON FUNCTION get_student_engagement_trends_with_filters(uuid, text, uuid, uuid, uuid, uuid, uuid, uuid, text, uuid) IS 'Get student engagement trends with hierarchical and grade filtering';

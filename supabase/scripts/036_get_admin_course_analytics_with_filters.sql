@@ -1,6 +1,9 @@
 -- Function to get course analytics with hierarchical filtering
 -- This function provides course performance data filtered by location and educational hierarchy
 
+-- Drop all existing versions of the function first
+DROP FUNCTION IF EXISTS public.get_admin_course_analytics_with_filters CASCADE;
+
 CREATE OR REPLACE FUNCTION public.get_admin_course_analytics_with_filters(
   filter_country_id UUID DEFAULT NULL,
   filter_region_id UUID DEFAULT NULL,
@@ -8,7 +11,8 @@ CREATE OR REPLACE FUNCTION public.get_admin_course_analytics_with_filters(
   filter_project_id UUID DEFAULT NULL,
   filter_board_id UUID DEFAULT NULL,
   filter_school_id UUID DEFAULT NULL,
-  filter_class_id UUID DEFAULT NULL
+  filter_class_id UUID DEFAULT NULL,
+  filter_grade TEXT DEFAULT NULL
 )
 RETURNS TABLE (
   course_id UUID,
@@ -47,16 +51,29 @@ BEGIN
     LEFT JOIN public.regions r ON ci.region_id = r.id
     LEFT JOIN public.countries co ON r.country_id = co.id
     WHERE c.status = 'Published'
-      AND (filter_country_id IS NULL OR co.id = filter_country_id)
-      AND (filter_region_id IS NULL OR r.id = filter_region_id)
-      AND (filter_city_id IS NULL OR ci.id = filter_city_id)
-      AND (filter_project_id IS NULL OR pr.id = filter_project_id)
-      AND (filter_board_id IS NULL OR b.id = filter_board_id)
-      AND (filter_school_id IS NULL OR s.id = filter_school_id)
-      AND (filter_class_id IS NULL OR cl.id = filter_class_id)
+      AND (
+        -- When no filters are applied, show all published courses
+        (filter_country_id IS NULL AND filter_region_id IS NULL AND filter_city_id IS NULL 
+         AND filter_project_id IS NULL AND filter_board_id IS NULL AND filter_school_id IS NULL 
+         AND filter_class_id IS NULL AND filter_grade IS NULL)
+        -- When filters are applied, check hierarchy
+        OR (filter_country_id IS NULL OR co.id = filter_country_id)
+        AND (filter_region_id IS NULL OR r.id = filter_region_id)
+        AND (filter_city_id IS NULL OR ci.id = filter_city_id)
+        AND (filter_project_id IS NULL OR pr.id = filter_project_id)
+        AND (filter_board_id IS NULL OR b.id = filter_board_id)
+        AND (filter_school_id IS NULL OR s.id = filter_school_id)
+        AND (filter_class_id IS NULL OR cl.id = filter_class_id)
+        AND (filter_grade IS NULL OR cl.grade = filter_grade)
+      )
       -- Also filter courses by their class_ids and school_ids arrays
       AND (filter_class_id IS NULL OR filter_class_id = ANY(c.class_ids))
       AND (filter_school_id IS NULL OR filter_school_id = ANY(c.school_ids))
+      AND (filter_grade IS NULL OR EXISTS (
+        SELECT 1 FROM classes cl2 
+        WHERE cl2.id = ANY(c.class_ids) 
+        AND cl2.grade = filter_grade
+      ))
     GROUP BY c.id, c.title
   ),
   course_scores AS (
@@ -76,16 +93,29 @@ BEGIN
     LEFT JOIN public.regions r ON ci.region_id = r.id
     LEFT JOIN public.countries co ON r.country_id = co.id
     WHERE c.status = 'Published'
-      AND (filter_country_id IS NULL OR co.id = filter_country_id)
-      AND (filter_region_id IS NULL OR r.id = filter_region_id)
-      AND (filter_city_id IS NULL OR ci.id = filter_city_id)
-      AND (filter_project_id IS NULL OR pr.id = filter_project_id)
-      AND (filter_board_id IS NULL OR b.id = filter_board_id)
-      AND (filter_school_id IS NULL OR s.id = filter_school_id)
-      AND (filter_class_id IS NULL OR cl.id = filter_class_id)
+      AND (
+        -- When no filters are applied, show all published courses
+        (filter_country_id IS NULL AND filter_region_id IS NULL AND filter_city_id IS NULL 
+         AND filter_project_id IS NULL AND filter_board_id IS NULL AND filter_school_id IS NULL 
+         AND filter_class_id IS NULL AND filter_grade IS NULL)
+        -- When filters are applied, check hierarchy
+        OR (filter_country_id IS NULL OR co.id = filter_country_id)
+        AND (filter_region_id IS NULL OR r.id = filter_region_id)
+        AND (filter_city_id IS NULL OR ci.id = filter_city_id)
+        AND (filter_project_id IS NULL OR pr.id = filter_project_id)
+        AND (filter_board_id IS NULL OR b.id = filter_board_id)
+        AND (filter_school_id IS NULL OR s.id = filter_school_id)
+        AND (filter_class_id IS NULL OR cl.id = filter_class_id)
+        AND (filter_grade IS NULL OR cl.grade = filter_grade)
+      )
       -- Also filter courses by their class_ids and school_ids arrays
       AND (filter_class_id IS NULL OR filter_class_id = ANY(c.class_ids))
       AND (filter_school_id IS NULL OR filter_school_id = ANY(c.school_ids))
+      AND (filter_grade IS NULL OR EXISTS (
+        SELECT 1 FROM classes cl2 
+        WHERE cl2.id = ANY(c.class_ids) 
+        AND cl2.grade = filter_grade
+      ))
     GROUP BY c.id
   )
   SELECT 
@@ -103,4 +133,4 @@ END;
 $$;
 
 -- Grant execute permission to authenticated users
-GRANT EXECUTE ON FUNCTION public.get_admin_course_analytics_with_filters TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_admin_course_analytics_with_filters(uuid, uuid, uuid, uuid, uuid, uuid, uuid, text) TO authenticated;

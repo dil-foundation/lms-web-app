@@ -137,6 +137,12 @@ interface Class {
   board_id: string;
 }
 
+interface Grade {
+  id: string;
+  name: string;
+  code: string;
+}
+
 interface FilterState {
   country: string;
   region: string;
@@ -144,6 +150,7 @@ interface FilterState {
   project: string;
   board: string;
   school: string;
+  grade: string;
   class: string;
 }
 
@@ -176,6 +183,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [boards, setBoards] = useState<Board[]>([]);
   const [schools, setSchools] = useState<School[]>([]);
+  const [grades, setGrades] = useState<Grade[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
 
   // Filter loading states
@@ -186,6 +194,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     projects: false,
     boards: false,
     schools: false,
+    grades: false,
     classes: false,
   });
 
@@ -197,6 +206,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     project: 'all',
     board: 'all',
     school: 'all',
+    grade: 'all',
     class: 'all',
   });
 
@@ -208,6 +218,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     project: 'all',
     board: 'all',
     school: 'all',
+    grade: 'all',
     class: 'all',
   });
 
@@ -409,7 +420,35 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     }
   };
 
-  const fetchClasses = async (schoolId?: string, boardId?: string) => {
+  const fetchGrades = async () => {
+    setFilterLoading(prev => ({ ...prev, grades: true }));
+    try {
+      // Static grades 1-12 as per classes table schema
+      const staticGrades: Grade[] = [
+        { id: '1', name: 'Grade 1', code: 'G1' },
+        { id: '2', name: 'Grade 2', code: 'G2' },
+        { id: '3', name: 'Grade 3', code: 'G3' },
+        { id: '4', name: 'Grade 4', code: 'G4' },
+        { id: '5', name: 'Grade 5', code: 'G5' },
+        { id: '6', name: 'Grade 6', code: 'G6' },
+        { id: '7', name: 'Grade 7', code: 'G7' },
+        { id: '8', name: 'Grade 8', code: 'G8' },
+        { id: '9', name: 'Grade 9', code: 'G9' },
+        { id: '10', name: 'Grade 10', code: 'G10' },
+        { id: '11', name: 'Grade 11', code: 'G11' },
+        { id: '12', name: 'Grade 12', code: 'G12' },
+      ];
+      
+      setGrades(staticGrades);
+    } catch (error) {
+      console.error('Failed to load grades:', error);
+      toast.error('Failed to load grades');
+    } finally {
+      setFilterLoading(prev => ({ ...prev, grades: false }));
+    }
+  };
+
+  const fetchClasses = async (schoolId?: string, boardId?: string, gradeId?: string) => {
     setFilterLoading(prev => ({ ...prev, classes: true }));
     try {
       let query = supabase
@@ -422,6 +461,9 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       }
       if (boardId && boardId !== 'all') {
         query = query.eq('board_id', boardId);
+      }
+      if (gradeId && gradeId !== 'all') {
+        query = query.eq('grade', gradeId);
       }
 
       const { data, error } = await query;
@@ -449,6 +491,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
           newFilters.project = 'all';
           newFilters.board = 'all';
           newFilters.school = 'all';
+          newFilters.grade = 'all';
           newFilters.class = 'all';
           break;
         case 'region':
@@ -456,24 +499,32 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
           newFilters.project = 'all';
           newFilters.board = 'all';
           newFilters.school = 'all';
+          newFilters.grade = 'all';
           newFilters.class = 'all';
           break;
         case 'city':
           newFilters.project = 'all';
           newFilters.board = 'all';
           newFilters.school = 'all';
+          newFilters.grade = 'all';
           newFilters.class = 'all';
           break;
         case 'project':
           newFilters.board = 'all';
           newFilters.school = 'all';
+          newFilters.grade = 'all';
           newFilters.class = 'all';
           break;
         case 'board':
           newFilters.school = 'all';
+          newFilters.grade = 'all';
           newFilters.class = 'all';
           break;
         case 'school':
+          newFilters.grade = 'all';
+          newFilters.class = 'all';
+          break;
+        case 'grade':
           newFilters.class = 'all';
           break;
       }
@@ -489,32 +540,41 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         fetchProjects(value !== 'all' ? value : undefined);
         fetchBoards(value !== 'all' ? value : undefined);
         fetchSchools(value !== 'all' ? value : undefined);
-        fetchClasses();
+        fetchGrades();
+        fetchClasses(undefined, undefined, filters.grade !== 'all' ? filters.grade : undefined);
         break;
       case 'region':
         fetchCities(filters.country !== 'all' ? filters.country : undefined, value !== 'all' ? value : undefined);
         fetchProjects(filters.country !== 'all' ? filters.country : undefined, value !== 'all' ? value : undefined);
         fetchBoards(filters.country !== 'all' ? filters.country : undefined, value !== 'all' ? value : undefined);
         fetchSchools(filters.country !== 'all' ? filters.country : undefined, value !== 'all' ? value : undefined);
-        fetchClasses();
+        fetchGrades();
+        fetchClasses(undefined, undefined, filters.grade !== 'all' ? filters.grade : undefined);
         break;
       case 'city':
         fetchProjects(filters.country !== 'all' ? filters.country : undefined, filters.region !== 'all' ? filters.region : undefined, value !== 'all' ? value : undefined);
         fetchBoards(filters.country !== 'all' ? filters.country : undefined, filters.region !== 'all' ? filters.region : undefined, value !== 'all' ? value : undefined);
         fetchSchools(filters.country !== 'all' ? filters.country : undefined, filters.region !== 'all' ? filters.region : undefined, value !== 'all' ? value : undefined);
-        fetchClasses();
+        fetchGrades();
+        fetchClasses(undefined, undefined, filters.grade !== 'all' ? filters.grade : undefined);
         break;
       case 'project':
         fetchBoards(filters.country !== 'all' ? filters.country : undefined, filters.region !== 'all' ? filters.region : undefined, filters.city !== 'all' ? filters.city : undefined, value !== 'all' ? value : undefined);
         fetchSchools(filters.country !== 'all' ? filters.country : undefined, filters.region !== 'all' ? filters.region : undefined, filters.city !== 'all' ? filters.city : undefined, value !== 'all' ? value : undefined);
-        fetchClasses();
+        fetchGrades();
+        fetchClasses(undefined, undefined, filters.grade !== 'all' ? filters.grade : undefined);
         break;
       case 'board':
         fetchSchools(filters.country !== 'all' ? filters.country : undefined, filters.region !== 'all' ? filters.region : undefined, filters.city !== 'all' ? filters.city : undefined, filters.project !== 'all' ? filters.project : undefined, value !== 'all' ? value : undefined);
-        fetchClasses(undefined, value !== 'all' ? value : undefined);
+        fetchGrades();
+        fetchClasses(undefined, value !== 'all' ? value : undefined, filters.grade !== 'all' ? filters.grade : undefined);
         break;
       case 'school':
-        fetchClasses(value !== 'all' ? value : undefined, filters.board !== 'all' ? filters.board : undefined);
+        fetchGrades();
+        fetchClasses(value !== 'all' ? value : undefined, filters.board !== 'all' ? filters.board : undefined, filters.grade !== 'all' ? filters.grade : undefined);
+        break;
+      case 'grade':
+        fetchClasses(filters.school !== 'all' ? filters.school : undefined, filters.board !== 'all' ? filters.board : undefined, value !== 'all' ? value : undefined);
         break;
     }
   };
@@ -528,6 +588,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       project: 'all',
       board: 'all',
       school: 'all',
+      grade: 'all',
       class: 'all',
     };
     
@@ -540,6 +601,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     fetchProjects();
     fetchBoards();
     fetchSchools();
+    fetchGrades();
     fetchClasses();
   };
 
@@ -558,6 +620,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
     fetchProjects();
     fetchBoards();
     fetchSchools();
+    fetchGrades();
     fetchClasses();
   }, []);
 
@@ -639,6 +702,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         if (appliedFilters.project !== 'all') filterParams.filter_project_id = appliedFilters.project;
         if (appliedFilters.board !== 'all') filterParams.filter_board_id = appliedFilters.board;
         if (appliedFilters.school !== 'all') filterParams.filter_school_id = appliedFilters.school;
+        if (appliedFilters.grade !== 'all') filterParams.filter_grade = appliedFilters.grade;
         if (appliedFilters.class !== 'all') filterParams.filter_class_id = appliedFilters.class;
 
         const { data: engagementMetrics, error: engagementError } = await supabase.rpc('get_teacher_engagement_metrics_with_filters', filterParams);
@@ -732,13 +796,14 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       };
       
       if (currentFilters) {
-        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
-        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
-        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
-        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
-        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
-        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
         if (currentFilters.country !== 'all') filterParams.filter_country_id = currentFilters.country;
+        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
+        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
+        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
+        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
+        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
+        if (currentFilters.grade !== 'all') filterParams.filter_grade = currentFilters.grade;
+        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
       }
 
       const { data, error } = await supabase.rpc('get_student_engagement_trends_with_filters', filterParams);
@@ -787,13 +852,14 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       };
       
       if (currentFilters) {
-        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
-        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
-        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
-        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
-        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
-        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
         if (currentFilters.country !== 'all') filterParams.filter_country_id = currentFilters.country;
+        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
+        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
+        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
+        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
+        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
+        if (currentFilters.grade !== 'all') filterParams.filter_grade = currentFilters.grade;
+        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
       }
 
       const { data, error } = await supabase.rpc('get_course_performance_data_with_filters', filterParams);
@@ -841,13 +907,14 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       };
       
       if (currentFilters) {
-        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
-        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
-        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
-        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
-        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
-        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
         if (currentFilters.country !== 'all') filterParams.filter_country_id = currentFilters.country;
+        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
+        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
+        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
+        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
+        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
+        if (currentFilters.grade !== 'all') filterParams.filter_grade = currentFilters.grade;
+        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
       }
 
       const { data, error } = await supabase.rpc('get_student_progress_distribution_with_filters', filterParams);
@@ -889,13 +956,14 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       };
       
       if (currentFilters) {
-        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
-        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
-        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
-        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
-        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
-        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
         if (currentFilters.country !== 'all') filterParams.filter_country_id = currentFilters.country;
+        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
+        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
+        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
+        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
+        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
+        if (currentFilters.grade !== 'all') filterParams.filter_grade = currentFilters.grade;
+        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
       }
 
       const { data, error } = await supabase.rpc('get_course_completion_trends_with_filters', filterParams);
@@ -928,13 +996,14 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       };
       
       if (currentFilters) {
-        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
-        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
-        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
-        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
-        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
-        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
         if (currentFilters.country !== 'all') filterParams.filter_country_id = currentFilters.country;
+        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
+        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
+        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
+        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
+        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
+        if (currentFilters.grade !== 'all') filterParams.filter_grade = currentFilters.grade;
+        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
       }
 
       const { data, error } = await supabase.rpc('get_quiz_performance_data_with_filters', filterParams);
@@ -970,13 +1039,14 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       };
       
       if (currentFilters) {
-        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
-        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
-        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
-        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
-        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
-        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
         if (currentFilters.country !== 'all') filterParams.filter_country_id = currentFilters.country;
+        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
+        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
+        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
+        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
+        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
+        if (currentFilters.grade !== 'all') filterParams.filter_grade = currentFilters.grade;
+        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
       }
 
       const { data, error } = await supabase.rpc('get_engagement_trends_data_with_filters', filterParams);
@@ -1027,13 +1097,14 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       };
       
       if (currentFilters) {
-        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
-        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
-        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
-        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
-        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
-        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
         if (currentFilters.country !== 'all') filterParams.filter_country_id = currentFilters.country;
+        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
+        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
+        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
+        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
+        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
+        if (currentFilters.grade !== 'all') filterParams.filter_grade = currentFilters.grade;
+        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
       }
 
       const { data, error } = await supabase.rpc('get_student_status_counts_with_filters', filterParams);
@@ -1181,7 +1252,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                               <SelectItem value="all">All Countries</SelectItem>
                               {countries.map((country) => (
                                 <SelectItem key={country.id} value={country.id}>
-                                  {country.name}
+                                  {country.name} ({country.code})
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -1203,7 +1274,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                               <SelectItem value="all">All Regions</SelectItem>
                               {regions.map((region) => (
                                 <SelectItem key={region.id} value={region.id}>
-                                  {region.name}
+                                  {region.name} ({region.code})
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -1225,7 +1296,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                               <SelectItem value="all">All Cities</SelectItem>
                               {cities.map((city) => (
                                 <SelectItem key={city.id} value={city.id}>
-                                  {city.name}
+                                  {city.name} ({city.code})
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -1247,7 +1318,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                               <SelectItem value="all">All Projects</SelectItem>
                               {projects.map((project) => (
                                 <SelectItem key={project.id} value={project.id}>
-                                  {project.name}
+                                  {project.name} ({project.code})
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -1269,7 +1340,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                               <SelectItem value="all">All Boards</SelectItem>
                               {boards.map((board) => (
                                 <SelectItem key={board.id} value={board.id}>
-                                  {board.name}
+                                  {board.name} ({board.code})
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -1292,6 +1363,28 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
                               {schools.map((school) => (
                                 <SelectItem key={school.id} value={school.id}>
                                   {school.name} ({school.school_type})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Grade */}
+                        <div className="space-y-2">
+                          <Label htmlFor="grade">Grade</Label>
+                          <Select 
+                            value={filters.grade} 
+                            onValueChange={(value) => handleFilterChange('grade', value)}
+                            disabled={filterLoading.grades}
+                          >
+                            <SelectTrigger id="grade">
+                              <SelectValue placeholder={filterLoading.grades ? "Loading..." : "Select grade"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Grades</SelectItem>
+                              {grades.map((grade) => (
+                                <SelectItem key={grade.id} value={grade.id}>
+                                  {grade.name}
                                 </SelectItem>
                               ))}
                             </SelectContent>
