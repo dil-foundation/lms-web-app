@@ -702,6 +702,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         if (appliedFilters.project !== 'all') filterParams.filter_project_id = appliedFilters.project;
         if (appliedFilters.board !== 'all') filterParams.filter_board_id = appliedFilters.board;
         if (appliedFilters.school !== 'all') filterParams.filter_school_id = appliedFilters.school;
+        if (appliedFilters.grade !== 'all') filterParams.filter_grade = appliedFilters.grade;
         if (appliedFilters.class !== 'all') filterParams.filter_class_id = appliedFilters.class;
 
         const { data: engagementMetrics, error: engagementError } = await supabase.rpc('get_teacher_engagement_metrics_with_filters', filterParams);
@@ -795,13 +796,14 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       };
       
       if (currentFilters) {
-        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
-        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
-        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
-        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
-        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
-        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
         if (currentFilters.country !== 'all') filterParams.filter_country_id = currentFilters.country;
+        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
+        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
+        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
+        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
+        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
+        if (currentFilters.grade !== 'all') filterParams.filter_grade = currentFilters.grade;
+        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
       }
 
       const { data, error } = await supabase.rpc('get_student_engagement_trends_with_filters', filterParams);
@@ -850,13 +852,14 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       };
       
       if (currentFilters) {
-        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
-        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
-        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
-        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
-        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
-        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
         if (currentFilters.country !== 'all') filterParams.filter_country_id = currentFilters.country;
+        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
+        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
+        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
+        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
+        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
+        if (currentFilters.grade !== 'all') filterParams.filter_grade = currentFilters.grade;
+        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
       }
 
       const { data, error } = await supabase.rpc('get_course_performance_data_with_filters', filterParams);
@@ -904,13 +907,14 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       };
       
       if (currentFilters) {
-        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
-        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
-        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
-        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
-        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
-        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
         if (currentFilters.country !== 'all') filterParams.filter_country_id = currentFilters.country;
+        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
+        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
+        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
+        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
+        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
+        if (currentFilters.grade !== 'all') filterParams.filter_grade = currentFilters.grade;
+        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
       }
 
       const { data, error } = await supabase.rpc('get_student_progress_distribution_with_filters', filterParams);
@@ -952,13 +956,14 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       };
       
       if (currentFilters) {
-        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
-        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
-        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
-        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
-        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
-        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
         if (currentFilters.country !== 'all') filterParams.filter_country_id = currentFilters.country;
+        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
+        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
+        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
+        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
+        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
+        if (currentFilters.grade !== 'all') filterParams.filter_grade = currentFilters.grade;
+        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
       }
 
       const { data, error } = await supabase.rpc('get_course_completion_trends_with_filters', filterParams);
@@ -991,13 +996,14 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       };
       
       if (currentFilters) {
-        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
-        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
-        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
-        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
-        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
-        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
         if (currentFilters.country !== 'all') filterParams.filter_country_id = currentFilters.country;
+        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
+        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
+        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
+        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
+        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
+        if (currentFilters.grade !== 'all') filterParams.filter_grade = currentFilters.grade;
+        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
       }
 
       const { data, error } = await supabase.rpc('get_quiz_performance_data_with_filters', filterParams);
@@ -1033,13 +1039,14 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       };
       
       if (currentFilters) {
-        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
-        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
-        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
-        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
-        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
-        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
         if (currentFilters.country !== 'all') filterParams.filter_country_id = currentFilters.country;
+        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
+        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
+        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
+        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
+        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
+        if (currentFilters.grade !== 'all') filterParams.filter_grade = currentFilters.grade;
+        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
       }
 
       const { data, error } = await supabase.rpc('get_engagement_trends_data_with_filters', filterParams);
@@ -1090,13 +1097,14 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
       };
       
       if (currentFilters) {
-        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
-        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
-        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
-        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
-        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
-        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
         if (currentFilters.country !== 'all') filterParams.filter_country_id = currentFilters.country;
+        if (currentFilters.region !== 'all') filterParams.filter_region_id = currentFilters.region;
+        if (currentFilters.city !== 'all') filterParams.filter_city_id = currentFilters.city;
+        if (currentFilters.project !== 'all') filterParams.filter_project_id = currentFilters.project;
+        if (currentFilters.board !== 'all') filterParams.filter_board_id = currentFilters.board;
+        if (currentFilters.school !== 'all') filterParams.filter_school_id = currentFilters.school;
+        if (currentFilters.grade !== 'all') filterParams.filter_grade = currentFilters.grade;
+        if (currentFilters.class !== 'all') filterParams.filter_class_id = currentFilters.class;
       }
 
       const { data, error } = await supabase.rpc('get_student_status_counts_with_filters', filterParams);
