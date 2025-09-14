@@ -298,7 +298,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
               math_expression: q.math_expression || null,
               math_tolerance: q.math_tolerance || null,
               math_hint: q.math_hint || null,
-              math_allow_drawing: q.math_allow_drawing || false
+              math_allow_drawing: q.math_allow_drawing === true
             }));
           }
           
@@ -1061,27 +1061,6 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                     
                     {isMathExpression ? (
                       <>
-                        {/* Debug logging */}
-                        {console.log('Math question debug:', {
-                          questionId: q.id,
-                          math_allow_drawing: q.math_allow_drawing,
-                          math_expression: q.math_expression,
-                          math_hint: q.math_hint,
-                          question: q
-                        })}
-                        {/* Test database schema */}
-                        {(() => {
-                          // Test if math fields exist in database
-                          supabase
-                            .from('quiz_questions')
-                            .select('id, math_allow_drawing, math_expression, math_hint')
-                            .eq('id', q.id)
-                            .single()
-                            .then(({ data, error }) => {
-                              console.log('Database test for question', q.id, ':', { data, error });
-                            });
-                          return null;
-                        })()}
                         <MathExpressionInput
                           questionId={q.id}
                           value={mathAnswer || ''}
@@ -1091,7 +1070,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                           expectedAnswer={q.math_expression}
                           tolerance={q.math_tolerance}
                           hint={q.math_hint}
-                          allowDrawing={q.math_allow_drawing || false}
+                          allowDrawing={q.math_allow_drawing === true}
                           drawingData={mathDrawings[q.id] || ''}
                           onDrawingChange={(drawingData) => setMathDrawings(prev => ({ ...prev, [q.id]: drawingData }))}
                         />

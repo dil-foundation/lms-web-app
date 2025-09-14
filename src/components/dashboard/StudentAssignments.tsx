@@ -47,6 +47,10 @@ import { toast } from 'sonner';
 import { ContentLoader } from '../ContentLoader';
 import { useAuth } from '@/hooks/useAuth';
 import AccessLogService from '@/services/accessLogService';
+import { useViewPreferences } from '@/contexts/ViewPreferencesContext';
+import { ViewToggle } from '@/components/ui/ViewToggle';
+import { AssignmentTileView } from '@/components/assignment/AssignmentTileView';
+import { AssignmentListView } from '@/components/assignment/AssignmentListView';
 
 type Profile = {
   id: string;
@@ -572,6 +576,7 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
   const [activeSubmissionTab, setActiveSubmissionTab] = useState('text');
   const [existingFileName, setExistingFileName] = useState<string | null>(null);
   const [existingFileUrl, setExistingFileUrl] = useState<string | null>(null);
+  const { preferences, setAssignmentView } = useViewPreferences();
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -822,8 +827,6 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
   };
 
   const AssignmentCard = ({ assignment }: { assignment: Assignment }) => {
-    const [isCollapsed, setIsCollapsed] = useState(true);
-
     // Helper function to strip HTML tags and get plain text
     const stripHtmlTags = (html: string) => {
       const tmp = document.createElement('div');
@@ -832,151 +835,78 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
     };
 
     return (
-      <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-        {isCollapsed ? (
-          // Slim collapsed state
-          <div className="p-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <CardTitle className="text-lg text-gray-900 dark:text-gray-100 truncate">{assignment.title}</CardTitle>
-                <p className="text-sm text-muted-foreground mt-1 truncate">{assignment.courseTitle}</p>
+      <Card className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-md bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-border dark:hover:border-border h-80 flex flex-col overflow-hidden">
+        <CardHeader className="p-4 pb-3">
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-base font-semibold line-clamp-2 group-hover:text-primary transition-colors mb-2">
+                {assignment.title}
+              </CardTitle>
+              <p className="text-xs text-muted-foreground line-clamp-1 mb-3">
+                {assignment.courseTitle}
+              </p>
+            </div>
+          </div>
+          
+          {/* Status and Grade Badges */}
+          <div className="flex flex-wrap gap-2 mb-3">
+            {/* Grade display for graded assignments */}
+            {assignment.status === 'graded' && (
+              <Badge variant="default" className="bg-gradient-to-r from-green-500 to-green-600 text-white">
+                {assignment.score != null ? `${assignment.score}%` : 'N/A'}
+              </Badge>
+            )}
+            
+            {/* Status badge */}
+            <Badge variant={getStatusColor(assignment.status)} className="capitalize">
+              {getStatusIcon(assignment.status)}
+              <span className="ml-1">{assignment.status}</span>
+            </Badge>
+            
+            {/* Overdue badge */}
+            {isOverdue(assignment.dueDate, assignment.status) && (
+              <Badge variant="destructive">Overdue</Badge>
+            )}
+          </div>
+        </CardHeader>
+        
+        <CardContent className="p-4 pt-0 flex flex-col flex-1 overflow-hidden">
+          {/* Assignment Description */}
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="text-xs text-muted-foreground line-clamp-3 mb-4">
+              <div dangerouslySetInnerHTML={{ __html: stripHtmlTags(assignment.description) }} />
+            </div>
+            
+            {/* Assignment Details */}
+            <div className="space-y-2 text-xs text-muted-foreground mb-4">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-3 h-3" />
+                <span className={isOverdue(assignment.dueDate, assignment.status) ? 'text-red-600' : ''}>
+                  Due: {formatDate(assignment.dueDate)}
+                </span>
               </div>
-              <div className="flex flex-wrap items-center gap-2 sm:gap-3 ml-0 sm:ml-4">
-                {/* Grade display for graded assignments */}
-                {assignment.status === 'graded' && (
-                  <div className="flex items-center space-x-2">
-                    <Badge variant="default" className="bg-gradient-to-r from-green-500 to-green-600 text-white">
-                      {assignment.score != null ? `${assignment.score}%` : 'N/A'}
-                    </Badge>
-                  </div>
-                )}
-                
-                {/* Status badge */}
-                <Badge variant={getStatusColor(assignment.status)} className="capitalize">
-                  {getStatusIcon(assignment.status)}
-                  <span className="ml-1">{assignment.status}</span>
-                </Badge>
-                
-                {/* Overdue badge */}
-                {isOverdue(assignment.dueDate, assignment.status) && (
-                  <Badge variant="destructive">Overdue</Badge>
-                )}
-                
-                {/* View Details button */}
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => {
-                    setSelectedAssignment(assignment);
-                    setIsDetailModalOpen(true);
-                  }} 
-                  className="hover:bg-primary/10 hover:border-primary/30 hover:text-gray-900 dark:hover:text-gray-100 w-full sm:w-auto"
-                >
-                  <Eye className="h-4 w-4 mr-2" />
-                  View Details
-                </Button>
-                
-                {/* Expand button */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsCollapsed(false)}
-                  className="text-primary hover:text-primary/80"
-                >
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
+              <div className="flex items-center gap-2">
+                <Clock className="w-3 h-3" />
+                <span>Assignment</span>
               </div>
             </div>
           </div>
-        ) : (
-          // Expanded state
-          <>
-            <CardHeader className="pb-3">
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                <div className="flex-1">
-                  <CardTitle className="text-lg text-gray-900 dark:text-gray-100">{assignment.title}</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">{assignment.courseTitle}</p>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Badge variant={getStatusColor(assignment.status)} className="capitalize">
-                    {getStatusIcon(assignment.status)}
-                    <span className="ml-1">{assignment.status}</span>
-                  </Badge>
-                  {isOverdue(assignment.dueDate, assignment.status) && (
-                    <Badge variant="destructive">Overdue</Badge>
-                  )}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="text-sm text-muted-foreground">
-                <div dangerouslySetInnerHTML={{ __html: assignment.description }} />
-              </div>
-              
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center space-x-1">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className={isOverdue(assignment.dueDate, assignment.status) ? 'text-red-600' : ''}>
-                      Due: {formatDate(assignment.dueDate)}
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={() => {
-                    setSelectedAssignment(assignment);
-                    setIsDetailModalOpen(true);
-                  }} className="hover:bg-primary/10 hover:border-primary/30 hover:text-gray-900 dark:hover:text-gray-100 w-full sm:w-auto">
-                    <Eye className="h-4 w-4 mr-2" />
-                    View Details
-                  </Button>
-                  
-                  {(assignment.status === 'pending' || assignment.status === 'submitted') && (
-                    <Button
-                      size="sm"
-                      onClick={() => handleOpenSubmissionModal(assignment)}
-                      className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl w-full sm:w-auto"
-                    >
-                      <Edit className="h-4 w-4 mr-2" />
-                      {assignment.status === 'pending' ? 'Submit' : 'Edit Submission'}
-                    </Button>
-                  )}
-                  
-                  {/* Collapse button */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsCollapsed(true)}
-                    className="text-primary hover:text-primary/80"
-                  >
-                    <ChevronUp className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              
-              {assignment.status === 'graded' && (
-                <div className="p-3 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/10 dark:to-green-800/10 border border-green-200/50 dark:border-green-700/50 rounded-2xl space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Grade: </span>
-                      <span className="text-sm font-bold text-green-600 dark:text-green-400">{assignment.score != null ? `${assignment.score}%` : 'N/A'}</span>
-                    </div>
-                    <span className="text-sm text-muted-foreground">
-                      Graded on {assignment.gradedAt && formatDate(assignment.gradedAt)}
-                    </span>
-                  </div>
-                  {assignment.feedback && (
-                    <div>
-                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Feedback: </span>
-                      <p className="text-sm text-muted-foreground inline">{assignment.feedback}</p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </>
-        )}
+
+          {/* Action Button */}
+          <div className="mt-auto pt-3">
+            <Button
+              size="sm"
+              className="w-full h-8 text-xs"
+              onClick={() => {
+                setSelectedAssignment(assignment);
+                setIsDetailModalOpen(true);
+              }}
+            >
+              <Eye className="w-3 h-3 mr-1" />
+              View Details
+            </Button>
+          </div>
+        </CardContent>
       </Card>
     );
   };
@@ -1131,15 +1061,113 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-6">
+          {/* View Toggle */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-foreground">Assignments</h2>
+              <p className="text-sm text-muted-foreground">Switch between different views to manage your assignments</p>
+            </div>
+            <ViewToggle
+              currentView={preferences.assignmentView}
+              onViewChange={setAssignmentView}
+              availableViews={['card', 'tile', 'list']}
+            />
+          </div>
+
+          {/* Assignment Display based on selected view */}
           {currentAssignments.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground">No assignments match your current filters.</p>
             </div>
           ) : (
-            currentAssignments.map((assignment) => (
-              <AssignmentCard key={assignment.id} assignment={assignment} />
-            ))
+            <>
+              {preferences.assignmentView === 'card' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {currentAssignments.map((assignment) => (
+                    <AssignmentCard key={assignment.id} assignment={assignment} />
+                  ))}
+                </div>
+              )}
+
+              {preferences.assignmentView === 'tile' && (
+                <AssignmentTileView
+                  assignments={currentAssignments.map(assignment => ({
+                    id: assignment.id,
+                    title: assignment.title,
+                    description: assignment.description,
+                    due_date: assignment.dueDate,
+                    course_title: assignment.courseTitle,
+                    course_id: assignment.courseId,
+                    status: assignment.status,
+                    submission_type: assignment.submissionType === 'link' ? 'url' : (assignment.submissionType === 'file' ? 'file' : 'text'),
+                    points: 100,
+                    grade: assignment.score,
+                    feedback: assignment.feedback,
+                    created_at: new Date().toISOString(),
+                    submitted_at: assignment.submittedAt,
+                    graded_at: assignment.gradedAt
+                  }))}
+                  onAssignmentClick={(assignment) => {
+                    const originalAssignment = currentAssignments.find(a => a.id === assignment.id);
+                    if (originalAssignment) setSelectedAssignment(originalAssignment);
+                  }}
+                  onSubmit={(assignment) => {
+                    const originalAssignment = currentAssignments.find(a => a.id === assignment.id);
+                    if (originalAssignment) {
+                      setSelectedAssignment(originalAssignment);
+                      setIsSubmissionModalOpen(true);
+                    }
+                  }}
+                  onView={(assignment) => {
+                    const originalAssignment = currentAssignments.find(a => a.id === assignment.id);
+                    if (originalAssignment) {
+                      setSelectedAssignment(originalAssignment);
+                      setIsDetailModalOpen(true);
+                    }
+                  }}
+                />
+              )}
+
+              {preferences.assignmentView === 'list' && (
+                <AssignmentListView
+                  assignments={currentAssignments.map(assignment => ({
+                    id: assignment.id,
+                    title: assignment.title,
+                    description: assignment.description,
+                    due_date: assignment.dueDate,
+                    course_title: assignment.courseTitle,
+                    course_id: assignment.courseId,
+                    status: assignment.status,
+                    submission_type: assignment.submissionType === 'link' ? 'url' : (assignment.submissionType === 'file' ? 'file' : 'text'),
+                    points: 100,
+                    grade: assignment.score,
+                    feedback: assignment.feedback,
+                    created_at: new Date().toISOString(),
+                    submitted_at: assignment.submittedAt,
+                    graded_at: assignment.gradedAt
+                  }))}
+                  onAssignmentClick={(assignment) => {
+                    const originalAssignment = currentAssignments.find(a => a.id === assignment.id);
+                    if (originalAssignment) setSelectedAssignment(originalAssignment);
+                  }}
+                  onSubmit={(assignment) => {
+                    const originalAssignment = currentAssignments.find(a => a.id === assignment.id);
+                    if (originalAssignment) {
+                      setSelectedAssignment(originalAssignment);
+                      setIsSubmissionModalOpen(true);
+                    }
+                  }}
+                  onView={(assignment) => {
+                    const originalAssignment = currentAssignments.find(a => a.id === assignment.id);
+                    if (originalAssignment) {
+                      setSelectedAssignment(originalAssignment);
+                      setIsDetailModalOpen(true);
+                    }
+                  }}
+                />
+              )}
+            </>
           )}
         </div>
       )}

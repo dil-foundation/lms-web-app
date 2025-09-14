@@ -94,20 +94,33 @@ export const cleanMathExpression = (expression: string): string => {
   cleaned = cleaned.replace(/\\pm/g, '±'); // Keep ± symbol
   cleaned = cleaned.replace(/\\mp/g, '∓'); // Keep ∓ symbol
   
+  // Handle direct symbol input (new format)
+  cleaned = cleaned.replace(/×/g, '*'); // Convert × to *
+  cleaned = cleaned.replace(/÷/g, '/'); // Convert ÷ to /
+  cleaned = cleaned.replace(/√/g, 'sqrt'); // Convert √ to sqrt
+  
   // Handle fractions
   cleaned = cleaned.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1)/($2)');
+  // Handle new fraction format: (a)/(b)
+  cleaned = cleaned.replace(/\(([^)]+)\)\/\(([^)]+)\)/g, '($1)/($2)');
   
   // Handle square roots
   cleaned = cleaned.replace(/\\sqrt\{([^}]+)\}/g, 'sqrt($1)');
   cleaned = cleaned.replace(/\\sqrt\[([^\]]+)\]\{([^}]+)\}/g, '($2)^(1/($1))');
+  // Handle new square root format: √(x)
+  cleaned = cleaned.replace(/√\(([^)]+)\)/g, 'sqrt($1)');
   
   // Handle exponents
   cleaned = cleaned.replace(/\^(\d+)/g, '**$1');
   cleaned = cleaned.replace(/\^\{([^}]+)\}/g, '**($1)');
+  // Handle new exponent format: ^(x)
+  cleaned = cleaned.replace(/\^\(([^)]+)\)/g, '**($1)');
   
   // Handle subscripts (convert to function notation where appropriate)
   cleaned = cleaned.replace(/([a-zA-Z])_(\d+)/g, '$1$2');
   cleaned = cleaned.replace(/([a-zA-Z])_\{([^}]+)\}/g, '$1$2');
+  // Handle new subscript format: _(x)
+  cleaned = cleaned.replace(/([a-zA-Z])_\(([^)]+)\)/g, '$1$2');
   
   // Handle common functions
   cleaned = cleaned.replace(/\\sin/g, 'sin');

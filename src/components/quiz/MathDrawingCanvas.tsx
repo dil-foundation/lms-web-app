@@ -69,14 +69,14 @@ export const MathDrawingCanvas: React.FC<MathDrawingCanvasProps> = ({
       try {
         const drawingData = JSON.parse(initialDrawing);
         setPaths(drawingData.paths || []);
-        redrawCanvas();
       } catch (error) {
         console.error('Error loading initial drawing:', error);
       }
     }
   }, [initialDrawing]);
 
-  const redrawCanvas = useCallback(() => {
+  // Redraw canvas when paths change
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -113,9 +113,17 @@ export const MathDrawingCanvas: React.FC<MathDrawingCanvasProps> = ({
     ctx.globalCompositeOperation = 'source-over';
   }, [paths]);
 
+  // Save drawing when paths change (but only if there are paths)
   useEffect(() => {
-    redrawCanvas();
-  }, [redrawCanvas]);
+    if (paths.length > 0) {
+      const drawingData = {
+        paths,
+        timestamp: new Date().toISOString(),
+        questionId
+      };
+      onDrawingChange(JSON.stringify(drawingData));
+    }
+  }, [paths, questionId, onDrawingChange]);
 
   const getPoint = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>): Point => {
     const canvas = canvasRef.current;
@@ -222,23 +230,6 @@ export const MathDrawingCanvas: React.FC<MathDrawingCanvasProps> = ({
     link.href = dataURL;
     link.click();
   };
-
-  const saveDrawing = () => {
-    const drawingData = {
-      paths,
-      timestamp: new Date().toISOString(),
-      questionId
-    };
-    
-    onDrawingChange(JSON.stringify(drawingData));
-  };
-
-  // Auto-save drawing when paths change
-  useEffect(() => {
-    if (paths.length > 0) {
-      saveDrawing();
-    }
-  }, [paths]);
 
   return (
     <div className="space-y-4">

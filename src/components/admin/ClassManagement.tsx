@@ -18,12 +18,20 @@ import { useClasses, useClassesPaginated, useTeachers, useStudents, useBoards, u
 import { ClassWithMembers, CreateClassData, UpdateClassData } from '@/services/classService';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useViewPreferences } from '@/contexts/ViewPreferencesContext';
+import { ViewToggle } from '@/components/ui/ViewToggle';
+import { ClassCardView } from '@/components/class/ClassCardView';
+import { ClassTileView } from '@/components/class/ClassTileView';
+import { ClassListView } from '@/components/class/ClassListView';
 
 
 const ClassManagement: React.FC = () => {
+  // View preferences
+  const { preferences, setTeacherClassView } = useViewPreferences();
+  
   // Pagination and filter state
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage] = useState(8);
   const [searchTerm, setSearchTerm] = useState('');
   const [gradeFilter, setGradeFilter] = useState('all');
   const [schoolFilter, setSchoolFilter] = useState('all');
@@ -201,21 +209,23 @@ const ClassManagement: React.FC = () => {
     }
   };
 
-  const handleClassDeleteCheck = async (cls: ClassWithMembers) => {
+  const handleClassDeleteCheck = (cls: ClassWithMembers) => {
     setClassToDelete(cls);
     setIsCheckingClassDependencies(true);
     setClassDependencies(null);
 
-    try {
-      // Check dependencies
-      const dependencies = await checkClassDependencies(cls.id);
-      setClassDependencies(dependencies);
-    } catch (error) {
-      console.error('Error checking class dependencies:', error);
-      toast.error('Failed to check dependencies. Please try again.');
-    } finally {
-      setIsCheckingClassDependencies(false);
-    }
+    // Handle async operations internally
+    checkClassDependencies(cls.id)
+      .then((dependencies) => {
+        setClassDependencies(dependencies);
+      })
+      .catch((error) => {
+        console.error('Error checking class dependencies:', error);
+        toast.error('Failed to check dependencies. Please try again.');
+      })
+      .finally(() => {
+        setIsCheckingClassDependencies(false);
+      });
   };
 
   const handleClassDeleteConfirm = async () => {
@@ -305,7 +315,11 @@ const ClassManagement: React.FC = () => {
   };
 
   const getGradeBadge = (grade: string) => {
-    return <Badge variant="default" className="bg-[#8DC63F] hover:bg-[#7AB82F] text-white">Grade {grade}</Badge>;
+    const gradeNum = parseInt(grade);
+    if (gradeNum <= 5) return <Badge variant="default" className="bg-blue-600 text-white">Grade {grade}</Badge>;
+    if (gradeNum <= 8) return <Badge variant="default" className="bg-green-600">Grade {grade}</Badge>;
+    if (gradeNum <= 10) return <Badge variant="default" className="bg-yellow-600">Grade {grade}</Badge>;
+    return <Badge variant="default" className="bg-purple-600">Grade {grade}</Badge>;
   };
 
   // Check if student limit is exceeded
@@ -649,12 +663,83 @@ const ClassManagement: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Classes Table */}
+      {/* Classes Display */}
       <Card>
         <CardContent className="p-0">
           {classes.length > 0 ? (
-            <>
-              <Table>
+            <div className="space-y-6">
+              {/* View Toggle */}
+              <div className="flex items-center justify-between p-6 pb-0">
+                <div>
+                  <h2 className="text-xl font-semibold text-foreground">Classes</h2>
+                  <p className="text-sm text-muted-foreground">Switch between different views to manage your classes</p>
+                </div>
+                <ViewToggle
+                  currentView={preferences.teacherClassView}
+                  onViewChange={setTeacherClassView}
+                  availableViews={['card', 'tile', 'list']}
+                />
+              </div>
+
+              {/* Class Display based on selected view */}
+              {preferences.teacherClassView === 'card' && (
+                <div className="p-6 pt-0">
+                  <ClassCardView
+                    classes={classes}
+                    onView={openViewDialog}
+                    onEdit={openEditDialog}
+                    onDelete={handleClassDeleteCheck}
+                  />
+                </div>
+              )}
+
+              {/* Pagination for Card View */}
+              {preferences.teacherClassView === 'card' && totalCount > 0 && (
+                <div className="flex items-center justify-center space-x-2 py-4 border-t px-6">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handlePreviousPage}
+                    disabled={currentPage === 1}
+                    className="text-sm"
+                  >
+                    &lt; Previous
+                  </Button>
+                  
+                  <div className="flex items-center space-x-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <Button
+                        key={page}
+                        variant={currentPage === page ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => handlePageChange(page)}
+                        className={`w-8 h-8 p-0 text-sm ${
+                          currentPage === page 
+                            ? "bg-gray-200 text-gray-900 hover:bg-gray-300" 
+                            : "hover:bg-gray-100"
+                        }`}
+                      >
+                        {page}
+                      </Button>
+                    ))}
+                  </div>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleNextPage}
+                    disabled={currentPage === totalPages}
+                    className="text-sm"
+                  >
+                    Next &gt;
+                  </Button>
+                </div>
+              )}
+
+              {/* Legacy Table View - Hidden */}
+              {false && (
+                <div className="p-6 pt-0">
+                  <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Class Name</TableHead>
@@ -888,7 +973,31 @@ const ClassManagement: React.FC = () => {
                   </Button>
                 </div>
               )}
-            </>
+                </div>
+              )}
+
+              {preferences.teacherClassView === 'tile' && (
+                <div className="p-6 pt-0">
+                  <ClassTileView
+                    classes={classes}
+                    onView={openViewDialog}
+                    onEdit={openEditDialog}
+                    onDelete={handleClassDeleteCheck}
+                  />
+                </div>
+              )}
+
+              {preferences.teacherClassView === 'list' && (
+                <div className="p-6 pt-0">
+                  <ClassListView
+                    classes={classes}
+                    onView={openViewDialog}
+                    onEdit={openEditDialog}
+                    onDelete={handleClassDeleteCheck}
+                  />
+                </div>
+              )}
+            </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-12 px-6">
               <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
@@ -1429,7 +1538,7 @@ const ClassManagement: React.FC = () => {
             </Button>
             <Button 
               onClick={handleEdit} 
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
               disabled={loading || !!validationErrors.name || !!validationErrors.code || !!validationErrors.grade || !!validationErrors.board_id || !!validationErrors.school_id || !!validationErrors.max_students || !!validationErrors.description}
             >
               {loading ? (
@@ -1563,7 +1672,7 @@ const ClassManagement: React.FC = () => {
               <Button onClick={() => {
                 setIsViewDialogOpen(false);
                 openEditDialog(viewingClass);
-              }} className="bg-blue-600 hover:bg-blue-700">
+              }} className="bg-blue-600 hover:bg-blue-700 text-white">
                 Edit Class
               </Button>
             )}
