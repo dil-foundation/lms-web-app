@@ -104,12 +104,16 @@ serve(async (req) => {
       throw new Error(`Storage upload error: ${uploadError.message}`)
     }
 
-    // Get public URL
-    const { data: urlData } = supabaseClient.storage
+    // Get signed URL (expires in 1 hour)
+    const { data: signedUrlData, error: signedUrlError } = await supabaseClient.storage
       .from('dil-lms')
-      .getPublicUrl(filename)
+      .createSignedUrl(filename, 3600) // 1 hour expiration
 
-    const publicUrl = urlData.publicUrl
+    if (signedUrlError) {
+      throw new Error(`Failed to create signed URL: ${signedUrlError.message}`)
+    }
+
+    const signedUrl = signedUrlData.signedUrl
 
     // Save thumbnail record to database
     const { error: dbError } = await supabaseClient
@@ -121,7 +125,7 @@ serve(async (req) => {
         prompt: prompt,
         style: style,
         image_url: filename,
-        public_url: publicUrl,
+        public_url: signedUrl,
         generated_at: new Date().toISOString()
       })
 
@@ -147,7 +151,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        imageUrl: publicUrl,
+        imageUrl: signedUrl,
         filename: filename,
         prompt: prompt
       }),
