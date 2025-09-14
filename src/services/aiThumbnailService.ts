@@ -17,7 +17,7 @@ export interface ThumbnailGenerationResult {
 }
 
 class AIThumbnailService {
-  private async generateThumbnailPrompt(course: CourseThumbnailRequest): string {
+  private generateThumbnailPrompt(course: CourseThumbnailRequest): string {
     const { title, description, subject, level, style = 'academic' } = course;
     
     // Extract key themes from title and description
@@ -156,10 +156,38 @@ class AIThumbnailService {
         return [];
       }
 
-      return data?.map(item => item.image_url) || [];
+      // Generate fresh signed URLs for each thumbnail
+      const signedUrls = await Promise.all(
+        data?.map(async (item) => {
+          const { data: signedUrlData } = await supabase.storage
+            .from('dil-lms')
+            .createSignedUrl(item.image_url, 3600); // 1 hour expiration
+          return signedUrlData?.signedUrl || '';
+        }) || []
+      );
+
+      return signedUrls.filter(url => url !== '');
     } catch (error) {
       console.error('Error in getThumbnailHistory:', error);
       return [];
+    }
+  }
+
+  async getSignedUrl(filename: string): Promise<string | null> {
+    try {
+      const { data, error } = await supabase.storage
+        .from('dil-lms')
+        .createSignedUrl(filename, 3600); // 1 hour expiration
+
+      if (error) {
+        console.error('Error creating signed URL:', error);
+        return null;
+      }
+
+      return data?.signedUrl || null;
+    } catch (error) {
+      console.error('Error in getSignedUrl:', error);
+      return null;
     }
   }
 }

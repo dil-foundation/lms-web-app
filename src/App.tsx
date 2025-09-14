@@ -82,14 +82,15 @@ const AppContent = () => {
               <AILMSProvider>
                 <ObservationReportsProvider>
                   <SecureLinksProvider>
-                    <ErrorBoundary fallback={
+                    {/* Temporarily disabled ErrorBoundary to prevent notification service error display */}
+                    {/* <ErrorBoundary fallback={
                       <div className="flex items-center justify-center h-screen">
                         <div className="text-center">
                           <h2 className="text-xl font-semibold mb-2">Notification Service Unavailable</h2>
                           <p className="text-muted-foreground">Some features may not work properly, but you can continue using the app.</p>
                         </div>
                       </div>
-                    }>
+                    }> */}
                       <NotificationProvider>
                         <ViewPreferencesProvider>
                           <APEXProvider>
@@ -135,7 +136,7 @@ const AppContent = () => {
                           </APEXProvider>
                         </ViewPreferencesProvider>
                       </NotificationProvider>
-                    </ErrorBoundary>
+                    {/* </ErrorBoundary> */}
                   </SecureLinksProvider>
                 </ObservationReportsProvider>
               </AILMSProvider>

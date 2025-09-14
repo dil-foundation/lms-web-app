@@ -28,6 +28,7 @@ import { QuizRetryService } from '@/services/quizRetryService';
 import { RetryEligibility, QuizAttempt } from '@/types/quizRetry';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
 
 interface QuizRetryInterfaceProps {
   userId: string;
@@ -64,12 +65,62 @@ export const QuizRetryInterface: React.FC<QuizRetryInterfaceProps> = ({
       ]);
       
       setEligibility(eligibilityData);
-      setAttempts(attemptsData);
+      
+      // If no attempts found in new system, check legacy quiz_submissions
+      if (attemptsData.length === 0) {
+        const legacyAttempts = await loadLegacyAttempts();
+        setAttempts(legacyAttempts);
+      } else {
+        setAttempts(attemptsData);
+      }
     } catch (error) {
       console.error('Error loading retry data:', error);
       toast.error('Failed to load retry information');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadLegacyAttempts = async (): Promise<QuizAttempt[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('quiz_submissions')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('lesson_content_id', lessonContentId)
+        .order('submitted_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching legacy attempts:', error);
+        return [];
+      }
+
+      // Convert legacy quiz_submissions to QuizAttempt format
+      return data.map((submission: any, index: number) => ({
+        id: submission.id,
+        userId: submission.user_id,
+        lessonContentId: submission.lesson_content_id,
+        attemptNumber: index + 1,
+        answers: submission.answers,
+        results: submission.results,
+        score: submission.score,
+        submittedAt: submission.submitted_at,
+        retryReason: null,
+        teacherApprovalRequired: false,
+        teacherApproved: false,
+        teacherApprovedBy: undefined,
+        teacherApprovedAt: undefined,
+        teacherApprovalNotes: undefined,
+        studyMaterialsCompleted: false,
+        studyMaterialsCompletedAt: undefined,
+        ipAddress: submission.ip_address,
+        userAgent: submission.user_agent,
+        createdAt: submission.created_at,
+        updatedAt: submission.updated_at
+      }));
+    } catch (error) {
+      console.error('Error loading legacy attempts:', error);
+      return [];
     }
   };
 
@@ -128,6 +179,8 @@ export const QuizRetryInterface: React.FC<QuizRetryInterfaceProps> = ({
     const retryTime = new Date(eligibility.retryAfter);
     const now = new Date();
     
+    // Check if the date is valid
+    if (isNaN(retryTime.getTime())) return null;
     if (retryTime <= now) return null;
     
     return formatDistanceToNow(retryTime, { addSuffix: true });
@@ -152,13 +205,17 @@ export const QuizRetryInterface: React.FC<QuizRetryInterfaceProps> = ({
   const status = getRetryStatus();
   const timeUntilRetry = getTimeUntilRetry();
 
+  // Only show retry options if student scored below the retry threshold
+  const retryThreshold = eligibility.retryThreshold || 70; // Default to 70% if not specified
+  const showRetryOptions = currentScore !== undefined && currentScore < retryThreshold;
+
   return (
     <>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <RotateCcw className="w-5 h-5" />
-            Quiz Retry Options
+            {showRetryOptions ? 'Quiz Retry Options' : `Quiz Results (Above ${retryThreshold}% Threshold)`}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -175,8 +232,8 @@ export const QuizRetryInterface: React.FC<QuizRetryInterfaceProps> = ({
             </div>
           )}
 
-          {/* Retry Status */}
-          {status && (
+          {/* Retry Status - Only show if retry options are available */}
+          {showRetryOptions && status && (
             <Alert variant={status.type === 'error' ? 'destructive' : status.type === 'warning' ? 'default' : 'default'}>
               <status.icon className="h-4 w-4" />
               <AlertDescription>
@@ -186,8 +243,8 @@ export const QuizRetryInterface: React.FC<QuizRetryInterfaceProps> = ({
             </Alert>
           )}
 
-          {/* Cooldown Timer */}
-          {timeUntilRetry && (
+          {/* Cooldown Timer - Only show if retry options are available */}
+          {showRetryOptions && timeUntilRetry && (
             <Alert>
               <Timer className="h-4 w-4" />
               <AlertDescription>
@@ -217,9 +274,20 @@ export const QuizRetryInterface: React.FC<QuizRetryInterfaceProps> = ({
                           {attempt.score}%
                         </Badge>
                       )}
-                      <span className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(attempt.submittedAt), { addSuffix: true })}
-                      </span>
+                      <div className="text-xs text-muted-foreground text-right">
+                        {(() => {
+                          const date = new Date(attempt.submittedAt);
+                          if (isNaN(date.getTime())) {
+                            return <div>Submitted</div>;
+                          }
+                          return (
+                            <div>
+                              <div>{date.toLocaleDateString()} at {date.toLocaleTimeString()}</div>
+                              <div className="text-xs opacity-75">{formatDistanceToNow(date, { addSuffix: true })}</div>
+                            </div>
+                          );
+                        })()}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -227,8 +295,8 @@ export const QuizRetryInterface: React.FC<QuizRetryInterfaceProps> = ({
             </div>
           )}
 
-          {/* Retry Button */}
-          {eligibility.canRetry && !timeUntilRetry && (
+          {/* Retry Button - Only show if retry options are available */}
+          {showRetryOptions && eligibility.canRetry && !timeUntilRetry && (
             <div className="pt-4">
               <Button 
                 onClick={() => setShowRetryDialog(true)}
