@@ -7,6 +7,18 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ContentLoader } from '../ContentLoader';
+import { ViewToggle, type ViewMode } from '@/components/ui/ViewToggle';
+import { StudentCourseTileView } from '@/components/course/StudentCourseTileView';
+import { StudentCourseListView } from '@/components/course/StudentCourseListView';
+import { useViewPreferences } from '@/contexts/ViewPreferencesContext';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
 
 type Profile = {
   id: string;
@@ -32,6 +44,11 @@ interface StudentCoursesProps {
 export const StudentCourses = ({ userProfile }: StudentCoursesProps) => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const { preferences, setStudentView } = useViewPreferences();
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(8); // 8 courses per page
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -80,6 +97,17 @@ export const StudentCourses = ({ userProfile }: StudentCoursesProps) => {
   const averageProgress = courses.length > 0 
     ? Math.round(courses.reduce((sum, course) => sum + (course.progress || 0), 0) / courses.length)
     : 0;
+
+  // Pagination logic
+  const totalPages = Math.ceil(courses.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentCourses = courses.slice(startIndex, endIndex);
+
+  // Reset to first page when courses change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [courses.length]);
 
   if (loading) {
     return (
@@ -212,72 +240,143 @@ export const StudentCourses = ({ userProfile }: StudentCoursesProps) => {
         </Card>
       </div>
       
-      {/* Enhanced Course Grid - Apple Style Aesthetics */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {courses.map((course) => (
-          <Card key={course.id} className="group bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 hover:-translate-y-2 rounded-3xl overflow-hidden">
-            <div className="relative overflow-hidden">
-              <img 
-                src={course.image_url} 
-                alt={course.title} 
-                className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105" 
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              {course.progress === 100 && (
-                <div className="absolute top-3 right-3">
-                  <div className="bg-green-500 text-white rounded-full p-1 shadow-lg">
-                    <CheckCircle className="h-4 w-4" />
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold leading-tight text-gray-900 dark:text-gray-100">{course.title}</CardTitle>
-              <p className="text-sm text-muted-foreground leading-relaxed">{course.subtitle}</p>
-            </CardHeader>
-            
-            <CardContent className="space-y-4">
-              {/* Enhanced Progress Bar */}
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Progress</span>
-                  <span className="text-sm font-semibold text-primary">{course.progress || 0}%</span>
-                </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
-                  <div 
-                    className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full transition-all duration-500 ease-out" 
-                    style={{ width: `${course.progress || 0}%` }}
-                  />
-                </div>
-              </div>
+      {/* View Toggle and Course Display */}
+      <div className="space-y-6">
+        {/* View Toggle */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-foreground">Your Courses</h2>
+            <p className="text-sm text-muted-foreground">Switch between different views to browse your courses</p>
+          </div>
+          <ViewToggle
+            currentView={preferences.studentView}
+            onViewChange={setStudentView}
+            availableViews={['card', 'tile', 'list']}
+          />
+        </div>
 
-              {/* Action Button */}
-              <Button 
-                asChild 
-                variant="outline" 
-                size="sm" 
-                className="w-full h-10 rounded-xl font-semibold hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300 hover:-translate-y-0.5 shadow-lg hover:shadow-xl"
-              >
-                <Link to={course.progress && course.progress > 0 ? `/dashboard/courses/${course.id}/content` : `/dashboard/courses/${course.id}`}>
-                  <div className="flex items-center gap-2">
-                    {course.progress && course.progress > 0 ? (
-                      <>
-                        <Play className="h-4 w-4" />
-                        Continue Learning
-                      </>
-                    ) : (
-                      <>
-                        <BookOpen className="h-4 w-4" />
-                        Start Course
-                      </>
-                    )}
+        {/* Course Display based on selected view */}
+        {preferences.studentView === 'card' && (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {currentCourses.map((course) => (
+              <Card key={course.id} className="group bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 hover:-translate-y-2 rounded-3xl overflow-hidden">
+                <div className="relative overflow-hidden">
+                  <img 
+                    src={course.image_url} 
+                    alt={course.title} 
+                    className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105" 
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  {course.progress === 100 && (
+                    <div className="absolute top-3 right-3">
+                      <div className="bg-green-500 text-white rounded-full p-1 shadow-lg">
+                        <CheckCircle className="h-4 w-4" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg font-semibold leading-tight text-gray-900 dark:text-gray-100">{course.title}</CardTitle>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{course.subtitle}</p>
+                </CardHeader>
+                
+                <CardContent className="space-y-4">
+                  {/* Enhanced Progress Bar */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Progress</span>
+                      <span className="text-sm font-semibold text-primary">{course.progress || 0}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                      <div 
+                        className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full transition-all duration-500 ease-out" 
+                        style={{ width: `${course.progress || 0}%` }}
+                      />
+                    </div>
                   </div>
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
+
+                  {/* Action Button */}
+                  <Button 
+                    asChild 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full h-10 rounded-xl font-semibold hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300 hover:-translate-y-0.5 shadow-lg hover:shadow-xl"
+                  >
+                    <Link to={course.progress && course.progress > 0 ? `/dashboard/courses/${course.id}/content` : `/dashboard/courses/${course.id}`}>
+                      <div className="flex items-center gap-2">
+                        {course.progress && course.progress > 0 ? (
+                          <>
+                            <Play className="h-4 w-4" />
+                            Continue Learning
+                          </>
+                        ) : (
+                          <>
+                            <BookOpen className="h-4 w-4" />
+                            Start Course
+                          </>
+                        )}
+                      </div>
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {preferences.studentView === 'tile' && (
+          <StudentCourseTileView
+            courses={currentCourses}
+            onCourseClick={(course) => {
+              // Handle course click if needed
+            }}
+          />
+        )}
+
+        {preferences.studentView === 'list' && (
+          <StudentCourseListView
+            courses={currentCourses}
+            onCourseClick={(course) => {
+              // Handle course click if needed
+            }}
+          />
+        )}
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center space-x-2 py-4">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                    className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                  />
+                </PaginationItem>
+                
+                {/* Page Numbers */}
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <PaginationItem key={page}>
+                    <PaginationLink
+                      onClick={() => setCurrentPage(page)}
+                      isActive={currentPage === page}
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                    className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        )}
       </div>
     </div>
   );

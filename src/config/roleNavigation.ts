@@ -242,12 +242,6 @@ export const getAICategorizedNavigation = (role: UserRole): NavigationCategory[]
           ]
         },
         {
-          title: 'OBSERVATION',
-          items: [
-            { title: 'Observation Reports', path: '/dashboard/observation-reports', icon: Eye },
-          ]
-        },
-        {
           title: 'SYSTEM MANAGEMENT',
           items: [
             { title: 'Settings and Security', path: '/dashboard/admin-settings', icon: Settings },

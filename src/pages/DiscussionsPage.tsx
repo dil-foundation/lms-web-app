@@ -1,5 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useViewPreferences } from '@/contexts/ViewPreferencesContext';
+import { ViewToggle } from '@/components/ui/ViewToggle';
+import { DiscussionTileView } from '@/components/discussion/DiscussionTileView';
+import { DiscussionListView } from '@/components/discussion/DiscussionListView';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -143,6 +147,7 @@ export default function DiscussionsPage() {
   const { user } = useAuth();
   const { profile, loading: isProfileLoading } = useUserProfile();
   const queryClient = useQueryClient();
+  const { preferences, setDiscussionView } = useViewPreferences();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -683,7 +688,23 @@ export default function DiscussionsPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
+            {/* View Toggle */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-foreground">Discussions</h2>
+                <p className="text-sm text-muted-foreground">Switch between different views to browse discussions</p>
+              </div>
+              <ViewToggle
+                currentView={preferences.discussionView}
+                onViewChange={setDiscussionView}
+                availableViews={['card', 'tile', 'list']}
+              />
+            </div>
+
+            {/* Discussion Display based on selected view */}
+            {preferences.discussionView === 'card' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {discussions.map((discussion) => (
               <Card 
                 key={discussion.id} 
@@ -693,78 +714,89 @@ export default function DiscussionsPage() {
                 {/* Subtle accent line */}
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/40 via-primary to-primary/60 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-5">
+                <CardContent className="p-6 h-80 flex flex-col">
+                  {/* Header Section with Avatar and Title */}
+                  <div className="flex items-start gap-4 mb-4">
                     {/* Enhanced Avatar */}
                     <div className="flex-shrink-0">
-                      <Avatar className="h-12 w-12 ring-2 ring-primary/20 group-hover:ring-primary/40 transition-all duration-300">
+                      <Avatar className="h-10 w-10 ring-2 ring-primary/20 group-hover:ring-primary/40 transition-all duration-300">
                         <AvatarImage src={undefined} />
-                        <AvatarFallback className="bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 text-primary font-semibold text-lg shadow-lg">
+                        <AvatarFallback className="bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 text-primary font-semibold text-sm shadow-lg">
                           {discussion.creator_first_name?.[0]}{discussion.creator_last_name?.[0]}
                         </AvatarFallback>
                       </Avatar>
                     </div>
                     
-                    {/* Main Content */}
-                    <div className="flex-1 min-w-0 space-y-3">
-                      {/* Title and Badges */}
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 truncate group-hover:text-primary transition-colors duration-300">
-                          {discussion.title}
-                        </h3>
-                        {discussion.discussion_type && (
-                          <Badge variant="blue" className="text-xs capitalize font-medium shadow-sm bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0">
-                            {discussion.discussion_type}
-                          </Badge>
-                        )}
-                        {discussion.course_title ? (
-                          <Badge variant="outline" className="text-xs font-medium shadow-sm border-gray-300/60 dark:border-gray-600/60 bg-gray-50/80 dark:bg-gray-800/80">
-                            {discussion.course_title}
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-xs font-medium shadow-sm border-gray-300/60 dark:border-gray-600/60 bg-gray-50/80 dark:bg-gray-800/80">
-                            General Discussion
-                          </Badge>
-                        )}
-                      </div>
+                    {/* Title and Author Section */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-base text-gray-900 dark:text-gray-100 truncate group-hover:text-primary transition-colors duration-300 mb-2">
+                        {discussion.title}
+                      </h3>
                       
-                      {/* Content Preview */}
-                      <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed font-medium">
-                        {discussion.content}
-                      </p>
-                      
-                      {/* Author and Date */}
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      {/* Author */}
+                      <div className="text-sm text-muted-foreground mb-2">
                         <span className="font-semibold text-gray-700 dark:text-gray-300">{discussion.creator_first_name} {discussion.creator_last_name}</span>
-                        <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
-                        <span className="font-medium">{format(new Date(discussion.created_at), 'MMM d, yyyy')}</span>
                       </div>
                     </div>
+                  </div>
+                  
+                  {/* Content Section */}
+                  <div className="flex-1 flex flex-col space-y-3">
+                    {/* Badges */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {discussion.discussion_type && (
+                        <Badge variant="blue" className="text-xs capitalize font-medium shadow-sm bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0">
+                          {discussion.discussion_type}
+                        </Badge>
+                      )}
+                      {discussion.course_title ? (
+                        <Badge variant="outline" className="text-xs font-medium shadow-sm border-gray-300/60 dark:border-gray-600/60 bg-gray-50/80 dark:bg-gray-800/80">
+                          {discussion.course_title}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-xs font-medium shadow-sm border-gray-300/60 dark:border-gray-600/60 bg-gray-50/80 dark:bg-gray-800/80">
+                          General Discussion
+                        </Badge>
+                      )}
+                    </div>
                     
-                    {/* Engagement Metrics and Actions */}
-                    <div className="flex flex-col items-end gap-4 text-sm text-muted-foreground">
-                      {/* Engagement Stats */}
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 group/stat">
-                          <div className="w-8 h-8 bg-gradient-to-br from-blue-400/20 via-blue-500/30 to-blue-600/20 rounded-xl flex items-center justify-center shadow-lg ring-1 ring-blue-500/20 group-hover/stat:ring-blue-500/40 transition-all duration-300">
-                            <MessageCircle className="h-4 w-4 text-blue-600 dark:text-blue-500" />
-                          </div>
-                          <span className="font-semibold text-gray-700 dark:text-gray-300 min-w-[20px] text-center">
-                            {discussion.replies_count}
-                          </span>
+                    {/* Content Preview */}
+                    <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed font-medium flex-1">
+                      {discussion.content}
+                    </p>
+                  </div>
+                  
+                  {/* Footer Section with Date and Engagement */}
+                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/50">
+                    {/* Date */}
+                    <div className="text-xs text-muted-foreground">
+                      <span className="font-medium">{format(new Date(discussion.created_at), 'MMM d, yyyy')}</span>
+                    </div>
+                    
+                    {/* Engagement Metrics */}
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-2 group/stat">
+                        <div className="w-6 h-6 bg-gradient-to-br from-blue-400/20 via-blue-500/30 to-blue-600/20 rounded-lg flex items-center justify-center shadow-sm ring-1 ring-blue-500/20 group-hover/stat:ring-blue-500/40 transition-all duration-300">
+                          <MessageCircle className="h-3 w-3 text-blue-600 dark:text-blue-500" />
                         </div>
-                        <div className="flex items-center gap-2 group/stat">
-                          <div className="w-8 h-8 bg-gradient-to-br from-green-400/20 via-green-500/30 to-green-600/20 rounded-xl flex items-center justify-center shadow-lg ring-1 ring-green-500/20 group-hover/stat:ring-green-500/40 transition-all duration-300">
-                            <ThumbsUp className="h-4 w-4 text-green-600 dark:text-green-500" />
-                          </div>
-                          <span className="font-semibold text-gray-700 dark:text-gray-300 min-w-[20px] text-center">
-                            {discussion.likes_count}
-                          </span>
-                        </div>
+                        <span className="font-semibold text-gray-700 dark:text-gray-300 min-w-[16px] text-center">
+                          {discussion.replies_count}
+                        </span>
                       </div>
-                      
-                      {/* Action Menu */}
-                      {!isProfileLoading && (user?.id === discussion.creator_id || profile?.role === 'admin') && (
+                      <div className="flex items-center gap-2 group/stat">
+                        <div className="w-6 h-6 bg-gradient-to-br from-green-400/20 via-green-500/30 to-green-600/20 rounded-lg flex items-center justify-center shadow-sm ring-1 ring-green-500/20 group-hover/stat:ring-green-500/40 transition-all duration-300">
+                          <ThumbsUp className="h-3 w-3 text-green-600 dark:text-green-500" />
+                        </div>
+                        <span className="font-semibold text-gray-700 dark:text-gray-300 min-w-[16px] text-center">
+                          {discussion.likes_count}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Action Menu */}
+                  {!isProfileLoading && (user?.id === discussion.creator_id || profile?.role === 'admin') && (
+                    <div className="flex justify-end mt-3">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button 
@@ -802,12 +834,42 @@ export default function DiscussionsPage() {
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
-                      )}
                     </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
+              </div>
+            )}
+
+            {preferences.discussionView === 'tile' && (
+              <DiscussionTileView
+                discussions={discussions}
+                onDiscussionClick={(discussion) => navigate(`/dashboard/discussion/${discussion.id}`)}
+                onLike={(discussionId) => {
+                  // Handle like functionality
+                }}
+                onEdit={(discussion) => setEditingDiscussion(discussion)}
+                onDelete={(discussionId) => setDiscussionToDelete({ id: discussionId })}
+                canModerate={!isProfileLoading && (profile?.role === 'admin' || profile?.role === 'teacher')}
+              />
+            )}
+
+            {preferences.discussionView === 'list' && (
+              <DiscussionListView
+                discussions={discussions}
+                onDiscussionClick={(discussion) => navigate(`/dashboard/discussion/${discussion.id}`)}
+                onLike={(discussionId) => {
+                  // Handle like functionality
+                }}
+                onEdit={(discussion) => setEditingDiscussion(discussion)}
+                onDelete={(discussionId) => setDiscussionToDelete({ id: discussionId })}
+                onPin={(discussionId) => {
+                  // Handle pin functionality
+                }}
+                canModerate={!isProfileLoading && (profile?.role === 'admin' || profile?.role === 'teacher')}
+              />
+            )}
           </div>
         )}
 
