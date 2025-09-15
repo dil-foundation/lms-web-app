@@ -446,7 +446,7 @@ export const APEXAdmin = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-card to-blue-500/5 dark:bg-card">
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Categories</CardTitle>
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
@@ -459,7 +459,7 @@ export const APEXAdmin = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-card to-purple-500/5 dark:bg-card">
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Contact Points</CardTitle>
             <Phone className="h-4 w-4 text-muted-foreground" />
@@ -472,7 +472,7 @@ export const APEXAdmin = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-card to-orange-500/5 dark:bg-card">
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Knowledge Items</CardTitle>
             <Eye className="h-4 w-4 text-muted-foreground" />
@@ -613,7 +613,14 @@ export const APEXAdmin = () => {
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} disabled={loading}>
+                  <Button variant="outline" onClick={() => {
+                    setDialogState({
+                      isOpen: false,
+                      type: null,
+                      mode: 'create'
+                    });
+                    resetFAQForm();
+                  }} disabled={loading}>
                     Cancel
                   </Button>
                   <Button onClick={handleAddFAQ} disabled={loading}>
@@ -776,7 +783,14 @@ export const APEXAdmin = () => {
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} disabled={loading}>
+                  <Button variant="outline" onClick={() => {
+                    setDialogState({
+                      isOpen: false,
+                      type: null,
+                      mode: 'create'
+                    });
+                    resetKnowledgeBaseForm();
+                  }} disabled={loading}>
                     Cancel
                   </Button>
                   <Button onClick={handleAddKnowledgeBase} disabled={loading}>
@@ -785,7 +799,7 @@ export const APEXAdmin = () => {
                     ) : (
                       <Save className="h-4 w-4 mr-2" />
                     )}
-                    {editingItem && editingType === 'knowledge' ? 'Update Article' : 'Add Article'}
+                    {dialogState.mode === 'edit' ? 'Update Article' : 'Add Article'}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -947,7 +961,14 @@ export const APEXAdmin = () => {
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} disabled={loading}>
+                  <Button variant="outline" onClick={() => {
+                    setDialogState({
+                      isOpen: false,
+                      type: null,
+                      mode: 'create'
+                    });
+                    resetContactForm();
+                  }} disabled={loading}>
                     Cancel
                   </Button>
                   <Button onClick={handleAddContact} disabled={loading}>
@@ -956,7 +977,7 @@ export const APEXAdmin = () => {
                     ) : (
                       <Save className="h-4 w-4 mr-2" />
                     )}
-                    {editingItem && editingType === 'contact' ? 'Update Contact' : 'Add Contact'}
+                    {dialogState.mode === 'edit' ? 'Update Contact' : 'Add Contact'}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -1124,73 +1145,6 @@ export const APEXAdmin = () => {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start"
-                    onClick={() => loadData()}
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <HelpCircle className="h-4 w-4 mr-2" />
-                    )}
-                    Refresh All Data
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start"
-                    onClick={() => {
-                      setDialogState({
-                        isOpen: true,
-                        type: 'faq',
-                        mode: 'create'
-                      });
-                      resetFAQForm();
-                    }}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add New FAQ
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start"
-                    onClick={() => {
-                      setDialogState({
-                        isOpen: true,
-                        type: 'knowledge',
-                        mode: 'create'
-                      });
-                      resetKnowledgeBaseForm();
-                    }}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Knowledge Article
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start"
-                    onClick={() => {
-                      setDialogState({
-                        isOpen: true,
-                        type: 'contact',
-                        mode: 'create'
-                      });
-                      resetContactForm();
-                    }}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Contact Info
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </TabsContent>
       </Tabs>

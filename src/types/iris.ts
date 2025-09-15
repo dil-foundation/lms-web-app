@@ -8,6 +8,9 @@ export interface IRISMessage {
   tool_call_id?: string;
   name?: string;
   timestamp?: Date;
+  // Export support fields
+  data?: any;
+  reportData?: any;
 }
 
 export interface IRISContext {
