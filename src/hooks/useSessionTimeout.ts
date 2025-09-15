@@ -155,8 +155,8 @@ export const useSessionTimeout = () => {
 
   // Set up periodic timeout checking
   const setupTimeoutChecking = useCallback(() => {
-    // Check every 30 seconds for more responsive warnings
-    timeoutRef.current = setInterval(checkSessionTimeout, 30 * 1000);
+    // Check every 60 seconds to reduce frequency (was 30 seconds)
+    timeoutRef.current = setInterval(checkSessionTimeout, 60 * 1000);
   }, [checkSessionTimeout]);
 
   // Initialize session timeout management

@@ -1,5 +1,5 @@
 import { BASE_API_URL } from '@/config/api';
-import { getAuthHeaders } from '@/utils/authUtils';
+import { getAuthHeadersWithAccept } from '@/utils/authUtils';
 
 // Fallback topics for when API is not available
 const fallbackTopics: CriticalOpinionTopic[] = [
@@ -136,7 +136,7 @@ class CriticalOpinionService {
     try {
       const response = await fetch(`${this.baseUrl}/api/critical-opinion-topics`, {
         method: 'GET',
-        headers: getAuthHeaders(),
+        headers: getAuthHeadersWithAccept(),
       });
 
       if (!response.ok) {
@@ -186,7 +186,7 @@ class CriticalOpinionService {
     try {
       const response = await fetch(`${this.baseUrl}/api/critical-opinion-topics/${topicId}`, {
         method: 'GET',
-        headers: getAuthHeaders(),
+        headers: getAuthHeadersWithAccept(),
       });
 
       if (!response.ok) {
@@ -207,7 +207,7 @@ class CriticalOpinionService {
     try {
       const response = await fetch(`${this.baseUrl}/api/critical-opinion-builder/${topicId}`, {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: getAuthHeadersWithAccept(),
       });
 
       if (!response.ok) {
@@ -269,7 +269,7 @@ class CriticalOpinionService {
     try {
       const response = await fetch(`${this.baseUrl}/api/evaluate-critical-opinion`, {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: getAuthHeadersWithAccept(),
         body: JSON.stringify({
           audio_base64: audioBase64,
           topic_id: topicId,

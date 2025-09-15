@@ -5,6 +5,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import accessibility fixes */
+@import './styles/accessibility-fix.css';
+
 /* Hide scrollbar while keeping scroll functionality */
 .scrollbar-hide {
   -ms-overflow-style: none;  /* Internet Explorer 10+ */

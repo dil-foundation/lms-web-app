@@ -13,34 +13,38 @@ export const SupabaseMFARequirement: React.FC<SupabaseMFARequirementProps> = ({ 
   const { user } = useAuth();
   const { mfaStatus, isMFARequired, loading, checkMFARequirement } = useSupabaseMFA();
   const [showMFASetup, setShowMFASetup] = useState(false);
-  const [isChecking, setIsChecking] = useState(false); // Start as false, only check when user is authenticated
+  const [isChecking, setIsChecking] = useState(false);
+  const [hasCheckedRequirement, setHasCheckedRequirement] = useState(false);
 
   useEffect(() => {
     const checkRequirements = async () => {
-      if (user) {
+      // Only check if user exists and we haven't checked yet
+      if (user && !hasCheckedRequirement) {
         setIsChecking(true);
         try {
           await checkMFARequirement();
+          setHasCheckedRequirement(true);
         } catch (error) {
           console.error('Error checking MFA requirement:', error);
         } finally {
           setIsChecking(false);
         }
-      } else {
+      } else if (!user) {
         setIsChecking(false);
+        setHasCheckedRequirement(false);
       }
     };
 
     checkRequirements();
-  }, [user, checkMFARequirement]);
+  }, [user, checkMFARequirement, hasCheckedRequirement]);
 
 
 
   // Show loading while checking MFA status
   if (isChecking || loading) {
     return (
-      <div className="flex items-center justify-center h-full text-center">
-        <div className="flex flex-col items-center gap-4">
+      <div className="flex items-center justify-center min-h-screen w-full">
+        <div className="flex flex-col items-center gap-4 text-center">
           <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
           <p className="text-muted-foreground">Verifying security settings...</p>
         </div>
@@ -95,10 +99,14 @@ export const SupabaseMFARequirement: React.FC<SupabaseMFARequirementProps> = ({ 
         <SupabaseMFASetup
           isOpen={showMFASetup}
           onClose={() => setShowMFASetup(false)}
-          onSuccess={() => {
+          onSuccess={async () => {
             setShowMFASetup(false);
-            // Reload the page to refresh the MFA status
-            window.location.reload();
+            // Refresh MFA status without reloading the page
+            try {
+              await checkMFARequirement();
+            } catch (error) {
+              console.error('Error refreshing MFA status:', error);
+            }
           }}
         />
       </>

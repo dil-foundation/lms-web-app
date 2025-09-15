@@ -13,32 +13,39 @@ export const useSupabaseMFA = () => {
   const [setupData, setSetupData] = useState<MFASetupData | null>(null);
   const [loading, setLoading] = useState(false);
   const [isMFARequired, setIsMFARequired] = useState(false);
+  const [mfaStatusCached, setMfaStatusCached] = useState(false);
+  const [requirementCached, setRequirementCached] = useState(false);
 
   // Load MFA status
-  const loadMFAStatus = useCallback(async () => {
+  const loadMFAStatus = useCallback(async (force = false) => {
     if (!user) return;
+    if (mfaStatusCached && !force) return; // Skip if already cached
 
     try {
       setLoading(true);
       const status = await SupabaseMFAService.getMFAStatus();
       setMfaStatus(status);
+      setMfaStatusCached(true);
     } catch (error) {
       console.error('Error loading MFA status:', error);
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, mfaStatusCached]);
 
   // Check if MFA is required globally
-  const checkMFARequirement = useCallback(async () => {
+  const checkMFARequirement = useCallback(async (force = false) => {
+    if (requirementCached && !force) return; // Skip if already cached
+
     try {
       const required = await SupabaseMFAService.checkMFARequirement();
       setIsMFARequired(required);
+      setRequirementCached(true);
     } catch (error) {
       console.error('Error checking MFA requirement:', error);
       setIsMFARequired(false);
     }
-  }, []);
+  }, [requirementCached]);
 
   // Start MFA setup
   const startMFASetup = useCallback(async () => {
@@ -65,7 +72,8 @@ export const useSupabaseMFA = () => {
       setLoading(true);
       await SupabaseMFAService.completeMFASetup();
       setSetupData(null);
-      await loadMFAStatus();
+      // Force refresh of MFA status after setup
+      await loadMFAStatus(true);
       toast.success('MFA setup completed successfully');
       return true;
     } catch (error: any) {
@@ -186,6 +194,10 @@ export const useSupabaseMFA = () => {
     if (user) {
       loadMFAStatus();
       checkMFARequirement();
+    } else {
+      // Reset cache when user changes
+      setMfaStatusCached(false);
+      setRequirementCached(false);
     }
   }, [user, loadMFAStatus, checkMFARequirement]);
 

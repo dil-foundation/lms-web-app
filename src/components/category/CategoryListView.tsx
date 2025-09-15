@@ -27,6 +27,15 @@ export const CategoryListView: React.FC<CategoryListViewProps> = ({
   isDeleting = () => false,
   className
 }) => {
+  const handleView = (category: CourseCategory) => {
+    // Small delay to ensure dropdown is fully closed
+    setTimeout(() => onView(category), 100);
+  };
+
+  const handleEdit = (category: CourseCategory) => {
+    // Small delay to ensure dropdown is fully closed
+    setTimeout(() => onEdit(category), 100);
+  };
   return (
     <Card className={className}>
       <CardContent className="p-0">
@@ -73,11 +82,11 @@ export const CategoryListView: React.FC<CategoryListViewProps> = ({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onView(category)}>
+                      <DropdownMenuItem onClick={() => handleView(category)}>
                         <Eye className="mr-2 h-4 w-4" />
                         View Details
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onEdit(category)}>
+                      <DropdownMenuItem onClick={() => handleEdit(category)}>
                         <Edit className="mr-2 h-4 w-4" />
                         Edit Category
                       </DropdownMenuItem>

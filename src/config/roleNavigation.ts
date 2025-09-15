@@ -244,7 +244,6 @@ export const getAICategorizedNavigation = (role: UserRole): NavigationCategory[]
         {
           title: 'SYSTEM MANAGEMENT',
           items: [
-            { title: 'Settings and Security', path: '/dashboard/admin-settings', icon: Settings },
             { title: 'AI Tutor Settings', path: '/dashboard/ai-tutor-settings', icon: Settings2 },
             { title: 'AI Safety & Ethics', path: '/dashboard/ai-safety-ethics', icon: ShieldCheck },
           ]
