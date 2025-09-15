@@ -24,6 +24,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
+import { PaginationControls } from '@/components/ui/PaginationControls';
 import { 
   validateFirstName, 
   validateLastName, 
@@ -106,7 +107,7 @@ export const UsersManagement = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   
   const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(8); // Consistent with list view default
   const [totalUsers, setTotalUsers] = useState(0);
   const [stats, setStats] = useState({
     students: 0,
@@ -116,6 +117,11 @@ export const UsersManagement = () => {
   const [loadingStats, setLoadingStats] = useState(true);
   
   const totalPages = Math.ceil(totalUsers / rowsPerPage);
+
+  const handleItemsPerPageChange = (newRowsPerPage: number) => {
+    setRowsPerPage(newRowsPerPage);
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
 
   const fetchStats = useCallback(async () => {
     setLoadingStats(true);
@@ -1258,47 +1264,18 @@ export const UsersManagement = () => {
             </Table>
           </div>
 
-          {!loading && totalPages > 0 && (
-             <Pagination className="mt-4">
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious 
-                    href="#" 
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setCurrentPage(prev => Math.max(1, prev - 1));
-                    }}
-                    className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-                  />
-                </PaginationItem>
-                
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                  <PaginationItem key={page}>
-                    <PaginationLink 
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setCurrentPage(page);
-                      }}
-                      isActive={currentPage === page}
-                    >
-                      {page}
-                    </PaginationLink>
-                  </PaginationItem>
-                ))}
-
-                <PaginationItem>
-                  <PaginationNext 
-                    href="#" 
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setCurrentPage(prev => Math.min(totalPages, prev + 1));
-                    }}
-                    className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
+          {!loading && totalPages > 1 && (
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalUsers}
+              itemsPerPage={rowsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+              itemsPerPageOptions={[5, 10, 20, 50, 100]}
+              disabled={loading}
+              className="mt-4"
+            />
           )}
 
           {!loading && users.length === 0 && (

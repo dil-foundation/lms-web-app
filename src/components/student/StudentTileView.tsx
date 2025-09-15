@@ -183,44 +183,38 @@ export const StudentTileView: React.FC<StudentTileViewProps> = ({
 
   return (
     <div className={className}>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
         {students.map((student) => (
           <Card
             key={student.id}
-            className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-md bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-border dark:hover:border-border h-full"
+            className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-sm bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-primary/30 dark:hover:border-primary/30 h-40 flex flex-col overflow-hidden"
             onClick={() => handleStudentClick(student)}
           >
-            <CardContent className="p-4 flex flex-col h-full">
-              {/* Header with status */}
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex flex-wrap gap-1">
-                  <Badge variant="outline" className="text-xs">
-                    <BookOpen className="w-3 h-3 mr-1" />
+            <CardContent className="p-3 flex flex-col h-full">
+              {/* Compact Header with Status */}
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1">
+                  <Badge variant="outline" className="text-xs px-1.5 py-0.5">
+                    <BookOpen className="w-2.5 h-2.5 mr-1" />
                     {student.course}
                   </Badge>
-                  {student.grade && getGradeBadge(student.grade)}
                 </div>
                 
-                {/* Status Badge */}
-                <Badge 
-                  variant="default" 
-                  className={`text-xs ${getStatusColor(student.status)} text-white`}
-                >
-                  {getStatusIcon(student.status)}
-                  <span className="ml-1 capitalize">{student.status}</span>
-                </Badge>
+                {/* Compact Status Indicator */}
+                <div className={`w-2 h-2 rounded-full ${getStatusColor(student.status)}`} 
+                     title={`${student.status.charAt(0).toUpperCase() + student.status.slice(1)}`} />
               </div>
 
-              {/* Student Info */}
-              <div className="flex items-center gap-3 mb-3 flex-1">
-                <Avatar className="h-10 w-10">
+              {/* Compact Student Info */}
+              <div className="flex items-center gap-2 mb-2 flex-1">
+                <Avatar className="h-8 w-8">
                   <AvatarImage src={student.avatar_url || student.avatar} />
-                  <AvatarFallback className="bg-primary/20 text-primary font-semibold">
+                  <AvatarFallback className="bg-primary/20 text-primary font-semibold text-xs">
                     {student.firstName?.[0]}{student.lastName?.[0]}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-sm leading-tight line-clamp-1 text-foreground group-hover:text-primary transition-colors">
+                  <h3 className="font-medium text-xs leading-tight line-clamp-1 text-foreground group-hover:text-primary transition-colors">
                     {student.name}
                   </h3>
                   <p className="text-xs text-muted-foreground line-clamp-1">
@@ -229,50 +223,36 @@ export const StudentTileView: React.FC<StudentTileViewProps> = ({
                 </div>
               </div>
 
-              {/* Progress */}
-              <div className="space-y-2 mb-3">
+              {/* Compact Progress */}
+              <div className="space-y-1 mb-3">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Progress</span>
-                  <span className="font-medium text-primary">{student.progress}%</span>
+                  <span className="text-muted-foreground text-xs">Progress</span>
+                  <span className="font-medium text-primary text-xs">{student.progress}%</span>
                 </div>
                 <Progress 
                   value={student.progress} 
-                  className="h-2"
+                  className="h-1.5"
                 />
               </div>
 
-              {/* Stats */}
-              <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
-                <div className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  <span>Enrolled {formatDate(student.enrolledDate)}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Activity className="w-3 h-3" />
-                  <span>{student.lastActive}</span>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex items-center gap-1 mt-auto">
+              {/* Compact Action Buttons */}
+              <div className="flex items-center gap-1 mt-auto pt-1">
                 <Button
                   size="sm"
                   variant="outline"
-                  className="flex-1 h-7 text-xs hover:bg-primary/10 hover:text-primary transition-all duration-200 min-w-0"
+                  className="flex-1 h-7 text-xs hover:bg-primary/10 hover:text-primary transition-all duration-200 min-w-0 px-1"
                   onClick={(e) => handleMessage(e, student)}
                 >
-                  <Mail className="w-3 h-3 mr-1 flex-shrink-0" />
-                  <span className="truncate">Message</span>
+                  <Mail className="w-3 h-3" />
                 </Button>
                 
                 <Button
                   size="sm"
                   variant="outline"
-                  className="flex-1 h-7 text-xs hover:bg-blue-500/10 hover:text-blue-500 transition-all duration-200 min-w-0"
+                  className="flex-1 h-7 text-xs hover:bg-blue-500/10 hover:text-blue-500 transition-all duration-200 min-w-0 px-1"
                   onClick={(e) => handleViewProfile(e, student)}
                 >
-                  <Users className="w-3 h-3 mr-1 flex-shrink-0" />
-                  <span className="truncate">Profile</span>
+                  <Users className="w-3 h-3" />
                 </Button>
                 
                 <DropdownMenu>

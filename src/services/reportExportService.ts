@@ -598,9 +598,31 @@ export class ReportExportService {
     
     // Check if content contains metrics/analytics
     const content = message.content || '';
-    const hasMetrics = /\d+[%]?.*(?:users?|courses?|sessions?|rate|duration|percentage)/i.test(content);
-    const hasAnalytics = /(?:analytics|metrics|performance|insights|data)/i.test(content);
     
-    return hasMetrics && hasAnalytics && content.length > 100;
+    // Expanded metrics detection to include teachers, students, admins, and more educational terms
+    const hasMetrics = /\d+[%]?.*(?:users?|courses?|sessions?|rate|duration|percentage|teachers?|students?|admins?|classes?|assignments?|enrollments?|completions?)/i.test(content);
+    
+    // Expanded analytics detection to include educational and report terms
+    const hasAnalytics = /(?:analytics|metrics|performance|insights|data|report|summary|overview|statistics|total|assigned|registered)/i.test(content);
+    
+    // Table structure detection (both HTML and Markdown)
+    const hasTableStructure = (content.includes('|') && content.includes('---')) || 
+                             (content.includes('<table') && content.includes('</table>')) ||
+                             content.includes('TEACHER ID') || content.includes('FIRST NAME') || 
+                             content.includes('EMAIL') || content.includes('ROLE');
+    
+    // Report-like content indicators
+    const hasReportKeywords = /(?:report|list|summary|overview|statistics|total|here\s+is|here\s+are)/i.test(content);
+    
+    // More flexible detection criteria
+    const hasSubstantialContent = content.length > 100;
+    const looksLikeReport = hasTableStructure || hasReportKeywords || content.length > 200;
+    
+    // Enhanced detection: if it has table structure, it's likely exportable even without other criteria
+    if (hasTableStructure && (hasMetrics || hasAnalytics)) {
+      return true;
+    }
+    
+    return hasMetrics && hasAnalytics && (hasSubstantialContent || looksLikeReport);
   }
 }

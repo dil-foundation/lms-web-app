@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { APEXService } from '@/services/aiAssistantService';
+import { APEXService, type ChatMessage as ServiceChatMessage } from '@/services/aiAssistantService';
 
 export interface AIMessage {
   id: string;
@@ -49,37 +49,41 @@ export const APEXProvider: React.FC<APEXProviderProps> = ({ children }) => {
     messages: [],
     isLoading: false,
     isTyping: false,
-    quickReplies: [
-      "How do I enroll in a course?",
-      "I forgot my password",
-      "How do I contact support?",
-      "What are the AI learning features?",
-      "How do I submit an assignment?",
-      "I'm having technical issues"
-    ],
-    faqCategories: [
-      "Getting Started",
-      "Account & Login",
-      "Courses & Learning",
-      "AI Features",
-      "Technical Support",
-      "Administrative"
-    ]
+    quickReplies: [],
+    faqCategories: []
   });
 
-  // Initialize with welcome message
+  const [conversationHistory, setConversationHistory] = useState<ServiceChatMessage[]>([]);
+
+  // Initialize with welcome message and load quick replies/categories
   useEffect(() => {
-    if (state.messages.length === 0) {
-      const welcomeMessage: AIMessage = {
-        id: 'welcome',
-        content: `Hello${user ? ` ${profile?.first_name || 'there'}` : ''}! I'm your AI Digital Assistant. I'm here to help you with questions about our LMS platform and connect you with our administrative staff when needed. How can I assist you today?`,
-        sender: 'assistant',
-        timestamp: new Date(),
-        type: 'text',
-        quickReplies: state.quickReplies
-      };
-      setState(prev => ({ ...prev, messages: [welcomeMessage] }));
-    }
+    const initializeAssistant = async () => {
+      if (state.messages.length === 0) {
+        // Load quick replies and categories from database
+        const [quickReplies, faqCategories] = await Promise.all([
+          APEXService.getQuickReplies(),
+          APEXService.getFAQCategories()
+        ]);
+
+        const welcomeMessage: AIMessage = {
+          id: 'welcome',
+          content: `Hello${user ? ` ${profile?.first_name || 'there'}` : ''}! I'm your AI Digital Assistant. I'm here to help you with questions about our LMS platform and connect you with our administrative staff when needed. How can I assist you today?`,
+          sender: 'assistant',
+          timestamp: new Date(),
+          type: 'text',
+          quickReplies: quickReplies.slice(0, 6) // Limit to 6 quick replies
+        };
+
+        setState(prev => ({ 
+          ...prev, 
+          messages: [welcomeMessage],
+          quickReplies,
+          faqCategories
+        }));
+      }
+    };
+
+    initializeAssistant();
   }, [user, profile, state.messages.length]);
 
   const openAssistant = () => {
@@ -111,15 +115,72 @@ export const APEXProvider: React.FC<APEXProviderProps> = ({ children }) => {
   };
 
   const generateAIResponse = async (userMessage: string): Promise<{ answer: string; relatedFAQs?: any[]; contactInfo?: any[] }> => {
-    // Simulate AI processing time
-    await simulateTyping(1500 + Math.random() * 1000);
+    console.log('🧠 APEX Context: generateAIResponse called with:', userMessage);
+    
+    // Show typing indicator
+    setState(prev => ({ ...prev, isTyping: true }));
 
-    // Use the knowledge base service to generate responses
-    return APEXService.generateResponse(userMessage);
+    try {
+      // Add user message to conversation history
+      const newUserMessage: ServiceChatMessage = {
+        role: 'user',
+        content: userMessage
+      };
+
+      const updatedHistory = [...conversationHistory, newUserMessage];
+      setConversationHistory(updatedHistory);
+
+      console.log('📞 APEX Context: Calling APEXService.generateResponse...');
+      console.log('   - Message:', userMessage);
+      console.log('   - User ID:', user?.id);
+      console.log('   - History length:', updatedHistory.length);
+
+      // Call the new APEX service
+      const response = await APEXService.generateResponse(
+        userMessage, 
+        user?.id, 
+        updatedHistory
+      );
+
+      console.log('📨 APEX Context: APEXService returned:', {
+        responseLength: response.response.length,
+        queryResultsCount: response.queryResults?.length || 0,
+        timestamp: response.timestamp
+      });
+
+      // Add assistant response to conversation history
+      const assistantMessage: ServiceChatMessage = {
+        role: 'assistant',
+        content: response.response
+      };
+
+      setConversationHistory([...updatedHistory, assistantMessage]);
+
+      // Extract related FAQs from query results if available
+      const relatedFAQs = response.queryResults?.find(r => r.table === 'apex_faqs' || r.table === 'local_faq')?.data || [];
+      const contactInfo = response.queryResults?.find(r => r.table === 'apex_contact_info' || r.table === 'local_contact')?.data || [];
+
+      console.log('🔍 APEX Context: Extracted data:', {
+        relatedFAQsCount: relatedFAQs.length,
+        contactInfoCount: contactInfo.length
+      });
+
+      // Return in the expected format for backward compatibility
+      return {
+        answer: response.response,
+        relatedFAQs: relatedFAQs.slice(0, 3), // Limit to 3 related FAQs
+        contactInfo: contactInfo.slice(0, 2) // Limit to 2 contact entries
+      };
+
+    } finally {
+      setState(prev => ({ ...prev, isTyping: false }));
+    }
   };
 
   const sendMessage = async (message: string) => {
     if (!message.trim()) return;
+
+    console.log('🎯 APEX Context: User sent message:', message);
 
     // Add user message
     addMessage({
@@ -131,7 +192,10 @@ export const APEXProvider: React.FC<APEXProviderProps> = ({ children }) => {
     setState(prev => ({ ...prev, isLoading: true }));
 
     try {
+      console.log('🔄 APEX Context: Calling generateAIResponse...');
       const response = await generateAIResponse(message);
+      
+      console.log('✅ APEX Context: Received response:', response.answer);
       
       // Add AI response
       addMessage({
@@ -143,6 +207,7 @@ export const APEXProvider: React.FC<APEXProviderProps> = ({ children }) => {
 
       // Add related FAQs if available
       if (response.relatedFAQs && response.relatedFAQs.length > 0) {
+        console.log('📚 APEX Context: Adding related FAQs');
         setTimeout(() => {
           addMessage({
             content: "Here are some related questions that might help:",
@@ -153,6 +218,7 @@ export const APEXProvider: React.FC<APEXProviderProps> = ({ children }) => {
         }, 1000);
       }
     } catch (error) {
+      console.error('❌ APEX Context: Error in sendMessage:', error);
       addMessage({
         content: "I apologize, but I'm experiencing some technical difficulties. Let me connect you with our support team who can help you right away.",
         sender: 'assistant',
@@ -187,13 +253,14 @@ export const APEXProvider: React.FC<APEXProviderProps> = ({ children }) => {
 
   const clearMessages = () => {
     setState(prev => ({ ...prev, messages: [] }));
+    setConversationHistory([]);
   };
 
   const setCategory = (category: string) => {
     setState(prev => ({ ...prev, currentCategory: category }));
   };
 
-  const value: AIAssistantContextType = {
+  const value: APEXContextType = {
     state,
     openAssistant,
     closeAssistant,

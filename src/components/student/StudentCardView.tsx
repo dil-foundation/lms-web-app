@@ -84,29 +84,33 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
 
   return (
     <div className={className}>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {students.map((student) => (
           <Card
             key={student.id}
-            className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-md bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-border dark:hover:border-border h-80 flex flex-col overflow-hidden"
+            className="group cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border border-border/50 shadow-lg bg-gradient-to-br from-card to-card/50 dark:bg-card dark:border-border/60 hover:border-primary/40 dark:hover:border-primary/40 h-96 flex flex-col overflow-hidden rounded-2xl"
             onClick={() => onStudentClick(student)}
           >
-            <CardHeader className="p-4 pb-3">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <Avatar className="h-12 w-12 flex-shrink-0">
+            <CardHeader className="p-6 pb-4">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                  <Avatar className="h-16 w-16 flex-shrink-0 ring-2 ring-primary/20 group-hover:ring-primary/40 transition-all duration-300">
                     <AvatarImage src={student.avatar_url} />
-                    <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
+                    <AvatarFallback className="bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 text-primary text-lg font-semibold">
                       {student.firstName?.[0]}{student.lastName?.[0]}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-sm line-clamp-1 group-hover:text-primary transition-colors">
+                    <h3 className="font-bold text-lg line-clamp-1 group-hover:text-primary transition-colors mb-1">
                       {student.firstName} {student.lastName}
                     </h3>
-                    <p className="text-xs text-muted-foreground truncate">
+                    <p className="text-sm text-muted-foreground truncate mb-2">
                       {student.email}
                     </p>
+                    <div className="flex items-center gap-2">
+                      {getStatusBadge(student.status)}
+                      {student.grade && getGradeBadge(student.grade)}
+                    </div>
                   </div>
                 </div>
                 <DropdownMenu>
@@ -114,7 +118,7 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="h-7 w-7 p-0 hover:bg-muted flex-shrink-0"
+                      className="h-8 w-8 p-0 hover:bg-muted flex-shrink-0"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <MoreHorizontal className="w-4 h-4" />
@@ -144,47 +148,49 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-              <div className="flex items-center justify-between">
-                {getStatusBadge(student.status)}
-                {student.grade && getGradeBadge(student.grade)}
-              </div>
             </CardHeader>
             
-            <CardContent className="p-4 pt-0 flex flex-col h-full overflow-hidden">
-              {/* Student Info */}
-              <div className="flex-1 flex flex-col min-h-0">
-                {/* Stats */}
-                <div className="space-y-2 text-xs text-muted-foreground mb-4">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-3 h-3" />
-                    <span>Joined: {student.joinedDate}</span>
+            <CardContent className="p-6 pt-0 flex flex-col h-full overflow-hidden">
+              {/* Detailed Student Info */}
+              <div className="flex-1 flex flex-col min-h-0 space-y-4">
+                {/* Detailed Stats */}
+                <div className="space-y-3 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                    <Calendar className="w-4 h-4 text-primary" />
+                    <div>
+                      <div className="font-medium text-foreground">Enrollment Date</div>
+                      <div className="text-xs">{student.joinedDate}</div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-3 h-3" />
-                    <span>Last active: {student.lastActive}</span>
+                  <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                    <Clock className="w-4 h-4 text-primary" />
+                    <div>
+                      <div className="font-medium text-foreground">Last Activity</div>
+                      <div className="text-xs">{student.lastActive}</div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="mt-auto pt-3">
-                <div className="flex gap-2">
+              {/* Enhanced Action Buttons */}
+              <div className="mt-auto pt-4">
+                <div className="flex gap-3">
                   <Button
                     size="sm"
                     variant="outline"
-                    className="flex-1 h-8 text-xs hover:bg-primary/10 hover:text-primary transition-all duration-200"
+                    className="flex-1 h-10 text-sm hover:bg-primary/10 hover:text-primary transition-all duration-200 font-medium"
                     onClick={(e) => handleMessage(e, student)}
                   >
-                    <Mail className="w-3 h-3 mr-1" />
+                    <Mail className="w-4 h-4 mr-2" />
                     Message
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
-                    className="flex-1 h-8 text-xs hover:bg-blue-500/10 hover:text-blue-500 transition-all duration-200"
+                    className="flex-1 h-10 text-sm hover:bg-blue-500/10 hover:text-blue-500 transition-all duration-200 font-medium"
                     onClick={(e) => handleViewProfile(e, student)}
                   >
-                    <Users className="w-3 h-3 mr-1" />
+                    <Users className="w-4 h-4 mr-2" />
                     Profile
                   </Button>
                 </div>

@@ -32,7 +32,25 @@ const StudentDashboardService = {
   getCoursesWithProgress: async (studentId: string): Promise<StudentCourseWithProgress[]> => {
     const { data, error } = await supabase.rpc('get_student_courses_with_progress', { student_id: studentId });
     if (error) throw new Error(error.message);
-    return data;
+    
+    // Process courses to create signed URLs for images
+    const coursesWithSignedUrls = await Promise.all(data.map(async (course: any) => {
+      let imageUrl = '/placeholder.svg';
+      if (course.image_url) {
+        const { data: signedUrlData } = await supabase.storage
+          .from('dil-lms')
+          .createSignedUrl(course.image_url, 3600);
+        if (signedUrlData) {
+          imageUrl = signedUrlData.signedUrl;
+        }
+      }
+      return { 
+        ...course,
+        image_url: imageUrl
+      };
+    }));
+    
+    return coursesWithSignedUrls;
   },
 };
 
