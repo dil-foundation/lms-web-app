@@ -477,22 +477,22 @@ sequenceDiagram
 ```mermaid
 graph TD
     subgraph "RLS Policy Engine"
-        AUTH[Authentication Context<br/>auth.uid()]
-        ROLE[User Role Check<br/>profiles.role]
-        TENANT[Multi-tenant Isolation<br/>school_id/board_id]
+        AUTH["Authentication Context<br/>auth.uid()"]
+        ROLE["User Role Check<br/>profiles.role"]
+        TENANT["Multi-tenant Isolation<br/>school_id/board_id"]
     end
     
     subgraph "Data Access Patterns"
-        STUDENT[Student Access<br/>Own data + enrolled courses]
-        TEACHER[Teacher Access<br/>Own classes + students]
-        ADMIN[Admin Access<br/>Full organization data]
+        STUDENT["Student Access<br/>Own data + enrolled courses"]
+        TEACHER["Teacher Access<br/>Own classes + students"]
+        ADMIN["Admin Access<br/>Full organization data"]
     end
     
     subgraph "Security Layers"
-        JWT[JWT Token Validation]
-        MFA[Multi-Factor Authentication]
-        SESSION[Session Management]
-        AUDIT[Access Logging]
+        JWT["JWT Token Validation"]
+        MFA["Multi-Factor Authentication"]
+        SESSION["Session Management"]
+        AUDIT["Access Logging"]
     end
     
     AUTH --> STUDENT
