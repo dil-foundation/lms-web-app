@@ -7,6 +7,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { PaginationControls } from '@/components/ui/PaginationControls';
 import { useState, useEffect } from 'react';
 import { TeacherReportsService, TeacherReportsData } from '@/services/teacherReportsService';
 import { 
@@ -78,6 +79,11 @@ export default function ReportsPage() {
   const [pageSize, setPageSize] = useState(10);
   const [sortBy, setSortBy] = useState('enrolled_date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  const handleItemsPerPageChange = (newPageSize: number) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
 
 
 
@@ -794,7 +800,16 @@ export default function ReportsPage() {
                         </Table>
                         
                         {/* Pagination */}
-                        <Pagination />
+                        <PaginationControls
+                          currentPage={currentPage}
+                          totalPages={Math.ceil(totalStudents / pageSize)}
+                          totalItems={totalStudents}
+                          itemsPerPage={pageSize}
+                          onPageChange={setCurrentPage}
+                          onItemsPerPageChange={handleItemsPerPageChange}
+                          itemsPerPageOptions={[5, 10, 20, 50, 100]}
+                          disabled={studentsLoading}
+                        />
                       </>
                     )}
                   </div>

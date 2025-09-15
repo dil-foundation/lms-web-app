@@ -88,24 +88,24 @@ export const AssessmentCardView: React.FC<AssessmentCardViewProps> = ({
 
   return (
     <div className={className}>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {assessments.map((assessment) => (
           <Card
             key={assessment.id}
-            className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-md bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-border dark:hover:border-border h-80 flex flex-col overflow-hidden"
+            className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-md bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-primary/30 dark:hover:border-primary/30 h-96 flex flex-col overflow-hidden"
             onClick={() => onAssessmentClick(assessment)}
           >
-            <CardHeader className="p-4 pb-3">
-              <div className="flex items-start justify-between mb-3">
+            <CardHeader className="p-6 pb-4">
+              <div className="flex items-start justify-between mb-4">
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-sm line-clamp-2 group-hover:text-primary transition-colors mb-2">
+                  <h3 className="font-semibold text-lg line-clamp-1 group-hover:text-primary transition-colors mb-3">
                     {assessment.title}
                   </h3>
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-3">
                     {getTypeBadge(assessment.type)}
                     {getStatusBadge(assessment.status)}
                   </div>
-                  <p className="text-xs text-muted-foreground truncate">
+                  <p className="text-sm text-muted-foreground">
                     {assessment.course_name}
                   </p>
                 </div>
@@ -114,7 +114,7 @@ export const AssessmentCardView: React.FC<AssessmentCardViewProps> = ({
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="h-7 w-7 p-0 hover:bg-muted flex-shrink-0"
+                      className="h-8 w-8 p-0 hover:bg-muted flex-shrink-0"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <MoreHorizontal className="w-4 h-4" />
@@ -146,43 +146,48 @@ export const AssessmentCardView: React.FC<AssessmentCardViewProps> = ({
               </div>
             </CardHeader>
             
-            <CardContent className="p-4 pt-0 flex flex-col h-full overflow-hidden">
-              {/* Assessment Info */}
+            <CardContent className="p-6 pt-0 flex flex-col h-full overflow-hidden">
+              {/* Content Area - Fixed height to ensure button alignment */}
               <div className="flex-1 flex flex-col min-h-0">
-                {/* Stats */}
-                <div className="space-y-2 text-xs text-muted-foreground mb-4">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-3 h-3" />
-                    <span>Due: {assessment.due_date}</span>
+                {/* Detailed Assessment Stats - Horizontal Layout */}
+                <div className="p-3 bg-muted/30 rounded-lg mb-4">
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1 w-1/3">
+                      <Users className="w-4 h-4 flex-shrink-0" />
+                      <span className="font-medium text-foreground truncate">{assessment.submissions_count}</span>
+                    </div>
+                    <div className="flex items-center gap-1 w-1/3 justify-center">
+                      <CheckCircle className="w-4 h-4 flex-shrink-0" />
+                      <span className="font-medium text-foreground">{assessment.graded_count}</span>
+                    </div>
+                    <div className="flex items-center gap-1 w-1/3 justify-end">
+                      <TrendingUp className="w-4 h-4 flex-shrink-0" />
+                      <span className={`font-medium text-foreground truncate ${getScoreColor(assessment.average_score)}`}>{assessment.average_score}%</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Users className="w-3 h-3" />
-                    <span>{assessment.submissions_count} submissions</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-3 h-3" />
-                    <span>{assessment.graded_count} graded</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="w-3 h-3" />
-                    <span className={`font-medium ${getScoreColor(assessment.average_score)}`}>
-                      Avg: {assessment.average_score}%
-                    </span>
+                </div>
+
+                {/* Due Date Section */}
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Calendar className="w-4 h-4" />
+                    <span className="font-medium">Due Date:</span>
+                    <span className="font-medium text-foreground">{assessment.due_date}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Action Button */}
-              <div className="mt-auto pt-3">
+              {/* Action Button - Always at bottom with fixed positioning */}
+              <div className="mt-auto pt-6 pb-1">
                 <Button
                   size="sm"
-                  className="w-full h-8 text-xs"
+                  className="w-full h-10 text-sm"
                   onClick={(e) => {
                     e.stopPropagation();
                     onAssessmentClick(assessment);
                   }}
                 >
-                  <FileText className="w-3 h-3 mr-1" />
+                  <FileText className="w-4 h-4 mr-2" />
                   View Assessment
                 </Button>
               </div>

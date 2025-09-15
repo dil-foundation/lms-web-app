@@ -19,6 +19,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { ViewToggle } from '@/components/ui/ViewToggle';
+import { PaginationControls } from '@/components/ui/PaginationControls';
 import { ObservationReportsViews } from './ObservationReportsViews';
 import { useViewPreferences } from '@/contexts/ViewPreferencesContext';
 import { Button } from '@/components/ui/button';
@@ -199,7 +200,17 @@ export const PastReportsView = ({ onBack, onViewReport }: PastReportsViewProps) 
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
+  // Get default items per page based on current view
+  const getDefaultItemsPerPage = (view: string) => {
+    switch (view) {
+      case 'card': return 8;
+      case 'tile': return 18;
+      case 'list': return 8;
+      default: return 8;
+    }
+  };
+  
+  const [itemsPerPage, setItemsPerPage] = useState(getDefaultItemsPerPage(preferences.observationReportsView));
   const [statistics, setStatistics] = useState({
     totalReports: 0,
     thisWeekReports: 0,
@@ -405,6 +416,18 @@ export const PastReportsView = ({ onBack, onViewReport }: PastReportsViewProps) 
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedReports = filteredAndSortedReports.slice(startIndex, endIndex);
+
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
+
+  // Update items per page when view changes
+  useEffect(() => {
+    const newItemsPerPage = getDefaultItemsPerPage(preferences.observationReportsView);
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when view changes
+  }, [preferences.observationReportsView]);
 
   // Reset to first page when filters change
   useEffect(() => {
@@ -763,50 +786,17 @@ export const PastReportsView = ({ onBack, onViewReport }: PastReportsViewProps) 
               
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-6">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">
-                      Showing {startIndex + 1} to {Math.min(endIndex, filteredAndSortedReports.length)} of {filteredAndSortedReports.length} reports
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(1)}
-                      disabled={currentPage === 1}
-                    >
-                      First
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(currentPage - 1)}
-                      disabled={currentPage === 1}
-                    >
-                      Previous
-                    </Button>
-                    <span className="text-sm text-muted-foreground px-4">
-                      Page {currentPage} of {totalPages}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                    >
-                      Next
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(totalPages)}
-                      disabled={currentPage === totalPages}
-                    >
-                      Last
-                    </Button>
-                  </div>
-                </div>
+                <PaginationControls
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={filteredAndSortedReports.length}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={setCurrentPage}
+                  onItemsPerPageChange={handleItemsPerPageChange}
+                  itemsPerPageOptions={preferences.observationReportsView === 'tile' ? [9, 18, 27, 36, 45] : [4, 8, 12, 16, 20]}
+                  disabled={isLoading}
+                  className="mt-6"
+                />
               )}
             </>
           )}

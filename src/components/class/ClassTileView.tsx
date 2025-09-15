@@ -80,26 +80,27 @@ export const ClassTileView: React.FC<ClassTileViewProps> = ({
 
   return (
     <div className={className}>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 w-full overflow-hidden">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 w-full overflow-hidden">
         {classes.map((cls) => (
           <Card
             key={cls.id}
-            className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-md bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-border dark:hover:border-border h-full overflow-hidden"
+            className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-sm bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-primary/30 dark:hover:border-primary/30 h-44 flex flex-col overflow-hidden"
+            onClick={() => onView(cls)}
           >
-            <CardHeader className="p-4 pb-2">
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-sm line-clamp-1 group-hover:text-primary transition-colors">
-                    {cls.name}
-                  </h3>
-                  <p className="text-xs text-muted-foreground mt-1">{cls.code}</p>
+            <CardHeader className="p-0 relative">
+              <div className="w-full h-16 bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center">
+                <GraduationCap className="w-8 h-8 text-primary" />
+              </div>
+              <div className="absolute top-1 left-1 right-1 flex justify-between items-start">
+                <div className="flex gap-1">
+                  {getGradeBadge(cls.grade)}
                 </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="h-6 w-6 p-0 hover:bg-muted"
+                      className="h-5 w-5 p-0 hover:bg-white/20 text-primary"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <MoreHorizontal className="w-3 h-3" />
@@ -108,11 +109,11 @@ export const ClassTileView: React.FC<ClassTileViewProps> = ({
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={(e) => handleView(e, cls)}>
                       <Eye className="w-4 h-4 mr-2" />
-                      View Details
+                      View
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={(e) => handleEdit(e, cls)}>
                       <Edit className="w-4 h-4 mr-2" />
-                      Edit Class
+                      Edit
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem 
@@ -120,80 +121,50 @@ export const ClassTileView: React.FC<ClassTileViewProps> = ({
                       className="text-red-600 hover:text-red-700 hover:bg-red-50"
                     >
                       <Trash2 className="w-4 h-4 mr-2" />
-                      Delete Class
+                      Delete
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-              
-              <div className="flex items-center gap-2 mb-3">
-                {getGradeBadge(cls.grade)}
-                <Badge variant="outline" className="text-xs">
-                  {cls.board}
-                </Badge>
-              </div>
             </CardHeader>
             
-            <CardContent className="p-4 pt-0 flex flex-col h-full">
-              {/* Class Info */}
-              <div className="space-y-2 text-xs text-muted-foreground mb-4 flex-1 min-h-0">
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-3 h-3" />
-                  <span className="truncate">{cls.school}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Users className="w-3 h-3" />
-                  <span>{cls.students.length} / {cls.max_students || 30} students</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <GraduationCap className="w-3 h-3" />
-                  <span>{cls.teachers.length} teacher{cls.teachers.length !== 1 ? 's' : ''}</span>
-                </div>
-                {cls.description && (
-                  <div className="flex items-start gap-2">
-                    <BookOpen className="w-3 h-3 mt-0.5" />
-                    <span className="line-clamp-2 text-xs">{cls.description}</span>
-                  </div>
-                )}
+            <CardContent className="p-3 flex flex-col h-full overflow-hidden">
+              {/* Class Title */}
+              <div className="mb-2">
+                <h3 className="font-medium text-xs line-clamp-2 group-hover:text-primary transition-colors">
+                  {cls.name}
+                </h3>
+                <p className="text-xs text-muted-foreground mt-1 truncate">{cls.code}</p>
               </div>
 
-              {/* Teachers Preview */}
-              {cls.teachers.length > 0 && (
-                <div className="mb-4">
-                  <div className="flex items-center gap-1 mb-2">
-                    <User className="w-3 h-3 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">Teachers</span>
-                  </div>
-                  <div className="flex -space-x-1">
-                    {cls.teachers.slice(0, 3).map((teacher, index) => (
-                      <Avatar key={teacher.id} className="h-6 w-6 border-2 border-background">
-                        <AvatarImage src={teacher.avatar_url} />
-                        <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                          {teacher.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    ))}
-                    {cls.teachers.length > 3 && (
-                      <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-xs border-2 border-background">
-                        +{cls.teachers.length - 3}
-                      </div>
-                    )}
-                  </div>
+              {/* Compact Class Stats - Horizontal Layout */}
+              <div className="flex items-center justify-between text-xs text-muted-foreground mb-3 flex-1 min-h-0">
+                <div className="flex items-center gap-1 min-w-0 flex-1">
+                  <Users className="w-2.5 h-2.5 flex-shrink-0" />
+                  <span className="truncate">{cls.students.length}</span>
                 </div>
-              )}
+                <div className="flex items-center gap-1 min-w-0 flex-1 justify-center">
+                  <GraduationCap className="w-2.5 h-2.5 flex-shrink-0" />
+                  <span className="truncate">{cls.teachers.length}</span>
+                </div>
+                <div className="flex items-center gap-1 min-w-0 flex-1 justify-end">
+                  <MapPin className="w-2.5 h-2.5 flex-shrink-0" />
+                  <span className="truncate">{cls.board}</span>
+                </div>
+              </div>
 
-              {/* Action Button */}
-              <div className="mt-auto pt-2">
+              {/* Compact Action Button */}
+              <div className="mt-auto pt-1">
                 <Button
                   size="sm"
-                  className="w-full h-8 text-xs"
+                  className="w-full h-7 text-xs"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleView(e, cls);
                   }}
                 >
                   <Settings className="w-3 h-3 mr-1" />
-                  Manage Class
+                  Manage
                 </Button>
               </div>
             </CardContent>

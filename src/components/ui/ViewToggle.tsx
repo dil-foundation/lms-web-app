@@ -26,19 +26,19 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({
       mode: 'card' as ViewMode,
       icon: LayoutGrid,
       label: 'Card View',
-      description: 'Large cards with detailed information'
+      description: 'Large detailed cards with comprehensive information and rich layouts'
     },
     {
       mode: 'tile' as ViewMode,
       icon: Grid3X3,
       label: 'Tile View',
-      description: 'Compact tiles for quick browsing'
+      description: 'Compact grid tiles optimized for quick scanning and overview'
     },
     {
       mode: 'list' as ViewMode,
       icon: List,
       label: 'List View',
-      description: 'Dense list with essential information'
+      description: 'Dense list format with essential information in rows'
     }
   ].filter(option => availableViews.includes(option.mode));
 

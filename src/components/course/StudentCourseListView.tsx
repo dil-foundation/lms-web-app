@@ -19,6 +19,9 @@ interface Course {
   subtitle: string;
   image_url: string;
   progress?: number;
+  total_lessons?: number;
+  completed_lessons?: number;
+  last_accessed?: string;
 }
 
 interface StudentCourseListViewProps {
@@ -74,8 +77,8 @@ export const StudentCourseListView: React.FC<StudentCourseListViewProps> = ({
                 </div>
 
                 {/* Course Info */}
-                <div className="flex-1 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3 items-center">
-                  <div className="col-span-1 md:col-span-2">
+                <div className="flex-1 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3 items-start">
+                  <div className="col-span-1 md:col-span-2 flex flex-col justify-center">
                     <h3 className="font-semibold text-base line-clamp-1 group-hover:text-primary transition-colors">
                       {course.title}
                     </h3>
@@ -84,25 +87,25 @@ export const StudentCourseListView: React.FC<StudentCourseListViewProps> = ({
                     </p>
                   </div>
                   
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm text-muted-foreground flex flex-col justify-center space-y-1">
                     <p className="flex items-center gap-1">
-                      <Users className="w-3 h-3" />
-                      <span>students</span>
+                      <Users className="w-3 h-3 flex-shrink-0" />
+                      <span>{course.completed_lessons || 0}</span>
                     </p>
-                    <p className="flex items-center gap-1 mt-1">
-                      <BookOpen className="w-3 h-3" />
-                      <span>lessons</span>
+                    <p className="flex items-center gap-1">
+                      <BookOpen className="w-3 h-3 flex-shrink-0" />
+                      <span>{course.total_lessons || 0}</span>
                     </p>
                   </div>
                   
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm text-muted-foreground flex flex-col justify-center space-y-1">
                     <p className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      <span>duration</span>
+                      <Clock className="w-3 h-3 flex-shrink-0" />
+                      <span>{course.last_accessed ? new Date(course.last_accessed).toLocaleDateString() : 'Never'}</span>
                     </p>
-                    <p className="flex items-center gap-1 mt-1">
-                      <User className="w-3 h-3" />
-                      <span>instructor</span>
+                    <p className="flex items-center gap-1">
+                      <User className="w-3 h-3 flex-shrink-0" />
+                      <span>{course.progress || 0}%</span>
                     </p>
                   </div>
                 </div>
@@ -127,7 +130,11 @@ export const StudentCourseListView: React.FC<StudentCourseListViewProps> = ({
                       handleCourseClick(course);
                     }}
                   >
-                    <Play className="w-3 h-3 mr-1" />
+                    {course.progress === 100 ? (
+                      <BookOpen className="w-3 h-3 mr-1" />
+                    ) : (
+                      <Play className="w-3 h-3 mr-1" />
+                    )}
                     {course.progress === 100 ? 'Review' : 'Continue'}
                   </Button>
                 </div>

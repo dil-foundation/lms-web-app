@@ -174,7 +174,18 @@ export default function StudentsPage() {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalStudentsInFilter, setTotalStudentsInFilter] = useState(0);
-  const rowsPerPage = 10;
+  
+  // Get default items per page based on current view
+  const getDefaultItemsPerPage = (view: string) => {
+    switch (view) {
+      case 'card': return 8;
+      case 'tile': return 16; // Tile view should show 16 items per page
+      case 'list': return 8;
+      default: return 8;
+    }
+  };
+  
+  const [rowsPerPage, setRowsPerPage] = useState(getDefaultItemsPerPage(preferences.teacherStudentView));
 
   // Profile modal state
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -334,6 +345,13 @@ export default function StudentsPage() {
     loadInitialData();
   }, [user]);
 
+  // Update items per page when view changes
+  useEffect(() => {
+    const newRowsPerPage = getDefaultItemsPerPage(preferences.teacherStudentView);
+    setRowsPerPage(newRowsPerPage);
+    setCurrentPage(1); // Reset to first page when view changes
+  }, [preferences.teacherStudentView]);
+
   useEffect(() => {
     setCurrentPage(1);
   }, [debouncedSearchTerm, selectedCourse, selectedStatus]);
@@ -342,7 +360,7 @@ export default function StudentsPage() {
     if(user) {
       fetchStudentDataAndCount();
     }
-  }, [user, currentPage, debouncedSearchTerm, selectedCourse, selectedStatus]);
+  }, [user, currentPage, debouncedSearchTerm, selectedCourse, selectedStatus, rowsPerPage]);
 
   const handleUpdateStudent = async () => {
     if (!editableStudent || !editableStudent.id) return;
@@ -1098,7 +1116,7 @@ export default function StudentsPage() {
           </div>
           
           {/* Pagination */}
-          {!isTableLoading && totalPages > 0 && (
+          {!isTableLoading && totalPages > 1 && (
             <Pagination className="mt-6">
               <PaginationContent>
                 <PaginationItem>

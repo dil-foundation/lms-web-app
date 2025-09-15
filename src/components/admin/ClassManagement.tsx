@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -23,6 +23,7 @@ import { ViewToggle } from '@/components/ui/ViewToggle';
 import { ClassCardView } from '@/components/class/ClassCardView';
 import { ClassTileView } from '@/components/class/ClassTileView';
 import { ClassListView } from '@/components/class/ClassListView';
+import { PaginationControls } from '@/components/ui/PaginationControls';
 
 
 const ClassManagement: React.FC = () => {
@@ -31,7 +32,26 @@ const ClassManagement: React.FC = () => {
   
   // Pagination and filter state
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(8);
+  
+  // Get default items per page based on current view
+  const getDefaultItemsPerPage = (view: string) => {
+    switch (view) {
+      case 'card': return 8;
+      case 'tile': return 18;
+      case 'list': return 8;
+      default: return 8;
+    }
+  };
+
+  // Get pagination options based on current view
+  const getPaginationOptions = (view: string) => {
+    if (view === 'tile') {
+      return [9, 18, 27, 36, 45];
+    }
+    return [4, 8, 12, 16, 20];
+  };
+  
+  const [itemsPerPage, setItemsPerPage] = useState(getDefaultItemsPerPage(preferences.teacherClassView));
   const [searchTerm, setSearchTerm] = useState('');
   const [gradeFilter, setGradeFilter] = useState('all');
   const [schoolFilter, setSchoolFilter] = useState('all');
@@ -70,6 +90,13 @@ const ClassManagement: React.FC = () => {
     hasPreviousPage,
     refetch: refetchClasses 
   } = useClassesPaginated(paginationParams);
+
+  // Update items per page when view changes
+  useEffect(() => {
+    const newItemsPerPage = getDefaultItemsPerPage(preferences.teacherClassView);
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when view changes
+  }, [preferences.teacherClassView]);
   
   // Use other hooks for stats and form data
   const { stats, createClass, updateClass, deleteClass } = useClasses();
@@ -483,6 +510,11 @@ const ClassManagement: React.FC = () => {
     setCurrentPage(page);
   };
 
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
+
 
 
   // Show loading state
@@ -694,45 +726,18 @@ const ClassManagement: React.FC = () => {
               )}
 
               {/* Pagination for Card View */}
-              {preferences.teacherClassView === 'card' && totalCount > 0 && (
-                <div className="flex items-center justify-center space-x-2 py-4 border-t px-6">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handlePreviousPage}
-                    disabled={currentPage === 1}
-                    className="text-sm"
-                  >
-                    &lt; Previous
-                  </Button>
-                  
-                  <div className="flex items-center space-x-1">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <Button
-                        key={page}
-                        variant={currentPage === page ? "default" : "ghost"}
-                        size="sm"
-                        onClick={() => handlePageChange(page)}
-                        className={`w-8 h-8 p-0 text-sm ${
-                          currentPage === page 
-                            ? "bg-gray-200 text-gray-900 hover:bg-gray-300" 
-                            : "hover:bg-gray-100"
-                        }`}
-                      >
-                        {page}
-                      </Button>
-                    ))}
-                  </div>
-                  
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleNextPage}
-                    disabled={currentPage === totalPages}
-                    className="text-sm"
-                  >
-                    Next &gt;
-                  </Button>
+              {preferences.teacherClassView === 'card' && totalPages > 1 && (
+                <div className="py-4 border-t px-6">
+                  <PaginationControls
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalItems={totalCount}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={handlePageChange}
+                    onItemsPerPageChange={handleItemsPerPageChange}
+                    itemsPerPageOptions={getPaginationOptions(preferences.teacherClassView)}
+                    disabled={loading}
+                  />
                 </div>
               )}
 
@@ -911,66 +916,18 @@ const ClassManagement: React.FC = () => {
               </Table>
               
               {/* Pagination */}
-              {totalCount > 0 && (
-                <div className="flex items-center justify-center gap-2 py-4 border-t">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handlePreviousPage}
-                    disabled={currentPage === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4 mr-1" />
-                    Previous
-                  </Button>
-                  
-                  <div className="flex items-center gap-1">
-                    {totalPages > 1 ? (
-                      Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        let pageNum;
-                        if (totalPages <= 5) {
-                          pageNum = i + 1;
-                        } else if (currentPage <= 3) {
-                          pageNum = i + 1;
-                        } else if (currentPage >= totalPages - 2) {
-                          pageNum = totalPages - 4 + i;
-                        } else {
-                          pageNum = currentPage - 2 + i;
-                        }
-                        
-                        return (
-                          <Button
-                            key={pageNum}
-                            variant={currentPage === pageNum ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => handlePageChange(pageNum)}
-                            disabled={loading}
-                            className="w-8 h-8 p-0"
-                          >
-                            {pageNum}
-                          </Button>
-                        );
-                      })
-                    ) : (
-                      <Button
-                        variant="default"
-                        size="sm"
-                        disabled
-                        className="w-8 h-8 p-0"
-                      >
-                        1
-                      </Button>
-                    )}
-                  </div>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleNextPage}
-                    disabled={currentPage === totalPages}
-                  >
-                    Next
-                    <ChevronRight className="h-4 w-4 ml-1" />
-                  </Button>
+              {totalPages > 1 && (
+                <div className="py-4 border-t">
+                  <PaginationControls
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalItems={totalCount}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={handlePageChange}
+                    onItemsPerPageChange={handleItemsPerPageChange}
+                    itemsPerPageOptions={getPaginationOptions(preferences.teacherClassView)}
+                    disabled={loading}
+                  />
                 </div>
               )}
                 </div>

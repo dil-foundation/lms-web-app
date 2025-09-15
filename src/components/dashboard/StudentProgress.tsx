@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { BookOpen, CheckCircle, Flame, Target, Sparkles, TrendingUp } from 'lucide-react';
+import { BookOpen, CheckCircle, Flame, Target, Sparkles, TrendingUp, Clock } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 import StudentDashboardService, { StudentDashboardStats, StudentCourseWithProgress } from '@/services/studentDashboardService';
 import { useAuth } from '@/hooks/useAuth';
@@ -34,81 +35,75 @@ const StatCard = ({ title, value, subtext, icon, progress }: { title: string, va
 );
 
 const CourseProgressDetails = ({ courses }: { courses: StudentCourseWithProgress[] }) => (
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+  <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
     {courses.length > 0 ? (
       courses.map(course => (
-        <Card key={course.course_id} className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-md bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-border dark:hover:border-border h-80 flex flex-col overflow-hidden">
-          <Link to={`/dashboard/course/${course.course_id}`} className="block h-full flex flex-col">
-          <CardHeader className="p-4 pb-3">
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex-1 min-w-0">
-                <CardTitle className="text-base font-semibold line-clamp-2 group-hover:text-primary transition-colors mb-2">
-                  {course.title}
-                </CardTitle>
-                <p className="text-xs text-muted-foreground line-clamp-1 mb-3">
-                  Last accessed: {course.last_accessed ? new Date(course.last_accessed).toLocaleDateString() : 'Never'}
-                </p>
-              </div>
+        <Card key={course.course_id} className="bg-card border border-border flex flex-col h-full">
+          <CardHeader className="p-0 relative">
+            {course.image_url ? (
+              <img 
+                src={course.image_url} 
+                alt={course.title} 
+                className="w-full h-40 object-cover rounded-t-lg"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  target.nextElementSibling?.classList.remove('hidden');
+                }}
+              />
+            ) : null}
+            <div className={`w-full h-40 bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center rounded-t-lg ${course.image_url ? 'hidden' : ''}`}>
+              <BookOpen className="w-8 h-8 text-primary/60" />
             </div>
-            
-            {/* Progress Status Badge */}
-            <div className="flex flex-wrap gap-2 mb-3">
-              {course.progress_percentage === 100 ? (
-                <div className="flex items-center gap-1 text-xs text-green-600">
-                  <CheckCircle className="w-3 h-3" />
-                  <span>Completed</span>
-                </div>
-              ) : course.progress_percentage > 0 ? (
-                <div className="flex items-center gap-1 text-xs text-primary">
-                  <TrendingUp className="w-3 h-3" />
-                  <span>In Progress</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <BookOpen className="w-3 h-3" />
-                  <span>Not Started</span>
-                </div>
-              )}
-            </div>
+            {course.progress_percentage === 100 && (
+              <Badge className="absolute top-2 left-2 bg-green-500">
+                <CheckCircle className="w-3 h-3 mr-1" />
+                Completed
+              </Badge>
+            )}
+            {course.progress_percentage > 0 && course.progress_percentage < 100 && (
+              <Badge variant="secondary" className="absolute top-2 left-2">
+                In Progress
+              </Badge>
+            )}
           </CardHeader>
-          
-          <CardContent className="p-4 pt-0 flex flex-col flex-1 overflow-hidden">
-            {/* Progress Bar */}
-            <div className="flex-1 flex flex-col min-h-0">
-              <div className="space-y-3 mb-4">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-muted-foreground">Progress</span>
-                  <span className="font-medium">{course.progress_percentage}%</span>
-                </div>
-                <div className="w-full bg-muted rounded-full h-2">
-                  <div 
-                    className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full transition-all duration-500"
-                    style={{ width: `${course.progress_percentage}%` }}
-                  />
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {course.completed_lessons} of {course.total_lessons} lessons
-                </div>
-              </div>
+          <CardContent className="p-4 space-y-2 flex-grow">
+            <h3 className="font-semibold text-lg">{course.title}</h3>
+            <p className="text-sm text-muted-foreground">{course.subtitle}</p>
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>{course.total_lessons} lessons</span>
+              <span>{course.progress_percentage}% complete</span>
             </div>
-
-            {/* Action Button */}
-            <div className="mt-auto pt-3">
-              <Link to={`/dashboard/course/${course.course_id}`}>
-                <Button
-                  size="sm"
-                  className="w-full h-8 text-xs hover:bg-primary hover:text-primary-foreground transition-all duration-200"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                  }}
-                >
-                  <BookOpen className="w-3 h-3 mr-1" />
-                  View Course
-                </Button>
-              </Link>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Clock className="h-4 w-4" />
+              <span>Last accessed: {course.last_accessed ? new Date(course.last_accessed).toLocaleDateString() : 'Never'}</span>
             </div>
           </CardContent>
-          </Link>
+          <CardFooter className="p-4 pt-0 mt-auto">
+            <Button 
+              asChild
+              className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-3 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:scale-105 rounded-xl"
+            >
+              <Link to={`/dashboard/course/${course.course_id}`}>
+                {course.progress_percentage === 100 ? (
+                  <>
+                    <BookOpen className="w-4 h-4 mr-2" />
+                    Review Course
+                  </>
+                ) : course.progress_percentage > 0 ? (
+                  <>
+                    <TrendingUp className="w-4 h-4 mr-2" />
+                    Continue Learning
+                  </>
+                ) : (
+                  <>
+                    <BookOpen className="w-4 h-4 mr-2" />
+                    Start Course
+                  </>
+                )}
+              </Link>
+            </Button>
+          </CardFooter>
         </Card>
       ))
     ) : (
@@ -254,7 +249,9 @@ export const StudentProgress = ({ userProfile }) => {
               category: 'General' // Default category
             }))}
             onCourseClick={(course) => {
-              // Handle course click if needed
+              window.location.href = course.progress_percentage > 0 
+                ? `/dashboard/courses/${course.course_id}/content` 
+                : `/dashboard/courses/${course.course_id}`;
             }}
           />
         )}
@@ -275,7 +272,9 @@ export const StudentProgress = ({ userProfile }) => {
               category: 'General' // Default category
             }))}
             onCourseClick={(course) => {
-              // Handle course click if needed
+              window.location.href = course.progress_percentage > 0 
+                ? `/dashboard/courses/${course.course_id}/content` 
+                : `/dashboard/courses/${course.course_id}`;
             }}
           />
         )}
