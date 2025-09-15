@@ -5,6 +5,8 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { useViewPreferences } from '@/contexts/ViewPreferencesContext';
 import { ViewToggle } from '@/components/ui/ViewToggle';
 import { AssessmentCardView } from '@/components/assessment/AssessmentCardView';
+import { AssessmentTileView } from '@/components/assessment/AssessmentTileView';
+import { AssessmentListView } from '@/components/assessment/AssessmentListView';
 import {
   Card,
   CardContent,
@@ -37,6 +39,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
+import { PaginationControls } from '@/components/ui/PaginationControls';
 import { useDebounce } from '@/hooks/useDebounce';
 
 type Assignment = {
@@ -82,7 +85,7 @@ const StatCard = ({ title, value, icon: Icon, color }: StatCardProps) => (
 export const GradeAssignments = () => {
   const { user } = useAuth();
   const { profile } = useUserProfile();
-  const { preferences, setTeacherReportsView } = useViewPreferences();
+  const { preferences, setAssignmentView } = useViewPreferences();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourse, setSelectedCourse] = useState('all');
@@ -91,7 +94,17 @@ export const GradeAssignments = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  // Get default items per page based on current view
+  const getDefaultItemsPerPage = (view: string) => {
+    switch (view) {
+      case 'card': return 8;
+      case 'tile': return 18; // Tile view should show 18 items per page for consistency
+      case 'list': return 8;
+      default: return 8;
+    }
+  };
+  
+  const [itemsPerPage, setItemsPerPage] = useState(getDefaultItemsPerPage(preferences.assignmentView));
 
   // Check if user is admin
   const isAdmin = profile?.role === 'admin';
@@ -183,6 +196,13 @@ export const GradeAssignments = () => {
     fetchAssignments();
   }, [fetchAssignments]);
   
+  // Update items per page when view changes
+  useEffect(() => {
+    const newItemsPerPage = getDefaultItemsPerPage(preferences.assignmentView);
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when view changes
+  }, [preferences.assignmentView]);
+  
   useEffect(() => {
       setCurrentPage(1);
   }, [debouncedSearchTerm, selectedCourse])
@@ -193,6 +213,11 @@ export const GradeAssignments = () => {
     currentPage * itemsPerPage
   );
   const totalPages = Math.ceil(assignments.length / itemsPerPage);
+
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
   
   const statCardsData = [
       { 
@@ -296,8 +321,8 @@ export const GradeAssignments = () => {
                   <h2 className="text-lg font-semibold">Assessments ({assignments.length})</h2>
                 </div>
                   <ViewToggle
-                    currentView={preferences.teacherReportsView}
-                    onViewChange={setTeacherReportsView}
+                    currentView={preferences.assignmentView}
+                    onViewChange={setAssignmentView}
                     availableViews={['card', 'tile', 'list']}
                   />
                 </div>
@@ -306,7 +331,7 @@ export const GradeAssignments = () => {
                 <div className="space-y-4">
                   {paginatedAssignments.length > 0 ? (
                     <>
-                      {preferences.teacherReportsView === 'card' && (
+                      {preferences.assignmentView === 'card' && (
                         <AssessmentCardView
                           assessments={paginatedAssignments.map(assignment => ({
                             id: assignment.id,
@@ -337,92 +362,66 @@ export const GradeAssignments = () => {
                         />
                       )}
 
-                      {preferences.teacherReportsView === 'tile' && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {paginatedAssignments.map((assignment) => (
-                            <Link to={`/dashboard/grade-assignments/${assignment.id}`} key={assignment.id} className="block">
-                              <Card className="hover:bg-muted/50 transition-colors h-full">
-                                <CardContent className="p-4">
-                                  <div className="flex items-center gap-3 mb-3">
-                                    <div className="bg-primary/10 text-primary p-2 rounded-lg">
-                                      <CheckSquare className="h-5 w-5" />
-                                    </div>
-                                    <div className="flex-1">
-                                      <h3 className="font-semibold text-sm line-clamp-1">{assignment.title}</h3>
-                                      <p className="text-xs text-muted-foreground">{assignment.course}</p>
-                                    </div>
-                                    <Badge variant={assignment.type === 'quiz' ? 'default' : assignment.type === 'assignment' ? 'blue' : 'secondary'} className="text-xs capitalize">
-                                      {assignment.type}
-                                    </Badge>
-                                  </div>
-                                  <div className="space-y-2 text-xs text-muted-foreground">
-                                    <div className="flex justify-between">
-                                      <span>Submissions:</span>
-                                      <span className="font-medium">{assignment.submissions}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span>Graded:</span>
-                                      <span className="font-medium">{assignment.graded}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span>Average:</span>
-                                      <span className="font-medium text-primary">{assignment.avg_score.toFixed(1)}%</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span>Due:</span>
-                                      <span className="font-medium">{assignment.due_date}</span>
-                                    </div>
-                                  </div>
-                                  {assignment.overdue && (
-                                    <Badge variant="destructive" className="mt-2 text-xs">Overdue</Badge>
-                                  )}
-                                </CardContent>
-                              </Card>
-                            </Link>
-                          ))}
-                        </div>
+                      {preferences.assignmentView === 'tile' && (
+                        <AssessmentTileView
+                          assessments={paginatedAssignments.map(assignment => ({
+                            id: assignment.id,
+                            title: assignment.title,
+                            type: assignment.type as 'quiz' | 'assignment',
+                            course_name: assignment.course,
+                            due_date: assignment.due_date,
+                            status: assignment.overdue ? 'overdue' : (assignment.status as 'active' | 'inactive'),
+                            submissions_count: assignment.submissions,
+                            graded_count: assignment.graded,
+                            average_score: assignment.avg_score
+                          }))}
+                          onAssessmentClick={(assessment) => {
+                            window.location.href = `/dashboard/grade-assignments/${assessment.id}`;
+                          }}
+                          onGrade={(assessment) => {
+                            window.location.href = `/dashboard/grade-assignments/${assessment.id}`;
+                          }}
+                          onEdit={(assessment) => {
+                            // Handle edit functionality
+                          }}
+                          onDelete={(assessment) => {
+                            // Handle delete functionality
+                          }}
+                          onViewSubmissions={(assessment) => {
+                            window.location.href = `/dashboard/grade-assignments/${assessment.id}`;
+                          }}
+                        />
                       )}
 
-                      {preferences.teacherReportsView === 'list' && (
-                        <div className="space-y-2">
-                          {paginatedAssignments.map((assignment) => (
-                            <Link to={`/dashboard/grade-assignments/${assignment.id}`} key={assignment.id} className="block">
-                              <Card className="hover:bg-muted/50 transition-colors">
-                                <CardContent className="p-3">
-                                  <div className="flex items-center gap-4">
-                                    <div className="bg-primary/10 text-primary p-2 rounded-lg">
-                                      <CheckSquare className="h-4 w-4" />
-                                    </div>
-                                    <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4 items-center">
-                                      <div className="col-span-2">
-                                        <div className="flex items-center gap-2">
-                                          <p className="font-semibold text-sm">{assignment.title}</p>
-                                          <Badge variant={assignment.type === 'quiz' ? 'default' : assignment.type === 'assignment' ? 'blue' : 'secondary'} className="text-xs capitalize">{assignment.type}</Badge>
-                                        </div>
-                                        <p className="text-xs text-muted-foreground">{assignment.course}</p>
-                                      </div>
-                                      <div className="text-xs text-muted-foreground">
-                                        {assignment.overdue && <Badge variant="destructive" className="text-xs">Overdue</Badge>}
-                                        <p className="mt-1">Due: {assignment.due_date}</p>
-                                      </div>
-                                      <div className="text-xs text-muted-foreground">
-                                        <p>{assignment.submissions} submissions</p>
-                                        <p>{assignment.graded} graded</p>
-                                      </div>
-                                      <div className="text-xs text-center">
-                                          <p className="font-semibold">{assignment.avg_score.toFixed(1)}%</p>
-                                          <p className="text-muted-foreground">Average</p>
-                                      </div>
-                                      <div className="flex items-center gap-2 justify-self-end">
-                                          <Badge className="text-xs">{assignment.status}</Badge>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            </Link>
-                          ))}
-                        </div>
+                      {preferences.assignmentView === 'list' && (
+                        <AssessmentListView
+                          assessments={paginatedAssignments.map(assignment => ({
+                            id: assignment.id,
+                            title: assignment.title,
+                            type: assignment.type as 'quiz' | 'assignment',
+                            course_name: assignment.course,
+                            due_date: assignment.due_date,
+                            status: assignment.overdue ? 'overdue' : (assignment.status as 'active' | 'inactive'),
+                            submissions_count: assignment.submissions,
+                            graded_count: assignment.graded,
+                            average_score: assignment.avg_score
+                          }))}
+                          onAssessmentClick={(assessment) => {
+                            window.location.href = `/dashboard/grade-assignments/${assessment.id}`;
+                          }}
+                          onGrade={(assessment) => {
+                            window.location.href = `/dashboard/grade-assignments/${assessment.id}`;
+                          }}
+                          onEdit={(assessment) => {
+                            // Handle edit functionality
+                          }}
+                          onDelete={(assessment) => {
+                            // Handle delete functionality
+                          }}
+                          onViewSubmissions={(assessment) => {
+                            window.location.href = `/dashboard/grade-assignments/${assessment.id}`;
+                          }}
+                        />
                       )}
                     </>
                   ) : (
@@ -431,27 +430,17 @@ export const GradeAssignments = () => {
                 </div>
               </div>
               {totalPages > 1 && (
-                <Pagination className="mt-6">
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious
-                        onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
-                        className={currentPage === 1 ? 'pointer-events-none opacity-50' : undefined}
-                      />
-                    </PaginationItem>
-                    <PaginationItem>
-                      <span className="text-sm p-2">
-                        Page {currentPage} of {totalPages}
-                      </span>
-                    </PaginationItem>
-                    <PaginationItem>
-                      <PaginationNext
-                        onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
-                        className={currentPage >= totalPages ? 'pointer-events-none opacity-50' : undefined}
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
+                <PaginationControls
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={assignments.length}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={setCurrentPage}
+                  onItemsPerPageChange={handleItemsPerPageChange}
+                  itemsPerPageOptions={preferences.assignmentView === 'tile' ? [9, 18, 27, 36, 45] : [4, 8, 12, 16, 20]}
+                  disabled={loading}
+                  className="mt-6"
+                />
               )}
             </>
           )}

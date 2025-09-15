@@ -227,7 +227,7 @@ export const ObservationReportsViews: React.FC<ObservationReportsViewsProps> = (
 
   if (viewMode === 'tile') {
     return (
-      <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 ${className}`}>
+      <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 ${className}`}>
         {reports.map((report) => {
           const RoleIcon = getRoleIcon(report.observerRole);
           const colorGradient = getRoleColor(report.observerRole);
@@ -235,14 +235,12 @@ export const ObservationReportsViews: React.FC<ObservationReportsViewsProps> = (
           return (
             <Card 
               key={report.id} 
-              className="group relative bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/60 dark:border-gray-700/60 hover:border-gray-300/80 dark:hover:border-gray-600/80 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 rounded-3xl overflow-hidden backdrop-blur-sm cursor-pointer hover:-translate-y-1 h-64 flex flex-col"
+              className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-sm bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-primary/30 dark:hover:border-primary/30 h-60 flex flex-col overflow-hidden"
             >
-              <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${colorGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-              
-              <CardContent className="p-4 flex flex-col h-full">
-                <div className="flex items-start justify-between mb-3">
-                  <div className={`w-10 h-10 bg-gradient-to-br ${colorGradient} rounded-xl flex items-center justify-center shadow-lg`}>
-                    <RoleIcon className="w-5 h-5 text-white" />
+              <CardContent className="p-3 flex flex-col h-full">
+                <div className="flex items-start justify-between mb-2">
+                  <div className={`w-8 h-8 bg-gradient-to-br ${colorGradient} rounded-lg flex items-center justify-center shadow-lg`}>
+                    <RoleIcon className="w-4 h-4 text-white" />
                   </div>
                   <ActionMenu
                     report={report}
@@ -255,31 +253,56 @@ export const ObservationReportsViews: React.FC<ObservationReportsViewsProps> = (
                   />
                 </div>
 
-                <div className="flex-1 flex flex-col space-y-2">
+                <div className="flex-1 flex flex-col space-y-1">
                   <div>
-                    <h3 className="font-bold text-sm text-gray-900 dark:text-gray-100 truncate group-hover:text-primary transition-colors duration-300 mb-1">
+                    <h3 className="font-medium text-xs line-clamp-1 group-hover:text-primary transition-colors duration-300 mb-1">
                       {report.teacherName}
                     </h3>
-                    <p className="text-xs text-muted-foreground line-clamp-1 leading-relaxed">
+                    <p className="text-xs text-muted-foreground line-clamp-1">
                       {report.schoolName}
                     </p>
                   </div>
                   
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs font-medium shadow-sm border-gray-300/60 dark:border-gray-600/60 bg-gray-50/80 dark:bg-gray-800/80">
+                  <div className="flex items-center gap-1">
+                    <Badge variant="outline" className="text-xs font-medium">
                       {report.observerRole.replace('-', ' ').toUpperCase()}
                     </Badge>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between mt-3 pt-2 border-t border-border/50">
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Calendar className="h-3 w-3" />
-                    <span className="font-medium">{new Date(report.observationDate).toLocaleDateString()}</span>
+                <div className="mt-auto pt-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className={`text-sm font-bold ${getScoreColor(report.overallScore)}`}>
+                      {report.overallScore}%
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(report.observationDate).toLocaleDateString()}
+                    </div>
                   </div>
-                  <div className={`text-xs font-bold ${getScoreColor(report.overallScore)}`}>
-                    {report.overallScore}%
+                  
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mb-2">
+                    <div 
+                      className={`h-1.5 rounded-full transition-all duration-500 ${
+                        report.overallScore >= 80 ? 'bg-green-500' :
+                        report.overallScore >= 70 ? 'bg-blue-500' :
+                        report.overallScore >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                      }`}
+                      style={{ width: `${report.overallScore}%` }}
+                    />
                   </div>
+                  
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onView(report);
+                    }}
+                    className="w-full h-7 text-xs hover:bg-primary hover:text-primary-foreground transition-all duration-200"
+                  >
+                    <Eye className="w-3 h-3 mr-1" />
+                    View
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -291,7 +314,7 @@ export const ObservationReportsViews: React.FC<ObservationReportsViewsProps> = (
 
   // Card view (default) - enhanced version of existing ReportCard
   return (
-    <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 ${className}`}>
+    <div className={`grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 ${className}`}>
       {reports.map((report) => {
         const RoleIcon = getRoleIcon(report.observerRole);
         const colorGradient = getRoleColor(report.observerRole);
@@ -304,10 +327,8 @@ export const ObservationReportsViews: React.FC<ObservationReportsViewsProps> = (
         }[report.observerRole] || 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
 
         return (
-          <Card key={report.id} className="group relative bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/60 dark:border-gray-700/60 hover:border-gray-300/80 dark:hover:border-gray-600/80 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 rounded-3xl overflow-hidden backdrop-blur-sm cursor-pointer hover:-translate-y-1 h-80 flex flex-col w-full">
-            <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${colorGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-            
-            <CardContent className="p-4 flex flex-col h-full w-full overflow-hidden">
+          <Card key={report.id} className="bg-card border border-border flex flex-col h-full">
+            <CardContent className="p-4 space-y-2 flex-grow">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   <Avatar className="w-10 h-10 ring-2 ring-primary/10 flex-shrink-0">
@@ -316,10 +337,10 @@ export const ObservationReportsViews: React.FC<ObservationReportsViewsProps> = (
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-sm text-gray-900 dark:text-gray-100 truncate group-hover:text-primary transition-colors duration-300 mb-1">
+                    <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100 truncate group-hover:text-primary transition-colors duration-300 mb-1">
                       {report.teacherName}
                     </h3>
-                    <p className="text-xs text-muted-foreground truncate mb-1">
+                    <p className="text-sm text-muted-foreground truncate mb-2">
                       {report.schoolName}
                     </p>
                     <div className="flex items-center gap-1 flex-wrap">
@@ -342,63 +363,74 @@ export const ObservationReportsViews: React.FC<ObservationReportsViewsProps> = (
                 </div>
               </div>
 
-              <div className="flex-1 flex flex-col space-y-2 overflow-hidden">
-                {/* Report Details */}
-                <div className="space-y-1 text-xs text-muted-foreground">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <User className="h-3 w-3 flex-shrink-0" />
-                    <span className="truncate">{report.observerName}</span>
+              {/* Detailed Report Stats - Horizontal Layout */}
+              <div className="p-3 bg-muted/30 rounded-lg mb-3">
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <div className="flex items-center gap-1 w-1/3">
+                    <User className="w-4 h-4 flex-shrink-0" />
+                    <span className="font-medium text-foreground truncate">{report.observerName}</span>
                   </div>
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Calendar className="h-3 w-3 flex-shrink-0" />
-                    <span className="truncate">{new Date(report.observationDate).toLocaleDateString()}</span>
+                  <div className="flex items-center gap-1 w-1/3 justify-center">
+                    <Calendar className="w-4 h-4 flex-shrink-0" />
+                    <span className="font-medium text-foreground">Date</span>
                   </div>
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Clock className="h-3 w-3 flex-shrink-0" />
-                    <span className="truncate">{report.startTime} - {report.endTime}</span>
-                  </div>
-                  <div className="flex items-center gap-2 min-w-0">
-                    <FileText className="h-3 w-3 flex-shrink-0" />
-                    <span className="truncate">{report.lessonCode}</span>
+                  <div className="flex items-center gap-1 w-1/3 justify-end">
+                    <Clock className="w-4 h-4 flex-shrink-0" />
+                    <span className="font-medium text-foreground truncate">
+                      {new Date(report.observationDate).toLocaleDateString()}
+                    </span>
                   </div>
                 </div>
-
-                {/* Project Information */}
-                {report.projectName && (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2 border-t border-border/50 min-w-0">
-                    <Star className="h-3 w-3 flex-shrink-0" />
-                    <span className="truncate">Project: {report.projectName}</span>
-                  </div>
-                )}
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center gap-1 pt-3 border-t border-border/50 w-full">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onView(report);
-                  }}
-                  className="flex-1 h-7 text-xs hover:bg-primary hover:text-primary-foreground transition-all duration-200 min-w-0"
-                >
-                  <Eye className="w-3 h-3 mr-1" />
-                  View
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDownload(report);
-                  }}
-                  disabled={isDownloading(report.id)}
-                  className="flex-1 h-7 text-xs hover:bg-primary hover:text-primary-foreground transition-all duration-200 min-w-0"
-                >
-                  <Download className="w-3 h-3 mr-1" />
-                  {isDownloading(report.id) ? 'Gen...' : 'PDF'}
-                </Button>
+              {/* Score Breakdown */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Overall Score</span>
+                  <span className="font-medium">{report.overallScore}%</span>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <div 
+                    className={`h-2 rounded-full transition-all duration-500 ${
+                      report.overallScore >= 80 ? 'bg-green-500' :
+                      report.overallScore >= 70 ? 'bg-blue-500' :
+                      report.overallScore >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                    }`}
+                    style={{ width: `${report.overallScore}%` }}
+                  />
+                </div>
+              </div>
+            </CardContent>
+
+            <div className="p-4 pt-0 mt-auto">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onView(report);
+                    }}
+                    className="h-8 text-xs hover:bg-primary hover:text-primary-foreground transition-all duration-200"
+                  >
+                    <Eye className="w-3 h-3 mr-1" />
+                    View
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDownload(report);
+                    }}
+                    disabled={isDownloading(report.id)}
+                    className="h-8 text-xs hover:bg-green-600 hover:text-white transition-all duration-200"
+                  >
+                    <Download className="w-3 h-3 mr-1" />
+                    {isDownloading(report.id) ? 'Gen...' : 'PDF'}
+                  </Button>
+                </div>
                 <Button
                   size="sm"
                   variant="outline"
@@ -407,13 +439,13 @@ export const ObservationReportsViews: React.FC<ObservationReportsViewsProps> = (
                     onDelete(report);
                   }}
                   disabled={isDeleting(report.id)}
-                  className="flex-1 h-7 text-xs hover:bg-red-600 hover:text-white transition-all duration-200 text-red-600 border-red-200 hover:border-red-600 min-w-0"
+                  className="h-8 text-xs hover:bg-red-600 hover:text-white transition-all duration-200 text-red-600 border-red-200 hover:border-red-600"
                 >
                   <Trash2 className="w-3 h-3 mr-1" />
                   {isDeleting(report.id) ? 'Del...' : 'Delete'}
                 </Button>
               </div>
-            </CardContent>
+            </div>
           </Card>
         );
       })}

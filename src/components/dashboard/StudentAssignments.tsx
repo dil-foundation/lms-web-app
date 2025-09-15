@@ -835,74 +835,79 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
     };
 
     return (
-      <Card className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-md bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-border dark:hover:border-border h-80 flex flex-col overflow-hidden">
-        <CardHeader className="p-4 pb-3">
-          <div className="flex items-start justify-between mb-3">
+      <Card className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-md bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-primary/30 dark:hover:border-primary/30 h-96 flex flex-col overflow-hidden">
+        <CardHeader className="p-6 pb-4">
+          <div className="flex items-start justify-between mb-4">
             <div className="flex-1 min-w-0">
-              <CardTitle className="text-base font-semibold line-clamp-2 group-hover:text-primary transition-colors mb-2">
+              <h3 className="font-semibold text-lg line-clamp-1 group-hover:text-primary transition-colors mb-3">
                 {assignment.title}
-              </CardTitle>
-              <p className="text-xs text-muted-foreground line-clamp-1 mb-3">
-                {assignment.courseTitle}
+              </h3>
+              <div className="flex items-center gap-2 mb-3">
+                <Badge variant="outline" className="text-sm">
+                  {assignment.courseTitle}
+                </Badge>
+                {assignment.status === 'graded' && (
+                  <Badge variant="default" className="bg-gradient-to-r from-green-500 to-green-600 text-white text-sm">
+                    {assignment.score != null ? `${assignment.score}%` : 'N/A'}
+                  </Badge>
+                )}
+                {isOverdue(assignment.dueDate, assignment.status) && (
+                  <Badge variant="destructive" className="text-sm">Overdue</Badge>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {assignment.submissionType === 'link' ? 'URL Submission' : assignment.submissionType === 'file' ? 'File Upload' : 'Text Submission'}
               </p>
             </div>
           </div>
-          
-          {/* Status and Grade Badges */}
-          <div className="flex flex-wrap gap-2 mb-3">
-            {/* Grade display for graded assignments */}
-            {assignment.status === 'graded' && (
-              <Badge variant="default" className="bg-gradient-to-r from-green-500 to-green-600 text-white">
-                {assignment.score != null ? `${assignment.score}%` : 'N/A'}
-              </Badge>
-            )}
-            
-            {/* Status badge */}
-            <Badge variant={getStatusColor(assignment.status)} className="capitalize">
-              {getStatusIcon(assignment.status)}
-              <span className="ml-1">{assignment.status}</span>
-            </Badge>
-            
-            {/* Overdue badge */}
-            {isOverdue(assignment.dueDate, assignment.status) && (
-              <Badge variant="destructive">Overdue</Badge>
-            )}
-          </div>
         </CardHeader>
         
-        <CardContent className="p-4 pt-0 flex flex-col flex-1 overflow-hidden">
-          {/* Assignment Description */}
+        <CardContent className="p-6 pt-0 flex flex-col h-full overflow-hidden">
+          {/* Content Area - Fixed height to ensure button alignment */}
           <div className="flex-1 flex flex-col min-h-0">
-            <div className="text-xs text-muted-foreground line-clamp-3 mb-4">
-              <div dangerouslySetInnerHTML={{ __html: stripHtmlTags(assignment.description) }} />
-            </div>
-            
-            {/* Assignment Details */}
-            <div className="space-y-2 text-xs text-muted-foreground mb-4">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-3 h-3" />
-                <span className={isOverdue(assignment.dueDate, assignment.status) ? 'text-red-600' : ''}>
-                  Due: {formatDate(assignment.dueDate)}
-                </span>
+            {/* Assignment Description */}
+            <div className="h-16 mb-4">
+              <div className="text-sm text-muted-foreground line-clamp-3 h-full">
+                <div dangerouslySetInnerHTML={{ __html: stripHtmlTags(assignment.description) }} />
               </div>
-              <div className="flex items-center gap-2">
-                <Clock className="w-3 h-3" />
-                <span>Assignment</span>
+            </div>
+
+            {/* Detailed Assignment Stats - Horizontal Layout */}
+            <div className="p-3 bg-muted/30 rounded-lg mb-4">
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <div className="flex items-center gap-1 w-1/3">
+                  <Calendar className="w-4 h-4 flex-shrink-0" />
+                  <span className="font-medium text-foreground truncate">
+                    {formatDate(assignment.dueDate)}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 w-1/3 justify-center">
+                  <Clock className="w-4 h-4 flex-shrink-0" />
+                  <span className="font-medium text-foreground">
+                    {assignment.points || 0} pts
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 w-1/3 justify-end">
+                  <CheckCircle className="w-4 h-4 flex-shrink-0" />
+                  <span className="font-medium text-foreground truncate">
+                    {assignment.status === 'graded' ? `${assignment.score || 0}%` : assignment.status.charAt(0).toUpperCase() + assignment.status.slice(1)}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Action Button */}
-          <div className="mt-auto pt-3">
+          {/* Action Button - Always at bottom with fixed positioning */}
+          <div className="mt-auto pt-6 pb-1">
             <Button
               size="sm"
-              className="w-full h-8 text-xs"
+              className="w-full h-10 text-sm"
               onClick={() => {
                 setSelectedAssignment(assignment);
                 setIsDetailModalOpen(true);
               }}
             >
-              <Eye className="w-3 h-3 mr-1" />
+              <Eye className="w-4 h-4 mr-2" />
               View Details
             </Button>
           </div>
@@ -1083,7 +1088,7 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
           ) : (
             <>
               {preferences.assignmentView === 'card' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {currentAssignments.map((assignment) => (
                     <AssignmentCard key={assignment.id} assignment={assignment} />
                   ))}
@@ -1172,27 +1177,29 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
         </div>
       )}
       
-      <div className="flex justify-center items-center space-x-2 mt-6">
-        <Button
-          variant="outline"
-          onClick={() => handlePageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-          className="hover:bg-primary/10 hover:border-primary/30 hover:text-gray-900 dark:hover:text-gray-100"
-        >
-          Previous
-        </Button>
-        <span className="text-sm text-muted-foreground">
-          Page {currentPage} of {totalPages}
-        </span>
-        <Button
-          variant="outline"
-          onClick={() => handlePageChange(currentPage + 1)}
-          disabled={currentPage === totalPages || totalPages === 0}
-          className="hover:bg-primary/10 hover:border-primary/30 hover:text-gray-900 dark:hover:text-gray-100"
-        >
-          Next
-        </Button>
-      </div>
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center space-x-2 mt-6">
+          <Button
+            variant="outline"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="hover:bg-primary/10 hover:border-primary/30 hover:text-gray-900 dark:hover:text-gray-100"
+          >
+            Previous
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            Page {currentPage} of {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages || totalPages === 0}
+            className="hover:bg-primary/10 hover:border-primary/30 hover:text-gray-900 dark:hover:text-gray-100"
+          >
+            Next
+          </Button>
+        </div>
+      )}
       
       <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
         <AssignmentDetailModal
