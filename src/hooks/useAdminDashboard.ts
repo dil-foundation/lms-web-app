@@ -5,13 +5,15 @@ import {
   DashboardOverviewData,
   KeyMetricsData,
   LearnUsageData,
-  MostAccessedLessonsData
+  MostAccessedLessonsData,
+  DashboardFilters
 } from '@/services/adminDashboardService';
 
 interface UseAdminDashboardOptions {
   initialTimeRange?: string;
   enableAutoRefresh?: boolean;
   autoRefreshInterval?: number;
+  filters?: DashboardFilters;
 }
 
 interface AdminDashboardData {
@@ -27,7 +29,7 @@ interface UseAdminDashboardReturn {
   error: string | null;
   refreshing: boolean;
   timeRange: string;
-  fetchData: (showRefreshIndicator?: boolean, customTimeRange?: string) => Promise<void>;
+  fetchData: (showRefreshIndicator?: boolean, customTimeRange?: string, customFilters?: DashboardFilters) => Promise<void>;
   handleTimeRangeChange: (newTimeRange: string) => void;
   handleRefresh: () => void;
   clearError: () => void;
@@ -39,7 +41,8 @@ export const useAdminDashboard = (
   const {
     initialTimeRange = 'alltime',
     enableAutoRefresh = false,
-    autoRefreshInterval = 300000 // 5 minutes
+    autoRefreshInterval = 300000, // 5 minutes
+    filters
   } = options;
 
   // State
@@ -66,7 +69,7 @@ export const useAdminDashboard = (
   }, []);
 
   // Fetch dashboard data
-  const fetchData = useCallback(async (showRefreshIndicator = false, customTimeRange?: string) => {
+  const fetchData = useCallback(async (showRefreshIndicator = false, customTimeRange?: string, customFilters?: DashboardFilters) => {
     if (!isMountedRef.current) return;
 
     try {
@@ -78,14 +81,15 @@ export const useAdminDashboard = (
       setError(null);
 
       const apiTimeRange = mapTimeRangeToApiValue(customTimeRange || timeRange);
-      console.log('🔄 [useAdminDashboard] Fetching data with timeRange:', apiTimeRange);
+      const activeFilters = customFilters || filters;
+      console.log('🔄 [useAdminDashboard] Fetching data with timeRange:', apiTimeRange, 'filters:', activeFilters);
       
       // Small delay to prevent rapid successive calls
       await new Promise(resolve => setTimeout(resolve, 50));
       
       if (!isMountedRef.current) return; // Check again after delay
       
-      const result = await adminDashboardService.getAllOverviewData(apiTimeRange);
+      const result = await adminDashboardService.getAllOverviewData(apiTimeRange, activeFilters);
       
       if (isMountedRef.current) {
         setData(result);
@@ -125,7 +129,7 @@ export const useAdminDashboard = (
         setRefreshing(false);
       }
     }
-  }, [timeRange, mapTimeRangeToApiValue, error]);
+  }, [timeRange, mapTimeRangeToApiValue, error, filters]);
 
   // Handle time range change with debouncing
   const handleTimeRangeChange = useCallback((newTimeRange: string) => {

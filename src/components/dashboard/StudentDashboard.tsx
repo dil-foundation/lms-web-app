@@ -16,7 +16,12 @@ import {
   PlayCircle,
   FileText,
   AlertCircle,
-  Sparkles
+  Sparkles,
+  Play,
+  Eye,
+  Star,
+  Timer,
+  Activity
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
@@ -39,6 +44,9 @@ interface Course {
   subtitle: string;
   image_url: string;
   progress?: number;
+  total_lessons?: number;
+  completed_lessons?: number;
+  last_accessed?: string;
 }
 
 interface DashboardStats {
@@ -159,7 +167,10 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
               title: course.title,
               subtitle: course.subtitle,
               image_url: imageUrl,
-              progress: course.progress_percentage
+              progress: course.progress_percentage,
+              total_lessons: course.total_lessons,
+              completed_lessons: course.completed_lessons,
+              last_accessed: course.last_accessed
             };
           }));
           setCourses(coursesWithSignedUrls);
@@ -271,13 +282,21 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
         </Card>
       </div>
 
-      {/* My Courses - Enhanced Premium Redesign */}
+      {/* My Courses - Overview Style */}
       <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center shadow-lg">
-            <BookOpen className="w-4 h-4 text-primary" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center shadow-lg">
+              <BookOpen className="w-4 h-4 text-primary" />
+            </div>
+            <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">My Courses</h2>
           </div>
-          <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">My Courses</h2>
+          <Link to="/dashboard/courses">
+            <Button variant="outline" size="sm" className="hover:bg-primary hover:text-primary-foreground transition-all duration-200">
+              View All
+              <BookOpen className="w-4 h-4 ml-2" />
+            </Button>
+          </Link>
         </div>
         
         {courses.length === 0 ? (
@@ -291,43 +310,143 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {courses.map((course) => (
-              <Card key={course.id} className="group bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 hover:-translate-y-2 rounded-3xl overflow-hidden">
-                <div className="relative overflow-hidden">
-                  <img 
-                    src={course.image_url} 
-                    alt={course.title} 
-                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500" 
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                </div>
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-lg font-bold truncate text-gray-900 dark:text-gray-100">{course.title}</CardTitle>
-                  <p className="text-sm text-muted-foreground truncate leading-relaxed">{course.subtitle}</p>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Progress</span>
-                      <span className="text-sm font-bold text-primary">{course.progress || 0}%</span>
+          <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg overflow-hidden">
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                {courses.slice(0, 4).map((course, index) => {
+                  const getLastAccessedText = (lastAccessed: string | undefined) => {
+                    if (!lastAccessed) return 'Never';
+                    const date = new Date(lastAccessed);
+                    const now = new Date();
+                    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+                    
+                    if (diffInHours < 1) return 'Just now';
+                    if (diffInHours < 24) return `${diffInHours}h ago`;
+                    const diffInDays = Math.floor(diffInHours / 24);
+                    if (diffInDays < 7) return `${diffInDays}d ago`;
+                    const diffInWeeks = Math.floor(diffInDays / 7);
+                    if (diffInWeeks < 4) return `${diffInWeeks}w ago`;
+                    return date.toLocaleDateString();
+                  };
+
+                  const getProgressStatus = (progress: number | undefined) => {
+                    if (!progress || progress === 0) return { icon: Play, text: 'Not Started', color: 'text-muted-foreground' };
+                    if (progress === 100) return { icon: CheckCircle, text: 'Completed', color: 'text-green-600' };
+                    return { icon: Activity, text: 'In Progress', color: 'text-primary' };
+                  };
+
+                  const status = getProgressStatus(course.progress);
+
+                  return (
+                    <div key={course.id} className={`group flex items-start gap-4 p-4 rounded-2xl hover:bg-muted/50 transition-all duration-200 ${index !== courses.slice(0, 4).length - 1 ? 'border-b border-border/50 pb-4' : ''}`}>
+                      {/* Course Image with Status Badge */}
+                      <div className="flex-shrink-0 relative">
+                        <div className="w-14 h-14 rounded-xl overflow-hidden bg-muted shadow-sm">
+                          {course.image_url ? (
+                            <img 
+                              src={course.image_url} 
+                              alt={course.title} 
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                target.nextElementSibling?.classList.remove('hidden');
+                              }}
+                            />
+                          ) : null}
+                          <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/20 ${course.image_url ? 'hidden' : ''}`}>
+                            <BookOpen className="w-6 h-6 text-primary/60" />
+                          </div>
+                        </div>
+                        {/* Progress Status Badge */}
+                        <div className={`absolute -top-1 -right-1 w-5 h-5 rounded-full bg-background border-2 border-background flex items-center justify-center shadow-sm`}>
+                          <status.icon className={`w-3 h-3 ${status.color}`} />
+                        </div>
+                      </div>
+
+                      {/* Course Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-sm text-foreground truncate group-hover:text-primary transition-colors mb-1">
+                              {course.title}
+                            </h3>
+                            <p className="text-xs text-muted-foreground truncate">{course.subtitle}</p>
+                          </div>
+                          <div className="flex items-center gap-2 ml-3 flex-shrink-0">
+                            <span className="text-xs font-medium text-primary">
+                              {course.progress || 0}%
+                            </span>
+                            {course.progress === 100 && (
+                              <Star className="w-3 h-3 text-yellow-500 fill-current" />
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Course Metrics */}
+                        <div className="flex items-center gap-4 mb-3 text-xs text-muted-foreground">
+                          {course.total_lessons && (
+                            <div className="flex items-center gap-1">
+                              <BookOpen className="w-3 h-3" />
+                              <span>{course.completed_lessons || 0}/{course.total_lessons} lessons</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            <span>Last: {getLastAccessedText(course.last_accessed)}</span>
+                          </div>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="w-full bg-muted rounded-full h-2 overflow-hidden mb-3">
+                          <div 
+                            className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full transition-all duration-500" 
+                            style={{ width: `${course.progress || 0}%` }}
+                          />
+                        </div>
+
+                        {/* Action Button */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className={`text-xs font-medium ${status.color}`}>
+                              {status.text}
+                            </span>
+                          </div>
+                          <Link to={course.progress && course.progress > 0 ? `/dashboard/courses/${course.id}/content` : `/dashboard/courses/${course.id}`}>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              className="h-7 px-3 text-xs hover:bg-primary hover:text-primary-foreground transition-all duration-200"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {course.progress && course.progress > 0 ? 'Continue' : 'Start'}
+                              {course.progress && course.progress > 0 ? (
+                                <Play className="w-3 h-3 ml-1" />
+                              ) : (
+                                <Eye className="w-3 h-3 ml-1" />
+                              )}
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
                     </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
-                      <div 
-                        className="bg-gradient-to-r from-primary to-primary/80 h-3 rounded-full transition-all duration-500 ease-out" 
-                        style={{ width: `${course.progress || 0}%` }}
-                      />
-                    </div>
-                  </div>
-                  <Button asChild variant="outline" size="lg" className="w-full rounded-xl font-semibold hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300">
-                    <Link to={course.progress && course.progress > 0 ? `/dashboard/courses/${course.id}/content` : `/dashboard/courses/${course.id}`}>
-                      {course.progress && course.progress > 0 ? 'Continue Learning' : 'Start Course'}
+                  );
+                })}
+                
+                {/* Show More Link */}
+                {courses.length > 4 && (
+                  <div className="pt-2 border-t border-border/50">
+                    <Link to="/dashboard/courses">
+                      <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors py-2">
+                        <span>View {courses.length - 4} more courses</span>
+                        <TrendingUp className="w-4 h-4" />
+                      </div>
                     </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
 

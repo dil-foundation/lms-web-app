@@ -2,6 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useViewPreferences } from '@/contexts/ViewPreferencesContext';
+import { ViewToggle } from '@/components/ui/ViewToggle';
+import { AssessmentCardView } from '@/components/assessment/AssessmentCardView';
 import {
   Card,
   CardContent,
@@ -79,6 +82,7 @@ const StatCard = ({ title, value, icon: Icon, color }: StatCardProps) => (
 export const GradeAssignments = () => {
   const { user } = useAuth();
   const { profile } = useUserProfile();
+  const { preferences, setTeacherReportsView } = useViewPreferences();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourse, setSelectedCourse] = useState('all');
@@ -284,48 +288,143 @@ export const GradeAssignments = () => {
             <ContentLoader message="Loading assessments..." />
           ) : (
             <>
-              <div className="space-y-4">
+              <div className="space-y-6">
+                {/* View Toggle */}
+                <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <FileText className="h-5 w-5 text-primary" />
                   <h2 className="text-lg font-semibold">Assessments ({assignments.length})</h2>
                 </div>
+                  <ViewToggle
+                    currentView={preferences.teacherReportsView}
+                    onViewChange={setTeacherReportsView}
+                    availableViews={['card', 'tile', 'list']}
+                  />
+                </div>
+
+                {/* Assessment Display based on selected view */}
                 <div className="space-y-4">
                   {paginatedAssignments.length > 0 ? (
-                    paginatedAssignments.map((assignment) => (
-                      <Link to={`/dashboard/grade-assignments/${assignment.id}`} key={assignment.id} className="block">
-                        <Card className="hover:bg-muted/50 transition-colors">
-                          <CardContent className="p-4 flex items-center gap-4">
-                            <div className="bg-primary/10 text-primary p-3 rounded-lg">
-                              <CheckSquare className="h-6 w-6" />
-                            </div>
-                            <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4 items-center">
-                              <div className="col-span-2 md:col-span-2">
-                                <div className="flex items-center gap-2">
-                                  <p className="font-semibold text-base">{assignment.title}</p>
-                                  <Badge variant={assignment.type === 'quiz' ? 'default' : assignment.type === 'assignment' ? 'blue' : 'secondary'} className="capitalize">{assignment.type}</Badge>
-                                </div>
-                                <p className="text-sm text-muted-foreground">{assignment.course}</p>
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                {assignment.overdue && <Badge variant="destructive">Overdue</Badge>}
-                                <p className="mt-1">Due: {assignment.due_date}</p>
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                <p>{assignment.submissions} submissions</p>
-                                <p>{assignment.graded} graded</p>
-                              </div>
-                              <div className="text-sm text-center">
-                                  <p className="font-semibold text-base">{assignment.avg_score.toFixed(1)}%</p>
-                                  <p className="text-muted-foreground">Average</p>
-                              </div>
-                              <div className="flex items-center gap-2 justify-self-end">
-                                  <Badge>{assignment.status}</Badge>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </Link>
-                    ))
+                    <>
+                      {preferences.teacherReportsView === 'card' && (
+                        <AssessmentCardView
+                          assessments={paginatedAssignments.map(assignment => ({
+                            id: assignment.id,
+                            title: assignment.title,
+                            type: assignment.type as 'quiz' | 'assignment',
+                            course_name: assignment.course,
+                            due_date: assignment.due_date,
+                            status: assignment.overdue ? 'overdue' : (assignment.status as 'active' | 'inactive'),
+                            submissions_count: assignment.submissions,
+                            graded_count: assignment.graded,
+                            average_score: assignment.avg_score
+                          }))}
+                          onAssessmentClick={(assessment) => {
+                            window.location.href = `/dashboard/grade-assignments/${assessment.id}`;
+                          }}
+                          onGrade={(assessment) => {
+                            window.location.href = `/dashboard/grade-assignments/${assessment.id}`;
+                          }}
+                          onEdit={(assessment) => {
+                            // Handle edit functionality
+                          }}
+                          onDelete={(assessment) => {
+                            // Handle delete functionality
+                          }}
+                          onViewSubmissions={(assessment) => {
+                            window.location.href = `/dashboard/grade-assignments/${assessment.id}`;
+                          }}
+                        />
+                      )}
+
+                      {preferences.teacherReportsView === 'tile' && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {paginatedAssignments.map((assignment) => (
+                            <Link to={`/dashboard/grade-assignments/${assignment.id}`} key={assignment.id} className="block">
+                              <Card className="hover:bg-muted/50 transition-colors h-full">
+                                <CardContent className="p-4">
+                                  <div className="flex items-center gap-3 mb-3">
+                                    <div className="bg-primary/10 text-primary p-2 rounded-lg">
+                                      <CheckSquare className="h-5 w-5" />
+                                    </div>
+                                    <div className="flex-1">
+                                      <h3 className="font-semibold text-sm line-clamp-1">{assignment.title}</h3>
+                                      <p className="text-xs text-muted-foreground">{assignment.course}</p>
+                                    </div>
+                                    <Badge variant={assignment.type === 'quiz' ? 'default' : assignment.type === 'assignment' ? 'blue' : 'secondary'} className="text-xs capitalize">
+                                      {assignment.type}
+                                    </Badge>
+                                  </div>
+                                  <div className="space-y-2 text-xs text-muted-foreground">
+                                    <div className="flex justify-between">
+                                      <span>Submissions:</span>
+                                      <span className="font-medium">{assignment.submissions}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span>Graded:</span>
+                                      <span className="font-medium">{assignment.graded}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span>Average:</span>
+                                      <span className="font-medium text-primary">{assignment.avg_score.toFixed(1)}%</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span>Due:</span>
+                                      <span className="font-medium">{assignment.due_date}</span>
+                                    </div>
+                                  </div>
+                                  {assignment.overdue && (
+                                    <Badge variant="destructive" className="mt-2 text-xs">Overdue</Badge>
+                                  )}
+                                </CardContent>
+                              </Card>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+
+                      {preferences.teacherReportsView === 'list' && (
+                        <div className="space-y-2">
+                          {paginatedAssignments.map((assignment) => (
+                            <Link to={`/dashboard/grade-assignments/${assignment.id}`} key={assignment.id} className="block">
+                              <Card className="hover:bg-muted/50 transition-colors">
+                                <CardContent className="p-3">
+                                  <div className="flex items-center gap-4">
+                                    <div className="bg-primary/10 text-primary p-2 rounded-lg">
+                                      <CheckSquare className="h-4 w-4" />
+                                    </div>
+                                    <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4 items-center">
+                                      <div className="col-span-2">
+                                        <div className="flex items-center gap-2">
+                                          <p className="font-semibold text-sm">{assignment.title}</p>
+                                          <Badge variant={assignment.type === 'quiz' ? 'default' : assignment.type === 'assignment' ? 'blue' : 'secondary'} className="text-xs capitalize">{assignment.type}</Badge>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">{assignment.course}</p>
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">
+                                        {assignment.overdue && <Badge variant="destructive" className="text-xs">Overdue</Badge>}
+                                        <p className="mt-1">Due: {assignment.due_date}</p>
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">
+                                        <p>{assignment.submissions} submissions</p>
+                                        <p>{assignment.graded} graded</p>
+                                      </div>
+                                      <div className="text-xs text-center">
+                                          <p className="font-semibold">{assignment.avg_score.toFixed(1)}%</p>
+                                          <p className="text-muted-foreground">Average</p>
+                                      </div>
+                                      <div className="flex items-center gap-2 justify-self-end">
+                                          <Badge className="text-xs">{assignment.status}</Badge>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <p className="text-center text-muted-foreground py-4">No assessments found.</p>
                   )}

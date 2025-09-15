@@ -2440,7 +2440,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   const getTypeBadge = (type: string) => {
     switch (type) {
       case 'Private':
-        return <Badge variant="default" className="bg-blue-600">Private</Badge>;
+        return <Badge variant="default" className="bg-blue-600 text-white">Private</Badge>;
       case 'Public':
         return <Badge variant="default" className="bg-[#8DC63F]">Public</Badge>;
       case 'International':

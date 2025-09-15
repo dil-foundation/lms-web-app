@@ -189,7 +189,7 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
-    attempt_number INTEGER;
+    next_attempt_number INTEGER;
     retry_settings JSONB;
     requires_approval BOOLEAN;
     attempt_id UUID;
@@ -197,7 +197,7 @@ DECLARE
 BEGIN
     -- Get next attempt number
     SELECT COALESCE(MAX(attempt_number), 0) + 1
-    INTO attempt_number
+    INTO next_attempt_number
     FROM public.quiz_attempts
     WHERE user_id = p_user_id AND lesson_content_id = p_lesson_content_id;
     
@@ -223,18 +223,18 @@ BEGIN
     ) VALUES (
         p_user_id,
         p_lesson_content_id,
-        attempt_number,
+        next_attempt_number,
         p_answers,
         p_results,
         p_score,
         p_retry_reason,
-        requires_approval AND attempt_number > 1,
+        requires_approval AND next_attempt_number > 1,
         p_ip_address,
         p_user_agent
     ) RETURNING id INTO attempt_id;
     
     -- If approval required, create a retry request
-    IF requires_approval AND attempt_number > 1 THEN
+    IF requires_approval AND next_attempt_number > 1 THEN
         INSERT INTO public.quiz_retry_requests (
             user_id,
             lesson_content_id,
@@ -251,8 +251,8 @@ BEGIN
     RETURN jsonb_build_object(
         'success', true,
         'attemptId', attempt_id,
-        'attemptNumber', attempt_number,
-        'requiresApproval', requires_approval AND attempt_number > 1
+        'attemptNumber', next_attempt_number,
+        'requiresApproval', requires_approval AND next_attempt_number > 1
     );
 END;
 $$;

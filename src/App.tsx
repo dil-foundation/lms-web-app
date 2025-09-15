@@ -10,11 +10,13 @@ import { ObservationReportsProvider } from "@/contexts/ObservationReportsContext
 import { SecureLinksProvider } from "@/contexts/SecureLinksContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { APEXProvider } from "@/contexts/AIAssistantContext";
+import { ViewPreferencesProvider } from "@/contexts/ViewPreferencesContext";
 import ScrollToTop from "@/components/ScrollToTop";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { SessionTimeoutWarning } from "@/components/SessionTimeoutWarning";
 import { SupabaseMFARequirement } from "@/components/auth/SupabaseMFARequirement";
 import { MFAProtectedRoute } from "@/components/auth/MFAProtectedRoute";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 
 // Component to handle session timeout and activity tracking
@@ -68,21 +70,32 @@ const queryClient = new QueryClient({
 
 const AppContent = () => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <ScrollToTop />
-          <AuthProvider>
-            <SessionTimeoutTracker />
-            <AILMSProvider>
-              <ObservationReportsProvider>
-                <SecureLinksProvider>
-                        <NotificationProvider>
-        <APEXProvider>
-          <Suspense fallback={null}>
-            <Routes>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <ScrollToTop />
+            <AuthProvider>
+              <SessionTimeoutTracker />
+              <AILMSProvider>
+                <ObservationReportsProvider>
+                  <SecureLinksProvider>
+                    {/* Temporarily disabled ErrorBoundary to prevent notification service error display */}
+                    {/* <ErrorBoundary fallback={
+                      <div className="flex items-center justify-center h-screen">
+                        <div className="text-center">
+                          <h2 className="text-xl font-semibold mb-2">Notification Service Unavailable</h2>
+                          <p className="text-muted-foreground">Some features may not work properly, but you can continue using the app.</p>
+                        </div>
+                      </div>
+                    }> */}
+                      <NotificationProvider>
+                        <ViewPreferencesProvider>
+                          <APEXProvider>
+                        <Suspense fallback={null}>
+                          <Routes>
                       {/* Public routes - no MFA requirement */}
                       <Route path="/" element={<Home />} />
                       <Route path="/home-layout-2" element={<HomeLayout2 />} />
@@ -118,17 +131,20 @@ const AppContent = () => {
                             </MFAProtectedRoute>
                           } />
                       <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </Suspense>
-                        </APEXProvider>
-        </NotificationProvider>
-                </SecureLinksProvider>
-              </ObservationReportsProvider>
-            </AILMSProvider>
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+                          </Routes>
+                        </Suspense>
+                          </APEXProvider>
+                        </ViewPreferencesProvider>
+                      </NotificationProvider>
+                    {/* </ErrorBoundary> */}
+                  </SecureLinksProvider>
+                </ObservationReportsProvider>
+              </AILMSProvider>
+            </AuthProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 

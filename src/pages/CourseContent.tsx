@@ -13,7 +13,7 @@ import { QuizRetryService } from '@/services/quizRetryService';
 import { QuizRetryInterface } from '@/components/QuizRetryInterface';
 import { MathExpressionInput } from '@/components/quiz/MathExpressionInput';
 // import { MathQuizService } from '@/services/mathQuizService';
-// import { evaluateMathExpression } from '@/utils/mathEvaluation';
+import { evaluateMathExpression } from '@/utils/mathEvaluation';
 import { 
   PlayCircle,
   CheckCircle, 
@@ -244,16 +244,20 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         // Convert old single-choice format to new format if needed
         const answers: Record<string, string | string[]> = {};
         const textAnswersData: Record<string, string> = {};
+        const mathAnswersData: Record<string, string> = {};
         
         if (submission.answers) {
           Object.keys(submission.answers as Record<string, any>).forEach(questionId => {
             const answer = (submission.answers as Record<string, any>)[questionId];
             
-            // Check if this is a text answer by looking at the question type
+            // Check if this is a text answer or math expression by looking at the question type
             const question = currentContentItem.quiz?.find((q: any) => q.id === questionId);
             if (question?.question_type === 'text_answer') {
               // This is a text answer
               textAnswersData[questionId] = answer;
+            } else if (question?.question_type === 'math_expression') {
+              // This is a math expression answer
+              mathAnswersData[questionId] = answer;
             } else {
               // This is a multiple choice/single choice answer
               // If it's already an array, keep it; otherwise convert to array for backward compatibility
@@ -264,12 +268,14 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         
         setUserAnswers(answers);
         setTextAnswers(textAnswersData);
+        setMathAnswers(mathAnswersData);
         setQuizResults(submission.results || {});
         setIsQuizSubmitted(true);
       } else {
         setIsQuizSubmitted(false);
         setUserAnswers({});
         setTextAnswers({});
+        setMathAnswers({});
         setQuizResults({});
       }
     }
@@ -298,7 +304,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
               math_expression: q.math_expression || null,
               math_tolerance: q.math_tolerance || null,
               math_hint: q.math_hint || null,
-              math_allow_drawing: q.math_allow_drawing || false
+              math_allow_drawing: q.math_allow_drawing === true
             }));
           }
           
@@ -492,33 +498,27 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     let hasTextAnswers = false;
     let hasMathAnswers = false;
     
-    // Process math expressions first
-    // for (const q of questions) {
-    //   if (q.question_type === 'math_expression') {
-    //     hasMathAnswers = true;
-    //     const userMathAnswer = mathAnswers[q.id];
-    //     const expectedAnswer = q.math_expression;
-    //     const tolerance = q.math_tolerance || 0.01;
-        
-    //     if (userMathAnswer && expectedAnswer) {
-    //       const evaluation = evaluateMathExpression(userMathAnswer, expectedAnswer, tolerance);
-    //       results[q.id] = evaluation.isCorrect;
-          
-    //       if (evaluation.isCorrect) correctAnswers++;
-    //     } else {
-    //       results[q.id] = false;
-    //     }
-    //   }
-    // }
-    
+    // Process all questions including math expressions
     questions.forEach((q: any) => {
         if (q.question_type === 'text_answer') {
           // For text answers, we can't auto-grade, so mark as requiring manual grading
           results[q.id] = false; // Will be updated by teacher
           hasTextAnswers = true;
         } else if (q.question_type === 'math_expression') {
-          // Math expressions are handled above
-          return;
+          // Process math expressions
+          hasMathAnswers = true;
+          const userMathAnswer = mathAnswers[q.id];
+          const expectedAnswer = q.math_expression;
+          const tolerance = q.math_tolerance || 0.01;
+          
+          if (userMathAnswer && expectedAnswer) {
+            const evaluation = evaluateMathExpression(userMathAnswer, expectedAnswer, tolerance);
+            results[q.id] = evaluation.isCorrect;
+            
+            if (evaluation.isCorrect) correctAnswers++;
+          } else {
+            results[q.id] = false;
+          }
         } else {
           const correctOptions = q.options.filter((opt: any) => opt.is_correct);
           const userAnswer = userAnswers[q.id] as string | string[] | undefined;
@@ -544,7 +544,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         }
     });
     
-    // Calculate score only for auto-graded questions
+    // Calculate score only for auto-graded questions (exclude text_answer which requires manual grading)
     const autoGradedQuestions = questions.filter((q: any) => q.question_type !== 'text_answer');
     const score = autoGradedQuestions.length > 0 ? (correctAnswers / autoGradedQuestions.length) * 100 : 0;
     
@@ -552,7 +552,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     const allAnswers = { ...userAnswers, ...textAnswers, ...mathAnswers, ...mathDrawings };
     
     // For quizzes with text answers, we'll let the database trigger handle the score
-    // For regular quizzes, we can provide an immediate score
+    // For regular quizzes (including math expressions), we can provide an immediate score
     const finalScore = hasTextAnswers ? null : score;
     
     // Use the new retry system for creating attempts
@@ -1061,27 +1061,6 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                     
                     {isMathExpression ? (
                       <>
-                        {/* Debug logging */}
-                        {console.log('Math question debug:', {
-                          questionId: q.id,
-                          math_allow_drawing: q.math_allow_drawing,
-                          math_expression: q.math_expression,
-                          math_hint: q.math_hint,
-                          question: q
-                        })}
-                        {/* Test database schema */}
-                        {(() => {
-                          // Test if math fields exist in database
-                          supabase
-                            .from('quiz_questions')
-                            .select('id, math_allow_drawing, math_expression, math_hint')
-                            .eq('id', q.id)
-                            .single()
-                            .then(({ data, error }) => {
-                              console.log('Database test for question', q.id, ':', { data, error });
-                            });
-                          return null;
-                        })()}
                         <MathExpressionInput
                           questionId={q.id}
                           value={mathAnswer || ''}
@@ -1091,10 +1070,72 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                           expectedAnswer={q.math_expression}
                           tolerance={q.math_tolerance}
                           hint={q.math_hint}
-                          allowDrawing={q.math_allow_drawing || false}
+                          allowDrawing={q.math_allow_drawing === true}
                           drawingData={mathDrawings[q.id] || ''}
                           onDrawingChange={(drawingData) => setMathDrawings(prev => ({ ...prev, [q.id]: drawingData }))}
                         />
+                        
+                        {/* Math Expression Review Section - Show after submission */}
+                        {hasSubmitted && (
+                          <div className="space-y-4 mt-4">
+                            <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 border-2 border-blue-200 dark:border-blue-700/50 rounded-xl shadow-sm">
+                              <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-3 flex items-center gap-2">
+                                <div className="w-4 h-4 text-blue-600 dark:text-blue-400">📝</div>
+                                Your Answer:
+                              </h4>
+                              <div className="p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg border border-blue-200/50 dark:border-blue-700/30">
+                                <p className="text-gray-900 dark:text-gray-100 font-mono text-lg leading-relaxed">
+                                  {mathAnswer || (
+                                    <span className="text-gray-500 dark:text-gray-400 italic">No answer provided</span>
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                            
+                            {q.math_expression && (
+                              <div className="p-4 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-800/10 border-2 border-green-200 dark:border-green-700/50 rounded-xl shadow-sm">
+                                <h4 className="font-semibold text-green-900 dark:text-green-100 mb-3 flex items-center gap-2">
+                                  <div className="w-4 h-4 text-green-600 dark:text-green-400">✅</div>
+                                  Correct Answer:
+                                </h4>
+                                <div className="p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg border border-green-200/50 dark:border-green-700/30">
+                                  <p className="text-gray-900 dark:text-gray-100 font-mono text-lg leading-relaxed">
+                                    {q.math_expression}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Show if answer was correct or incorrect */}
+                            {currentContentItem.submission?.results && currentContentItem.submission.results[q.id] !== undefined && (
+                              <div className={`p-4 rounded-xl shadow-sm border-2 ${
+                                currentContentItem.submission.results[q.id] 
+                                  ? 'bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-800/10 border-green-200 dark:border-green-700/50'
+                                  : 'bg-gradient-to-br from-red-50 to-red-100/50 dark:from-red-900/20 dark:to-red-800/10 border-red-200 dark:border-red-700/50'
+                              }`}>
+                                <div className={`flex items-center gap-2 font-semibold ${
+                                  currentContentItem.submission.results[q.id] 
+                                    ? 'text-green-900 dark:text-green-100'
+                                    : 'text-red-900 dark:text-red-100'
+                                }`}>
+                                  <div className={`w-4 h-4 ${
+                                    currentContentItem.submission.results[q.id] 
+                                      ? 'text-green-600 dark:text-green-400'
+                                      : 'text-red-600 dark:text-red-400'
+                                  }`}>
+                                    {currentContentItem.submission.results[q.id] ? '✅' : '❌'}
+                                  </div>
+                                  {currentContentItem.submission.results[q.id] ? 'Correct!' : 'Incorrect'}
+                                </div>
+                                {q.math_tolerance && (
+                                  <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                                    <span className="font-medium">Tolerance used:</span> {q.math_tolerance}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </>
                     ) : isTextAnswer ? (
                       <div className="space-y-3">

@@ -56,7 +56,7 @@ interface Submission {
 interface QuizQuestion {
   id: string;
   question_text: string;
-  question_type: 'single_choice' | 'multiple_choice' | 'text_answer';
+  question_type: 'single_choice' | 'multiple_choice' | 'text_answer' | 'math_expression';
   options: {
     id: string;
     option_text: string;
@@ -64,6 +64,11 @@ interface QuizQuestion {
     position: number;
   }[];
   position: number;
+  // Math-specific fields
+  math_expression?: string;
+  math_tolerance?: number;
+  math_hint?: string;
+  math_allow_drawing?: boolean;
 }
 
 interface AssignmentDetails {
@@ -880,10 +885,16 @@ export const AssignmentSubmissions = () => {
                                   Question {qIndex + 1}
                                 </Badge>
                                 <Badge 
-                                  variant={question.question_type === 'multiple_choice' ? 'blue' : question.question_type === 'text_answer' ? 'warning' : 'default'}
+                                  variant={
+                                    question.question_type === 'multiple_choice' ? 'blue' : 
+                                    question.question_type === 'text_answer' ? 'warning' : 
+                                    question.question_type === 'math_expression' ? 'secondary' : 'default'
+                                  }
                                   className="text-xs"
                                 >
-                                  {question.question_type === 'multiple_choice' ? 'Multiple Choice' : question.question_type === 'text_answer' ? 'Text Answer' : 'Single Choice'}
+                                  {question.question_type === 'multiple_choice' ? 'Multiple Choice' : 
+                                   question.question_type === 'text_answer' ? 'Text Answer' : 
+                                   question.question_type === 'math_expression' ? 'Math Expression' : 'Single Choice'}
                                 </Badge>
                               </div>
                               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -895,6 +906,12 @@ export const AssignmentSubmissions = () => {
                                 <Badge variant="outline" className="text-orange-600 border-orange-600 text-xs">
                                   Manual Grading Required
                                 </Badge>
+                              ) : question.question_type === 'math_expression' ? (
+                                isCorrect ? (
+                                  <CheckCircle className="h-6 w-6 text-green-600" />
+                                ) : (
+                                  <XCircle className="h-6 w-6 text-red-600" />
+                                )
                               ) : isCorrect ? (
                                 <CheckCircle className="h-6 w-6 text-green-600" />
                               ) : (
@@ -973,6 +990,42 @@ export const AssignmentSubmissions = () => {
                                     />
                                   </div>
                                 </div>
+                              </div>
+                            ) : question.question_type === 'math_expression' ? (
+                              <div className="space-y-4">
+                                <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 border-2 border-blue-200 dark:border-blue-700/50 rounded-xl shadow-sm">
+                                  <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-3 flex items-center gap-2">
+                                    <Circle className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                    Student's Math Expression:
+                                  </h4>
+                                  <div className="p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg border border-blue-200/50 dark:border-blue-700/30">
+                                    <p className="text-gray-900 dark:text-gray-100 font-mono text-lg leading-relaxed">
+                                      {studentAnswer || (
+                                        <span className="text-gray-500 dark:text-gray-400 italic">No answer provided</span>
+                                      )}
+                                    </p>
+                                  </div>
+                                </div>
+                                
+                                {question.math_expression && (
+                                  <div className="p-4 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-800/10 border-2 border-green-200 dark:border-green-700/50 rounded-xl shadow-sm">
+                                    <h4 className="font-semibold text-green-900 dark:text-green-100 mb-3 flex items-center gap-2">
+                                      <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+                                      Expected Answer:
+                                    </h4>
+                                    <div className="p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg border border-green-200/50 dark:border-green-700/30">
+                                      <p className="text-gray-900 dark:text-gray-100 font-mono text-lg leading-relaxed">
+                                        {question.math_expression}
+                                      </p>
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {question.math_tolerance && (
+                                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                                    <span className="font-medium">Tolerance:</span> {question.math_tolerance}
+                                  </div>
+                                )}
                               </div>
                             ) : (
                               question.options.map((option) => {
@@ -1059,7 +1112,9 @@ export const AssignmentSubmissions = () => {
                                     ? `Selected ${studentAnswer.length} option(s)`
                                     : 'No answer selected'
                                   : studentAnswer 
-                                    ? 'Answered'
+                                    ? question.question_type === 'math_expression' 
+                                      ? `Math Expression: ${studentAnswer}`
+                                      : 'Answered'
                                     : 'No answer selected'
                                 }
                               </div>

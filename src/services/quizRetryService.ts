@@ -403,10 +403,10 @@ export class QuizRetryService {
   /**
    * Get client IP address (for academic integrity tracking)
    */
-  static getClientIP(): string {
+  static getClientIP(): string | null {
     // This would need to be implemented based on your setup
-    // For now, return a placeholder
-    return 'unknown';
+    // For now, return null to avoid database errors
+    return null;
   }
 
   /**

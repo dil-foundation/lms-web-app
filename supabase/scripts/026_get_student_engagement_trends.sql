@@ -95,31 +95,18 @@ BEGIN
       AND ucip.course_id IN (SELECT course_id FROM teacher_courses)
     GROUP BY p.period_number, p.period_label, p.period_start
   )
-  SELECT * FROM (
-    SELECT 
-      ad.period_label,
-      ad.active_students,
-      CASE 
-        WHEN ad.total_activities > 0 THEN 
-          ROUND((ad.completed_lessons::DECIMAL / ad.total_activities) * 100)::INTEGER
-        ELSE 0
-      END as completion_rate,
-      ROUND(ad.total_time_spent / 60)::INTEGER as time_spent,
-      ad.period_number::INTEGER as period_number
-    FROM activity_data ad
-    WHERE ad.total_activities > 0
-    
-    UNION ALL
-    
-    -- If no activity data, return empty set for the frontend to handle
-    SELECT 
-      'No Activity'::TEXT as period_label,
-      0::INTEGER as active_students,
-      0::INTEGER as completion_rate,
-      0::INTEGER as time_spent,
-      999::INTEGER as period_number
-    WHERE NOT EXISTS (SELECT 1 FROM activity_data WHERE total_activities > 0)
-  ) combined_data
-  ORDER BY period_number;
+  SELECT 
+    ad.period_label,
+    ad.active_students,
+    CASE 
+      WHEN ad.total_activities > 0 THEN 
+        ROUND((ad.completed_lessons::DECIMAL / ad.total_activities) * 100)::INTEGER
+      ELSE 0
+    END as completion_rate,
+    ROUND(ad.total_time_spent / 60)::INTEGER as time_spent,
+    ad.period_number::INTEGER as period_number
+  FROM activity_data ad
+  WHERE ad.total_activities > 0
+  ORDER BY ad.period_number;
 END;
 $$;
