@@ -44,7 +44,7 @@ jobs:
 
       - name: Build (Vite)
         # make sure package.json has: "build": "vite build"
-        run: npm run build
+        run: npm run build:prod
 
       - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
