@@ -1,5 +1,5 @@
 import { BASE_API_URL } from '@/config/api';
-import { getAuthHeaders } from '@/utils/authUtils';
+import { getAuthHeadersWithAccept } from '@/utils/authUtils';
 
 // Fallback topics for when API is not available
 const fallbackTopics: SpontaneousSpeechTopic[] = [
@@ -133,7 +133,7 @@ class SpontaneousSpeechService {
     try {
       const response = await fetch(`${this.baseUrl}/api/spontaneous-speech-topics`, {
         method: 'GET',
-        headers: getAuthHeaders(),
+        headers: getAuthHeadersWithAccept(),
       });
 
       if (!response.ok) {
@@ -193,7 +193,7 @@ class SpontaneousSpeechService {
     try {
       const response = await fetch(`${this.baseUrl}/api/spontaneous-speech-topics/${topicId}`, {
         method: 'GET',
-        headers: getAuthHeaders(),
+        headers: getAuthHeadersWithAccept(),
       });
 
       if (!response.ok) {
@@ -234,7 +234,7 @@ class SpontaneousSpeechService {
     try {
       const response = await fetch(`${this.baseUrl}/api/spontaneous-speech/${topicId}`, {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: getAuthHeadersWithAccept(),
       });
 
       if (!response.ok) {
@@ -295,7 +295,7 @@ class SpontaneousSpeechService {
     try {
       const response = await fetch(`${this.baseUrl}/api/evaluate-spontaneous-speech`, {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: getAuthHeadersWithAccept(),
         body: JSON.stringify({
           audio_base64: audioBase64,
           topic_id: topicId,

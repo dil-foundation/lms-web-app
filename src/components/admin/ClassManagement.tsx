@@ -288,34 +288,40 @@ const ClassManagement: React.FC = () => {
   };
 
   const openEditDialog = (cls: ClassWithMembers) => {
-    setEditingClass(cls);
-    setFormData({
-      name: cls.name,
-      code: cls.code,
-      grade: cls.grade,
-      school_id: cls.school_id || '',
-      board_id: cls.board_id || '',
-      description: cls.description,
-      max_students: String(cls.max_students || 30),
-      teachers: cls.teachers.map(t => t.id),
-      students: cls.students.map(s => s.id)
-    });
-    // Clear validation errors when opening edit dialog
-    setValidationErrors({
-      name: '',
-      code: '',
-      grade: '',
-      school_id: '',
-      board_id: '',
-      description: '',
-      max_students: ''
-    });
-    setIsEditDialogOpen(true);
+    // Small delay to ensure dropdown is fully closed
+    setTimeout(() => {
+      setEditingClass(cls);
+      setFormData({
+        name: cls.name,
+        code: cls.code,
+        grade: cls.grade,
+        school_id: cls.school_id || '',
+        board_id: cls.board_id || '',
+        description: cls.description,
+        max_students: String(cls.max_students || 30),
+        teachers: cls.teachers.map(t => t.id),
+        students: cls.students.map(s => s.id)
+      });
+      // Clear validation errors when opening edit dialog
+      setValidationErrors({
+        name: '',
+        code: '',
+        grade: '',
+        school_id: '',
+        board_id: '',
+        description: '',
+        max_students: ''
+      });
+      setIsEditDialogOpen(true);
+    }, 100);
   };
 
   const openViewDialog = (cls: ClassWithMembers) => {
-    setViewingClass(cls);
-    setIsViewDialogOpen(true);
+    // Small delay to ensure dropdown is fully closed
+    setTimeout(() => {
+      setViewingClass(cls);
+      setIsViewDialogOpen(true);
+    }, 100);
   };
 
   const resetForm = () => {
@@ -1249,10 +1255,10 @@ const ClassManagement: React.FC = () => {
 
       {/* Edit Class Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
-          <DialogHeader className="flex-shrink-0">
-            <DialogTitle>Edit Class</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col border-primary/20">
+          <DialogHeader className="flex-shrink-0 border-b border-primary/10 pb-4">
+            <DialogTitle className="text-primary text-xl font-semibold">Edit Class</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
               Update the information for {editingClass?.name}.
             </DialogDescription>
           </DialogHeader>
@@ -1489,13 +1495,13 @@ const ClassManagement: React.FC = () => {
              </div>
             </div>
           </div>
-          <DialogFooter className="flex-shrink-0">
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+          <DialogFooter className="flex-shrink-0 border-t border-primary/10 pt-4">
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} className="border-primary/20 text-primary hover:bg-primary/5">
               Cancel
             </Button>
             <Button 
               onClick={handleEdit} 
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-primary hover:bg-primary/90 text-white"
               disabled={loading || !!validationErrors.name || !!validationErrors.code || !!validationErrors.grade || !!validationErrors.board_id || !!validationErrors.school_id || !!validationErrors.max_students || !!validationErrors.description}
             >
               {loading ? (
@@ -1513,10 +1519,10 @@ const ClassManagement: React.FC = () => {
 
       {/* View Class Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Class Details</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="max-w-4xl border-primary/20">
+          <DialogHeader className="border-b border-primary/10 pb-4">
+            <DialogTitle className="text-primary text-xl font-semibold">Class Details</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
               View detailed information about {viewingClass?.name}.
             </DialogDescription>
           </DialogHeader>
@@ -1545,7 +1551,7 @@ const ClassManagement: React.FC = () => {
                   </div>
                   <div>
                     <Label className="text-sm font-medium text-muted-foreground">Max Students</Label>
-                    <p className="text-lg font-semibold text-blue-600">{viewingClass.max_students || 30}</p>
+                    <p className="text-lg font-semibold text-primary">{viewingClass.max_students || 30}</p>
                   </div>
                 </div>
                 
@@ -1594,7 +1600,7 @@ const ClassManagement: React.FC = () => {
                   <div className="flex flex-wrap gap-2 mt-2">
                     {viewingClass.teachers.length > 0 ? (
                       viewingClass.teachers.map((teacher, index) => (
-                        <Badge key={index} variant="default" className="bg-green-600 text-white">
+                        <Badge key={index} variant="default" className="bg-primary text-white">
                           {teacher.name}
                         </Badge>
                       ))
@@ -1609,7 +1615,7 @@ const ClassManagement: React.FC = () => {
                   <div className="flex flex-wrap gap-2 mt-2">
                     {viewingClass.students.length > 0 ? (
                       viewingClass.students.map((student, index) => (
-                        <Badge key={index} variant="outline" className="border-blue-300 text-blue-700">
+                        <Badge key={index} variant="outline" className="border-primary/30 text-primary">
                           {student.name}
                         </Badge>
                       ))
@@ -1621,15 +1627,15 @@ const ClassManagement: React.FC = () => {
               </div>
             </div>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
+          <DialogFooter className="border-t border-primary/10 pt-4">
+            <Button variant="outline" onClick={() => setIsViewDialogOpen(false)} className="border-primary/20 text-primary hover:bg-primary/5">
               Close
             </Button>
             {viewingClass && (
               <Button onClick={() => {
                 setIsViewDialogOpen(false);
                 openEditDialog(viewingClass);
-              }} className="bg-blue-600 hover:bg-blue-700 text-white">
+              }} className="bg-primary hover:bg-primary/90 text-white">
                 Edit Class
               </Button>
             )}

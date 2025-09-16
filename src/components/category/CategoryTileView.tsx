@@ -26,6 +26,15 @@ export const CategoryTileView: React.FC<CategoryTileViewProps> = ({
   isDeleting = () => false,
   className
 }) => {
+  const handleView = (category: CourseCategory) => {
+    // Small delay to ensure dropdown is fully closed
+    setTimeout(() => onView(category), 100);
+  };
+
+  const handleEdit = (category: CourseCategory) => {
+    // Small delay to ensure dropdown is fully closed
+    setTimeout(() => onEdit(category), 100);
+  };
   return (
     <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 ${className}`}>
       {categories.map((category) => (
@@ -46,11 +55,11 @@ export const CategoryTileView: React.FC<CategoryTileViewProps> = ({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => onView(category)}>
+                  <DropdownMenuItem onClick={() => handleView(category)}>
                     <Eye className="mr-2 h-3 w-3" />
                     View Details
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onEdit(category)}>
+                  <DropdownMenuItem onClick={() => handleEdit(category)}>
                     <Edit className="mr-2 h-3 w-3" />
                     Edit Category
                   </DropdownMenuItem>

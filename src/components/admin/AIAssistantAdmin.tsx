@@ -29,6 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { PaginationControls } from '@/components/ui/PaginationControls';
 import {
   Bot,
   Plus,
@@ -75,6 +76,10 @@ export const APEXAdmin = () => {
   const [editingItem, setEditingItem] = useState<FAQItem | KnowledgeBaseItem | ContactInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('faqs');
+
+  // Pagination state for FAQs
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(8);
 
   // Data state
   const [faqs, setFaqs] = useState<FAQItem[]>([]);
@@ -396,8 +401,19 @@ export const APEXAdmin = () => {
     return matchesSearch && matchesCategory;
   });
 
+  // Pagination logic for FAQs
+  const totalPages = Math.ceil(filteredFAQs.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedFAQs = filteredFAQs.slice(startIndex, endIndex);
+
+  // Reset to first page when search or filter changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCategory]);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24">
       {/* Header */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
@@ -652,7 +668,7 @@ export const APEXAdmin = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredFAQs.map((faq) => (
+                  {paginatedFAQs.map((faq) => (
                     <TableRow key={faq.id}>
                       <TableCell className="font-medium">{faq.question}</TableCell>
                       <TableCell>
@@ -698,6 +714,22 @@ export const APEXAdmin = () => {
               </Table>
             </CardContent>
           </Card>
+
+          {/* Pagination Controls */}
+          {filteredFAQs.length > 0 && (
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredFAQs.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={setItemsPerPage}
+              itemsPerPageOptions={[5, 8, 10, 20, 50]}
+              showItemsPerPage={true}
+              showPageInfo={true}
+              className="mt-4"
+            />
+          )}
         </TabsContent>
 
         {/* Knowledge Base Tab */}

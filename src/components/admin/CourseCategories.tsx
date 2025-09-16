@@ -201,17 +201,23 @@ export const CourseCategories = () => {
 
   // Open edit dialog
   const openEditDialog = (category: CourseCategory) => {
-    setEditingCategory(category);
-    setFormData({
-      name: category.name
-    });
-    setIsEditDialogOpen(true);
+    // Small delay to ensure dropdown is fully closed
+    setTimeout(() => {
+      setEditingCategory(category);
+      setFormData({
+        name: category.name
+      });
+      setIsEditDialogOpen(true);
+    }, 100);
   };
 
   // Open view dialog
   const openViewDialog = (category: CourseCategory) => {
-    setViewingCategory(category);
-    setIsViewDialogOpen(true);
+    // Small delay to ensure dropdown is fully closed
+    setTimeout(() => {
+      setViewingCategory(category);
+      setIsViewDialogOpen(true);
+    }, 100);
   };
 
   // Reset form

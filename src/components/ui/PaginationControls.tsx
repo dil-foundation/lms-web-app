@@ -174,23 +174,22 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
 
         {/* Page numbers */}
         <div className="flex items-center gap-1">
-          {getPageNumbers().map((page, index) => (
-            <React.Fragment key={index}>
-              {page === '...' ? (
-                <span className="px-2 py-1 text-sm text-muted-foreground">...</span>
-              ) : (
-                <Button
-                  variant={currentPage === page ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => goToPage(page as number)}
-                  disabled={disabled}
-                  className="h-8 w-8 p-0"
-                >
-                  {page}
-                </Button>
-              )}
-            </React.Fragment>
-          ))}
+          {getPageNumbers().map((page, index) => 
+            page === '...' ? (
+              <span key={index} className="px-2 py-1 text-sm text-muted-foreground">...</span>
+            ) : (
+              <Button
+                key={index}
+                variant={currentPage === page ? "default" : "outline"}
+                size="sm"
+                onClick={() => goToPage(page as number)}
+                disabled={disabled}
+                className="h-8 w-8 p-0"
+              >
+                {page}
+              </Button>
+            )
+          )}
         </div>
 
         {/* Next page button */}

@@ -1,6 +1,9 @@
 /* Import Urdu font for proper rendering */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;500;600;700&display=swap');
 
+/* Import accessibility fixes */
+@import './styles/accessibility-fix.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

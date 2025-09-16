@@ -64,12 +64,14 @@ export const ClassListView: React.FC<ClassListViewProps> = ({
 
   const handleView = (e: React.MouseEvent, cls: ClassWithMembers) => {
     e.stopPropagation();
-    onView(cls);
+    // Small delay to ensure dropdown is fully closed
+    setTimeout(() => onView(cls), 100);
   };
 
   const handleEdit = (e: React.MouseEvent, cls: ClassWithMembers) => {
     e.stopPropagation();
-    onEdit(cls);
+    // Small delay to ensure dropdown is fully closed
+    setTimeout(() => onEdit(cls), 100);
   };
 
   const handleDelete = (e: React.MouseEvent, cls: ClassWithMembers) => {

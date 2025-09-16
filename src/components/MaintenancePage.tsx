@@ -44,8 +44,8 @@ const MaintenancePage: React.FC = () => {
     }
   };
 
-  const handleRefresh = () => {
-    window.location.reload();
+  const handleRefresh = async () => {
+    await checkMaintenanceStatus();
   };
 
   const handleGoHome = () => {

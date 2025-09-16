@@ -1,5 +1,5 @@
 import { BASE_API_URL } from '@/config/api';
-import { getAuthHeaders } from '@/utils/authUtils';
+import { getAuthHeadersWithAccept } from '@/utils/authUtils';
 
 // Interfaces
 export interface InDepthInterviewPrompt {
@@ -60,7 +60,7 @@ class InDepthInterviewService {
     try {
       const response = await fetch(`${this.baseUrl}/api/in-depth-interview-prompts`, {
         method: 'GET',
-        headers: getAuthHeaders(),
+        headers: getAuthHeadersWithAccept(),
       });
 
       if (!response.ok) {
@@ -92,7 +92,7 @@ class InDepthInterviewService {
     try {
       const response = await fetch(`${this.baseUrl}/api/in-depth-interview-prompts/${promptId}`, {
         method: 'GET',
-        headers: getAuthHeaders(),
+        headers: getAuthHeadersWithAccept(),
       });
 
       if (!response.ok) {
@@ -116,7 +116,7 @@ class InDepthInterviewService {
 
       const response = await fetch(`${this.baseUrl}/api/in-depth-interview/${promptId}`, {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: getAuthHeadersWithAccept(),
         signal: controller.signal,
       });
 
@@ -178,7 +178,7 @@ class InDepthInterviewService {
 
       const response = await fetch(`${this.baseUrl}/api/evaluate-in-depth-interview`, {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: getAuthHeadersWithAccept(),
         body: JSON.stringify(evaluationData),
         signal: controller.signal,
       });

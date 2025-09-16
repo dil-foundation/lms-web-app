@@ -44,6 +44,7 @@ export default function NewsSummaryChallenge() {
   const timeSpentRef = useRef<number>(0);
   const [isCompleted, setIsCompleted] = useState(false);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   // Load news items from API
   useEffect(() => {
@@ -67,7 +68,7 @@ export default function NewsSummaryChallenge() {
     };
 
     loadNewsItems();
-  }, []);
+  }, [retryCount]); // Add retryCount as dependency to re-trigger fetch
 
   // Track time spent
   useEffect(() => {
@@ -234,9 +235,15 @@ export default function NewsSummaryChallenge() {
 
   const handleRetry = () => {
     setError(null);
-    setIsLoading(true);
-    // Trigger re-fetch
-    window.location.reload();
+    setCurrentItemIndex(0);
+    setEvaluationResult(null);
+    setIsCompleted(false);
+    setShowCompletionDialog(false);
+    stopAudio();
+    resetRecording();
+    // Re-trigger the data fetch by incrementing retry count
+    setRetryCount(prev => prev + 1);
+    console.log('✅ News summary challenge retry initiated');
   };
 
   const handleNextArticle = () => {

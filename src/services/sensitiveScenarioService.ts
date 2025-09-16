@@ -1,5 +1,5 @@
 import { BASE_API_URL } from '@/config/api';
-import { getAuthHeaders } from '@/utils/authUtils';
+import { getAuthHeadersWithAccept } from '@/utils/authUtils';
 
 // Interfaces
 export interface SensitiveScenario {
@@ -75,7 +75,7 @@ class SensitiveScenarioService {
     try {
       const response = await fetch(`${this.baseUrl}/api/sensitive-scenario-scenarios`, {
         method: 'GET',
-        headers: getAuthHeaders(),
+        headers: getAuthHeadersWithAccept(),
       });
 
       if (!response.ok) {
@@ -118,7 +118,7 @@ class SensitiveScenarioService {
     try {
       const response = await fetch(`${this.baseUrl}/api/sensitive-scenario-scenarios/${scenarioId}`, {
         method: 'GET',
-        headers: getAuthHeaders(),
+        headers: getAuthHeadersWithAccept(),
       });
 
       if (!response.ok) {
@@ -148,7 +148,7 @@ class SensitiveScenarioService {
     try {
       const response = await fetch(`${this.baseUrl}/api/sensitive-scenario/${scenarioId}`, {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: getAuthHeadersWithAccept(),
       });
 
       if (!response.ok) {
@@ -221,7 +221,7 @@ class SensitiveScenarioService {
     try {
       const response = await fetch(`${this.baseUrl}/api/evaluate-critical-opinion`, {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: getAuthHeadersWithAccept(),
         body: JSON.stringify({
           audio_base64: audioBase64,
           topic_id: topicId,

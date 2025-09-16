@@ -77,6 +77,14 @@ class AdminDashboardService {
     this.requestCache.set(cacheKey, { data, timestamp: Date.now() });
   }
 
+  // Cleanup method to abort ongoing requests
+  cleanup(): void {
+    if (this.currentController) {
+      this.currentController.abort();
+      this.currentController = null;
+    }
+  }
+
   async getAllOverviewData(timeRange: string = 'all_time', filters?: DashboardFilters): Promise<{
     overview: DashboardOverviewData;
     keyMetrics: KeyMetricsData;
@@ -127,7 +135,7 @@ class AdminDashboardService {
     } catch (error: any) {
       if (error.name === 'AbortError') {
         console.log('🚫 Admin dashboard request was cancelled');
-        // Re-throw the original AbortError to preserve the error type
+        // Don't wrap AbortError - let it propagate as-is
         throw error;
       }
       console.error('❌ Error fetching admin dashboard data:', error);
@@ -141,15 +149,15 @@ class AdminDashboardService {
   // Implement fetch functions directly in the class to avoid closure issues
   private async fetchDashboardOverview(timeRange: string, filters?: DashboardFilters, signal?: AbortSignal): Promise<DashboardOverviewData> {
     try {
-      // Use provided signal or create a new one
-      const controller = signal ? null : new AbortController();
-      const requestSignal = signal || controller?.signal;
-      const timeoutId = setTimeout(() => {
-        if (controller) controller.abort();
-        else if (signal && !signal.aborted) {
-          console.warn('⚠️ Cannot abort external signal, request may continue');
-        }
-      }, 15000); // Increased timeout to 15 seconds
+      // Use provided signal directly without creating additional controllers
+      let timeoutId: NodeJS.Timeout | null = null;
+      
+      // Only set timeout if we have a signal and it's not already aborted
+      if (signal && !signal.aborted) {
+        timeoutId = setTimeout(() => {
+          console.warn('⚠️ Request timeout for dashboard overview');
+        }, 15000); // 15 seconds timeout warning only
+      }
 
       console.log('🔍 Fetching dashboard overview data with timeRange:', timeRange, 'filters:', filters);
 
@@ -170,7 +178,7 @@ class AdminDashboardService {
       const response = await fetch(url.toString(), {
         method: 'GET',
         headers: getAuthHeadersWithAccept(),
-        signal: requestSignal,
+        signal: signal,
       });
 
       clearTimeout(timeoutId);
@@ -217,6 +225,10 @@ class AdminDashboardService {
       };
 
     } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('🚫 Dashboard overview request was cancelled');
+        throw error; // Re-throw AbortError as-is
+      }
       console.error('❌ Error fetching dashboard overview:', error);
       throw new Error(`Failed to fetch dashboard overview: ${error.message}`);
     }
@@ -298,6 +310,10 @@ class AdminDashboardService {
       };
 
     } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('🚫 Key metrics request was cancelled');
+        throw error; // Re-throw AbortError as-is
+      }
       console.error('❌ Error fetching key metrics:', error);
       throw new Error(`Failed to fetch key metrics: ${error.message}`);
     }
@@ -380,6 +396,10 @@ class AdminDashboardService {
       };
 
     } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('🚫 Learn usage request was cancelled');
+        throw error; // Re-throw AbortError as-is
+      }
       console.error('❌ Error fetching learn usage:', error);
       throw new Error(`Failed to fetch learn usage: ${error.message}`);
     }
@@ -498,6 +518,10 @@ class AdminDashboardService {
       };
 
     } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('🚫 Most accessed lessons request was cancelled');
+        throw error; // Re-throw AbortError as-is
+      }
       console.error('❌ Error fetching most accessed lessons:', error);
       throw new Error(`Failed to fetch most accessed lessons: ${error.message}`);
     }
