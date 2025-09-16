@@ -226,11 +226,11 @@ const LinkCard = ({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-gradient-to-r from-green-100 to-green-200 text-green-800 dark:from-green-900/30 dark:to-green-800/30 dark:text-green-400 border border-green-200 dark:border-green-800/50';
-      case 'expired': return 'bg-gradient-to-r from-red-100 to-red-200 text-red-800 dark:from-red-900/30 dark:to-red-800/30 dark:text-red-400 border border-red-200 dark:border-red-800/50';
-      case 'used': return 'bg-gradient-to-r from-blue-100 to-blue-200 text-white dark:from-blue-900/30 dark:to-blue-800/30 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50';
-      case 'deactivated': return 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 dark:from-gray-900/30 dark:to-gray-800/30 dark:text-gray-400 border border-gray-200 dark:border-gray-800/50';
-      default: return 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 dark:from-gray-900/30 dark:to-gray-800/30 dark:text-gray-400 border border-gray-200 dark:border-gray-800/50';
+      case 'active': return 'bg-green-500 text-white dark:bg-green-600 dark:text-white border border-green-600 dark:border-green-500 shadow-sm';
+      case 'expired': return 'bg-red-500 text-white dark:bg-red-600 dark:text-white border border-red-600 dark:border-red-500 shadow-sm';
+      case 'used': return 'bg-blue-500 text-white dark:bg-blue-600 dark:text-white border border-blue-600 dark:border-blue-500 shadow-sm';
+      case 'deactivated': return 'bg-gray-500 text-white dark:bg-gray-600 dark:text-white border border-gray-600 dark:border-gray-500 shadow-sm';
+      default: return 'bg-gray-500 text-white dark:bg-gray-600 dark:text-white border border-gray-600 dark:border-gray-500 shadow-sm';
     }
   };
 
@@ -244,8 +244,8 @@ const LinkCard = ({
           {/* Left section - Main info */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-green-500/10 to-green-600/20 rounded-xl flex items-center justify-center">
-                <Shield className="w-4 h-4 text-green-600" />
+              <div className="w-8 h-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
+                <Shield className="w-4 h-4 text-primary" />
               </div>
               <h3 className="text-lg font-bold text-foreground">
                 {link.role}

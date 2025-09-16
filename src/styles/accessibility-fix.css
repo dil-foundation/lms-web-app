@@ -1,0 +1,17 @@
+/* Fix for aria-hidden elements blocking focus */
+/* This addresses the "Blocked aria-hidden on an element because its descendant retained focus" error */
+
+/* Simple fix: Hide stuck Radix UI components completely when aria-hidden */
+[data-radix-popper-content-wrapper][aria-hidden="true"],
+[data-radix-dialog-overlay][aria-hidden="true"],
+[data-radix-dropdown-menu-content][aria-hidden="true"],
+[data-radix-popover-content][aria-hidden="true"] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Ensure closed Radix components are properly hidden */
+[data-state="closed"] {
+  display: none !important;
+}

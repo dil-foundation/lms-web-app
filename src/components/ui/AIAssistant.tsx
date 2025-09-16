@@ -23,8 +23,6 @@ import {
   Mail,
   HelpCircle,
   Sparkles,
-  Minimize2,
-  Maximize2,
   RotateCcw,
   ChevronDown,
   ChevronUp,
@@ -50,7 +48,6 @@ export const APEX: React.FC<APEXProps> = ({ className }) => {
   } = useAPEX();
 
   const [inputValue, setInputValue] = useState('');
-  const [isMinimized, setIsMinimized] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -89,10 +86,6 @@ export const APEX: React.FC<APEXProps> = ({ className }) => {
 
   const handleContactAdmin = async () => {
     await contactAdmin();
-  };
-
-  const toggleMinimize = () => {
-    setIsMinimized(!isMinimized);
   };
 
   const MessageBubble: React.FC<{ message: any }> = ({ message }) => {
@@ -236,7 +229,7 @@ export const APEX: React.FC<APEXProps> = ({ className }) => {
 
       {/* Chat Dialog */}
       <Dialog open={state.isOpen} onOpenChange={closeAssistant}>
-        <DialogContent className="max-w-md h-[600px] p-0 flex flex-col">
+        <DialogContent className="max-w-md h-[600px] p-0 flex flex-col" hideCloseButton>
           <DialogHeader className="p-4 pb-2 border-b">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -253,104 +246,73 @@ export const APEX: React.FC<APEXProps> = ({ className }) => {
                  <Button
                    variant="ghost"
                    size="sm"
-                   onClick={toggleMinimize}
-                   className="h-8 w-8 p-0 hover:bg-muted/50 rounded-lg transition-colors"
-                 >
-                   {isMinimized ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
-                 </Button>
-                 <Button
-                   variant="ghost"
-                   size="sm"
                    onClick={clearMessages}
                    className="h-8 w-8 p-0 hover:bg-muted/50 rounded-lg transition-colors"
                  >
                    <RotateCcw className="h-4 w-4" />
                  </Button>
+                 <Button
+                   variant="ghost"
+                   size="sm"
+                   onClick={closeAssistant}
+                   className="h-8 w-8 p-0 hover:bg-muted/50 rounded-lg transition-colors"
+                 >
+                   <X className="h-4 w-4" />
+                 </Button>
                </div>
             </div>
           </DialogHeader>
 
-          {!isMinimized && (
-            <>
-              {/* Messages Area */}
-              <ScrollArea className="flex-1 p-4">
-                <div className="space-y-4">
-                  {state.messages.map((message) => (
-                    <MessageBubble key={message.id} message={message} />
-                  ))}
-                  
-                  {state.isTyping && <TypingIndicator />}
-                  
-                  <div ref={messagesEndRef} />
-                </div>
-              </ScrollArea>
-
-              <Separator />
-
-              {/* Input Area */}
-              <div className="p-4">
-                <div className="flex gap-2">
-                  <Input
-                    ref={inputRef}
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Ask me anything about the platform..."
-                    disabled={state.isLoading}
-                    className="flex-1"
-                  />
-                  <Button
-                    onClick={handleSendMessage}
-                    disabled={!inputValue.trim() || state.isLoading}
-                    size="sm"
-                    className="px-3"
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </div>
-                
-                {/* Quick Actions */}
-                <div className="flex gap-2 mt-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleContactAdmin()}
-                    className="text-xs"
-                  >
-                    <Phone className="w-3 h-3 mr-1" />
-                    Contact Admin
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleQuickReply("I need help with my account")}
-                    className="text-xs"
-                  >
-                    <HelpCircle className="w-3 h-3 mr-1" />
-                    Account Help
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
-
-          {isMinimized && (
-            <div className="flex-1 flex items-center justify-center p-4">
-              <div className="text-center">
-                <Bot className="w-12 h-12 text-primary/50 mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">AI Assistant minimized</p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={toggleMinimize}
-                  className="mt-2"
-                >
-                  <Maximize2 className="w-4 h-4 mr-1" />
-                  Expand
-                </Button>
-              </div>
+          {/* Messages Area */}
+          <ScrollArea className="flex-1 p-4">
+            <div className="space-y-4">
+              {state.messages.map((message) => (
+                <MessageBubble key={message.id} message={message} />
+              ))}
+              
+              {state.isTyping && <TypingIndicator />}
+              
+              <div ref={messagesEndRef} />
             </div>
-          )}
+          </ScrollArea>
+
+          <Separator />
+
+          {/* Input Area */}
+          <div className="p-4">
+            <div className="flex gap-2">
+              <Input
+                ref={inputRef}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Ask me anything about the platform..."
+                disabled={state.isLoading}
+                className="flex-1"
+              />
+              <Button
+                onClick={handleSendMessage}
+                disabled={!inputValue.trim() || state.isLoading}
+                size="sm"
+                className="px-3"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            {/* Quick Actions */}
+            <div className="flex gap-2 mt-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleQuickReply("I need help with my account")}
+                className="text-xs"
+              >
+                <HelpCircle className="w-3 h-3 mr-1" />
+                Account Help
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </>

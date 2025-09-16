@@ -1,4 +1,4 @@
-name: Build and Deploy to S3
+name: Build & Deploy (Vite → S3 + CloudFront)
 
 on:
   # push:
@@ -21,140 +21,62 @@ on:
         default: false
         type: boolean
 
-env:
-  NODE_VERSION: '18'
-  AWS_REGION: 'us-east-1'
-
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Debug workflow info
-      run: |
-        echo "🔍 Workflow Debug Information:"
-        echo "Event name: ${{ github.event_name }}"
-        echo "Ref: ${{ github.ref }}"
-        echo "Ref name: ${{ github.ref_name }}"
-        echo "Actor: ${{ github.actor }}"
-        echo "Repository: ${{ github.repository }}"
-        echo "Working directory: $(pwd)"
-        echo "Files in root: $(ls -la)"
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-
-    - name: Install dependencies
-      run: npm ci
-
-    # - name: Run linting
-    #   run: npm run lint
-
-    - name: Build application
-      run: |
-        echo "🏗️ Building application..."
-        echo "📦 Environment variables being used:"
-        echo "VITE_API_BASE_URL: ${VITE_API_BASE_URL:+SET}"
-        echo "VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:+SET}"
-        echo "VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:+SET}"
-        echo "VITE_OPENAI_API_KEY: ${VITE_OPENAI_API_KEY:+SET}"
-        echo "VITE_BULK_UPLOAD_XLSX_TEMPLATE_URL: ${VITE_BULK_UPLOAD_XLSX_TEMPLATE_URL:+SET}"
-        echo "VITE_AUTH_TOKEN: ${VITE_AUTH_TOKEN:+SET}"
-        npm run build:prod
-        echo "✅ Build completed successfully"
-      env:
-        VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
-        VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-        VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-        # VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-        # VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
-        # VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-        # VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
-        # VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
-        # VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
-        VITE_OPENAI_API_KEY: ${{ secrets.VITE_OPENAI_API_KEY }}
-        VITE_BULK_UPLOAD_XLSX_TEMPLATE_URL: ${{ secrets.VITE_BULK_UPLOAD_XLSX_TEMPLATE_URL }}
-        VITE_AUTH_TOKEN: ${{ secrets.VITE_AUTH_TOKEN }}
-
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: dist
-        path: dist/
-        retention-days: 1
-
   deploy:
-    needs: build
     runs-on: ubuntu-latest
-    if: |
-      (github.event_name == 'workflow_dispatch' && !inputs.skip_deploy) ||
-      (github.ref == 'refs/heads/main' && github.event_name == 'push')
-    
+
+    permissions:
+      id-token: write
+      contents: read
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Download build artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: dist
-        path: dist/
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
+      - name: Install deps
+        run: npm ci
 
-    - name: Set deployment variables
-      run: |
-        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-          echo "DEPLOYMENT_TYPE=manual" >> $GITHUB_ENV
-          echo "ENVIRONMENT=${{ inputs.environment }}" >> $GITHUB_ENV
-        else
-          echo "DEPLOYMENT_TYPE=automatic" >> $GITHUB_ENV
-          echo "ENVIRONMENT=production" >> $GITHUB_ENV
-        fi
+      - name: Build (Vite)
+        # make sure package.json has: "build": "vite build"
+        run: npm run build:prod
+        env:
+          # Explicitly set environment variables for the build process
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+          VITE_AUTH_TOKEN: ${{ secrets.VITE_AUTH_TOKEN }}
+          VITE_BULK_UPLOAD_XLSX_TEMPLATE_URL: ${{ secrets.VITE_BULK_UPLOAD_XLSX_TEMPLATE_URL }}
+          VITE_MCP_ADAPTER_URL: ${{ secrets.VITE_MCP_ADAPTER_URL }}
+          VITE_MCP_SSE_URL: ${{ secrets.VITE_MCP_SSE_URL }}
+          VITE_OPENAI_API_KEY: ${{ secrets.VITE_OPENAI_API_KEY }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
 
-    - name: Deploy to S3
-      run: |
-        echo "🚀 Deploying to ${{ env.ENVIRONMENT }} environment (${{ env.DEPLOYMENT_TYPE }} deployment)"
-        
-        # Sync files to S3 bucket
-        aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_NAME }} --delete
-        
-        # Set proper cache headers for different file types
-        # aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/ s3://${{ secrets.S3_BUCKET_NAME }}/ --recursive --metadata-directive REPLACE --cache-control "max-age=31536000" --exclude "*.html" --exclude "service-worker.js"
-        
-        # Set shorter cache for HTML files
-        #aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/ s3://${{ secrets.S3_BUCKET_NAME }}/ --recursive --metadata-directive REPLACE --cache-control "max-age=0, no-cache, no-store, must-revalidate" --include "*.html"
-        
-        # Set no-cache for service worker
-        aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/ s3://${{ secrets.S3_BUCKET_NAME }}/ --recursive --metadata-directive REPLACE --cache-control "max-age=0, no-cache, no-store, must-revalidate" --include "*.*"
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-    - name: Invalidate CloudFront cache
-      run: |
-        if [ -n "${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}" ]; then
-          echo "Invalidating CloudFront cache..."
-          aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
-          echo "✅ CloudFront cache invalidated"
-        else
-          echo "⚠️ CLOUDFRONT_DISTRIBUTION_ID not set, skipping cache invalidation"
-        fi
+      - name: Sync to S3 (preserves MIME types)
+        run: |
+          aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_NAME }} --delete
 
-    - name: Deploy status
-      run: |
-        echo "✅ Deployment completed successfully!"
-        echo "🌐 Environment: ${{ env.ENVIRONMENT }}"
-        echo "📦 Deployment Type: ${{ env.DEPLOYMENT_TYPE }}"
-        echo "🌐 Application URL: https://${{ secrets.S3_BUCKET_NAME }}.s3-website-${{ env.AWS_REGION }}.amazonaws.com"
-        if [ -n "${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}" ]; then
-          echo "🚀 CloudFront URL: https://${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}.cloudfront.net"
-        fi
+      # Safety: ensure index.html is served as HTML (not downloaded)
+      - name: Force-correct headers for index.html
+        run: |
+          aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/index.html s3://${{ secrets.S3_BUCKET_NAME }}/index.html \
+            --metadata-directive REPLACE \
+            --content-type "text/html; charset=utf-8" \
+            --cache-control "public, max-age=300"
+
+      - name: Invalidate CloudFront
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"

@@ -8,6 +8,13 @@ import { IRISService } from '@/services/irisService';
 import { IRISMessage, IRISContext, PlatformType } from '@/types/iris';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
+import { ReportExportService, ExportFormat } from '@/services/reportExportService';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { 
   Bot, 
   Send, 
@@ -38,7 +45,10 @@ import {
   AlertCircle,
   Sparkles,
   Database,
-  TrendingDown
+  TrendingDown,
+  Download,
+  FileSpreadsheet,
+  ChevronDown
 } from 'lucide-react';
 
 export const IRISv2 = () => {
@@ -363,6 +373,53 @@ Error details: ${error instanceof Error ? error.message : 'Unknown error'}`,
     textareaRef.current?.focus();
   };
 
+  // Export functionality handlers
+  const handleExportReport = async (message: IRISMessage, format: ExportFormat, userQuery: string) => {
+    try {
+      const exportData = ReportExportService.extractExportData(
+        {
+          content: message.content,
+          timestamp: message.timestamp?.toLocaleString(),
+          data: (message as any).data || (message as any).reportData
+        },
+        userQuery
+      );
+
+      if (!exportData) {
+        toast({
+          title: 'Export Failed',
+          description: 'No exportable data found in this message.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      await ReportExportService.exportReport(exportData, format);
+      
+      toast({
+        title: 'Export Successful',
+        description: `Report exported as ${format.toUpperCase()} format.`,
+      });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: 'Export Failed',
+        description: 'Failed to export report. Please try again.',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const findUserQueryForMessage = (messageIndex: number): string => {
+    // Find the user message that preceded this assistant message
+    for (let i = messageIndex - 1; i >= 0; i--) {
+      if (messages[i].role === 'user') {
+        return messages[i].content;
+      }
+    }
+    return 'General Report Query';
+  };
+
   const formatMessage = (content: string): string => {
     let formatted = content;
   
@@ -458,11 +515,11 @@ formatted = formatted.replace(/(<li>.*?<\/li>\s*)+/g,
 );
 
 // Key Insights & Recommendations
-formatted = formatted.replace(/📊 Key Insights|Key Insights/g,
+formatted = formatted.replace(/📊 Key Insights:?|Key Insights:?/g,
   '<div class="text-lg font-semibold text-foreground mt-5 mb-2 flex items-center gap-2">📊 Key Insights</div>'
 );
 
-formatted = formatted.replace(/💡 Recommendations|Recommendations/g,
+formatted = formatted.replace(/💡 Recommendations:?|Recommendations:?/g,
   '<div class="text-lg font-semibold text-foreground mt-5 mb-2 flex items-center gap-2">💡 Recommendations</div>'
 );
   
@@ -538,41 +595,69 @@ formatted = formatted.replace(/💡 Recommendations|Recommendations/g,
               <div className="flex-1 p-6 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400">
                 <div className="space-y-6 max-w-none">
                   {messages.map((message, index) => (
-                    <div key={index} className={`flex items-start space-x-3 ${
-                      message.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''
-                    }`}>
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center flex-shrink-0 shadow-sm">
-                        {message.role === 'user' ? (
-                          <div className="w-4 h-4 bg-primary rounded-full" />
-                        ) : (
-                          <Bot className="h-4 w-4 text-primary" />
-                        )}
-                      </div>
-                      <div className={`rounded-lg p-4 max-w-[85%] break-words ${
-                        message.role === 'user' 
-                          ? 'bg-primary text-primary-foreground ml-auto' 
-                          : 'bg-muted/50 border border-border/50'
+                    <div key={index} className="space-y-2">
+                      <div className={`flex items-start space-x-3 ${
+                        message.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''
                       }`}>
-                        <div 
-                          className={`prose prose-sm max-w-none leading-relaxed ${
-                            message.role === 'user' ? 'prose-invert' : ''
-                          }`}
-                          style={{ 
-                            wordBreak: 'break-word',
-                            overflowWrap: 'break-word'
-                          }}
-                          dangerouslySetInnerHTML={{ __html: formatMessage(message.content) }}
-                        />
-                        {message.timestamp && (
-                          <div className={`text-xs mt-2 ${
-                            message.role === 'user' 
-                              ? 'text-primary-foreground/70' 
-                              : 'text-muted-foreground'
-                          }`}>
-                            {message.timestamp.toLocaleTimeString()}
-                          </div>
-                        )}
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center flex-shrink-0 shadow-sm">
+                          {message.role === 'user' ? (
+                            <div className="w-4 h-4 bg-primary rounded-full" />
+                          ) : (
+                            <Bot className="h-4 w-4 text-primary" />
+                          )}
+                        </div>
+                        <div className={`rounded-lg p-4 max-w-[85%] break-words ${
+                          message.role === 'user' 
+                            ? 'bg-primary text-primary-foreground ml-auto' 
+                            : 'bg-muted/50 border border-border/50'
+                        }`}>
+                          <div 
+                            className={`prose prose-sm max-w-none leading-relaxed ${
+                              message.role === 'user' ? 'prose-invert' : ''
+                            }`}
+                            style={{ 
+                              wordBreak: 'break-word',
+                              overflowWrap: 'break-word'
+                            }}
+                            dangerouslySetInnerHTML={{ __html: formatMessage(message.content) }}
+                          />
+                          {message.timestamp && (
+                            <div className={`text-xs mt-2 ${
+                              message.role === 'user' 
+                                ? 'text-primary-foreground/70' 
+                                : 'text-muted-foreground'
+                            }`}>
+                              {message.timestamp.toLocaleTimeString()}
+                            </div>
+                          )}
+                        </div>
                       </div>
+                      
+                      {/* Export buttons for assistant messages with data - positioned below the message */}
+                      {message.role === 'assistant' && ReportExportService.hasExportableData(message) && (
+                        <div className="flex items-center gap-2 mt-2 ml-11">
+                          <span className="text-xs text-muted-foreground">Export:</span>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="sm" className="h-7 px-2 text-xs">
+                                <Download className="h-3 w-3 mr-1" />
+                                Export
+                                <ChevronDown className="h-3 w-3 ml-1" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start">
+                              <DropdownMenuItem onClick={() => handleExportReport(message, 'pdf', findUserQueryForMessage(index))}>
+                                <FileText className="h-4 w-4 mr-2" />
+                                PDF Report
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleExportReport(message, 'xlsx', findUserQueryForMessage(index))}>
+                                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                                Excel File
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      )}
                     </div>
                   ))}
                   

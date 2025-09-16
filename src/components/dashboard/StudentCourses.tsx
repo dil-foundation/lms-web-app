@@ -1,8 +1,9 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/EmptyState';
-import { BookOpen, TrendingUp, Clock, Award, Play, CheckCircle, Sparkles } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { BookOpen, TrendingUp, Clock, Award, Play, CheckCircle, Sparkles, Users } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -19,6 +20,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
+import { PaginationControls } from '@/components/ui/PaginationControls';
 
 type Profile = {
   id: string;
@@ -35,6 +37,9 @@ interface Course {
   subtitle: string;
   image_url: string;
   progress?: number;
+  total_lessons?: number;
+  completed_lessons?: number;
+  last_accessed?: string;
 }
 
 interface StudentCoursesProps {
@@ -45,10 +50,22 @@ export const StudentCourses = ({ userProfile }: StudentCoursesProps) => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const { preferences, setStudentView } = useViewPreferences();
+  const navigate = useNavigate();
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(8); // 8 courses per page
+  
+  // Get default items per page based on current view
+  const getDefaultItemsPerPage = (view: string) => {
+    switch (view) {
+      case 'card': return 8;
+      case 'tile': return 18;
+      case 'list': return 8;
+      default: return 8;
+    }
+  };
+  
+  const [itemsPerPage, setItemsPerPage] = useState(getDefaultItemsPerPage(preferences.studentView));
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -79,6 +96,9 @@ export const StudentCourses = ({ userProfile }: StudentCoursesProps) => {
             subtitle: course.subtitle,
             image_url: imageUrl,
             progress: course.progress_percentage,
+            total_lessons: course.total_lessons,
+            completed_lessons: course.completed_lessons,
+            last_accessed: course.last_accessed,
           };
         }));
         setCourses(coursesWithSignedUrls);
@@ -103,6 +123,18 @@ export const StudentCourses = ({ userProfile }: StudentCoursesProps) => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentCourses = courses.slice(startIndex, endIndex);
+
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
+
+  // Update items per page when view changes
+  useEffect(() => {
+    const newItemsPerPage = getDefaultItemsPerPage(preferences.studentView);
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when view changes
+  }, [preferences.studentView]);
 
   // Reset to first page when courses change
   useEffect(() => {
@@ -257,69 +289,64 @@ export const StudentCourses = ({ userProfile }: StudentCoursesProps) => {
 
         {/* Course Display based on selected view */}
         {preferences.studentView === 'card' && (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {currentCourses.map((course) => (
-              <Card key={course.id} className="group bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 hover:-translate-y-2 rounded-3xl overflow-hidden">
-                <div className="relative overflow-hidden">
+              <Card key={course.id} className="bg-card border border-border flex flex-col h-full">
+                <CardHeader className="p-0 relative">
                   <img 
                     src={course.image_url} 
                     alt={course.title} 
-                    className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105" 
+                    className="w-full h-40 object-cover rounded-t-lg" 
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   {course.progress === 100 && (
-                    <div className="absolute top-3 right-3">
-                      <div className="bg-green-500 text-white rounded-full p-1 shadow-lg">
-                        <CheckCircle className="h-4 w-4" />
-                      </div>
-                    </div>
+                    <Badge className="absolute top-2 left-2 bg-green-500">
+                      <CheckCircle className="w-3 h-3 mr-1" />
+                      Completed
+                    </Badge>
                   )}
-                </div>
-                
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg font-semibold leading-tight text-gray-900 dark:text-gray-100">{course.title}</CardTitle>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{course.subtitle}</p>
+                  {course.progress && course.progress > 0 && course.progress < 100 && (
+                    <Badge variant="secondary" className="absolute top-2 left-2">
+                      In Progress
+                    </Badge>
+                  )}
                 </CardHeader>
-                
-                <CardContent className="space-y-4">
-                  {/* Enhanced Progress Bar */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Progress</span>
-                      <span className="text-sm font-semibold text-primary">{course.progress || 0}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
-                      <div 
-                        className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full transition-all duration-500 ease-out" 
-                        style={{ width: `${course.progress || 0}%` }}
-                      />
-                    </div>
+                <CardContent className="p-4 space-y-2 flex-grow">
+                  <h3 className="font-semibold text-lg">{course.title}</h3>
+                  <p className="text-sm text-muted-foreground">{course.subtitle}</p>
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>{course.total_lessons || 0} lessons</span>
+                    <span>{course.progress || 0}% complete</span>
                   </div>
-
-                  {/* Action Button */}
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Clock className="h-4 w-4" />
+                    <span>Last accessed: {course.last_accessed ? new Date(course.last_accessed).toLocaleDateString() : 'Never'}</span>
+                  </div>
+                </CardContent>
+                <CardFooter className="p-4 pt-0 mt-auto">
                   <Button 
-                    asChild 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full h-10 rounded-xl font-semibold hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300 hover:-translate-y-0.5 shadow-lg hover:shadow-xl"
+                    asChild
+                    className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-3 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:scale-105 rounded-xl"
                   >
                     <Link to={course.progress && course.progress > 0 ? `/dashboard/courses/${course.id}/content` : `/dashboard/courses/${course.id}`}>
-                      <div className="flex items-center gap-2">
-                        {course.progress && course.progress > 0 ? (
-                          <>
-                            <Play className="h-4 w-4" />
-                            Continue Learning
-                          </>
-                        ) : (
-                          <>
-                            <BookOpen className="h-4 w-4" />
-                            Start Course
-                          </>
-                        )}
-                      </div>
+                      {course.progress === 100 ? (
+                        <>
+                          <BookOpen className="w-4 h-4 mr-2" />
+                          Review Course
+                        </>
+                      ) : course.progress && course.progress > 0 ? (
+                        <>
+                          <Play className="w-4 h-4 mr-2" />
+                          Continue Learning
+                        </>
+                      ) : (
+                        <>
+                          <BookOpen className="w-4 h-4 mr-2" />
+                          Start Course
+                        </>
+                      )}
                     </Link>
                   </Button>
-                </CardContent>
+                </CardFooter>
               </Card>
             ))}
           </div>
@@ -329,7 +356,9 @@ export const StudentCourses = ({ userProfile }: StudentCoursesProps) => {
           <StudentCourseTileView
             courses={currentCourses}
             onCourseClick={(course) => {
-              // Handle course click if needed
+              navigate(course.progress && course.progress > 0 
+                ? `/dashboard/courses/${course.id}/content` 
+                : `/dashboard/courses/${course.id}`);
             }}
           />
         )}
@@ -338,44 +367,26 @@ export const StudentCourses = ({ userProfile }: StudentCoursesProps) => {
           <StudentCourseListView
             courses={currentCourses}
             onCourseClick={(course) => {
-              // Handle course click if needed
+              navigate(course.progress && course.progress > 0 
+                ? `/dashboard/courses/${course.id}/content` 
+                : `/dashboard/courses/${course.id}`);
             }}
           />
         )}
 
         {/* Pagination Controls */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-center space-x-2 py-4">
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                    className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-                  />
-                </PaginationItem>
-                
-                {/* Page Numbers */}
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <PaginationItem key={page}>
-                    <PaginationLink
-                      onClick={() => setCurrentPage(page)}
-                      isActive={currentPage === page}
-                    >
-                      {page}
-                    </PaginationLink>
-                  </PaginationItem>
-                ))}
-                
-                <PaginationItem>
-                  <PaginationNext
-                    onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                    className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </div>
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={courses.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={handleItemsPerPageChange}
+            itemsPerPageOptions={preferences.studentView === 'tile' ? [9, 18, 27, 36, 45] : [4, 8, 12, 16, 20]}
+            disabled={loading}
+            className="py-4"
+          />
         )}
       </div>
     </div>

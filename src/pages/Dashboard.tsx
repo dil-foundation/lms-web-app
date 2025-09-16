@@ -1,5 +1,5 @@
 import { Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom';
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useState, useEffect, Suspense, lazy, useCallback, useRef } from 'react';
 import { DashboardSidebar } from '@/components/DashboardSidebar';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/useAuth';
@@ -115,10 +115,13 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [loadingTimeout, setLoadingTimeout] = useState(false);
+  const [debouncedLoading, setDebouncedLoading] = useState(false);
+  const loadingTimeoutRef = useRef<NodeJS.Timeout>();
+  const debounceTimeoutRef = useRef<NodeJS.Timeout>();
 
-  const resetToDashboard = () => {
+  const resetToDashboard = useCallback(() => {
     navigate('/dashboard');
-  };
+  }, [navigate]);
   
   useEffect(() => {
     if (!authLoading && !user) {
@@ -144,17 +147,44 @@ const Dashboard = () => {
   
   const isLoading = authLoading || (user && profileLoading) || maintenanceLoading;
 
+  // Debounce loading state to prevent rapid re-renders
+  useEffect(() => {
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+    
+    debounceTimeoutRef.current = setTimeout(() => {
+      setDebouncedLoading(isLoading);
+    }, 150); // 150ms debounce
+
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, [isLoading]);
+
   // Add timeout for loading states
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (isLoading) {
+    if (loadingTimeoutRef.current) {
+      clearTimeout(loadingTimeoutRef.current);
+    }
+    
+    if (debouncedLoading) {
+      loadingTimeoutRef.current = setTimeout(() => {
         console.warn('Dashboard loading timeout - showing fallback');
         setLoadingTimeout(true);
-      }
-    }, 10000); // 10 second timeout
+      }, 10000); // 10 second timeout
+    } else {
+      setLoadingTimeout(false);
+    }
 
-    return () => clearTimeout(timeout);
-  }, [isLoading]);
+    return () => {
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+    };
+  }, [debouncedLoading]);
 
   // Debug logging
   console.log('Dashboard loading states:', {
@@ -162,6 +192,7 @@ const Dashboard = () => {
     profileLoading,
     maintenanceLoading,
     isLoading,
+    debouncedLoading,
     user: !!user,
     profile: !!profile,
     profileError
@@ -169,7 +200,7 @@ const Dashboard = () => {
 
   const DashboardContent = () => {
     // Show loading state while data is being fetched
-    if (isLoading && !loadingTimeout) {
+    if (debouncedLoading && !loadingTimeout) {
       return (
         <div className="flex items-center justify-center h-full text-center">
           <div className="flex flex-col items-center gap-4">

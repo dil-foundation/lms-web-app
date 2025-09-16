@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -23,6 +23,7 @@ import { ViewToggle } from '@/components/ui/ViewToggle';
 import { ClassCardView } from '@/components/class/ClassCardView';
 import { ClassTileView } from '@/components/class/ClassTileView';
 import { ClassListView } from '@/components/class/ClassListView';
+import { PaginationControls } from '@/components/ui/PaginationControls';
 
 
 const ClassManagement: React.FC = () => {
@@ -31,7 +32,26 @@ const ClassManagement: React.FC = () => {
   
   // Pagination and filter state
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(8);
+  
+  // Get default items per page based on current view
+  const getDefaultItemsPerPage = (view: string) => {
+    switch (view) {
+      case 'card': return 8;
+      case 'tile': return 18;
+      case 'list': return 8;
+      default: return 8;
+    }
+  };
+
+  // Get pagination options based on current view
+  const getPaginationOptions = (view: string) => {
+    if (view === 'tile') {
+      return [9, 18, 27, 36, 45];
+    }
+    return [4, 8, 12, 16, 20];
+  };
+  
+  const [itemsPerPage, setItemsPerPage] = useState(getDefaultItemsPerPage(preferences.teacherClassView));
   const [searchTerm, setSearchTerm] = useState('');
   const [gradeFilter, setGradeFilter] = useState('all');
   const [schoolFilter, setSchoolFilter] = useState('all');
@@ -70,6 +90,13 @@ const ClassManagement: React.FC = () => {
     hasPreviousPage,
     refetch: refetchClasses 
   } = useClassesPaginated(paginationParams);
+
+  // Update items per page when view changes
+  useEffect(() => {
+    const newItemsPerPage = getDefaultItemsPerPage(preferences.teacherClassView);
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when view changes
+  }, [preferences.teacherClassView]);
   
   // Use other hooks for stats and form data
   const { stats, createClass, updateClass, deleteClass } = useClasses();
@@ -261,34 +288,40 @@ const ClassManagement: React.FC = () => {
   };
 
   const openEditDialog = (cls: ClassWithMembers) => {
-    setEditingClass(cls);
-    setFormData({
-      name: cls.name,
-      code: cls.code,
-      grade: cls.grade,
-      school_id: cls.school_id || '',
-      board_id: cls.board_id || '',
-      description: cls.description,
-      max_students: String(cls.max_students || 30),
-      teachers: cls.teachers.map(t => t.id),
-      students: cls.students.map(s => s.id)
-    });
-    // Clear validation errors when opening edit dialog
-    setValidationErrors({
-      name: '',
-      code: '',
-      grade: '',
-      school_id: '',
-      board_id: '',
-      description: '',
-      max_students: ''
-    });
-    setIsEditDialogOpen(true);
+    // Small delay to ensure dropdown is fully closed
+    setTimeout(() => {
+      setEditingClass(cls);
+      setFormData({
+        name: cls.name,
+        code: cls.code,
+        grade: cls.grade,
+        school_id: cls.school_id || '',
+        board_id: cls.board_id || '',
+        description: cls.description,
+        max_students: String(cls.max_students || 30),
+        teachers: cls.teachers.map(t => t.id),
+        students: cls.students.map(s => s.id)
+      });
+      // Clear validation errors when opening edit dialog
+      setValidationErrors({
+        name: '',
+        code: '',
+        grade: '',
+        school_id: '',
+        board_id: '',
+        description: '',
+        max_students: ''
+      });
+      setIsEditDialogOpen(true);
+    }, 100);
   };
 
   const openViewDialog = (cls: ClassWithMembers) => {
-    setViewingClass(cls);
-    setIsViewDialogOpen(true);
+    // Small delay to ensure dropdown is fully closed
+    setTimeout(() => {
+      setViewingClass(cls);
+      setIsViewDialogOpen(true);
+    }, 100);
   };
 
   const resetForm = () => {
@@ -481,6 +514,11 @@ const ClassManagement: React.FC = () => {
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when changing items per page
   };
 
 
@@ -694,45 +732,18 @@ const ClassManagement: React.FC = () => {
               )}
 
               {/* Pagination for Card View */}
-              {preferences.teacherClassView === 'card' && totalCount > 0 && (
-                <div className="flex items-center justify-center space-x-2 py-4 border-t px-6">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handlePreviousPage}
-                    disabled={currentPage === 1}
-                    className="text-sm"
-                  >
-                    &lt; Previous
-                  </Button>
-                  
-                  <div className="flex items-center space-x-1">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <Button
-                        key={page}
-                        variant={currentPage === page ? "default" : "ghost"}
-                        size="sm"
-                        onClick={() => handlePageChange(page)}
-                        className={`w-8 h-8 p-0 text-sm ${
-                          currentPage === page 
-                            ? "bg-gray-200 text-gray-900 hover:bg-gray-300" 
-                            : "hover:bg-gray-100"
-                        }`}
-                      >
-                        {page}
-                      </Button>
-                    ))}
-                  </div>
-                  
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleNextPage}
-                    disabled={currentPage === totalPages}
-                    className="text-sm"
-                  >
-                    Next &gt;
-                  </Button>
+              {preferences.teacherClassView === 'card' && totalPages > 1 && (
+                <div className="py-4 border-t px-6">
+                  <PaginationControls
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalItems={totalCount}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={handlePageChange}
+                    onItemsPerPageChange={handleItemsPerPageChange}
+                    itemsPerPageOptions={getPaginationOptions(preferences.teacherClassView)}
+                    disabled={loading}
+                  />
                 </div>
               )}
 
@@ -911,66 +922,18 @@ const ClassManagement: React.FC = () => {
               </Table>
               
               {/* Pagination */}
-              {totalCount > 0 && (
-                <div className="flex items-center justify-center gap-2 py-4 border-t">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handlePreviousPage}
-                    disabled={currentPage === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4 mr-1" />
-                    Previous
-                  </Button>
-                  
-                  <div className="flex items-center gap-1">
-                    {totalPages > 1 ? (
-                      Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        let pageNum;
-                        if (totalPages <= 5) {
-                          pageNum = i + 1;
-                        } else if (currentPage <= 3) {
-                          pageNum = i + 1;
-                        } else if (currentPage >= totalPages - 2) {
-                          pageNum = totalPages - 4 + i;
-                        } else {
-                          pageNum = currentPage - 2 + i;
-                        }
-                        
-                        return (
-                          <Button
-                            key={pageNum}
-                            variant={currentPage === pageNum ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => handlePageChange(pageNum)}
-                            disabled={loading}
-                            className="w-8 h-8 p-0"
-                          >
-                            {pageNum}
-                          </Button>
-                        );
-                      })
-                    ) : (
-                      <Button
-                        variant="default"
-                        size="sm"
-                        disabled
-                        className="w-8 h-8 p-0"
-                      >
-                        1
-                      </Button>
-                    )}
-                  </div>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleNextPage}
-                    disabled={currentPage === totalPages}
-                  >
-                    Next
-                    <ChevronRight className="h-4 w-4 ml-1" />
-                  </Button>
+              {totalPages > 1 && (
+                <div className="py-4 border-t">
+                  <PaginationControls
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalItems={totalCount}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={handlePageChange}
+                    onItemsPerPageChange={handleItemsPerPageChange}
+                    itemsPerPageOptions={getPaginationOptions(preferences.teacherClassView)}
+                    disabled={loading}
+                  />
                 </div>
               )}
                 </div>
@@ -1292,10 +1255,10 @@ const ClassManagement: React.FC = () => {
 
       {/* Edit Class Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
-          <DialogHeader className="flex-shrink-0">
-            <DialogTitle>Edit Class</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col border-primary/20">
+          <DialogHeader className="flex-shrink-0 border-b border-primary/10 pb-4">
+            <DialogTitle className="text-primary text-xl font-semibold">Edit Class</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
               Update the information for {editingClass?.name}.
             </DialogDescription>
           </DialogHeader>
@@ -1532,13 +1495,13 @@ const ClassManagement: React.FC = () => {
              </div>
             </div>
           </div>
-          <DialogFooter className="flex-shrink-0">
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+          <DialogFooter className="flex-shrink-0 border-t border-primary/10 pt-4">
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} className="border-primary/20 text-primary hover:bg-primary/5">
               Cancel
             </Button>
             <Button 
               onClick={handleEdit} 
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-primary hover:bg-primary/90 text-white"
               disabled={loading || !!validationErrors.name || !!validationErrors.code || !!validationErrors.grade || !!validationErrors.board_id || !!validationErrors.school_id || !!validationErrors.max_students || !!validationErrors.description}
             >
               {loading ? (
@@ -1556,10 +1519,10 @@ const ClassManagement: React.FC = () => {
 
       {/* View Class Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Class Details</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="max-w-4xl border-primary/20">
+          <DialogHeader className="border-b border-primary/10 pb-4">
+            <DialogTitle className="text-primary text-xl font-semibold">Class Details</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
               View detailed information about {viewingClass?.name}.
             </DialogDescription>
           </DialogHeader>
@@ -1588,7 +1551,7 @@ const ClassManagement: React.FC = () => {
                   </div>
                   <div>
                     <Label className="text-sm font-medium text-muted-foreground">Max Students</Label>
-                    <p className="text-lg font-semibold text-blue-600">{viewingClass.max_students || 30}</p>
+                    <p className="text-lg font-semibold text-primary">{viewingClass.max_students || 30}</p>
                   </div>
                 </div>
                 
@@ -1637,7 +1600,7 @@ const ClassManagement: React.FC = () => {
                   <div className="flex flex-wrap gap-2 mt-2">
                     {viewingClass.teachers.length > 0 ? (
                       viewingClass.teachers.map((teacher, index) => (
-                        <Badge key={index} variant="default" className="bg-green-600 text-white">
+                        <Badge key={index} variant="default" className="bg-primary text-white">
                           {teacher.name}
                         </Badge>
                       ))
@@ -1652,7 +1615,7 @@ const ClassManagement: React.FC = () => {
                   <div className="flex flex-wrap gap-2 mt-2">
                     {viewingClass.students.length > 0 ? (
                       viewingClass.students.map((student, index) => (
-                        <Badge key={index} variant="outline" className="border-blue-300 text-blue-700">
+                        <Badge key={index} variant="outline" className="border-primary/30 text-primary">
                           {student.name}
                         </Badge>
                       ))
@@ -1664,15 +1627,15 @@ const ClassManagement: React.FC = () => {
               </div>
             </div>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
+          <DialogFooter className="border-t border-primary/10 pt-4">
+            <Button variant="outline" onClick={() => setIsViewDialogOpen(false)} className="border-primary/20 text-primary hover:bg-primary/5">
               Close
             </Button>
             {viewingClass && (
               <Button onClick={() => {
                 setIsViewDialogOpen(false);
                 openEditDialog(viewingClass);
-              }} className="bg-blue-600 hover:bg-blue-700 text-white">
+              }} className="bg-primary hover:bg-primary/90 text-white">
                 Edit Class
               </Button>
             )}

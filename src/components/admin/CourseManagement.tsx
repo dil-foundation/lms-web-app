@@ -64,6 +64,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { PaginationControls } from '@/components/ui/PaginationControls';
 import AccessLogService from "@/services/accessLogService";
 
 type CourseStatus = "Published" | "Draft" | "Under Review" | "Rejected";
@@ -141,7 +142,17 @@ const CourseManagement = () => {
   const [statusFilter, setStatusFilter] = useState<CourseStatus | "All">("All");
   const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage] = useState(8); // Show 8 courses per page
+  // Get default items per page based on current view
+  const getDefaultItemsPerPage = (view: string) => {
+    switch (view) {
+      case 'card': return 8;
+      case 'tile': return 16; // Tile view should show 16 items per page
+      case 'list': return 8;
+      default: return 8;
+    }
+  };
+  
+  const [rowsPerPage, setRowsPerPage] = useState(getDefaultItemsPerPage(preferences.teacherCourseView));
   const [totalCourses, setTotalCourses] = useState(0);
   const [stats, setStats] = useState({
     total: 0,
@@ -347,6 +358,13 @@ const CourseManagement = () => {
     }
   }, [searchQuery, statusFilter, currentPage, rowsPerPage, user]);
 
+  // Update items per page when view changes
+  useEffect(() => {
+    const newRowsPerPage = getDefaultItemsPerPage(preferences.teacherCourseView);
+    setRowsPerPage(newRowsPerPage);
+    setCurrentPage(1); // Reset to first page when view changes
+  }, [preferences.teacherCourseView]);
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
@@ -466,6 +484,11 @@ const CourseManagement = () => {
 
   const { total, published, draft } = stats;
   const totalPages = Math.ceil(totalCourses / rowsPerPage);
+
+  const handleItemsPerPageChange = (newRowsPerPage: number) => {
+    setRowsPerPage(newRowsPerPage);
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
 
   return (
     <main className="space-y-8">
@@ -666,37 +689,19 @@ const CourseManagement = () => {
             </div>
           )}
             </CardContent>
-            {totalPages > 0 && (
+            {totalPages > 1 && (
             <CardFooter>
-              <Pagination className="mt-4">
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      href="#"
-                      onClick={(e) => { e.preventDefault(); setCurrentPage(p => Math.max(1, p - 1)); }}
-                      className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-                    />
-                  </PaginationItem>
-                  {[...Array(totalPages)].map((_, i) => (
-                    <PaginationItem key={i}>
-                      <PaginationLink
-                        href="#"
-                        onClick={(e) => { e.preventDefault(); setCurrentPage(i + 1); }}
-                        isActive={currentPage === i + 1}
-                      >
-                        {i + 1}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))}
-                  <PaginationItem>
-                    <PaginationNext
-                      href="#"
-                      onClick={(e) => { e.preventDefault(); setCurrentPage(p => Math.min(totalPages, p + 1)); }}
-                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
+              <PaginationControls
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalCourses}
+                itemsPerPage={rowsPerPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={handleItemsPerPageChange}
+                itemsPerPageOptions={preferences.teacherCourseView === 'tile' ? [8, 16, 24, 32, 40] : [4, 8, 12, 16, 20]}
+                disabled={loading}
+                className="mt-4"
+              />
             </CardFooter>
           )}
           </Card>

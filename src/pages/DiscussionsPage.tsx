@@ -140,7 +140,7 @@ export default function DiscussionsPage() {
   const [selectedCourse, setSelectedCourse] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const rowsPerPage = 10;
+  const rowsPerPage = 8; // Consistent with list view default
   const [discussionToDelete, setDiscussionToDelete] = useState<any | null>(null);
   const [showDeletedMessage, setShowDeletedMessage] = useState(false);
   const hasShownDeletedMessage = useRef(false);
@@ -874,7 +874,7 @@ export default function DiscussionsPage() {
         )}
 
         {/* Enhanced Pagination */}
-        {!isFetching && totalPages > 0 && (
+        {!isFetching && totalPages > 1 && (
           <div className="mt-8 flex justify-center">
             <div className="flex items-center space-x-2">
               <Button

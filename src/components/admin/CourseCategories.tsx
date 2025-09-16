@@ -13,8 +13,15 @@ import { Search, Plus, BookCheck, Edit, Trash2, Eye, RefreshCw, Calendar, MoreHo
 import { toast } from 'sonner';
 import { CourseCategoriesService, CourseCategory, PaginatedResponse, PaginationParams, SearchParams } from '@/services/courseCategoriesService';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useViewPreferences } from '@/contexts/ViewPreferencesContext';
+import { ViewToggle } from '@/components/ui/ViewToggle';
+import { CategoryCardView } from '@/components/category/CategoryCardView';
+import { CategoryTileView } from '@/components/category/CategoryTileView';
+import { CategoryListView } from '@/components/category/CategoryListView';
+import { PaginationControls } from '@/components/ui/PaginationControls';
 
 export const CourseCategories = () => {
+  const { preferences, setCourseCategoriesView } = useViewPreferences();
   const [categories, setCategories] = useState<CourseCategory[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -32,12 +39,30 @@ export const CourseCategories = () => {
   // Pagination state
   const [pagination, setPagination] = useState<PaginationParams>({
     page: 1,
-    limit: 5
+    limit: 10
   });
   const [paginationData, setPaginationData] = useState<PaginatedResponse<CourseCategory> | null>(null);
+  // Get default items per page based on current view
+  const getDefaultItemsPerPage = (view: string) => {
+    switch (view) {
+      case 'card': return 8;
+      case 'tile': return 18;
+      case 'list': return 8;
+      default: return 8;
+    }
+  };
+  
+  const [itemsPerPage, setItemsPerPage] = useState(getDefaultItemsPerPage(preferences.courseCategoriesView));
   
   // Debounced search term
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
+  // Update items per page when view changes
+  useEffect(() => {
+    const newItemsPerPage = getDefaultItemsPerPage(preferences.courseCategoriesView);
+    setItemsPerPage(newItemsPerPage);
+    setPagination(prev => ({ ...prev, limit: newItemsPerPage, page: 1 }));
+  }, [preferences.courseCategoriesView]);
 
   // Load categories when pagination or search changes
   useEffect(() => {
@@ -91,6 +116,11 @@ export const CourseCategories = () => {
   // Pagination functions
   const goToPage = (page: number) => {
     setPagination(prev => ({ ...prev, page }));
+  };
+
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setPagination(prev => ({ ...prev, limit: newItemsPerPage, page: 1 }));
   };
 
 
@@ -171,17 +201,23 @@ export const CourseCategories = () => {
 
   // Open edit dialog
   const openEditDialog = (category: CourseCategory) => {
-    setEditingCategory(category);
-    setFormData({
-      name: category.name
-    });
-    setIsEditDialogOpen(true);
+    // Small delay to ensure dropdown is fully closed
+    setTimeout(() => {
+      setEditingCategory(category);
+      setFormData({
+        name: category.name
+      });
+      setIsEditDialogOpen(true);
+    }, 100);
   };
 
   // Open view dialog
   const openViewDialog = (category: CourseCategory) => {
-    setViewingCategory(category);
-    setIsViewDialogOpen(true);
+    // Small delay to ensure dropdown is fully closed
+    setTimeout(() => {
+      setViewingCategory(category);
+      setIsViewDialogOpen(true);
+    }, 100);
   };
 
   // Reset form
@@ -310,180 +346,88 @@ export const CourseCategories = () => {
         </Button>
       </div>
 
-      {/* Categories Table */}
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Category</TableHead>
-                <TableHead>Courses</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8">
-                    <div className="flex items-center justify-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Loading categories...
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : categories.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                    {searchTerm ? 'No categories found matching your search.' : 'No categories found.'}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                categories.map((category) => (
-                  <TableRow key={category.id}>
-                    <TableCell className="font-medium">
-                      {category.name}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {courseCounts[category.id] || 0} courses
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {new Date(category.created_at).toLocaleDateString()}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Open menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openViewDialog(category)}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => openEditDialog(category)}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit Category
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete Category
-                              </DropdownMenuItem>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Category</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to delete "{category.name}"? This action cannot be undone.
-                                  {(courseCounts[category.id] || 0) > 0 && (
-                                    <span className="block mt-2 text-amber-600">
-                                      Warning: This category has {courseCounts[category.id]} courses assigned to it.
-                                    </span>
-                                  )}
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDelete(category.id)}
-                                  className="bg-red-600 hover:bg-red-700"
-                                  disabled={submitting}
-                                >
-                                  {submitting ? (
-                                    <>
-                                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                      Deleting...
-                                    </>
-                                  ) : (
-                                    'Delete'
-                                  )}
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {/* Pagination */}
-      {paginationData && (
-        <div className="flex items-center justify-center gap-2 mt-6">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => goToPage(paginationData.page - 1)}
-            disabled={paginationData.page <= 1 || loading || paginationData.totalPages <= 1}
-          >
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            Previous
-          </Button>
-          
-          <div className="flex items-center gap-1">
-            {paginationData.totalPages > 1 ? (
-              Array.from({ length: Math.min(5, paginationData.totalPages) }, (_, i) => {
-                let pageNum;
-                if (paginationData.totalPages <= 5) {
-                  pageNum = i + 1;
-                } else if (paginationData.page <= 3) {
-                  pageNum = i + 1;
-                } else if (paginationData.page >= paginationData.totalPages - 2) {
-                  pageNum = paginationData.totalPages - 4 + i;
-                } else {
-                  pageNum = paginationData.page - 2 + i;
-                }
-                
-                return (
-                  <Button
-                    key={pageNum}
-                    variant={paginationData.page === pageNum ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => goToPage(pageNum)}
-                    disabled={loading}
-                    className="w-8 h-8 p-0"
-                  >
-                    {pageNum}
-                  </Button>
-                );
-              })
-            ) : (
-              <Button
-                variant="default"
-                size="sm"
-                disabled
-                className="w-8 h-8 p-0"
-              >
-                1
-              </Button>
-            )}
+      {/* Categories View Toggle and Content */}
+      {loading ? (
+        <Card>
+          <CardContent className="p-8">
+            <div className="flex items-center justify-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading categories...
+            </div>
+          </CardContent>
+        </Card>
+      ) : categories.length === 0 ? (
+        <Card>
+          <CardContent className="p-8">
+            <div className="text-center text-muted-foreground">
+              {searchTerm ? 'No categories found matching your search.' : 'No categories found.'}
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-6">
+          {/* View Toggle */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-foreground">Categories</h2>
+              <p className="text-sm text-muted-foreground">Switch between different views to manage your categories</p>
+            </div>
+            <ViewToggle
+              currentView={preferences.courseCategoriesView}
+              onViewChange={setCourseCategoriesView}
+              availableViews={['card', 'tile', 'list']}
+            />
           </div>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => goToPage(paginationData.page + 1)}
-            disabled={paginationData.page >= paginationData.totalPages || loading || paginationData.totalPages <= 1}
-          >
-            Next
-            <ChevronRight className="h-4 w-4 ml-1" />
-          </Button>
+
+          {/* Conditional View Rendering */}
+          {preferences.courseCategoriesView === 'card' && (
+            <CategoryCardView
+              categories={categories}
+              courseCounts={courseCounts}
+              onEdit={openEditDialog}
+              onView={openViewDialog}
+              onDelete={handleDelete}
+              isDeleting={() => submitting}
+            />
+          )}
+
+          {preferences.courseCategoriesView === 'tile' && (
+            <CategoryTileView
+              categories={categories}
+              courseCounts={courseCounts}
+              onEdit={openEditDialog}
+              onView={openViewDialog}
+              onDelete={handleDelete}
+              isDeleting={() => submitting}
+            />
+          )}
+
+          {preferences.courseCategoriesView === 'list' && (
+            <CategoryListView
+              categories={categories}
+              courseCounts={courseCounts}
+              onEdit={openEditDialog}
+              onView={openViewDialog}
+              onDelete={handleDelete}
+              isDeleting={() => submitting}
+            />
+          )}
         </div>
+      )}
+
+      {/* Pagination Controls */}
+      {paginationData && (
+        <PaginationControls
+          currentPage={paginationData.page}
+          totalPages={paginationData.totalPages}
+          totalItems={paginationData.total}
+          itemsPerPage={itemsPerPage}
+          onPageChange={goToPage}
+          onItemsPerPageChange={handleItemsPerPageChange}
+            itemsPerPageOptions={preferences.courseCategoriesView === 'tile' ? [9, 18, 27, 36, 45] : [4, 8, 12, 16, 20]}
+          disabled={loading}
+          className="mt-6"
+        />
       )}
 
       {/* Create Category Dialog */}

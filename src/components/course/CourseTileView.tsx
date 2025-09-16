@@ -93,20 +93,20 @@ export const CourseTileView: React.FC<CourseTileViewProps> = ({
 
   return (
     <div className={className}>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 w-full overflow-hidden">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 w-full overflow-hidden">
         {courses.map((course) => (
           <Card
             key={course.id}
-            className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-md bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-border dark:hover:border-border h-full overflow-hidden"
+            className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-sm bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-primary/30 dark:hover:border-primary/30 h-52 flex flex-col overflow-hidden"
             onClick={() => handleCourseClick(course)}
           >
             <CardHeader className="p-0 relative">
               <img 
                 src={course.imageUrl} 
                 alt={course.title} 
-                className="w-full h-32 object-cover rounded-t-lg"
+                className="w-full h-16 object-cover"
               />
-              <div className="absolute top-2 left-2 right-2 flex justify-between items-start">
+              <div className="absolute top-1 left-1 right-1 flex justify-between items-start">
                 <Badge
                   variant={
                     course.status === 'Published' ? 'default' :
@@ -114,7 +114,7 @@ export const CourseTileView: React.FC<CourseTileViewProps> = ({
                     course.status === 'Under Review' ? 'warning' :
                     'blue'
                   }
-                  className="text-xs"
+                  className="text-xs px-1.5 py-0.5"
                 >
                   {course.status}
                 </Badge>
@@ -123,7 +123,7 @@ export const CourseTileView: React.FC<CourseTileViewProps> = ({
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="h-6 w-6 p-0 hover:bg-white/20 text-white"
+                      className="h-5 w-5 p-0 hover:bg-white/20 text-white"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <MoreHorizontal className="w-3 h-3" />
@@ -155,46 +155,42 @@ export const CourseTileView: React.FC<CourseTileViewProps> = ({
               </div>
             </CardHeader>
             
-            <CardContent className="p-4 flex flex-col h-full overflow-hidden">
+            <CardContent className="p-3 flex flex-col h-full overflow-hidden">
               {/* Course Title */}
-              <div className="mb-3">
-                <h3 className="font-semibold text-sm line-clamp-2 mb-1 group-hover:text-primary transition-colors">
+              <div className="mb-2">
+                <h3 className="font-medium text-xs line-clamp-2 group-hover:text-primary transition-colors">
                   {course.title}
                 </h3>
               </div>
 
-              {/* Course Stats */}
-              <div className="space-y-2 text-xs text-muted-foreground mb-4 flex-1 min-h-0">
-                <div className="flex items-center gap-2">
-                  <Users className="w-3 h-3" />
-                  <span>{course.totalStudents} students</span>
+              {/* Compact Course Stats - Horizontal Layout */}
+              <div className="flex items-center justify-between text-xs text-muted-foreground mb-2 flex-1 min-h-0">
+                <div className="flex items-center gap-1">
+                  <Users className="w-2.5 h-2.5" />
+                  <span>{course.totalStudents}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <BookOpen className="w-3 h-3" />
-                  <span>{course.totalLessons} lessons</span>
+                <div className="flex items-center gap-1">
+                  <BookOpen className="w-2.5 h-2.5" />
+                  <span>{course.totalLessons}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-3 h-3" />
-                  <span>{course.duration}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <User className="w-3 h-3" />
-                  <span className="truncate">{course.authorName}</span>
+                <div className="flex items-center gap-1">
+                  <Clock className="w-2.5 h-2.5" />
+                  <span className="truncate">{course.duration}</span>
                 </div>
               </div>
 
-              {/* Action Button - Fixed positioning */}
+              {/* Compact Action Button */}
               <div className="mt-auto pt-2">
                 <Button
                   size="sm"
-                  className="w-full h-8 text-xs"
+                  className="w-full h-7 text-xs"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleCourseClick(course);
                   }}
                 >
                   <Play className="w-3 h-3 mr-1" />
-                  Manage Course
+                  Manage
                 </Button>
               </div>
             </CardContent>

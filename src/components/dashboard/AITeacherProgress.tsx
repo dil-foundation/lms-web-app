@@ -20,6 +20,7 @@ import {
   PaginationPrevious, 
   PaginationEllipsis 
 } from '@/components/ui/pagination';
+import { PaginationControls } from '@/components/ui/PaginationControls';
 import { 
   Users, 
   Search, 
@@ -137,7 +138,16 @@ export const AITeacherProgress = () => {
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
+  // Get default items per page based on current view
+  const getDefaultItemsPerPage = (view: string) => {
+    switch (view) {
+      case 'table': return 8; // Table view is like list view
+      case 'cards': return 8; // Cards view
+      default: return 8;
+    }
+  };
+  
+  const [itemsPerPage, setItemsPerPage] = useState(getDefaultItemsPerPage(viewMode));
 
   // Derived state from hook data
   const students = progressOverviewData?.students || [];
@@ -159,6 +169,13 @@ export const AITeacherProgress = () => {
     
     return filtered;
   }, [students, searchQuery, stageFilter]);
+
+  // Update items per page when view changes
+  useEffect(() => {
+    const newItemsPerPage = getDefaultItemsPerPage(viewMode);
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when view changes
+  }, [viewMode]);
 
   // Handle search term change (local state for immediate UI update)
   const handleSearchTermChange = (newSearchTerm: string) => {
@@ -184,6 +201,11 @@ export const AITeacherProgress = () => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedStudents = filteredStudents.slice(startIndex, endIndex);
+
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
 
   // Handle page change
   const handlePageChange = (page: number) => {
@@ -707,64 +729,17 @@ export const AITeacherProgress = () => {
             
             {/* Pagination for Table View */}
             {totalPages > 1 && (
-              <div className="flex justify-center pt-4 border-t">
-                <Pagination>
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious 
-                        onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
-                        className={currentPage <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                      />
-                    </PaginationItem>
-                    
-                    {/* Page Numbers */}
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-                      // Show first page, last page, current page, and pages around current
-                      const showPage = page === 1 || 
-                                      page === totalPages || 
-                                      Math.abs(page - currentPage) <= 1;
-                      
-                      if (!showPage) {
-                        // Show ellipsis for gaps
-                        if (page === 2 && currentPage > 4) {
-                          return (
-                            <PaginationItem key={`ellipsis-${page}`}>
-                              <PaginationEllipsis />
-                            </PaginationItem>
-                          );
-                        }
-                        if (page === totalPages - 1 && currentPage < totalPages - 3) {
-                          return (
-                            <PaginationItem key={`ellipsis-${page}`}>
-                              <PaginationEllipsis />
-                            </PaginationItem>
-                          );
-                        }
-                        return null;
-                      }
-                      
-                      return (
-                        <PaginationItem key={page}>
-                          <PaginationLink
-                            onClick={() => handlePageChange(page)}
-                            isActive={currentPage === page}
-                            className="cursor-pointer"
-                          >
-                            {page}
-                          </PaginationLink>
-                        </PaginationItem>
-                      );
-                    })}
-                    
-                    <PaginationItem>
-                      <PaginationNext 
-                        onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
-                        className={currentPage >= totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              </div>
+              <PaginationControls
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={filteredStudents.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={handlePageChange}
+                onItemsPerPageChange={handleItemsPerPageChange}
+                itemsPerPageOptions={[4, 8, 12, 16, 20]}
+                disabled={loading}
+                className="pt-4 border-t"
+              />
             )}
           </CardContent>
         </Card>
@@ -891,64 +866,17 @@ export const AITeacherProgress = () => {
           
           {/* Pagination for Cards View */}
           {totalPages > 1 && (
-            <div className="flex justify-center pt-6">
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious 
-                      onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
-                      className={currentPage <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                    />
-                  </PaginationItem>
-                  
-                  {/* Page Numbers */}
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-                    // Show first page, last page, current page, and pages around current
-                    const showPage = page === 1 || 
-                                    page === totalPages || 
-                                    Math.abs(page - currentPage) <= 1;
-                    
-                    if (!showPage) {
-                      // Show ellipsis for gaps
-                      if (page === 2 && currentPage > 4) {
-                        return (
-                          <PaginationItem key={`ellipsis-${page}`}>
-                            <PaginationEllipsis />
-                          </PaginationItem>
-                        );
-                      }
-                      if (page === totalPages - 1 && currentPage < totalPages - 3) {
-                        return (
-                          <PaginationItem key={`ellipsis-${page}`}>
-                            <PaginationEllipsis />
-                          </PaginationItem>
-                        );
-                      }
-                      return null;
-                    }
-                    
-                    return (
-                      <PaginationItem key={page}>
-                        <PaginationLink
-                          onClick={() => handlePageChange(page)}
-                          isActive={currentPage === page}
-                          className="cursor-pointer"
-                        >
-                          {page}
-                        </PaginationLink>
-                      </PaginationItem>
-                    );
-                  })}
-                  
-                  <PaginationItem>
-                    <PaginationNext 
-                      onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
-                      className={currentPage >= totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            </div>
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredStudents.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={handlePageChange}
+              onItemsPerPageChange={handleItemsPerPageChange}
+              itemsPerPageOptions={[4, 8, 12, 16, 20]}
+              disabled={loading}
+              className="pt-6"
+            />
           )}
         </div>
       )}
