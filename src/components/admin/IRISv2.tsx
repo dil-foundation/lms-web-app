@@ -151,7 +151,10 @@ export const IRISv2 = () => {
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
-    scrollToBottom();
+    // Only scroll if there are messages
+    if (messages.length > 0) {
+      scrollToBottom();
+    }
   }, [messages]);
 
   // Update suggestions when messages change
@@ -249,7 +252,10 @@ Error details: ${error instanceof Error ? error.message : 'Unknown error'}`,
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Use setTimeout to ensure DOM has updated before scrolling
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
   };
 
   const handleSendMessage = async (content: string) => {
@@ -637,25 +643,26 @@ formatted = formatted.replace(/💡 Recommendations:?|Recommendations:?/g,
                       {message.role === 'assistant' && ReportExportService.hasExportableData(message) && (
                         <div className="flex items-center gap-2 mt-2 ml-11">
                           <span className="text-xs text-muted-foreground">Export:</span>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm" className="h-7 px-2 text-xs">
-                                <Download className="h-3 w-3 mr-1" />
-                                Export
-                                <ChevronDown className="h-3 w-3 ml-1" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="start">
-                              <DropdownMenuItem onClick={() => handleExportReport(message, 'pdf', findUserQueryForMessage(index))}>
-                                <FileText className="h-4 w-4 mr-2" />
-                                PDF Report
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleExportReport(message, 'xlsx', findUserQueryForMessage(index))}>
-                                <FileSpreadsheet className="h-4 w-4 mr-2" />
-                                Excel File
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <div className="flex gap-1">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-7 px-2 text-xs"
+                              onClick={() => handleExportReport(message, 'pdf', findUserQueryForMessage(index))}
+                            >
+                              <FileText className="h-3 w-3 mr-1" />
+                              PDF
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-7 px-2 text-xs"
+                              onClick={() => handleExportReport(message, 'xlsx', findUserQueryForMessage(index))}
+                            >
+                              <FileSpreadsheet className="h-3 w-3 mr-1" />
+                              Excel
+                            </Button>
+                          </div>
                         </div>
                       )}
                     </div>
