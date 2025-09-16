@@ -101,7 +101,7 @@ export const PracticeBreadcrumb: React.FC<PracticeBreadcrumbProps> = ({ classNam
   };
 
   const handlePracticeClick = () => {
-    navigate('/dashboard');
+    navigate('/dashboard/ai-practice');
   };
 
   const handleStageClick = () => {

@@ -31,7 +31,7 @@ export const useSupabaseMFA = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, mfaStatusCached]);
+  }, [user]); // Remove mfaStatusCached dependency to prevent recreation
 
   // Check if MFA is required globally
   const checkMFARequirement = useCallback(async (force = false) => {
@@ -45,7 +45,7 @@ export const useSupabaseMFA = () => {
       console.error('Error checking MFA requirement:', error);
       setIsMFARequired(false);
     }
-  }, [requirementCached]);
+  }, []); // Remove requirementCached dependency to prevent recreation
 
   // Start MFA setup
   const startMFASetup = useCallback(async () => {
@@ -199,7 +199,7 @@ export const useSupabaseMFA = () => {
       setMfaStatusCached(false);
       setRequirementCached(false);
     }
-  }, [user, loadMFAStatus, checkMFARequirement]);
+  }, [user]); // Remove the function dependencies to prevent infinite loops
 
   return {
     mfaStatus,
