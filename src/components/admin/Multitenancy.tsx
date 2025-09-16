@@ -1640,27 +1640,27 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   const openCountryEditDialog = (country: CountryType) => {
     // Small delay to ensure dropdown is fully closed
     setTimeout(() => {
-      setEditingCountry(country);
-      setCountryFormData({
-        name: country.name,
-        code: country.code,
-        description: country.description
-      });
-      // Clear validation errors when opening edit dialog
-      setCountryValidationErrors({
-        name: '',
-        code: '',
-        description: ''
-      });
-      setIsCountryEditDialogOpen(true);
+    setEditingCountry(country);
+    setCountryFormData({
+      name: country.name,
+      code: country.code,
+      description: country.description
+    });
+    // Clear validation errors when opening edit dialog
+    setCountryValidationErrors({
+      name: '',
+      code: '',
+      description: ''
+    });
+    setIsCountryEditDialogOpen(true);
     }, 100);
   };
 
   const openCountryViewDialog = (country: CountryType) => {
     // Small delay to ensure dropdown is fully closed
     setTimeout(() => {
-      setViewingCountry(country);
-      setIsCountryViewDialogOpen(true);
+    setViewingCountry(country);
+    setIsCountryViewDialogOpen(true);
     }, 100);
   };
 
@@ -1816,29 +1816,29 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   const openRegionEditDialog = (region: Region) => {
     // Small delay to ensure dropdown is fully closed
     setTimeout(() => {
-      setEditingRegion(region);
-      setRegionFormData({
-        name: region.name,
-        code: region.code,
-        country: region.country_id,
-        description: region.description
-      });
-      // Clear validation errors when opening edit dialog
-      setRegionValidationErrors({
-        name: '',
-        code: '',
-        country: '',
-        description: ''
-      });
-      setIsRegionEditDialogOpen(true);
+    setEditingRegion(region);
+    setRegionFormData({
+      name: region.name,
+      code: region.code,
+      country: region.country_id,
+      description: region.description
+    });
+    // Clear validation errors when opening edit dialog
+    setRegionValidationErrors({
+      name: '',
+      code: '',
+      country: '',
+      description: ''
+    });
+    setIsRegionEditDialogOpen(true);
     }, 100);
   };
 
   const openRegionViewDialog = (region: Region) => {
     // Small delay to ensure dropdown is fully closed
     setTimeout(() => {
-      setViewingRegion(region);
-      setIsRegionViewDialogOpen(true);
+    setViewingRegion(region);
+    setIsRegionViewDialogOpen(true);
     }, 100);
   };
 
@@ -1949,31 +1949,31 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   const openCityEditDialog = (city: City) => {
     // Small delay to ensure dropdown is fully closed
     setTimeout(() => {
-      setEditingCity(city);
-      setCityFormData({
-        name: city.name,
-        code: city.code,
-        country: city.country_id,
-        region: city.region_id,
-        description: city.description
-      });
-      // Clear validation errors when opening edit dialog
-      setCityValidationErrors({
-        name: '',
-        code: '',
-        country: '',
-        region: '',
-        description: ''
-      });
-      setIsCityEditDialogOpen(true);
+    setEditingCity(city);
+    setCityFormData({
+      name: city.name,
+      code: city.code,
+      country: city.country_id,
+      region: city.region_id,
+      description: city.description
+    });
+    // Clear validation errors when opening edit dialog
+    setCityValidationErrors({
+      name: '',
+      code: '',
+      country: '',
+      region: '',
+      description: ''
+    });
+    setIsCityEditDialogOpen(true);
     }, 100);
   };
 
   const openCityViewDialog = (city: City) => {
     // Small delay to ensure dropdown is fully closed
     setTimeout(() => {
-      setViewingCity(city);
-      setIsCityViewDialogOpen(true);
+    setViewingCity(city);
+    setIsCityViewDialogOpen(true);
     }, 100);
   };
 
@@ -2089,33 +2089,33 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   const openProjectEditDialog = (project: Project) => {
     // Small delay to ensure dropdown is fully closed
     setTimeout(() => {
-      setEditingProject(project);
-      setProjectFormData({
-        name: project.name,
-        code: project.code,
-        country: project.country_id,
-        region: project.region_id,
-        city: project.city_id,
-        description: project.description
-      });
-      // Clear validation errors when opening edit dialog
-      setProjectValidationErrors({
-        name: '',
-        code: '',
-        country: '',
-        region: '',
-        city: '',
-        description: ''
-      });
-      setIsProjectEditDialogOpen(true);
+    setEditingProject(project);
+    setProjectFormData({
+      name: project.name,
+      code: project.code,
+      country: project.country_id,
+      region: project.region_id,
+      city: project.city_id,
+      description: project.description
+    });
+    // Clear validation errors when opening edit dialog
+    setProjectValidationErrors({
+      name: '',
+      code: '',
+      country: '',
+      region: '',
+      city: '',
+      description: ''
+    });
+    setIsProjectEditDialogOpen(true);
     }, 100);
   };
 
   const openProjectViewDialog = (project: Project) => {
     // Small delay to ensure dropdown is fully closed
     setTimeout(() => {
-      setViewingProject(project);
-      setIsProjectViewDialogOpen(true);
+    setViewingProject(project);
+    setIsProjectViewDialogOpen(true);
     }, 100);
   };
 
@@ -2236,35 +2236,35 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   const openBoardEditDialog = (board: Board) => {
     // Small delay to ensure dropdown is fully closed
     setTimeout(() => {
-      setEditingBoard(board);
-      setBoardFormData({
-        name: board.name,
-        code: board.code,
-        country: board.country_id,
-        region: board.region_id,
-        city: board.city_id,
-        project: board.project_id,
-        description: board.description
-      });
-      // Clear validation errors when opening edit dialog
-      setBoardValidationErrors({
-        name: '',
-        code: '',
-        country: '',
-        region: '',
-        city: '',
-        project: '',
-        description: ''
-      });
-      setIsBoardEditDialogOpen(true);
+    setEditingBoard(board);
+    setBoardFormData({
+      name: board.name,
+      code: board.code,
+      country: board.country_id,
+      region: board.region_id,
+      city: board.city_id,
+      project: board.project_id,
+      description: board.description
+    });
+    // Clear validation errors when opening edit dialog
+    setBoardValidationErrors({
+      name: '',
+      code: '',
+      country: '',
+      region: '',
+      city: '',
+      project: '',
+      description: ''
+    });
+    setIsBoardEditDialogOpen(true);
     }, 100);
   };
 
   const openBoardViewDialog = (board: Board) => {
     // Small delay to ensure dropdown is fully closed
     setTimeout(() => {
-      setViewingBoard(board);
-      setIsBoardViewDialogOpen(true);
+    setViewingBoard(board);
+    setIsBoardViewDialogOpen(true);
     }, 100);
   };
 
@@ -2400,45 +2400,45 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   const openSchoolEditDialog = (school: School) => {
     // Small delay to ensure dropdown is fully closed
     setTimeout(() => {
-      setEditingSchool(school);
-      setSchoolFormData({
-        name: school.name,
-        code: school.code,
-        type: school.school_type,
-        address: school.address || '',
-        country: school.country_id,
-        region: school.region_id,
-        city: school.city_id,
-        project: school.project_id,
-        board: school.board_id,
-        phone: school.phone || '',
-        email: school.email || '',
-        website: school.website || ''
-      });
-      // Clear validation errors when opening edit dialog
-      setSchoolValidationErrors({
-        name: '',
-        code: '',
-        type: '',
-        address: '',
-        country: '',
-        region: '',
-        city: '',
-        project: '',
-        board: '',
-        phone: '',
-        email: '',
-        website: ''
-      });
-      setIsSchoolEditDialogOpen(true);
+    setEditingSchool(school);
+    setSchoolFormData({
+      name: school.name,
+      code: school.code,
+      type: school.school_type,
+      address: school.address || '',
+      country: school.country_id,
+      region: school.region_id,
+      city: school.city_id,
+      project: school.project_id,
+      board: school.board_id,
+      phone: school.phone || '',
+      email: school.email || '',
+      website: school.website || ''
+    });
+    // Clear validation errors when opening edit dialog
+    setSchoolValidationErrors({
+      name: '',
+      code: '',
+      type: '',
+      address: '',
+      country: '',
+      region: '',
+      city: '',
+      project: '',
+      board: '',
+      phone: '',
+      email: '',
+      website: ''
+    });
+    setIsSchoolEditDialogOpen(true);
     }, 100);
   };
 
   const openSchoolViewDialog = (school: School) => {
     // Small delay to ensure dropdown is fully closed
     setTimeout(() => {
-      setViewingSchool(school);
-      setIsSchoolViewDialogOpen(true);
+    setViewingSchool(school);
+    setIsSchoolViewDialogOpen(true);
     }, 100);
   };
 

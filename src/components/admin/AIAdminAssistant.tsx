@@ -139,11 +139,17 @@ export const IRIS: React.FC<IRISProps> = ({ userProfile }) => {
   // Synthetic responses removed - ready for new implementation
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Use setTimeout to ensure DOM has updated before scrolling
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
   };
 
   useEffect(() => {
-    scrollToBottom();
+    // Only scroll if there are messages
+    if (messages.length > 0) {
+      scrollToBottom();
+    }
   }, [messages]);
 
   const handleSendMessage = async (content: string) => {
