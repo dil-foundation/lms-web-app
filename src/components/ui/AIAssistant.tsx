@@ -50,14 +50,35 @@ export const APEX: React.FC<APEXProps> = ({ className }) => {
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Clear any existing scroll timeout to prevent multiple rapid scrolls
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+    }
+    
+    // Use setTimeout to ensure DOM has updated before scrolling
+    scrollTimeoutRef.current = setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
   };
 
   useEffect(() => {
-    scrollToBottom();
-  }, [state.messages, state.isTyping]);
+    // Only scroll if there are messages and the chat is open
+    if (state.isOpen && (state.messages.length > 0 || state.isTyping)) {
+      scrollToBottom();
+    }
+  }, [state.messages, state.isTyping, state.isOpen]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (state.isOpen && inputRef.current) {

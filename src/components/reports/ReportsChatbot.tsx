@@ -72,11 +72,17 @@ export const ReportsChatbot: React.FC<ReportsChatbotProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Use setTimeout to ensure DOM has updated before scrolling
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
   };
 
   useEffect(() => {
-    scrollToBottom();
+    // Only scroll if there are messages
+    if (messages.length > 0) {
+      scrollToBottom();
+    }
   }, [messages]);
 
   // Function to send a message directly with a prompt

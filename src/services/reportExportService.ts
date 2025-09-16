@@ -591,38 +591,29 @@ export class ReportExportService {
   static hasExportableData(message: { content?: string; data?: any }): boolean {
     if (!message) return false;
     
-    // Check if message has structured data
+    // Always allow export if message has structured data
     if (message.data && typeof message.data === 'object' && Object.keys(message.data).length > 0) {
       return true;
     }
     
-    // Check if content contains metrics/analytics
     const content = message.content || '';
     
-    // Expanded metrics detection to include teachers, students, admins, and more educational terms
-    const hasMetrics = /\d+[%]?.*(?:users?|courses?|sessions?|rate|duration|percentage|teachers?|students?|admins?|classes?|assignments?|enrollments?|completions?)/i.test(content);
-    
-    // Expanded analytics detection to include educational and report terms
-    const hasAnalytics = /(?:analytics|metrics|performance|insights|data|report|summary|overview|statistics|total|assigned|registered)/i.test(content);
-    
-    // Table structure detection (both HTML and Markdown)
-    const hasTableStructure = (content.includes('|') && content.includes('---')) || 
-                             (content.includes('<table') && content.includes('</table>')) ||
-                             content.includes('TEACHER ID') || content.includes('FIRST NAME') || 
-                             content.includes('EMAIL') || content.includes('ROLE');
-    
-    // Report-like content indicators
-    const hasReportKeywords = /(?:report|list|summary|overview|statistics|total|here\s+is|here\s+are)/i.test(content);
-    
-    // More flexible detection criteria
-    const hasSubstantialContent = content.length > 100;
-    const looksLikeReport = hasTableStructure || hasReportKeywords || content.length > 200;
-    
-    // Enhanced detection: if it has table structure, it's likely exportable even without other criteria
-    if (hasTableStructure && (hasMetrics || hasAnalytics)) {
-      return true;
+    // Very short messages are not exportable (less than 10 characters)
+    if (content.length < 10) {
+      return false;
     }
     
-    return hasMetrics && hasAnalytics && (hasSubstantialContent || looksLikeReport);
+    // ONLY exclude very specific welcome message patterns
+    const isWelcomeMessage = content.includes("Hello! I'm IRIS") || 
+                            content.includes("Role: Admin") ||
+                            (content.includes("I'm your AI assistant") && content.includes("platform analytics"));
+    
+    if (isWelcomeMessage) {
+      return false;
+    }
+    
+    // EXPORT ABSOLUTELY EVERYTHING ELSE
+    // Any message with 10+ characters that's not the welcome message is exportable
+    return true;
   }
 }

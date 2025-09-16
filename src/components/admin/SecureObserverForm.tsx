@@ -36,6 +36,63 @@ interface SecureObserverFormProps {
 
 type ObserverRole = 'principal' | 'ece' | 'school-officer' | 'project-manager' | '';
 
+// Observer Information Component
+const ObserverInformation: React.FC<{ observerRole: ObserverRole; onRoleChange: (role: ObserverRole) => void }> = ({ observerRole, onRoleChange }) => (
+  <Card>
+    <CardHeader className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-primary/10 pb-6">
+      <div className="flex flex-row items-center gap-4">
+        <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
+          <User className="w-6 h-6 text-primary" />
+        </div>
+        <div>
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 dark:from-white dark:via-gray-100 dark:to-gray-200 bg-clip-text text-transparent">
+            Observer Information
+          </CardTitle>
+          <CardDescription className="text-base text-gray-600 dark:text-gray-300 mt-1">
+            Select your role and provide basic information about the observation
+          </CardDescription>
+        </div>
+      </div>
+    </CardHeader>
+    <CardContent className="p-8">
+      <div className="max-w-md mx-auto">
+        <Label htmlFor="observer-role" className="text-center block mb-4 font-semibold text-lg text-gray-900 dark:text-gray-100">
+          Observer Role *
+        </Label>
+        <div className="relative">
+          <Select value={observerRole} onValueChange={onRoleChange}>
+            <SelectTrigger 
+              id="observer-role" 
+              className="h-14 text-lg font-medium border-2 rounded-2xl bg-background border-input hover:bg-accent hover:text-accent-foreground"
+            >
+              <SelectValue placeholder="Select your observer role" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="principal">Principal</SelectItem>
+              <SelectItem value="ece">ECE Observer</SelectItem>
+              <SelectItem value="school-officer">School Officer</SelectItem>
+              <SelectItem value="project-manager">Project Manager</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        {/* Debug info */}
+        <div className="mt-2 text-xs text-gray-500">
+          Debug: Current role = {observerRole || 'none'}
+        </div>
+      </div>
+      {observerRole && (
+        <div className="text-center mt-8">
+          <Badge variant="outline" className="border-primary/30 bg-gradient-to-r from-primary/5 to-primary/10 text-primary-800 dark:text-primary-200 dark:bg-primary/10 dark:border-primary/30 px-6 py-3 rounded-2xl shadow-lg">
+            <Check className="w-5 h-5 mr-2 text-primary-600 dark:text-primary-400" />
+            <span className="font-semibold">Role-specific questionnaire will appear below</span>
+          </Badge>
+        </div>
+      )}
+    </CardContent>
+  </Card>
+);
+
 // Form data interfaces
 interface FormData {
   // Observer information
@@ -1209,7 +1266,10 @@ export const SecureObserverForm = ({ token }: SecureObserverFormProps) => {
             </Badge>
           </div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {observerRole.charAt(0).toUpperCase() + observerRole.slice(1).replace('-', ' ')} Observation Report
+            {observerRole ? 
+              `${observerRole.charAt(0).toUpperCase() + observerRole.slice(1).replace('-', ' ')} Observation Report` : 
+              'Observation Report'
+            }
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             Please complete all required fields to submit your observation report.
@@ -1219,6 +1279,15 @@ export const SecureObserverForm = ({ token }: SecureObserverFormProps) => {
 
       {/* Form Content */}
       <div className="max-w-4xl mx-auto space-y-8 py-8">
+        {/* Observer Information */}
+        <ObserverInformation 
+          observerRole={observerRole} 
+          onRoleChange={(role) => {
+            setObserverRole(role);
+            updateFormData('observerRole', role);
+          }} 
+        />
+        
         {/* Observation Details */}
         {observerRole && <ObservationDetails formData={formData} updateFormData={updateFormData} formErrors={formErrors} />}
 
