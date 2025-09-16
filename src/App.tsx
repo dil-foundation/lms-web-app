@@ -47,6 +47,7 @@ const SessionTimeoutTracker = () => {
 const Home = lazy(() => import("./pages/Home"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const CourseBuilder = lazy(() => import("./pages/CourseBuilder"));
+const StandaloneQuizManagement = lazy(() => import("./pages/StandaloneQuizManagement"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const RoleSelection = lazy(() => import('./pages/RoleSelection'));

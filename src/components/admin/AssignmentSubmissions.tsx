@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, CheckCircle2, Clock, FileText, Search, Users, ChevronRight, Download, Eye, CheckCircle, XCircle, Circle } from 'lucide-react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { ContentLoader } from '@/components/ContentLoader';
 import { useAuth } from '@/hooks/useAuth';
@@ -89,6 +89,7 @@ type StatCardData = {
 export const AssignmentSubmissions = () => {
   const { user } = useAuth();
   const { id: assignmentId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -115,6 +116,19 @@ export const AssignmentSubmissions = () => {
     setError(null);
 
     try {
+      // Check if this is a standalone quiz ID by trying to find it in standalone_quizzes table
+      const { data: standaloneQuiz, error: standaloneError } = await supabase
+        .from('standalone_quizzes')
+        .select('id')
+        .eq('id', assignmentId)
+        .maybeSingle();
+
+      if (standaloneQuiz && !standaloneError) {
+        // This is a standalone quiz ID, redirect to standalone quiz management
+        navigate('/dashboard/standalone-quizzes?tab=attempts');
+        return;
+      }
+
       const { data, error: rpcError } = await supabase
         .rpc('get_assessment_submissions', { assessment_id: assignmentId })
         .single();
@@ -122,15 +136,17 @@ export const AssignmentSubmissions = () => {
       if (rpcError) throw rpcError;
       if (!data) throw new Error("Assessment not found.");
 
+      const assessmentData = data as any; // Type assertion for the RPC response
+
       setAssignmentDetails({
-        title: data.title,
-        course: data.course_title,
-        type: data.content_type as 'quiz' | 'assignment',
-        course_id: data.course_id,
-        lesson_id: data.lesson_id
+        title: assessmentData.title,
+        course: assessmentData.course_title,
+        type: assessmentData.content_type as 'quiz' | 'assignment',
+        course_id: assessmentData.course_id,
+        lesson_id: assessmentData.lesson_id
       });
       
-      const processedSubmissions = (data.submissions || []).map((item: any) => {
+      const processedSubmissions = (assessmentData.submissions || []).map((item: any) => {
           if (item.submission) {
               return {
                   ...item.submission,

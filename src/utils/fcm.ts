@@ -28,7 +28,7 @@ export const requestNotificationPermission = async () => {
         console.error('No registration token available. Request permission to generate one.');
       }
     } else {
-      console.warn('Notification permission denied');
+      console.log('Notification permission denied - notifications will not be available');
     }
   } catch (error) {
     console.error('An error occurred while retrieving token:', error);

@@ -15,6 +15,8 @@ interface Assessment {
   submissions_count: number;
   graded_count: number;
   average_score: number;
+  is_standalone?: boolean;
+  author_id?: string;
 }
 
 interface AssessmentCardViewProps {

@@ -1,4 +1,4 @@
-import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom';
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { DashboardSidebar } from '@/components/DashboardSidebar';
 import { SidebarProvider } from '@/components/ui/sidebar';
@@ -77,6 +77,27 @@ const Multitenancy = lazy(() => import('@/components/admin/Multitenancy').then(m
 const OfflineLearning = lazy(() => import('@/components/admin/OfflineLearning').then(module => ({ default: module.OfflineLearning })));
 const CourseCategories = lazy(() => import('@/components/admin/CourseCategories').then(module => ({ default: module.CourseCategories })));
 const CourseBuilder = lazy(() => import('./CourseBuilder'));
+const StandaloneQuizManagement = lazy(() => import('./StandaloneQuizManagement'));
+const StandaloneQuizBuilder = lazy(() => import('./StandaloneQuizBuilder'));
+const StandaloneQuizTaker = lazy(() => import('./StandaloneQuizTaker'));
+const StudentQuizzes = lazy(() => import('./StudentQuizzes'));
+const QuizResults = lazy(() => import('@/components/standaloneQuiz/QuizResults'));
+
+// Wrapper component for QuizResults to handle route parameters
+const QuizResultsWrapper = () => {
+  const { quizId, attemptId } = useParams<{ quizId: string; attemptId?: string }>();
+  const navigate = useNavigate();
+  
+  const handleBack = () => {
+    navigate('/dashboard/quizzes');
+  };
+  
+  const handleRetake = () => {
+    navigate(`/dashboard/quiz/${quizId}`);
+  };
+  
+  return <QuizResults quizId={quizId!} attemptId={attemptId} onBack={handleBack} onRetake={handleRetake} />;
+};
 const CourseOverview = lazy(() => import('./CourseOverview').then(module => ({ default: module.CourseOverview })));
 const CourseContent = lazy(() => import('./CourseContent').then(module => ({ default: module.CourseContent })));
 const StudentsPage = lazy(() => import('./StudentsPage'));
@@ -283,6 +304,10 @@ const Dashboard = () => {
                       <Route path="/courses" element={<StudentCourses userProfile={finalProfile} />} />
                       <Route path="/assignments" element={<StudentAssignments userProfile={finalProfile} />} />
                       <Route path="/progress" element={<StudentProgress userProfile={finalProfile} />} />
+                      <Route path="/quizzes" element={<StudentQuizzes />} />
+                      <Route path="/quiz/:quizId" element={<StandaloneQuizTaker />} />
+                      <Route path="/quiz-results/:quizId" element={<QuizResultsWrapper />} />
+                      <Route path="/quiz-results/:quizId/:attemptId" element={<QuizResultsWrapper />} />
                       <Route path="/messages" element={<MessagesPage />} />
                       <Route path="/discussion" element={<DiscussionsPage />} />
                       <Route path="/discussion/:id" element={<DiscussionViewPage />} />
@@ -328,6 +353,10 @@ const Dashboard = () => {
                         <>
                           <Route path="/courses" element={<CourseManagement />} />
                           <Route path="/courses/builder/:courseId" element={<CourseBuilder />} />
+                          <Route path="/standalone-quizzes" element={<StandaloneQuizManagement />} />
+                          <Route path="/quiz-builder" element={<StandaloneQuizBuilder />} />
+                          <Route path="/quiz-builder/:quizId" element={<StandaloneQuizBuilder />} />
+                          <Route path="/quiz/:quizId" element={<StandaloneQuizTaker />} />
                           <Route path="/students" element={<StudentsPage />} />
                           <Route path="/classes" element={<ClassManagement />} />
                           <Route path="/reports" element={<ReportsPage />} />
@@ -388,6 +417,10 @@ const Dashboard = () => {
                           <Route path="/courses" element={<CourseManagement />} />
                           <Route path="/course-categories" element={<CourseCategories />} />
                           <Route path="/courses/builder/:courseId" element={<CourseBuilder />} />
+                          <Route path="/standalone-quizzes" element={<StandaloneQuizManagement />} />
+                          <Route path="/quiz-builder" element={<StandaloneQuizBuilder />} />
+                          <Route path="/quiz-builder/:quizId" element={<StandaloneQuizBuilder />} />
+                          <Route path="/quiz/:quizId" element={<StandaloneQuizTaker />} />
                           <Route path="/reports" element={<ReportsOverview />} />
                           <Route path="/observation-reports" element={<ObservationReports />} />
                           <Route path="/messages" element={<MessagesPage />} />

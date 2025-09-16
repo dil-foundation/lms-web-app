@@ -5,6 +5,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { useViewPreferences } from '@/contexts/ViewPreferencesContext';
 import { ViewToggle } from '@/components/ui/ViewToggle';
 import { AssessmentCardView } from '@/components/assessment/AssessmentCardView';
+import { StandaloneQuizService } from '@/services/standaloneQuizService';
 import {
   Card,
   CardContent,
@@ -51,6 +52,9 @@ type Assignment = {
   avg_score: number;
   status: string;
   overdue: boolean;
+  // For standalone quizzes
+  is_standalone?: boolean;
+  author_id?: string;
 };
 
 type Course = {
@@ -134,40 +138,115 @@ export const GradeAssignments = () => {
     setError(null);
 
     try {
-      let data, rpcError;
+      let courseAssignments = [];
+      let standaloneQuizzes = [];
       
       if (isAdmin) {
-        // Use admin function to get all assessments
-        const result = await supabase.rpc('get_admin_assessments_data', {
-          search_query: debouncedSearchTerm,
-          course_filter_id: selectedCourse === 'all' ? null : selectedCourse,
+        // For admins, get course assessments and standalone quizzes separately (simpler approach)
+        const [courseResult, standaloneData] = await Promise.all([
+          supabase.rpc('get_admin_assessments_data', {
+            search_query: debouncedSearchTerm,
+            course_filter_id: selectedCourse === 'all' ? null : selectedCourse,
+          }),
+          StandaloneQuizService.getAttemptsRequiringGrading() // No teacher_id for admins
+        ]);
+        
+        if (courseResult.error) throw courseResult.error;
+        courseAssignments = courseResult.data || [];
+        
+        // Group standalone quizzes by quiz and get unique quizzes
+        const quizMap = new Map();
+        standaloneData.forEach((attempt: any) => {
+          if (!quizMap.has(attempt.quiz_id)) {
+            quizMap.set(attempt.quiz_id, {
+              id: attempt.quiz_id,
+              title: attempt.quiz_title,
+              course: 'Standalone Quiz',
+              course_id: null,
+              type: 'quiz',
+              due_date: null,
+              submissions: 0,
+              graded: 0,
+              avg_score: 0,
+              status: 'active',
+              overdue: false,
+              is_standalone: true,
+              author_id: attempt.author_id || user.id
+            });
+          }
+          const quiz = quizMap.get(attempt.quiz_id);
+          quiz.submissions += 1;
+          if (attempt.manual_grading_completed) {
+            quiz.graded += 1;
+          }
         });
-        data = result.data;
-        rpcError = result.error;
+        
+        standaloneQuizzes = Array.from(quizMap.values());
       } else {
-        // Use teacher function to get only their assessments
-        const result = await supabase.rpc('get_teacher_assessments_data', {
-          teacher_id: user.id,
-          search_query: debouncedSearchTerm,
-          course_filter_id: selectedCourse === 'all' ? null : selectedCourse,
+        // For teachers, get course assessments and standalone quizzes separately
+        const [courseResult, standaloneData] = await Promise.all([
+          supabase.rpc('get_teacher_assessments_data', {
+            teacher_id: user.id,
+            search_query: debouncedSearchTerm,
+            course_filter_id: selectedCourse === 'all' ? null : selectedCourse,
+          }),
+          StandaloneQuizService.getAttemptsRequiringGrading(user.id)
+        ]);
+        
+        if (courseResult.error) throw courseResult.error;
+        courseAssignments = courseResult.data || [];
+        
+        // Group standalone quizzes by quiz and get unique quizzes
+        const quizMap = new Map();
+        standaloneData.forEach((attempt: any) => {
+          if (!quizMap.has(attempt.quiz_id)) {
+            quizMap.set(attempt.quiz_id, {
+              id: attempt.quiz_id,
+              title: attempt.quiz_title,
+              course: 'Standalone Quiz',
+              course_id: null,
+              type: 'quiz',
+              due_date: null,
+              submissions: 0,
+              graded: 0,
+              avg_score: 0,
+              status: 'active',
+              overdue: false,
+              is_standalone: true,
+              author_id: attempt.author_id || user.id
+            });
+          }
+          const quiz = quizMap.get(attempt.quiz_id);
+          quiz.submissions += 1;
+          if (attempt.manual_grading_completed) {
+            quiz.graded += 1;
+          }
         });
-        data = result.data;
-        rpcError = result.error;
+        
+        standaloneQuizzes = Array.from(quizMap.values());
       }
       
-      if (rpcError) {
-        throw rpcError;
-      }
-      
-      const formattedAssignments = (data || []).map((a: any) => ({
+      const formattedCourseAssignments = courseAssignments.map((a: any) => ({
         ...a,
         due_date: a.due_date ? new Date(a.due_date).toLocaleDateString() : 'N/A',
         overdue: a.due_date ? new Date(a.due_date) < new Date() : false,
-        status: 'active', // This could be enhanced if the function provides it
-        avg_score: Number(a.avg_score)
+        status: 'active',
+        avg_score: Number(a.avg_score),
+        is_standalone: a.is_standalone || false
       }));
 
-      setAssignments(formattedAssignments);
+      // Combine course assignments and standalone quizzes for both admins and teachers
+      const allAssignments = [...formattedCourseAssignments, ...standaloneQuizzes];
+      
+      // Filter by search term if needed
+      const filteredAssignments = debouncedSearchTerm 
+        ? allAssignments.filter(a => 
+            a.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+            a.course.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+          )
+        : allAssignments;
+
+      setAssignments(filteredAssignments);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -317,22 +396,48 @@ export const GradeAssignments = () => {
                             status: assignment.overdue ? 'overdue' : (assignment.status as 'active' | 'inactive'),
                             submissions_count: assignment.submissions,
                             graded_count: assignment.graded,
-                            average_score: assignment.avg_score
+                            average_score: assignment.avg_score,
+                            is_standalone: assignment.is_standalone,
+                            author_id: assignment.author_id
                           }))}
                           onAssessmentClick={(assessment) => {
-                            window.location.href = `/dashboard/grade-assignments/${assessment.id}`;
+                            if (assessment.is_standalone) {
+                              // Navigate to standalone quiz management attempts tab
+                              window.location.href = `/dashboard/standalone-quizzes?tab=attempts`;
+                            } else {
+                              window.location.href = `/dashboard/grade-assignments/${assessment.id}`;
+                            }
                           }}
                           onGrade={(assessment) => {
-                            window.location.href = `/dashboard/grade-assignments/${assessment.id}`;
+                            if (assessment.is_standalone) {
+                              // Navigate to standalone quiz management attempts tab
+                              window.location.href = `/dashboard/standalone-quizzes?tab=attempts`;
+                            } else {
+                              window.location.href = `/dashboard/grade-assignments/${assessment.id}`;
+                            }
                           }}
                           onEdit={(assessment) => {
-                            // Handle edit functionality
+                            if (assessment.is_standalone) {
+                              // Navigate to standalone quiz builder
+                              window.location.href = `/dashboard/quiz-builder/${assessment.id}`;
+                            } else {
+                              // Handle edit functionality for course assessments
+                            }
                           }}
                           onDelete={(assessment) => {
-                            // Handle delete functionality
+                            if (assessment.is_standalone) {
+                              // Handle delete functionality for standalone quizzes
+                            } else {
+                              // Handle delete functionality for course assessments
+                            }
                           }}
                           onViewSubmissions={(assessment) => {
-                            window.location.href = `/dashboard/grade-assignments/${assessment.id}`;
+                            if (assessment.is_standalone) {
+                              // Navigate to standalone quiz management with attempts tab
+                              window.location.href = `/dashboard/standalone-quizzes?tab=attempts`;
+                            } else {
+                              window.location.href = `/dashboard/grade-assignments/${assessment.id}`;
+                            }
                           }}
                         />
                       )}

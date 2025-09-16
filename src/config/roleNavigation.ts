@@ -1,5 +1,5 @@
 
-import { Home, BookOpen, FileQuestion, TrendingUp, Users, Settings, BarChart3, GraduationCap, ClipboardList, Award, UserCheck, Database, Shield, MessageSquare, Link, Eye, MessageCircle, Bot, Brain, Zap, Target, Sparkles, BookCheck, FileText, Cog, Settings2, ShieldCheck, Plug, Building2, Download, MapPin, Users2, MessageCircle as AIAssistant } from 'lucide-react';
+import { Home, BookOpen, FileQuestion, TrendingUp, Users, Settings, BarChart3, GraduationCap, ClipboardList, Award, UserCheck, Database, Shield, MessageSquare, Link, Eye, MessageCircle, Bot, Brain, Zap, Target, Sparkles, BookCheck, FileText, Cog, Settings2, ShieldCheck, Plug, Building2, Download, MapPin, Users2, MessageCircle as AIAssistant, HelpCircle, Plus } from 'lucide-react';
 
 export type UserRole = 'student' | 'teacher' | 'admin';
 
@@ -26,6 +26,7 @@ export const getRoleNavigation = (role?: UserRole): NavigationItem[] => {
         { title: 'Overview', path: '/dashboard', icon: Home },
         { title: 'My Courses', path: '/dashboard/courses', icon: BookOpen },
         { title: 'Assignments', path: '/dashboard/assignments', icon: ClipboardList },
+        { title: 'Quizzes', path: '/dashboard/quizzes', icon: HelpCircle },
         { title: 'Progress', path: '/dashboard/progress', icon: TrendingUp },
       ];
     
@@ -33,6 +34,7 @@ export const getRoleNavigation = (role?: UserRole): NavigationItem[] => {
       return [
         { title: 'Overview', path: '/dashboard', icon: Home },
         { title: 'My Courses', path: '/dashboard/courses', icon: BookOpen },
+        { title: 'Quizzes', path: '/dashboard/standalone-quizzes', icon: HelpCircle },
         { title: 'Students', path: '/dashboard/students', icon: Users },
         { title: 'Performance Analytics', path: '/dashboard/reports', icon: FileQuestion },
         { title: 'Discussion', path: '/dashboard/discussion', icon: MessageCircle },
@@ -43,6 +45,7 @@ export const getRoleNavigation = (role?: UserRole): NavigationItem[] => {
         { title: 'Overview', path: '/dashboard', icon: Home },
         { title: 'Users', path: '/dashboard/users', icon: Users },
         { title: 'Courses', path: '/dashboard/courses', icon: BookOpen },
+        { title: 'Quizzes', path: '/dashboard/standalone-quizzes', icon: HelpCircle },
         { title: 'Performance Analytics', path: '/dashboard/reports', icon: FileQuestion },
         { title: 'Observation Reports', path: '/dashboard/observation-reports', icon: Eye },
         { title: 'Discussion', path: '/dashboard/discussion', icon: MessageSquare },
@@ -76,6 +79,7 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean): N
             { title: 'Overview', path: '/dashboard', icon: Home },
             { title: 'My Courses', path: '/dashboard/courses', icon: BookOpen },
             { title: 'Assignments', path: '/dashboard/assignments', icon: ClipboardList },
+            { title: 'Quizzes', path: '/dashboard/quizzes', icon: HelpCircle },
           ]
         },
         {
@@ -107,6 +111,7 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean): N
           items: [
             { title: 'Students', path: '/dashboard/students', icon: Users },
             { title: 'Classes', path: '/dashboard/classes', icon: Users2 },
+            { title: 'Quizzes', path: '/dashboard/standalone-quizzes', icon: HelpCircle },
             { title: 'Assessments', path: '/dashboard/grade-assignments', icon: Award },
             { title: 'Performance Analytics', path: '/dashboard/reports', icon: FileQuestion },
           ]
@@ -136,6 +141,7 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean): N
             { title: 'Classes', path: '/dashboard/classes', icon: Users2 },
             { title: 'Courses', path: '/dashboard/courses', icon: BookOpen },
             { title: 'Course Categories', path: '/dashboard/course-categories', icon: BookCheck },
+            { title: 'Quizzes', path: '/dashboard/standalone-quizzes', icon: HelpCircle },
             { title: 'Assessments', path: '/dashboard/grade-assignments', icon: Award },
             { title: 'Messages', path: '/dashboard/messages', icon: MessageSquare },
             { title: 'Discussion', path: '/dashboard/discussion', icon: MessageCircle },
