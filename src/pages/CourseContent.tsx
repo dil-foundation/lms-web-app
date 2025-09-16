@@ -180,6 +180,11 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
   const [isQuizSubmitted, setIsQuizSubmitted] = useState(false);
   const [quizResults, setQuizResults] = useState<Record<string, boolean>>({});
 
+  // Memoized function to handle drawing changes
+  const handleDrawingChange = useCallback((questionId: string, drawingData: string) => {
+    setMathDrawings(prev => ({ ...prev, [questionId]: drawingData }));
+  }, []);
+
   const actualCourseId = courseId || id;
 
   // Check if user can reorder content (admin and teacher only, and only in draft mode)
@@ -245,6 +250,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         const answers: Record<string, string | string[]> = {};
         const textAnswersData: Record<string, string> = {};
         const mathAnswersData: Record<string, string> = {};
+        const mathDrawingsData: Record<string, string> = {};
         
         if (submission.answers) {
           Object.keys(submission.answers as Record<string, any>).forEach(questionId => {
@@ -256,8 +262,25 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
               // This is a text answer
               textAnswersData[questionId] = answer;
             } else if (question?.question_type === 'math_expression') {
-              // This is a math expression answer
-              mathAnswersData[questionId] = answer;
+              // Check if this is drawing data (JSON string with paths) or regular math expression
+              if (typeof answer === 'string' && answer.startsWith('{"paths":')) {
+                // This is drawing data - parse and store it
+                try {
+                  const drawingData = JSON.parse(answer);
+                  mathDrawingsData[questionId] = answer; // Store the full JSON string
+                  // If there's also a math expression in the drawing data, extract it
+                  if (drawingData.mathExpression) {
+                    mathAnswersData[questionId] = drawingData.mathExpression;
+                  }
+                } catch (error) {
+                  console.error('Error parsing drawing data:', error);
+                  // Fallback: treat as regular math answer
+                  mathAnswersData[questionId] = answer;
+                }
+              } else {
+                // This is a regular math expression answer
+                mathAnswersData[questionId] = answer;
+              }
             } else {
               // This is a multiple choice/single choice answer
               // If it's already an array, keep it; otherwise convert to array for backward compatibility
@@ -269,6 +292,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         setUserAnswers(answers);
         setTextAnswers(textAnswersData);
         setMathAnswers(mathAnswersData);
+        setMathDrawings(mathDrawingsData);
         setQuizResults(submission.results || {});
         setIsQuizSubmitted(true);
       } else {
@@ -276,6 +300,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         setUserAnswers({});
         setTextAnswers({});
         setMathAnswers({});
+        setMathDrawings({});
         setQuizResults({});
       }
     }
@@ -508,10 +533,17 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
           // Process math expressions
           hasMathAnswers = true;
           const userMathAnswer = mathAnswers[q.id];
+          const userDrawing = mathDrawings[q.id];
           const expectedAnswer = q.math_expression;
           const tolerance = q.math_tolerance || 0.01;
           
-          if (userMathAnswer && expectedAnswer) {
+          // Check if this is a drawing answer
+          if (userDrawing && userDrawing.trim() !== '') {
+            // This is a drawing answer - don't set a result, will be graded manually
+            // Don't set results[q.id] = false; // This was causing the "Incorrect" display
+            hasTextAnswers = true; // Use this flag to indicate manual grading needed
+          } else if (userMathAnswer && expectedAnswer) {
+            // This is a regular math expression - auto-grade
             const evaluation = evaluateMathExpression(userMathAnswer, expectedAnswer, tolerance);
             results[q.id] = evaluation.isCorrect;
             
@@ -544,8 +576,12 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         }
     });
     
-    // Calculate score only for auto-graded questions (exclude text_answer which requires manual grading)
-    const autoGradedQuestions = questions.filter((q: any) => q.question_type !== 'text_answer');
+    // Calculate score only for auto-graded questions (exclude text_answer and drawing math expressions which require manual grading)
+    const autoGradedQuestions = questions.filter((q: any) => {
+      if (q.question_type === 'text_answer') return false;
+      if (q.question_type === 'math_expression' && mathDrawings[q.id]) return false; // Exclude drawing math expressions
+      return true;
+    });
     const score = autoGradedQuestions.length > 0 ? (correctAnswers / autoGradedQuestions.length) * 100 : 0;
     
     // Combine all answer types
@@ -581,6 +617,8 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         answers: allAnswers,
         results: results,
         score: finalScore,
+        manual_grading_required: hasTextAnswers,
+        manual_grading_completed: false,
     }).select().single();
     
     if (error) {
@@ -1072,7 +1110,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                           hint={q.math_hint}
                           allowDrawing={q.math_allow_drawing === true}
                           drawingData={mathDrawings[q.id] || ''}
-                          onDrawingChange={(drawingData) => setMathDrawings(prev => ({ ...prev, [q.id]: drawingData }))}
+                          onDrawingChange={(drawingData) => handleDrawingChange(q.id, drawingData)}
                         />
                         
                         {/* Math Expression Review Section - Show after submission */}
@@ -1106,8 +1144,8 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                               </div>
                             )}
                             
-                            {/* Show if answer was correct or incorrect */}
-                            {currentContentItem.submission?.results && currentContentItem.submission.results[q.id] !== undefined && (
+                            {/* Show if answer was correct or incorrect - only for non-drawing answers */}
+                            {currentContentItem.submission?.results && currentContentItem.submission.results[q.id] !== undefined && !mathDrawings[q.id] && (
                               <div className={`p-4 rounded-xl shadow-sm border-2 ${
                                 currentContentItem.submission.results[q.id] 
                                   ? 'bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-800/10 border-green-200 dark:border-green-700/50'
@@ -1127,9 +1165,24 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                                   </div>
                                   {currentContentItem.submission.results[q.id] ? 'Correct!' : 'Incorrect'}
                                 </div>
-                                {q.math_tolerance && (
+                                {q.math_tolerance && !mathDrawings[q.id] && (
                                   <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                                     <span className="font-medium">Tolerance used:</span> {q.math_tolerance}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            
+                            {/* Show manual grading status for drawing answers */}
+                            {mathDrawings[q.id] && (
+                              <div className="p-4 rounded-xl shadow-sm border-2 bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-800/10 border-orange-200 dark:border-orange-700/50">
+                                <div className="flex items-center gap-2 font-semibold text-orange-900 dark:text-orange-100">
+                                  <div className="w-4 h-4 text-orange-600 dark:text-orange-400">📝</div>
+                                  {currentContentItem.submission?.manual_grading_completed ? 'Graded by Teacher' : 'Pending Manual Grading'}
+                                </div>
+                                {currentContentItem.submission?.manual_grading_completed && currentContentItem.submission?.manual_grading_score !== null && (
+                                  <div className="text-sm text-orange-700 dark:text-orange-300 mt-2">
+                                    <span className="font-medium">Your Grade:</span> {currentContentItem.submission.manual_grading_score}%
                                   </div>
                                 )}
                               </div>
