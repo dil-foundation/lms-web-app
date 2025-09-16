@@ -14,6 +14,7 @@ import { ContentLoader } from '@/components/ContentLoader';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import AccessLogService from '@/services/accessLogService';
+import { MathDrawingCanvas } from '@/components/quiz/MathDrawingCanvas';
 
 // Types
 type SubmissionStatus = 'graded' | 'submitted' | 'not submitted';
@@ -352,18 +353,24 @@ export const AssignmentSubmissions = () => {
   const handleSaveGrade = async () => {
     if (!selectedSubmission) return;
 
-    // For quiz submissions with text answers, validate that all questions are graded
+    // For quiz submissions with text answers or drawing math expressions, validate that all questions are graded
     if (assignmentDetails?.type === 'quiz' && quizQuestions) {
       const textAnswerQuestions = quizQuestions.filter(q => q.question_type === 'text_answer');
-      const ungradedQuestions = textAnswerQuestions.filter(q => !manualGrades[q.id] && manualGrades[q.id] !== 0);
+      const drawingMathQuestions = quizQuestions.filter(q => 
+        q.question_type === 'math_expression' && 
+        selectedSubmission?.answers?.[q.id]?.startsWith('{"paths":')
+      );
+      const manualGradingQuestions = [...textAnswerQuestions, ...drawingMathQuestions];
+      
+      const ungradedQuestions = manualGradingQuestions.filter(q => !manualGrades[q.id] && manualGrades[q.id] !== 0);
       
       if (ungradedQuestions.length > 0) {
-        toast.error(`Please grade all ${textAnswerQuestions.length} text answer question(s) before saving.`);
+        toast.error(`Please grade all ${manualGradingQuestions.length} manual grading question(s) before saving.`);
         return;
       }
       
       // Validate that all grades are valid numbers between 0 and 100
-      const invalidGrades = textAnswerQuestions.filter(q => {
+      const invalidGrades = manualGradingQuestions.filter(q => {
         const grade = manualGrades[q.id];
         return typeof grade !== 'number' || grade < 0 || grade > 100;
       });
@@ -425,11 +432,23 @@ export const AssignmentSubmissions = () => {
       } else if (assignmentDetails?.type === 'quiz') {
         // Handle quiz grading
         const hasTextAnswers = quizQuestions.some(q => q.question_type === 'text_answer');
+        const hasDrawingMath = quizQuestions.some(q => 
+          q.question_type === 'math_expression' && 
+          selectedSubmission?.answers?.[q.id]?.startsWith('{"paths":')
+        );
         
-        if (hasTextAnswers) {
+        if (hasTextAnswers || hasDrawingMath) {
           // Calculate final score by combining auto-graded and manually graded questions
           const textAnswerQuestions = quizQuestions.filter(q => q.question_type === 'text_answer');
-          const autoGradedQuestions = quizQuestions.filter(q => q.question_type !== 'text_answer');
+          const drawingMathQuestions = quizQuestions.filter(q => 
+            q.question_type === 'math_expression' && 
+            selectedSubmission?.answers?.[q.id]?.startsWith('{"paths":')
+          );
+          const manualGradingQuestions = [...textAnswerQuestions, ...drawingMathQuestions];
+          const autoGradedQuestions = quizQuestions.filter(q => 
+            q.question_type !== 'text_answer' && 
+            !(q.question_type === 'math_expression' && selectedSubmission?.answers?.[q.id]?.startsWith('{"paths":'))
+          );
           
           let finalScore = 0;
           let totalQuestions = quizQuestions.length;
@@ -443,17 +462,17 @@ export const AssignmentSubmissions = () => {
             finalScore += autoGradedScore;
           }
           
-          // Calculate score from manually graded text answer questions
-          if (textAnswerQuestions.length > 0) {
-            const textAnswerScore = textAnswerQuestions.reduce((sum, q) => sum + (manualGrades[q.id] || 0), 0);
-            finalScore += textAnswerScore;
+          // Calculate score from manually graded questions (text answers + drawing math expressions)
+          if (manualGradingQuestions.length > 0) {
+            const manualScore = manualGradingQuestions.reduce((sum, q) => sum + (manualGrades[q.id] || 0), 0);
+            finalScore += manualScore;
           }
           
           // Calculate final percentage
           const finalPercentage = Math.round(finalScore / totalQuestions);
           
           // Prepare grades data for the new structure
-          const gradesData = textAnswerQuestions.map(q => ({
+          const gradesData = manualGradingQuestions.map(q => ({
             question_id: q.id,
             grade: manualGrades[q.id] || 0,
             feedback: manualFeedback[q.id] || ''
@@ -469,11 +488,11 @@ export const AssignmentSubmissions = () => {
           if (error) throw error;
           
           const autoGradedCount = autoGradedQuestions.length;
-          const textAnswerCount = textAnswerQuestions.length;
+          const manualGradingCount = manualGradingQuestions.length;
           
-          if (autoGradedCount > 0 && textAnswerCount > 0) {
-            toast.success(`Grading completed! Final score: ${finalPercentage}% (Auto-graded: ${autoGradedCount} questions, Manual: ${textAnswerCount} questions)`);
-          } else if (textAnswerCount > 0) {
+          if (autoGradedCount > 0 && manualGradingCount > 0) {
+            toast.success(`Grading completed! Final score: ${finalPercentage}% (Auto-graded: ${autoGradedCount} questions, Manual: ${manualGradingCount} questions)`);
+          } else if (manualGradingCount > 0) {
             toast.success(`Manual grading completed! Final score: ${finalPercentage}%`);
           }
           
@@ -495,12 +514,12 @@ export const AssignmentSubmissions = () => {
             }
           }
         } else {
-          // Regular quiz grading (for non-text answer quizzes)
+          // Regular quiz grading (for quizzes with only auto-graded questions)
           const { error } = await supabase
             .from('quiz_submissions')
             .update({
-              score: grade ? parseFloat(grade) : 0,
-              feedback: feedback
+              score: selectedSubmission.score || 0,
+              manual_grading_completed: true
             })
             .eq('id', selectedSubmission.id);
           
@@ -518,7 +537,7 @@ export const AssignmentSubmissions = () => {
                 selectedSubmission.student.name,
                 assignmentId || 'unknown',
                 assignmentDetails.title,
-                parseFloat(grade) || 0,
+                selectedSubmission.score || 0,
                 feedback
               );
             } catch (logError) {
@@ -993,37 +1012,116 @@ export const AssignmentSubmissions = () => {
                               </div>
                             ) : question.question_type === 'math_expression' ? (
                               <div className="space-y-4">
-                                <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 border-2 border-blue-200 dark:border-blue-700/50 rounded-xl shadow-sm">
-                                  <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-3 flex items-center gap-2">
-                                    <Circle className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                                    Student's Math Expression:
-                                  </h4>
-                                  <div className="p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg border border-blue-200/50 dark:border-blue-700/30">
-                                    <p className="text-gray-900 dark:text-gray-100 font-mono text-lg leading-relaxed">
-                                      {studentAnswer || (
-                                        <span className="text-gray-500 dark:text-gray-400 italic">No answer provided</span>
-                                      )}
-                                    </p>
-                                  </div>
-                                </div>
-                                
-                                {question.math_expression && (
-                                  <div className="p-4 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-800/10 border-2 border-green-200 dark:border-green-700/50 rounded-xl shadow-sm">
-                                    <h4 className="font-semibold text-green-900 dark:text-green-100 mb-3 flex items-center gap-2">
-                                      <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
-                                      Expected Answer:
-                                    </h4>
-                                    <div className="p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg border border-green-200/50 dark:border-green-700/30">
-                                      <p className="text-gray-900 dark:text-gray-100 font-mono text-lg leading-relaxed">
-                                        {question.math_expression}
-                                      </p>
+                                {/* Check if this is a drawing answer */}
+                                {studentAnswer && studentAnswer.startsWith('{"paths":') ? (
+                                  <div className="space-y-4">
+                                    <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 border-2 border-blue-200 dark:border-blue-700/50 rounded-xl shadow-sm">
+                                      <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-3 flex items-center gap-2">
+                                        <Circle className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                        Student's Drawing:
+                                      </h4>
+                                      <div className="p-4 bg-white/60 dark:bg-gray-800/60 rounded-lg border border-blue-200/50 dark:border-blue-700/30">
+                                        <MathDrawingCanvas
+                                          questionId={question.id}
+                                          initialDrawing={studentAnswer}
+                                          disabled={true}
+                                          width={600}
+                                          height={400}
+                                          onDrawingChange={() => {}}
+                                        />
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Manual grading interface for drawing */}
+                                    <div className="space-y-4 p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-lg">
+                                      <h5 className="font-medium text-orange-900 dark:text-orange-100">Grade This Drawing:</h5>
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                          <Label className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-2">
+                                            Grade (0-100):
+                                            {manualGrades[question.id] !== undefined && manualGrades[question.id] !== null && (
+                                              <Badge variant="success" className="text-xs">
+                                                Grade: {manualGrades[question.id]}%
+                                              </Badge>
+                                            )}
+                                          </Label>
+                                          <Input
+                                            type="text"
+                                            value={manualGrades[question.id] ?? ''}
+                                            onChange={(e) => {
+                                              const value = e.target.value;
+                                              if (value === '' || /^\d+$/.test(value)) {
+                                                const numValue = value === '' ? 0 : parseInt(value);
+                                                if (numValue >= 0 && numValue <= 100) {
+                                                  setManualGrades(prev => ({
+                                                    ...prev,
+                                                    [question.id]: numValue
+                                                  }));
+                                                }
+                                              }
+                                            }}
+                                            className="bg-background border-2 border-gray-200 dark:border-gray-700 focus:border-orange-500 focus-visible:ring-2 focus-visible:ring-orange-500/20 focus-visible:ring-offset-0 focus-visible:outline-none text-gray-900 dark:text-gray-100"
+                                            placeholder="Enter grade (0-100)"
+                                          />
+                                        </div>
+                                        
+                                        <div>
+                                          <Label className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-2">
+                                            Feedback (Optional):
+                                            {manualFeedback[question.id] && (
+                                              <Badge variant="info" className="text-xs">
+                                                Feedback provided
+                                              </Badge>
+                                            )}
+                                          </Label>
+                                          <Textarea
+                                            value={manualFeedback[question.id] || ''}
+                                            onChange={(e) => setManualFeedback(prev => ({
+                                              ...prev,
+                                              [question.id]: e.target.value
+                                            }))}
+                                            className="bg-background border-2 border-gray-200 dark:border-gray-700 focus:border-orange-500 focus-visible:ring-2 focus-visible:ring-orange-500/20 focus-visible:ring-offset-0 focus-visible:outline-none text-gray-900 dark:text-gray-100 min-h-[100px]"
+                                            placeholder="Provide feedback for this drawing..."
+                                          />
+                                        </div>
+                                      </div>
                                     </div>
                                   </div>
-                                )}
-                                
-                                {question.math_tolerance && (
-                                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                                    <span className="font-medium">Tolerance:</span> {question.math_tolerance}
+                                ) : (
+                                  <div className="space-y-4">
+                                    <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 border-2 border-blue-200 dark:border-blue-700/50 rounded-xl shadow-sm">
+                                      <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-3 flex items-center gap-2">
+                                        <Circle className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                        Student's Math Expression:
+                                      </h4>
+                                      <div className="p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg border border-blue-200/50 dark:border-blue-700/30">
+                                        <p className="text-gray-900 dark:text-gray-100 font-mono text-lg leading-relaxed">
+                                          {studentAnswer || (
+                                            <span className="text-gray-500 dark:text-gray-400 italic">No answer provided</span>
+                                          )}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    
+                                    {question.math_expression && (
+                                      <div className="p-4 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-800/10 border-2 border-green-200 dark:border-green-700/50 rounded-xl shadow-sm">
+                                        <h4 className="font-semibold text-green-900 dark:text-green-100 mb-3 flex items-center gap-2">
+                                          <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+                                          Expected Answer:
+                                        </h4>
+                                        <div className="p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg border border-green-200/50 dark:border-green-700/30">
+                                          <p className="text-gray-900 dark:text-gray-100 font-mono text-lg leading-relaxed">
+                                            {question.math_expression}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    )}
+                                    
+                                    {question.math_tolerance && (
+                                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                                        <span className="font-medium">Tolerance:</span> {question.math_tolerance}
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                               </div>
@@ -1093,8 +1191,9 @@ export const AssignmentSubmissions = () => {
                               )}
                             </div>
                           
-                          {/* Answer Summary - Only show for auto-graded questions */}
-                          {question.question_type !== 'text_answer' && (
+                          {/* Answer Summary - Only show for auto-graded questions (exclude drawing math expressions) */}
+                          {question.question_type !== 'text_answer' && 
+                           !(question.question_type === 'math_expression' && studentAnswer && studentAnswer.startsWith('{"paths":')) && (
                             <div className="mt-4 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
                               <div className="flex items-center justify-between">
                                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -1132,21 +1231,31 @@ export const AssignmentSubmissions = () => {
               )}
             </div>
             <DialogFooter>
-              {assignmentDetails?.type === 'quiz' && quizQuestions && quizQuestions.some((q: QuizQuestion) => q.question_type === 'text_answer') && (
+              {assignmentDetails?.type === 'quiz' && quizQuestions && (
                 (() => {
                   const textAnswerQuestions = quizQuestions.filter(q => q.question_type === 'text_answer');
-                  const allGraded = textAnswerQuestions.every(q => manualGrades[q.id] !== undefined && manualGrades[q.id] !== null);
-                  const isAlreadyGraded = selectedSubmission?.manual_grading_completed;
-                  
-                  return (
-                    <Button 
-                      onClick={handleSaveGrade}
-                      disabled={!allGraded}
-                      className="bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
-                    >
-                      {isAlreadyGraded ? 'Update Grade' : 'Save Grade'}
-                    </Button>
+                  const drawingMathQuestions = quizQuestions.filter(q => 
+                    q.question_type === 'math_expression' && 
+                    selectedSubmission?.answers?.[q.id]?.startsWith('{"paths":')
                   );
+                  const manualGradingQuestions = [...textAnswerQuestions, ...drawingMathQuestions];
+                  
+                  if (manualGradingQuestions.length > 0) {
+                    const allGraded = manualGradingQuestions.every(q => manualGrades[q.id] !== undefined && manualGrades[q.id] !== null);
+                    const isAlreadyGraded = selectedSubmission?.manual_grading_completed;
+                    
+                    return (
+                      <Button 
+                        onClick={handleSaveGrade}
+                        disabled={!allGraded}
+                        className="bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                      >
+                        {isAlreadyGraded ? 'Update Grade' : 'Save Grade'}
+                      </Button>
+                    );
+                  }
+                  
+                  return null;
                 })()
               )}
               <Button 

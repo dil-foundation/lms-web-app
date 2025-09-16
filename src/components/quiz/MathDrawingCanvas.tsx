@@ -43,6 +43,7 @@ export const MathDrawingCanvas: React.FC<MathDrawingCanvasProps> = ({
   initialDrawing
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const isInitializingRef = useRef(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentPath, setCurrentPath] = useState<DrawingPath>({
     points: [],
@@ -66,11 +67,17 @@ export const MathDrawingCanvas: React.FC<MathDrawingCanvasProps> = ({
   // Load initial drawing if provided
   useEffect(() => {
     if (initialDrawing) {
+      isInitializingRef.current = true;
       try {
         const drawingData = JSON.parse(initialDrawing);
         setPaths(drawingData.paths || []);
       } catch (error) {
         console.error('Error loading initial drawing:', error);
+      } finally {
+        // Reset the flag after a short delay to allow the paths state to update
+        setTimeout(() => {
+          isInitializingRef.current = false;
+        }, 100);
       }
     }
   }, [initialDrawing]);
@@ -113,9 +120,9 @@ export const MathDrawingCanvas: React.FC<MathDrawingCanvasProps> = ({
     ctx.globalCompositeOperation = 'source-over';
   }, [paths]);
 
-  // Save drawing when paths change (but only if there are paths)
+  // Save drawing when paths change (but only if there are paths and not initializing)
   useEffect(() => {
-    if (paths.length > 0) {
+    if (paths.length > 0 && !isInitializingRef.current) {
       const drawingData = {
         paths,
         timestamp: new Date().toISOString(),
@@ -217,6 +224,7 @@ export const MathDrawingCanvas: React.FC<MathDrawingCanvasProps> = ({
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     setPaths([]);
+    // Call onDrawingChange directly for clear action
     onDrawingChange('');
   };
 

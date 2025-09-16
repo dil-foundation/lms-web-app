@@ -93,7 +93,7 @@ export interface QuizRetryAnalytics {
 export const DEFAULT_RETRY_SETTINGS: QuizRetrySettings = {
   allowRetries: false,
   maxRetries: 2,
-  retryCooldownHours: 24,
+  retryCooldownHours: 1/60, // 1 minute (1/60 of an hour)
   retryThreshold: 70,
   requireTeacherApproval: false,
   generateNewQuestions: true,
