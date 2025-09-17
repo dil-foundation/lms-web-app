@@ -259,15 +259,13 @@ const ClassManagement: React.FC = () => {
     if (!classToDelete) return;
 
     try {
-      const success = await deleteClass(classToDelete.id);
-      if (success) {
-        toast.success('Class deleted successfully');
-        refetchClasses(); // Refresh paginated data
-        
-        // Reset state
-        setClassToDelete(null);
-        setClassDependencies(null);
-      }
+      await deleteClass(classToDelete.id);
+      toast.success('Class deleted successfully');
+      refetchClasses(); // Refresh paginated data
+      
+      // Reset state
+      setClassToDelete(null);
+      setClassDependencies(null);
     } catch (error) {
       console.error('Error deleting class:', error);
       toast.error('Failed to delete class. Please try again.');
@@ -281,9 +279,12 @@ const ClassManagement: React.FC = () => {
   };
 
   const handleDelete = async (classId: string) => {
-    const success = await deleteClass(classId);
-    if (success) {
+    try {
+      await deleteClass(classId);
       refetchClasses(); // Refresh paginated data
+    } catch (error) {
+      console.error('Error deleting class:', error);
+      toast.error('Failed to delete class. Please try again.');
     }
   };
 
@@ -1642,6 +1643,97 @@ const ClassManagement: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Class Confirmation Dialog */}
+      <AlertDialog open={!!classToDelete} onOpenChange={(open) => {
+        if (!open) {
+          handleClassDeleteCancel();
+        }
+      }}>
+        <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+          <AlertDialogHeader className="flex-shrink-0">
+            <AlertDialogTitle>Delete Class</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{classToDelete?.name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          {/* Scrollable Content Area */}
+          <div className="flex-1 overflow-y-auto min-h-0">
+            {/* Dependency Information */}
+            {isCheckingClassDependencies && (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-4"></div>
+                  <p className="text-muted-foreground">Checking dependencies...</p>
+                </div>
+              </div>
+            )}
+
+            {classDependencies && !isCheckingClassDependencies && (
+              <div className="py-4">
+                {(() => {
+                  const hasDependencies = classDependencies.courses.length > 0;
+                  
+                  if (hasDependencies) {
+                    return (
+                      <div className="space-y-4">
+                        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                            <h4 className="font-semibold text-red-800 dark:text-red-200">Cannot Delete Class</h4>
+                          </div>
+                          <p className="text-red-700 dark:text-red-300 text-sm">
+                            This class cannot be deleted because it has active dependencies:
+                          </p>
+                        </div>
+
+                        {classDependencies.courses.length > 0 && (
+                          <div className="space-y-2">
+                            <h5 className="font-medium text-sm text-muted-foreground">Active Courses:</h5>
+                            <div className="space-y-1">
+                              {classDependencies.courses.map((course: any) => (
+                                <div key={course.id} className="p-2 bg-muted/50 rounded text-sm">
+                                  {course.title}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  } else {
+                    return (
+                      <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <h4 className="font-semibold text-green-800 dark:text-green-200">Safe to Delete</h4>
+                        </div>
+                        <p className="text-green-700 dark:text-green-300 text-sm">
+                          This class has no active dependencies and can be safely deleted.
+                        </p>
+                      </div>
+                    );
+                  }
+                })()}
+              </div>
+            )}
+          </div>
+
+          <AlertDialogFooter className="flex-shrink-0 border-t pt-4">
+            <AlertDialogCancel onClick={handleClassDeleteCancel}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleClassDeleteConfirm}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={isCheckingClassDependencies || (classDependencies && (
+                classDependencies.courses.length
+              ) > 0)}
+            >
+              {isCheckingClassDependencies ? 'Checking...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
