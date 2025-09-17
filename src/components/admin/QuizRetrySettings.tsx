@@ -200,7 +200,9 @@ export const QuizRetrySettings: React.FC<QuizRetrySettingsProps> = ({
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label className="text-base font-medium">
-                  Cooldown Period: {settings.retryCooldownHours} hours
+                  Cooldown Period: {settings.retryCooldownHours < 1 
+                    ? `${Math.round(settings.retryCooldownHours * 60)} minutes` 
+                    : `${settings.retryCooldownHours} hours`}
                 </Label>
                 <p className="text-sm text-muted-foreground">
                   Minimum time students must wait between retry attempts
@@ -209,12 +211,12 @@ export const QuizRetrySettings: React.FC<QuizRetrySettingsProps> = ({
                   value={[settings.retryCooldownHours]}
                   onValueChange={(value) => updateSetting('retryCooldownHours', value[0])}
                   max={168} // 1 week
-                  min={1}
-                  step={1}
+                  min={1/60} // 1 minute
+                  step={1/60} // 1 minute steps
                   className="w-full"
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>1 hour</span>
+                  <span>1 minute</span>
                   <span>1 week</span>
                 </div>
               </div>
@@ -286,7 +288,9 @@ export const QuizRetrySettings: React.FC<QuizRetrySettingsProps> = ({
               <Info className="h-4 w-4" />
               <AlertDescription>
                 <strong>Current Configuration:</strong> Students can retry up to {settings.maxRetries} times 
-                if they score below {settings.retryThreshold}%, with a {settings.retryCooldownHours}-hour cooldown 
+                if they score below {settings.retryThreshold}%, with a {settings.retryCooldownHours < 1 
+                  ? `${Math.round(settings.retryCooldownHours * 60)}-minute` 
+                  : `${settings.retryCooldownHours}-hour`} cooldown 
                 between attempts{settings.requireTeacherApproval ? ' (teacher approval required)' : ''}.
               </AlertDescription>
             </Alert>

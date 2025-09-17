@@ -165,8 +165,11 @@ BEGIN
   -- Calculate and update final score
   UPDATE quiz_submissions 
   SET 
+    manual_grading_completed = TRUE,
     manual_grading_score = calculate_quiz_final_score(submission_id),
-    score = calculate_quiz_final_score(submission_id)
+    score = calculate_quiz_final_score(submission_id),
+    manual_grading_completed_at = NOW(),
+    manual_grading_completed_by = teacher_id
   WHERE id = submission_id;
 END;
 $$;

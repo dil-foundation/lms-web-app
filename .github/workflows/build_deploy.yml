@@ -45,6 +45,16 @@ jobs:
       - name: Build (Vite)
         # make sure package.json has: "build": "vite build"
         run: npm run build:prod
+        env:
+          # Explicitly set environment variables for the build process
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+          VITE_AUTH_TOKEN: ${{ secrets.VITE_AUTH_TOKEN }}
+          VITE_BULK_UPLOAD_XLSX_TEMPLATE_URL: ${{ secrets.VITE_BULK_UPLOAD_XLSX_TEMPLATE_URL }}
+          VITE_MCP_ADAPTER_URL: ${{ secrets.VITE_MCP_ADAPTER_URL }}
+          VITE_MCP_SSE_URL: ${{ secrets.VITE_MCP_SSE_URL }}
+          VITE_OPENAI_API_KEY: ${{ secrets.VITE_OPENAI_API_KEY }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
 
       - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
