@@ -1121,7 +1121,7 @@ const ClassManagement: React.FC = () => {
                        </SelectItem>
                      ))
                    ) : (
-                     <SelectItem value="" disabled className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">
+                     <SelectItem value="no-schools" disabled className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">
                        {formData.board_id ? "No schools found for this board" : "Select a board first"}
                      </SelectItem>
                    )}
@@ -1385,7 +1385,7 @@ const ClassManagement: React.FC = () => {
                        </SelectItem>
                      ))
                    ) : (
-                     <SelectItem value="" disabled className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">
+                     <SelectItem value="no-schools" disabled className="focus:bg-accent focus:text-accent-foreground dark:focus:bg-accent dark:focus:text-accent-foreground">
                        {formData.board_id ? "No schools found for this board" : "Select a board first"}
                      </SelectItem>
                    )}
