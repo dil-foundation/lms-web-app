@@ -15,11 +15,9 @@ import {
   Bot, 
   Brain, 
   MessageSquare, 
-  Volume2, 
   Target,
   Save,
   RefreshCw,
-  Sparkles,
   AlertTriangle,
   CheckCircle
 } from 'lucide-react';
@@ -156,12 +154,10 @@ export const AITutorSettings = ({ userProfile }: AITutorSettingsProps) => {
       )}
 
       <Tabs defaultValue="behavior" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="behavior">Behavior</TabsTrigger>
           <TabsTrigger value="learning">Learning</TabsTrigger>
-          <TabsTrigger value="voice">Voice & Audio</TabsTrigger>
           <TabsTrigger value="content">Content</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
         {/* AI Behavior Settings */}
@@ -212,33 +208,6 @@ export const AITutorSettings = ({ userProfile }: AITutorSettingsProps) => {
                 </div>
               </div>
               
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Adaptive Difficulty</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Automatically adjust difficulty based on student performance
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.adaptiveDifficulty}
-                    onCheckedChange={(checked) => updateSettings({ adaptiveDifficulty: checked })}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Context Awareness</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Remember previous conversations and learning progress
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.contextAwareness}
-                    onCheckedChange={(checked) => updateSettings({ contextAwareness: checked })}
-                  />
-                </div>
-              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -325,80 +294,6 @@ export const AITutorSettings = ({ userProfile }: AITutorSettingsProps) => {
           </Card>
         </TabsContent>
 
-        {/* Voice & Audio Settings */}
-        <TabsContent value="voice">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Volume2 className="w-5 h-5" />
-                Voice & Audio Configuration
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Voice Enabled</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Enable text-to-speech for AI responses
-                  </p>
-                </div>
-                                  <Switch
-                    checked={settings.voiceEnabled}
-                    onCheckedChange={(checked) => updateSettings({ voiceEnabled: checked })}
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="voiceGender">Voice Gender</Label>
-                  <Select
-                    value={settings.voiceGender}
-                    onValueChange={(value) => updateSettings({ voiceGender: value })}
-                    disabled={!settings.voiceEnabled}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="neutral">Neutral</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
-                      <SelectItem value="male">Male</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Speech Rate: {settings.speechRate}x</Label>
-                                  <Slider
-                    value={[settings.speechRate]}
-                    onValueChange={(value) => updateSettings({ speechRate: value[0] })}
-                  max={2.0}
-                  min={0.5}
-                  step={0.1}
-                  className="w-full"
-                  disabled={!settings.voiceEnabled}
-                />
-                <p className="text-sm text-muted-foreground">
-                  Speed of AI voice responses
-                </p>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Audio Feedback</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Play sounds for correct/incorrect responses
-                  </p>
-                </div>
-                                  <Switch
-                    checked={settings.audioFeedback}
-                    onCheckedChange={(checked) => updateSettings({ audioFeedback: checked })}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         {/* Content Customization */}
         <TabsContent value="content">
@@ -468,128 +363,6 @@ export const AITutorSettings = ({ userProfile }: AITutorSettingsProps) => {
           </Card>
         </TabsContent>
 
-        {/* Analytics & Performance */}
-        <TabsContent value="analytics">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5" />
-                Analytics & Performance
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Learning Analytics</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Track detailed learning patterns and insights
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.learningAnalytics}
-                    onCheckedChange={(checked) => updateSettings({ learningAnalytics: checked })}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Progress Tracking</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Monitor student progress over time
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.progressTracking}
-                    onCheckedChange={(checked) => updateSettings({ progressTracking: checked })}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Performance Reports</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Generate detailed performance reports
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.performanceReports}
-                    onCheckedChange={(checked) => updateSettings({ performanceReports: checked })}
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Data Retention: {settings.dataRetention} days</Label>
-                <Slider
-                  value={[settings.dataRetention]}
-                  onValueChange={(value) => updateSettings({ dataRetention: value[0] })}
-                  max={365}
-                  min={30}
-                  step={30}
-                  className="w-full"
-                />
-                <p className="text-sm text-muted-foreground">
-                  How long to retain student interaction data
-                </p>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Multilingual Support</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Enable support for multiple languages
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.multilingualSupport}
-                    onCheckedChange={(checked) => updateSettings({ multilingualSupport: checked })}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Emotional Intelligence</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Detect and respond to emotional cues
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.emotionalIntelligence}
-                    onCheckedChange={(checked) => updateSettings({ emotionalIntelligence: checked })}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Gamification Elements</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Include badges, points, and achievements
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.gamificationElements}
-                    onCheckedChange={(checked) => updateSettings({ gamificationElements: checked })}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Real-time Adaptation</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Continuously adapt based on student responses
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.realTimeAdaptation}
-                    onCheckedChange={(checked) => updateSettings({ realTimeAdaptation: checked })}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </div>
   );
