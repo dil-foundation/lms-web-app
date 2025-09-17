@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
-import { ArrowLeft, BookOpen, Mic, Lightbulb, Play, Pause, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, BookOpen, Mic, Lightbulb, Play, Pause, Loader2, CheckCircle, XCircle, Trophy, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { BASE_API_URL, API_ENDPOINTS } from '@/config/api';
@@ -585,7 +585,7 @@ export default function StorytellingPractice() {
     try {
       const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.EVALUATE_STORYTELLING}`, {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: await getAuthHeaders(),
         body: JSON.stringify({
           audio_base64: audioBase64,
           prompt_id: parseInt(currentStoryPrompt.id),
