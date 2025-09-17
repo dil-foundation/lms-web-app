@@ -41,7 +41,7 @@ const getRoleColor = (role: string) => {
 };
 
 const getScoreColor = (score: number) => {
-  if (score >= 80) return 'text-green-600 dark:text-green-500';
+  if (score >= 80) return 'text-[#8DC63F] dark:text-[#8DC63F]';
   if (score >= 70) return 'text-blue-600 dark:text-blue-500';
   if (score >= 60) return 'text-yellow-600 dark:text-yellow-500';
   return 'text-red-600 dark:text-red-500';
@@ -200,7 +200,7 @@ export const ObservationReportsViews: React.FC<ObservationReportsViewsProps> = (
                     <TableCell>
                       <Badge 
                         variant={report.status === 'completed' ? 'default' : 'secondary'}
-                        className={report.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'}
+                        className={report.status === 'completed' ? 'bg-[#8DC63F]/20 text-[#8DC63F] dark:bg-[#8DC63F]/20 dark:text-[#8DC63F]' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'}
                       >
                         {report.status}
                       </Badge>
@@ -283,7 +283,7 @@ export const ObservationReportsViews: React.FC<ObservationReportsViewsProps> = (
                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mb-2">
                     <div 
                       className={`h-1.5 rounded-full transition-all duration-500 ${
-                        report.overallScore >= 80 ? 'bg-green-500' :
+                        report.overallScore >= 80 ? 'bg-[#8DC63F]' :
                         report.overallScore >= 70 ? 'bg-blue-500' :
                         report.overallScore >= 60 ? 'bg-yellow-500' : 'bg-red-500'
                       }`}
@@ -318,12 +318,12 @@ export const ObservationReportsViews: React.FC<ObservationReportsViewsProps> = (
       {reports.map((report) => {
         const RoleIcon = getRoleIcon(report.observerRole);
         const colorGradient = getRoleColor(report.observerRole);
-        const statusColor = report.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+        const statusColor = report.status === 'completed' ? 'bg-[#8DC63F]/20 text-[#8DC63F] dark:bg-[#8DC63F]/20 dark:text-[#8DC63F]' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
         const roleColor = {
           'principal': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
           'ece': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
           'school-officer': 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-          'project-manager': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+          'project-manager': 'bg-[#8DC63F]/20 text-[#8DC63F] dark:bg-[#8DC63F]/20 dark:text-[#8DC63F]'
         }[report.observerRole] || 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
 
         return (
@@ -387,12 +387,12 @@ export const ObservationReportsViews: React.FC<ObservationReportsViewsProps> = (
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Overall Score</span>
-                  <span className="font-medium">{report.overallScore}%</span>
+                  <span className={`font-medium ${getScoreColor(report.overallScore)}`}>{report.overallScore}%</span>
                 </div>
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                   <div 
                     className={`h-2 rounded-full transition-all duration-500 ${
-                      report.overallScore >= 80 ? 'bg-green-500' :
+                      report.overallScore >= 80 ? 'bg-[#8DC63F]' :
                       report.overallScore >= 70 ? 'bg-blue-500' :
                       report.overallScore >= 60 ? 'bg-yellow-500' : 'bg-red-500'
                     }`}
@@ -403,8 +403,8 @@ export const ObservationReportsViews: React.FC<ObservationReportsViewsProps> = (
             </CardContent>
 
             <div className="p-4 pt-0 mt-auto">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 flex-1">
                   <Button
                     size="sm"
                     variant="outline"
@@ -412,7 +412,7 @@ export const ObservationReportsViews: React.FC<ObservationReportsViewsProps> = (
                       e.stopPropagation();
                       onView(report);
                     }}
-                    className="h-8 text-xs hover:bg-primary hover:text-primary-foreground transition-all duration-200"
+                    className="h-9 px-3 text-xs hover:bg-primary hover:text-primary-foreground transition-all duration-200 flex-1"
                   >
                     <Eye className="w-3 h-3 mr-1" />
                     View
@@ -425,22 +425,22 @@ export const ObservationReportsViews: React.FC<ObservationReportsViewsProps> = (
                       onDownload(report);
                     }}
                     disabled={isDownloading(report.id)}
-                    className="h-8 text-xs hover:bg-green-600 hover:text-white transition-all duration-200"
+                    className="h-9 px-3 text-xs hover:bg-[#8DC63F] hover:text-white transition-all duration-200 flex-1"
                   >
                     <Download className="w-3 h-3 mr-1" />
                     {isDownloading(report.id) ? 'Gen...' : 'PDF'}
                   </Button>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(report);
-                  }}
-                  disabled={isDeleting(report.id)}
-                  className="h-8 text-xs hover:bg-red-600 hover:text-white transition-all duration-200 text-red-600 border-red-200 hover:border-red-600"
-                >
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(report);
+                    }}
+                    disabled={isDeleting(report.id)}
+                    className="h-9 px-3 text-xs hover:bg-red-600 hover:text-white transition-all duration-200 text-red-600"
+                  >
                   <Trash2 className="w-3 h-3 mr-1" />
                   {isDeleting(report.id) ? 'Del...' : 'Delete'}
                 </Button>
