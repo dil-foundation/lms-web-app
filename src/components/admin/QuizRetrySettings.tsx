@@ -14,43 +14,79 @@ import {
   RotateCcw, 
   Clock, 
   Target, 
-  Shield, 
   BookOpen,
   AlertTriangle,
   CheckCircle,
   Info
 } from 'lucide-react';
 import { QuizRetryService } from '@/services/quizRetryService';
-import { QuizRetrySettings, DEFAULT_RETRY_SETTINGS } from '@/types/quizRetry';
+import { QuizRetrySettings as QuizRetrySettingsType, DEFAULT_RETRY_SETTINGS } from '@/types/quizRetry';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface QuizRetrySettingsProps {
   lessonContentId: string;
-  onSettingsChange?: (settings: QuizRetrySettings) => void;
+  onSettingsChange?: (settings: QuizRetrySettingsType) => void;
+  courseStatus?: 'Draft' | 'Published' | 'Under Review' | 'Rejected';
 }
 
 export const QuizRetrySettings: React.FC<QuizRetrySettingsProps> = ({
   lessonContentId,
-  onSettingsChange
+  onSettingsChange,
+  courseStatus
 }) => {
-  const [settings, setSettings] = useState<QuizRetrySettings>(DEFAULT_RETRY_SETTINGS);
+  const [settings, setSettings] = useState<QuizRetrySettingsType>(DEFAULT_RETRY_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [quizExists, setQuizExists] = useState<boolean>(false);
 
   useEffect(() => {
+    console.log('🚀 QUIZRETRYSETTINGS: Component mounted/updated for lessonContentId:', lessonContentId);
     loadSettings();
   }, [lessonContentId]);
 
   const loadSettings = async () => {
     try {
       setLoading(true);
-      const retrySettings = await QuizRetryService.getRetrySettings(lessonContentId);
-      setSettings(retrySettings);
-      setError(null);
+      console.log('🔄 QUIZRETRYSETTINGS: Loading settings for lessonContentId:', lessonContentId);
+      
+      // Check if the lesson content exists in the database
+      const { data, error } = await supabase
+        .from('course_lesson_content')
+        .select('id, retry_settings')
+        .eq('id', lessonContentId)
+        .single();
+
+      if (error) {
+        // If lesson content doesn't exist, it's a new unsaved quiz
+        console.log('❌ QUIZRETRYSETTINGS: Error loading settings:', error);
+        setQuizExists(false);
+        setSettings(DEFAULT_RETRY_SETTINGS);
+        setError(null);
+      } else {
+        // Lesson content exists, it's a saved quiz
+        console.log('📊 QUIZRETRYSETTINGS: Raw data from database:', data);
+        setQuizExists(true);
+        // Clean up retry settings to only include valid properties
+        const cleanRetrySettings = {
+          allowRetries: data.retry_settings?.allowRetries ?? DEFAULT_RETRY_SETTINGS.allowRetries,
+          maxRetries: data.retry_settings?.maxRetries ?? DEFAULT_RETRY_SETTINGS.maxRetries,
+          retryCooldownHours: data.retry_settings?.retryCooldownHours ?? DEFAULT_RETRY_SETTINGS.retryCooldownHours,
+          retryThreshold: data.retry_settings?.retryThreshold ?? DEFAULT_RETRY_SETTINGS.retryThreshold
+        };
+        setSettings(cleanRetrySettings);
+        setError(null);
+        // Notify parent component about the loaded settings
+        console.log('✅ QUIZRETRYSETTINGS: Loaded retry settings from database:', cleanRetrySettings);
+        console.log('🔄 QUIZRETRYSETTINGS: Calling onSettingsChange with:', cleanRetrySettings);
+        onSettingsChange?.(cleanRetrySettings);
+        console.log('✅ QUIZRETRYSETTINGS: onSettingsChange called successfully');
+      }
     } catch (err) {
       setError('Failed to load retry settings');
       console.error('Error loading retry settings:', err);
+      setQuizExists(false);
     } finally {
       setLoading(false);
     }
@@ -63,6 +99,7 @@ export const QuizRetrySettings: React.FC<QuizRetrySettingsProps> = ({
       
       if (success) {
         toast.success('Retry settings saved successfully');
+        console.log('💾 QUIZRETRYSETTINGS: Saving retry settings:', settings);
         onSettingsChange?.(settings);
       } else {
         toast.error('Failed to save retry settings');
@@ -75,15 +112,22 @@ export const QuizRetrySettings: React.FC<QuizRetrySettingsProps> = ({
     }
   };
 
-  const updateSetting = <K extends keyof QuizRetrySettings>(
+  const updateSetting = <K extends keyof QuizRetrySettingsType>(
     key: K,
-    value: QuizRetrySettings[K]
+    value: QuizRetrySettingsType[K]
   ) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
+    const newSettings = { ...settings, [key]: value };
+    setSettings(newSettings);
+    // Immediately update the parent component's state
+    console.log('🔄 QUIZRETRYSETTINGS: updateSetting called, updating parent with:', newSettings);
+    onSettingsChange?.(newSettings);
   };
 
   const resetToDefaults = () => {
     setSettings(DEFAULT_RETRY_SETTINGS);
+    // Immediately update the parent component's state
+    console.log('🔄 QUIZRETRYSETTINGS: resetToDefaults called, updating parent with:', DEFAULT_RETRY_SETTINGS);
+    onSettingsChange?.(DEFAULT_RETRY_SETTINGS);
   };
 
   if (loading) {
@@ -222,66 +266,6 @@ export const QuizRetrySettings: React.FC<QuizRetrySettingsProps> = ({
               </div>
             </div>
 
-            <Separator />
-
-            {/* Advanced Settings */}
-            <div className="space-y-4">
-              <h4 className="text-lg font-medium flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                Advanced Settings
-              </h4>
-
-              {/* Teacher Approval */}
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label htmlFor="require-approval" className="text-base font-medium">
-                    Require Teacher Approval
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Students must request approval for retry attempts
-                  </p>
-                </div>
-                <Switch
-                  id="require-approval"
-                  checked={settings.requireTeacherApproval}
-                  onCheckedChange={(checked) => updateSetting('requireTeacherApproval', checked)}
-                />
-              </div>
-
-              {/* Generate New Questions */}
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label htmlFor="generate-questions" className="text-base font-medium">
-                    Generate New Questions
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Show different questions for retry attempts (if available)
-                  </p>
-                </div>
-                <Switch
-                  id="generate-questions"
-                  checked={settings.generateNewQuestions}
-                  onCheckedChange={(checked) => updateSetting('generateNewQuestions', checked)}
-                />
-              </div>
-
-              {/* Study Materials */}
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label htmlFor="require-study" className="text-base font-medium">
-                    Require Study Materials
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Students must complete additional study materials before retrying
-                  </p>
-                </div>
-                <Switch
-                  id="require-study"
-                  checked={settings.requireStudyMaterials}
-                  onCheckedChange={(checked) => updateSetting('requireStudyMaterials', checked)}
-                />
-              </div>
-            </div>
 
             {/* Summary */}
             <Alert>
@@ -291,7 +275,7 @@ export const QuizRetrySettings: React.FC<QuizRetrySettingsProps> = ({
                 if they score below {settings.retryThreshold}%, with a {settings.retryCooldownHours < 1 
                   ? `${Math.round(settings.retryCooldownHours * 60)}-minute` 
                   : `${settings.retryCooldownHours}-hour`} cooldown 
-                between attempts{settings.requireTeacherApproval ? ' (teacher approval required)' : ''}.
+                between attempts.
               </AlertDescription>
             </Alert>
           </>
@@ -306,23 +290,31 @@ export const QuizRetrySettings: React.FC<QuizRetrySettingsProps> = ({
           >
             Reset to Defaults
           </Button>
-          <Button
-            onClick={handleSave}
-            disabled={saving}
-            className="min-w-[120px]"
-          >
-            {saving ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                Saving...
-              </>
-            ) : (
-              <>
-                <CheckCircle className="w-4 h-4 mr-2" />
-                Save Settings
-              </>
-            )}
-          </Button>
+          
+          {!quizExists && (
+            <div className="text-sm text-muted-foreground">
+              Save the quiz first to enable retry settings
+            </div>
+          )}
+          {courseStatus !== 'Draft' && quizExists && (
+            <Button
+              onClick={handleSave}
+              disabled={saving}
+              className="min-w-[120px]"
+            >
+              {saving ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Save Settings
+                </>
+              )}
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>

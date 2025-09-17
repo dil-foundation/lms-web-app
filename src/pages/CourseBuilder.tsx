@@ -506,9 +506,10 @@ interface LessonContentItemProps {
   courseId: string | undefined;
   canReorder?: boolean;
   dragHandleProps?: any;
+  courseStatus?: 'Draft' | 'Published' | 'Under Review' | 'Rejected';
 }
 
-const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, onRemove, isRemovable, courseId, canReorder = false, dragHandleProps = {} }: LessonContentItemProps) => {
+const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, onRemove, isRemovable, courseId, canReorder = false, dragHandleProps = {}, courseStatus }: LessonContentItemProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [attachmentInfo, setAttachmentInfo] = useState<{ url: string; name: string } | null>(null);
@@ -798,6 +799,7 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
           </div>
         );
       case 'quiz':
+        console.log('🎯 COURSEBUILDER: Rendering quiz content item:', item.id, 'with retry_settings:', item.retry_settings);
         return (
           <div className="space-y-4">
             <div>
@@ -856,9 +858,15 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
             
             {/* Quiz Retry Settings */}
             <div className="mt-6">
+              {(() => {
+                console.log('🎯 COURSEBUILDER: Rendering QuizRetrySettings for item:', item.id, 'with retry_settings:', item.retry_settings);
+                return null;
+              })()}
               <QuizRetrySettings
                 lessonContentId={item.id}
+                courseStatus={courseStatus}
                 onSettingsChange={(settings) => {
+                  console.log('🔄 COURSEBUILDER: QuizRetrySettings onSettingsChange called with:', settings);
                   onUpdate(lessonId, item.id, { retry_settings: settings } as any);
                 }}
               />
@@ -1095,6 +1103,7 @@ const LessonContainer = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovab
                         isRemovable={true}
                         courseId={courseId}
                         canReorder={canReorderContent}
+                        courseStatus={courseStatus}
                       />
                     ))}
                   </SortableContext>
@@ -1110,6 +1119,7 @@ const LessonContainer = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovab
                       isRemovable={true}
                       courseId={courseId}
                       canReorder={false}
+                      courseStatus={courseStatus}
                     />
                   ))
                 )}
@@ -1182,9 +1192,10 @@ interface SortableContentItemProps {
   isRemovable: boolean;
   courseId: string | undefined;
   canReorder: boolean;
+  courseStatus?: 'Draft' | 'Published' | 'Under Review' | 'Rejected';
 }
 
-const SortableContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, onRemove, isRemovable, courseId, canReorder }: SortableContentItemProps) => {
+const SortableContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, onRemove, isRemovable, courseId, canReorder, courseStatus }: SortableContentItemProps) => {
   const {
     attributes,
     listeners,
@@ -1220,6 +1231,7 @@ const SortableContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate
         courseId={courseId}
         canReorder={canReorder}
         dragHandleProps={canReorder ? { ...attributes, ...listeners } : {}}
+        courseStatus={courseStatus}
       />
     </div>
   );
@@ -3057,6 +3069,7 @@ const CourseBuilder = () => {
         }
         
         if (courseId && courseId !== 'new') {
+          console.log('🔄 COURSE LOADING STARTED - Loading course with ID:', courseId);
           const { data, error } = await supabase
             .from('courses')
             .select(`
@@ -3069,6 +3082,7 @@ const CourseBuilder = () => {
                   *,
                   contentItems:course_lesson_content (
                     *,
+                    retry_settings,
                     quiz:quiz_questions(
                       *,
                       math_expression,
@@ -3089,11 +3103,20 @@ const CourseBuilder = () => {
             .single();
 
           if (error) {
+            console.error('❌ ERROR loading course:', error);
             toast.error("Failed to load course data.");
     
             navigate('/dashboard/courses');
             return;
           }
+
+          console.log('📊 RAW COURSE DATA FROM DATABASE:', data);
+          console.log('📊 COURSE SECTIONS FROM DATABASE:', data?.sections);
+          console.log('📊 QUIZ CONTENT ITEMS WITH RETRY SETTINGS FROM DATABASE:', data?.sections?.map(s => 
+            s.lessons?.map(l => 
+              l.contentItems?.filter(ci => ci.content_type === 'quiz' && ci.retry_settings)
+            )
+          ));
           
                     if (data) {
     
@@ -3187,7 +3210,19 @@ const CourseBuilder = () => {
               teachers: courseTeachers,
               students: courseStudents,
             };
+            console.log('✅ PROCESSED COURSE DATA WITH RETRY SETTINGS:', finalCourseData.sections?.map(s => 
+              s.lessons?.map(l => 
+                l.contentItems?.filter(ci => ci.content_type === 'quiz' && ci.retry_settings)
+              )
+            ));
+            console.log('📋 ALL QUIZ CONTENT ITEMS:', finalCourseData.sections?.map(s => 
+              s.lessons?.map(l => 
+                l.contentItems?.filter(ci => ci.content_type === 'quiz')
+              )
+            ));
+            console.log('🔄 SETTING COURSE DATA WITH RETRY SETTINGS...');
             setCourseData(finalCourseData);
+            console.log('✅ COURSE DATA SET SUCCESSFULLY');
             setSelectedClasses(finalCourseData.class_ids || []);
             
             // Force reload classes to ensure enrolled classes are available
@@ -3423,6 +3458,27 @@ const CourseBuilder = () => {
                             is_correct: option.is_correct,
                             position: oIndex,
                         });
+                    }
+                }
+
+                // Save quiz retry settings if they exist
+                if (item.retry_settings) {
+                    // Clean up retry settings to only include valid properties
+                    const cleanRetrySettings = {
+                        allowRetries: item.retry_settings.allowRetries,
+                        maxRetries: item.retry_settings.maxRetries,
+                        retryCooldownHours: item.retry_settings.retryCooldownHours,
+                        retryThreshold: item.retry_settings.retryThreshold
+                    };
+                    console.log('Saving quiz retry settings in saveCourseData for content item:', savedContent.id, cleanRetrySettings);
+                    const { error: retryError } = await supabase
+                        .from('course_lesson_content')
+                        .update({ retry_settings: cleanRetrySettings })
+                        .eq('id', savedContent.id);
+
+                    if (retryError) {
+                        console.error('Error saving quiz retry settings:', retryError);
+                        // Don't throw error here as it's not critical for course saving
                     }
                 }
             }
@@ -3681,14 +3737,29 @@ const CourseBuilder = () => {
                 processedContentIds.add(existingContent.id);
                 
                 // Update existing content item (preserves ID and progress)
+                const contentUpdateData: any = {
+                  title: item.title,
+                  content_type: item.content_type,
+                  content_path: item.content_path,
+                  due_date: item.due_date
+                };
+
+                // Include retry settings if they exist
+                if (item.retry_settings) {
+                  // Clean up retry settings to only include valid properties
+                  const cleanRetrySettings = {
+                    allowRetries: item.retry_settings.allowRetries,
+                    maxRetries: item.retry_settings.maxRetries,
+                    retryCooldownHours: item.retry_settings.retryCooldownHours,
+                    retryThreshold: item.retry_settings.retryThreshold
+                  };
+                  contentUpdateData.retry_settings = cleanRetrySettings;
+                  console.log('Saving retry settings for content item:', item.id, cleanRetrySettings);
+                }
+
                 await supabase
                   .from('course_lesson_content')
-                  .update({
-                    title: item.title,
-                    content_type: item.content_type,
-                    content_path: item.content_path,
-                    due_date: item.due_date
-                  })
+                  .update(contentUpdateData)
                   .eq('id', existingContent.id);
                 
                 // Handle quiz updates if needed
@@ -4120,6 +4191,11 @@ const CourseBuilder = () => {
   };
 
   const saveCourseWithCurriculum = async (courseToSave: CourseData): Promise<string | null> => {
+    console.log('saveCourseWithCurriculum called with retry settings:', courseToSave.sections?.map(s => 
+      s.lessons?.map(l => 
+        l.contentItems?.filter(ci => ci.content_type === 'quiz' && ci.retry_settings)
+      )
+    ));
     if (!user) {
       toast.error("You must be logged in to save a course.");
       throw new Error("User not logged in");
@@ -4248,6 +4324,27 @@ const CourseBuilder = () => {
                               is_correct: option.is_correct,
                               position: oIndex,
                           });
+                      }
+                  }
+
+                  // Save quiz retry settings if they exist
+                  if (item.retry_settings) {
+                      // Clean up retry settings to only include valid properties
+                      const cleanRetrySettings = {
+                          allowRetries: item.retry_settings.allowRetries,
+                          maxRetries: item.retry_settings.maxRetries,
+                          retryCooldownHours: item.retry_settings.retryCooldownHours,
+                          retryThreshold: item.retry_settings.retryThreshold
+                      };
+                      console.log('Saving quiz retry settings in saveCourseWithCurriculum for content item:', savedContent.id, cleanRetrySettings);
+                      const { error: retryError } = await supabase
+                          .from('course_lesson_content')
+                          .update({ retry_settings: cleanRetrySettings })
+                          .eq('id', savedContent.id);
+
+                      if (retryError) {
+                          console.error('Error saving quiz retry settings:', retryError);
+                          // Don't throw error here as it's not critical for course saving
                       }
                   }
               }
@@ -4484,7 +4581,14 @@ const CourseBuilder = () => {
       if (courseData.published_course_id && courseData.id) {
         // This is an update to an existing published course
         // Save metadata, members, and curriculum structure (but preserve existing content)
+        console.log('Publishing course with retry settings:', courseData.sections?.map(s => 
+          s.lessons?.map(l => 
+            l.contentItems?.filter(ci => ci.content_type === 'quiz' && ci.retry_settings)
+          )
+        ));
+        console.log('About to call saveCourseWithCurriculum...');
         await saveCourseWithCurriculum({ ...courseData, status: 'Draft' });
+        console.log('saveCourseWithCurriculum completed');
         
         // Check if this is the same course (admin unpublish/republish scenario)
         const isSameCourse = courseData.id === courseData.published_course_id;
@@ -4492,6 +4596,7 @@ const CourseBuilder = () => {
         if (isSameCourse) {
           // For same course scenario, just update the status to Published
           // The changes are already saved in the database through saveCourseWithCurriculum
+          console.log('Publishing same course - curriculum and retry settings should already be saved');
           const { error: updateError } = await supabase
             .from('courses')
             .update({ status: 'Published' })
@@ -5099,6 +5204,7 @@ const CourseBuilder = () => {
   };
 
   const updateContentItem = useCallback((lessonId: string, itemId: string, updatedItem: Partial<LessonContentItem>) => {
+    console.log('🔄 COURSEBUILDER: updateContentItem called with:', { lessonId, itemId, updatedItem });
     setCourseData(prev => ({
       ...prev,
       sections: prev.sections.map(section => ({

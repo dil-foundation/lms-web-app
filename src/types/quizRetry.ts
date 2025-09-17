@@ -5,10 +5,6 @@ export interface QuizRetrySettings {
   maxRetries: number; // 1-3 attempts
   retryCooldownHours: number; // 24-48 hours
   retryThreshold: number; // Only allow retries below this score (0-100)
-  requireTeacherApproval: boolean;
-  generateNewQuestions: boolean;
-  requireStudyMaterials: boolean;
-  studyMaterialsRequired: string[]; // IDs of required study materials
 }
 
 export interface QuizAttempt {
@@ -53,7 +49,6 @@ export interface RetryEligibility {
   canRetry: boolean;
   reason?: string;
   retryAfter?: string;
-  requiresApproval?: boolean;
   currentAttempts?: number;
   maxRetries?: number;
   retryThreshold?: number;
@@ -63,7 +58,6 @@ export interface CreateAttemptResult {
   success: boolean;
   attemptId?: string;
   attemptNumber?: number;
-  requiresApproval?: boolean;
   error?: string;
 }
 
@@ -94,9 +88,5 @@ export const DEFAULT_RETRY_SETTINGS: QuizRetrySettings = {
   allowRetries: false,
   maxRetries: 2,
   retryCooldownHours: 1/60, // 1 minute (1/60 of an hour)
-  retryThreshold: 70,
-  requireTeacherApproval: false,
-  generateNewQuestions: true,
-  requireStudyMaterials: false,
-  studyMaterialsRequired: []
+  retryThreshold: 70
 };

@@ -2,17 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { 
   RotateCcw, 
   Clock, 
@@ -48,13 +38,55 @@ export const QuizRetryInterface: React.FC<QuizRetryInterfaceProps> = ({
   const [eligibility, setEligibility] = useState<RetryEligibility | null>(null);
   const [attempts, setAttempts] = useState<QuizAttempt[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showRetryDialog, setShowRetryDialog] = useState(false);
-  const [retryReason, setRetryReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
 
   useEffect(() => {
     loadRetryData();
   }, [userId, lessonContentId]);
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (!eligibility?.retryAfter) {
+      setTimeRemaining(null);
+      return;
+    }
+
+    const retryTime = new Date(eligibility.retryAfter);
+    const now = new Date();
+    
+    // Check if the date is valid
+    if (isNaN(retryTime.getTime())) {
+      setTimeRemaining(null);
+      return;
+    }
+
+    const updateTimer = () => {
+      const now = new Date();
+      const diff = retryTime.getTime() - now.getTime();
+      
+      if (diff <= 0) {
+        setTimeRemaining(0);
+        // When timer expires, refresh the eligibility data
+        console.log('⏰ TIMER EXPIRED - REFRESHING ELIGIBILITY...');
+        // Use a timeout to avoid dependency issues
+        setTimeout(() => {
+          loadRetryData();
+        }, 100);
+        return;
+      }
+      
+      setTimeRemaining(diff);
+    };
+
+    // Update immediately
+    updateTimer();
+
+    // Set up interval to update every second
+    const interval = setInterval(updateTimer, 1000);
+
+    return () => clearInterval(interval);
+  }, [eligibility?.retryAfter]);
 
   const loadRetryData = async () => {
     try {
@@ -125,20 +157,14 @@ export const QuizRetryInterface: React.FC<QuizRetryInterfaceProps> = ({
   };
 
   const handleRetryRequest = async () => {
-    if (!retryReason.trim()) {
-      toast.error('Please provide a reason for retrying');
-      return;
-    }
-
     try {
       setSubmitting(true);
-      onRetryRequested?.(retryReason);
-      setShowRetryDialog(false);
-      setRetryReason('');
-      toast.success('Retry request submitted');
+      // Directly start the retry without asking for a reason
+      onRetryRequested?.('Automatic retry - no approval required');
+      toast.success('Starting quiz retry...');
     } catch (error) {
-      console.error('Error submitting retry request:', error);
-      toast.error('Failed to submit retry request');
+      console.error('Error starting retry:', error);
+      toast.error('Failed to start retry');
     } finally {
       setSubmitting(false);
     }
@@ -156,12 +182,13 @@ export const QuizRetryInterface: React.FC<QuizRetryInterfaceProps> = ({
       };
     }
 
-    if (eligibility.requiresApproval) {
+    // If cooldown is still active, show cooldown message
+    if (timeRemaining !== null && timeRemaining > 0) {
       return {
-        type: 'warning' as const,
-        title: 'Retry Requires Approval',
-        message: 'Your retry request will need teacher approval before you can attempt the quiz again',
-        icon: Clock
+        type: 'error' as const,
+        title: 'Retry Not Available',
+        message: 'Cooldown period not yet expired',
+        icon: XCircle
       };
     }
 
@@ -186,6 +213,21 @@ export const QuizRetryInterface: React.FC<QuizRetryInterfaceProps> = ({
     return formatDistanceToNow(retryTime, { addSuffix: true });
   };
 
+  const formatTimeRemaining = (milliseconds: number): string => {
+    if (milliseconds <= 0) return "0:00";
+    
+    const totalSeconds = Math.floor(milliseconds / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    } else {
+      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+  };
+
   if (loading) {
     return (
       <Card>
@@ -207,7 +249,25 @@ export const QuizRetryInterface: React.FC<QuizRetryInterfaceProps> = ({
 
   // Only show retry options if student scored below the retry threshold
   const retryThreshold = eligibility.retryThreshold || 70; // Default to 70% if not specified
-  const showRetryOptions = currentScore !== undefined && currentScore < retryThreshold;
+  const hasValidScore = currentScore !== undefined && currentScore !== null;
+  const showRetryOptions = hasValidScore && currentScore < retryThreshold;
+  
+  // Check if cooldown period has expired or doesn't exist
+  const isCooldownExpired = timeRemaining === null || timeRemaining === 0;
+  
+  // Debug logging
+  console.log('🔍 RETRY BUTTON DEBUG:', {
+    showRetryOptions,
+    canRetry: eligibility?.canRetry,
+    timeRemaining,
+    isCooldownExpired,
+    shouldShowButton: showRetryOptions && eligibility?.canRetry && isCooldownExpired,
+    eligibility: eligibility,
+    attempts: attempts.length,
+    maxRetries: eligibility?.maxRetries,
+    currentScore,
+    retryThreshold
+  });
 
   return (
     <>
@@ -215,26 +275,50 @@ export const QuizRetryInterface: React.FC<QuizRetryInterfaceProps> = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <RotateCcw className="w-5 h-5" />
-            {showRetryOptions ? 'Quiz Retry Options' : `Quiz Results (Above ${retryThreshold}% Threshold)`}
+            {showRetryOptions ? 'Quiz Retry Options' : hasValidScore ? `Quiz Results (Above ${retryThreshold}% Threshold)` : 'Quiz Results'}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Current Score Display */}
-          {currentScore !== undefined && (
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Target className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm font-medium">Your Score</span>
-              </div>
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-2">
+              <Target className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Your Score</span>
+            </div>
+            {hasValidScore ? (
               <Badge variant={currentScore >= 70 ? 'default' : 'destructive'}>
                 {currentScore}%
               </Badge>
-            </div>
+            ) : (
+              <Badge variant="outline">
+                Pending
+              </Badge>
+            )}
+          </div>
+
+          {/* Message when score is pending and no retry options */}
+          {!hasValidScore && !showRetryOptions && (
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                Your quiz has been submitted and is awaiting manual grading. Retry options will be available once your score is calculated.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Message when score is above threshold */}
+          {hasValidScore && !showRetryOptions && (
+            <Alert>
+              <CheckCircle className="h-4 w-4" />
+              <AlertDescription>
+                Great job! You scored {currentScore}%, which is above the {retryThreshold}% threshold. No retry is needed.
+              </AlertDescription>
+            </Alert>
           )}
 
           {/* Retry Status - Only show if retry options are available */}
           {showRetryOptions && status && (
-            <Alert variant={status.type === 'error' ? 'destructive' : status.type === 'warning' ? 'default' : 'default'}>
+            <Alert variant={status.type === 'error' ? 'destructive' : 'default'}>
               <status.icon className="h-4 w-4" />
               <AlertDescription>
                 <div className="font-medium">{status.title}</div>
@@ -244,11 +328,16 @@ export const QuizRetryInterface: React.FC<QuizRetryInterfaceProps> = ({
           )}
 
           {/* Cooldown Timer - Only show if retry options are available */}
-          {showRetryOptions && timeUntilRetry && (
+          {showRetryOptions && timeRemaining !== null && timeRemaining > 0 && (
             <Alert>
               <Timer className="h-4 w-4" />
               <AlertDescription>
-                You can retry in {timeUntilRetry}
+                <div className="flex items-center justify-between">
+                  <span>You can retry in:</span>
+                  <span className="font-mono text-lg font-bold text-primary">
+                    {formatTimeRemaining(timeRemaining)}
+                  </span>
+                </div>
               </AlertDescription>
             </Alert>
           )}
@@ -295,16 +384,33 @@ export const QuizRetryInterface: React.FC<QuizRetryInterfaceProps> = ({
             </div>
           )}
 
-          {/* Retry Button - Only show if retry options are available */}
-          {showRetryOptions && eligibility.canRetry && !timeUntilRetry && (
+          {/* Retry Button - Only show if retry options are available and cooldown has expired */}
+          {showRetryOptions && eligibility.canRetry && isCooldownExpired && (
             <div className="pt-4">
               <Button 
-                onClick={() => setShowRetryDialog(true)}
+                onClick={handleRetryRequest}
                 className="w-full"
                 disabled={submitting}
               >
                 <RotateCcw className="w-4 h-4 mr-2" />
-                {eligibility.requiresApproval ? 'Request Retry' : 'Retry Quiz'}
+                Retry Quiz
+              </Button>
+            </div>
+          )}
+
+          {/* Refresh Button - Show when there's a mismatch between frontend and backend */}
+          {showRetryOptions && !eligibility.canRetry && isCooldownExpired && (
+            <div className="pt-4">
+              <Button 
+                onClick={() => {
+                  console.log('🔄 REFRESHING RETRY ELIGIBILITY...');
+                  loadRetryData();
+                }}
+                variant="outline"
+                className="w-full"
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Refresh Retry Status
               </Button>
             </div>
           )}
@@ -324,73 +430,6 @@ export const QuizRetryInterface: React.FC<QuizRetryInterfaceProps> = ({
         </CardContent>
       </Card>
 
-      {/* Retry Request Dialog */}
-      <Dialog open={showRetryDialog} onOpenChange={setShowRetryDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <RotateCcw className="w-5 h-5" />
-              {eligibility?.requiresApproval ? 'Request Quiz Retry' : 'Retry Quiz'}
-            </DialogTitle>
-            <DialogDescription>
-              {eligibility?.requiresApproval 
-                ? 'Please provide a reason for your retry request. Your teacher will review it before approval.'
-                : 'Please provide a reason for retrying this quiz.'
-              }
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="retry-reason">Reason for Retry</Label>
-              <Textarea
-                id="retry-reason"
-                placeholder="Explain why you want to retry this quiz..."
-                value={retryReason}
-                onChange={(e) => setRetryReason(e.target.value)}
-                rows={3}
-                className="mt-1"
-              />
-            </div>
-
-            {eligibility?.requiresApproval && (
-              <Alert>
-                <Info className="h-4 w-4" />
-                <AlertDescription>
-                  Your retry request will be sent to your teacher for approval. 
-                  You'll be notified once it's been reviewed.
-                </AlertDescription>
-              </Alert>
-            )}
-          </div>
-
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowRetryDialog(false)}
-              disabled={submitting}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleRetryRequest}
-              disabled={submitting || !retryReason.trim()}
-            >
-              {submitting ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Submitting...
-                </>
-              ) : (
-                <>
-                  <RotateCcw className="w-4 h-4 mr-2" />
-                  {eligibility?.requiresApproval ? 'Submit Request' : 'Start Retry'}
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
 };
