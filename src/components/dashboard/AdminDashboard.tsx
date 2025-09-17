@@ -952,24 +952,24 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
           {/* Premium Header Section */}
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-            <div className="relative p-8 rounded-3xl">
-              <div className="flex items-center justify-between mb-6">
+            <div className="relative p-4 sm:p-6 lg:p-8 rounded-3xl">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                 <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
-                  <Shield className="w-6 h-6 text-primary" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                  <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                 </div>
           <div>
-                  <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
                     Admin Dashboard
                   </h1>
-                  <p className="text-lg text-muted-foreground font-light">
+                  <p className="text-sm sm:text-base lg:text-lg text-muted-foreground font-light">
                     Welcome back, {userProfile?.first_name || 'Administrator'}
                   </p>
                   </div>
                 </div>
                 
                 {/* Filter Controls - Matching Reports Page Style */}
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
                   <Select value={timeRange} onValueChange={setTimeRange}>
                     <SelectTrigger className="w-full sm:w-48 rounded-xl h-9">
                       <SelectValue placeholder="Select time range" />
@@ -987,7 +987,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                     <DrawerTrigger asChild>
                       <Button 
                         variant="outline"
-                        className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800"
+                        className="h-9 px-4 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800 w-full sm:w-auto"
                       >
                         <Filter className="h-4 w-4 mr-2" />
                         Filters
@@ -1253,11 +1253,11 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
 
       {/* Charts and Analytics */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="courses">Courses</TabsTrigger>
-          <TabsTrigger value="engagement">Engagement</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 grid-rows-2 sm:grid-cols-4 sm:grid-rows-1 gap-1 h-auto p-1">
+          <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
+          <TabsTrigger value="users" className="text-xs sm:text-sm">Users</TabsTrigger>
+          <TabsTrigger value="courses" className="text-xs sm:text-sm">Courses</TabsTrigger>
+          <TabsTrigger value="engagement" className="text-xs sm:text-sm">Engagement</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -1487,13 +1487,13 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
               <CardTitle>Daily Engagement Metrics</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-[400px]">
+              <div className="h-[400px] w-full">
                 {!hasEngagementData ? (
                   <div className="flex items-center justify-center h-full">
                     <p className="text-muted-foreground">No engagement data to display for this period.</p>
                   </div>
                 ) : (
-                <div className="relative">
+                <div className="relative w-full h-full">
                   <ChartContainer config={chartConfig} className="w-full h-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={engagementData}>
@@ -1508,7 +1508,7 @@ export const AdminDashboard = ({ userProfile }: AdminDashboardProps) => {
                     </ResponsiveContainer>
                   </ChartContainer>
                   {engagementData.every(d => d.activeUsers === 0 && d.courses === 0 && d.discussions === 0) && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+                    <div className="absolute inset-0 flex items-center justify-center bg-background/90 backdrop-blur-sm rounded-lg">
                       <div className="text-center">
                         <p className="text-sm text-muted-foreground">No activity recorded for this period</p>
                         <p className="text-xs text-muted-foreground mt-1">Overall engagement: {stats?.avgEngagement ?? 0}%</p>
