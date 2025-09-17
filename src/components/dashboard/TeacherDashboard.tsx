@@ -1470,7 +1470,7 @@ export const TeacherDashboard = ({ userProfile }: TeacherDashboardProps) => {
         <div className="relative">
           <div className="relative">
             <Tabs defaultValue="overview" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-2 md:grid-cols-3">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="performance">Performance</TabsTrigger>
                 <TabsTrigger value="feedback">Reports</TabsTrigger>
