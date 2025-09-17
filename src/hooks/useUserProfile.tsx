@@ -21,38 +21,67 @@ export const useUserProfile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isFetching, setIsFetching] = useState(false);
 
   const fetchProfile = useCallback(async () => {
     console.log('👤 useUserProfile: fetchProfile called', {
       hasUser: !!user,
       userId: user?.id,
-      userEmail: user?.email
+      userEmail: user?.email,
+      isFetching
     });
     
     if (!user) {
       console.log('👤 useUserProfile: No user, clearing profile');
       setProfile(null);
       setLoading(false);
+      setIsFetching(false);
       return;
     }
     
+    // Prevent multiple simultaneous fetches
+    if (isFetching) {
+      console.log('👤 useUserProfile: Already fetching, skipping...');
+      return;
+    }
+    
+    setIsFetching(true);
     setLoading(true);
     setError(null);
     
     try {
-      console.log('👤 useUserProfile: Fetching profile from database...');
-      const { data, error } = await supabase
+      console.log('👤 useUserProfile: Fetching profile from database...', {
+        userId: user.id,
+        userEmail: user.email
+      });
+      
+      const startTime = Date.now();
+      
+      // Add timeout to prevent infinite loading
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Profile fetch timeout after 10 seconds')), 10000);
+      });
+      
+      const fetchPromise = supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single();
+      
+      const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
+      
+      const endTime = Date.now();
+      const duration = endTime - startTime;
 
       console.log('👤 useUserProfile: Profile fetch result', {
         hasData: !!data,
         hasError: !!error,
         errorCode: error?.code,
         errorMessage: error?.message,
-        profileRole: data?.role
+        profileRole: data?.role,
+        duration: `${duration}ms`,
+        fullError: error,
+        fullData: data
       });
 
       if (error) {
@@ -67,8 +96,9 @@ export const useUserProfile = () => {
       setError(err.message);
     } finally {
       setLoading(false);
+      setIsFetching(false);
     }
-  }, [user]);
+  }, [user, isFetching]);
 
   useEffect(() => {
     console.log('👤 useUserProfile: useEffect triggered', {
