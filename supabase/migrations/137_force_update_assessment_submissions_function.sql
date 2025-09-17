@@ -1,8 +1,10 @@
--- This script updates the get_assessment_submissions function to include course_id and lesson_id
--- so that an assignment can be marked as complete for a student upon grading.
+-- Force update the get_assessment_submissions function to ensure it's using the latest version
+-- This migration ensures the function is properly updated with the latest attempt filtering
 
+-- Drop the function if it exists to ensure a clean update
 DROP FUNCTION IF EXISTS get_assessment_submissions(UUID);
 
+-- Recreate the function with the correct latest attempt filtering
 CREATE OR REPLACE FUNCTION get_assessment_submissions(assessment_id UUID)
 RETURNS TABLE (
     id UUID,
@@ -40,29 +42,54 @@ BEGIN
         JOIN course_members cm ON p.id = cm.user_id
         WHERE cm.course_id = (SELECT ad.course_id FROM assessment_details ad) AND p.role = 'student'
     ),
+    text_answer_grades_data AS (
+        SELECT
+            tag.quiz_submission_id,
+            jsonb_agg(
+                jsonb_build_object(
+                    'question_id', tag.question_id,
+                    'question_text', qq.question_text,
+                    'question_position', qq.position,
+                    'grade', tag.grade,
+                    'feedback', tag.feedback,
+                    'graded_by', tag.graded_by,
+                    'graded_at', tag.graded_at
+                )
+            ) as individual_grades
+        FROM text_answer_grades tag
+        JOIN quiz_questions qq ON qq.id = tag.question_id
+        GROUP BY tag.quiz_submission_id
+    ),
     quiz_submissions_data AS (
         SELECT
             qs.user_id,
             jsonb_build_object(
                 'id', qs.id,
                 'status', CASE 
+                    WHEN qs.manual_grading_required AND NOT qs.manual_grading_completed THEN 'submitted'
                     WHEN qs.manual_grading_completed THEN 'graded'
-                    ELSE 'submitted'
+                    ELSE 'graded'
                 END,
                 'score', COALESCE(qs.score, qs.manual_grading_score),
+                'feedback', qs.manual_grading_feedback,
                 'submitted_at', qs.submitted_at,
                 'answers', qs.answers,
                 'results', qs.results,
                 'manual_grading_required', qs.manual_grading_required,
                 'manual_grading_completed', qs.manual_grading_completed,
                 'manual_grading_score', qs.manual_grading_score,
+                'manual_grading_feedback', qs.manual_grading_feedback,
+                'manual_grading_completed_at', qs.manual_grading_completed_at,
+                'manual_grading_completed_by', qs.manual_grading_completed_by,
+                'text_answer_grades', COALESCE(tagd.individual_grades, '[]'::jsonb),
                 'attempt_number', qs.attempt_number,
                 'is_latest_attempt', qs.is_latest_attempt,
                 'retry_reason', qs.retry_reason
             ) as submission_data
         FROM quiz_submissions qs
+        LEFT JOIN text_answer_grades_data tagd ON qs.id = tagd.quiz_submission_id
         WHERE qs.lesson_content_id = assessment_id
-        AND qs.is_latest_attempt = true
+        AND qs.is_latest_attempt = true  -- CRITICAL: Only show latest attempts
     ),
     assignment_submissions_data AS (
         SELECT

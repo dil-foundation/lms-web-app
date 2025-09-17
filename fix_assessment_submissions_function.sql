@@ -1,5 +1,5 @@
--- This script updates the get_assessment_submissions function to include course_id and lesson_id
--- so that an assignment can be marked as complete for a student upon grading.
+-- Fix the get_assessment_submissions function to properly show quiz submissions
+-- Run this in Supabase SQL editor
 
 DROP FUNCTION IF EXISTS get_assessment_submissions(UUID);
 

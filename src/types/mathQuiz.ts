@@ -66,10 +66,6 @@ export interface MathQuestionSettings {
   maxRetries: number;
   retryCooldownHours: number;
   retryThreshold: number;
-  requireTeacherApproval: boolean;
-  generateNewQuestions: boolean;
-  requireStudyMaterials: boolean;
-  studyMaterialsRequired: string[];
   // Math-specific settings
   mathTolerance: number; // Default tolerance for math answers
   allowApproximateAnswers: boolean; // Allow answers within tolerance
