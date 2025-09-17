@@ -2,16 +2,11 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface AISafetyEthicsSettings {
   // Content Safety
-  contentFiltering: boolean;
   toxicityDetection: boolean;
-  biasDetection: boolean;
   inappropriateContentBlocking: boolean;
   harmfulContentPrevention: boolean;
-  misinformationDetection: boolean;
   
   // Privacy & Data Protection
-  dataEncryption: boolean;
-  personalDataProtection: boolean;
   conversationLogging: boolean;
   dataRetentionLimit: number;
   
@@ -22,32 +17,18 @@ export interface AISafetyEthicsSettings {
   inclusiveLanguage: boolean;
   emotionalSafetyChecks: boolean;
   
-  // Monitoring & Alerts
-  realTimeMonitoring: boolean;
-  alertThreshold: number;
-  automaticEscalation: boolean;
-  adminNotifications: boolean;
-  contextualSafetyAnalysis: boolean;
-  
   // Compliance & Reporting
-  complianceReporting: boolean;
   auditTrail: boolean;
-  incidentReporting: boolean;
   regularAssessments: boolean;
 }
 
 export const defaultAISafetyEthicsSettings: AISafetyEthicsSettings = {
   // Content Safety
-  contentFiltering: true,
   toxicityDetection: true,
-  biasDetection: true,
   inappropriateContentBlocking: true,
   harmfulContentPrevention: true,
-  misinformationDetection: true,
   
   // Privacy & Data Protection
-  dataEncryption: true,
-  personalDataProtection: true,
   conversationLogging: true,
   dataRetentionLimit: 90,
   
@@ -58,17 +39,8 @@ export const defaultAISafetyEthicsSettings: AISafetyEthicsSettings = {
   inclusiveLanguage: true,
   emotionalSafetyChecks: true,
   
-  // Monitoring & Alerts
-  realTimeMonitoring: true,
-  alertThreshold: 75,
-  automaticEscalation: true,
-  adminNotifications: true,
-  contextualSafetyAnalysis: true,
-  
   // Compliance & Reporting
-  complianceReporting: true,
   auditTrail: true,
-  incidentReporting: true,
   regularAssessments: true
 };
 
@@ -109,14 +81,9 @@ export class AISafetyEthicsService {
 
       const settings = data[0];
       return {
-        contentFiltering: settings.content_filtering,
         toxicityDetection: settings.toxicity_detection,
-        biasDetection: settings.bias_detection,
         inappropriateContentBlocking: settings.inappropriate_content_blocking,
         harmfulContentPrevention: settings.harmful_content_prevention,
-        misinformationDetection: settings.misinformation_detection,
-        dataEncryption: settings.data_encryption,
-        personalDataProtection: settings.personal_data_protection,
         conversationLogging: settings.conversation_logging,
         dataRetentionLimit: settings.data_retention_limit,
         genderBiasMonitoring: settings.gender_bias_monitoring,
@@ -124,14 +91,7 @@ export class AISafetyEthicsService {
         ageAppropriateResponses: settings.age_appropriate_responses,
         inclusiveLanguage: settings.inclusive_language,
         emotionalSafetyChecks: settings.emotional_safety_checks,
-        realTimeMonitoring: settings.real_time_monitoring,
-        alertThreshold: settings.alert_threshold,
-        automaticEscalation: settings.automatic_escalation,
-        adminNotifications: settings.admin_notifications,
-        contextualSafetyAnalysis: settings.contextual_safety_analysis,
-        complianceReporting: settings.compliance_reporting,
         auditTrail: settings.audit_trail,
-        incidentReporting: settings.incident_reporting,
         regularAssessments: settings.regular_assessments,
       };
     } catch (error) {
@@ -168,14 +128,9 @@ export class AISafetyEthicsService {
       }
 
       const settingsData = {
-        content_filtering: settings.contentFiltering,
         toxicity_detection: settings.toxicityDetection,
-        bias_detection: settings.biasDetection,
         inappropriate_content_blocking: settings.inappropriateContentBlocking,
         harmful_content_prevention: settings.harmfulContentPrevention,
-        misinformation_detection: settings.misinformationDetection,
-        data_encryption: settings.dataEncryption,
-        personal_data_protection: settings.personalDataProtection,
         conversation_logging: settings.conversationLogging,
         data_retention_limit: settings.dataRetentionLimit,
         gender_bias_monitoring: settings.genderBiasMonitoring,
@@ -183,14 +138,7 @@ export class AISafetyEthicsService {
         age_appropriate_responses: settings.ageAppropriateResponses,
         inclusive_language: settings.inclusiveLanguage,
         emotional_safety_checks: settings.emotionalSafetyChecks,
-        real_time_monitoring: settings.realTimeMonitoring,
-        alert_threshold: settings.alertThreshold,
-        automatic_escalation: settings.automaticEscalation,
-        admin_notifications: settings.adminNotifications,
-        contextual_safety_analysis: settings.contextualSafetyAnalysis,
-        compliance_reporting: settings.complianceReporting,
         audit_trail: settings.auditTrail,
-        incident_reporting: settings.incidentReporting,
         regular_assessments: settings.regularAssessments,
       };
 
@@ -250,30 +198,8 @@ export class AISafetyEthicsService {
       errors.push('Data retention limit must be between 30 and 365 days');
     }
 
-    // Validate alert threshold
-    if (settings.alertThreshold < 50 || settings.alertThreshold > 100) {
-      errors.push('Alert threshold must be between 50% and 100%');
-    }
 
     return errors;
   }
 
-  /**
-   * Get safety metrics (mock data for now - can be replaced with real metrics later)
-   */
-  static async getSafetyMetrics(): Promise<{
-    contentFiltered: number;
-    biasDetected: number;
-    incidentsReported: number;
-    complianceScore: number;
-  }> {
-    // This would typically fetch real metrics from the database
-    // For now, return mock data
-    return {
-      contentFiltered: 127,
-      biasDetected: 23,
-      incidentsReported: 5,
-      complianceScore: 94
-    };
-  }
 }
