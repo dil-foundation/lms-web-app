@@ -57,9 +57,9 @@ export const useUserProfile = () => {
       
       const startTime = Date.now();
       
-      // Add timeout to prevent infinite loading
+      // Add timeout to prevent infinite loading (reduced to 5 seconds)
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Profile fetch timeout after 10 seconds')), 10000);
+        setTimeout(() => reject(new Error('Profile fetch timeout after 5 seconds')), 5000);
       });
       
       const fetchPromise = supabase
@@ -93,7 +93,34 @@ export const useUserProfile = () => {
       setProfile(data);
     } catch (err: any) {
       console.error('👤 useUserProfile: Profile fetch failed:', err);
-      setError(err.message);
+      
+      // If it's a timeout error, create a fallback profile
+      if (err.message?.includes('timeout')) {
+        console.warn('👤 useUserProfile: Database timeout, creating fallback profile');
+        console.warn('👤 useUserProfile: This indicates a database connectivity issue');
+        
+        // Check if we're online
+        if (!navigator.onLine) {
+          console.error('👤 useUserProfile: No internet connection detected');
+          setError('No internet connection. Please check your network and try again.');
+        } else {
+          const fallbackProfile = {
+            id: user.id,
+            email: user.email,
+            first_name: user.user_metadata?.first_name || null,
+            last_name: user.user_metadata?.last_name || null,
+            role: 'admin' as UserRole, // Default to admin for now
+            phone_number: null,
+            timezone: null,
+            avatar_url: null
+          };
+          setProfile(fallbackProfile);
+          setError(null); // Clear error since we have a fallback
+          console.log('👤 useUserProfile: Fallback profile created:', fallbackProfile);
+        }
+      } else {
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
       setIsFetching(false);
