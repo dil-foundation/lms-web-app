@@ -80,14 +80,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user]);
 
   useEffect(() => {
+    console.log('🔐 AuthContext: Initializing authentication...');
+    console.log('🔐 AuthContext: Current path:', window.location.pathname);
+    console.log('🔐 AuthContext: Initial user state:', getInitialUser());
+    
     // Get the initial session and user data
     supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+      console.log('🔐 AuthContext: getSession result:', { session: !!session, error: !!error });
+      
       if (error) {
-        console.error('Error getting session:', error);
+        console.error('🔐 AuthContext: Error getting session:', error);
+        console.error('🔐 AuthContext: Error details:', {
+          message: error.message,
+          code: error.code,
+          status: error.status
+        });
         
         // Handle user_not_found error
         if (error.message?.includes('user_not_found') || error.message?.includes('User from sub claim in JWT does not exist')) {
-          console.warn('User not found, clearing auth state and redirecting to login');
+          console.warn('🔐 AuthContext: User not found, clearing auth state and redirecting to login');
           cleanupAuthState();
           setSession(null);
           setUser(null);
@@ -95,21 +106,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           
           // Redirect to login if on dashboard
           if (window.location.pathname.startsWith('/dashboard')) {
+            console.log('🔐 AuthContext: Redirecting to /auth from dashboard');
             navigate('/auth', { replace: true });
           }
           return;
         }
       }
       
+      console.log('🔐 AuthContext: Setting session and user:', {
+        hasSession: !!session,
+        hasUser: !!session?.user,
+        userId: session?.user?.id,
+        userEmail: session?.user?.email
+      });
+      
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      
+      console.log('🔐 AuthContext: Initial auth setup complete');
     });
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('🔐 AuthContext: Auth state change event:', event, {
+          hasSession: !!session,
+          hasUser: !!session?.user,
+          userId: session?.user?.id,
+          currentPath: window.location.pathname
+        });
+        
         // Handle auth errors
         if (event === 'TOKEN_REFRESHED' && session) {
+          console.log('🔐 AuthContext: Token refreshed, checking user profile...');
           try {
             // Check if user still exists in database
             const { data: profile, error } = await supabase
@@ -118,9 +147,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               .eq('id', session.user.id)
               .single();
             
+            console.log('🔐 AuthContext: Profile check result:', { profile: !!profile, error: !!error });
+            
             if (error && error.code === 'PGRST116') {
               // User not found in database, sign them out
-              console.warn('User not found in database during auth state change, signing out');
+              console.warn('🔐 AuthContext: User not found in database during auth state change, signing out');
               cleanupAuthState();
               setSession(null);
               setUser(null);
@@ -128,17 +159,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               return;
             }
           } catch (profileError) {
-            console.error('Error checking user profile during auth state change:', profileError);
+            console.error('🔐 AuthContext: Error checking user profile during auth state change:', profileError);
           }
         }
         
         // Prevent re-renders on tab focus, etc. by only updating state if the user ID is different.
         if (event === 'USER_UPDATED' || session?.user?.id !== userRef.current?.id) {
+          console.log('🔐 AuthContext: Updating user state:', {
+            event,
+            previousUserId: userRef.current?.id,
+            newUserId: session?.user?.id,
+            isSignIn: event === 'SIGNED_IN'
+          });
+          
           setSession(session);
           setUser(session?.user ?? null);
           
           // Track session in database when user signs in
           if (event === 'SIGNED_IN' && session?.user) {
+            console.log('🔐 AuthContext: User signed in, creating session record...');
             try {
               // Create session record
               await SessionService.createSession(
@@ -158,8 +197,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 location: 'Unknown location', // Can be enhanced with geolocation later
                 login_method: 'email' // Default to email, can be enhanced based on auth method
               });
+              
+              console.log('🔐 AuthContext: Session record and access log created successfully');
             } catch (error) {
-              console.error('Error creating session or logging access:', error);
+              console.error('🔐 AuthContext: Error creating session or logging access:', error);
             }
           }
         }
@@ -169,8 +210,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const isDashboardPage = currentPath.startsWith('/dashboard');
         const isSecureFormPage = currentPath.startsWith('/secure-form');
 
+        console.log('🔐 AuthContext: Navigation check:', {
+          event,
+          currentPath,
+          isAuthPage,
+          isDashboardPage,
+          isSecureFormPage,
+          hasPendingMFA: !!pendingMFAUser,
+          shouldNavigate: event === 'SIGNED_IN' && !isAuthPage && !isDashboardPage && !isSecureFormPage && !pendingMFAUser
+        });
+
         // Only navigate to dashboard if user is fully authenticated (not pending MFA)
         if (event === 'SIGNED_IN' && !isAuthPage && !isDashboardPage && !isSecureFormPage && !pendingMFAUser) {
+          console.log('🔐 AuthContext: Navigating to dashboard after sign in');
           navigate('/dashboard', { replace: true });
         }
 

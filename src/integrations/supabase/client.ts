@@ -74,7 +74,16 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
 
 // Global error interceptor for handling user_not_found errors
 supabase.auth.onAuthStateChange(async (event, session) => {
+  console.log('🔗 Supabase: Auth state change', {
+    event,
+    hasSession: !!session,
+    hasUser: !!session?.user,
+    userId: session?.user?.id,
+    currentPath: window.location.pathname
+  });
+  
   if (event === 'TOKEN_REFRESHED' && session) {
+    console.log('🔗 Supabase: Token refreshed, checking user profile...');
     try {
       // Check if the user still exists in the database
       const { data: profile, error } = await supabase
@@ -83,9 +92,16 @@ supabase.auth.onAuthStateChange(async (event, session) => {
         .eq('id', session.user.id)
         .single();
       
+      console.log('🔗 Supabase: Profile check result', {
+        hasProfile: !!profile,
+        hasError: !!error,
+        errorCode: error?.code,
+        errorMessage: error?.message
+      });
+      
       if (error && error.code === 'PGRST116') {
         // User not found in database, sign them out
-        console.warn('User not found in database, signing out automatically');
+        console.warn('🔗 Supabase: User not found in database, signing out automatically');
         await supabase.auth.signOut({ scope: 'global' });
         
         // Clear local storage
@@ -97,11 +113,12 @@ supabase.auth.onAuthStateChange(async (event, session) => {
         
         // Redirect to login page
         if (window.location.pathname.startsWith('/dashboard')) {
+          console.log('🔗 Supabase: Redirecting to auth from dashboard');
           window.location.href = '/auth';
         }
       }
     } catch (profileError) {
-      console.error('Error checking user profile:', profileError);
+      console.error('🔗 Supabase: Error checking user profile:', profileError);
     }
   }
 });
