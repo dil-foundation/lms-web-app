@@ -22,28 +22,46 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 const getInitialUser = () => {
   try {
+    // Check if localStorage is available
+    if (typeof localStorage === 'undefined' || !localStorage) {
+      return null;
+    }
+    
     const sessionStr = localStorage.getItem(import.meta.env.VITE_AUTH_TOKEN);
     if (sessionStr) {
       const session = JSON.parse(sessionStr);
       return session.user || null;
     }
   } catch (error) {
-    // Ignore parsing errors
+    console.warn('Error accessing localStorage for initial user:', error);
   }
   return null;
 };
 
 const cleanupAuthState = () => {
-  Object.keys(localStorage).forEach((key) => {
-    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-      localStorage.removeItem(key);
+  try {
+    if (typeof localStorage !== 'undefined' && localStorage) {
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
     }
-  });
-  Object.keys(sessionStorage || {}).forEach((key) => {
-    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-      sessionStorage.removeItem(key);
+  } catch (error) {
+    console.warn('Error cleaning up localStorage:', error);
+  }
+  
+  try {
+    if (typeof sessionStorage !== 'undefined' && sessionStorage) {
+      Object.keys(sessionStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          sessionStorage.removeItem(key);
+        }
+      });
     }
-  });
+  } catch (error) {
+    console.warn('Error cleaning up sessionStorage:', error);
+  }
 };
 
 // Create the provider component

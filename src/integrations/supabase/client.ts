@@ -13,9 +13,54 @@ if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KE
   console.warn('⚠️ Supabase environment variables are missing. Using fallback values. Please create a .env file with VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
 }
 
+// Custom storage adapter that handles incognito mode
+const createStorageAdapter = () => {
+  const isAvailable = (storage: Storage) => {
+    try {
+      const testKey = '__storage_test__';
+      storage.setItem(testKey, 'test');
+      storage.removeItem(testKey);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  const safeGetItem = (key: string) => {
+    try {
+      return localStorage.getItem(key);
+    } catch (e) {
+      console.warn('localStorage not available, using memory fallback');
+      return null;
+    }
+  };
+
+  const safeSetItem = (key: string, value: string) => {
+    try {
+      localStorage.setItem(key, value);
+    } catch (e) {
+      console.warn('localStorage not available, using memory fallback');
+    }
+  };
+
+  const safeRemoveItem = (key: string) => {
+    try {
+      localStorage.removeItem(key);
+    } catch (e) {
+      console.warn('localStorage not available, using memory fallback');
+    }
+  };
+
+  return {
+    getItem: safeGetItem,
+    setItem: safeSetItem,
+    removeItem: safeRemoveItem,
+  };
+};
+
 export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
-    storage: localStorage,
+    storage: createStorageAdapter(),
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
