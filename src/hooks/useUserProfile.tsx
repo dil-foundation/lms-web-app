@@ -125,16 +125,23 @@ export const useUserProfile = () => {
       setLoading(false);
       setIsFetching(false);
     }
-  }, [user, isFetching]);
+  }, [user]);
 
   useEffect(() => {
     console.log('👤 useUserProfile: useEffect triggered', {
       hasUser: !!user,
       userId: user?.id,
-      refreshKey
+      refreshKey,
+      hasProfile: !!profile
     });
-    fetchProfile();
-  }, [fetchProfile]);
+    
+    // Only fetch if we don't have a profile or if the user changed
+    if (!profile || (user && profile.id !== user.id)) {
+      fetchProfile();
+    } else {
+      console.log('👤 useUserProfile: Profile already exists, skipping fetch');
+    }
+  }, [user, refreshKey, profile?.id]);
 
   const refreshProfile = useCallback(async () => {
     console.log('refreshProfile called - triggering refresh');
