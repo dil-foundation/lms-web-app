@@ -98,26 +98,62 @@ const Dashboard = () => {
   const loadingTimeoutRef = useRef<NodeJS.Timeout>();
   const debounceTimeoutRef = useRef<NodeJS.Timeout>();
 
+  console.log('🏠 Dashboard: Component initialized', {
+    hasUser: !!user,
+    authLoading,
+    profileLoading,
+    maintenanceLoading,
+    hasProfile: !!profile,
+    profileError: !!profileError,
+    currentPath: location.pathname,
+    isMaintenanceMode,
+    isAIMode,
+    loadingTimeout,
+    debouncedLoading
+  });
+
   const resetToDashboard = useCallback(() => {
     navigate('/dashboard');
   }, [navigate]);
   
   useEffect(() => {
+    console.log('🏠 Dashboard: Auth check effect', {
+      authLoading,
+      hasUser: !!user,
+      userId: user?.id,
+      userEmail: user?.email
+    });
+    
     if (!authLoading && !user) {
+      console.log('🏠 Dashboard: No user found, redirecting to auth');
       navigate('/auth', { replace: true });
     }
   }, [authLoading, user, navigate]);
 
   // Check for maintenance mode (only for students and teachers)
   useEffect(() => {
+    console.log('🏠 Dashboard: Maintenance check effect', {
+      maintenanceLoading,
+      isMaintenanceMode,
+      userRole: profile?.role
+    });
+    
     if (!maintenanceLoading && isMaintenanceMode && profile?.role !== 'admin') {
+      console.log('🏠 Dashboard: Maintenance mode active for non-admin user');
       // Don't redirect, just show maintenance page
       return;
     }
   }, [maintenanceLoading, isMaintenanceMode, profile?.role]);
 
   useEffect(() => {
+    console.log('🏠 Dashboard: Profile effect', {
+      hasProfile: !!profile,
+      profileRole: profile?.role,
+      profileId: profile?.id
+    });
+    
     if (profile) {
+      console.log('🏠 Dashboard: Requesting notification permission');
       requestNotificationPermission();
     }
   }, [profile]);
@@ -125,6 +161,16 @@ const Dashboard = () => {
   const currentRole = profile?.role as UserRole | undefined;
   
   const isLoading = authLoading || (user && profileLoading) || maintenanceLoading;
+  
+  console.log('🏠 Dashboard: Loading state calculation', {
+    authLoading,
+    profileLoading,
+    maintenanceLoading,
+    hasUser: !!user,
+    hasProfile: !!profile,
+    isLoading,
+    currentRole
+  });
 
   // Debounce loading state to prevent rapid re-renders
   useEffect(() => {

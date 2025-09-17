@@ -23,27 +23,47 @@ export const useUserProfile = () => {
   const [refreshKey, setRefreshKey] = useState(0);
 
   const fetchProfile = useCallback(async () => {
+    console.log('👤 useUserProfile: fetchProfile called', {
+      hasUser: !!user,
+      userId: user?.id,
+      userEmail: user?.email
+    });
+    
     if (!user) {
+      console.log('👤 useUserProfile: No user, clearing profile');
       setProfile(null);
       setLoading(false);
       return;
     }
     
     setLoading(true);
+    setError(null);
+    
     try {
+      console.log('👤 useUserProfile: Fetching profile from database...');
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single();
 
+      console.log('👤 useUserProfile: Profile fetch result', {
+        hasData: !!data,
+        hasError: !!error,
+        errorCode: error?.code,
+        errorMessage: error?.message,
+        profileRole: data?.role
+      });
+
       if (error) {
+        console.error('👤 useUserProfile: Profile fetch error:', error);
         throw error;
       }
 
-      console.log('Profile data fetched:', data);
+      console.log('👤 useUserProfile: Profile data fetched successfully:', data);
       setProfile(data);
     } catch (err: any) {
+      console.error('👤 useUserProfile: Profile fetch failed:', err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -51,6 +71,11 @@ export const useUserProfile = () => {
   }, [user]);
 
   useEffect(() => {
+    console.log('👤 useUserProfile: useEffect triggered', {
+      hasUser: !!user,
+      userId: user?.id,
+      refreshKey
+    });
     fetchProfile();
   }, [fetchProfile]);
 
