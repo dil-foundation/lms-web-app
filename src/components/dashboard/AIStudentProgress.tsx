@@ -176,7 +176,7 @@ export const AIStudentProgress: React.FC = () => {
       overallProgress: Math.round(apiData.overall_progress * 10) / 10,
       dayStreak: apiData.streak_days,
       completedExercises: apiData.total_exercises_completed,
-      totalPracticeTime: `${(apiData.total_practice_time / 60).toFixed(1)}h`
+      totalPracticeTime: `${(Number(apiData.total_practice_time) || 0) === 0 ? '0.0' : (Number(apiData.total_practice_time) / 60).toFixed(1)}h`
     };
 
     // Transform learning path stages (API values are already percentages)
@@ -208,10 +208,10 @@ export const AIStudentProgress: React.FC = () => {
 
     // Transform learning stats
     const learningStats: LearningStats = {
-      totalLearningTime: `${(apiData.total_practice_time / 60).toFixed(1)}h`,
+      totalLearningTime: `${(Number(apiData.total_practice_time) || 0) === 0 ? '0.0' : (Number(apiData.total_practice_time) / 60).toFixed(1)}h`,
       dayStreak: apiData.streak_days,
       bestLearningStreak: apiData.longest_streak,
-      avgLearningSession: `${Math.round(apiData.average_session_duration)}m`
+      avgLearningSession: `${Math.round(Number(apiData.average_session_duration) || 0)}m`
     };
 
     return {

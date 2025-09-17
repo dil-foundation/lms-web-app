@@ -524,7 +524,7 @@ export default function ProblemSolvingSimulations() {
 
       const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.EVALUATE_PROBLEM_SOLVING}`, {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: await getAuthHeaders(),
         body: JSON.stringify(requestData),
       });
 
