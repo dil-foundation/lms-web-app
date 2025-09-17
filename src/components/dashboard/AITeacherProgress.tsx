@@ -50,7 +50,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { 
   TeacherProgressOverviewData, 
-  StudentProgressData 
+  StudentProgressData
 } from '@/services/teacherDashboardService';
 import { useTeacherProgress } from '@/hooks/useTeacherProgress';
 
@@ -106,6 +106,42 @@ interface StudentDetailData {
     recommendations: string[];
   };
 }
+
+// Helper function to generate CSV data from student progress data
+const generateCSVData = (students: StudentProgressData[]): string => {
+  // CSV headers
+  const headers = [
+    'Student Name',
+    'Student Email', 
+    'Current Stage',
+    'Progress Percentage',
+    'Average Score',
+    'AI Feedback',
+    'Last Active',
+    'Total Time Exercised',
+    'At Risk'
+  ];
+
+  // Convert students data to CSV rows
+  const rows = students.map(student => [
+    student.name || 'N/A',
+    student.email || 'N/A',
+    student.stage || 'N/A',
+    `${student.progressPercentage || 0}%`,
+    `${student.averageScore || 0}`,
+    student.aiFeedback || 'No feedback available',
+    student.lastActive || 'Never',
+    student.totalTimeExercised || '0 minutes',
+    student.atRisk ? 'Yes' : 'No'
+  ]);
+
+  // Combine headers and rows
+  const csvContent = [headers, ...rows]
+    .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    .join('\n');
+
+  return csvContent;
+};
 
 export const AITeacherProgress = () => {
   const { user } = useAuth();
@@ -303,48 +339,51 @@ export const AITeacherProgress = () => {
       const fileName = scope === 'all' 
         ? `ai-student-progress-report-${new Date().toISOString().split('T')[0]}.${format}`
         : `student-${studentId}-progress-${new Date().toISOString().split('T')[0]}.${format}`;
-      
-      // Show loading toast
-      toast.loading(`Preparing ${format.toUpperCase()} export...`, {
-        description: 'This may take a few moments.'
-      });
 
       if (format === 'csv' && scope === 'all') {
-        // Use the API for CSV export with current filters
-        const blob = await teacherDashboardService.exportProgressData(
-          timeRange, 
-          'csv', 
-          searchTerm, 
-          stageFilter
-        );
-        
-        // Create download link
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-
-        toast.dismiss();
-        toast.success(`${fileName} downloaded successfully!`, {
-          description: 'Your progress report is ready.'
+        // Show loading toast
+        const loadingToast = toast.loading(`Preparing ${format.toUpperCase()} export...`, {
+          description: 'This may take a few moments.'
         });
+
+        try {
+          // Generate CSV client-side from filtered data
+          const csvData = generateCSVData(filteredStudents);
+          
+          // Create blob and download
+          const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = fileName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+
+          // Replace loading toast with success toast
+          toast.success(`${fileName} downloaded successfully!`, {
+            id: loadingToast,
+            description: 'Your progress report is ready.'
+          });
+        } catch (exportError) {
+          // Replace loading toast with error toast
+          toast.error('Export failed', {
+            id: loadingToast,
+            description: 'Unable to generate CSV file. Please try again.'
+          });
+          throw exportError;
+        }
       } else {
         // For individual student exports or PDF (not implemented yet)
-        toast.dismiss();
         toast.info('Export feature coming soon', {
           description: `${format.toUpperCase()} export for ${scope === 'individual' ? 'individual students' : 'all data'} will be available in a future update.`
         });
       }
     } catch (error: any) {
       console.error('Export failed:', error);
-      toast.dismiss();
-      toast.error('Export failed', {
-        description: error.message || 'Unable to export data. Please try again.'
-      });
+      // Error handling is done in the inner try-catch for CSV exports
+      // For other formats, the error would be handled here if needed
     }
   };
 
