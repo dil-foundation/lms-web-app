@@ -5,11 +5,11 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAITutorRuntimeSettings } from '@/contexts/AITutorSettingsContext';
-import { generateAITutorPrompt, applyVoiceSettings, shouldApplyGamification } from '@/utils/aiTutorUtils';
+import { generateAITutorPrompt, shouldApplyGamification } from '@/utils/aiTutorUtils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Volume2, Star, Trophy } from 'lucide-react';
+import { Star, Trophy } from 'lucide-react';
 
 interface AITutorIntegrationExampleProps {
   lessonType: string;
@@ -58,14 +58,6 @@ export const AITutorIntegrationExample: React.FC<AITutorIntegrationExampleProps>
       const data = await response.json();
       setAiResponse(data.response);
       
-      // Apply voice settings if enabled
-      if (aiSettings.voiceEnabled) {
-        const utterance = applyVoiceSettings(aiSettings);
-        if (utterance) {
-          utterance.text = data.response;
-          window.speechSynthesis.speak(utterance);
-        }
-      }
       
       // Apply gamification if enabled
       if (shouldApplyGamification(aiSettings)) {
@@ -84,7 +76,7 @@ export const AITutorIntegrationExample: React.FC<AITutorIntegrationExampleProps>
   const handleUserAttempt = (userInput: string, isCorrect: boolean) => {
     setAttempts(prev => prev + 1);
     
-    if (!isCorrect && attempts >= (aiSettings.repetitionThreshold || 3)) {
+    if (!isCorrect && attempts >= 3) {
       // Provide additional help after threshold is reached
       callAITutor(`The user has attempted ${attempts} times. Please provide additional help and guidance for: ${userInput}`);
     } else if (isCorrect) {
@@ -97,13 +89,6 @@ export const AITutorIntegrationExample: React.FC<AITutorIntegrationExampleProps>
     }
   };
 
-  // Example of adaptive difficulty
-  useEffect(() => {
-    if (aiSettings.adaptiveDifficulty && points > 50) {
-      // Increase difficulty based on performance
-      console.log('Increasing difficulty based on user performance');
-    }
-  }, [points, aiSettings.adaptiveDifficulty]);
 
   return (
     <div className="space-y-6">
@@ -134,12 +119,6 @@ export const AITutorIntegrationExample: React.FC<AITutorIntegrationExampleProps>
               <p className="text-sm font-medium">Max Length</p>
               <p className="text-xs text-muted-foreground">{aiSettings.maxResponseLength} words</p>
             </div>
-            <div>
-              <p className="text-sm font-medium">Voice</p>
-              <p className="text-xs text-muted-foreground">
-                {aiSettings.voiceEnabled ? 'Enabled' : 'Disabled'}
-              </p>
-            </div>
           </div>
 
           {/* AI Response Display */}
@@ -152,23 +131,6 @@ export const AITutorIntegrationExample: React.FC<AITutorIntegrationExampleProps>
                   </div>
                   <div className="flex-1">
                     <p className="text-sm">{aiResponse}</p>
-                    {aiSettings.voiceEnabled && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="mt-2"
-                        onClick={() => {
-                          const utterance = applyVoiceSettings(aiSettings);
-                          if (utterance) {
-                            utterance.text = aiResponse;
-                            window.speechSynthesis.speak(utterance);
-                          }
-                        }}
-                      >
-                        <Volume2 className="w-4 h-4 mr-1" />
-                        Replay
-                      </Button>
-                    )}
                   </div>
                 </div>
               </CardContent>
@@ -204,8 +166,8 @@ export const AITutorIntegrationExample: React.FC<AITutorIntegrationExampleProps>
           {/* Display attempts if repetition threshold is being tracked */}
           {attempts > 0 && (
             <div className="text-sm text-muted-foreground">
-              Attempts: {attempts} / {aiSettings.repetitionThreshold || 3}
-              {attempts >= (aiSettings.repetitionThreshold || 3) && (
+              Attempts: {attempts} / 3
+              {attempts >= 3 && (
                 <span className="text-orange-600 ml-2">Help will be provided</span>
               )}
             </div>
@@ -240,20 +202,13 @@ export const AITutorIntegrationExample: React.FC<AITutorIntegrationExampleProps>
  * 3. Generate prompts with settings:
  *    const promptConfig = generateAITutorPrompt(aiSettings, context);
  * 
- * 4. Apply voice settings:
- *    if (aiSettings.voiceEnabled) {
- *      const utterance = applyVoiceSettings(aiSettings);
- *      utterance.text = response;
- *      speechSynthesis.speak(utterance);
- *    }
- * 
- * 5. Check for gamification:
+ * 4. Check for gamification:
  *    if (shouldApplyGamification(aiSettings)) {
  *      // Add points, badges, etc.
  *    }
  * 
- * 6. Handle repetition threshold:
- *    if (attempts >= getRepetitionThreshold(aiSettings)) {
+ * 5. Handle repetition threshold:
+ *    if (attempts >= 3) {
  *      // Provide additional help
  *    }
  */

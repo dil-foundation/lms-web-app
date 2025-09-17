@@ -8,8 +8,6 @@ export interface AITutorSettings {
   // AI Behavior Settings
   personalityType: string;
   responseStyle: string;
-  adaptiveDifficulty: boolean;
-  contextAwareness: boolean;
   
   // Learning Parameters
   maxResponseLength: number;
@@ -17,23 +15,11 @@ export interface AITutorSettings {
   repetitionThreshold: number;
   errorCorrectionStyle: string;
   
-  // Voice & Audio
-  voiceEnabled: boolean;
-  voiceGender: string;
-  speechRate: number;
-  audioFeedback: boolean;
-  
   // Content Customization
   culturalSensitivity: boolean;
   ageAppropriate: boolean;
   professionalContext: boolean;
   customPrompts: string;
-  
-  // Performance & Analytics
-  learningAnalytics: boolean;
-  progressTracking: boolean;
-  performanceReports: boolean;
-  dataRetention: number;
   
   // Advanced Features
   multilingualSupport: boolean;
@@ -45,24 +31,14 @@ export interface AITutorSettings {
 export const defaultAITutorSettings: AITutorSettings = {
   personalityType: 'encouraging',
   responseStyle: 'conversational',
-  adaptiveDifficulty: true,
-  contextAwareness: true,
   maxResponseLength: 150,
   responseSpeed: 'normal',
   repetitionThreshold: 3,
   errorCorrectionStyle: 'gentle',
-  voiceEnabled: true,
-  voiceGender: 'neutral',
-  speechRate: 1.0,
-  audioFeedback: true,
   culturalSensitivity: true,
   ageAppropriate: true,
   professionalContext: false,
   customPrompts: '',
-  learningAnalytics: true,
-  progressTracking: true,
-  performanceReports: true,
-  dataRetention: 90,
   multilingualSupport: true,
   emotionalIntelligence: true,
   gamificationElements: true,
@@ -108,24 +84,14 @@ export class AITutorSettingsService {
       return {
         personalityType: data.personality_type || defaultAITutorSettings.personalityType,
         responseStyle: data.response_style || defaultAITutorSettings.responseStyle,
-        adaptiveDifficulty: data.adaptive_difficulty ?? defaultAITutorSettings.adaptiveDifficulty,
-        contextAwareness: data.context_awareness ?? defaultAITutorSettings.contextAwareness,
         maxResponseLength: data.max_response_length || defaultAITutorSettings.maxResponseLength,
         responseSpeed: data.response_speed || defaultAITutorSettings.responseSpeed,
         repetitionThreshold: data.repetition_threshold || defaultAITutorSettings.repetitionThreshold,
         errorCorrectionStyle: data.error_correction_style || defaultAITutorSettings.errorCorrectionStyle,
-        voiceEnabled: data.voice_enabled ?? defaultAITutorSettings.voiceEnabled,
-        voiceGender: data.voice_gender || defaultAITutorSettings.voiceGender,
-        speechRate: data.speech_rate || defaultAITutorSettings.speechRate,
-        audioFeedback: data.audio_feedback ?? defaultAITutorSettings.audioFeedback,
         culturalSensitivity: data.cultural_sensitivity ?? defaultAITutorSettings.culturalSensitivity,
         ageAppropriate: data.age_appropriate ?? defaultAITutorSettings.ageAppropriate,
         professionalContext: data.professional_context ?? defaultAITutorSettings.professionalContext,
         customPrompts: data.custom_prompts || defaultAITutorSettings.customPrompts,
-        learningAnalytics: data.learning_analytics ?? defaultAITutorSettings.learningAnalytics,
-        progressTracking: data.progress_tracking ?? defaultAITutorSettings.progressTracking,
-        performanceReports: data.performance_reports ?? defaultAITutorSettings.performanceReports,
-        dataRetention: data.data_retention || defaultAITutorSettings.dataRetention,
         multilingualSupport: data.multilingual_support ?? defaultAITutorSettings.multilingualSupport,
         emotionalIntelligence: data.emotional_intelligence ?? defaultAITutorSettings.emotionalIntelligence,
         gamificationElements: data.gamification_elements ?? defaultAITutorSettings.gamificationElements,
@@ -156,24 +122,14 @@ export class AITutorSettingsService {
       const settingsData = {
         personality_type: settings.personalityType,
         response_style: settings.responseStyle,
-        adaptive_difficulty: settings.adaptiveDifficulty,
-        context_awareness: settings.contextAwareness,
         max_response_length: settings.maxResponseLength,
         response_speed: settings.responseSpeed,
         repetition_threshold: settings.repetitionThreshold,
         error_correction_style: settings.errorCorrectionStyle,
-        voice_enabled: settings.voiceEnabled,
-        voice_gender: settings.voiceGender,
-        speech_rate: settings.speechRate,
-        audio_feedback: settings.audioFeedback,
         cultural_sensitivity: settings.culturalSensitivity,
         age_appropriate: settings.ageAppropriate,
         professional_context: settings.professionalContext,
         custom_prompts: settings.customPrompts,
-        learning_analytics: settings.learningAnalytics,
-        progress_tracking: settings.progressTracking,
-        performance_reports: settings.performanceReports,
-        data_retention: settings.dataRetention,
         multilingual_support: settings.multilingualSupport,
         emotional_intelligence: settings.emotionalIntelligence,
         gamification_elements: settings.gamificationElements,
@@ -233,15 +189,6 @@ export class AITutorSettingsService {
       errors.push('Repetition threshold must be between 1 and 10');
     }
 
-    // Validate speech rate
-    if (settings.speechRate < 0.5 || settings.speechRate > 2.0) {
-      errors.push('Speech rate must be between 0.5x and 2.0x');
-    }
-
-    // Validate data retention
-    if (settings.dataRetention < 30 || settings.dataRetention > 365) {
-      errors.push('Data retention must be between 30 and 365 days');
-    }
 
     // Validate custom prompts length
     if (settings.customPrompts.length > 1000) {
@@ -262,8 +209,6 @@ export class AITutorSettingsService {
       return {
         personalityType: settings.personalityType,
         responseStyle: settings.responseStyle,
-        adaptiveDifficulty: settings.adaptiveDifficulty,
-        contextAwareness: settings.contextAwareness,
         maxResponseLength: settings.maxResponseLength,
         errorCorrectionStyle: settings.errorCorrectionStyle,
         culturalSensitivity: settings.culturalSensitivity,
@@ -279,8 +224,6 @@ export class AITutorSettingsService {
       return {
         personalityType: 'encouraging',
         responseStyle: 'conversational',
-        adaptiveDifficulty: true,
-        contextAwareness: true,
         maxResponseLength: 150,
         errorCorrectionStyle: 'gentle',
       };

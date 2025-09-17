@@ -595,14 +595,13 @@ export const ReportsOverview = () => {
                 <CardTitle className="text-lg sm:text-xl">Platform Activity Overview</CardTitle>
               </CardHeader>
               <CardContent className="p-2 sm:p-6">
-                <div className="w-full h-[250px] sm:h-[300px]">
+                <div className="w-full h-[250px] sm:h-[300px] overflow-hidden">
                   <ChartContainer config={chartConfig} className="w-full h-full">
-                    <BarChart 
-                      data={processedEngagementMetricsData} 
-                      width={500} 
-                      height={250} 
-                      margin={{ top: 5, right: 10, left: 10, bottom: 80 }}
-                    >
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart 
+                        data={processedEngagementMetricsData} 
+                        margin={{ top: 5, right: 10, left: 10, bottom: 80 }}
+                      >
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis 
                         dataKey="period_label" 
@@ -621,7 +620,8 @@ export const ReportsOverview = () => {
                       <Bar dataKey="quiz_submissions" fill="var(--color-quizSubmissions)" name="Quiz Submissions" />
                       <Bar dataKey="lessons_completed" fill="var(--color-lessonsCompleted)" name="Lessons Completed" />
                       <Bar dataKey="discussions_created" fill="var(--color-discussionsCreated)" name="Discussions Created" />
-                    </BarChart>
+                      </BarChart>
+                    </ResponsiveContainer>
                   </ChartContainer>
                 </div>
               </CardContent>
@@ -632,14 +632,13 @@ export const ReportsOverview = () => {
                 <CardTitle className="text-lg sm:text-xl">Learning Activity Trends</CardTitle>
               </CardHeader>
               <CardContent className="p-2 sm:p-6">
-                <div className="w-full h-[250px] sm:h-[300px]">
+                <div className="w-full h-[250px] sm:h-[300px] overflow-hidden">
                   <ChartContainer config={chartConfig} className="w-full h-full">
-                    <LineChart 
-                      data={processedEngagementMetricsData} 
-                      width={500} 
-                      height={250} 
-                      margin={{ top: 5, right: 10, left: 10, bottom: 80 }}
-                    >
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart 
+                        data={processedEngagementMetricsData} 
+                        margin={{ top: 5, right: 10, left: 10, bottom: 80 }}
+                      >
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis 
                         dataKey="period_label" 
@@ -668,6 +667,7 @@ export const ReportsOverview = () => {
                         name="Lessons Completed"
                       />
                     </LineChart>
+                    </ResponsiveContainer>
                   </ChartContainer>
                 </div>
               </CardContent>

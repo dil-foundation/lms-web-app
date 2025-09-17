@@ -34,8 +34,6 @@ export const useAITutorRuntimeSettings = () => {
   return {
     personalityType: settings.personalityType,
     responseStyle: settings.responseStyle,
-    adaptiveDifficulty: settings.adaptiveDifficulty,
-    contextAwareness: settings.contextAwareness,
     maxResponseLength: settings.maxResponseLength,
     errorCorrectionStyle: settings.errorCorrectionStyle,
     culturalSensitivity: settings.culturalSensitivity,
@@ -44,9 +42,5 @@ export const useAITutorRuntimeSettings = () => {
     customPrompts: settings.customPrompts,
     emotionalIntelligence: settings.emotionalIntelligence,
     realTimeAdaptation: settings.realTimeAdaptation,
-    voiceEnabled: settings.voiceEnabled,
-    voiceGender: settings.voiceGender,
-    speechRate: settings.speechRate,
-    audioFeedback: settings.audioFeedback,
   };
 };

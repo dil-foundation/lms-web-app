@@ -1,32 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import AccessLogService from '@/services/accessLogService';
 import { AISafetyEthicsService, AISafetyEthicsSettings, defaultAISafetyEthicsSettings } from '@/services/aiSafetyEthicsService';
 import { 
   Shield, 
-  AlertTriangle, 
-  Eye, 
   Lock, 
   Users, 
-  FileText,
   Save,
-  RefreshCw,
-  CheckCircle,
-  XCircle,
-  Activity,
-  Zap
+  RefreshCw
 } from 'lucide-react';
 
 interface AISafetyEthicsSettingsProps {
@@ -43,24 +31,14 @@ export const AISafetyEthicsSettings = ({ userProfile }: AISafetyEthicsSettingsPr
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState<AISafetyEthicsSettings>(defaultAISafetyEthicsSettings);
 
-  const [safetyMetrics, setSafetyMetrics] = useState({
-    contentFiltered: 127,
-    biasDetected: 23,
-    incidentsReported: 5,
-    complianceScore: 94
-  });
 
   // Load settings on component mount
   useEffect(() => {
     const loadSettings = async () => {
       try {
         setLoading(true);
-        const [loadedSettings, metrics] = await Promise.all([
-          AISafetyEthicsService.getSettings(),
-          AISafetyEthicsService.getSafetyMetrics()
-        ]);
+        const loadedSettings = await AISafetyEthicsService.getSettings();
         setSettings(loadedSettings);
-        setSafetyMetrics(metrics);
       } catch (error) {
         console.error('Error loading AI Safety & Ethics settings:', error);
         toast.error('Failed to load settings. Using defaults.');
@@ -89,13 +67,11 @@ export const AISafetyEthicsSettings = ({ userProfile }: AISafetyEthicsSettingsPr
             'updated',
             'ai_safety_ethics_settings',
             {
-              content_filtering: settings.contentFiltering,
               toxicity_detection: settings.toxicityDetection,
-              bias_detection: settings.biasDetection,
-              data_encryption: settings.dataEncryption,
-              real_time_monitoring: settings.realTimeMonitoring,
-              alert_threshold: settings.alertThreshold,
-              compliance_reporting: settings.complianceReporting
+              inappropriate_content_blocking: settings.inappropriateContentBlocking,
+              harmful_content_prevention: settings.harmfulContentPrevention,
+              conversation_logging: settings.conversationLogging,
+              data_retention_limit: settings.dataRetentionLimit
             }
           );
         }
@@ -126,13 +102,11 @@ export const AISafetyEthicsSettings = ({ userProfile }: AISafetyEthicsSettingsPr
             'reset',
             'ai_safety_ethics_settings',
             {
-              content_filtering: defaultAISafetyEthicsSettings.contentFiltering,
               toxicity_detection: defaultAISafetyEthicsSettings.toxicityDetection,
-              bias_detection: defaultAISafetyEthicsSettings.biasDetection,
-              data_encryption: defaultAISafetyEthicsSettings.dataEncryption,
-              real_time_monitoring: defaultAISafetyEthicsSettings.realTimeMonitoring,
-              alert_threshold: defaultAISafetyEthicsSettings.alertThreshold,
-              compliance_reporting: defaultAISafetyEthicsSettings.complianceReporting
+              inappropriate_content_blocking: defaultAISafetyEthicsSettings.inappropriateContentBlocking,
+              harmful_content_prevention: defaultAISafetyEthicsSettings.harmfulContentPrevention,
+              conversation_logging: defaultAISafetyEthicsSettings.conversationLogging,
+              data_retention_limit: defaultAISafetyEthicsSettings.dataRetentionLimit
             }
           );
         }
@@ -180,65 +154,12 @@ export const AISafetyEthicsSettings = ({ userProfile }: AISafetyEthicsSettingsPr
         </div>
       </div>
 
-      {/* Safety Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Content Filtered</p>
-                <p className="text-2xl font-bold">{safetyMetrics.contentFiltered}</p>
-              </div>
-              <Shield className="w-8 h-8 text-blue-500" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Bias Detected</p>
-                <p className="text-2xl font-bold">{safetyMetrics.biasDetected}</p>
-              </div>
-              <Eye className="w-8 h-8 text-yellow-500" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Incidents</p>
-                <p className="text-2xl font-bold">{safetyMetrics.incidentsReported}</p>
-              </div>
-              <AlertTriangle className="w-8 h-8 text-red-500" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Compliance Score</p>
-                <p className="text-2xl font-bold">{safetyMetrics.complianceScore}%</p>
-              </div>
-              <CheckCircle className="w-8 h-8 text-green-500" />
-            </div>
-            <Progress value={safetyMetrics.complianceScore} className="mt-2" />
-          </CardContent>
-        </Card>
-      </div>
 
       <Tabs defaultValue="content" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="content">Content Safety</TabsTrigger>
           <TabsTrigger value="privacy">Privacy</TabsTrigger>
           <TabsTrigger value="bias">Bias & Fairness</TabsTrigger>
-          <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
-          <TabsTrigger value="compliance">Compliance</TabsTrigger>
         </TabsList>
 
         {/* Content Safety */}
@@ -252,18 +173,6 @@ export const AISafetyEthicsSettings = ({ userProfile }: AISafetyEthicsSettingsPr
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Content Filtering</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Filter inappropriate or harmful content in real-time
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.contentFiltering}
-                    onCheckedChange={(checked) => setSettings({...settings, contentFiltering: checked})}
-                  />
-                </div>
                 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
@@ -278,18 +187,6 @@ export const AISafetyEthicsSettings = ({ userProfile }: AISafetyEthicsSettingsPr
                   />
                 </div>
                 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Bias Detection</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Monitor and alert on potential bias in AI responses
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.biasDetection}
-                    onCheckedChange={(checked) => setSettings({...settings, biasDetection: checked})}
-                  />
-                </div>
                 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
@@ -317,18 +214,6 @@ export const AISafetyEthicsSettings = ({ userProfile }: AISafetyEthicsSettingsPr
                   />
                 </div>
                 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Misinformation Detection</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Detect and flag potential misinformation
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.misinformationDetection}
-                    onCheckedChange={(checked) => setSettings({...settings, misinformationDetection: checked})}
-                  />
-                </div>
               </div>
             </CardContent>
           </Card>
@@ -345,31 +230,7 @@ export const AISafetyEthicsSettings = ({ userProfile }: AISafetyEthicsSettingsPr
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Data Encryption</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Encrypt all user data and conversations
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.dataEncryption}
-                    onCheckedChange={(checked) => setSettings({...settings, dataEncryption: checked})}
-                  />
-                </div>
                 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Personal Data Protection</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Protect and anonymize personal information
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.personalDataProtection}
-                    onCheckedChange={(checked) => setSettings({...settings, personalDataProtection: checked})}
-                  />
-                </div>
                 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
@@ -483,176 +344,7 @@ export const AISafetyEthicsSettings = ({ userProfile }: AISafetyEthicsSettingsPr
           </Card>
         </TabsContent>
 
-        {/* Monitoring & Alerts */}
-        <TabsContent value="monitoring">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="w-5 h-5" />
-                Real-time Monitoring & Alerts
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Real-time Monitoring</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Monitor AI interactions in real-time
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.realTimeMonitoring}
-                    onCheckedChange={(checked) => setSettings({...settings, realTimeMonitoring: checked})}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Automatic Escalation</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Automatically escalate serious safety issues
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.automaticEscalation}
-                    onCheckedChange={(checked) => setSettings({...settings, automaticEscalation: checked})}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Admin Notifications</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Send notifications to administrators
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.adminNotifications}
-                    onCheckedChange={(checked) => setSettings({...settings, adminNotifications: checked})}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Contextual Safety Analysis</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Analyze safety within conversation context
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.contextualSafetyAnalysis}
-                    onCheckedChange={(checked) => setSettings({...settings, contextualSafetyAnalysis: checked})}
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Alert Threshold: {settings.alertThreshold}%</Label>
-                <Slider
-                  value={[settings.alertThreshold]}
-                  onValueChange={(value) => setSettings({...settings, alertThreshold: value[0]})}
-                  max={100}
-                  min={50}
-                  step={5}
-                  className="w-full"
-                />
-                <p className="text-sm text-muted-foreground">
-                  Confidence threshold for triggering safety alerts
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
-        {/* Compliance & Reporting */}
-        <TabsContent value="compliance">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                Compliance & Reporting
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Compliance Reporting</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Generate compliance reports for regulatory requirements
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.complianceReporting}
-                    onCheckedChange={(checked) => setSettings({...settings, complianceReporting: checked})}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Audit Trail</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Maintain detailed audit trail of all safety actions
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.auditTrail}
-                    onCheckedChange={(checked) => setSettings({...settings, auditTrail: checked})}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Incident Reporting</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Automatically report safety incidents
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.incidentReporting}
-                    onCheckedChange={(checked) => setSettings({...settings, incidentReporting: checked})}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Regular Assessments</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Conduct regular safety and ethics assessments
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.regularAssessments}
-                    onCheckedChange={(checked) => setSettings({...settings, regularAssessments: checked})}
-                  />
-                </div>
-              </div>
-              
-              <div className="p-4 bg-muted rounded-lg">
-                <h4 className="font-medium mb-2">Compliance Standards</h4>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span className="text-sm">GDPR Compliance</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span className="text-sm">COPPA Compliance</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span className="text-sm">AI Ethics Guidelines</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span className="text-sm">Educational Safety Standards</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </div>
   );

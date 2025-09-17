@@ -54,15 +54,6 @@ export const generateAITutorPrompt = (settings: Partial<AITutorSettings>, contex
     systemPrompt += `\n\nAdditional instructions: ${settings.customPrompts}`;
   }
   
-  // Add adaptive difficulty
-  if (settings.adaptiveDifficulty) {
-    systemPrompt += "\n\nAdapt the difficulty of your responses based on the student's performance and comprehension level.";
-  }
-  
-  // Add context awareness
-  if (settings.contextAwareness) {
-    systemPrompt += "\n\nRemember previous interactions and build upon them to create a coherent learning experience.";
-  }
   
   // Add emotional intelligence
   if (settings.emotionalIntelligence) {
@@ -162,38 +153,6 @@ const getTemperatureForStyle = (responseStyle: string): number => {
   }
 };
 
-/**
- * Apply voice settings to speech synthesis
- */
-export const applyVoiceSettings = (settings: Partial<AITutorSettings>) => {
-  if (!settings.voiceEnabled || typeof window === 'undefined' || !window.speechSynthesis) {
-    return null;
-  }
-  
-  const utterance = new SpeechSynthesisUtterance();
-  
-  // Set speech rate
-  utterance.rate = settings.speechRate || 1.0;
-  
-  // Set voice gender (this is a simplified approach - actual implementation would need more sophisticated voice selection)
-  const voices = window.speechSynthesis.getVoices();
-  if (voices.length > 0) {
-    const preferredVoice = voices.find(voice => {
-      if (settings.voiceGender === 'female') {
-        return voice.name.toLowerCase().includes('female') || voice.name.toLowerCase().includes('woman');
-      } else if (settings.voiceGender === 'male') {
-        return voice.name.toLowerCase().includes('male') || voice.name.toLowerCase().includes('man');
-      }
-      return true; // neutral or default
-    });
-    
-    if (preferredVoice) {
-      utterance.voice = preferredVoice;
-    }
-  }
-  
-  return utterance;
-};
 
 /**
  * Check if gamification should be applied
@@ -205,20 +164,7 @@ export const shouldApplyGamification = (settings: Partial<AITutorSettings>): boo
 /**
  * Get repetition threshold for help
  */
-export const getRepetitionThreshold = (settings: Partial<AITutorSettings>): number => {
-  return settings.repetitionThreshold || 3;
+export const getRepetitionThreshold = (): number => {
+  return 3; // Fixed threshold since this setting was removed
 };
 
-/**
- * Check if learning analytics should be tracked
- */
-export const shouldTrackAnalytics = (settings: Partial<AITutorSettings>): boolean => {
-  return settings.learningAnalytics === true;
-};
-
-/**
- * Check if progress should be tracked
- */
-export const shouldTrackProgress = (settings: Partial<AITutorSettings>): boolean => {
-  return settings.progressTracking === true;
-};
