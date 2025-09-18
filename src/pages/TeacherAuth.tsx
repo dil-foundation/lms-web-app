@@ -354,7 +354,7 @@ const TeacherAuth = () => {
         email: signupData.email,
         password: signupData.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`,
+          emailRedirectTo: `${window.location.origin}/dashboard/profile-settings?source=reset`,
           data: {
             role: 'teacher',
             first_name: signupData.firstName,
