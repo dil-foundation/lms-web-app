@@ -364,7 +364,7 @@ const StudentAuth = () => {
         email: signupData.email,
         password: signupData.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/dashboard/profile-settings?source=reset`,
+          emailRedirectTo: `${window.location.origin}/dashboard`,
           data: {
             role: 'student',
             first_name: signupData.firstName,
