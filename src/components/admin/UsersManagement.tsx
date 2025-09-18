@@ -306,7 +306,7 @@ export const UsersManagement = () => {
           lastName: newUser.lastName,
           grade: newUser.role === 'student' ? newUser.grade : undefined,
           teacherId: newUser.role === 'teacher' ? newUser.teacherId : undefined,
-          redirectTo: `${window.location.origin}/dashboard/profile-settings`,
+          redirectTo: `${window.location.origin}/dashboard/profile-settings?source=reset`,
         },
       });
 
