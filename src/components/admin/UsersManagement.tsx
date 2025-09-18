@@ -488,8 +488,24 @@ export const UsersManagement = () => {
         );
       }
     } catch (error: any) {
-      toast.error("Failed to send reset link.", { description: error.message });
       console.error("Error sending reset link:", error);
+      
+      // Handle specific error messages with user-friendly descriptions
+      let errorMessage = "Failed to send reset link.";
+      let errorDescription = error.message;
+      
+      if (error.message?.includes("For security purposes, you can only request this after")) {
+        errorMessage = "Rate limit exceeded";
+        errorDescription = "Please wait a moment before requesting another password reset. This is a security measure to prevent spam.";
+      } else if (error.message?.includes("Email is required")) {
+        errorMessage = "Invalid request";
+        errorDescription = "Email address is required to send the reset link.";
+      } else if (error.message?.includes("User not found")) {
+        errorMessage = "User not found";
+        errorDescription = "No user found with this email address.";
+      }
+      
+      toast.error(errorMessage, { description: errorDescription });
     }
   };
 
