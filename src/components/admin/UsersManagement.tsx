@@ -1240,7 +1240,7 @@ export const UsersManagement = () => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setUserToEdit(user)}>
+                            <DropdownMenuItem onClick={() => setTimeout(() => setUserToEdit(user), 100)}>
                               <Edit className="mr-2 h-4 w-4" />
                               <span>Edit User</span>
                             </DropdownMenuItem>
@@ -1249,7 +1249,7 @@ export const UsersManagement = () => {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-destructive"
-                              onClick={() => setUserToDelete(user)}
+                              onClick={() => setTimeout(() => setUserToDelete(user), 100)}
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
                               <span>Delete User</span>
