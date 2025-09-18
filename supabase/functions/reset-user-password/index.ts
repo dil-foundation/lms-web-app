@@ -17,7 +17,7 @@ serve(async (req) => {
     if (!email) throw new Error("Email is required.")
 
     const { error } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
-      redirectTo: `${Deno.env.get('APP_URL')}/dashboard/profile-settings`,
+      redirectTo: `${Deno.env.get('APP_URL')}/dashboard/profile-settings?source=reset`,
     })
 
     if (error) throw error
