@@ -7,7 +7,7 @@ import { SSEClientTransport } from "npm:@modelcontextprotocol/sdk/client/sse.js"
 import OpenAI from "npm:openai";
 
 // ---- Config ----
-const MCP_SSE_URL = Deno.env.get("MCP_SSE_URL") || "https://mcp.hachiai.com/sse";
+const MCP_SSE_URL = Deno.env.get("MCP_SSE_URL");
 const MCP_SSE_HEADERS = Deno.env.get("MCP_SSE_HEADERS") ? JSON.parse(Deno.env.get("MCP_SSE_HEADERS")!) : {};
 const LOG_LEVEL = Deno.env.get("LOG_LEVEL") || "info";
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
