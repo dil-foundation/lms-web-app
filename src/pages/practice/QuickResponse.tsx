@@ -397,7 +397,7 @@ export const QuickResponse: React.FC = () => {
     try {
       const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.EVALUATE_QUICK_RESPONSE}`, {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: await getAuthHeaders(),
         body: JSON.stringify({
           audio_base64: audioBase64,
           prompt_id: Number(currentPrompt.id),

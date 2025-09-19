@@ -245,7 +245,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
   useEffect(() => {
     if (currentContentItem?.content_type === 'quiz') {
       const submission = currentContentItem.submission;
-      if (submission) {
+      if (submission && submission.answers) {
         // Convert old single-choice format to new format if needed
         const answers: Record<string, string | string[]> = {};
         const textAnswersData: Record<string, string> = {};
@@ -505,8 +505,10 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
   const handleQuizSubmit = async (retryReason?: string) => {
     if (!user || !currentContentItem || !currentLesson || !course) return;
     
-    // Check if this is a retry attempt
-    const isRetry = currentContentItem.submission && currentContentItem.submission.id;
+    // Check if this is a retry attempt (look for attempt_number > 1 or previous attempts)
+    const isRetry = currentContentItem.submission && 
+                   (currentContentItem.submission.attempt_number > 1 || 
+                    currentContentItem.submission.previous_attempt_id);
     
     // For retry attempts, check eligibility first
     if (isRetry) {
@@ -536,14 +538,48 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
           const userDrawing = mathDrawings[q.id];
           const expectedAnswer = q.math_expression;
           const tolerance = q.math_tolerance || 0.01;
+          const allowDrawing = q.math_allow_drawing === true;
           
-          // Check if this is a drawing answer
-          if (userDrawing && userDrawing.trim() !== '') {
-            // This is a drawing answer - don't set a result, will be graded manually
-            // Don't set results[q.id] = false; // This was causing the "Incorrect" display
-            hasTextAnswers = true; // Use this flag to indicate manual grading needed
+          
+          console.log('🔍 MATH EXPRESSION PROCESSING:', {
+            questionId: q.id,
+            allowDrawing,
+            userMathAnswer,
+            userDrawing,
+            expectedAnswer,
+            hasUserDrawing: !!userDrawing,
+            userDrawingLength: userDrawing?.length,
+            willCheckDrawing: allowDrawing && userDrawing && userDrawing.trim() !== ''
+          });
+          
+          // Only check for drawing if drawing is actually enabled for this question
+          if (allowDrawing && userDrawing && userDrawing.trim() !== '') {
+            try {
+              const drawingData = JSON.parse(userDrawing);
+              // Only require manual grading if there are actual drawing paths
+              if (drawingData.paths && drawingData.paths.length > 0) {
+                // This is a drawing answer with actual content - will be graded manually
+                hasTextAnswers = true; // Use this flag to indicate manual grading needed
+              } else if (userMathAnswer && expectedAnswer) {
+                // Drawing is empty, but there's a text answer - auto-grade the text
+                const evaluation = evaluateMathExpression(userMathAnswer, expectedAnswer, tolerance);
+                results[q.id] = evaluation.isCorrect;
+                if (evaluation.isCorrect) correctAnswers++;
+              } else {
+                results[q.id] = false;
+              }
+            } catch (error) {
+              // If parsing fails, treat as regular math answer
+              if (userMathAnswer && expectedAnswer) {
+                const evaluation = evaluateMathExpression(userMathAnswer, expectedAnswer, tolerance);
+                results[q.id] = evaluation.isCorrect;
+                if (evaluation.isCorrect) correctAnswers++;
+              } else {
+                results[q.id] = false;
+              }
+            }
           } else if (userMathAnswer && expectedAnswer) {
-            // This is a regular math expression - auto-grade
+            // This is a regular math expression (drawing not enabled or no drawing) - auto-grade
             const evaluation = evaluateMathExpression(userMathAnswer, expectedAnswer, tolerance);
             results[q.id] = evaluation.isCorrect;
             
@@ -579,7 +615,22 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     // Calculate score only for auto-graded questions (exclude text_answer and drawing math expressions which require manual grading)
     const autoGradedQuestions = questions.filter((q: any) => {
       if (q.question_type === 'text_answer') return false;
-      if (q.question_type === 'math_expression' && mathDrawings[q.id]) return false; // Exclude drawing math expressions
+      if (q.question_type === 'math_expression') {
+        const allowDrawing = q.math_allow_drawing === true;
+        const userDrawing = mathDrawings[q.id];
+        // Only check for drawing if drawing is actually enabled for this question
+        if (allowDrawing && userDrawing && userDrawing.trim() !== '') {
+          try {
+            const drawingData = JSON.parse(userDrawing);
+            // Only exclude if there are actual drawing paths
+            if (drawingData.paths && drawingData.paths.length > 0) {
+              return false; // Exclude drawing math expressions with actual content
+            }
+          } catch (error) {
+            // If parsing fails, include it for auto-grading
+          }
+        }
+      }
       return true;
     });
     const score = autoGradedQuestions.length > 0 ? (correctAnswers / autoGradedQuestions.length) * 100 : 0;
@@ -587,43 +638,130 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     // Combine all answer types
     const allAnswers = { ...userAnswers, ...textAnswers, ...mathAnswers, ...mathDrawings };
     
-    // For quizzes with text answers, we'll let the database trigger handle the score
+    // For quizzes with text answers, we can't auto-calculate score, so set it to null
     // For regular quizzes (including math expressions), we can provide an immediate score
-    const finalScore = hasTextAnswers ? null : score;
+    // If no auto-graded questions exist, set score to 0 as fallback
+    const finalScore = hasTextAnswers ? null : (autoGradedQuestions.length > 0 ? score : 0);
     
-    // Use the new retry system for creating attempts
-    const attemptResult = await QuizRetryService.createQuizAttempt(
-      user.id,
-      currentContentItem.id,
-      allAnswers,
-      results,
+    // Explicitly set manual grading flags based on our logic
+    const manualGradingRequired = hasTextAnswers;
+    const manualGradingCompleted = !hasTextAnswers;
+    
+    console.log('🔍 MANUAL GRADING FLAGS:', {
+      hasTextAnswers,
+      manualGradingRequired,
+      manualGradingCompleted,
       finalScore,
-      retryReason,
-      QuizRetryService.getClientIP(),
-      QuizRetryService.getUserAgent()
-    );
+      questions: questions.map(q => ({
+        id: q.id,
+        type: q.question_type,
+        allowDrawing: q.math_allow_drawing,
+        hasUserAnswer: !!mathAnswers[q.id],
+        hasUserDrawing: !!mathDrawings[q.id],
+        userAnswer: mathAnswers[q.id],
+        userDrawing: mathDrawings[q.id]
+      }))
+    });
     
-    if (!attemptResult.success) {
-      toast.error("Failed to submit quiz.", { description: attemptResult.error });
-      return;
-    }
     
-    // Also create the legacy quiz_submissions entry for backward compatibility
-    const { data: newSubmission, error } = await supabase.from('quiz_submissions').insert({
-        user_id: user.id,
-        lesson_content_id: currentContentItem.id,
-        lesson_id: currentLesson.id,
-        course_id: course.id,
-        answers: allAnswers,
-        results: results,
-        score: finalScore,
-        manual_grading_required: hasTextAnswers,
-        manual_grading_completed: false,
-    }).select().single();
+    // Note: We no longer use QuizRetryService.createQuizAttempt since we handle
+    // attempt tracking directly in the quiz_submissions table with the new functions
     
-    if (error) {
-        console.error("Failed to create legacy submission:", error);
-        // Don't return here as the main attempt was created successfully
+    // Handle legacy quiz_submissions entry for backward compatibility
+    let newSubmission = null;
+    if (isRetry) {
+      // For retries, update the existing submission instead of creating a new one
+      console.log('🔍 UPDATING QUIZ SUBMISSION:', {
+        manual_grading_required: manualGradingRequired,
+        manual_grading_completed: manualGradingCompleted,
+        score: finalScore
+      });
+      
+      // Use the new function for updating submissions
+      const { data: updateResult, error: updateError } = await supabase
+        .rpc('update_quiz_submission_with_attempt_tracking', {
+          p_submission_id: currentContentItem.submission.id,
+          p_answers: allAnswers,
+          p_results: results,
+          p_score: finalScore,
+          p_manual_grading_required: manualGradingRequired,
+          p_manual_grading_completed: manualGradingCompleted,
+          p_retry_reason: retryReason || null,
+        })
+        .single();
+
+      if (updateError) {
+        console.error("Failed to update submission with attempt tracking:", updateError);
+        throw updateError;
+      }
+
+      // Get the full updated submission data
+      const { data: updatedSubmission, error: fetchError } = await supabase
+        .from('quiz_submissions')
+        .select('*')
+        .eq('id', (updateResult as any).submission_id)
+        .single();
+      
+      if (fetchError) {
+        console.error("Failed to fetch updated submission:", fetchError);
+        throw fetchError;
+      }
+      
+      newSubmission = updatedSubmission;
+      console.log('✅ UPDATED SUBMISSION RESULT:', {
+        id: updatedSubmission.id,
+        score: updatedSubmission.score,
+        manual_grading_required: updatedSubmission.manual_grading_required,
+        manual_grading_completed: updatedSubmission.manual_grading_completed
+      });
+    } else {
+      // For first attempts, create a new submission
+      console.log('🔍 CREATING QUIZ SUBMISSION:', {
+        manual_grading_required: manualGradingRequired,
+        manual_grading_completed: manualGradingCompleted,
+        score: finalScore
+      });
+      
+      // Use the new function for proper attempt tracking
+      const { data: submissionResult, error: createError } = await supabase
+        .rpc('create_quiz_submission_with_attempt_tracking', {
+          p_user_id: user.id,
+          p_lesson_content_id: currentContentItem.id,
+          p_lesson_id: currentLesson.id,
+          p_course_id: course.id,
+          p_answers: allAnswers,
+          p_results: results,
+          p_score: finalScore,
+          p_manual_grading_required: manualGradingRequired,
+          p_manual_grading_completed: manualGradingCompleted,
+          p_retry_reason: retryReason || null,
+        })
+        .single();
+
+      if (createError) {
+        console.error("Failed to create submission with attempt tracking:", createError);
+        throw createError;
+      }
+
+      // Get the full submission data
+      const { data: createdSubmission, error: fetchError } = await supabase
+        .from('quiz_submissions')
+        .select('*')
+        .eq('id', (submissionResult as any).submission_id)
+        .single();
+
+      if (fetchError) {
+        console.error("Failed to fetch created submission:", fetchError);
+        throw fetchError;
+      }
+      
+      newSubmission = createdSubmission;
+      console.log('✅ CREATED SUBMISSION RESULT:', {
+        id: createdSubmission.id,
+        score: createdSubmission.score,
+        manual_grading_required: createdSubmission.manual_grading_required,
+        manual_grading_completed: createdSubmission.manual_grading_completed
+      });
     }
     
     // Save math answers to database
@@ -661,12 +799,12 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         {
           content_id: currentContentItem.id,
           lesson_id: currentLesson.id,
-          submission_id: newSubmission?.id || attemptResult.attemptId,
+          submission_id: newSubmission?.id,
           score: finalScore,
           has_text_answers: hasTextAnswers,
           correct_answers: correctAnswers,
           total_questions: questions.length,
-          attempt_number: attemptResult.attemptNumber,
+          attempt_number: newSubmission?.attempt_number || 1,
           is_retry: isRetry
         }
       );
@@ -690,15 +828,9 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     
     // Show appropriate message based on attempt type
     if (isRetry) {
-      if (attemptResult.requiresApproval) {
-        toast.success("Quiz submitted for review", { 
-          description: "Your retry attempt has been submitted and is pending teacher approval." 
-        });
-      } else {
-        toast.success("Quiz retry submitted", { 
-          description: `This was attempt #${attemptResult.attemptNumber}` 
-        });
-      }
+      toast.success("Quiz retry submitted", { 
+        description: `This was attempt #${newSubmission?.attempt_number || 1}` 
+      });
     } else {
       toast.success("Quiz submitted successfully!");
     }
@@ -707,6 +839,15 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       ...newSubmission,
       text_answer_grades: []
     };
+    
+    console.log('🔄 UPDATING COURSE STATE WITH NEW SUBMISSION:', {
+      currentContentItemId: currentContentItem.id,
+      newSubmission: submissionWithGrades,
+      hasScore: submissionWithGrades?.score !== null && submissionWithGrades?.score !== undefined,
+      score: submissionWithGrades?.score,
+      manualGradingRequired: submissionWithGrades?.manual_grading_required,
+      manualGradingCompleted: submissionWithGrades?.manual_grading_completed
+    });
     
     setCourse((prevCourse: any) => {
         if (!prevCourse) return null;
@@ -721,6 +862,8 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         }));
         return { ...prevCourse, modules: updatedModules };
     });
+    
+    console.log('✅ COURSE STATE UPDATE COMPLETED');
     await markContentAsComplete(currentContentItem.id, currentLesson.id, course.id);
     
     if (hasTextAnswers) {
@@ -728,12 +871,12 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       const textAnswerCount = questions.length - autoGradedCount;
       
       if (autoGradedCount > 0) {
-        toast.success(`Quiz submitted! Auto-graded questions: ${score.toFixed(0)}%. ${textAnswerCount} question(s) require manual grading.`);
+        toast.success(`Quiz submitted! Auto-graded questions: ${(score || 0).toFixed(0)}%. ${textAnswerCount} question(s) require manual grading.`);
       } else {
         toast.success(`Quiz submitted! All ${textAnswerCount} question(s) require manual grading by your teacher.`);
       }
     } else {
-      toast.success(`Quiz submitted! Your score: ${score.toFixed(0)}%`);
+      toast.success(`Quiz submitted! Your score: ${(score || 0).toFixed(0)}%`);
     }
   };
 
@@ -1053,7 +1196,15 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         );
       case 'quiz':
         const questions = currentContentItem.quiz || [];
-        const hasSubmitted = isQuizSubmitted || !!(currentContentItem.submission && currentContentItem.submission.id);
+        const hasSubmitted = isQuizSubmitted || !!(currentContentItem.submission && currentContentItem.submission.id && currentContentItem.submission.score !== undefined);
+        console.log('🔍 HASSUBMITTED DEBUG:', {
+          isQuizSubmitted,
+          hasSubmission: !!currentContentItem.submission,
+          hasSubmissionId: !!(currentContentItem.submission && currentContentItem.submission.id),
+          hasScore: currentContentItem.submission?.score !== undefined,
+          submissionScore: currentContentItem.submission?.score,
+          finalHasSubmitted: hasSubmitted
+        });
         return (
           <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
             <CardHeader>
@@ -1359,9 +1510,10 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                  <div className="p-4 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/20 border border-primary/30 dark:border-primary/20 shadow-lg">
                    <h4 className="font-semibold text-gray-900 dark:text-gray-100">Quiz Submitted</h4>
                    <p className="text-muted-foreground text-sm mt-1">
-                     {(currentContentItem.submission.score !== null || 
+                     {currentContentItem.submission && 
+                      (currentContentItem.submission.score !== null || 
                        (currentContentItem.submission.manual_grading_completed && currentContentItem.submission.manual_grading_score !== null)) ? (
-                       `You scored ${(currentContentItem.submission.manual_grading_score || currentContentItem.submission.score).toFixed(0)}%.`
+                       `You scored ${((currentContentItem.submission.manual_grading_score ?? currentContentItem.submission.score) || 0).toFixed(0)}%.`
                      ) : (
                        'Your score will be available after manual grading by your teacher.'
                      )}
@@ -1369,18 +1521,74 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                  </div>
               )}
               
-              {/* Quiz Retry Interface */}
-              {hasSubmitted && user && (
-                <QuizRetryInterface
-                  userId={user.id}
-                  lessonContentId={currentContentItem.id}
-                  currentScore={currentContentItem.submission?.score || currentContentItem.submission?.manual_grading_score}
-                  onRetryRequested={(reason) => handleQuizSubmit(reason)}
-                  onRetryApproved={() => {
-                    // Refresh the quiz data when retry is approved
-                    window.location.reload();
-                  }}
-                />
+              {/* Quiz Retry Interface - Only show when quiz is actually submitted with a score */}
+              {hasSubmitted && user && currentContentItem.submission?.score !== undefined && (
+                <>
+                  {(() => {
+                    const scoreToPass = currentContentItem.submission?.score ?? currentContentItem.submission?.manual_grading_score;
+                    console.log('🎯 QUIZRETRYINTERFACE PROPS:', {
+                      userId: user.id,
+                      lessonContentId: currentContentItem.id,
+                      currentScore: scoreToPass,
+                      submission: currentContentItem.submission,
+                      hasSubmission: !!currentContentItem.submission,
+                      submissionScore: currentContentItem.submission?.score,
+                      manualGradingScore: currentContentItem.submission?.manual_grading_score,
+                      manualGradingRequired: currentContentItem.submission?.manual_grading_required,
+                      manualGradingCompleted: currentContentItem.submission?.manual_grading_completed
+                    });
+                    return null;
+                  })()}
+                  <QuizRetryInterface
+                    key={`${currentContentItem.id}-${currentContentItem.submission?.id || 'no-submission'}`}
+                    userId={user.id}
+                    lessonContentId={currentContentItem.id}
+                    currentScore={currentContentItem.submission?.score ?? currentContentItem.submission?.manual_grading_score}
+                    onRetryRequested={(reason) => {
+                      console.log('🔄 RETRY QUIZ REQUESTED:', reason);
+                      // Reset quiz state to allow user to answer again
+                      setIsQuizSubmitted(false);
+                      setUserAnswers({});
+                      setTextAnswers({});
+                      setMathAnswers({});
+                      setMathDrawings({});
+                      setQuizResults({});
+                      
+                      // Clear the submission from the current content item to make hasSubmitted false
+                      // But keep the submission ID for retry detection
+                      const submissionId = currentContentItem.submission?.id;
+                      setCourse((prevCourse: any) => {
+                        if (!prevCourse) return null;
+                        const updatedModules = prevCourse.modules.map((module: any) => ({
+                          ...module,
+                          lessons: module.lessons.map((lesson: any) => ({
+                            ...lesson,
+                            contentItems: lesson.contentItems.map((item: any) => 
+                              item.id === currentContentItem.id ? { 
+                                ...item, 
+                                submission: submissionId ? { id: submissionId } : null 
+                              } : item
+                            ),
+                          })),
+                        }));
+                        return { ...prevCourse, modules: updatedModules };
+                      });
+                      
+                      console.log('✅ QUIZ STATE RESET FOR RETRY');
+                      console.log('🔍 AFTER RETRY RESET - CHECKING STATE:', {
+                        isQuizSubmitted,
+                        submissionId,
+                        currentContentItemSubmission: currentContentItem.submission,
+                        hasSubmission: !!currentContentItem.submission,
+                        hasScore: currentContentItem.submission?.score !== undefined
+                      });
+                    }}
+                    onRetryApproved={() => {
+                      // Refresh the quiz data when retry is approved
+                      window.location.reload();
+                    }}
+                  />
+                </>
               )}
             </CardContent>
           </Card>

@@ -45,14 +45,24 @@ BEGIN
             qs.user_id,
             jsonb_build_object(
                 'id', qs.id,
-                'status', 'graded',
-                'score', qs.score,
+                'status', CASE 
+                    WHEN qs.manual_grading_completed THEN 'graded'
+                    ELSE 'submitted'
+                END,
+                'score', COALESCE(qs.score, qs.manual_grading_score),
                 'submitted_at', qs.submitted_at,
                 'answers', qs.answers,
-                'results', qs.results
+                'results', qs.results,
+                'manual_grading_required', qs.manual_grading_required,
+                'manual_grading_completed', qs.manual_grading_completed,
+                'manual_grading_score', qs.manual_grading_score,
+                'attempt_number', qs.attempt_number,
+                'is_latest_attempt', qs.is_latest_attempt,
+                'retry_reason', qs.retry_reason
             ) as submission_data
         FROM quiz_submissions qs
         WHERE qs.lesson_content_id = assessment_id
+        AND qs.is_latest_attempt = true
     ),
     assignment_submissions_data AS (
         SELECT

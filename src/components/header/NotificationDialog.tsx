@@ -109,7 +109,7 @@ export const NotificationDialog = ({ open, onOpenChange }: NotificationDialogPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-             <DialogContent className="sm:max-w-lg max-h-[80vh] p-0 bg-gradient-to-br from-white/98 via-white/95 to-[#8DC63F]/5 dark:from-gray-900/98 dark:via-gray-900/95 dark:to-[#8DC63F]/10 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-xl">
+             <DialogContent className="sm:max-w-lg max-h-[80vh] p-0 bg-gradient-to-br from-white/98 via-white/95 to-[#8DC63F]/5 dark:from-gray-900/98 dark:via-gray-900/95 dark:to-[#8DC63F]/10 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-xl overflow-visible">
         <DialogHeader className="px-6 py-5 border-b border-gray-200/40 dark:border-gray-700/40 bg-gradient-to-r from-transparent via-[#8DC63F]/5 to-transparent dark:via-[#8DC63F]/10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -151,7 +151,7 @@ export const NotificationDialog = ({ open, onOpenChange }: NotificationDialogPro
                     <MoreHorizontal className="h-4 w-4 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuContent align="end" side="bottom" className="w-48 z-[100000]">
                   <DropdownMenuItem onClick={clearAllNotifications} className="text-red-600 dark:text-red-400">
                     <Trash2 className="h-4 w-4 mr-2" />
                     Clear all
@@ -224,7 +224,7 @@ export const NotificationDialog = ({ open, onOpenChange }: NotificationDialogPro
                                     <MoreHorizontal className="h-3 w-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200" />
                                   </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-32">
+                                <DropdownMenuContent align="end" className="w-32 z-[100000]">
                                   <DropdownMenuItem 
                                     onClick={(e) => {
                                       e.stopPropagation();

@@ -87,7 +87,7 @@ export const cleanMathExpression = (expression: string): string => {
   cleaned = cleaned.replace(/\s+/g, ' ');
   
   // Normalize common mathematical symbols
-  cleaned = cleaned.replace(/\^/g, '**'); // Convert ^ to **
+  // Note: mathjs uses ^ for exponentiation, not **
   cleaned = cleaned.replace(/\\cdot/g, '*'); // Convert \cdot to *
   cleaned = cleaned.replace(/\\times/g, '*'); // Convert \times to *
   cleaned = cleaned.replace(/\\div/g, '/'); // Convert \div to /
@@ -110,11 +110,8 @@ export const cleanMathExpression = (expression: string): string => {
   // Handle new square root format: √(x)
   cleaned = cleaned.replace(/√\(([^)]+)\)/g, 'sqrt($1)');
   
-  // Handle exponents
-  cleaned = cleaned.replace(/\^(\d+)/g, '**$1');
-  cleaned = cleaned.replace(/\^\{([^}]+)\}/g, '**($1)');
-  // Handle new exponent format: ^(x)
-  cleaned = cleaned.replace(/\^\(([^)]+)\)/g, '**($1)');
+  // Handle exponents - mathjs uses ^ for exponentiation
+  // No conversion needed as mathjs supports ^ natively
   
   // Handle subscripts (convert to function notation where appropriate)
   cleaned = cleaned.replace(/([a-zA-Z])_(\d+)/g, '$1$2');

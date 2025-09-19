@@ -425,7 +425,7 @@ export default function DailyRoutine() {
     try {
       const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.EVALUATE_DAILY_ROUTINE}`, {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: await getAuthHeaders(),
         body: JSON.stringify({
           audio_base64: audioBase64,
           phrase_id: Number(currentPhrase.id),

@@ -306,7 +306,7 @@ export const UsersManagement = () => {
           lastName: newUser.lastName,
           grade: newUser.role === 'student' ? newUser.grade : undefined,
           teacherId: newUser.role === 'teacher' ? newUser.teacherId : undefined,
-          redirectTo: `${window.location.origin}/dashboard/profile-settings`,
+          redirectTo: `${window.location.origin}/dashboard/profile-settings?source=reset`,
         },
       });
 
@@ -465,12 +465,64 @@ export const UsersManagement = () => {
 
   const handleResetPassword = async (user: User) => {
     try {
-      const { error } = await supabase.functions.invoke('reset-user-password', {
+      console.log("🔍 DEBUG: Starting password reset for user:", user.email);
+      
+      const { data, error } = await supabase.functions.invoke('reset-user-password', {
         body: { email: user.email },
       });
 
-      if (error) throw error;
+      console.log("🔍 DEBUG: Supabase function response:", { data, error });
 
+      if (error) {
+        console.log("🔍 DEBUG: Error object structure:", {
+          message: error.message,
+          context: error.context,
+          details: error.details,
+          status: error.status,
+          statusText: error.statusText
+        });
+        
+        // Handle Supabase function errors
+        let errorMessage = "Failed to send reset link.";
+        let errorDescription = error.message;
+        
+        // Try to extract the actual error from the response body
+        if (error.context && error.context instanceof Response) {
+          try {
+            console.log("🔍 DEBUG: Attempting to read response body from context");
+            const responseText = await error.context.text();
+            console.log("🔍 DEBUG: Response body text:", responseText);
+            
+            const errorData = JSON.parse(responseText);
+            console.log("🔍 DEBUG: Parsed error data:", errorData);
+            
+            if (errorData.error) {
+              errorDescription = errorData.error;
+              console.log("🔍 DEBUG: Using extracted error from response body:", errorDescription);
+            }
+          } catch (parseError) {
+            console.log("🔍 DEBUG: Failed to parse response body:", parseError);
+          }
+        }
+        
+        // Check if the error contains the rate limiting message
+        if (errorDescription?.includes("For security purposes, you can only request this after")) {
+          errorMessage = "Rate limit exceeded";
+          errorDescription = "Please wait a moment before requesting another password reset. This is a security measure to prevent spam.";
+        } else if (errorDescription?.includes("Email is required")) {
+          errorMessage = "Invalid request";
+          errorDescription = "Email address is required to send the reset link.";
+        } else if (errorDescription?.includes("User not found")) {
+          errorMessage = "User not found";
+          errorDescription = "No user found with this email address.";
+        }
+        
+        console.log("🔍 DEBUG: Showing error toast:", { errorMessage, errorDescription });
+        toast.error(errorMessage, { description: errorDescription });
+        return;
+      }
+
+      console.log("🔍 DEBUG: Password reset successful");
       toast.success("Password reset email sent!", { description: `A reset link has been sent to ${user.name}.` });
       
       // Log password reset
@@ -488,8 +540,56 @@ export const UsersManagement = () => {
         );
       }
     } catch (error: any) {
-      toast.error("Failed to send reset link.", { description: error.message });
-      console.error("Error sending reset link:", error);
+      console.error("🔍 DEBUG: Catch block error:", error);
+      console.log("🔍 DEBUG: Error object structure in catch:", {
+        message: error.message,
+        context: error.context,
+        details: error.details,
+        status: error.status,
+        statusText: error.statusText,
+        stack: error.stack
+      });
+      
+      // Handle network or other errors
+      let errorMessage = "Failed to send reset link.";
+      let errorDescription = error.message;
+      
+      // Check if it's a Supabase function error with JSON response
+      if (error.message?.includes("Edge Function returned a non-2xx status code")) {
+        console.log("🔍 DEBUG: Detected Edge Function error, trying to extract details");
+        
+        // Try to extract the actual error from the response
+        try {
+          // The error might be in error.context or error.details
+          const errorData = error.context || error.details || {};
+          console.log("🔍 DEBUG: Error data extracted:", errorData);
+          
+          if (errorData.error) {
+            errorDescription = errorData.error;
+            console.log("🔍 DEBUG: Using extracted error:", errorDescription);
+          }
+        } catch (parseError) {
+          console.log("🔍 DEBUG: Failed to parse error data:", parseError);
+          // If parsing fails, use the original message
+          errorDescription = error.message;
+        }
+      }
+      
+      // Handle specific error messages with user-friendly descriptions
+      if (errorDescription?.includes("For security purposes, you can only request this after")) {
+        errorMessage = "Rate limit exceeded";
+        errorDescription = "Please wait a moment before requesting another password reset. This is a security measure to prevent spam.";
+        console.log("🔍 DEBUG: Detected rate limit error, showing user-friendly message");
+      } else if (errorDescription?.includes("Email is required")) {
+        errorMessage = "Invalid request";
+        errorDescription = "Email address is required to send the reset link.";
+      } else if (errorDescription?.includes("User not found")) {
+        errorMessage = "User not found";
+        errorDescription = "No user found with this email address.";
+      }
+      
+      console.log("🔍 DEBUG: Final error toast:", { errorMessage, errorDescription });
+      toast.error(errorMessage, { description: errorDescription });
     }
   };
 
@@ -1240,7 +1340,7 @@ export const UsersManagement = () => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setUserToEdit(user)}>
+                            <DropdownMenuItem onClick={() => setTimeout(() => setUserToEdit(user), 100)}>
                               <Edit className="mr-2 h-4 w-4" />
                               <span>Edit User</span>
                             </DropdownMenuItem>
@@ -1249,7 +1349,7 @@ export const UsersManagement = () => {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-destructive"
-                              onClick={() => setUserToDelete(user)}
+                              onClick={() => setTimeout(() => setUserToDelete(user), 100)}
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
                               <span>Delete User</span>
