@@ -35,6 +35,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
 
 // Mock data for stages
@@ -262,19 +269,22 @@ const StageConfigurationCard = ({ stage }) => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="difficulty">Difficulty Level</Label>
-              <select
-                id="difficulty"
-                className="w-full p-2 border border-input rounded-md"
+              <Select
                 value={editForm.difficulty}
-                onChange={(e) => setEditForm({...editForm, difficulty: e.target.value})}
+                onValueChange={(value) => setEditForm({...editForm, difficulty: value})}
               >
-                <option value="Beginner">Beginner</option>
-                <option value="Elementary">Elementary</option>
-                <option value="Intermediate">Intermediate</option>
-                <option value="Upper Intermediate">Upper Intermediate</option>
-                <option value="Advanced">Advanced</option>
-                <option value="Proficiency">Proficiency</option>
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select difficulty level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Beginner">Beginner</SelectItem>
+                  <SelectItem value="Elementary">Elementary</SelectItem>
+                  <SelectItem value="Intermediate">Intermediate</SelectItem>
+                  <SelectItem value="Upper Intermediate">Upper Intermediate</SelectItem>
+                  <SelectItem value="Advanced">Advanced</SelectItem>
+                  <SelectItem value="Proficiency">Proficiency</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex items-center justify-between">
               <Label htmlFor="active">Stage Active</Label>
