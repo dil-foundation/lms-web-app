@@ -11,15 +11,11 @@ import { Separator } from '@/components/ui/separator';
 import { 
   Plug, 
   Settings, 
-  ExternalLink, 
   CheckCircle, 
   XCircle, 
   AlertTriangle,
   Video,
-  CreditCard,
-  BookOpen,
-  Users,
-  GraduationCap
+  CreditCard
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -79,36 +75,6 @@ const mockIntegrations: Integration[] = [
       apiKey: '****-****-****-5678',
       webhookUrl: 'https://your-domain.com/webhooks/stripe'
     }
-  },
-  {
-    id: 'google-classroom',
-    name: 'Google Classroom',
-    description: 'Sync courses, assignments, and grades with Google Classroom',
-    icon: BookOpen,
-    category: 'Productivity',
-    status: 'disabled',
-    isConfigured: false,
-    settings: {}
-  },
-  {
-    id: 'canvas-lti',
-    name: 'Canvas LTI',
-    description: 'Learning Tools Interoperability with Canvas LMS',
-    icon: ExternalLink,
-    category: 'Productivity',
-    status: 'disabled',
-    isConfigured: false,
-    settings: {}
-  },
-  {
-    id: 'moodle',
-    name: 'Moodle',
-    description: 'Integration with Moodle learning management system',
-    icon: GraduationCap,
-    category: 'Productivity',
-    status: 'disabled',
-    isConfigured: false,
-    settings: {}
   }
 ];
 
@@ -144,7 +110,7 @@ export const IntegrationAPIs = ({ userProfile }: IntegrationAPIsProps) => {
   const [configureIntegration, setConfigureIntegration] = useState<Integration | null>(null);
   const [configForm, setConfigForm] = useState<Record<string, string>>({});
 
-  const categories = ['all', 'Communication', 'Payment', 'Productivity'];
+  const categories = ['all', 'Communication', 'Payment'];
   
   const filteredIntegrations = selectedCategory === 'all' 
     ? integrations 
