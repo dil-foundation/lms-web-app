@@ -334,6 +334,7 @@ serve(async (req) => {
 
           const { error } = await supabaseAdmin.auth.admin.inviteUserByEmail(user.email, {
             data: userMetaData,
+            redirectTo: `${Deno.env.get('APP_URL')}/dashboard/profile-settings?source=reset`,
           });
 
           if (error) {
