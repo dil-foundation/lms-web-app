@@ -51,24 +51,50 @@ export const APEX: React.FC<APEXProps> = ({ className }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
+  const scrollToBottom = (immediate = false) => {
     // Clear any existing scroll timeout to prevent multiple rapid scrolls
     if (scrollTimeoutRef.current) {
       clearTimeout(scrollTimeoutRef.current);
     }
     
     // Use setTimeout to ensure DOM has updated before scrolling
+    const delay = immediate ? 0 : 100;
     scrollTimeoutRef.current = setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
+      // Try to find the scroll container (ScrollArea viewport)
+      const scrollContainer = document.querySelector('[data-radix-scroll-area-viewport]');
+      
+      if (scrollContainer && messagesEndRef.current) {
+        // Scroll the container directly to avoid focus-related scrolling
+        scrollContainer.scrollTo({
+          top: scrollContainer.scrollHeight,
+          behavior: immediate ? 'auto' : 'smooth'
+        });
+      } else if (messagesEndRef.current) {
+        // Fallback to scrollIntoView
+        messagesEndRef.current.scrollIntoView({ 
+          behavior: immediate ? 'auto' : 'smooth',
+          block: 'end',
+          inline: 'nearest'
+        });
+      }
+    }, delay);
   };
 
+  // Track previous message count to only scroll when new messages are added
+  const prevMessageCountRef = useRef(0);
+
   useEffect(() => {
-    // Only scroll if there are messages and the chat is open
-    if (state.isOpen && (state.messages.length > 0 || state.isTyping)) {
+    const currentMessageCount = state.messages.length;
+    const isNewMessage = currentMessageCount > prevMessageCountRef.current;
+    
+    // Only scroll if there are new messages, chat is open, and we're not just re-rendering
+    if (state.isOpen && (isNewMessage || state.isTyping)) {
       scrollToBottom();
     }
+    
+    prevMessageCountRef.current = currentMessageCount;
   }, [state.messages, state.isTyping, state.isOpen]);
 
   // Cleanup timeout on unmount
@@ -101,8 +127,26 @@ export const APEX: React.FC<APEXProps> = ({ className }) => {
     }
   };
 
-  const handleQuickReply = async (reply: string) => {
+  const handleQuickReply = async (reply: string, event?: React.MouseEvent) => {
+    // Prevent default button behavior and blur to avoid focus scrolling
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      // Remove focus from the button to prevent scroll-to-focus behavior
+      (event.target as HTMLElement).blur();
+      
+      // Also prevent any parent elements from handling the event
+      event.nativeEvent.stopImmediatePropagation();
+    }
+    
+    // Immediately scroll to bottom multiple times to ensure it stays there
+    scrollToBottom(true);
+    
+    // Send the message
     await sendQuickReply(reply);
+    
+    // Force scroll again after message is sent
+    setTimeout(() => scrollToBottom(true), 50);
   };
 
   const handleContactAdmin = async () => {
@@ -143,7 +187,7 @@ export const APEX: React.FC<APEXProps> = ({ className }) => {
                     variant="outline"
                     size="sm"
                     className="text-xs h-7 px-2 bg-background/50 hover:bg-background/80"
-                    onClick={() => handleQuickReply(reply)}
+                    onClick={(e) => handleQuickReply(reply, e)}
                   >
                     {reply}
                   </Button>
@@ -326,7 +370,7 @@ export const APEX: React.FC<APEXProps> = ({ className }) => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleQuickReply("I need help with my account")}
+                onClick={(e) => handleQuickReply("I need help with my account", e)}
                 className="text-xs"
               >
                 <HelpCircle className="w-3 h-3 mr-1" />

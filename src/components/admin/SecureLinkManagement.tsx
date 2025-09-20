@@ -98,10 +98,10 @@ const GenerateLinkModal = ({ onGenerate, isGenerating }: { onGenerate: (link: Se
       <DialogContent className="sm:max-w-md bg-gradient-to-br from-background to-background/95 backdrop-blur-sm border border-border/50 shadow-2xl">
         <DialogHeader className="pb-4">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-green-500/10 to-green-600/20 rounded-xl flex items-center justify-center">
-              <Shield className="w-4 h-4 text-green-600" />
+            <div className="w-8 h-8 bg-gradient-to-br from-[#8DC63F]/10 to-[#8DC63F]/20 rounded-xl flex items-center justify-center">
+              <Shield className="w-4 h-4 text-[#8DC63F]" />
             </div>
-            <DialogTitle className="text-xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">
+            <DialogTitle className="text-xl font-bold bg-gradient-to-r from-[#8DC63F] to-[#7AB62F] bg-clip-text text-transparent">
               Generate Secure Link
             </DialogTitle>
           </div>

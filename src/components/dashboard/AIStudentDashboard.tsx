@@ -256,7 +256,7 @@ export const AIStudentDashboard = ({ userProfile }: AIStudentDashboardProps) => 
   const currentStage = progressData?.current_stage;
   const overallProgress = progressData?.overall_progress || 0;
   const streak = progressData?.streak_days || 0;
-  const practiceTime = progressData?.total_practice_time || 0;
+  const practiceTime = Number(progressData?.total_practice_time) || 0;
   const exercisesCompleted = progressData?.total_exercises_completed || 0;
 
   return (
@@ -354,7 +354,9 @@ export const AIStudentDashboard = ({ userProfile }: AIStudentDashboardProps) => 
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{(practiceTime / 60).toFixed(1)}h</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              {isNaN(practiceTime) || practiceTime === 0 ? '0.0h' : `${(practiceTime / 60).toFixed(1)}h`}
+            </div>
             <p className="text-xs text-muted-foreground">
               Total practice
             </p>

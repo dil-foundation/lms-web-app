@@ -75,27 +75,39 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
       const spaceBelow = viewportHeight - rect.bottom;
       const spaceAbove = rect.top;
       
-
+      // Calculate approximate content height based on number of options
+      const optionHeight = 48; // Approximate height per option (including padding)
+      const filteredOptionsCount = options.filter(
+        (option) =>
+          !option.disabled &&
+          !value.includes(option.value) &&
+          (option.label.toLowerCase().includes(inputValue.toLowerCase()) ||
+            option.subLabel?.toLowerCase().includes(inputValue.toLowerCase()))
+      ).length;
+      
+      const contentHeight = Math.max(40, filteredOptionsCount * optionHeight + 8); // 8px for padding
       const dropdownMaxHeight = 240; // Maximum height we want
+      const actualHeight = Math.min(contentHeight, dropdownMaxHeight);
+      
       let top: number;
       let height: number;
 
       // Simple logic: try to position below first, then above
-      if (spaceBelow >= 200) {
+      if (spaceBelow >= actualHeight + 20) {
         // Enough space below - position below
         top = rect.bottom + 8;
-        height = Math.min(dropdownMaxHeight, spaceBelow - 20);
-      } else if (spaceAbove >= 200) {
+        height = actualHeight;
+      } else if (spaceAbove >= actualHeight + 20) {
         // Not enough space below, but enough above - position above
-        height = Math.min(dropdownMaxHeight, spaceAbove - 20);
+        height = actualHeight;
         top = rect.top - height - 8;
       } else {
         // Not enough space in either direction - use available space
         if (spaceBelow > spaceAbove) {
           top = rect.bottom + 8;
-          height = Math.max(100, spaceBelow - 20);
+          height = Math.max(40, spaceBelow - 20);
         } else {
-          height = Math.max(100, spaceAbove - 20);
+          height = Math.max(40, spaceAbove - 20);
           top = rect.top - height - 8;
         }
       }
@@ -117,7 +129,7 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
           pointerEvents: 'auto' as const, // Ensure dropdown can receive mouse events
         };
         setDropdownStyle(style);
-    }, []);
+    }, [options, value, inputValue]);
 
     const handleInputKeyDown = (
       event: React.KeyboardEvent<HTMLInputElement>

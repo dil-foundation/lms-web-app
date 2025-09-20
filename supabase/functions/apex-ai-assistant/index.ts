@@ -557,6 +557,9 @@ RESPONSE GUIDELINES:
 - Use a friendly, professional tone
 - Don't mention technical details like "database queries" or "query results"
 - Focus on being helpful to the user
+- DO NOT include "related questions", "quick replies", or suggest additional questions
+- DO NOT add phrases like "Here are some related questions that might help"
+- Provide ONLY the direct answer to the user's question
 
 IMPORTANT: If the query results contain specific FAQ answers that directly address the user's question, use those answers. If multiple relevant results exist, synthesize them into a coherent response.
 

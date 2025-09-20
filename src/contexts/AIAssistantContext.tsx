@@ -205,18 +205,7 @@ export const APEXProvider: React.FC<APEXProviderProps> = ({ children }) => {
         quickReplies: state.quickReplies
       });
 
-      // Add related FAQs if available
-      if (response.relatedFAQs && response.relatedFAQs.length > 0) {
-        console.log('📚 APEX Context: Adding related FAQs');
-        setTimeout(() => {
-          addMessage({
-            content: "Here are some related questions that might help:",
-            sender: 'assistant',
-            type: 'faq',
-            quickReplies: response.relatedFAQs.map(faq => faq.question)
-          });
-        }, 1000);
-      }
+      // Related FAQs functionality removed per user request
     } catch (error) {
       console.error('❌ APEX Context: Error in sendMessage:', error);
       addMessage({

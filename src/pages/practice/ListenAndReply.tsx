@@ -429,7 +429,7 @@ export const ListenAndReply: React.FC = () => {
     try {
       const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.EVALUATE_LISTEN_REPLY}`, {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: await getAuthHeaders(),
         body: JSON.stringify({
           audio_base64: audioBase64,
           dialogue_id: Number(currentDialogue.id),

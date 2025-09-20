@@ -29,9 +29,7 @@ class CourseClassSyncService {
         .select(`
           id,
           title,
-          class_ids,
-          teachers,
-          students
+          class_ids
         `)
         .not('class_ids', 'is', null);
 
@@ -50,8 +48,8 @@ class CourseClassSyncService {
         courseId: course.id,
         courseTitle: course.title,
         classIds: course.class_ids || [],
-        teachers: course.teachers || [],
-        students: course.students || []
+        teachers: [], // Will be populated separately if needed
+        students: []  // Will be populated separately if needed
       }));
     } catch (error) {
       console.error('Error in getCoursesUsingClasses:', error);

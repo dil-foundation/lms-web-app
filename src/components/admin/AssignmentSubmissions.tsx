@@ -68,6 +68,8 @@ interface QuizQuestion {
     option_text: string;
     is_correct: boolean;
     position: number;
+    option_image_url?: string; // File path in Supabase storage
+    option_image_display_url?: string; // Signed URL for display (temporary)
   }[];
   position: number;
   // Math-specific fields
@@ -369,7 +371,8 @@ export const AssignmentSubmissions = () => {
             id,
             option_text,
             is_correct,
-            position
+            position,
+            option_image_url
           )
         `)
         .eq('lesson_content_id', contentItemId)
@@ -382,18 +385,41 @@ export const AssignmentSubmissions = () => {
         options: q.options.sort((a: any, b: any) => a.position - b.position)
       })) || [];
 
-      setQuizQuestions(processedQuestions);
+      // Generate signed URLs for option images
+      const questionsWithImages = await Promise.all(
+        processedQuestions.map(async (question) => {
+          const optionsWithImages = await Promise.all(
+            question.options.map(async (option: any) => {
+              if (option.option_image_url && !option.option_image_display_url) {
+                try {
+                  const { data: signedUrlData, error } = await supabase.storage
+                    .from('dil-lms')
+                    .createSignedUrl(option.option_image_url, 3600 * 24 * 7); // 7 days
+                  
+                  if (!error && signedUrlData) {
+                    return { ...option, option_image_display_url: signedUrlData.signedUrl };
+                  }
+                } catch (error) {
+                  console.error('Error generating signed URL for option image:', error);
+                }
+              }
+              return option;
+            })
+          );
+          return { ...question, options: optionsWithImages };
+        })
+      );
+
+      setQuizQuestions(questionsWithImages);
       
       // After questions are loaded, populate manual grading data if submission exists
       const submissionToUse = submission || selectedSubmission;
       if (submissionToUse && submissionToUse.manual_grading_completed) {
         // Set overall grade and feedback
         if (submissionToUse.manual_grading_score !== null && submissionToUse.manual_grading_score !== undefined) {
-          console.log('Setting grade:', submissionToUse.manual_grading_score);
           setGrade(submissionToUse.manual_grading_score.toString());
         }
         if (submissionToUse.manual_grading_feedback) {
-          console.log('Setting feedback:', submissionToUse.manual_grading_feedback);
           setFeedback(submissionToUse.manual_grading_feedback);
         }
         
@@ -403,7 +429,6 @@ export const AssignmentSubmissions = () => {
         if (textAnswerQuestions.length > 0) {
           // Check if we have individual grades in the submission data
           if (submissionToUse.text_answer_grades && submissionToUse.text_answer_grades.length > 0) {
-            console.log('Using individual grades from submission data:', submissionToUse.text_answer_grades);
             
             // Populate grades and feedback from the submission data
             const grades: Record<string, number> = {};
@@ -414,8 +439,6 @@ export const AssignmentSubmissions = () => {
               if (gradeData.feedback) {
                 feedbackMap[gradeData.question_id] = gradeData.feedback;
               }
-              console.log('Loaded grade for question:', gradeData.question_id, '=', gradeData.grade);
-              console.log('Loaded feedback for question:', gradeData.question_id, '=', gradeData.feedback);
             });
             
             setManualGrades(grades);
@@ -428,7 +451,6 @@ export const AssignmentSubmissions = () => {
             if (gradesError) {
               console.error('Error fetching individual grades:', gradesError);
             } else {
-              console.log('Fetched individual grades from database:', individualGrades);
               
               // Populate grades and feedback from the database
               const grades: Record<string, number> = {};
@@ -439,8 +461,6 @@ export const AssignmentSubmissions = () => {
                 if (gradeData.feedback) {
                   feedbackMap[gradeData.question_id] = gradeData.feedback;
                 }
-                console.log('Loaded grade for question:', gradeData.question_id, '=', gradeData.grade);
-                console.log('Loaded feedback for question:', gradeData.question_id, '=', gradeData.feedback);
               });
               
               setManualGrades(grades);
@@ -1354,8 +1374,8 @@ export const AssignmentSubmissions = () => {
                                         : 'border-gray-200 dark:border-gray-600'
                                     }`}
                                   >
-                                    <div className="flex items-center gap-3">
-                                      <div className="flex-shrink-0">
+                                    <div className="flex items-start gap-3">
+                                      <div className="flex-shrink-0 mt-1">
                                         {question.question_type === 'multiple_choice' ? (
                                           <div className={`w-5 h-5 border-2 rounded flex items-center justify-center ${
                                             isSelected 
@@ -1378,9 +1398,24 @@ export const AssignmentSubmissions = () => {
                                           </div>
                                         )}
                                       </div>
-                                      <span className="flex-1 text-gray-900 dark:text-gray-100">
-                                        {option.option_text}
-                                      </span>
+                                      <div className="flex-1 space-y-2">
+                                        <span className="text-gray-900 dark:text-gray-100">
+                                          {option.option_text}
+                                        </span>
+                                        {option.option_image_display_url && (
+                                          <div className="relative w-full max-w-md">
+                                            <img 
+                                              src={option.option_image_display_url} 
+                                              alt={`Option image`}
+                                              className="w-full max-h-48 object-contain rounded-lg border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700"
+                                              onError={(e) => {
+                                                const target = e.target as HTMLImageElement;
+                                                target.style.display = 'none';
+                                              }}
+                                            />
+                                          </div>
+                                        )}
+                                      </div>
                                       <div className="flex items-center gap-2">
                                         {isCorrectOption && (
                                           <Badge variant="outline" className="text-green-600 border-green-600 text-xs">

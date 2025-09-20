@@ -87,12 +87,12 @@ const ReportCard = ({
   isDeleting = false,
   isDownloading = false
 }: ReportCardProps) => {
-  const statusColor = report.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+  const statusColor = report.status === 'completed' ? 'bg-[#8DC63F]/20 text-[#8DC63F] dark:bg-[#8DC63F]/20 dark:text-[#8DC63F]' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
   const roleColor = {
-    'principal': 'bg-blue-100 text-white dark:bg-blue-900 dark:text-blue-200',
+    'principal': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
     'ece': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
     'school-officer': 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-    'project-manager': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+    'project-manager': 'bg-[#8DC63F]/20 text-[#8DC63F] dark:bg-[#8DC63F]/20 dark:text-[#8DC63F]'
   }[report.observerRole] || 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
 
   return (
@@ -148,12 +148,12 @@ const ReportCard = ({
             </div>
           </div>
           
-          <div className="flex items-center gap-2 ml-4">
+          <div className="flex items-center gap-4 ml-6">
             <Button 
               variant="outline" 
               size="sm" 
               onClick={onView}
-              className="h-9 w-9 p-0 rounded-xl border-2 hover:border-accent/40 hover:bg-accent/5 transition-all duration-300"
+              className="h-10 w-10 p-0 rounded-xl border-2 hover:border-[#8DC63F]/40 hover:bg-[#8DC63F]/5 transition-all duration-300"
             >
               <Eye className="w-4 h-4" />
             </Button>
@@ -162,7 +162,7 @@ const ReportCard = ({
               size="sm" 
               onClick={onDownload} 
               disabled={isDownloading}
-              className="h-9 w-9 p-0 rounded-xl border-2 hover:border-accent/40 hover:bg-accent/5 transition-all duration-300"
+              className="h-10 w-10 p-0 rounded-xl border-2 hover:border-[#8DC63F]/40 hover:bg-[#8DC63F]/5 transition-all duration-300"
             >
               {isDownloading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -171,11 +171,11 @@ const ReportCard = ({
               )}
             </Button>
             <Button 
-              variant="outline" 
+              variant="ghost" 
               size="sm" 
               onClick={onDelete}
               disabled={isDeleting}
-              className="h-9 w-9 p-0 rounded-xl border-2 border-red-200 hover:border-red-300 hover:bg-red-50 text-red-600 hover:text-red-700 transition-all duration-300 dark:border-red-800 dark:hover:border-red-700 dark:hover:bg-red-900/20 dark:text-red-400"
+              className="h-10 w-10 p-0 rounded-xl hover:bg-red-50 text-red-600 hover:text-red-700 transition-all duration-300 dark:hover:bg-red-900/20 dark:text-red-400"
             >
               {isDeleting ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -264,14 +264,14 @@ export const PastReportsView = ({ onBack, onViewReport }: PastReportsViewProps) 
     return `
       <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
         <!-- Header -->
-        <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #22C55E; padding-bottom: 20px;">
-          <h1 style="color: #22C55E; margin: 0; font-size: 28px;">Observation Report</h1>
+        <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #8DC63F; padding-bottom: 20px;">
+          <h1 style="color: #8DC63F; margin: 0; font-size: 28px;">Observation Report</h1>
           <p style="color: #666; margin: 5px 0;">Performance Assessment and Analysis</p>
         </div>
 
         <!-- Observer Information -->
         <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-          <h2 style="color: #22C55E; margin-top: 0;">Observation Details</h2>
+          <h2 style="color: #8DC63F; margin-top: 0;">Observation Details</h2>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
             <div><strong>Observer:</strong> ${report.observerName}</div>
             <div><strong>Role:</strong> ${report.observerRole.replace('-', ' ').toUpperCase()}</div>
@@ -285,9 +285,9 @@ export const PastReportsView = ({ onBack, onViewReport }: PastReportsViewProps) 
         </div>
 
         <!-- Overall Score -->
-        <div style="text-align: center; margin: 30px 0; padding: 20px; background: linear-gradient(135deg, #22C55E20, #22C55E10); border-radius: 12px;">
-          <h2 style="color: #22C55E; margin: 0;">Overall Score</h2>
-          <div style="font-size: 48px; font-weight: bold; color: #22C55E; margin: 10px 0;">${report.overallScore}%</div>
+        <div style="text-align: center; margin: 30px 0; padding: 20px; background: linear-gradient(135deg, #8DC63F20, #8DC63F10); border-radius: 12px;">
+          <h2 style="color: #8DC63F; margin: 0;">Overall Score</h2>
+          <div style="font-size: 48px; font-weight: bold; color: #8DC63F; margin: 10px 0;">${report.overallScore}%</div>
           <div style="color: #666;">
             Grade: ${report.overallScore >= 80 ? 'A' : report.overallScore >= 70 ? 'B+' : report.overallScore >= 60 ? 'B' : 'C'} | 
             Status: ${report.status.toUpperCase()}
@@ -607,7 +607,7 @@ export const PastReportsView = ({ onBack, onViewReport }: PastReportsViewProps) 
         <>
           {/* Statistics Cards Section */}
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+            <Card className="bg-gradient-to-br from-card to-[#8DC63F]/5 dark:bg-card">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Reports</CardTitle>
                 <FileText className="h-4 w-4 text-muted-foreground" />
@@ -622,7 +622,7 @@ export const PastReportsView = ({ onBack, onViewReport }: PastReportsViewProps) 
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+            <Card className="bg-gradient-to-br from-card to-[#8DC63F]/5 dark:bg-card">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">This Week</CardTitle>
                 <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -637,7 +637,7 @@ export const PastReportsView = ({ onBack, onViewReport }: PastReportsViewProps) 
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+            <Card className="bg-gradient-to-br from-card to-[#8DC63F]/5 dark:bg-card">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Schools Visited</CardTitle>
                 <Building2 className="h-4 w-4 text-muted-foreground" />
@@ -652,7 +652,7 @@ export const PastReportsView = ({ onBack, onViewReport }: PastReportsViewProps) 
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+            <Card className="bg-gradient-to-br from-card to-[#8DC63F]/5 dark:bg-card">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Top Role</CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />

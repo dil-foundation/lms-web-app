@@ -1107,39 +1107,45 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
 
 
   const handleCountryDeleteCheck = async (country: CountryType) => {
-    setCountryToDelete(country);
-    setIsCheckingDependencies(true);
-    setCountryDependencies(null);
+    // Small delay to ensure dropdown is fully closed
+    setTimeout(async () => {
+      setCountryToDelete(country);
+      setIsCheckingDependencies(true);
+      setCountryDependencies(null);
 
-    try {
-      // Check dependencies
-      const dependencies = await checkCountryDependencies(country.id);
-      setCountryDependencies(dependencies);
-    } catch (error) {
-      console.error('Error checking country dependencies:', error);
-      toast.error('Failed to check dependencies. Please try again.');
-    } finally {
-      setIsCheckingDependencies(false);
-    }
+      try {
+        // Check dependencies
+        const dependencies = await checkCountryDependencies(country.id);
+        setCountryDependencies(dependencies);
+      } catch (error) {
+        console.error('Error checking country dependencies:', error);
+        toast.error('Failed to check dependencies. Please try again.');
+      } finally {
+        setIsCheckingDependencies(false);
+      }
+    }, 100);
   };
 
   const handleCountryDeleteConfirm = async () => {
     if (!countryToDelete) return;
 
-    try {
-      await deleteCountry(countryToDelete.id);
-      // Refresh statistics
-      const stats = await getCountriesWithStats();
-      setCountriesStats(stats);
-      toast.success('Country deleted successfully');
-      
-      // Reset state
-      setCountryToDelete(null);
-      setCountryDependencies(null);
-    } catch (error) {
-      console.error('Error deleting country:', error);
-      toast.error('Failed to delete country. Please try again.');
-    }
+    // Add delay to prevent aria-hidden conflicts
+    setTimeout(async () => {
+      try {
+        await deleteCountry(countryToDelete.id);
+        // Refresh statistics
+        const stats = await getCountriesWithStats();
+        setCountriesStats(stats);
+        toast.success('Country deleted successfully');
+        
+        // Reset state
+        setCountryToDelete(null);
+        setCountryDependencies(null);
+      } catch (error) {
+        console.error('Error deleting country:', error);
+        toast.error('Failed to delete country. Please try again.');
+      }
+    }, 100);
   };
 
   const handleCountryDeleteCancel = () => {
@@ -1236,36 +1242,42 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   };
 
   const handleRegionDeleteCheck = async (region: Region) => {
-    setRegionToDelete(region);
-    setIsCheckingRegionDependencies(true);
-    setRegionDependencies(null);
+    // Small delay to ensure dropdown is fully closed
+    setTimeout(async () => {
+      setRegionToDelete(region);
+      setIsCheckingRegionDependencies(true);
+      setRegionDependencies(null);
 
-    try {
-      // Check dependencies
-      const dependencies = await checkRegionDependencies(region.id);
-      setRegionDependencies(dependencies);
-    } catch (error) {
-      console.error('Error checking region dependencies:', error);
-      toast.error('Failed to check dependencies. Please try again.');
-    } finally {
-      setIsCheckingRegionDependencies(false);
-    }
+      try {
+        // Check dependencies
+        const dependencies = await checkRegionDependencies(region.id);
+        setRegionDependencies(dependencies);
+      } catch (error) {
+        console.error('Error checking region dependencies:', error);
+        toast.error('Failed to check dependencies. Please try again.');
+      } finally {
+        setIsCheckingRegionDependencies(false);
+      }
+    }, 100);
   };
 
   const handleRegionDeleteConfirm = async () => {
     if (!regionToDelete) return;
 
-    try {
-      await deleteRegion(regionToDelete.id);
-      toast.success('Region deleted successfully');
-      
-      // Reset state
-      setRegionToDelete(null);
-      setRegionDependencies(null);
-    } catch (error) {
-      console.error('Error deleting region:', error);
-      toast.error('Failed to delete region. Please try again.');
-    }
+    // Add delay to prevent aria-hidden conflicts
+    setTimeout(async () => {
+      try {
+        await deleteRegion(regionToDelete.id);
+        toast.success('Region deleted successfully');
+        
+        // Reset state
+        setRegionToDelete(null);
+        setRegionDependencies(null);
+      } catch (error) {
+        console.error('Error deleting region:', error);
+        toast.error('Failed to delete region. Please try again.');
+      }
+    }, 100);
   };
 
   const handleRegionDeleteCancel = () => {
@@ -1349,36 +1361,42 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   };
 
   const handleCityDeleteCheck = async (city: City) => {
-    setCityToDelete(city);
-    setIsCheckingCityDependencies(true);
-    setCityDependencies(null);
+    // Small delay to ensure dropdown is fully closed
+    setTimeout(async () => {
+      setCityToDelete(city);
+      setIsCheckingCityDependencies(true);
+      setCityDependencies(null);
 
-    try {
-      // Check dependencies
-      const dependencies = await checkCityDependencies(city.id);
-      setCityDependencies(dependencies);
-    } catch (error) {
-      console.error('Error checking city dependencies:', error);
-      toast.error('Failed to check dependencies. Please try again.');
-    } finally {
-      setIsCheckingCityDependencies(false);
-    }
+      try {
+        // Check dependencies
+        const dependencies = await checkCityDependencies(city.id);
+        setCityDependencies(dependencies);
+      } catch (error) {
+        console.error('Error checking city dependencies:', error);
+        toast.error('Failed to check dependencies. Please try again.');
+      } finally {
+        setIsCheckingCityDependencies(false);
+      }
+    }, 100);
   };
 
   const handleCityDeleteConfirm = async () => {
     if (!cityToDelete) return;
 
-    try {
-      await deleteCity(cityToDelete.id);
-      toast.success('City deleted successfully');
-      
-      // Reset state
-      setCityToDelete(null);
-      setCityDependencies(null);
-    } catch (error) {
-      console.error('Error deleting city:', error);
-      toast.error('Failed to delete city. Please try again.');
-    }
+    // Add delay to prevent aria-hidden conflicts
+    setTimeout(async () => {
+      try {
+        await deleteCity(cityToDelete.id);
+        toast.success('City deleted successfully');
+        
+        // Reset state
+        setCityToDelete(null);
+        setCityDependencies(null);
+      } catch (error) {
+        console.error('Error deleting city:', error);
+        toast.error('Failed to delete city. Please try again.');
+      }
+    }, 100);
   };
 
   const handleCityDeleteCancel = () => {
@@ -1449,36 +1467,42 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   };
 
   const handleProjectDeleteCheck = async (project: Project) => {
-    setProjectToDelete(project);
-    setIsCheckingProjectDependencies(true);
-    setProjectDependencies(null);
+    // Small delay to ensure dropdown is fully closed
+    setTimeout(async () => {
+      setProjectToDelete(project);
+      setIsCheckingProjectDependencies(true);
+      setProjectDependencies(null);
 
-    try {
-      // Check dependencies
-      const dependencies = await checkProjectDependencies(project.id);
-      setProjectDependencies(dependencies);
-    } catch (error) {
-      console.error('Error checking project dependencies:', error);
-      toast.error('Failed to check dependencies. Please try again.');
-    } finally {
-      setIsCheckingProjectDependencies(false);
-    }
+      try {
+        // Check dependencies
+        const dependencies = await checkProjectDependencies(project.id);
+        setProjectDependencies(dependencies);
+      } catch (error) {
+        console.error('Error checking project dependencies:', error);
+        toast.error('Failed to check dependencies. Please try again.');
+      } finally {
+        setIsCheckingProjectDependencies(false);
+      }
+    }, 100);
   };
 
   const handleProjectDeleteConfirm = async () => {
     if (!projectToDelete) return;
 
-    try {
-      await deleteProject(projectToDelete.id);
-      toast.success('Project deleted successfully');
-      
-      // Reset state
-      setProjectToDelete(null);
-      setProjectDependencies(null);
-    } catch (error) {
-      console.error('Error deleting project:', error);
-      toast.error('Failed to delete project. Please try again.');
-    }
+    // Add delay to prevent aria-hidden conflicts
+    setTimeout(async () => {
+      try {
+        await deleteProject(projectToDelete.id);
+        toast.success('Project deleted successfully');
+        
+        // Reset state
+        setProjectToDelete(null);
+        setProjectDependencies(null);
+      } catch (error) {
+        console.error('Error deleting project:', error);
+        toast.error('Failed to delete project. Please try again.');
+      }
+    }, 100);
   };
 
   const handleProjectDeleteCancel = () => {
@@ -1536,36 +1560,42 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   };
 
   const handleBoardDeleteCheck = async (board: Board) => {
-    setBoardToDelete(board);
-    setIsCheckingBoardDependencies(true);
-    setBoardDependencies(null);
+    // Small delay to ensure dropdown is fully closed
+    setTimeout(async () => {
+      setBoardToDelete(board);
+      setIsCheckingBoardDependencies(true);
+      setBoardDependencies(null);
 
-    try {
-      // Check dependencies
-      const dependencies = await checkBoardDependencies(board.id);
-      setBoardDependencies(dependencies);
-    } catch (error) {
-      console.error('Error checking board dependencies:', error);
-      toast.error('Failed to check dependencies. Please try again.');
-    } finally {
-      setIsCheckingBoardDependencies(false);
-    }
+      try {
+        // Check dependencies
+        const dependencies = await checkBoardDependencies(board.id);
+        setBoardDependencies(dependencies);
+      } catch (error) {
+        console.error('Error checking board dependencies:', error);
+        toast.error('Failed to check dependencies. Please try again.');
+      } finally {
+        setIsCheckingBoardDependencies(false);
+      }
+    }, 100);
   };
 
   const handleBoardDeleteConfirm = async () => {
     if (!boardToDelete) return;
 
-    try {
-      await deleteBoard(boardToDelete.id);
-      toast.success('Board deleted successfully');
-      
-      // Reset state
-      setBoardToDelete(null);
-      setBoardDependencies(null);
-    } catch (error) {
-      console.error('Error deleting board:', error);
-      toast.error('Failed to delete board. Please try again.');
-    }
+    // Add delay to prevent aria-hidden conflicts
+    setTimeout(async () => {
+      try {
+        await deleteBoard(boardToDelete.id);
+        toast.success('Board deleted successfully');
+        
+        // Reset state
+        setBoardToDelete(null);
+        setBoardDependencies(null);
+      } catch (error) {
+        console.error('Error deleting board:', error);
+        toast.error('Failed to delete board. Please try again.');
+      }
+    }, 100);
   };
 
   const handleBoardDeleteCancel = () => {
@@ -1599,36 +1629,42 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   };
 
   const handleSchoolDeleteCheck = async (school: School) => {
-    setSchoolToDelete(school);
-    setIsCheckingSchoolDependencies(true);
-    setSchoolDependencies(null);
+    // Small delay to ensure dropdown is fully closed
+    setTimeout(async () => {
+      setSchoolToDelete(school);
+      setIsCheckingSchoolDependencies(true);
+      setSchoolDependencies(null);
 
-    try {
-      // Check dependencies
-      const dependencies = await checkSchoolDependencies(school.id);
-      setSchoolDependencies(dependencies);
-    } catch (error) {
-      console.error('Error checking school dependencies:', error);
-      toast.error('Failed to check dependencies. Please try again.');
-    } finally {
-      setIsCheckingSchoolDependencies(false);
-    }
+      try {
+        // Check dependencies
+        const dependencies = await checkSchoolDependencies(school.id);
+        setSchoolDependencies(dependencies);
+      } catch (error) {
+        console.error('Error checking school dependencies:', error);
+        toast.error('Failed to check dependencies. Please try again.');
+      } finally {
+        setIsCheckingSchoolDependencies(false);
+      }
+    }, 100);
   };
 
   const handleSchoolDeleteConfirm = async () => {
     if (!schoolToDelete) return;
 
-    try {
-      await deleteSchool(schoolToDelete.id);
-      toast.success('School deleted successfully');
-      
-      // Reset state
-      setSchoolToDelete(null);
-      setSchoolDependencies(null);
-    } catch (error) {
-      console.error('Error deleting school:', error);
-      toast.error('Failed to delete school. Please try again.');
-    }
+    // Add delay to prevent aria-hidden conflicts
+    setTimeout(async () => {
+      try {
+        await deleteSchool(schoolToDelete.id);
+        toast.success('School deleted successfully');
+        
+        // Reset state
+        setSchoolToDelete(null);
+        setSchoolDependencies(null);
+      } catch (error) {
+        console.error('Error deleting school:', error);
+        toast.error('Failed to delete school. Please try again.');
+      }
+    }, 100);
   };
 
   const handleSchoolDeleteCancel = () => {
@@ -2737,9 +2773,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                     <span className="text-red-600 group-hover:text-white group-focus:text-white">Delete Country</span>
                                 </DropdownMenuItem>
                               </AlertDialogTrigger>
-                              <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+                              <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col border-red-200 dark:border-red-800">
                                 <AlertDialogHeader className="flex-shrink-0">
-                                    <AlertDialogTitle className="text-red-600">Delete Country</AlertDialogTitle>
+                                    <AlertDialogTitle className="text-red-600 dark:text-red-400">Delete Country</AlertDialogTitle>
                                   <AlertDialogDescription>
                                       Are you sure you want to delete "{country.name}"? This action cannot be undone.
                                   </AlertDialogDescription>
@@ -2772,14 +2808,14 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                       if (totalDependencies > 0) {
                                         return (
                                           <div className="space-y-4">
-                                            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                                            <div className="p-4 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/50 rounded-lg">
                                               <div className="flex items-center mb-2">
-                                                <div className="w-6 h-6 bg-red-600 rounded-full flex items-center justify-center mr-3">
+                                                <div className="w-6 h-6 bg-red-600 dark:bg-red-500 rounded-full flex items-center justify-center mr-3">
                                                   <span className="text-white text-sm font-bold">!</span>
                                                 </div>
-                                                <h4 className="font-semibold text-red-800">Cannot Delete Country</h4>
+                                                <h4 className="font-semibold text-red-800 dark:text-red-300">Cannot Delete Country</h4>
                                               </div>
-                                              <p className="text-red-700 mb-3">
+                                              <p className="text-red-700 dark:text-red-400 dark:text-red-400 mb-3">
                                                 This country is linked to the following entities:
                                               </p>
                                               
@@ -2828,13 +2864,13 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                 )}
                                               </div>
 
-                                              <div className="bg-white p-3 rounded border">
-                                                <h5 className="font-medium text-gray-800 mb-3">Remove from courses first:</h5>
+                                              <div className="bg-white dark:bg-gray-800 p-3 rounded border border-gray-200 dark:border-gray-600">
+                                                <h5 className="font-medium text-gray-800 dark:text-gray-200 mb-3">Remove from courses first:</h5>
                                                 <div className="space-y-3">
                                                   {countryDependencies.courses.length > 0 && (
                                                     <div>
-                                                      <h6 className="font-medium text-red-700 mb-1">1. Remove this country from {countryDependencies.courses.length} Course(s):</h6>
-                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                      <h6 className="font-medium text-red-700 dark:text-red-400 mb-1">1. Remove this country from {countryDependencies.courses.length} Course(s):</h6>
+                                                      <ul className="text-sm text-gray-600 dark:text-gray-400 ml-4 space-y-1">
                                                         {countryDependencies.courses.map((course, index) => (
                                                           <li key={course.id} className="flex items-center">
                                                             <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
@@ -2843,7 +2879,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                           </li>
                                                         ))}
                                                       </ul>
-                                                      <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
+                                                      <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/50 rounded text-sm text-blue-700 dark:text-blue-400">
                                                         <strong>How to remove:</strong> Go to each course's "Course Details" tab and remove this country from the Countries field.
                                                       </div>
                                                     </div>
@@ -2851,13 +2887,13 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                   
                                                   {countryDependencies.classes.length > 0 && (
                                                     <div>
-                                                      <h6 className="font-medium text-red-700 mb-1">2. Delete {countryDependencies.classes.length} Class(es):</h6>
-                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                      <h6 className="font-medium text-red-700 dark:text-red-400 mb-1">2. Delete {countryDependencies.classes.length} Class(es):</h6>
+                                                      <ul className="text-sm text-gray-600 dark:text-gray-400 ml-4 space-y-1">
                                                         {countryDependencies.classes.map((cls, index) => (
                                                           <li key={cls.id} className="flex items-center">
                                                             <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
                                                             <span className="font-medium">{cls.name}</span>
-                                                            <Badge variant="outline" className="ml-2 text-xs">Grade {cls.grade}</Badge>
+                                                            <Badge variant="outline" className="ml-2 text-xs border-blue-300 text-blue-700 hover:bg-blue-100 hover:text-blue-800 dark:border-blue-600 dark:text-blue-400 dark:hover:bg-blue-900/50 dark:hover:text-blue-300">Grade {cls.grade}</Badge>
                                                           </li>
                                                         ))}
                                                       </ul>
@@ -2866,8 +2902,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                   
                                                   {countryDependencies.schools.length > 0 && (
                                                     <div>
-                                                      <h6 className="font-medium text-red-700 mb-1">3. Delete {countryDependencies.schools.length} School(s):</h6>
-                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                      <h6 className="font-medium text-red-700 dark:text-red-400 mb-1">3. Delete {countryDependencies.schools.length} School(s):</h6>
+                                                      <ul className="text-sm text-gray-600 dark:text-gray-400 ml-4 space-y-1">
                                                         {countryDependencies.schools.map((school, index) => (
                                                           <li key={school.id} className="flex items-center">
                                                             <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
@@ -2881,8 +2917,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                   
                                                   {countryDependencies.boards.length > 0 && (
                                                     <div>
-                                                      <h6 className="font-medium text-red-700 mb-1">4. Delete {countryDependencies.boards.length} Board(s):</h6>
-                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                      <h6 className="font-medium text-red-700 dark:text-red-400 mb-1">4. Delete {countryDependencies.boards.length} Board(s):</h6>
+                                                      <ul className="text-sm text-gray-600 dark:text-gray-400 ml-4 space-y-1">
                                                         {countryDependencies.boards.map((board, index) => (
                                                           <li key={board.id} className="flex items-center">
                                                             <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
@@ -2896,8 +2932,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                   
                                                   {countryDependencies.projects.length > 0 && (
                                                     <div>
-                                                      <h6 className="font-medium text-red-700 mb-1">5. Delete {countryDependencies.projects.length} Project(s):</h6>
-                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                      <h6 className="font-medium text-red-700 dark:text-red-400 mb-1">5. Delete {countryDependencies.projects.length} Project(s):</h6>
+                                                      <ul className="text-sm text-gray-600 dark:text-gray-400 ml-4 space-y-1">
                                                         {countryDependencies.projects.map((project, index) => (
                                                           <li key={project.id} className="flex items-center">
                                                             <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
@@ -2911,8 +2947,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                   
                                                   {countryDependencies.cities.length > 0 && (
                                                     <div>
-                                                      <h6 className="font-medium text-red-700 mb-1">6. Delete {countryDependencies.cities.length} City(ies):</h6>
-                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                      <h6 className="font-medium text-red-700 dark:text-red-400 mb-1">6. Delete {countryDependencies.cities.length} City(ies):</h6>
+                                                      <ul className="text-sm text-gray-600 dark:text-gray-400 ml-4 space-y-1">
                                                         {countryDependencies.cities.map((city, index) => (
                                                           <li key={city.id} className="flex items-center">
                                                             <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
@@ -2926,8 +2962,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                   
                                                   {countryDependencies.regions.length > 0 && (
                                                     <div>
-                                                      <h6 className="font-medium text-red-700 mb-1">7. Delete {countryDependencies.regions.length} Region(s):</h6>
-                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                      <h6 className="font-medium text-red-700 dark:text-red-400 mb-1">7. Delete {countryDependencies.regions.length} Region(s):</h6>
+                                                      <ul className="text-sm text-gray-600 dark:text-gray-400 ml-4 space-y-1">
                                                         {countryDependencies.regions.map((region, index) => (
                                                           <li key={region.id} className="flex items-center">
                                                             <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
@@ -3225,9 +3261,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                     <span className="text-red-600 group-hover:text-white group-focus:text-white">Delete Region</span>
                                 </DropdownMenuItem>
                               </AlertDialogTrigger>
-                              <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+                              <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col border-red-200 dark:border-red-800">
                                 <AlertDialogHeader className="flex-shrink-0">
-                                    <AlertDialogTitle className="text-red-600">Delete Region</AlertDialogTitle>
+                                    <AlertDialogTitle className="text-red-600 dark:text-red-400">Delete Region</AlertDialogTitle>
                                   <AlertDialogDescription>
                                     Are you sure you want to delete "{region.name}"? This action cannot be undone.
                                   </AlertDialogDescription>
@@ -3258,14 +3294,14 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
 
                                         if (totalDependencies > 0) {
                                           return (
-                                            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                                            <div className="p-4 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/50 rounded-lg">
                                               <div className="flex items-center mb-2">
-                                                <div className="w-6 h-6 bg-red-600 rounded-full flex items-center justify-center mr-3">
+                                                <div className="w-6 h-6 bg-red-600 dark:bg-red-500 rounded-full flex items-center justify-center mr-3">
                                                   <span className="text-white text-sm font-bold">!</span>
                                                 </div>
-                                                <h4 className="font-semibold text-red-800">Cannot Delete Region</h4>
+                                                <h4 className="font-semibold text-red-800 dark:text-red-300">Cannot Delete Region</h4>
                                               </div>
-                                              <p className="text-red-700 mb-3">
+                                              <p className="text-red-700 dark:text-red-400 dark:text-red-400 mb-3">
                                                 This region is linked to the following entities:
                                               </p>
                                               
@@ -3308,13 +3344,13 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                 )}
                                               </div>
 
-                                              <div className="bg-white p-3 rounded border">
-                                                <h5 className="font-medium text-gray-800 mb-3">Remove from courses first:</h5>
+                                              <div className="bg-white dark:bg-gray-800 p-3 rounded border border-gray-200 dark:border-gray-600">
+                                                <h5 className="font-medium text-gray-800 dark:text-gray-200 mb-3">Remove from courses first:</h5>
                                                 <div className="space-y-3">
                                                   {regionDependencies.courses.length > 0 && (
                                                     <div>
-                                                      <h6 className="font-medium text-red-700 mb-1">1. Remove this region from {regionDependencies.courses.length} Course(s):</h6>
-                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                      <h6 className="font-medium text-red-700 dark:text-red-400 mb-1">1. Remove this region from {regionDependencies.courses.length} Course(s):</h6>
+                                                      <ul className="text-sm text-gray-600 dark:text-gray-400 ml-4 space-y-1">
                                                         {regionDependencies.courses.map((course) => (
                                                           <li key={course.id} className="flex items-center">
                                                             <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
@@ -3323,7 +3359,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                           </li>
                                                         ))}
                                                       </ul>
-                                                      <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
+                                                      <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/50 rounded text-sm text-blue-700 dark:text-blue-400">
                                                         <strong>How to remove:</strong> Go to each course's "Course Details" tab and remove this region from the Regions field.
                                                       </div>
                                                     </div>
@@ -3331,13 +3367,13 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                   
                                                   {regionDependencies.classes.length > 0 && (
                                                     <div>
-                                                      <h6 className="font-medium text-red-700 mb-1">2. Delete {regionDependencies.classes.length} Class(es):</h6>
-                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                      <h6 className="font-medium text-red-700 dark:text-red-400 mb-1">2. Delete {regionDependencies.classes.length} Class(es):</h6>
+                                                      <ul className="text-sm text-gray-600 dark:text-gray-400 ml-4 space-y-1">
                                                         {regionDependencies.classes.map((cls) => (
                                                           <li key={cls.id} className="flex items-center">
                                                             <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
                                                             <span className="font-medium">{cls.name}</span>
-                                                            <Badge variant="outline" className="ml-2 text-xs">Grade {cls.grade}</Badge>
+                                                            <Badge variant="outline" className="ml-2 text-xs border-blue-300 text-blue-700 hover:bg-blue-100 hover:text-blue-800 dark:border-blue-600 dark:text-blue-400 dark:hover:bg-blue-900/50 dark:hover:text-blue-300">Grade {cls.grade}</Badge>
                                                           </li>
                                                         ))}
                                                       </ul>
@@ -3346,8 +3382,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                   
                                                   {regionDependencies.schools.length > 0 && (
                                                     <div>
-                                                      <h6 className="font-medium text-red-700 mb-1">3. Delete {regionDependencies.schools.length} School(s):</h6>
-                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                      <h6 className="font-medium text-red-700 dark:text-red-400 mb-1">3. Delete {regionDependencies.schools.length} School(s):</h6>
+                                                      <ul className="text-sm text-gray-600 dark:text-gray-400 ml-4 space-y-1">
                                                         {regionDependencies.schools.map((school) => (
                                                           <li key={school.id} className="flex items-center">
                                                             <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
@@ -3361,8 +3397,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                   
                                                   {regionDependencies.boards.length > 0 && (
                                                     <div>
-                                                      <h6 className="font-medium text-red-700 mb-1">4. Delete {regionDependencies.boards.length} Board(s):</h6>
-                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                      <h6 className="font-medium text-red-700 dark:text-red-400 mb-1">4. Delete {regionDependencies.boards.length} Board(s):</h6>
+                                                      <ul className="text-sm text-gray-600 dark:text-gray-400 ml-4 space-y-1">
                                                         {regionDependencies.boards.map((board) => (
                                                           <li key={board.id} className="flex items-center">
                                                             <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
@@ -3376,8 +3412,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                   
                                                   {regionDependencies.projects.length > 0 && (
                                                     <div>
-                                                      <h6 className="font-medium text-red-700 mb-1">5. Delete {regionDependencies.projects.length} Project(s):</h6>
-                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                      <h6 className="font-medium text-red-700 dark:text-red-400 mb-1">5. Delete {regionDependencies.projects.length} Project(s):</h6>
+                                                      <ul className="text-sm text-gray-600 dark:text-gray-400 ml-4 space-y-1">
                                                         {regionDependencies.projects.map((project) => (
                                                           <li key={project.id} className="flex items-center">
                                                             <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
@@ -3391,8 +3427,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                   
                                                   {regionDependencies.cities.length > 0 && (
                                                     <div>
-                                                      <h6 className="font-medium text-red-700 mb-1">6. Delete {regionDependencies.cities.length} City(ies):</h6>
-                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                      <h6 className="font-medium text-red-700 dark:text-red-400 mb-1">6. Delete {regionDependencies.cities.length} City(ies):</h6>
+                                                      <ul className="text-sm text-gray-600 dark:text-gray-400 ml-4 space-y-1">
                                                         {regionDependencies.cities.map((city) => (
                                                           <li key={city.id} className="flex items-center">
                                                             <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
@@ -3690,9 +3726,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                     <span className="text-red-600 group-hover:text-white group-focus:text-white">Delete City</span>
                                 </DropdownMenuItem>
                               </AlertDialogTrigger>
-                              <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+                              <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col border-red-200 dark:border-red-800">
                                 <AlertDialogHeader className="flex-shrink-0">
-                                    <AlertDialogTitle className="text-red-600">Delete City</AlertDialogTitle>
+                                    <AlertDialogTitle className="text-red-600 dark:text-red-400">Delete City</AlertDialogTitle>
                                   <AlertDialogDescription>
                                     Are you sure you want to delete "{city.name}"? This action cannot be undone.
                                   </AlertDialogDescription>
@@ -3722,14 +3758,14 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
 
                                         if (totalDependencies > 0) {
                                           return (
-                                            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                                            <div className="p-4 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/50 rounded-lg">
                                               <div className="flex items-center mb-2">
-                                                <div className="w-6 h-6 bg-red-600 rounded-full flex items-center justify-center mr-3">
+                                                <div className="w-6 h-6 bg-red-600 dark:bg-red-500 rounded-full flex items-center justify-center mr-3">
                                                   <span className="text-white text-sm font-bold">!</span>
                                                 </div>
-                                                <h4 className="font-semibold text-red-800">Cannot Delete City</h4>
+                                                <h4 className="font-semibold text-red-800 dark:text-red-300">Cannot Delete City</h4>
                                               </div>
-                                              <p className="text-red-700 mb-3">
+                                              <p className="text-red-700 dark:text-red-400 dark:text-red-400 mb-3">
                                                 This city is linked to the following entities:
                                               </p>
                                               
@@ -3766,13 +3802,13 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                 )}
                                               </div>
 
-                                              <div className="bg-white p-3 rounded border">
-                                                <h5 className="font-medium text-gray-800 mb-3">Remove from courses first:</h5>
+                                              <div className="bg-white dark:bg-gray-800 p-3 rounded border border-gray-200 dark:border-gray-600">
+                                                <h5 className="font-medium text-gray-800 dark:text-gray-200 mb-3">Remove from courses first:</h5>
                                                 <div className="space-y-3">
                                                   {cityDependencies.courses.length > 0 && (
                                                     <div>
-                                                      <h6 className="font-medium text-red-700 mb-1">1. Remove this city from {cityDependencies.courses.length} Course(s):</h6>
-                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                      <h6 className="font-medium text-red-700 dark:text-red-400 mb-1">1. Remove this city from {cityDependencies.courses.length} Course(s):</h6>
+                                                      <ul className="text-sm text-gray-600 dark:text-gray-400 ml-4 space-y-1">
                                                         {cityDependencies.courses.map((course) => (
                                                           <li key={course.id} className="flex items-center">
                                                             <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
@@ -3781,7 +3817,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                           </li>
                                                         ))}
                                                       </ul>
-                                                      <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
+                                                      <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/50 rounded text-sm text-blue-700 dark:text-blue-400">
                                                         <strong>How to remove:</strong> Go to each course's "Course Details" tab and remove this city from the Cities field.
                                                       </div>
                                                     </div>
@@ -3789,13 +3825,13 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                   
                                                   {cityDependencies.classes.length > 0 && (
                                                     <div>
-                                                      <h6 className="font-medium text-red-700 mb-1">2. Delete {cityDependencies.classes.length} Class(es):</h6>
-                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                      <h6 className="font-medium text-red-700 dark:text-red-400 mb-1">2. Delete {cityDependencies.classes.length} Class(es):</h6>
+                                                      <ul className="text-sm text-gray-600 dark:text-gray-400 ml-4 space-y-1">
                                                         {cityDependencies.classes.map((cls) => (
                                                           <li key={cls.id} className="flex items-center">
                                                             <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
                                                             <span className="font-medium">{cls.name}</span>
-                                                            <Badge variant="outline" className="ml-2 text-xs">Grade {cls.grade}</Badge>
+                                                            <Badge variant="outline" className="ml-2 text-xs border-blue-300 text-blue-700 hover:bg-blue-100 hover:text-blue-800 dark:border-blue-600 dark:text-blue-400 dark:hover:bg-blue-900/50 dark:hover:text-blue-300">Grade {cls.grade}</Badge>
                                                           </li>
                                                         ))}
                                                       </ul>
@@ -3804,8 +3840,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                   
                                                   {cityDependencies.schools.length > 0 && (
                                                     <div>
-                                                      <h6 className="font-medium text-red-700 mb-1">3. Delete {cityDependencies.schools.length} School(s):</h6>
-                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                      <h6 className="font-medium text-red-700 dark:text-red-400 mb-1">3. Delete {cityDependencies.schools.length} School(s):</h6>
+                                                      <ul className="text-sm text-gray-600 dark:text-gray-400 ml-4 space-y-1">
                                                         {cityDependencies.schools.map((school) => (
                                                           <li key={school.id} className="flex items-center">
                                                             <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
@@ -3819,8 +3855,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                   
                                                   {cityDependencies.boards.length > 0 && (
                                                     <div>
-                                                      <h6 className="font-medium text-red-700 mb-1">4. Delete {cityDependencies.boards.length} Board(s):</h6>
-                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                      <h6 className="font-medium text-red-700 dark:text-red-400 mb-1">4. Delete {cityDependencies.boards.length} Board(s):</h6>
+                                                      <ul className="text-sm text-gray-600 dark:text-gray-400 ml-4 space-y-1">
                                                         {cityDependencies.boards.map((board) => (
                                                           <li key={board.id} className="flex items-center">
                                                             <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
@@ -3834,8 +3870,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                   
                                                   {cityDependencies.projects.length > 0 && (
                                                     <div>
-                                                      <h6 className="font-medium text-red-700 mb-1">5. Delete {cityDependencies.projects.length} Project(s):</h6>
-                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                      <h6 className="font-medium text-red-700 dark:text-red-400 mb-1">5. Delete {cityDependencies.projects.length} Project(s):</h6>
+                                                      <ul className="text-sm text-gray-600 dark:text-gray-400 ml-4 space-y-1">
                                                         {cityDependencies.projects.map((project) => (
                                                           <li key={project.id} className="flex items-center">
                                                             <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
@@ -4134,9 +4170,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                     <span className="text-red-600 group-hover:text-white group-focus:text-white">Delete Project</span>
                                 </DropdownMenuItem>
                               </AlertDialogTrigger>
-                              <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+                              <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col border-red-200 dark:border-red-800">
                                 <AlertDialogHeader className="flex-shrink-0">
-                                    <AlertDialogTitle className="text-red-600">Delete Project</AlertDialogTitle>
+                                    <AlertDialogTitle className="text-red-600 dark:text-red-400">Delete Project</AlertDialogTitle>
                                   <AlertDialogDescription>
                                     Are you sure you want to delete "{project.name}"? This action cannot be undone.
                                   </AlertDialogDescription>
@@ -4165,14 +4201,14 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
 
                                         if (totalDependencies > 0) {
                                           return (
-                                            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                                            <div className="p-4 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/50 rounded-lg">
                                               <div className="flex items-center mb-2">
-                                                <div className="w-6 h-6 bg-red-600 rounded-full flex items-center justify-center mr-3">
+                                                <div className="w-6 h-6 bg-red-600 dark:bg-red-500 rounded-full flex items-center justify-center mr-3">
                                                   <span className="text-white text-sm font-bold">!</span>
                                                 </div>
-                                                <h4 className="font-semibold text-red-800">Cannot Delete Project</h4>
+                                                <h4 className="font-semibold text-red-800 dark:text-red-300">Cannot Delete Project</h4>
                                               </div>
-                                              <p className="text-red-700 mb-3">
+                                              <p className="text-red-700 dark:text-red-400 dark:text-red-400 mb-3">
                                                 This project is linked to the following entities:
                                               </p>
                                               
@@ -4203,13 +4239,13 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                 )}
                                               </div>
 
-                                              <div className="bg-white p-3 rounded border">
-                                                <h5 className="font-medium text-gray-800 mb-3">Remove from courses first:</h5>
+                                              <div className="bg-white dark:bg-gray-800 p-3 rounded border border-gray-200 dark:border-gray-600">
+                                                <h5 className="font-medium text-gray-800 dark:text-gray-200 mb-3">Remove from courses first:</h5>
                                                 <div className="space-y-3">
                                                   {projectDependencies.courses.length > 0 && (
                                                     <div>
-                                                      <h6 className="font-medium text-red-700 mb-1">1. Remove this project from {projectDependencies.courses.length} Course(s):</h6>
-                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                      <h6 className="font-medium text-red-700 dark:text-red-400 mb-1">1. Remove this project from {projectDependencies.courses.length} Course(s):</h6>
+                                                      <ul className="text-sm text-gray-600 dark:text-gray-400 ml-4 space-y-1">
                                                         {projectDependencies.courses.map((course) => (
                                                           <li key={course.id} className="flex items-center">
                                                             <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
@@ -4218,7 +4254,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                           </li>
                                                         ))}
                                                       </ul>
-                                                      <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
+                                                      <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/50 rounded text-sm text-blue-700 dark:text-blue-400">
                                                         <strong>How to remove:</strong> Go to each course's "Course Details" tab and remove this project from the Projects field.
                                                       </div>
                                                     </div>
@@ -4226,13 +4262,13 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                   
                                                   {projectDependencies.classes.length > 0 && (
                                                     <div>
-                                                      <h6 className="font-medium text-red-700 mb-1">2. Delete {projectDependencies.classes.length} Class(es):</h6>
-                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                      <h6 className="font-medium text-red-700 dark:text-red-400 mb-1">2. Delete {projectDependencies.classes.length} Class(es):</h6>
+                                                      <ul className="text-sm text-gray-600 dark:text-gray-400 ml-4 space-y-1">
                                                         {projectDependencies.classes.map((cls) => (
                                                           <li key={cls.id} className="flex items-center">
                                                             <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
                                                             <span className="font-medium">{cls.name}</span>
-                                                            <Badge variant="outline" className="ml-2 text-xs">Grade {cls.grade}</Badge>
+                                                            <Badge variant="outline" className="ml-2 text-xs border-blue-300 text-blue-700 hover:bg-blue-100 hover:text-blue-800 dark:border-blue-600 dark:text-blue-400 dark:hover:bg-blue-900/50 dark:hover:text-blue-300">Grade {cls.grade}</Badge>
                                                           </li>
                                                         ))}
                                                       </ul>
@@ -4241,8 +4277,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                   
                                                   {projectDependencies.schools.length > 0 && (
                                                     <div>
-                                                      <h6 className="font-medium text-red-700 mb-1">3. Delete {projectDependencies.schools.length} School(s):</h6>
-                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                      <h6 className="font-medium text-red-700 dark:text-red-400 mb-1">3. Delete {projectDependencies.schools.length} School(s):</h6>
+                                                      <ul className="text-sm text-gray-600 dark:text-gray-400 ml-4 space-y-1">
                                                         {projectDependencies.schools.map((school) => (
                                                           <li key={school.id} className="flex items-center">
                                                             <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
@@ -4256,8 +4292,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                   
                                                   {projectDependencies.boards.length > 0 && (
                                                     <div>
-                                                      <h6 className="font-medium text-red-700 mb-1">4. Delete {projectDependencies.boards.length} Board(s):</h6>
-                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                      <h6 className="font-medium text-red-700 dark:text-red-400 mb-1">4. Delete {projectDependencies.boards.length} Board(s):</h6>
+                                                      <ul className="text-sm text-gray-600 dark:text-gray-400 ml-4 space-y-1">
                                                         {projectDependencies.boards.map((board) => (
                                                           <li key={board.id} className="flex items-center">
                                                             <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
@@ -4557,9 +4593,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                     <span className="text-red-600 group-hover:text-white group-focus:text-white">Delete Board</span>
                                 </DropdownMenuItem>
                               </AlertDialogTrigger>
-                              <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+                              <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col border-red-200 dark:border-red-800">
                                 <AlertDialogHeader className="flex-shrink-0">
-                                    <AlertDialogTitle className="text-red-600">Delete Board</AlertDialogTitle>
+                                    <AlertDialogTitle className="text-red-600 dark:text-red-400">Delete Board</AlertDialogTitle>
                                   <AlertDialogDescription>
                                     Are you sure you want to delete "{board.name}"? This action cannot be undone.
                                   </AlertDialogDescription>
@@ -4587,14 +4623,14 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
 
                                         if (totalDependencies > 0) {
                                           return (
-                                            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                                            <div className="p-4 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/50 rounded-lg">
                                               <div className="flex items-center mb-2">
-                                                <div className="w-6 h-6 bg-red-600 rounded-full flex items-center justify-center mr-3">
+                                                <div className="w-6 h-6 bg-red-600 dark:bg-red-500 rounded-full flex items-center justify-center mr-3">
                                                   <span className="text-white text-sm font-bold">!</span>
                                                 </div>
-                                                <h4 className="font-semibold text-red-800">Cannot Delete Board</h4>
+                                                <h4 className="font-semibold text-red-800 dark:text-red-300">Cannot Delete Board</h4>
                                               </div>
-                                              <p className="text-red-700 mb-3">
+                                              <p className="text-red-700 dark:text-red-400 dark:text-red-400 mb-3">
                                                 This board is linked to the following entities:
                                               </p>
                                               
@@ -4619,13 +4655,13 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                 )}
                                               </div>
 
-                                              <div className="bg-white p-3 rounded border">
-                                                <h5 className="font-medium text-gray-800 mb-3">Remove from courses first:</h5>
+                                              <div className="bg-white dark:bg-gray-800 p-3 rounded border border-gray-200 dark:border-gray-600">
+                                                <h5 className="font-medium text-gray-800 dark:text-gray-200 mb-3">Remove from courses first:</h5>
                                                 <div className="space-y-3">
                                                   {boardDependencies.courses.length > 0 && (
                                                     <div>
-                                                      <h6 className="font-medium text-red-700 mb-1">1. Remove this board from {boardDependencies.courses.length} Course(s):</h6>
-                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                      <h6 className="font-medium text-red-700 dark:text-red-400 mb-1">1. Remove this board from {boardDependencies.courses.length} Course(s):</h6>
+                                                      <ul className="text-sm text-gray-600 dark:text-gray-400 ml-4 space-y-1">
                                                         {boardDependencies.courses.map((course) => (
                                                           <li key={course.id} className="flex items-center">
                                                             <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
@@ -4634,7 +4670,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                           </li>
                                                         ))}
                                                       </ul>
-                                                      <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
+                                                      <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/50 rounded text-sm text-blue-700 dark:text-blue-400">
                                                         <strong>How to remove:</strong> Go to each course's "Course Details" tab and remove this board from the Boards field.
                                                       </div>
                                                     </div>
@@ -4642,13 +4678,13 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                   
                                                   {boardDependencies.classes.length > 0 && (
                                                     <div>
-                                                      <h6 className="font-medium text-red-700 mb-1">2. Delete {boardDependencies.classes.length} Class(es):</h6>
-                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                      <h6 className="font-medium text-red-700 dark:text-red-400 mb-1">2. Delete {boardDependencies.classes.length} Class(es):</h6>
+                                                      <ul className="text-sm text-gray-600 dark:text-gray-400 ml-4 space-y-1">
                                                         {boardDependencies.classes.map((cls) => (
                                                           <li key={cls.id} className="flex items-center">
                                                             <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
                                                             <span className="font-medium">{cls.name}</span>
-                                                            <Badge variant="outline" className="ml-2 text-xs">Grade {cls.grade}</Badge>
+                                                            <Badge variant="outline" className="ml-2 text-xs border-blue-300 text-blue-700 hover:bg-blue-100 hover:text-blue-800 dark:border-blue-600 dark:text-blue-400 dark:hover:bg-blue-900/50 dark:hover:text-blue-300">Grade {cls.grade}</Badge>
                                                           </li>
                                                         ))}
                                                       </ul>
@@ -4657,8 +4693,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                   
                                                   {boardDependencies.schools.length > 0 && (
                                                     <div>
-                                                      <h6 className="font-medium text-red-700 mb-1">3. Delete {boardDependencies.schools.length} School(s):</h6>
-                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                      <h6 className="font-medium text-red-700 dark:text-red-400 mb-1">3. Delete {boardDependencies.schools.length} School(s):</h6>
+                                                      <ul className="text-sm text-gray-600 dark:text-gray-400 ml-4 space-y-1">
                                                         {boardDependencies.schools.map((school) => (
                                                           <li key={school.id} className="flex items-center">
                                                             <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
@@ -4961,9 +4997,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                     <span className="text-red-600 group-hover:text-white group-focus:text-white">Delete School</span>
                                 </DropdownMenuItem>
                               </AlertDialogTrigger>
-                              <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+                              <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col border-red-200 dark:border-red-800">
                                 <AlertDialogHeader className="flex-shrink-0">
-                                    <AlertDialogTitle className="text-red-600">Delete School</AlertDialogTitle>
+                                    <AlertDialogTitle className="text-red-600 dark:text-red-400">Delete School</AlertDialogTitle>
                                   <AlertDialogDescription>
                                     Are you sure you want to delete "{school.name}"? This action cannot be undone.
                                   </AlertDialogDescription>
@@ -4988,14 +5024,14 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
 
                                         if (totalDependencies > 0) {
                                           return (
-                                            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                                            <div className="p-4 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/50 rounded-lg">
                                               <div className="flex items-center mb-2">
-                                                <div className="w-6 h-6 bg-red-600 rounded-full flex items-center justify-center mr-3">
+                                                <div className="w-6 h-6 bg-red-600 dark:bg-red-500 rounded-full flex items-center justify-center mr-3">
                                                   <span className="text-white text-sm font-bold">!</span>
                                                 </div>
-                                                <h4 className="font-semibold text-red-800">Cannot Delete School</h4>
+                                                <h4 className="font-semibold text-red-800 dark:text-red-300">Cannot Delete School</h4>
                                               </div>
-                                              <p className="text-red-700 mb-3">
+                                              <p className="text-red-700 dark:text-red-400 dark:text-red-400 mb-3">
                                                 This school is linked to the following entities:
                                               </p>
                                               
@@ -5008,18 +5044,18 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                                                 )}
                                               </div>
 
-                                              <div className="bg-white p-3 rounded border">
-                                                <h5 className="font-medium text-gray-800 mb-3">Delete in this order:</h5>
+                                              <div className="bg-white dark:bg-gray-800 p-3 rounded border border-gray-200 dark:border-gray-600">
+                                                <h5 className="font-medium text-gray-800 dark:text-gray-200 mb-3">Delete in this order:</h5>
                                                 <div className="space-y-3">
                                                   {schoolDependencies.classes.length > 0 && (
                                                     <div>
-                                                      <h6 className="font-medium text-red-700 mb-1">1. Delete {schoolDependencies.classes.length} Class(es):</h6>
-                                                      <ul className="text-sm text-gray-600 ml-4 space-y-1">
+                                                      <h6 className="font-medium text-red-700 dark:text-red-400 mb-1">1. Delete {schoolDependencies.classes.length} Class(es):</h6>
+                                                      <ul className="text-sm text-gray-600 dark:text-gray-400 ml-4 space-y-1">
                                                         {schoolDependencies.classes.map((cls) => (
                                                           <li key={cls.id} className="flex items-center">
                                                             <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
                                                             <span className="font-medium">{cls.name}</span>
-                                                            <Badge variant="outline" className="ml-2 text-xs">Grade {cls.grade}</Badge>
+                                                            <Badge variant="outline" className="ml-2 text-xs border-blue-300 text-blue-700 hover:bg-blue-100 hover:text-blue-800 dark:border-blue-600 dark:text-blue-400 dark:hover:bg-blue-900/50 dark:hover:text-blue-300">Grade {cls.grade}</Badge>
                                                           </li>
                                                         ))}
                                                       </ul>

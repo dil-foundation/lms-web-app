@@ -511,7 +511,7 @@ export const RepeatAfterMe: React.FC = () => {
     try {
       const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.EVALUATE_AUDIO}`, {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: await getAuthHeaders(),
         body: JSON.stringify({
           audio_base64: audioBase64,
           phrase_id: currentPhrase.id,
@@ -1101,7 +1101,7 @@ export const RepeatAfterMe: React.FC = () => {
 
         {/* Navigation buttons for manual phrase control */}
         {phrases.length > 1 && (
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-8 w-full max-w-md">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-8 w-full max-w-md mx-auto justify-center">
             <Button
               onClick={() => {
                 const newIndex = Math.max(0, currentPhraseIndex - 1);

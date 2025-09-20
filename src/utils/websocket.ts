@@ -37,8 +37,10 @@ export const connectEnglishOnlySocket = (
   }
 
   try {
-    // Always connect to staging production server
-    const wsUrl = 'wss://api-prod.dil.lms-staging.com/api/ws/english-only';
+    // Get base URL from environment variable, fallback to staging production server
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://api-prod.dil.lms-staging.com';
+    // Convert HTTP(S) URL to WebSocket URL and append the endpoint
+    const wsUrl = baseUrl.replace(/^https?:\/\//, 'wss://') + '/api/ws/english-only';
     
     console.log(`🔌 Connecting to English-only WebSocket: ${wsUrl}`);
     englishOnlySocket = new WebSocket(wsUrl);

@@ -426,7 +426,7 @@ export default function QuickAnswer() {
     try {
       const response = await fetch(`${BASE_API_URL}${API_ENDPOINTS.EVALUATE_QUICK_ANSWER}`, {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: await getAuthHeaders(),
         body: JSON.stringify({
           audio_base64: audioBase64,
           question_id: Number(currentQuestion.id),
