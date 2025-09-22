@@ -42,12 +42,14 @@ export const QuizRetrySettings: React.FC<QuizRetrySettingsProps> = ({
   const [quizExists, setQuizExists] = useState<boolean>(false);
 
   useEffect(() => {
+    console.log('🚀 QUIZRETRYSETTINGS: Component mounted/updated for lessonContentId:', lessonContentId);
     loadSettings();
   }, [lessonContentId]);
 
   const loadSettings = async () => {
     try {
       setLoading(true);
+      console.log('🔄 QUIZRETRYSETTINGS: Loading settings for lessonContentId:', lessonContentId);
       
       // Check if the lesson content exists in the database
       const { data, error } = await supabase
@@ -58,11 +60,13 @@ export const QuizRetrySettings: React.FC<QuizRetrySettingsProps> = ({
 
       if (error) {
         // If lesson content doesn't exist, it's a new unsaved quiz
+        console.log('❌ QUIZRETRYSETTINGS: Error loading settings:', error);
         setQuizExists(false);
         setSettings(DEFAULT_RETRY_SETTINGS);
         setError(null);
       } else {
         // Lesson content exists, it's a saved quiz
+        console.log('📊 QUIZRETRYSETTINGS: Raw data from database:', data);
         setQuizExists(true);
         // Clean up retry settings to only include valid properties
         const cleanRetrySettings = {
@@ -74,7 +78,10 @@ export const QuizRetrySettings: React.FC<QuizRetrySettingsProps> = ({
         setSettings(cleanRetrySettings);
         setError(null);
         // Notify parent component about the loaded settings
+        console.log('✅ QUIZRETRYSETTINGS: Loaded retry settings from database:', cleanRetrySettings);
+        console.log('🔄 QUIZRETRYSETTINGS: Calling onSettingsChange with:', cleanRetrySettings);
         onSettingsChange?.(cleanRetrySettings);
+        console.log('✅ QUIZRETRYSETTINGS: onSettingsChange called successfully');
       }
     } catch (err) {
       setError('Failed to load retry settings');
@@ -92,6 +99,7 @@ export const QuizRetrySettings: React.FC<QuizRetrySettingsProps> = ({
       
       if (success) {
         toast.success('Retry settings saved successfully');
+        console.log('💾 QUIZRETRYSETTINGS: Saving retry settings:', settings);
         onSettingsChange?.(settings);
       } else {
         toast.error('Failed to save retry settings');
@@ -111,12 +119,14 @@ export const QuizRetrySettings: React.FC<QuizRetrySettingsProps> = ({
     const newSettings = { ...settings, [key]: value };
     setSettings(newSettings);
     // Immediately update the parent component's state
+    console.log('🔄 QUIZRETRYSETTINGS: updateSetting called, updating parent with:', newSettings);
     onSettingsChange?.(newSettings);
   };
 
   const resetToDefaults = () => {
     setSettings(DEFAULT_RETRY_SETTINGS);
     // Immediately update the parent component's state
+    console.log('🔄 QUIZRETRYSETTINGS: resetToDefaults called, updating parent with:', DEFAULT_RETRY_SETTINGS);
     onSettingsChange?.(DEFAULT_RETRY_SETTINGS);
   };
 

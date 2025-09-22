@@ -179,43 +179,10 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
   const [mathDrawings, setMathDrawings] = useState<Record<string, string>>({});
   const [isQuizSubmitted, setIsQuizSubmitted] = useState(false);
   const [quizResults, setQuizResults] = useState<Record<string, boolean>>({});
-  const [quizImagesLoaded, setQuizImagesLoaded] = useState<Record<string, boolean>>({});
-  const [isLoadingQuizImages, setIsLoadingQuizImages] = useState<Record<string, boolean>>({});
 
   // Memoized function to handle drawing changes
   const handleDrawingChange = useCallback((questionId: string, drawingData: string) => {
     setMathDrawings(prev => ({ ...prev, [questionId]: drawingData }));
-  }, []);
-
-  // Function to generate signed URLs for quiz images
-  const generateQuizImageUrls = useCallback(async (quizData: any[]) => {
-    if (!quizData || quizData.length === 0) return quizData;
-    
-    const updatedQuiz = await Promise.all(
-      quizData.map(async (question) => {
-        const updatedOptions = await Promise.all(
-          question.options?.map(async (option: any) => {
-            if (option.option_image_url && !option.option_image_display_url) {
-              try {
-                const { data: signedUrlData, error } = await supabase.storage
-                  .from('dil-lms')
-                  .createSignedUrl(option.option_image_url, 3600 * 24 * 7); // 7 days
-                
-                if (!error && signedUrlData) {
-                  return { ...option, option_image_display_url: signedUrlData.signedUrl };
-                }
-              } catch (error) {
-                console.error('Error generating signed URL for quiz image:', error);
-              }
-            }
-            return option;
-          }) || []
-        );
-        return { ...question, options: updatedOptions };
-      })
-    );
-    
-    return updatedQuiz;
   }, []);
 
   const actualCourseId = courseId || id;
@@ -339,50 +306,6 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     }
   }, [currentContentItem]);
 
-  // Generate signed URLs for quiz images when quiz is loaded
-  useEffect(() => {
-    if (currentContentItem?.content_type === 'quiz' && currentContentItem.quiz && !quizImagesLoaded[currentContentItem.id]) {
-      // Check if this quiz has any images that need signed URLs
-      const hasImages = currentContentItem.quiz.some((q: any) => 
-        q.options?.some((opt: any) => opt.option_image_url && !opt.option_image_display_url)
-      );
-      
-      if (hasImages) {
-        setIsLoadingQuizImages(prev => ({ ...prev, [currentContentItem.id]: true }));
-        
-        generateQuizImageUrls(currentContentItem.quiz).then(updatedQuiz => {
-          // Update the course data with signed URLs
-          setCourse(prevCourse => {
-            if (!prevCourse) return prevCourse;
-            
-            const updatedModules = prevCourse.modules.map(module => ({
-              ...module,
-              lessons: module.lessons.map(lesson => ({
-                ...lesson,
-                contentItems: lesson.contentItems.map(item => 
-                  item.id === currentContentItem.id 
-                    ? { ...item, quiz: updatedQuiz }
-                    : item
-                )
-              }))
-            }));
-            
-            return { ...prevCourse, modules: updatedModules };
-          });
-          
-          setQuizImagesLoaded(prev => ({ ...prev, [currentContentItem.id]: true }));
-          setIsLoadingQuizImages(prev => ({ ...prev, [currentContentItem.id]: false }));
-        }).catch(error => {
-          console.error('Error loading quiz images:', error);
-          setIsLoadingQuizImages(prev => ({ ...prev, [currentContentItem.id]: false }));
-        });
-      } else {
-        // No images to load, mark as loaded immediately
-        setQuizImagesLoaded(prev => ({ ...prev, [currentContentItem.id]: true }));
-      }
-    }
-  }, [currentContentItem, generateQuizImageUrls, quizImagesLoaded]);
-
   const transformCourseData = (data: any, progress: any[] = [], quizSubmissions: any[] = []) => {
     if (!data) return null;
     let totalItems = 0;
@@ -406,13 +329,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
               math_expression: q.math_expression || null,
               math_tolerance: q.math_tolerance || null,
               math_hint: q.math_hint || null,
-              math_allow_drawing: q.math_allow_drawing === true,
-              // Process options to include image URLs
-              options: q.options?.map((option: any) => ({
-                ...option,
-                // Keep the storage path for potential future use
-                option_image_url: option.option_image_url || null
-              })) || []
+              math_allow_drawing: q.math_allow_drawing === true
             }));
           }
           
@@ -1006,46 +923,6 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
           const transformedCourse = transformCourseData(data, userProgress, quizSubmissions);
           setCourse(transformedCourse);
           
-          // Preload images for all quiz content items
-          if (transformedCourse) {
-            transformedCourse.modules.forEach((module: any) => {
-              module.lessons.forEach((lesson: any) => {
-                lesson.contentItems.forEach((item: any) => {
-                  if (item.content_type === 'quiz' && item.quiz) {
-                    const hasImages = item.quiz.some((q: any) => 
-                      q.options?.some((opt: any) => opt.option_image_url && !opt.option_image_display_url)
-                    );
-                    
-                    if (hasImages) {
-                      // Preload images in the background
-                      generateQuizImageUrls(item.quiz).then(updatedQuiz => {
-                        setCourse(prevCourse => {
-                          if (!prevCourse) return prevCourse;
-                          
-                          const updatedModules = prevCourse.modules.map(prevModule => ({
-                            ...prevModule,
-                            lessons: prevModule.lessons.map(prevLesson => ({
-                              ...prevLesson,
-                              contentItems: prevLesson.contentItems.map(prevItem => 
-                                prevItem.id === item.id 
-                                  ? { ...prevItem, quiz: updatedQuiz }
-                                  : prevItem
-                              )
-                            }))
-                          }));
-                          
-                          return { ...prevCourse, modules: updatedModules };
-                        });
-                      }).catch(error => {
-                        console.error('Error preloading quiz images:', error);
-                      });
-                    }
-                  }
-                });
-              });
-            });
-          }
-          
           // Log course started if this is the first time accessing
           if (transformedCourse && userProgress.length === 0) {
             try {
@@ -1320,37 +1197,14 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       case 'quiz':
         const questions = currentContentItem.quiz || [];
         const hasSubmitted = isQuizSubmitted || !!(currentContentItem.submission && currentContentItem.submission.id && currentContentItem.submission.score !== undefined);
-        const isLoadingImages = isLoadingQuizImages[currentContentItem.id];
-        
         console.log('🔍 HASSUBMITTED DEBUG:', {
           isQuizSubmitted,
           hasSubmission: !!currentContentItem.submission,
           hasSubmissionId: !!(currentContentItem.submission && currentContentItem.submission.id),
           hasScore: currentContentItem.submission?.score !== undefined,
           submissionScore: currentContentItem.submission?.score,
-          finalHasSubmitted: hasSubmitted,
-          submissionResults: currentContentItem.submission?.results
+          finalHasSubmitted: hasSubmitted
         });
-
-        // Show loading state while images are being loaded
-        if (isLoadingImages) {
-          return (
-            <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-gray-900 dark:text-gray-100">Knowledge Check</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-center py-8">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                    <p className="text-muted-foreground">Loading quiz images...</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        }
-
         return (
           <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
             <CardHeader>
@@ -1547,30 +1401,11 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                           if (isMultipleChoice) {
                             isSelected = Array.isArray(userAnswer) && userAnswer.includes(option.id);
                           } else {
-                            // For single choice, userAnswer might be an array due to the conversion in useEffect
-                            isSelected = Array.isArray(userAnswer) 
-                              ? userAnswer.includes(option.id) 
-                              : userAnswer === option.id;
+                            isSelected = userAnswer === option.id;
                           }
                           
                           const showAsCorrect = hasSubmitted && option.is_correct;
                           const showAsIncorrect = hasSubmitted && isSelected && !option.is_correct;
-                          
-                          // Debug logging to help identify the issue
-                          if (hasSubmitted) {
-                            console.log('🔍 OPTION STYLING DEBUG:', {
-                              optionId: option.id,
-                              optionText: option.option_text,
-                              isSelected,
-                              isCorrect: option.is_correct,
-                              showAsCorrect,
-                              showAsIncorrect,
-                              hasSubmitted,
-                              userAnswer,
-                              isMultipleChoice,
-                              questionId: q.id
-                            });
-                          }
                           
                           const handleOptionClick = () => {
                             if (isMultipleChoice) {
@@ -1596,23 +1431,16 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                                 "w-full justify-start p-4 h-auto text-left transition-all duration-300 hover:shadow-md", 
                                 // Override default button hover to prevent color conflicts
                                 "hover:bg-gray-50 hover:text-gray-900 hover:border-gray-300 dark:hover:bg-gray-800/50 dark:hover:text-gray-100 dark:hover:border-gray-600",
-                                // Apply incorrect styling first (higher priority)
-                                showAsIncorrect && "!bg-red-100 !border-red-500 dark:!bg-red-900/20 dark:!border-red-400 hover:!bg-red-200 hover:!border-red-600 dark:hover:!bg-red-900/30 dark:hover:!border-red-300",
-                                // Then apply correct styling
-                                showAsCorrect && !showAsIncorrect && "!bg-green-100 !border-green-500 dark:!bg-green-900/20 dark:!border-green-400 hover:!bg-green-200 hover:!border-green-600 dark:hover:!bg-green-900/30 dark:hover:!border-green-300",
-                                // Apply selected styling only if not showing as correct/incorrect
-                                isSelected && !showAsCorrect && !showAsIncorrect && (isMultipleChoice ? "border-purple-300 bg-purple-50 dark:bg-purple-900/20 dark:border-purple-600 hover:bg-purple-100 hover:border-purple-400 dark:hover:bg-purple-900/30 dark:hover:border-purple-500" : "border-blue-300 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-600 hover:bg-blue-100 hover:border-blue-400 dark:hover:bg-blue-900/30 dark:hover:border-blue-500")
+                                isSelected && (isMultipleChoice ? "border-purple-300 bg-purple-50 dark:bg-purple-900/20 dark:border-purple-600 hover:bg-purple-100 hover:border-purple-400 dark:hover:bg-purple-900/30 dark:hover:border-purple-500" : "border-blue-300 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-600 hover:bg-blue-100 hover:border-blue-400 dark:hover:bg-blue-900/30 dark:hover:border-blue-500"), 
+                                showAsCorrect && "bg-green-100 border-green-500 dark:bg-green-900/20 dark:border-green-400 hover:bg-green-200 hover:border-green-600 dark:hover:bg-green-900/30 dark:hover:border-green-300", 
+                                showAsIncorrect && "bg-red-100 border-red-500 dark:bg-red-900/20 dark:border-red-400 hover:bg-red-200 hover:border-red-600 dark:hover:bg-red-900/30 dark:hover:border-red-300"
                               )}
                             >
-                              <div className="flex items-start gap-3 w-full">
+                              <div className="flex items-center gap-3 w-full">
                                 {isMultipleChoice ? (
                                   // Checkbox for multiple choice
-                                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 mt-1 ${
-                                    showAsIncorrect 
-                                      ? 'bg-red-600 border-red-600'
-                                      : showAsCorrect
-                                      ? 'bg-green-600 border-green-600'
-                                      : isSelected 
+                                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                                    isSelected 
                                       ? 'bg-purple-600 border-purple-600'
                                       : 'border-gray-300 dark:border-gray-600'
                                   }`}>
@@ -1624,12 +1452,8 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                                   </div>
                                 ) : (
                                   // Radio button for single choice
-                                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-1 ${
-                                    showAsIncorrect 
-                                      ? 'bg-red-600 border-red-600'
-                                      : showAsCorrect
-                                      ? 'bg-green-600 border-green-600'
-                                      : isSelected 
+                                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                                    isSelected 
                                       ? 'bg-blue-600 border-blue-600'
                                       : 'border-gray-300 dark:border-gray-600'
                                   }`}>
@@ -1638,38 +1462,13 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                                     )}
                                   </div>
                                 )}
-                                
-                                {/* Option Content */}
-                                <div className="flex-1 space-y-2">
-                                  {/* Option Text */}
-                                  <span className="text-gray-900 dark:text-gray-100">{option.option_text}</span>
-                                  
-                                  {/* Option Image */}
-                                  {(option.option_image_display_url || option.option_image_url) && (
-                                    <div className="w-full max-w-sm">
-                                      <img 
-                                        src={option.option_image_display_url || option.option_image_url} 
-                                        alt={`Option image`}
-                                        className="w-full max-h-32 object-contain rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700"
-                                        onError={(e) => {
-                                          // Handle image loading errors
-                                          const target = e.target as HTMLImageElement;
-                                          target.style.display = 'none';
-                                        }}
-                                      />
-                                    </div>
-                                  )}
-                                </div>
-                                
-                                {/* Status Icons */}
-                                <div className="flex-shrink-0">
-                                  {hasSubmitted && option.is_correct && (
-                                    <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
-                                  )}
-                                  {hasSubmitted && showAsIncorrect && (
-                                    <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
-                                  )}
-                                </div>
+                                <span className="flex-1 text-gray-900 dark:text-gray-100">{option.option_text}</span>
+                                {hasSubmitted && option.is_correct && (
+                                  <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                                )}
+                                {hasSubmitted && showAsIncorrect && (
+                                  <XCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+                                )}
                               </div>
                             </Button>
                           )
