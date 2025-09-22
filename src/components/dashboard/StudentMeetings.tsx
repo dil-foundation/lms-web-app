@@ -14,11 +14,13 @@ import {
   AlertCircle,
   Play,
   BookOpen,
-  Timer
+  Timer,
+  RefreshCw,
+  Copy
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 import { ContentLoader } from '@/components/ContentLoader';
+import meetingService, { ZoomMeeting } from '@/services/meetingService';
 
 interface StudentMeetingsProps {
   userProfile: {
@@ -28,73 +30,71 @@ interface StudentMeetingsProps {
   };
 }
 
-interface ZoomMeeting {
-  id: string;
-  title: string;
-  description?: string;
-  meeting_type: '1-on-1' | 'class';
-  scheduled_time: string;
-  duration: number;
-  teacher_name: string;
-  course_title?: string;
-  zoom_meeting_id?: string;
-  zoom_join_url?: string;
-  status: 'scheduled' | 'active' | 'completed' | 'cancelled';
-  created_at: string;
+interface StudentMeetingStats {
+  total: number;
+  upcoming: number;
+  oneOnOne: number;
+  classMeetings: number;
 }
 
-const mockMeetings: ZoomMeeting[] = [
-  {
-    id: '1',
-    title: 'Math Tutoring Session',
-    description: 'One-on-one algebra help',
-    meeting_type: '1-on-1',
-    scheduled_time: '2024-01-20T14:00:00Z',
-    duration: 60,
-    teacher_name: 'Dr. Sarah Johnson',
-    zoom_meeting_id: '123456789',
-    zoom_join_url: 'https://zoom.us/j/123456789',
-    status: 'scheduled',
-    created_at: '2024-01-15T10:00:00Z'
-  },
-  {
-    id: '2',
-    title: 'Physics Class - Chapter 5',
-    description: 'Quantum mechanics introduction',
-    meeting_type: 'class',
-    scheduled_time: '2024-01-22T10:00:00Z',
-    duration: 90,
-    teacher_name: 'Prof. Michael Chen',
-    course_title: 'Advanced Physics',
-    zoom_meeting_id: '987654321',
-    zoom_join_url: 'https://zoom.us/j/987654321',
-    status: 'scheduled',
-    created_at: '2024-01-15T11:00:00Z'
-  },
-  {
-    id: '3',
-    title: 'Chemistry Lab Review',
-    description: 'Review of last week\'s experiments',
-    meeting_type: 'class',
-    scheduled_time: '2024-01-18T15:30:00Z',
-    duration: 45,
-    teacher_name: 'Dr. Emily Rodriguez',
-    course_title: 'Chemistry Basics',
-    zoom_meeting_id: '456789123',
-    zoom_join_url: 'https://zoom.us/j/456789123',
-    status: 'completed',
-    created_at: '2024-01-10T09:00:00Z'
-  }
-];
-
 export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
-  const [meetings, setMeetings] = useState<ZoomMeeting[]>(mockMeetings);
-  const [loading, setLoading] = useState(false);
+  const [meetings, setMeetings] = useState<ZoomMeeting[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<StudentMeetingStats>({ 
+    total: 0, 
+    upcoming: 0, 
+    oneOnOne: 0, 
+    classMeetings: 0 
+  });
+
+  // Load meetings data
+  useEffect(() => {
+    loadMeetings();
+  }, [userProfile.id]);
+
+  const loadMeetings = async () => {
+    try {
+      setLoading(true);
+      console.log('Loading student meetings for:', userProfile.id);
+      
+      const meetingsData = await meetingService.getStudentMeetings(userProfile.id);
+      console.log('Student meetings loaded:', meetingsData);
+      
+      setMeetings(meetingsData);
+      
+      // Calculate stats
+      const now = new Date();
+      const calculatedStats: StudentMeetingStats = {
+        total: meetingsData.length,
+        upcoming: meetingsData.filter(m => 
+          m.status === 'scheduled' && new Date(m.scheduled_time) > now
+        ).length,
+        oneOnOne: meetingsData.filter(m => m.meeting_type === '1-on-1').length,
+        classMeetings: meetingsData.filter(m => m.meeting_type === 'class').length
+      };
+      
+      setStats(calculatedStats);
+    } catch (error) {
+      console.error('Error loading student meetings:', error);
+      toast.error('Failed to load meetings. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleJoinMeeting = (meeting: ZoomMeeting) => {
     if (meeting.zoom_join_url) {
       window.open(meeting.zoom_join_url, '_blank');
       toast.success(`Joining ${meeting.title}...`);
+    } else {
+      toast.error('Meeting link not available');
+    }
+  };
+
+  const handleCopyMeetingLink = (meeting: ZoomMeeting) => {
+    if (meeting.zoom_join_url) {
+      navigator.clipboard.writeText(meeting.zoom_join_url);
+      toast.success('Meeting link copied to clipboard');
     } else {
       toast.error('Meeting link not available');
     }
@@ -150,19 +150,37 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
     const meetingTime = new Date(scheduledTime);
     const diffMs = meetingTime.getTime() - now.getTime();
     
-    // Allow joining 15 minutes before and up to meeting duration after
+    // Allow joining 15 minutes before and up to 2 hours after meeting start
     return diffMs <= 15 * 60 * 1000 && diffMs >= -2 * 60 * 60 * 1000;
   };
 
+  const getTeacherName = (meeting: ZoomMeeting) => {
+    // The enhanced getStudentMeetings method stores teacher name in student_name field
+    return meeting.student_name || 'Teacher';
+  };
+
+  const getCourseTitle = (meeting: ZoomMeeting) => {
+    return meeting.course_title || (meeting.meeting_type === 'class' ? 'Class Meeting' : undefined);
+  };
+
   const upcomingMeetings = meetings
-    .filter(m => m.status === 'scheduled')
+    .filter(m => m.status === 'scheduled' && new Date(m.scheduled_time) > new Date())
     .sort((a, b) => new Date(a.scheduled_time).getTime() - new Date(b.scheduled_time).getTime());
   
   const pastMeetings = meetings
-    .filter(m => m.status === 'completed' || m.status === 'cancelled')
+    .filter(m => m.status === 'completed' || m.status === 'cancelled' || 
+      (m.status === 'scheduled' && new Date(m.scheduled_time) <= new Date()))
     .sort((a, b) => new Date(b.scheduled_time).getTime() - new Date(a.scheduled_time).getTime());
 
   const nextMeeting = upcomingMeetings[0];
+
+  if (loading) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8">
+        <ContentLoader />
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
@@ -176,6 +194,10 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
             View and join your scheduled Zoom meetings
           </p>
         </div>
+        <Button variant="outline" onClick={loadMeetings} disabled={loading}>
+          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
       </div>
 
       {/* Next Meeting Alert */}
@@ -185,22 +207,33 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
           <AlertDescription className="text-blue-800 dark:text-blue-200">
             <div className="flex items-center justify-between">
               <div>
-                <strong>Next Meeting:</strong> {nextMeeting.title} with {nextMeeting.teacher_name}
+                <strong>Next Meeting:</strong> {nextMeeting.title} with {getTeacherName(nextMeeting)}
                 <br />
                 <span className="text-sm">
                   {formatDateTime(nextMeeting.scheduled_time).date} at {formatDateTime(nextMeeting.scheduled_time).time}
                   {' • '}{getTimeUntilMeeting(nextMeeting.scheduled_time)}
                 </span>
               </div>
-              {canJoinMeeting(nextMeeting.scheduled_time) && (
-                <Button
-                  onClick={() => handleJoinMeeting(nextMeeting)}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <Play className="h-4 w-4 mr-2" />
-                  Join Now
-                </Button>
-              )}
+              <div className="flex items-center gap-2">
+                {nextMeeting.zoom_join_url && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleCopyMeetingLink(nextMeeting)}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                )}
+                {canJoinMeeting(nextMeeting.scheduled_time) && (
+                  <Button
+                    onClick={() => handleJoinMeeting(nextMeeting)}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Play className="h-4 w-4 mr-2" />
+                    Join Now
+                  </Button>
+                )}
+              </div>
             </div>
           </AlertDescription>
         </Alert>
@@ -214,7 +247,7 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
             <Video className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{meetings.length}</div>
+            <div className="text-2xl font-bold">{stats.total}</div>
           </CardContent>
         </Card>
         
@@ -224,7 +257,7 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{upcomingMeetings.length}</div>
+            <div className="text-2xl font-bold text-green-600">{stats.upcoming}</div>
           </CardContent>
         </Card>
         
@@ -234,9 +267,7 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
             <User className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {meetings.filter(m => m.meeting_type === '1-on-1').length}
-            </div>
+            <div className="text-2xl font-bold">{stats.oneOnOne}</div>
           </CardContent>
         </Card>
         
@@ -246,9 +277,7 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {meetings.filter(m => m.meeting_type === 'class').length}
-            </div>
+            <div className="text-2xl font-bold">{stats.classMeetings}</div>
           </CardContent>
         </Card>
       </div>
@@ -276,6 +305,8 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
                 const { date, time } = formatDateTime(meeting.scheduled_time);
                 const timeUntil = getTimeUntilMeeting(meeting.scheduled_time);
                 const canJoin = canJoinMeeting(meeting.scheduled_time);
+                const teacherName = getTeacherName(meeting);
+                const courseTitle = getCourseTitle(meeting);
                 
                 return (
                   <div
@@ -299,8 +330,8 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
                           <div>
                             <h3 className="font-semibold">{meeting.title}</h3>
                             <p className="text-sm text-muted-foreground">
-                              with {meeting.teacher_name}
-                              {meeting.course_title && ` • ${meeting.course_title}`}
+                              with {teacherName}
+                              {courseTitle && ` • ${courseTitle}`}
                             </p>
                           </div>
                         </div>
@@ -334,6 +365,15 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
                       </div>
                       
                       <div className="flex items-center gap-2">
+                        {meeting.zoom_join_url && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleCopyMeetingLink(meeting)}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        )}
                         {canJoin ? (
                           <Button
                             onClick={() => handleJoinMeeting(meeting)}
@@ -379,6 +419,8 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
             <div className="space-y-3">
               {pastMeetings.slice(0, 5).map((meeting) => {
                 const { date, time } = formatDateTime(meeting.scheduled_time);
+                const teacherName = getTeacherName(meeting);
+                const courseTitle = getCourseTitle(meeting);
                 
                 return (
                   <div
@@ -396,8 +438,8 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
                       <div>
                         <h4 className="font-medium">{meeting.title}</h4>
                         <p className="text-sm text-muted-foreground">
-                          {meeting.teacher_name} • {date} at {time}
-                          {meeting.course_title && ` • ${meeting.course_title}`}
+                          {teacherName} • {date} at {time}
+                          {courseTitle && ` • ${courseTitle}`}
                         </p>
                       </div>
                     </div>
@@ -417,7 +459,7 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
               {pastMeetings.length > 5 && (
                 <div className="text-center pt-4">
                   <Button variant="outline" size="sm">
-                    View All Past Meetings
+                    View All Past Meetings ({pastMeetings.length - 5} more)
                   </Button>
                 </div>
               )}

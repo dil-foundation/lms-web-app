@@ -1,11 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { 
@@ -15,9 +13,11 @@ import {
   XCircle, 
   AlertTriangle,
   Video,
-  CreditCard
+  CreditCard,
+  Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { integrationService, type Integration, type IntegrationStats } from '@/services/integrationService';
 
 interface IntegrationAPIsProps {
   userProfile: {
@@ -28,55 +28,40 @@ interface IntegrationAPIsProps {
   };
 }
 
-interface Integration {
-  id: string;
-  name: string;
+interface IntegrationDisplay extends Integration {
   description: string;
   icon: React.ElementType;
   category: 'Communication' | 'Payment' | 'Productivity';
-  status: 'enabled' | 'disabled' | 'error';
-  isConfigured: boolean;
-  lastSync?: string;
-  version?: string;
-  settings?: {
-    apiKey?: string;
-    webhookUrl?: string;
-    [key: string]: any;
-  };
 }
 
-const mockIntegrations: Integration[] = [
-  {
-    id: 'zoom',
-    name: 'Zoom',
-    description: 'Video conferencing and virtual classroom integration',
-    icon: Video,
-    category: 'Communication',
-    status: 'enabled',
-    isConfigured: true,
-    lastSync: '2024-01-15T10:30:00Z',
-    version: 'v5.17.0',
-    settings: {
-      apiKey: '****-****-****-1234',
-      webhookUrl: 'https://your-domain.com/webhooks/zoom'
+// Helper function to get integration display data
+const getIntegrationDisplayData = (integration: Integration): IntegrationDisplay => {
+  const displayData: Record<string, { description: string; icon: React.ElementType; category: 'Communication' | 'Payment' | 'Productivity' }> = {
+    'Zoom': {
+      description: 'Video conferencing and virtual classroom integration',
+      icon: Video,
+      category: 'Communication'
+    },
+    'Stripe': {
+      description: 'Payment processing for course enrollments and subscriptions',
+      icon: CreditCard,
+      category: 'Payment'
     }
-  },
-  {
-    id: 'stripe',
-    name: 'Stripe',
-    description: 'Payment processing for course enrollments and subscriptions',
-    icon: CreditCard,
-    category: 'Payment',
-    status: 'enabled',
-    isConfigured: true,
-    lastSync: '2024-01-15T09:15:00Z',
-    version: 'v2023-10-16',
-    settings: {
-      apiKey: '****-****-****-5678',
-      webhookUrl: 'https://your-domain.com/webhooks/stripe'
-    }
-  }
-];
+  };
+
+  const defaultData = {
+    description: 'External service integration',
+    icon: Plug,
+    category: 'Productivity' as const
+  };
+
+  const data = displayData[integration.name] || defaultData;
+  
+  return {
+    ...integration,
+    ...data
+  };
+};
 
 const getStatusColor = (status: Integration['status']) => {
   switch (status) {
@@ -105,10 +90,10 @@ const getStatusIcon = (status: Integration['status']) => {
 };
 
 export const IntegrationAPIs = ({ userProfile }: IntegrationAPIsProps) => {
-  const [integrations, setIntegrations] = useState<Integration[]>(mockIntegrations);
+  const [integrations, setIntegrations] = useState<IntegrationDisplay[]>([]);
+  const [stats, setStats] = useState<IntegrationStats>({ total: 0, active: 0, configured: 0, errors: 0 });
+  const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [configureIntegration, setConfigureIntegration] = useState<Integration | null>(null);
-  const [configForm, setConfigForm] = useState<Record<string, string>>({});
 
   const categories = ['all', 'Communication', 'Payment'];
   
@@ -116,46 +101,90 @@ export const IntegrationAPIs = ({ userProfile }: IntegrationAPIsProps) => {
     ? integrations 
     : integrations.filter(integration => integration.category === selectedCategory);
 
-  const handleToggleIntegration = (integrationId: string) => {
-    setIntegrations(prev => prev.map(integration => {
-      if (integration.id === integrationId) {
-        const newStatus = integration.status === 'enabled' ? 'disabled' : 'enabled';
-        toast.success(`${integration.name} ${newStatus === 'enabled' ? 'enabled' : 'disabled'} successfully`);
-        return { ...integration, status: newStatus };
+  // Load integrations on component mount
+  useEffect(() => {
+    const loadIntegrations = async () => {
+      try {
+        setLoading(true);
+        
+        // Load integrations and stats first
+        const [integrationsData, statsData] = await Promise.all([
+          integrationService.getIntegrations(),
+          integrationService.getIntegrationStats()
+        ]);
+        
+        // If no integrations exist, initialize defaults
+        if (integrationsData.length === 0) {
+          await integrationService.initializeDefaultIntegrations();
+          
+          // Reload after initialization
+          const [newIntegrationsData, newStatsData] = await Promise.all([
+            integrationService.getIntegrations(),
+            integrationService.getIntegrationStats()
+          ]);
+          
+          const displayIntegrations = newIntegrationsData.map(getIntegrationDisplayData);
+          setIntegrations(displayIntegrations);
+          setStats(newStatsData);
+        } else {
+          // Map to display format
+          const displayIntegrations = integrationsData.map(getIntegrationDisplayData);
+          setIntegrations(displayIntegrations);
+          setStats(statsData);
+        }
+      } catch (error) {
+        console.error('Error loading integrations:', error);
+        toast.error('Failed to load integrations');
+      } finally {
+        setLoading(false);
       }
-      return integration;
-    }));
+    };
+
+    loadIntegrations();
+  }, []);
+
+  const handleToggleIntegration = async (integrationId: string) => {
+    const integration = integrations.find(i => i.id === integrationId);
+    if (!integration) return;
+
+    const newStatus = integration.status === 'enabled' ? 'disabled' : 'enabled';
+    
+    try {
+      await integrationService.updateIntegrationStatus(integrationId, newStatus);
+      
+      setIntegrations(prev => prev.map(integration => {
+        if (integration.id === integrationId) {
+          return { ...integration, status: newStatus };
+        }
+        return integration;
+      }));
+      
+      // Update stats
+      const updatedStats = await integrationService.getIntegrationStats();
+      setStats(updatedStats);
+      
+      toast.success(`${integration.name} ${newStatus === 'enabled' ? 'enabled' : 'disabled'} successfully`);
+    } catch (error) {
+      console.error('Error toggling integration:', error);
+      toast.error('Failed to update integration status');
+    }
   };
 
-  const handleConfigureIntegration = (integration: Integration) => {
-    setConfigureIntegration(integration);
-    setConfigForm(integration.settings || {});
-  };
 
-  const handleSaveConfiguration = () => {
-    if (!configureIntegration) return;
-
-    setIntegrations(prev => prev.map(integration => {
-      if (integration.id === configureIntegration.id) {
-        return {
-          ...integration,
-          settings: configForm,
-          isConfigured: Object.keys(configForm).length > 0,
-          lastSync: new Date().toISOString()
-        };
-      }
-      return integration;
-    }));
-
-    toast.success(`${configureIntegration.name} configuration saved successfully`);
-    setConfigureIntegration(null);
-    setConfigForm({});
-  };
-
-  const formatLastSync = (lastSync?: string) => {
+  const formatLastSync = (lastSync?: string | null) => {
     if (!lastSync) return 'Never';
     return new Date(lastSync).toLocaleString();
   };
+
+  if (loading) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
@@ -179,7 +208,7 @@ export const IntegrationAPIs = ({ userProfile }: IntegrationAPIsProps) => {
             <Plug className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{integrations.length}</div>
+            <div className="text-2xl font-bold">{stats.total}</div>
           </CardContent>
         </Card>
         
@@ -190,7 +219,7 @@ export const IntegrationAPIs = ({ userProfile }: IntegrationAPIsProps) => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {integrations.filter(i => i.status === 'enabled').length}
+              {stats.active}
             </div>
           </CardContent>
         </Card>
@@ -202,7 +231,7 @@ export const IntegrationAPIs = ({ userProfile }: IntegrationAPIsProps) => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {integrations.filter(i => i.isConfigured).length}
+              {stats.configured}
             </div>
           </CardContent>
         </Card>
@@ -214,7 +243,7 @@ export const IntegrationAPIs = ({ userProfile }: IntegrationAPIsProps) => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
-              {integrations.filter(i => i.status === 'error').length}
+              {stats.errors}
             </div>
           </CardContent>
         </Card>
@@ -288,165 +317,32 @@ export const IntegrationAPIs = ({ userProfile }: IntegrationAPIsProps) => {
                   )}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Last Sync:</span>
-                    <span>{formatLastSync(integration.lastSync)}</span>
+                    <span>{formatLastSync(integration.last_sync)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Configured:</span>
-                    <span>{integration.isConfigured ? 'Yes' : 'No'}</span>
+                    <span>{integration.is_configured ? 'Yes' : 'No'}</span>
                   </div>
                 </div>
                 
                 <Separator />
                 
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-center">
                   <div className="flex items-center space-x-2">
                     <Switch
                       checked={integration.status === 'enabled'}
                       onCheckedChange={() => handleToggleIntegration(integration.id)}
-                      disabled={!integration.isConfigured}
                     />
                     <Label className="text-sm">
                       {integration.status === 'enabled' ? 'Enabled' : 'Disabled'}
                     </Label>
                   </div>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleConfigureIntegration(integration)}
-                  >
-                    <Settings className="h-4 w-4 mr-1" />
-                    Configure
-                  </Button>
                 </div>
               </CardContent>
             </Card>
           );
         })}
       </div>
-
-      {/* Configuration Dialog */}
-      <Dialog open={!!configureIntegration} onOpenChange={() => setConfigureIntegration(null)}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center space-x-2">
-              {configureIntegration && (
-                <>
-                  <configureIntegration.icon className="h-5 w-5" />
-                  <span>Configure {configureIntegration.name}</span>
-                </>
-              )}
-            </DialogTitle>
-            <DialogDescription>
-              Set up your {configureIntegration?.name} integration settings.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            {configureIntegration?.id === 'zoom' && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="apiKey">API Key</Label>
-                  <Input
-                    id="apiKey"
-                    placeholder="Enter your Zoom API key"
-                    value={configForm.apiKey || ''}
-                    onChange={(e) => setConfigForm(prev => ({ ...prev, apiKey: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="webhookUrl">Webhook URL</Label>
-                  <Input
-                    id="webhookUrl"
-                    placeholder="https://your-domain.com/webhooks/zoom"
-                    value={configForm.webhookUrl || ''}
-                    onChange={(e) => setConfigForm(prev => ({ ...prev, webhookUrl: e.target.value }))}
-                  />
-                </div>
-              </>
-            )}
-            
-            {configureIntegration?.id === 'stripe' && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="apiKey">Secret Key</Label>
-                  <Input
-                    id="apiKey"
-                    type="password"
-                    placeholder="sk_test_..."
-                    value={configForm.apiKey || ''}
-                    onChange={(e) => setConfigForm(prev => ({ ...prev, apiKey: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="webhookUrl">Webhook Endpoint</Label>
-                  <Input
-                    id="webhookUrl"
-                    placeholder="https://your-domain.com/webhooks/stripe"
-                    value={configForm.webhookUrl || ''}
-                    onChange={(e) => setConfigForm(prev => ({ ...prev, webhookUrl: e.target.value }))}
-                  />
-                </div>
-              </>
-            )}
-            
-            {configureIntegration?.id === 'google-classroom' && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="apiKey">Google API Key</Label>
-                  <Input
-                    id="apiKey"
-                    placeholder="Enter your Google Classroom API key"
-                    value={configForm.apiKey || ''}
-                    onChange={(e) => setConfigForm(prev => ({ ...prev, apiKey: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="clientId">Client ID</Label>
-                  <Input
-                    id="clientId"
-                    placeholder="Enter your Google OAuth Client ID"
-                    value={configForm.clientId || ''}
-                    onChange={(e) => setConfigForm(prev => ({ ...prev, clientId: e.target.value }))}
-                  />
-                </div>
-              </>
-            )}
-            
-            {configureIntegration && ['canvas-lti', 'moodle'].includes(configureIntegration.id) && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="apiKey">API Key</Label>
-                  <Input
-                    id="apiKey"
-                    placeholder={`Enter your ${configureIntegration.name} API key`}
-                    value={configForm.apiKey || ''}
-                    onChange={(e) => setConfigForm(prev => ({ ...prev, apiKey: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="baseUrl">Base URL</Label>
-                  <Input
-                    id="baseUrl"
-                    placeholder={`https://your-${configureIntegration.id}.com`}
-                    value={configForm.baseUrl || ''}
-                    onChange={(e) => setConfigForm(prev => ({ ...prev, baseUrl: e.target.value }))}
-                  />
-                </div>
-              </>
-            )}
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfigureIntegration(null)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSaveConfiguration}>
-              Save Configuration
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
