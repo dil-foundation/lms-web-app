@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Loader2, Wand2, RefreshCw, Eye, Download, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { aiThumbnailService, CourseThumbnailRequest } from '@/services/aiThumbnailService';
@@ -14,6 +15,7 @@ interface AIThumbnailGeneratorProps {
   courseTitle: string;
   courseDescription?: string;
   currentThumbnail?: string;
+  courseStatus?: string;
   onThumbnailGenerated: (imageUrl: string) => void;
   className?: string;
 }
@@ -23,6 +25,7 @@ export const AIThumbnailGenerator: React.FC<AIThumbnailGeneratorProps> = ({
   courseTitle,
   courseDescription,
   currentThumbnail,
+  courseStatus,
   onThumbnailGenerated,
   className
 }) => {
@@ -32,6 +35,31 @@ export const AIThumbnailGenerator: React.FC<AIThumbnailGeneratorProps> = ({
   const [selectedStyle, setSelectedStyle] = useState<'academic' | 'modern' | 'minimal' | 'illustrative' | 'photographic'>('academic');
   const [customPrompt, setCustomPrompt] = useState('');
   const [showPreview, setShowPreview] = useState(false);
+
+  // Validation function to check if thumbnail generation is allowed
+  const isThumbnailGenerationAllowed = () => {
+    const hasTitle = courseTitle && courseTitle.trim().length > 0;
+    const hasDescription = courseDescription && courseDescription.trim().length > 0;
+    const hasCourseId = courseId && courseId.trim().length > 0;
+    const isDraft = courseStatus === 'Draft';
+    return hasTitle && hasDescription && hasCourseId && isDraft;
+  };
+
+  const getDisabledReason = () => {
+    if (!courseTitle || courseTitle.trim().length === 0) {
+      return 'Course title is required to generate a thumbnail';
+    }
+    if (!courseDescription || courseDescription.trim().length === 0) {
+      return 'Course description is required to generate a thumbnail';
+    }
+    if (!courseId || courseId.trim().length === 0) {
+      return 'Course must be saved as draft first to generate a thumbnail';
+    }
+    if (courseStatus !== 'Draft') {
+      return 'Course must be in draft status to generate a thumbnail';
+    }
+    return '';
+  };
 
   const handleGenerateThumbnail = async () => {
     setIsGenerating(true);
@@ -222,28 +250,46 @@ export const AIThumbnailGenerator: React.FC<AIThumbnailGeneratorProps> = ({
             <Badge variant="outline">
               Style: {selectedStyle}
             </Badge>
+            {courseStatus && courseStatus !== 'Draft' && (
+              <Badge 
+                variant="destructive"
+              >
+                Status: {courseStatus}
+              </Badge>
+            )}
           </div>
         </div>
 
         {/* Action Buttons */}
         <div className="flex gap-2">
-          <Button
-            onClick={handleGenerateThumbnail}
-            disabled={isGenerating || isRegenerating}
-            className="flex-1"
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              <>
-                <Wand2 className="w-4 h-4 mr-2" />
-                Generate Thumbnail
-              </>
-            )}
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={handleGenerateThumbnail}
+                  disabled={isGenerating || isRegenerating || !isThumbnailGenerationAllowed()}
+                  className="flex-1"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="w-4 h-4 mr-2" />
+                      Generate Thumbnail
+                    </>
+                  )}
+                </Button>
+              </TooltipTrigger>
+              {!isThumbnailGenerationAllowed() && (
+                <TooltipContent>
+                  <p>{getDisabledReason()}</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
           
           {generatedThumbnail && (
             <Button
@@ -259,6 +305,25 @@ export const AIThumbnailGenerator: React.FC<AIThumbnailGeneratorProps> = ({
             </Button>
           )}
         </div>
+
+        {/* Validation Message */}
+        {!isThumbnailGenerationAllowed() && (
+          <div className="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
+            <p className="font-medium">⚠️ Requirements not met:</p>
+            <p className="text-xs mt-1">{getDisabledReason()}</p>
+            {(!courseId || courseId.trim().length === 0 || !courseDescription || courseDescription.trim().length === 0) && (
+              <div className="mt-2 text-xs">
+                <p className="font-medium">To enable AI thumbnail generation:</p>
+                <ol className="list-decimal list-inside mt-1 space-y-1">
+                  <li>Fill in the course title</li>
+                  <li>Add a course description</li>
+                  <li>Click "Save as Draft" to create the course</li>
+                  <li>Return to this tab to generate thumbnail</li>
+                </ol>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Info Text */}
         <div className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">

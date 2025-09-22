@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Save, Eye, Upload, Plus, GripVertical, X, ChevronDown, ChevronUp, BookOpen, Info, UploadCloud, FileText, RefreshCw, Calendar, Edit, Sparkles } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Upload, Plus, GripVertical, X, ChevronDown, ChevronUp, BookOpen, Info, UploadCloud, FileText, RefreshCw, Calendar, Edit, Sparkles, Image as ImageIcon, Trash2 } from 'lucide-react';
 import { AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { FileUpload } from '@/components/ui/FileUpload';
@@ -117,6 +117,8 @@ interface QuizQuestion {
   math_tolerance?: number;
   math_hint?: string;
   math_allow_drawing?: boolean;
+  // Image field for question
+  image_url?: string;
 }
 
 interface QuestionOption {
@@ -124,8 +126,6 @@ interface QuestionOption {
   option_text: string;
   is_correct: boolean;
   position: number;
-  option_image_url?: string; // File path in Supabase storage
-  option_image_display_url?: string; // Signed URL for display (temporary)
 }
 
 interface CourseData {
@@ -801,6 +801,7 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
           </div>
         );
       case 'quiz':
+        console.log('🎯 COURSEBUILDER: Rendering quiz content item:', item.id, 'with retry_settings:', item.retry_settings);
         return (
           <div className="space-y-4">
             <div>
@@ -860,12 +861,14 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
             {/* Quiz Retry Settings */}
             <div className="mt-6">
               {(() => {
+                console.log('🎯 COURSEBUILDER: Rendering QuizRetrySettings for item:', item.id, 'with retry_settings:', item.retry_settings);
                 return null;
               })()}
               <QuizRetrySettings
                 lessonContentId={item.id}
                 courseStatus={courseStatus}
                 onSettingsChange={(settings) => {
+                  console.log('🔄 COURSEBUILDER: QuizRetrySettings onSettingsChange called with:', settings);
                   onUpdate(lessonId, item.id, { retry_settings: settings } as any);
                 }}
               />
@@ -1240,66 +1243,77 @@ SortableContentItemComponent.displayName = "SortableContentItemComponent";
 // #endregion
 
 // #region QuizBuilder Component
-  const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (quiz: QuizData) => void }) => {
+// Component for displaying quiz question images with signed URL
+const QuizQuestionImage = ({ imageUrl, onClick }: { imageUrl: string, onClick: () => void }) => {
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadSignedUrl = async () => {
+      if (imageUrl.startsWith('http')) {
+        // Already a signed URL
+        setSignedUrl(imageUrl);
+        setLoading(false);
+      } else {
+        // It's a file path, create signed URL
+        try {
+          const { data, error } = await supabase.storage
+            .from('dil-lms')
+            .createSignedUrl(imageUrl, 3600); // 1 hour expiry
+          
+          if (error) {
+            console.error('Error creating signed URL:', error);
+            setLoading(false);
+            return;
+          }
+          
+          setSignedUrl(data.signedUrl);
+        } catch (error) {
+          console.error('Error creating signed URL:', error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadSignedUrl();
+  }, [imageUrl]);
+
+  if (loading) {
+    return (
+      <div className="relative w-8 h-8 rounded-md overflow-hidden border border-purple-200 dark:border-purple-700 bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+        <div className="w-3 h-3 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (!signedUrl) {
+    return (
+      <div className="relative w-8 h-8 rounded-md overflow-hidden border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
+        <X className="w-3 h-3 text-red-500" />
+      </div>
+    );
+  }
+
+  return (
+    <div 
+      className="relative w-8 h-8 rounded-md overflow-hidden border border-purple-200 dark:border-purple-700 cursor-pointer hover:border-purple-400 dark:hover:border-purple-500 transition-colors"
+      onClick={onClick}
+    >
+      <img 
+        src={signedUrl} 
+        alt="Question image" 
+        className="w-full h-full object-cover"
+      />
+    </div>
+  );
+};
+
+const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (quiz: QuizData) => void }) => {
   const [showPDFUploader, setShowPDFUploader] = useState(false);
-  const [imagesProcessed, setImagesProcessed] = useState(false);
-  
-  
-  // Generate signed URLs for existing images
-  const generateSignedUrlsForImages = async (quizData: QuizData) => {
-    
-    const updatedQuestions = await Promise.all(
-      quizData.questions.map(async (question) => {
-        
-        const updatedOptions = await Promise.all(
-          question.options.map(async (option) => {
-            
-            if (option.option_image_url && !option.option_image_display_url) {
-              try {
-                const { data: signedUrlData, error } = await supabase.storage
-                  .from('dil-lms')
-                  .createSignedUrl(option.option_image_url, 3600 * 24 * 7); // 7 days
-                
-                if (!error && signedUrlData) {
-                  return { ...option, option_image_display_url: signedUrlData.signedUrl };
-                } else {
-                  console.error('🖼️ Error generating signed URL:', error);
-                }
-              } catch (error) {
-                console.error('🖼️ Exception generating signed URL:', error);
-              }
-            }
-            return option;
-          })
-        );
-        return { ...question, options: updatedOptions };
-      })
-    );
-    
-    return { ...quizData, questions: updatedQuestions };
-  };
-
-  // Generate signed URLs when quiz is loaded
-  useEffect(() => {
-    const hasImagesWithoutDisplayUrls = quiz.questions.some(q => 
-      q.options.some(opt => opt.option_image_url && !opt.option_image_display_url)
-    );
-    
-    
-    if (hasImagesWithoutDisplayUrls && !imagesProcessed) {
-      generateSignedUrlsForImages(quiz).then(updatedQuiz => {
-        onQuizChange(updatedQuiz);
-        setImagesProcessed(true);
-      });
-    } else if (!hasImagesWithoutDisplayUrls) {
-      setImagesProcessed(true);
-    }
-  }, [quiz.id, quiz.questions.length, imagesProcessed]); // Run when quiz ID changes (new quiz loaded) or questions length changes
-
-  // Reset imagesProcessed when quiz changes
-  useEffect(() => {
-    setImagesProcessed(false);
-  }, [quiz.id]);
+  const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string>('');
+  const [imageLoading, setImageLoading] = useState(false);
   
   const addQuestion = () => {
     const newQuestion: QuizQuestion = {
@@ -1446,150 +1460,84 @@ SortableContentItemComponent.displayName = "SortableContentItemComponent";
     onQuizChange({ ...quiz, questions: updatedQuestions });
   };
 
-  // Image validation and resizing utility
-  const validateAndResizeImage = (file: File): Promise<File> => {
-    return new Promise((resolve, reject) => {
-      // Validate file type
-      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-      if (!allowedTypes.includes(file.type)) {
-        reject(new Error('Only JPEG, PNG, and WebP images are allowed'));
-        return;
-      }
-
-      // Validate file size (2MB max)
-      const maxSize = 2 * 1024 * 1024; // 2MB
-      if (file.size > maxSize) {
-        reject(new Error('Image size must be less than 2MB'));
-        return;
-      }
-
-      // Create image element
-      const img = new Image();
-      img.onload = () => {
-        // Target dimensions (400x300 for optimal display)
-        const targetWidth = 400;
-        const targetHeight = 300;
-        
-        // Calculate new dimensions maintaining aspect ratio
-        let { width, height } = img;
-        const aspectRatio = width / height;
-        
-        if (width > targetWidth || height > targetHeight) {
-          if (aspectRatio > targetWidth / targetHeight) {
-            width = targetWidth;
-            height = targetWidth / aspectRatio;
-          } else {
-            height = targetHeight;
-            width = targetHeight * aspectRatio;
-          }
-        }
-
-        // Create canvas and resize
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          reject(new Error('Failed to create canvas context'));
-          return;
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-
-        // Draw resized image
-        ctx.drawImage(img, 0, 0, width, height);
-
-        // Convert to JPEG with 85% quality
-        canvas.toBlob((blob) => {
-          if (!blob) {
-            reject(new Error('Failed to convert image'));
-            return;
-          }
-
-          // Create new file with JPEG extension
-          const fileName = file.name.replace(/\.[^/.]+$/, '.jpg');
-          const resizedFile = new File([blob], fileName, { 
-            type: 'image/jpeg',
-            lastModified: Date.now()
-          });
-
-          resolve(resizedFile);
-        }, 'image/jpeg', 0.85);
-      };
-
-      img.onerror = () => {
-        reject(new Error('Invalid image file'));
-      };
-
-      img.src = URL.createObjectURL(file);
-    });
-  };
-
-  const handleOptionImageUpload = async (qIndex: number, oIndex: number, file: File) => {
-    
-    if (!file) return;
-    
+  const handleImageUpload = async (qIndex: number, file: File) => {
     try {
-      // Show loading state
-      toast.loading('Processing and uploading image...', { id: 'image-upload' });
-      
-      // Validate and resize image
-      const resizedFile = await validateAndResizeImage(file);
-      
-      // Generate file path with JPEG extension
-      const filePath = `quiz-options/${Date.now()}/${crypto.randomUUID()}/${resizedFile.name}`;
-      
+      // Create a unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `quiz-question-${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `quiz-images/${fileName}`;
+
       // Upload to Supabase storage
-      const { error } = await supabase.storage.from('dil-lms').upload(filePath, resizedFile);
-      if (error) throw error;
-      
-      // Generate signed URL
-      const { data: signedUrlData, error: urlError } = await supabase.storage
+      const { data, error } = await supabase.storage
         .from('dil-lms')
-        .createSignedUrl(filePath, 3600 * 24 * 7); // 7 days
-      
-      if (urlError) throw urlError;
-      
-      // Update quiz state
-      const updatedQuestions = quiz.questions.map((q, i) => {
-        if (i === qIndex) {
-          const updatedOptions = q.options.map((opt, optIndex) => 
-            optIndex === oIndex ? { 
-              ...opt, 
-              option_image_url: filePath,
-              option_image_display_url: signedUrlData.signedUrl 
-            } : opt
-          );
-          return { ...q, options: updatedOptions };
-        }
-        return q;
-      });
-      
+        .upload(filePath, file);
+
+      if (error) {
+        toast.error('Failed to upload image');
+        return;
+      }
+
+      // Store the file path instead of public URL for later signed URL generation
+      // Update the question with the file path
+      const updatedQuestions = quiz.questions.map((q, i) => 
+        i === qIndex ? { ...q, image_url: filePath } : q
+      );
       onQuizChange({ ...quiz, questions: updatedQuestions });
-      
-      // Success toast
-      toast.success('Image uploaded successfully!', { id: 'image-upload' });
-    } catch (error: any) {
-      console.error('🖼️ Error uploading image:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to upload image';
-      toast.error(errorMessage, { id: 'image-upload' });
+
+      toast.success('Image uploaded successfully');
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error('Failed to upload image');
     }
   };
 
-  const removeOptionImage = (qIndex: number, oIndex: number) => {
-    const updatedQuestions = quiz.questions.map((q, i) => {
-      if (i === qIndex) {
-        const updatedOptions = q.options.map((opt, optIndex) => 
-          optIndex === oIndex ? { 
-            ...opt, 
-            option_image_url: undefined,
-            option_image_display_url: undefined 
-          } : opt
-        );
-        return { ...q, options: updatedOptions };
-      }
-      return q;
-    });
+  const removeImage = (qIndex: number) => {
+    const updatedQuestions = quiz.questions.map((q, i) => 
+      i === qIndex ? { ...q, image_url: undefined } : q
+    );
     onQuizChange({ ...quiz, questions: updatedQuestions });
+    toast.success('Image removed');
+  };
+
+  const getSignedImageUrl = async (filePath: string): Promise<string | null> => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('dil-lms')
+        .createSignedUrl(filePath, 3600); // 1 hour expiry
+      
+      if (error) {
+        console.error('Error creating signed URL:', error);
+        return null;
+      }
+      
+      return data.signedUrl;
+    } catch (error) {
+      console.error('Error creating signed URL:', error);
+      return null;
+    }
+  };
+
+  const openImageModal = async (imageUrl: string) => {
+    setImageLoading(true);
+    setImageModalOpen(true);
+    setSelectedImageUrl(''); // Clear previous image
+    
+    // Check if it's already a signed URL or if we need to create one
+    let signedUrl = imageUrl;
+    if (!imageUrl.startsWith('http')) {
+      // It's a file path, create signed URL
+      const url = await getSignedImageUrl(imageUrl);
+      if (url) {
+        signedUrl = url;
+      } else {
+        toast.error('Failed to load image');
+        setImageLoading(false);
+        setImageModalOpen(false);
+        return;
+      }
+    }
+    setSelectedImageUrl(signedUrl);
+    setImageLoading(false);
   };
   
   return (
@@ -1735,6 +1683,51 @@ SortableContentItemComponent.displayName = "SortableContentItemComponent";
               >
                 {question.question_type === 'single_choice' ? 'Single Choice' : question.question_type === 'multiple_choice' ? 'Multiple Choice' : question.question_type === 'math_expression' ? 'Math Expression' : 'Text Answer'}
               </Badge>
+              
+              {/* Compact Image Upload Button */}
+              {question.image_url ? (
+                <div className="flex items-center gap-2">
+                  <QuizQuestionImage 
+                    imageUrl={question.image_url}
+                    onClick={() => openImageModal(question.image_url!)}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeImage(qIndex)}
+                    className="h-6 w-6 p-0 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
+                </div>
+              ) : (
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file && file.size <= 5 * 1024 * 1024) {
+                        handleImageUpload(qIndex, file);
+                      } else if (file) {
+                        toast.error('File size must be less than 5MB');
+                      }
+                    }}
+                    className="hidden"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-6 px-2 text-xs border-purple-200 dark:border-purple-700 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                    asChild
+                  >
+                    <span>
+                      <ImageIcon className="w-3 h-3 mr-1" />
+                      Image
+                    </span>
+                  </Button>
+                </label>
+              )}
             </div>
           </CardHeader>
           <CardContent className="p-6 space-y-4">
@@ -1834,89 +1827,35 @@ SortableContentItemComponent.displayName = "SortableContentItemComponent";
             ) : (
               <>
                 {question.options.map((option, oIndex) => (
-                  <div key={option.id} className="p-4 bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 rounded-xl border border-gray-200/50 dark:border-gray-600/30 hover:border-gray-300 dark:hover:border-gray-500 transition-all duration-300">
-                    <div className="flex items-start gap-3">
-                      {/* Option Content */}
-                      <div className="flex-1 space-y-3">
-                        {/* Text Input */}
-                        <Input
-                          value={option.option_text}
-                          onChange={(e) => updateOption(qIndex, oIndex, e.target.value)}
-                          placeholder={`Option ${oIndex + 1}`}
-                          className="w-full border-0 bg-white/60 dark:bg-gray-800/60 rounded-xl px-4 py-3 focus-visible:ring-2 focus-visible:ring-purple-500/20 placeholder:text-gray-500 dark:placeholder:text-gray-400 [&]:text-gray-900 [&]:dark:text-white"
-                        />
-                        
-                        {/* Image Upload/Display */}
-                        <div className="space-y-2">
-                          {option.option_image_display_url ? (
-                            <div className="relative group">
-                              <div className="relative w-full max-w-md mx-auto">
-                                <img 
-                                  src={option.option_image_display_url} 
-                                  alt={`Option ${oIndex + 1} image`}
-                                  className="w-full max-h-48 object-contain rounded-lg border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700"
-                                />
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => removeOptionImage(qIndex, oIndex)}
-                                  className="absolute top-2 right-2 h-8 w-8 bg-red-500/80 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                                >
-                                  <X className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          ) : (
-                            <div
-                              className="w-full max-w-md mx-auto text-center p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:border-purple-400 dark:hover:border-purple-500 transition-colors duration-200"
-                              onClick={() => {
-                                const input = document.createElement('input');
-                                input.type = 'file';
-                                input.accept = 'image/jpeg,image/jpg,image/png,image/webp';
-                                input.onchange = (e) => {
-                                  const file = (e.target as HTMLInputElement).files?.[0];
-                                  if (file) {
-                                    handleOptionImageUpload(qIndex, oIndex, file);
-                                  }
-                                };
-                                input.click();
-                              }}
-                            >
-                              <div className="flex flex-col items-center gap-2 text-gray-500 dark:text-gray-400">
-                                <UploadCloud className="h-6 w-6" />
-                                <span className="text-sm">Add Image (Optional)</span>
-                                <span className="text-xs">Click to upload</span>
-                                <span className="text-xs text-gray-400">Max 2MB • Auto-resized to 400x300px</span>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Action Buttons */}
-                      <div className="flex flex-col gap-2">
-                        <Button
-                          variant={option.is_correct ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setCorrectOption(qIndex, option.id)}
-                          className={`h-9 px-4 rounded-xl transition-all duration-300 hover:scale-105 ${
-                            option.is_correct 
-                              ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg' 
-                              : 'border-green-300 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'
-                          }`}
-                        >
-                          {option.is_correct ? '✓ Correct' : question.question_type === 'multiple_choice' ? 'Add Correct' : 'Mark Correct'}
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => removeOption(qIndex, oIndex)}
-                          className="h-9 w-9 hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 rounded-xl transition-all duration-300 hover:scale-105"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
+                  <div key={option.id} className="flex items-center gap-3 p-4 bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50 rounded-xl border border-gray-200/50 dark:border-gray-600/30 hover:border-gray-300 dark:hover:border-gray-500 transition-all duration-300">
+                    <div className="flex-1 text-gray-900 dark:text-white">
+                    <Input
+                      value={option.option_text}
+                      onChange={(e) => updateOption(qIndex, oIndex, e.target.value)}
+                      placeholder={`Option ${oIndex + 1}`}
+                        className="w-full border-0 bg-white/60 dark:bg-gray-800/60 rounded-xl px-4 py-3 focus-visible:ring-2 focus-visible:ring-purple-500/20 placeholder:text-gray-500 dark:placeholder:text-gray-400 [&]:text-gray-900 [&]:dark:text-white"
+                    />
                     </div>
+                    <Button
+                      variant={option.is_correct ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setCorrectOption(qIndex, option.id)}
+                      className={`h-9 px-4 rounded-xl transition-all duration-300 hover:scale-105 ${
+                        option.is_correct 
+                          ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg' 
+                          : 'border-green-300 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'
+                      }`}
+                    >
+                      {option.is_correct ? '✓ Correct' : question.question_type === 'multiple_choice' ? 'Add Correct' : 'Mark Correct'}
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => removeOption(qIndex, oIndex)}
+                      className="h-9 w-9 hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 rounded-xl transition-all duration-300 hover:scale-105"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
                   </div>
                 ))}
                 <Button 
@@ -1962,6 +1901,53 @@ SortableContentItemComponent.displayName = "SortableContentItemComponent";
           </Dialog>
         </div>
       ) : null}
+      
+      {/* Image Modal */}
+      <Dialog open={imageModalOpen} onOpenChange={(open) => {
+        setImageModalOpen(open);
+        if (!open) {
+          setImageLoading(false);
+          setSelectedImageUrl('');
+        }
+      }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Question Image</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-center p-4 min-h-[400px]">
+            {imageLoading ? (
+              <div className="flex flex-col items-center justify-center space-y-4">
+                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                <div className="text-center">
+                  <p className="text-lg font-medium text-foreground">Loading Image</p>
+                  <p className="text-sm text-muted-foreground">Please wait while we prepare the image...</p>
+                </div>
+              </div>
+            ) : selectedImageUrl ? (
+              <img 
+                src={selectedImageUrl} 
+                alt="Question image preview" 
+                className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg transition-opacity duration-300"
+                onLoad={() => setImageLoading(false)}
+                onError={() => {
+                  setImageLoading(false);
+                  toast.error('Failed to load image');
+                }}
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center space-y-4">
+                <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
+                  <ImageIcon className="w-8 h-8 text-red-500" />
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-medium text-foreground">Image Not Available</p>
+                  <p className="text-sm text-muted-foreground">The image could not be loaded</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -2088,6 +2074,10 @@ const CourseBuilder = () => {
   const enrolledClasses = dbClasses.filter(cls => selectedClasses.includes(cls.id));
   
   // Debug: Log enrolled classes info
+  console.log('Debug - selectedClasses:', selectedClasses);
+  console.log('Debug - dbClasses count:', dbClasses.length);
+  console.log('Debug - enrolledClasses count:', enrolledClasses.length);
+  console.log('Debug - enrolledClasses:', enrolledClasses);
 
 
   // Handle class selection for course enrollment
@@ -3322,6 +3312,7 @@ const CourseBuilder = () => {
         }
         
         if (courseId && courseId !== 'new') {
+          console.log('🔄 COURSE LOADING STARTED - Loading course with ID:', courseId);
           const { data, error } = await supabase
             .from('courses')
             .select(`
@@ -3341,6 +3332,7 @@ const CourseBuilder = () => {
                       math_tolerance,
                       math_hint,
                       math_allow_drawing,
+                      image_url,
                       options:question_options(*)
                     )
                   )
@@ -3362,8 +3354,13 @@ const CourseBuilder = () => {
             return;
           }
 
-          
-          // Debug quiz data with images
+          console.log('📊 RAW COURSE DATA FROM DATABASE:', data);
+          console.log('📊 COURSE SECTIONS FROM DATABASE:', data?.sections);
+          console.log('📊 QUIZ CONTENT ITEMS WITH RETRY SETTINGS FROM DATABASE:', data?.sections?.map(s => 
+            s.lessons?.map(l => 
+              l.contentItems?.filter(ci => ci.content_type === 'quiz' && ci.retry_settings)
+            )
+          ));
           
                     if (data) {
     
@@ -3431,27 +3428,18 @@ const CourseBuilder = () => {
                       .map((ci: any) => {
                         let quizData: QuizData | undefined = undefined;
                         if (ci.content_type === 'quiz' && ci.quiz && ci.quiz.length > 0) {
-                          
-                          const quizQuestions = ci.quiz.map((q: any) => {
-                            
-                            return {
-                              ...q,
-                              question_type: q.question_type || 'single_choice', // Default for backward compatibility
-                              options: q.options.sort((a: any, b: any) => a.position - b.position).map((opt: any) => {
-                                
-                                return {
-                                  ...opt,
-                                  option_image_url: opt.option_image_url || undefined,
-                                  option_image_display_url: undefined // Will be generated when needed
-                                };
-                              }),
-                              // Ensure math fields are included
-                              math_expression: q.math_expression || null,
-                              math_tolerance: q.math_tolerance || null,
-                              math_hint: q.math_hint || null,
-                              math_allow_drawing: q.math_allow_drawing === true
-                            };
-                          });
+                          const quizQuestions = ci.quiz.map((q: any) => ({
+                            ...q,
+                            question_type: q.question_type || 'single_choice', // Default for backward compatibility
+                            options: q.options.sort((a: any, b: any) => a.position - b.position),
+                            // Ensure math fields are included
+                            math_expression: q.math_expression || null,
+                            math_tolerance: q.math_tolerance || null,
+                            math_hint: q.math_hint || null,
+                            math_allow_drawing: q.math_allow_drawing === true,
+                            // Store the file path (not signed URL) - signed URLs will be generated in the component
+                            image_url: q.image_url || null
+                          }));
                           quizData = { id: ci.id, questions: quizQuestions };
                         }
                         return {
@@ -3468,7 +3456,19 @@ const CourseBuilder = () => {
               teachers: courseTeachers,
               students: courseStudents,
             };
+            console.log('✅ PROCESSED COURSE DATA WITH RETRY SETTINGS:', finalCourseData.sections?.map(s => 
+              s.lessons?.map(l => 
+                l.contentItems?.filter(ci => ci.content_type === 'quiz' && ci.retry_settings)
+              )
+            ));
+            console.log('📋 ALL QUIZ CONTENT ITEMS:', finalCourseData.sections?.map(s => 
+              s.lessons?.map(l => 
+                l.contentItems?.filter(ci => ci.content_type === 'quiz')
+              )
+            ));
+            console.log('🔄 SETTING COURSE DATA WITH RETRY SETTINGS...');
             setCourseData(finalCourseData);
+            console.log('✅ COURSE DATA SET SUCCESSFULLY');
             setSelectedClasses(finalCourseData.class_ids || []);
             
             // Force reload classes to ensure enrolled classes are available
@@ -3703,7 +3703,6 @@ const CourseBuilder = () => {
                             option_text: option.option_text,
                             is_correct: option.is_correct,
                             position: oIndex,
-                            option_image_url: option.option_image_url || null,
                         });
                     }
                 }
@@ -3717,6 +3716,7 @@ const CourseBuilder = () => {
                         retryCooldownHours: item.retry_settings.retryCooldownHours,
                         retryThreshold: item.retry_settings.retryThreshold
                     };
+                    console.log('Saving quiz retry settings in saveCourseData for content item:', savedContent.id, cleanRetrySettings);
                     const { error: retryError } = await supabase
                         .from('course_lesson_content')
                         .update({ retry_settings: cleanRetrySettings })
@@ -4000,6 +4000,7 @@ const CourseBuilder = () => {
                     retryThreshold: item.retry_settings.retryThreshold
                   };
                   contentUpdateData.retry_settings = cleanRetrySettings;
+                  console.log('Saving retry settings for content item:', item.id, cleanRetrySettings);
                 }
 
                 await supabase
@@ -4047,7 +4048,8 @@ const CourseBuilder = () => {
                           math_expression: question.math_expression || null,
                           math_tolerance: question.math_tolerance || null,
                           math_hint: question.math_hint || null,
-                          math_allow_drawing: question.math_allow_drawing === true
+                          math_allow_drawing: question.math_allow_drawing === true,
+                          image_url: question.image_url || null
                         })
                         .eq('id', existingQuestion.id);
                       
@@ -4098,7 +4100,8 @@ const CourseBuilder = () => {
                           math_expression: question.math_expression || null,
                           math_tolerance: question.math_tolerance || null,
                           math_hint: question.math_hint || null,
-                          math_allow_drawing: question.math_allow_drawing === true
+                          math_allow_drawing: question.math_allow_drawing === true,
+                          image_url: question.image_url || null
                         })
                         .select('id')
                         .single();
@@ -4169,13 +4172,12 @@ const CourseBuilder = () => {
                     if (qError) throw qError;
                     
                     for (const [oIndex, option] of question.options.entries()) {
-                          await supabase.from('question_options').insert({
-                            question_id: savedQuestion.id,
-                            option_text: option.option_text,
-                            is_correct: option.is_correct,
-                            position: oIndex,
-                            option_image_url: option.option_image_url || null,
-                          });
+                      await supabase.from('question_options').insert({
+                        question_id: savedQuestion.id,
+                        option_text: option.option_text,
+                        is_correct: option.is_correct,
+                        position: oIndex
+                      });
                     }
                   }
                 }
@@ -4255,13 +4257,12 @@ const CourseBuilder = () => {
                   if (qError) throw qError;
                   
                   for (const [oIndex, option] of question.options.entries()) {
-                          await supabase.from('question_options').insert({
-                            question_id: savedQuestion.id,
-                            option_text: option.option_text,
-                            is_correct: option.is_correct,
-                            position: oIndex,
-                            option_image_url: option.option_image_url || null,
-                          });
+                    await supabase.from('question_options').insert({
+                      question_id: savedQuestion.id,
+                      option_text: option.option_text,
+                      is_correct: option.is_correct,
+                      position: oIndex
+                    });
                   }
                 }
               }
@@ -4370,13 +4371,12 @@ const CourseBuilder = () => {
                 if (qError) throw qError;
                 
                 for (const [oIndex, option] of question.options.entries()) {
-                          await supabase.from('question_options').insert({
-                            question_id: savedQuestion.id,
-                            option_text: option.option_text,
-                            is_correct: option.is_correct,
-                            position: oIndex,
-                            option_image_url: option.option_image_url || null,
-                          });
+                  await supabase.from('question_options').insert({
+                    question_id: savedQuestion.id,
+                    option_text: option.option_text,
+                    is_correct: option.is_correct,
+                    position: oIndex
+                  });
                 }
               }
             }
@@ -4439,6 +4439,11 @@ const CourseBuilder = () => {
   };
 
   const saveCourseWithCurriculum = async (courseToSave: CourseData): Promise<string | null> => {
+    console.log('saveCourseWithCurriculum called with retry settings:', courseToSave.sections?.map(s => 
+      s.lessons?.map(l => 
+        l.contentItems?.filter(ci => ci.content_type === 'quiz' && ci.retry_settings)
+      )
+    ));
     if (!user) {
       toast.error("You must be logged in to save a course.");
       throw new Error("User not logged in");
@@ -4553,7 +4558,8 @@ const CourseBuilder = () => {
                               math_expression: question.math_expression || null,
                               math_tolerance: question.math_tolerance || null,
                               math_hint: question.math_hint || null,
-                              math_allow_drawing: question.math_allow_drawing === true
+                              math_allow_drawing: question.math_allow_drawing === true,
+                              image_url: question.image_url || null
                           })
                           .select('id').single();
 
@@ -4579,6 +4585,7 @@ const CourseBuilder = () => {
                           retryCooldownHours: item.retry_settings.retryCooldownHours,
                           retryThreshold: item.retry_settings.retryThreshold
                       };
+                      console.log('Saving quiz retry settings in saveCourseWithCurriculum for content item:', savedContent.id, cleanRetrySettings);
                       const { error: retryError } = await supabase
                           .from('course_lesson_content')
                           .update({ retry_settings: cleanRetrySettings })
@@ -4823,7 +4830,14 @@ const CourseBuilder = () => {
       if (courseData.published_course_id && courseData.id) {
         // This is an update to an existing published course
         // Save metadata, members, and curriculum structure (but preserve existing content)
+        console.log('Publishing course with retry settings:', courseData.sections?.map(s => 
+          s.lessons?.map(l => 
+            l.contentItems?.filter(ci => ci.content_type === 'quiz' && ci.retry_settings)
+          )
+        ));
+        console.log('About to call saveCourseWithCurriculum...');
         await saveCourseWithCurriculum({ ...courseData, status: 'Draft' });
+        console.log('saveCourseWithCurriculum completed');
         
         // Check if this is the same course (admin unpublish/republish scenario)
         const isSameCourse = courseData.id === courseData.published_course_id;
@@ -4831,6 +4845,7 @@ const CourseBuilder = () => {
         if (isSameCourse) {
           // For same course scenario, just update the status to Published
           // The changes are already saved in the database through saveCourseWithCurriculum
+          console.log('Publishing same course - curriculum and retry settings should already be saved');
           const { error: updateError } = await supabase
             .from('courses')
             .update({ status: 'Published' })
@@ -5438,6 +5453,7 @@ const CourseBuilder = () => {
   };
 
   const updateContentItem = useCallback((lessonId: string, itemId: string, updatedItem: Partial<LessonContentItem>) => {
+    console.log('🔄 COURSEBUILDER: updateContentItem called with:', { lessonId, itemId, updatedItem });
     setCourseData(prev => ({
       ...prev,
       sections: prev.sections.map(section => ({
@@ -6299,6 +6315,7 @@ const CourseBuilder = () => {
                     courseTitle={courseData.title}
                     courseDescription={courseData.description}
                     currentThumbnail={courseData.image}
+                    courseStatus={courseData.status}
                     onThumbnailGenerated={(imageUrl) => {
                       setCourseData(prev => ({ ...prev, image: imageUrl }));
                       toast.success('AI thumbnail applied to your course!');

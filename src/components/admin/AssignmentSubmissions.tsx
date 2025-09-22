@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, CheckCircle2, Clock, FileText, Search, Users, ChevronRight, Download, Eye, CheckCircle, XCircle, Circle } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Clock, FileText, Search, Users, ChevronRight, Download, Eye, CheckCircle, XCircle, Circle, Image as ImageIcon } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { ContentLoader } from '@/components/ContentLoader';
@@ -68,8 +68,6 @@ interface QuizQuestion {
     option_text: string;
     is_correct: boolean;
     position: number;
-    option_image_url?: string; // File path in Supabase storage
-    option_image_display_url?: string; // Signed URL for display (temporary)
   }[];
   position: number;
   // Math-specific fields
@@ -77,6 +75,8 @@ interface QuizQuestion {
   math_tolerance?: number;
   math_hint?: string;
   math_allow_drawing?: boolean;
+  // Image field for question
+  image_url?: string;
 }
 
 interface AssignmentDetails {
@@ -91,6 +91,72 @@ type StatCardData = {
   title: string;
   value: string;
   icon: React.ElementType;
+};
+
+// Component for displaying quiz question images with signed URL
+const QuizQuestionImage = ({ imageUrl, onClick }: { imageUrl: string, onClick: () => void }) => {
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadSignedUrl = async () => {
+      if (imageUrl.startsWith('http')) {
+        // Already a signed URL
+        setSignedUrl(imageUrl);
+        setLoading(false);
+      } else {
+        // It's a file path, create signed URL
+        try {
+          const { data, error } = await supabase.storage
+            .from('dil-lms')
+            .createSignedUrl(imageUrl, 3600); // 1 hour expiry
+          
+          if (error) {
+            console.error('Error creating signed URL:', error);
+            setLoading(false);
+            return;
+          }
+          
+          setSignedUrl(data.signedUrl);
+        } catch (error) {
+          console.error('Error creating signed URL:', error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadSignedUrl();
+  }, [imageUrl]);
+
+  if (loading) {
+    return (
+      <div className="relative w-8 h-8 rounded-md overflow-hidden border border-purple-200 dark:border-purple-700 bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+        <div className="w-3 h-3 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (!signedUrl) {
+    return (
+      <div className="relative w-8 h-8 rounded-md overflow-hidden border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
+        <ImageIcon className="w-3 h-3 text-red-500" />
+      </div>
+    );
+  }
+
+  return (
+    <div 
+      className="relative w-8 h-8 rounded-md overflow-hidden border border-purple-200 dark:border-purple-700 cursor-pointer hover:border-purple-400 dark:hover:border-purple-500 transition-colors"
+      onClick={onClick}
+    >
+      <img 
+        src={signedUrl} 
+        alt="Question image" 
+        className="w-full h-full object-cover"
+      />
+    </div>
+  );
 };
 
 // Main Component
@@ -117,6 +183,9 @@ export const AssignmentSubmissions = () => {
   const [showAllAttempts, setShowAllAttempts] = useState(false);
   const [allAttempts, setAllAttempts] = useState<Submission[]>([]);
   const [selectedStudentForAttempts, setSelectedStudentForAttempts] = useState<string | null>(null);
+  const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string>('');
+  const [imageLoading, setImageLoading] = useState(false);
 
 
   // Data Fetching
@@ -367,12 +436,12 @@ export const AssignmentSubmissions = () => {
           question_text,
           question_type,
           position,
+          image_url,
           options:question_options(
             id,
             option_text,
             is_correct,
-            position,
-            option_image_url
+            position
           )
         `)
         .eq('lesson_content_id', contentItemId)
@@ -385,41 +454,18 @@ export const AssignmentSubmissions = () => {
         options: q.options.sort((a: any, b: any) => a.position - b.position)
       })) || [];
 
-      // Generate signed URLs for option images
-      const questionsWithImages = await Promise.all(
-        processedQuestions.map(async (question) => {
-          const optionsWithImages = await Promise.all(
-            question.options.map(async (option: any) => {
-              if (option.option_image_url && !option.option_image_display_url) {
-                try {
-                  const { data: signedUrlData, error } = await supabase.storage
-                    .from('dil-lms')
-                    .createSignedUrl(option.option_image_url, 3600 * 24 * 7); // 7 days
-                  
-                  if (!error && signedUrlData) {
-                    return { ...option, option_image_display_url: signedUrlData.signedUrl };
-                  }
-                } catch (error) {
-                  console.error('Error generating signed URL for option image:', error);
-                }
-              }
-              return option;
-            })
-          );
-          return { ...question, options: optionsWithImages };
-        })
-      );
-
-      setQuizQuestions(questionsWithImages);
+      setQuizQuestions(processedQuestions);
       
       // After questions are loaded, populate manual grading data if submission exists
       const submissionToUse = submission || selectedSubmission;
       if (submissionToUse && submissionToUse.manual_grading_completed) {
         // Set overall grade and feedback
         if (submissionToUse.manual_grading_score !== null && submissionToUse.manual_grading_score !== undefined) {
+          console.log('Setting grade:', submissionToUse.manual_grading_score);
           setGrade(submissionToUse.manual_grading_score.toString());
         }
         if (submissionToUse.manual_grading_feedback) {
+          console.log('Setting feedback:', submissionToUse.manual_grading_feedback);
           setFeedback(submissionToUse.manual_grading_feedback);
         }
         
@@ -429,6 +475,7 @@ export const AssignmentSubmissions = () => {
         if (textAnswerQuestions.length > 0) {
           // Check if we have individual grades in the submission data
           if (submissionToUse.text_answer_grades && submissionToUse.text_answer_grades.length > 0) {
+            console.log('Using individual grades from submission data:', submissionToUse.text_answer_grades);
             
             // Populate grades and feedback from the submission data
             const grades: Record<string, number> = {};
@@ -439,6 +486,8 @@ export const AssignmentSubmissions = () => {
               if (gradeData.feedback) {
                 feedbackMap[gradeData.question_id] = gradeData.feedback;
               }
+              console.log('Loaded grade for question:', gradeData.question_id, '=', gradeData.grade);
+              console.log('Loaded feedback for question:', gradeData.question_id, '=', gradeData.feedback);
             });
             
             setManualGrades(grades);
@@ -451,6 +500,7 @@ export const AssignmentSubmissions = () => {
             if (gradesError) {
               console.error('Error fetching individual grades:', gradesError);
             } else {
+              console.log('Fetched individual grades from database:', individualGrades);
               
               // Populate grades and feedback from the database
               const grades: Record<string, number> = {};
@@ -461,6 +511,8 @@ export const AssignmentSubmissions = () => {
                 if (gradeData.feedback) {
                   feedbackMap[gradeData.question_id] = gradeData.feedback;
                 }
+                console.log('Loaded grade for question:', gradeData.question_id, '=', gradeData.grade);
+                console.log('Loaded feedback for question:', gradeData.question_id, '=', gradeData.feedback);
               });
               
               setManualGrades(grades);
@@ -679,6 +731,42 @@ export const AssignmentSubmissions = () => {
     } catch (error: any) {
       toast.error('Failed to save grade.', { description: error.message });
     }
+  };
+
+  // Helper function to open image modal
+  const openImageModal = async (imageUrl: string) => {
+    setImageLoading(true);
+    setImageModalOpen(true);
+    setSelectedImageUrl(''); // Clear previous image
+    
+    // Check if it's already a signed URL or if we need to create one
+    let signedUrl = imageUrl;
+    if (!imageUrl.startsWith('http')) {
+      // It's a file path, create signed URL
+      try {
+        const { data, error } = await supabase.storage
+          .from('dil-lms')
+          .createSignedUrl(imageUrl, 3600);
+        
+        if (error) {
+          console.error('Error creating signed URL:', error);
+          toast.error('Failed to load image');
+          setImageLoading(false);
+          setImageModalOpen(false);
+          return;
+        }
+        
+        signedUrl = data.signedUrl;
+      } catch (error) {
+        console.error('Error creating signed URL:', error);
+        toast.error('Failed to load image');
+        setImageLoading(false);
+        setImageModalOpen(false);
+        return;
+      }
+    }
+    setSelectedImageUrl(signedUrl);
+    setImageLoading(false);
   };
 
   // Utility Functions
@@ -1072,9 +1160,18 @@ export const AssignmentSubmissions = () => {
                                    question.question_type === 'math_expression' ? 'Math Expression' : 'Single Choice'}
                                 </Badge>
                               </div>
-                              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                                {question.question_text}
-                              </h3>
+                              <div className="flex items-center gap-3">
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                                  {question.question_text}
+                                </h3>
+                                {/* Quiz Question Image */}
+                                {question.image_url && (
+                                  <QuizQuestionImage 
+                                    imageUrl={question.image_url}
+                                    onClick={() => openImageModal(question.image_url)}
+                                  />
+                                )}
+                              </div>
                             </div>
                             <div className="flex items-center gap-2">
                               {question.question_type === 'text_answer' ? (
@@ -1374,8 +1471,8 @@ export const AssignmentSubmissions = () => {
                                         : 'border-gray-200 dark:border-gray-600'
                                     }`}
                                   >
-                                    <div className="flex items-start gap-3">
-                                      <div className="flex-shrink-0 mt-1">
+                                    <div className="flex items-center gap-3">
+                                      <div className="flex-shrink-0">
                                         {question.question_type === 'multiple_choice' ? (
                                           <div className={`w-5 h-5 border-2 rounded flex items-center justify-center ${
                                             isSelected 
@@ -1398,24 +1495,9 @@ export const AssignmentSubmissions = () => {
                                           </div>
                                         )}
                                       </div>
-                                      <div className="flex-1 space-y-2">
-                                        <span className="text-gray-900 dark:text-gray-100">
-                                          {option.option_text}
-                                        </span>
-                                        {option.option_image_display_url && (
-                                          <div className="relative w-full max-w-md">
-                                            <img 
-                                              src={option.option_image_display_url} 
-                                              alt={`Option image`}
-                                              className="w-full max-h-48 object-contain rounded-lg border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700"
-                                              onError={(e) => {
-                                                const target = e.target as HTMLImageElement;
-                                                target.style.display = 'none';
-                                              }}
-                                            />
-                                          </div>
-                                        )}
-                                      </div>
+                                      <span className="flex-1 text-gray-900 dark:text-gray-100">
+                                        {option.option_text}
+                                      </span>
                                       <div className="flex items-center gap-2">
                                         {isCorrectOption && (
                                           <Badge variant="outline" className="text-green-600 border-green-600 text-xs">
@@ -1590,6 +1672,53 @@ export const AssignmentSubmissions = () => {
               Close
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Modal */}
+      <Dialog open={imageModalOpen} onOpenChange={(open) => {
+        setImageModalOpen(open);
+        if (!open) {
+          setImageLoading(false);
+          setSelectedImageUrl('');
+        }
+      }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Question Image</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-center p-4 min-h-[400px]">
+            {imageLoading ? (
+              <div className="flex flex-col items-center justify-center space-y-4">
+                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                <div className="text-center">
+                  <p className="text-lg font-medium text-foreground">Loading Image</p>
+                  <p className="text-sm text-muted-foreground">Please wait while we prepare the image...</p>
+                </div>
+              </div>
+            ) : selectedImageUrl ? (
+              <img 
+                src={selectedImageUrl} 
+                alt="Question image preview" 
+                className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg transition-opacity duration-300"
+                onLoad={() => setImageLoading(false)}
+                onError={() => {
+                  setImageLoading(false);
+                  toast.error('Failed to load image');
+                }}
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center space-y-4">
+                <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
+                  <ImageIcon className="w-8 h-8 text-red-500" />
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-medium text-foreground">Image Not Available</p>
+                  <p className="text-sm text-muted-foreground">The image could not be loaded</p>
+                </div>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>

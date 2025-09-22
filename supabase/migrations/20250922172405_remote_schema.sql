@@ -3493,6 +3493,34 @@ $$;
 ALTER FUNCTION "public"."get_ai_tutor_settings"() OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."get_all_stages_with_counts"() RETURNS TABLE("stage_id" integer, "stage_number" integer, "title" "text", "title_urdu" "text", "description" "text", "difficulty_level" "text", "stage_order" integer, "exercise_count" bigint, "topic_count" bigint)
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        s.id,
+        s.stage_number,
+        s.title,
+        s.title_urdu,
+        s.description,
+        s.difficulty_level,
+        s.stage_order,
+        COUNT(DISTINCT e.id) as exercise_count,
+        COUNT(DISTINCT t.id) as topic_count
+    FROM public.ai_tutor_content_hierarchy s
+    LEFT JOIN public.ai_tutor_content_hierarchy e ON e.parent_id = s.id AND e.level = 'exercise'
+    LEFT JOIN public.ai_tutor_content_hierarchy t ON t.parent_id = e.id AND t.level = 'topic'
+    WHERE s.level = 'stage'
+    GROUP BY s.id, s.stage_number, s.title, s.title_urdu, s.description, s.difficulty_level, s.stage_order
+    ORDER BY s.stage_order;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."get_all_stages_with_counts"() OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."get_assessment_submissions"("assessment_id" "uuid") RETURNS TABLE("id" "uuid", "title" "text", "course_title" "text", "course_id" "uuid", "lesson_id" "uuid", "content_type" "text", "submissions" "jsonb")
     LANGUAGE "plpgsql"
     AS $$
@@ -4977,6 +5005,36 @@ ALTER FUNCTION "public"."get_engagement_trends_data_with_filters"("p_teacher_id"
 
 COMMENT ON FUNCTION "public"."get_engagement_trends_data_with_filters"("p_teacher_id" "uuid", "p_time_range" "text", "filter_country_id" "uuid", "filter_region_id" "uuid", "filter_city_id" "uuid", "filter_project_id" "uuid", "filter_board_id" "uuid", "filter_school_id" "uuid", "filter_grade" "text", "filter_class_id" "uuid") IS 'Get engagement trends data with hierarchical and grade filtering';
 
+
+
+CREATE OR REPLACE FUNCTION "public"."get_exercises_for_stage_with_counts"("stage_num" integer) RETURNS TABLE("exercise_id" integer, "exercise_number" integer, "title" "text", "title_urdu" "text", "description" "text", "exercise_type" "text", "exercise_order" integer, "topic_count" bigint)
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        e.id,
+        e.exercise_number,
+        e.title,
+        e.title_urdu,
+        e.description,
+        e.exercise_type,
+        e.exercise_order,
+        COUNT(t.id) as topic_count
+    FROM public.ai_tutor_content_hierarchy e
+    LEFT JOIN public.ai_tutor_content_hierarchy t ON t.parent_id = e.id AND t.level = 'topic'
+    WHERE e.level = 'exercise' 
+    AND e.parent_id = (
+        SELECT id FROM public.ai_tutor_content_hierarchy 
+        WHERE level = 'stage' AND stage_number = stage_num
+    )
+    GROUP BY e.id, e.exercise_number, e.title, e.title_urdu, e.description, e.exercise_type, e.exercise_order
+    ORDER BY e.exercise_order;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."get_exercises_for_stage_with_counts"("stage_num" integer) OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."get_failed_login_attempts"("p_email" "text", "p_hours_back" integer DEFAULT 24) RETURNS integer
@@ -8182,6 +8240,40 @@ $$;
 ALTER FUNCTION "public"."get_text_answer_grades"("submission_id" "uuid") OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."get_topics_for_exercise_full"("stage_num" integer, "exercise_num" integer) RETURNS TABLE("topic_id" integer, "topic_number" integer, "title" "text", "title_urdu" "text", "description" "text", "topic_data" "jsonb", "topic_order" integer, "category" "text", "difficulty" "text")
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        t.id,
+        t.topic_number,
+        t.title,
+        t.title_urdu,
+        t.description,
+        t.topic_data,
+        t.topic_order,
+        t.category,
+        t.difficulty
+    FROM public.ai_tutor_content_hierarchy t
+    WHERE t.level = 'topic' 
+    AND t.parent_id = (
+        SELECT id FROM public.ai_tutor_content_hierarchy 
+        WHERE level = 'exercise' 
+        AND parent_id = (
+            SELECT id FROM public.ai_tutor_content_hierarchy 
+            WHERE level = 'stage' AND stage_number = stage_num
+        )
+        AND exercise_number = exercise_num
+    )
+    ORDER BY t.topic_order;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."get_topics_for_exercise_full"("stage_num" integer, "exercise_num" integer) OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."get_user_accessible_quizzes"("input_user_id" "uuid") RETURNS TABLE("id" "uuid", "title" "text", "description" "text", "instructions" "text", "time_limit_minutes" integer, "max_attempts" integer, "passing_score" numeric, "shuffle_questions" boolean, "shuffle_options" boolean, "show_correct_answers" boolean, "show_results_immediately" boolean, "allow_retake" boolean, "retry_settings" "jsonb", "status" "text", "visibility" "text", "tags" "text"[], "difficulty_level" "text", "estimated_duration_minutes" integer, "author_id" "uuid", "created_at" timestamp with time zone, "updated_at" timestamp with time zone, "published_at" timestamp with time zone, "role" "text")
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
@@ -9771,6 +9863,34 @@ COMMENT ON FUNCTION "public"."search_standalone_quizzes"("search_term" "text", "
 
 
 
+CREATE OR REPLACE FUNCTION "public"."search_topics_by_content"("search_term" "text") RETURNS TABLE("topic_id" integer, "hierarchy_path" "text", "title" "text", "title_urdu" "text", "topic_data" "jsonb", "category" "text", "difficulty" "text")
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        t.id,
+        t.hierarchy_path,
+        t.title,
+        t.title_urdu,
+        t.topic_data,
+        t.category,
+        t.difficulty
+    FROM public.ai_tutor_content_hierarchy t
+    WHERE t.level = 'topic'
+    AND (
+        t.title ILIKE '%' || search_term || '%'
+        OR t.title_urdu ILIKE '%' || search_term || '%'
+        OR t.topic_data::TEXT ILIKE '%' || search_term || '%'
+    )
+    ORDER BY t.hierarchy_path;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."search_topics_by_content"("search_term" "text") OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."set_admin_settings_created_by"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
@@ -10676,6 +10796,56 @@ COMMENT ON TABLE "public"."ai_safety_ethics_settings" IS 'Stores AI safety and e
 
 
 
+CREATE TABLE IF NOT EXISTS "public"."ai_tutor_content_hierarchy" (
+    "id" integer NOT NULL,
+    "uuid" "uuid" DEFAULT "extensions"."uuid_generate_v4"(),
+    "level" "text" NOT NULL,
+    "hierarchy_path" "text" NOT NULL,
+    "parent_id" integer,
+    "title" "text" NOT NULL,
+    "title_urdu" "text",
+    "description" "text",
+    "description_urdu" "text",
+    "stage_number" integer,
+    "difficulty_level" "text",
+    "stage_order" integer,
+    "exercise_number" integer,
+    "exercise_type" "text",
+    "exercise_order" integer,
+    "topic_number" integer,
+    "topic_order" integer,
+    "topic_data" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "category" "text",
+    "difficulty" "text",
+    "metadata" "jsonb" DEFAULT '{}'::"jsonb",
+    "is_active" boolean DEFAULT true,
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    CONSTRAINT "ai_tutor_content_hierarchy_difficulty_level_check" CHECK (("difficulty_level" = ANY (ARRAY['A1'::"text", 'A2'::"text", 'B1'::"text", 'B2'::"text", 'C1'::"text", 'C2'::"text"]))),
+    CONSTRAINT "ai_tutor_content_hierarchy_exercise_type_check" CHECK (("exercise_type" = ANY (ARRAY['lesson'::"text", 'pronunciation'::"text", 'response'::"text", 'dialogue'::"text", 'narration'::"text", 'conversation'::"text", 'roleplay'::"text", 'storytelling'::"text", 'discussion'::"text", 'problem_solving'::"text", 'presentation'::"text", 'negotiation'::"text", 'leadership'::"text", 'debate'::"text", 'academic'::"text", 'interview'::"text", 'spontaneous'::"text", 'diplomatic'::"text", 'academic_debate'::"text"]))),
+    CONSTRAINT "ai_tutor_content_hierarchy_level_check" CHECK (("level" = ANY (ARRAY['stage'::"text", 'exercise'::"text", 'topic'::"text"])))
+);
+
+
+ALTER TABLE "public"."ai_tutor_content_hierarchy" OWNER TO "postgres";
+
+
+CREATE SEQUENCE IF NOT EXISTS "public"."ai_tutor_content_hierarchy_id_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE "public"."ai_tutor_content_hierarchy_id_seq" OWNER TO "postgres";
+
+
+ALTER SEQUENCE "public"."ai_tutor_content_hierarchy_id_seq" OWNED BY "public"."ai_tutor_content_hierarchy"."id";
+
+
+
 CREATE TABLE IF NOT EXISTS "public"."ai_tutor_daily_learning_analytics" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "user_id" "uuid" NOT NULL,
@@ -10741,7 +10911,7 @@ CREATE TABLE IF NOT EXISTS "public"."ai_tutor_learning_unlocks" (
     "created_at" timestamp with time zone DEFAULT "now"(),
     "updated_at" timestamp with time zone DEFAULT "now"(),
     CONSTRAINT "ai_tutor_learning_unlocks_exercise_id_check" CHECK ((("exercise_id" >= 1) AND ("exercise_id" <= 3))),
-    CONSTRAINT "ai_tutor_learning_unlocks_stage_id_check" CHECK ((("stage_id" >= 1) AND ("stage_id" <= 6)))
+    CONSTRAINT "ai_tutor_learning_unlocks_stage_id_check" CHECK ((("stage_id" >= 0) AND ("stage_id" <= 6)))
 );
 
 
@@ -10796,683 +10966,6 @@ CREATE TABLE IF NOT EXISTS "public"."ai_tutor_settings" (
 
 
 ALTER TABLE "public"."ai_tutor_settings" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "public"."ai_tutor_stage1_exercise1_repeat_after_me" (
-    "id" integer NOT NULL,
-    "phrase" "text" NOT NULL,
-    "urdu_meaning" "text" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"(),
-    "updated_at" timestamp with time zone DEFAULT "now"()
-);
-
-
-ALTER TABLE "public"."ai_tutor_stage1_exercise1_repeat_after_me" OWNER TO "postgres";
-
-
-CREATE SEQUENCE IF NOT EXISTS "public"."ai_tutor_stage1_exercise1_repeat_after_me_id_seq"
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage1_exercise1_repeat_after_me_id_seq" OWNER TO "postgres";
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage1_exercise1_repeat_after_me_id_seq" OWNED BY "public"."ai_tutor_stage1_exercise1_repeat_after_me"."id";
-
-
-
-CREATE TABLE IF NOT EXISTS "public"."ai_tutor_stage1_exercise2_quick_response" (
-    "id" integer NOT NULL,
-    "question" "text" NOT NULL,
-    "question_urdu" "text" NOT NULL,
-    "expected_answers" "text"[] NOT NULL,
-    "expected_answers_urdu" "text"[] NOT NULL,
-    "category" "text" NOT NULL,
-    "difficulty" "text" DEFAULT 'beginner'::"text" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"(),
-    "updated_at" timestamp with time zone DEFAULT "now"()
-);
-
-
-ALTER TABLE "public"."ai_tutor_stage1_exercise2_quick_response" OWNER TO "postgres";
-
-
-CREATE SEQUENCE IF NOT EXISTS "public"."ai_tutor_stage1_exercise2_quick_response_id_seq"
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage1_exercise2_quick_response_id_seq" OWNER TO "postgres";
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage1_exercise2_quick_response_id_seq" OWNED BY "public"."ai_tutor_stage1_exercise2_quick_response"."id";
-
-
-
-CREATE TABLE IF NOT EXISTS "public"."ai_tutor_stage1_exercise3_functional_dialogue" (
-    "id" integer NOT NULL,
-    "ai_prompt" "text" NOT NULL,
-    "ai_prompt_urdu" "text" NOT NULL,
-    "expected_keywords" "text"[] NOT NULL,
-    "expected_keywords_urdu" "text"[] NOT NULL,
-    "category" "text" NOT NULL,
-    "difficulty" "text" DEFAULT 'beginner'::"text" NOT NULL,
-    "context" "text" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"(),
-    "updated_at" timestamp with time zone DEFAULT "now"()
-);
-
-
-ALTER TABLE "public"."ai_tutor_stage1_exercise3_functional_dialogue" OWNER TO "postgres";
-
-
-CREATE SEQUENCE IF NOT EXISTS "public"."ai_tutor_stage1_exercise3_functional_dialogue_id_seq"
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage1_exercise3_functional_dialogue_id_seq" OWNER TO "postgres";
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage1_exercise3_functional_dialogue_id_seq" OWNED BY "public"."ai_tutor_stage1_exercise3_functional_dialogue"."id";
-
-
-
-CREATE TABLE IF NOT EXISTS "public"."ai_tutor_stage2_exercise1_daily_routine" (
-    "id" integer NOT NULL,
-    "phrase" "text" NOT NULL,
-    "phrase_urdu" "text" NOT NULL,
-    "example" "text" NOT NULL,
-    "example_urdu" "text" NOT NULL,
-    "keywords" "text"[] NOT NULL,
-    "keywords_urdu" "text"[] NOT NULL,
-    "category" "text" NOT NULL,
-    "difficulty" "text" DEFAULT 'a2_beginner'::"text" NOT NULL,
-    "tense_focus" "text" NOT NULL,
-    "sentence_structure" "text" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"(),
-    "updated_at" timestamp with time zone DEFAULT "now"()
-);
-
-
-ALTER TABLE "public"."ai_tutor_stage2_exercise1_daily_routine" OWNER TO "postgres";
-
-
-CREATE SEQUENCE IF NOT EXISTS "public"."ai_tutor_stage2_exercise1_daily_routine_id_seq"
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage2_exercise1_daily_routine_id_seq" OWNER TO "postgres";
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage2_exercise1_daily_routine_id_seq" OWNED BY "public"."ai_tutor_stage2_exercise1_daily_routine"."id";
-
-
-
-CREATE TABLE IF NOT EXISTS "public"."ai_tutor_stage2_exercise2_question_answer" (
-    "id" integer NOT NULL,
-    "question" "text" NOT NULL,
-    "question_urdu" "text" NOT NULL,
-    "expected_answers" "text"[] NOT NULL,
-    "expected_answers_urdu" "text"[] NOT NULL,
-    "keywords" "text"[] NOT NULL,
-    "keywords_urdu" "text"[] NOT NULL,
-    "category" "text" NOT NULL,
-    "difficulty" "text" DEFAULT 'a2_beginner'::"text" NOT NULL,
-    "tense" "text" NOT NULL,
-    "sentence_structure" "text" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"(),
-    "updated_at" timestamp with time zone DEFAULT "now"()
-);
-
-
-ALTER TABLE "public"."ai_tutor_stage2_exercise2_question_answer" OWNER TO "postgres";
-
-
-CREATE SEQUENCE IF NOT EXISTS "public"."ai_tutor_stage2_exercise2_question_answer_id_seq"
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage2_exercise2_question_answer_id_seq" OWNER TO "postgres";
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage2_exercise2_question_answer_id_seq" OWNED BY "public"."ai_tutor_stage2_exercise2_question_answer"."id";
-
-
-
-CREATE TABLE IF NOT EXISTS "public"."ai_tutor_stage2_exercise3_roleplay" (
-    "id" integer NOT NULL,
-    "title" "text" NOT NULL,
-    "title_urdu" "text" NOT NULL,
-    "description" "text" NOT NULL,
-    "description_urdu" "text" NOT NULL,
-    "initial_prompt" "text" NOT NULL,
-    "initial_prompt_urdu" "text" NOT NULL,
-    "scenario_context" "text" NOT NULL,
-    "difficulty" "text" DEFAULT 'a2_beginner'::"text" NOT NULL,
-    "expected_keywords" "text"[] NOT NULL,
-    "expected_keywords_urdu" "text"[] NOT NULL,
-    "ai_character" "text" NOT NULL,
-    "conversation_flow" "text" NOT NULL,
-    "cultural_context" "text" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"(),
-    "updated_at" timestamp with time zone DEFAULT "now"()
-);
-
-
-ALTER TABLE "public"."ai_tutor_stage2_exercise3_roleplay" OWNER TO "postgres";
-
-
-CREATE SEQUENCE IF NOT EXISTS "public"."ai_tutor_stage2_exercise3_roleplay_id_seq"
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage2_exercise3_roleplay_id_seq" OWNER TO "postgres";
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage2_exercise3_roleplay_id_seq" OWNED BY "public"."ai_tutor_stage2_exercise3_roleplay"."id";
-
-
-
-CREATE TABLE IF NOT EXISTS "public"."ai_tutor_stage3_exercise1_storytelling" (
-    "id" integer NOT NULL,
-    "prompt" "text" NOT NULL,
-    "prompt_urdu" "text" NOT NULL,
-    "category" "text" NOT NULL,
-    "difficulty" "text" DEFAULT 'b1_intermediate'::"text" NOT NULL,
-    "tense_focus" "text" NOT NULL,
-    "expected_structure" "text" NOT NULL,
-    "example_keywords" "text"[] NOT NULL,
-    "example_keywords_urdu" "text"[] NOT NULL,
-    "model_answer" "text" NOT NULL,
-    "model_answer_urdu" "text" NOT NULL,
-    "evaluation_criteria" "jsonb" NOT NULL,
-    "learning_objectives" "text"[] NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"(),
-    "updated_at" timestamp with time zone DEFAULT "now"()
-);
-
-
-ALTER TABLE "public"."ai_tutor_stage3_exercise1_storytelling" OWNER TO "postgres";
-
-
-CREATE SEQUENCE IF NOT EXISTS "public"."ai_tutor_stage3_exercise1_storytelling_id_seq"
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage3_exercise1_storytelling_id_seq" OWNER TO "postgres";
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage3_exercise1_storytelling_id_seq" OWNED BY "public"."ai_tutor_stage3_exercise1_storytelling"."id";
-
-
-
-CREATE TABLE IF NOT EXISTS "public"."ai_tutor_stage3_exercise2_group_discussion" (
-    "id" integer NOT NULL,
-    "title" "text" NOT NULL,
-    "title_urdu" "text" NOT NULL,
-    "context" "text" NOT NULL,
-    "context_urdu" "text" NOT NULL,
-    "difficulty" "text" DEFAULT 'b1_intermediate'::"text" NOT NULL,
-    "category" "text" NOT NULL,
-    "conversation_flow" "text" NOT NULL,
-    "initial_prompt" "text" NOT NULL,
-    "initial_prompt_urdu" "text" NOT NULL,
-    "follow_up_turns" "jsonb" NOT NULL,
-    "expected_responses" "jsonb" NOT NULL,
-    "evaluation_criteria" "jsonb" NOT NULL,
-    "learning_objectives" "text"[] NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"(),
-    "updated_at" timestamp with time zone DEFAULT "now"()
-);
-
-
-ALTER TABLE "public"."ai_tutor_stage3_exercise2_group_discussion" OWNER TO "postgres";
-
-
-CREATE SEQUENCE IF NOT EXISTS "public"."ai_tutor_stage3_exercise2_group_discussion_id_seq"
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage3_exercise2_group_discussion_id_seq" OWNER TO "postgres";
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage3_exercise2_group_discussion_id_seq" OWNED BY "public"."ai_tutor_stage3_exercise2_group_discussion"."id";
-
-
-
-CREATE TABLE IF NOT EXISTS "public"."ai_tutor_stage3_exercise3_problem_solving" (
-    "id" integer NOT NULL,
-    "title" "text" NOT NULL,
-    "title_urdu" "text" NOT NULL,
-    "problem_description" "text" NOT NULL,
-    "problem_description_urdu" "text" NOT NULL,
-    "difficulty" "text" DEFAULT 'b1_intermediate'::"text" NOT NULL,
-    "category" "text" NOT NULL,
-    "scenario_type" "text" NOT NULL,
-    "context" "text" NOT NULL,
-    "context_urdu" "text" NOT NULL,
-    "expected_keywords" "text"[] NOT NULL,
-    "expected_keywords_urdu" "text"[] NOT NULL,
-    "polite_phrases" "text"[] NOT NULL,
-    "polite_phrases_urdu" "text"[] NOT NULL,
-    "sample_responses" "text"[] NOT NULL,
-    "sample_responses_urdu" "text"[] NOT NULL,
-    "evaluation_criteria" "jsonb" NOT NULL,
-    "learning_objectives" "text"[] NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"(),
-    "updated_at" timestamp with time zone DEFAULT "now"()
-);
-
-
-ALTER TABLE "public"."ai_tutor_stage3_exercise3_problem_solving" OWNER TO "postgres";
-
-
-CREATE SEQUENCE IF NOT EXISTS "public"."ai_tutor_stage3_exercise3_problem_solving_id_seq"
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage3_exercise3_problem_solving_id_seq" OWNER TO "postgres";
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage3_exercise3_problem_solving_id_seq" OWNED BY "public"."ai_tutor_stage3_exercise3_problem_solving"."id";
-
-
-
-CREATE TABLE IF NOT EXISTS "public"."ai_tutor_stage4_exercise1_opinion_debate" (
-    "id" integer NOT NULL,
-    "topic" "text" NOT NULL,
-    "topic_urdu" "text" NOT NULL,
-    "category" "text" NOT NULL,
-    "difficulty" "text" DEFAULT 'b2_upper_intermediate'::"text" NOT NULL,
-    "speaking_duration" "text" NOT NULL,
-    "thinking_time" "text" NOT NULL,
-    "expected_structure" "text" NOT NULL,
-    "key_connectors" "text"[] NOT NULL,
-    "key_connectors_urdu" "text"[] NOT NULL,
-    "vocabulary_focus" "text"[] NOT NULL,
-    "vocabulary_focus_urdu" "text"[] NOT NULL,
-    "model_response" "text" NOT NULL,
-    "model_response_urdu" "text" NOT NULL,
-    "evaluation_criteria" "jsonb" NOT NULL,
-    "learning_objectives" "text"[] NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"(),
-    "updated_at" timestamp with time zone DEFAULT "now"()
-);
-
-
-ALTER TABLE "public"."ai_tutor_stage4_exercise1_opinion_debate" OWNER TO "postgres";
-
-
-CREATE SEQUENCE IF NOT EXISTS "public"."ai_tutor_stage4_exercise1_opinion_debate_id_seq"
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage4_exercise1_opinion_debate_id_seq" OWNER TO "postgres";
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage4_exercise1_opinion_debate_id_seq" OWNED BY "public"."ai_tutor_stage4_exercise1_opinion_debate"."id";
-
-
-
-CREATE TABLE IF NOT EXISTS "public"."ai_tutor_stage4_exercise2_interview_simulation" (
-    "id" integer NOT NULL,
-    "question" "text" NOT NULL,
-    "question_urdu" "text" NOT NULL,
-    "category" "text" NOT NULL,
-    "difficulty" "text" DEFAULT 'B2'::"text" NOT NULL,
-    "speaking_duration" "text" NOT NULL,
-    "thinking_time" "text" NOT NULL,
-    "expected_structure" "text" NOT NULL,
-    "expected_keywords" "text"[] NOT NULL,
-    "expected_keywords_urdu" "text"[] NOT NULL,
-    "vocabulary_focus" "text"[] NOT NULL,
-    "vocabulary_focus_urdu" "text"[] NOT NULL,
-    "model_response" "text" NOT NULL,
-    "model_response_urdu" "text" NOT NULL,
-    "evaluation_criteria" "jsonb" NOT NULL,
-    "learning_objectives" "text"[] NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"(),
-    "updated_at" timestamp with time zone DEFAULT "now"()
-);
-
-
-ALTER TABLE "public"."ai_tutor_stage4_exercise2_interview_simulation" OWNER TO "postgres";
-
-
-CREATE SEQUENCE IF NOT EXISTS "public"."ai_tutor_stage4_exercise2_interview_simulation_id_seq"
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage4_exercise2_interview_simulation_id_seq" OWNER TO "postgres";
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage4_exercise2_interview_simulation_id_seq" OWNED BY "public"."ai_tutor_stage4_exercise2_interview_simulation"."id";
-
-
-
-CREATE TABLE IF NOT EXISTS "public"."ai_tutor_stage4_exercise3_news_summarization" (
-    "id" integer NOT NULL,
-    "title" "text" NOT NULL,
-    "title_urdu" "text" NOT NULL,
-    "summary_text" "text" NOT NULL,
-    "summary_text_urdu" "text" NOT NULL,
-    "category" "text" NOT NULL,
-    "difficulty" "text" DEFAULT 'B2'::"text" NOT NULL,
-    "listening_duration" "text" NOT NULL,
-    "summary_time" "text" NOT NULL,
-    "expected_structure" "text" NOT NULL,
-    "expected_keywords" "text"[] NOT NULL,
-    "expected_keywords_urdu" "text"[] NOT NULL,
-    "vocabulary_focus" "text"[] NOT NULL,
-    "vocabulary_focus_urdu" "text"[] NOT NULL,
-    "model_summary" "text" NOT NULL,
-    "model_summary_urdu" "text" NOT NULL,
-    "evaluation_criteria" "jsonb" NOT NULL,
-    "learning_objectives" "text"[] NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"(),
-    "updated_at" timestamp with time zone DEFAULT "now"()
-);
-
-
-ALTER TABLE "public"."ai_tutor_stage4_exercise3_news_summarization" OWNER TO "postgres";
-
-
-CREATE SEQUENCE IF NOT EXISTS "public"."ai_tutor_stage4_exercise3_news_summarization_id_seq"
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage4_exercise3_news_summarization_id_seq" OWNER TO "postgres";
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage4_exercise3_news_summarization_id_seq" OWNED BY "public"."ai_tutor_stage4_exercise3_news_summarization"."id";
-
-
-
-CREATE TABLE IF NOT EXISTS "public"."ai_tutor_stage5_exercise1_advanced_debate" (
-    "id" integer NOT NULL,
-    "topic" "text" NOT NULL,
-    "topic_urdu" "text" NOT NULL,
-    "ai_position" "text" NOT NULL,
-    "ai_position_urdu" "text" NOT NULL,
-    "category" "text" NOT NULL,
-    "difficulty" "text" DEFAULT 'C1'::"text" NOT NULL,
-    "speaking_duration" "text" NOT NULL,
-    "thinking_time" "text" NOT NULL,
-    "expected_structure" "text" NOT NULL,
-    "expected_keywords" "text"[] NOT NULL,
-    "expected_keywords_urdu" "text"[] NOT NULL,
-    "vocabulary_focus" "text"[] NOT NULL,
-    "vocabulary_focus_urdu" "text"[] NOT NULL,
-    "model_response" "text" NOT NULL,
-    "model_response_urdu" "text" NOT NULL,
-    "evaluation_criteria" "jsonb" NOT NULL,
-    "learning_objectives" "text"[] NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"(),
-    "updated_at" timestamp with time zone DEFAULT "now"()
-);
-
-
-ALTER TABLE "public"."ai_tutor_stage5_exercise1_advanced_debate" OWNER TO "postgres";
-
-
-CREATE SEQUENCE IF NOT EXISTS "public"."ai_tutor_stage5_exercise1_advanced_debate_id_seq"
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage5_exercise1_advanced_debate_id_seq" OWNER TO "postgres";
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage5_exercise1_advanced_debate_id_seq" OWNED BY "public"."ai_tutor_stage5_exercise1_advanced_debate"."id";
-
-
-
-CREATE TABLE IF NOT EXISTS "public"."ai_tutor_stage5_exercise2_academic_presentation" (
-    "id" integer NOT NULL,
-    "topic" "text" NOT NULL,
-    "topic_urdu" "text" NOT NULL,
-    "category" "text" NOT NULL,
-    "difficulty" "text" DEFAULT 'C1'::"text" NOT NULL,
-    "speaking_duration" "text" NOT NULL,
-    "thinking_time" "text" NOT NULL,
-    "expected_structure" "text" NOT NULL,
-    "expected_keywords" "text"[] NOT NULL,
-    "expected_keywords_urdu" "text"[] NOT NULL,
-    "vocabulary_focus" "text"[] NOT NULL,
-    "vocabulary_focus_urdu" "text"[] NOT NULL,
-    "model_response" "text" NOT NULL,
-    "model_response_urdu" "text" NOT NULL,
-    "evaluation_criteria" "jsonb" NOT NULL,
-    "learning_objectives" "text"[] NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"(),
-    "updated_at" timestamp with time zone DEFAULT "now"()
-);
-
-
-ALTER TABLE "public"."ai_tutor_stage5_exercise2_academic_presentation" OWNER TO "postgres";
-
-
-CREATE SEQUENCE IF NOT EXISTS "public"."ai_tutor_stage5_exercise2_academic_presentation_id_seq"
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage5_exercise2_academic_presentation_id_seq" OWNER TO "postgres";
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage5_exercise2_academic_presentation_id_seq" OWNED BY "public"."ai_tutor_stage5_exercise2_academic_presentation"."id";
-
-
-
-CREATE TABLE IF NOT EXISTS "public"."ai_tutor_stage5_exercise3_interview_mastery" (
-    "id" integer NOT NULL,
-    "question" "text" NOT NULL,
-    "category" "text" NOT NULL,
-    "difficulty" "text" DEFAULT 'C1'::"text" NOT NULL,
-    "question_type" "text" NOT NULL,
-    "expected_structure" "text" NOT NULL,
-    "expected_keywords" "text"[] NOT NULL,
-    "vocabulary_focus" "text"[] NOT NULL,
-    "model_answer" "text" NOT NULL,
-    "evaluation_criteria" "jsonb" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"(),
-    "updated_at" timestamp with time zone DEFAULT "now"()
-);
-
-
-ALTER TABLE "public"."ai_tutor_stage5_exercise3_interview_mastery" OWNER TO "postgres";
-
-
-CREATE SEQUENCE IF NOT EXISTS "public"."ai_tutor_stage5_exercise3_interview_mastery_id_seq"
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage5_exercise3_interview_mastery_id_seq" OWNER TO "postgres";
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage5_exercise3_interview_mastery_id_seq" OWNED BY "public"."ai_tutor_stage5_exercise3_interview_mastery"."id";
-
-
-
-CREATE TABLE IF NOT EXISTS "public"."ai_tutor_stage6_exercise1_spontaneous_speaking" (
-    "id" integer NOT NULL,
-    "topic" "text" NOT NULL,
-    "category" "text" NOT NULL,
-    "difficulty" "text" DEFAULT 'C2'::"text" NOT NULL,
-    "topic_type" "text" NOT NULL,
-    "expected_structure" "text" NOT NULL,
-    "expected_keywords" "text"[] NOT NULL,
-    "vocabulary_focus" "text"[] NOT NULL,
-    "model_response" "text" NOT NULL,
-    "evaluation_criteria" "jsonb" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"(),
-    "updated_at" timestamp with time zone DEFAULT "now"()
-);
-
-
-ALTER TABLE "public"."ai_tutor_stage6_exercise1_spontaneous_speaking" OWNER TO "postgres";
-
-
-CREATE SEQUENCE IF NOT EXISTS "public"."ai_tutor_stage6_exercise1_spontaneous_speaking_id_seq"
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage6_exercise1_spontaneous_speaking_id_seq" OWNER TO "postgres";
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage6_exercise1_spontaneous_speaking_id_seq" OWNED BY "public"."ai_tutor_stage6_exercise1_spontaneous_speaking"."id";
-
-
-
-CREATE TABLE IF NOT EXISTS "public"."ai_tutor_stage6_exercise2_diplomatic_communication" (
-    "id" integer NOT NULL,
-    "scenario" "text" NOT NULL,
-    "category" "text" NOT NULL,
-    "difficulty" "text" DEFAULT 'C2'::"text" NOT NULL,
-    "scenario_type" "text" NOT NULL,
-    "context" "text" NOT NULL,
-    "stakeholder_emotions" "text" NOT NULL,
-    "expected_structure" "text" NOT NULL,
-    "expected_keywords" "text"[] NOT NULL,
-    "vocabulary_focus" "text"[] NOT NULL,
-    "model_response" "text" NOT NULL,
-    "evaluation_criteria" "jsonb" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"(),
-    "updated_at" timestamp with time zone DEFAULT "now"()
-);
-
-
-ALTER TABLE "public"."ai_tutor_stage6_exercise2_diplomatic_communication" OWNER TO "postgres";
-
-
-CREATE SEQUENCE IF NOT EXISTS "public"."ai_tutor_stage6_exercise2_diplomatic_communication_id_seq"
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage6_exercise2_diplomatic_communication_id_seq" OWNER TO "postgres";
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage6_exercise2_diplomatic_communication_id_seq" OWNED BY "public"."ai_tutor_stage6_exercise2_diplomatic_communication"."id";
-
-
-
-CREATE TABLE IF NOT EXISTS "public"."ai_tutor_stage6_exercise3_academic_debate" (
-    "id" integer NOT NULL,
-    "topic" "text" NOT NULL,
-    "category" "text" NOT NULL,
-    "difficulty" "text" DEFAULT 'C2'::"text" NOT NULL,
-    "topic_type" "text" NOT NULL,
-    "controversy_level" "text" NOT NULL,
-    "expected_structure" "text" NOT NULL,
-    "expected_keywords" "text"[] NOT NULL,
-    "vocabulary_focus" "text"[] NOT NULL,
-    "academic_expressions" "text"[] NOT NULL,
-    "model_response" "text" NOT NULL,
-    "evaluation_criteria" "jsonb" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"(),
-    "updated_at" timestamp with time zone DEFAULT "now"()
-);
-
-
-ALTER TABLE "public"."ai_tutor_stage6_exercise3_academic_debate" OWNER TO "postgres";
-
-
-CREATE SEQUENCE IF NOT EXISTS "public"."ai_tutor_stage6_exercise3_academic_debate_id_seq"
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage6_exercise3_academic_debate_id_seq" OWNER TO "postgres";
-
-
-ALTER SEQUENCE "public"."ai_tutor_stage6_exercise3_academic_debate_id_seq" OWNED BY "public"."ai_tutor_stage6_exercise3_academic_debate"."id";
-
 
 
 CREATE TABLE IF NOT EXISTS "public"."ai_tutor_user_exercise_progress" (
@@ -11552,7 +11045,7 @@ CREATE TABLE IF NOT EXISTS "public"."ai_tutor_user_progress_summary" (
     "english_proficiency_text" "text",
     "assigned_start_stage" integer,
     CONSTRAINT "user_progress_summary_current_exercise_check" CHECK ((("current_exercise" >= 1) AND ("current_exercise" <= 3))),
-    CONSTRAINT "user_progress_summary_current_stage_check" CHECK ((("current_stage" >= 1) AND ("current_stage" <= 6))),
+    CONSTRAINT "user_progress_summary_current_stage_check" CHECK ((("current_stage" >= 0) AND ("current_stage" <= 6))),
     CONSTRAINT "user_progress_summary_longest_streak_check" CHECK (("longest_streak" >= 0)),
     CONSTRAINT "user_progress_summary_overall_progress_percentage_check" CHECK ((("overall_progress_percentage" >= (0)::numeric) AND ("overall_progress_percentage" <= (100)::numeric))),
     CONSTRAINT "user_progress_summary_streak_days_check" CHECK (("streak_days" >= 0)),
@@ -11598,7 +11091,7 @@ CREATE TABLE IF NOT EXISTS "public"."ai_tutor_user_stage_progress" (
     CONSTRAINT "ai_tutor_user_stage_progress_best_score_check" CHECK (("best_score" >= (0)::numeric)),
     CONSTRAINT "ai_tutor_user_stage_progress_exercises_completed_check" CHECK ((("exercises_completed" >= 0) AND ("exercises_completed" <= 3))),
     CONSTRAINT "ai_tutor_user_stage_progress_progress_percentage_check" CHECK ((("progress_percentage" >= (0)::numeric) AND ("progress_percentage" <= (100)::numeric))),
-    CONSTRAINT "ai_tutor_user_stage_progress_stage_id_check" CHECK ((("stage_id" >= 1) AND ("stage_id" <= 6))),
+    CONSTRAINT "ai_tutor_user_stage_progress_stage_id_check" CHECK ((("stage_id" >= 0) AND ("stage_id" <= 6))),
     CONSTRAINT "ai_tutor_user_stage_progress_time_spent_minutes_check" CHECK (("time_spent_minutes" >= 0)),
     CONSTRAINT "ai_tutor_user_stage_progress_total_score_check" CHECK (("total_score" >= (0)::numeric))
 );
@@ -12887,8 +12380,7 @@ CREATE TABLE IF NOT EXISTS "public"."question_options" (
     "option_text" "text" NOT NULL,
     "is_correct" boolean DEFAULT false NOT NULL,
     "position" integer DEFAULT 0 NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "option_image_url" "text"
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
 );
 
 
@@ -12896,10 +12388,6 @@ ALTER TABLE "public"."question_options" OWNER TO "postgres";
 
 
 COMMENT ON TABLE "public"."question_options" IS 'Stores the answer options for a quiz question.';
-
-
-
-COMMENT ON COLUMN "public"."question_options"."option_image_url" IS 'URL path to the image file for this option in Supabase storage';
 
 
 
@@ -13326,8 +12814,7 @@ CREATE TABLE IF NOT EXISTS "public"."standalone_question_options" (
     "option_text" "text" NOT NULL,
     "is_correct" boolean DEFAULT false NOT NULL,
     "position" integer DEFAULT 0 NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"(),
-    "option_image_url" "text"
+    "created_at" timestamp with time zone DEFAULT "now"()
 );
 
 
@@ -13335,10 +12822,6 @@ ALTER TABLE "public"."standalone_question_options" OWNER TO "postgres";
 
 
 COMMENT ON TABLE "public"."standalone_question_options" IS 'Answer options for standalone quiz questions';
-
-
-
-COMMENT ON COLUMN "public"."standalone_question_options"."option_image_url" IS 'URL path to the image file for this option in Supabase storage';
 
 
 
@@ -13686,75 +13169,7 @@ CREATE TABLE IF NOT EXISTS "public"."user_status" (
 ALTER TABLE "public"."user_status" OWNER TO "postgres";
 
 
-ALTER TABLE ONLY "public"."ai_tutor_stage1_exercise1_repeat_after_me" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."ai_tutor_stage1_exercise1_repeat_after_me_id_seq"'::"regclass");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage1_exercise2_quick_response" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."ai_tutor_stage1_exercise2_quick_response_id_seq"'::"regclass");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage1_exercise3_functional_dialogue" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."ai_tutor_stage1_exercise3_functional_dialogue_id_seq"'::"regclass");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage2_exercise1_daily_routine" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."ai_tutor_stage2_exercise1_daily_routine_id_seq"'::"regclass");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage2_exercise2_question_answer" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."ai_tutor_stage2_exercise2_question_answer_id_seq"'::"regclass");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage2_exercise3_roleplay" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."ai_tutor_stage2_exercise3_roleplay_id_seq"'::"regclass");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage3_exercise1_storytelling" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."ai_tutor_stage3_exercise1_storytelling_id_seq"'::"regclass");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage3_exercise2_group_discussion" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."ai_tutor_stage3_exercise2_group_discussion_id_seq"'::"regclass");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage3_exercise3_problem_solving" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."ai_tutor_stage3_exercise3_problem_solving_id_seq"'::"regclass");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage4_exercise1_opinion_debate" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."ai_tutor_stage4_exercise1_opinion_debate_id_seq"'::"regclass");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage4_exercise2_interview_simulation" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."ai_tutor_stage4_exercise2_interview_simulation_id_seq"'::"regclass");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage4_exercise3_news_summarization" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."ai_tutor_stage4_exercise3_news_summarization_id_seq"'::"regclass");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage5_exercise1_advanced_debate" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."ai_tutor_stage5_exercise1_advanced_debate_id_seq"'::"regclass");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage5_exercise2_academic_presentation" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."ai_tutor_stage5_exercise2_academic_presentation_id_seq"'::"regclass");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage5_exercise3_interview_mastery" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."ai_tutor_stage5_exercise3_interview_mastery_id_seq"'::"regclass");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage6_exercise1_spontaneous_speaking" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."ai_tutor_stage6_exercise1_spontaneous_speaking_id_seq"'::"regclass");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage6_exercise2_diplomatic_communication" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."ai_tutor_stage6_exercise2_diplomatic_communication_id_seq"'::"regclass");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage6_exercise3_academic_debate" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."ai_tutor_stage6_exercise3_academic_debate_id_seq"'::"regclass");
+ALTER TABLE ONLY "public"."ai_tutor_content_hierarchy" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."ai_tutor_content_hierarchy_id_seq"'::"regclass");
 
 
 
@@ -13800,6 +13215,16 @@ ALTER TABLE ONLY "public"."ai_safety_ethics_settings"
 
 
 
+ALTER TABLE ONLY "public"."ai_tutor_content_hierarchy"
+    ADD CONSTRAINT "ai_tutor_content_hierarchy_hierarchy_path_key" UNIQUE ("hierarchy_path");
+
+
+
+ALTER TABLE ONLY "public"."ai_tutor_content_hierarchy"
+    ADD CONSTRAINT "ai_tutor_content_hierarchy_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."ai_tutor_daily_learning_analytics"
     ADD CONSTRAINT "ai_tutor_daily_learning_analytics_pkey" PRIMARY KEY ("id");
 
@@ -13827,96 +13252,6 @@ ALTER TABLE ONLY "public"."ai_tutor_learning_unlocks"
 
 ALTER TABLE ONLY "public"."ai_tutor_settings"
     ADD CONSTRAINT "ai_tutor_settings_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage1_exercise1_repeat_after_me"
-    ADD CONSTRAINT "ai_tutor_stage1_exercise1_repeat_after_me_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage1_exercise2_quick_response"
-    ADD CONSTRAINT "ai_tutor_stage1_exercise2_quick_response_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage1_exercise3_functional_dialogue"
-    ADD CONSTRAINT "ai_tutor_stage1_exercise3_functional_dialogue_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage2_exercise1_daily_routine"
-    ADD CONSTRAINT "ai_tutor_stage2_exercise1_daily_routine_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage2_exercise2_question_answer"
-    ADD CONSTRAINT "ai_tutor_stage2_exercise2_question_answer_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage2_exercise3_roleplay"
-    ADD CONSTRAINT "ai_tutor_stage2_exercise3_roleplay_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage3_exercise1_storytelling"
-    ADD CONSTRAINT "ai_tutor_stage3_exercise1_storytelling_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage3_exercise2_group_discussion"
-    ADD CONSTRAINT "ai_tutor_stage3_exercise2_group_discussion_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage3_exercise3_problem_solving"
-    ADD CONSTRAINT "ai_tutor_stage3_exercise3_problem_solving_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage4_exercise1_opinion_debate"
-    ADD CONSTRAINT "ai_tutor_stage4_exercise1_opinion_debate_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage4_exercise2_interview_simulation"
-    ADD CONSTRAINT "ai_tutor_stage4_exercise2_interview_simulation_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage4_exercise3_news_summarization"
-    ADD CONSTRAINT "ai_tutor_stage4_exercise3_news_summarization_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage5_exercise1_advanced_debate"
-    ADD CONSTRAINT "ai_tutor_stage5_exercise1_advanced_debate_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage5_exercise2_academic_presentation"
-    ADD CONSTRAINT "ai_tutor_stage5_exercise2_academic_presentation_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage5_exercise3_interview_mastery"
-    ADD CONSTRAINT "ai_tutor_stage5_exercise3_interview_mastery_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage6_exercise1_spontaneous_speaking"
-    ADD CONSTRAINT "ai_tutor_stage6_exercise1_spontaneous_speaking_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage6_exercise2_diplomatic_communication"
-    ADD CONSTRAINT "ai_tutor_stage6_exercise2_diplomatic_communication_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "public"."ai_tutor_stage6_exercise3_academic_debate"
-    ADD CONSTRAINT "ai_tutor_stage6_exercise3_academic_debate_pkey" PRIMARY KEY ("id");
 
 
 
@@ -14444,30 +13779,6 @@ ALTER TABLE ONLY "public"."discussion_likes"
 
 
 
-CREATE INDEX "idx_academic_debate_category" ON "public"."ai_tutor_stage6_exercise3_academic_debate" USING "btree" ("category");
-
-
-
-CREATE INDEX "idx_academic_debate_controversy_level" ON "public"."ai_tutor_stage6_exercise3_academic_debate" USING "btree" ("controversy_level");
-
-
-
-CREATE INDEX "idx_academic_debate_difficulty" ON "public"."ai_tutor_stage6_exercise3_academic_debate" USING "btree" ("difficulty");
-
-
-
-CREATE INDEX "idx_academic_presentation_category" ON "public"."ai_tutor_stage5_exercise2_academic_presentation" USING "btree" ("category");
-
-
-
-CREATE INDEX "idx_academic_presentation_difficulty" ON "public"."ai_tutor_stage5_exercise2_academic_presentation" USING "btree" ("difficulty");
-
-
-
-CREATE INDEX "idx_academic_presentation_topic" ON "public"."ai_tutor_stage5_exercise2_academic_presentation" USING "btree" ("topic");
-
-
-
 CREATE INDEX "idx_access_logs_action" ON "public"."access_logs" USING "btree" ("action");
 
 
@@ -14485,18 +13796,6 @@ CREATE INDEX "idx_access_logs_user_id" ON "public"."access_logs" USING "btree" (
 
 
 CREATE INDEX "idx_admin_settings_created_at" ON "public"."admin_settings" USING "btree" ("created_at" DESC);
-
-
-
-CREATE INDEX "idx_advanced_debate_category" ON "public"."ai_tutor_stage5_exercise1_advanced_debate" USING "btree" ("category");
-
-
-
-CREATE INDEX "idx_advanced_debate_difficulty" ON "public"."ai_tutor_stage5_exercise1_advanced_debate" USING "btree" ("difficulty");
-
-
-
-CREATE INDEX "idx_advanced_debate_topic" ON "public"."ai_tutor_stage5_exercise1_advanced_debate" USING "btree" ("topic");
 
 
 
@@ -14728,6 +14027,50 @@ CREATE INDEX "idx_classes_status" ON "public"."classes" USING "btree" ("status")
 
 
 
+CREATE INDEX "idx_content_hierarchy_category" ON "public"."ai_tutor_content_hierarchy" USING "btree" ("category");
+
+
+
+CREATE INDEX "idx_content_hierarchy_difficulty" ON "public"."ai_tutor_content_hierarchy" USING "btree" ("difficulty");
+
+
+
+CREATE INDEX "idx_content_hierarchy_difficulty_level" ON "public"."ai_tutor_content_hierarchy" USING "btree" ("difficulty_level") WHERE ("level" = 'stage'::"text");
+
+
+
+CREATE INDEX "idx_content_hierarchy_exercise_number" ON "public"."ai_tutor_content_hierarchy" USING "btree" ("exercise_number") WHERE ("level" = 'exercise'::"text");
+
+
+
+CREATE INDEX "idx_content_hierarchy_exercise_type" ON "public"."ai_tutor_content_hierarchy" USING "btree" ("exercise_type") WHERE ("level" = 'exercise'::"text");
+
+
+
+CREATE INDEX "idx_content_hierarchy_level" ON "public"."ai_tutor_content_hierarchy" USING "btree" ("level");
+
+
+
+CREATE INDEX "idx_content_hierarchy_parent" ON "public"."ai_tutor_content_hierarchy" USING "btree" ("parent_id");
+
+
+
+CREATE INDEX "idx_content_hierarchy_path" ON "public"."ai_tutor_content_hierarchy" USING "btree" ("hierarchy_path");
+
+
+
+CREATE INDEX "idx_content_hierarchy_stage_number" ON "public"."ai_tutor_content_hierarchy" USING "btree" ("stage_number") WHERE ("level" = 'stage'::"text");
+
+
+
+CREATE INDEX "idx_content_hierarchy_topic_data_gin" ON "public"."ai_tutor_content_hierarchy" USING "gin" ("topic_data");
+
+
+
+CREATE INDEX "idx_content_hierarchy_topic_number" ON "public"."ai_tutor_content_hierarchy" USING "btree" ("topic_number") WHERE ("level" = 'topic'::"text");
+
+
+
 CREATE INDEX "idx_conversation_participants_active" ON "public"."conversation_participants" USING "btree" ("conversation_id", "user_id") WHERE ("left_at" IS NULL);
 
 
@@ -14824,30 +14167,6 @@ CREATE INDEX "idx_daily_analytics_user_id" ON "public"."ai_tutor_daily_learning_
 
 
 
-CREATE INDEX "idx_daily_routine_category" ON "public"."ai_tutor_stage2_exercise1_daily_routine" USING "btree" ("category");
-
-
-
-CREATE INDEX "idx_daily_routine_difficulty" ON "public"."ai_tutor_stage2_exercise1_daily_routine" USING "btree" ("difficulty");
-
-
-
-CREATE INDEX "idx_daily_routine_tense" ON "public"."ai_tutor_stage2_exercise1_daily_routine" USING "btree" ("tense_focus");
-
-
-
-CREATE INDEX "idx_diplomatic_communication_category" ON "public"."ai_tutor_stage6_exercise2_diplomatic_communication" USING "btree" ("category");
-
-
-
-CREATE INDEX "idx_diplomatic_communication_difficulty" ON "public"."ai_tutor_stage6_exercise2_diplomatic_communication" USING "btree" ("difficulty");
-
-
-
-CREATE INDEX "idx_diplomatic_communication_scenario_type" ON "public"."ai_tutor_stage6_exercise2_diplomatic_communication" USING "btree" ("scenario_type");
-
-
-
 CREATE INDEX "idx_exercise_progress_stage_exercise" ON "public"."ai_tutor_user_exercise_progress" USING "btree" ("stage_id", "exercise_id");
 
 
@@ -14865,54 +14184,6 @@ CREATE INDEX "idx_fcm_tokens_created_at" ON "public"."fcm_tokens" USING "btree" 
 
 
 CREATE INDEX "idx_fcm_tokens_user_id" ON "public"."fcm_tokens" USING "btree" ("user_id");
-
-
-
-CREATE INDEX "idx_functional_dialogue_category" ON "public"."ai_tutor_stage1_exercise3_functional_dialogue" USING "btree" ("category");
-
-
-
-CREATE INDEX "idx_functional_dialogue_context" ON "public"."ai_tutor_stage1_exercise3_functional_dialogue" USING "btree" ("context");
-
-
-
-CREATE INDEX "idx_functional_dialogue_difficulty" ON "public"."ai_tutor_stage1_exercise3_functional_dialogue" USING "btree" ("difficulty");
-
-
-
-CREATE INDEX "idx_group_discussion_category" ON "public"."ai_tutor_stage3_exercise2_group_discussion" USING "btree" ("category");
-
-
-
-CREATE INDEX "idx_group_discussion_difficulty" ON "public"."ai_tutor_stage3_exercise2_group_discussion" USING "btree" ("difficulty");
-
-
-
-CREATE INDEX "idx_group_discussion_flow" ON "public"."ai_tutor_stage3_exercise2_group_discussion" USING "btree" ("conversation_flow");
-
-
-
-CREATE INDEX "idx_interview_mastery_category" ON "public"."ai_tutor_stage5_exercise3_interview_mastery" USING "btree" ("category");
-
-
-
-CREATE INDEX "idx_interview_mastery_difficulty" ON "public"."ai_tutor_stage5_exercise3_interview_mastery" USING "btree" ("difficulty");
-
-
-
-CREATE INDEX "idx_interview_mastery_question_type" ON "public"."ai_tutor_stage5_exercise3_interview_mastery" USING "btree" ("question_type");
-
-
-
-CREATE INDEX "idx_interview_simulation_category" ON "public"."ai_tutor_stage4_exercise2_interview_simulation" USING "btree" ("category");
-
-
-
-CREATE INDEX "idx_interview_simulation_difficulty" ON "public"."ai_tutor_stage4_exercise2_interview_simulation" USING "btree" ("difficulty");
-
-
-
-CREATE INDEX "idx_interview_simulation_question" ON "public"."ai_tutor_stage4_exercise2_interview_simulation" USING "btree" ("question");
 
 
 
@@ -15004,18 +14275,6 @@ CREATE INDEX "idx_milestones_user_type" ON "public"."ai_tutor_learning_milestone
 
 
 
-CREATE INDEX "idx_news_summarization_category" ON "public"."ai_tutor_stage4_exercise3_news_summarization" USING "btree" ("category");
-
-
-
-CREATE INDEX "idx_news_summarization_difficulty" ON "public"."ai_tutor_stage4_exercise3_news_summarization" USING "btree" ("difficulty");
-
-
-
-CREATE INDEX "idx_news_summarization_title" ON "public"."ai_tutor_stage4_exercise3_news_summarization" USING "btree" ("title");
-
-
-
 CREATE INDEX "idx_notifications_action_data" ON "public"."notifications" USING "gin" ("action_data");
 
 
@@ -15057,30 +14316,6 @@ CREATE INDEX "idx_observation_reports_status" ON "public"."observation_reports" 
 
 
 CREATE INDEX "idx_observation_reports_submitted_by" ON "public"."observation_reports" USING "btree" ("submitted_by");
-
-
-
-CREATE INDEX "idx_opinion_debate_category" ON "public"."ai_tutor_stage4_exercise1_opinion_debate" USING "btree" ("category");
-
-
-
-CREATE INDEX "idx_opinion_debate_difficulty" ON "public"."ai_tutor_stage4_exercise1_opinion_debate" USING "btree" ("difficulty");
-
-
-
-CREATE INDEX "idx_opinion_debate_topic" ON "public"."ai_tutor_stage4_exercise1_opinion_debate" USING "btree" ("topic");
-
-
-
-CREATE INDEX "idx_problem_solving_category" ON "public"."ai_tutor_stage3_exercise3_problem_solving" USING "btree" ("category");
-
-
-
-CREATE INDEX "idx_problem_solving_difficulty" ON "public"."ai_tutor_stage3_exercise3_problem_solving" USING "btree" ("difficulty");
-
-
-
-CREATE INDEX "idx_problem_solving_type" ON "public"."ai_tutor_stage3_exercise3_problem_solving" USING "btree" ("scenario_type");
 
 
 
@@ -15129,30 +14364,6 @@ CREATE INDEX "idx_projects_region_id" ON "public"."projects" USING "btree" ("reg
 
 
 CREATE INDEX "idx_projects_status" ON "public"."projects" USING "btree" ("status");
-
-
-
-CREATE INDEX "idx_question_answer_category" ON "public"."ai_tutor_stage2_exercise2_question_answer" USING "btree" ("category");
-
-
-
-CREATE INDEX "idx_question_answer_difficulty" ON "public"."ai_tutor_stage2_exercise2_question_answer" USING "btree" ("difficulty");
-
-
-
-CREATE INDEX "idx_question_answer_tense" ON "public"."ai_tutor_stage2_exercise2_question_answer" USING "btree" ("tense");
-
-
-
-CREATE INDEX "idx_quick_response_category" ON "public"."ai_tutor_stage1_exercise2_quick_response" USING "btree" ("category");
-
-
-
-CREATE INDEX "idx_quick_response_difficulty" ON "public"."ai_tutor_stage1_exercise2_quick_response" USING "btree" ("difficulty");
-
-
-
-CREATE INDEX "idx_quick_response_question" ON "public"."ai_tutor_stage1_exercise2_quick_response" USING "btree" ("question");
 
 
 
@@ -15264,26 +14475,6 @@ CREATE INDEX "idx_regions_name" ON "public"."regions" USING "btree" ("name");
 
 
 
-CREATE INDEX "idx_repeat_after_me_phrase" ON "public"."ai_tutor_stage1_exercise1_repeat_after_me" USING "btree" ("phrase");
-
-
-
-CREATE INDEX "idx_repeat_after_me_urdu" ON "public"."ai_tutor_stage1_exercise1_repeat_after_me" USING "btree" ("urdu_meaning");
-
-
-
-CREATE INDEX "idx_roleplay_character" ON "public"."ai_tutor_stage2_exercise3_roleplay" USING "btree" ("ai_character");
-
-
-
-CREATE INDEX "idx_roleplay_difficulty" ON "public"."ai_tutor_stage2_exercise3_roleplay" USING "btree" ("difficulty");
-
-
-
-CREATE INDEX "idx_roleplay_scenario" ON "public"."ai_tutor_stage2_exercise3_roleplay" USING "btree" ("scenario_context");
-
-
-
 CREATE INDEX "idx_schools_accreditation_status" ON "public"."schools" USING "btree" ("accreditation_status");
 
 
@@ -15365,18 +14556,6 @@ CREATE INDEX "idx_security_alerts_severity" ON "public"."security_alerts" USING 
 
 
 CREATE INDEX "idx_security_alerts_type" ON "public"."security_alerts" USING "btree" ("alert_type");
-
-
-
-CREATE INDEX "idx_spontaneous_speaking_category" ON "public"."ai_tutor_stage6_exercise1_spontaneous_speaking" USING "btree" ("category");
-
-
-
-CREATE INDEX "idx_spontaneous_speaking_difficulty" ON "public"."ai_tutor_stage6_exercise1_spontaneous_speaking" USING "btree" ("difficulty");
-
-
-
-CREATE INDEX "idx_spontaneous_speaking_topic_type" ON "public"."ai_tutor_stage6_exercise1_spontaneous_speaking" USING "btree" ("topic_type");
 
 
 
@@ -15465,18 +14644,6 @@ CREATE INDEX "idx_standalone_quizzes_status" ON "public"."standalone_quizzes" US
 
 
 CREATE INDEX "idx_standalone_quizzes_visibility" ON "public"."standalone_quizzes" USING "btree" ("visibility");
-
-
-
-CREATE INDEX "idx_storytelling_category" ON "public"."ai_tutor_stage3_exercise1_storytelling" USING "btree" ("category");
-
-
-
-CREATE INDEX "idx_storytelling_difficulty" ON "public"."ai_tutor_stage3_exercise1_storytelling" USING "btree" ("difficulty");
-
-
-
-CREATE INDEX "idx_storytelling_tense" ON "public"."ai_tutor_stage3_exercise1_storytelling" USING "btree" ("tense_focus");
 
 
 
@@ -15813,6 +14980,11 @@ ALTER TABLE ONLY "public"."ai_safety_ethics_settings"
 
 ALTER TABLE ONLY "public"."ai_safety_ethics_settings"
     ADD CONSTRAINT "ai_safety_ethics_settings_updated_by_fkey" FOREIGN KEY ("updated_by") REFERENCES "auth"."users"("id");
+
+
+
+ALTER TABLE ONLY "public"."ai_tutor_content_hierarchy"
+    ADD CONSTRAINT "ai_tutor_content_hierarchy_parent_id_fkey" FOREIGN KEY ("parent_id") REFERENCES "public"."ai_tutor_content_hierarchy"("id");
 
 
 
@@ -16985,14 +16157,6 @@ COMMENT ON POLICY "Anonymous users can insert access logs" ON "public"."access_l
 
 
 
-CREATE POLICY "Anyone can view academic debate topics" ON "public"."ai_tutor_stage6_exercise3_academic_debate" FOR SELECT USING (true);
-
-
-
-CREATE POLICY "Anyone can view academic presentation topics" ON "public"."ai_tutor_stage5_exercise2_academic_presentation" FOR SELECT USING (true);
-
-
-
 CREATE POLICY "Anyone can view active FAQs" ON "public"."apex_faqs" FOR SELECT USING (("is_active" = true));
 
 
@@ -17005,67 +16169,7 @@ CREATE POLICY "Anyone can view active knowledge base articles" ON "public"."apex
 
 
 
-CREATE POLICY "Anyone can view advanced debate topics" ON "public"."ai_tutor_stage5_exercise1_advanced_debate" FOR SELECT USING (true);
-
-
-
-CREATE POLICY "Anyone can view daily routine narration" ON "public"."ai_tutor_stage2_exercise1_daily_routine" FOR SELECT USING (true);
-
-
-
-CREATE POLICY "Anyone can view diplomatic communication scenarios" ON "public"."ai_tutor_stage6_exercise2_diplomatic_communication" FOR SELECT USING (true);
-
-
-
-CREATE POLICY "Anyone can view functional dialogue" ON "public"."ai_tutor_stage1_exercise3_functional_dialogue" FOR SELECT USING (true);
-
-
-
-CREATE POLICY "Anyone can view group discussion simulation" ON "public"."ai_tutor_stage3_exercise2_group_discussion" FOR SELECT USING (true);
-
-
-
-CREATE POLICY "Anyone can view interview mastery questions" ON "public"."ai_tutor_stage5_exercise3_interview_mastery" FOR SELECT USING (true);
-
-
-
-CREATE POLICY "Anyone can view interview simulation questions" ON "public"."ai_tutor_stage4_exercise2_interview_simulation" FOR SELECT USING (true);
-
-
-
-CREATE POLICY "Anyone can view news summarization content" ON "public"."ai_tutor_stage4_exercise3_news_summarization" FOR SELECT USING (true);
-
-
-
-CREATE POLICY "Anyone can view opinion debate topics" ON "public"."ai_tutor_stage4_exercise1_opinion_debate" FOR SELECT USING (true);
-
-
-
-CREATE POLICY "Anyone can view problem solving conversations" ON "public"."ai_tutor_stage3_exercise3_problem_solving" FOR SELECT USING (true);
-
-
-
-CREATE POLICY "Anyone can view question answer chat practice" ON "public"."ai_tutor_stage2_exercise2_question_answer" FOR SELECT USING (true);
-
-
-
-CREATE POLICY "Anyone can view quick response prompts" ON "public"."ai_tutor_stage1_exercise2_quick_response" FOR SELECT USING (true);
-
-
-
-CREATE POLICY "Anyone can view repeat after me phrases" ON "public"."ai_tutor_stage1_exercise1_repeat_after_me" FOR SELECT USING (true);
-
-
-
-CREATE POLICY "Anyone can view roleplay simulation" ON "public"."ai_tutor_stage2_exercise3_roleplay" FOR SELECT USING (true);
-
-
-
-CREATE POLICY "Anyone can view spontaneous speaking topics" ON "public"."ai_tutor_stage6_exercise1_spontaneous_speaking" FOR SELECT USING (true);
-
-
-
-CREATE POLICY "Anyone can view storytelling narration" ON "public"."ai_tutor_stage3_exercise1_storytelling" FOR SELECT USING (true);
+CREATE POLICY "Anyone can view content hierarchy" ON "public"."ai_tutor_content_hierarchy" FOR SELECT USING (true);
 
 
 
@@ -18051,6 +17155,9 @@ ALTER TABLE "public"."ai_report_interactions" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."ai_safety_ethics_settings" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "public"."ai_tutor_content_hierarchy" ENABLE ROW LEVEL SECURITY;
+
+
 ALTER TABLE "public"."ai_tutor_daily_learning_analytics" ENABLE ROW LEVEL SECURITY;
 
 
@@ -18061,60 +17168,6 @@ ALTER TABLE "public"."ai_tutor_learning_unlocks" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."ai_tutor_settings" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "public"."ai_tutor_stage1_exercise1_repeat_after_me" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "public"."ai_tutor_stage1_exercise2_quick_response" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "public"."ai_tutor_stage1_exercise3_functional_dialogue" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "public"."ai_tutor_stage2_exercise1_daily_routine" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "public"."ai_tutor_stage2_exercise2_question_answer" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "public"."ai_tutor_stage2_exercise3_roleplay" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "public"."ai_tutor_stage3_exercise1_storytelling" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "public"."ai_tutor_stage3_exercise2_group_discussion" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "public"."ai_tutor_stage3_exercise3_problem_solving" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "public"."ai_tutor_stage4_exercise1_opinion_debate" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "public"."ai_tutor_stage4_exercise2_interview_simulation" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "public"."ai_tutor_stage4_exercise3_news_summarization" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "public"."ai_tutor_stage5_exercise1_advanced_debate" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "public"."ai_tutor_stage5_exercise2_academic_presentation" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "public"."ai_tutor_stage5_exercise3_interview_mastery" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "public"."ai_tutor_stage6_exercise1_spontaneous_speaking" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "public"."ai_tutor_stage6_exercise2_diplomatic_communication" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "public"."ai_tutor_stage6_exercise3_academic_debate" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."ai_tutor_user_exercise_progress" ENABLE ROW LEVEL SECURITY;
@@ -18869,6 +17922,12 @@ GRANT ALL ON FUNCTION "public"."get_ai_tutor_settings"() TO "service_role";
 
 
 
+GRANT ALL ON FUNCTION "public"."get_all_stages_with_counts"() TO "anon";
+GRANT ALL ON FUNCTION "public"."get_all_stages_with_counts"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_all_stages_with_counts"() TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."get_assessment_submissions"("assessment_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."get_assessment_submissions"("assessment_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_assessment_submissions"("assessment_id" "uuid") TO "service_role";
@@ -19010,6 +18069,12 @@ GRANT ALL ON FUNCTION "public"."get_engagement_trends_data"("p_teacher_id" "uuid
 GRANT ALL ON FUNCTION "public"."get_engagement_trends_data_with_filters"("p_teacher_id" "uuid", "p_time_range" "text", "filter_country_id" "uuid", "filter_region_id" "uuid", "filter_city_id" "uuid", "filter_project_id" "uuid", "filter_board_id" "uuid", "filter_school_id" "uuid", "filter_grade" "text", "filter_class_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."get_engagement_trends_data_with_filters"("p_teacher_id" "uuid", "p_time_range" "text", "filter_country_id" "uuid", "filter_region_id" "uuid", "filter_city_id" "uuid", "filter_project_id" "uuid", "filter_board_id" "uuid", "filter_school_id" "uuid", "filter_grade" "text", "filter_class_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_engagement_trends_data_with_filters"("p_teacher_id" "uuid", "p_time_range" "text", "filter_country_id" "uuid", "filter_region_id" "uuid", "filter_city_id" "uuid", "filter_project_id" "uuid", "filter_board_id" "uuid", "filter_school_id" "uuid", "filter_grade" "text", "filter_class_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."get_exercises_for_stage_with_counts"("stage_num" integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."get_exercises_for_stage_with_counts"("stage_num" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_exercises_for_stage_with_counts"("stage_num" integer) TO "service_role";
 
 
 
@@ -19331,6 +18396,12 @@ GRANT ALL ON FUNCTION "public"."get_text_answer_grades"("submission_id" "uuid") 
 
 
 
+GRANT ALL ON FUNCTION "public"."get_topics_for_exercise_full"("stage_num" integer, "exercise_num" integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."get_topics_for_exercise_full"("stage_num" integer, "exercise_num" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_topics_for_exercise_full"("stage_num" integer, "exercise_num" integer) TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."get_user_accessible_quizzes"("input_user_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."get_user_accessible_quizzes"("input_user_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_user_accessible_quizzes"("input_user_id" "uuid") TO "service_role";
@@ -19559,6 +18630,12 @@ GRANT ALL ON FUNCTION "public"."search_standalone_quizzes"("search_term" "text",
 
 
 
+GRANT ALL ON FUNCTION "public"."search_topics_by_content"("search_term" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."search_topics_by_content"("search_term" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."search_topics_by_content"("search_term" "text") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."set_admin_settings_created_by"() TO "anon";
 GRANT ALL ON FUNCTION "public"."set_admin_settings_created_by"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."set_admin_settings_created_by"() TO "service_role";
@@ -19784,6 +18861,18 @@ GRANT ALL ON TABLE "public"."ai_safety_ethics_settings" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."ai_tutor_content_hierarchy" TO "anon";
+GRANT ALL ON TABLE "public"."ai_tutor_content_hierarchy" TO "authenticated";
+GRANT ALL ON TABLE "public"."ai_tutor_content_hierarchy" TO "service_role";
+
+
+
+GRANT ALL ON SEQUENCE "public"."ai_tutor_content_hierarchy_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."ai_tutor_content_hierarchy_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."ai_tutor_content_hierarchy_id_seq" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."ai_tutor_daily_learning_analytics" TO "anon";
 GRANT ALL ON TABLE "public"."ai_tutor_daily_learning_analytics" TO "authenticated";
 GRANT ALL ON TABLE "public"."ai_tutor_daily_learning_analytics" TO "service_role";
@@ -19805,222 +18894,6 @@ GRANT ALL ON TABLE "public"."ai_tutor_learning_unlocks" TO "service_role";
 GRANT ALL ON TABLE "public"."ai_tutor_settings" TO "anon";
 GRANT ALL ON TABLE "public"."ai_tutor_settings" TO "authenticated";
 GRANT ALL ON TABLE "public"."ai_tutor_settings" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."ai_tutor_stage1_exercise1_repeat_after_me" TO "anon";
-GRANT ALL ON TABLE "public"."ai_tutor_stage1_exercise1_repeat_after_me" TO "authenticated";
-GRANT ALL ON TABLE "public"."ai_tutor_stage1_exercise1_repeat_after_me" TO "service_role";
-
-
-
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage1_exercise1_repeat_after_me_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage1_exercise1_repeat_after_me_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage1_exercise1_repeat_after_me_id_seq" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."ai_tutor_stage1_exercise2_quick_response" TO "anon";
-GRANT ALL ON TABLE "public"."ai_tutor_stage1_exercise2_quick_response" TO "authenticated";
-GRANT ALL ON TABLE "public"."ai_tutor_stage1_exercise2_quick_response" TO "service_role";
-
-
-
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage1_exercise2_quick_response_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage1_exercise2_quick_response_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage1_exercise2_quick_response_id_seq" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."ai_tutor_stage1_exercise3_functional_dialogue" TO "anon";
-GRANT ALL ON TABLE "public"."ai_tutor_stage1_exercise3_functional_dialogue" TO "authenticated";
-GRANT ALL ON TABLE "public"."ai_tutor_stage1_exercise3_functional_dialogue" TO "service_role";
-
-
-
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage1_exercise3_functional_dialogue_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage1_exercise3_functional_dialogue_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage1_exercise3_functional_dialogue_id_seq" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."ai_tutor_stage2_exercise1_daily_routine" TO "anon";
-GRANT ALL ON TABLE "public"."ai_tutor_stage2_exercise1_daily_routine" TO "authenticated";
-GRANT ALL ON TABLE "public"."ai_tutor_stage2_exercise1_daily_routine" TO "service_role";
-
-
-
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage2_exercise1_daily_routine_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage2_exercise1_daily_routine_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage2_exercise1_daily_routine_id_seq" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."ai_tutor_stage2_exercise2_question_answer" TO "anon";
-GRANT ALL ON TABLE "public"."ai_tutor_stage2_exercise2_question_answer" TO "authenticated";
-GRANT ALL ON TABLE "public"."ai_tutor_stage2_exercise2_question_answer" TO "service_role";
-
-
-
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage2_exercise2_question_answer_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage2_exercise2_question_answer_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage2_exercise2_question_answer_id_seq" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."ai_tutor_stage2_exercise3_roleplay" TO "anon";
-GRANT ALL ON TABLE "public"."ai_tutor_stage2_exercise3_roleplay" TO "authenticated";
-GRANT ALL ON TABLE "public"."ai_tutor_stage2_exercise3_roleplay" TO "service_role";
-
-
-
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage2_exercise3_roleplay_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage2_exercise3_roleplay_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage2_exercise3_roleplay_id_seq" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."ai_tutor_stage3_exercise1_storytelling" TO "anon";
-GRANT ALL ON TABLE "public"."ai_tutor_stage3_exercise1_storytelling" TO "authenticated";
-GRANT ALL ON TABLE "public"."ai_tutor_stage3_exercise1_storytelling" TO "service_role";
-
-
-
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage3_exercise1_storytelling_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage3_exercise1_storytelling_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage3_exercise1_storytelling_id_seq" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."ai_tutor_stage3_exercise2_group_discussion" TO "anon";
-GRANT ALL ON TABLE "public"."ai_tutor_stage3_exercise2_group_discussion" TO "authenticated";
-GRANT ALL ON TABLE "public"."ai_tutor_stage3_exercise2_group_discussion" TO "service_role";
-
-
-
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage3_exercise2_group_discussion_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage3_exercise2_group_discussion_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage3_exercise2_group_discussion_id_seq" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."ai_tutor_stage3_exercise3_problem_solving" TO "anon";
-GRANT ALL ON TABLE "public"."ai_tutor_stage3_exercise3_problem_solving" TO "authenticated";
-GRANT ALL ON TABLE "public"."ai_tutor_stage3_exercise3_problem_solving" TO "service_role";
-
-
-
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage3_exercise3_problem_solving_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage3_exercise3_problem_solving_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage3_exercise3_problem_solving_id_seq" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."ai_tutor_stage4_exercise1_opinion_debate" TO "anon";
-GRANT ALL ON TABLE "public"."ai_tutor_stage4_exercise1_opinion_debate" TO "authenticated";
-GRANT ALL ON TABLE "public"."ai_tutor_stage4_exercise1_opinion_debate" TO "service_role";
-
-
-
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage4_exercise1_opinion_debate_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage4_exercise1_opinion_debate_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage4_exercise1_opinion_debate_id_seq" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."ai_tutor_stage4_exercise2_interview_simulation" TO "anon";
-GRANT ALL ON TABLE "public"."ai_tutor_stage4_exercise2_interview_simulation" TO "authenticated";
-GRANT ALL ON TABLE "public"."ai_tutor_stage4_exercise2_interview_simulation" TO "service_role";
-
-
-
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage4_exercise2_interview_simulation_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage4_exercise2_interview_simulation_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage4_exercise2_interview_simulation_id_seq" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."ai_tutor_stage4_exercise3_news_summarization" TO "anon";
-GRANT ALL ON TABLE "public"."ai_tutor_stage4_exercise3_news_summarization" TO "authenticated";
-GRANT ALL ON TABLE "public"."ai_tutor_stage4_exercise3_news_summarization" TO "service_role";
-
-
-
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage4_exercise3_news_summarization_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage4_exercise3_news_summarization_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage4_exercise3_news_summarization_id_seq" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."ai_tutor_stage5_exercise1_advanced_debate" TO "anon";
-GRANT ALL ON TABLE "public"."ai_tutor_stage5_exercise1_advanced_debate" TO "authenticated";
-GRANT ALL ON TABLE "public"."ai_tutor_stage5_exercise1_advanced_debate" TO "service_role";
-
-
-
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage5_exercise1_advanced_debate_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage5_exercise1_advanced_debate_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage5_exercise1_advanced_debate_id_seq" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."ai_tutor_stage5_exercise2_academic_presentation" TO "anon";
-GRANT ALL ON TABLE "public"."ai_tutor_stage5_exercise2_academic_presentation" TO "authenticated";
-GRANT ALL ON TABLE "public"."ai_tutor_stage5_exercise2_academic_presentation" TO "service_role";
-
-
-
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage5_exercise2_academic_presentation_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage5_exercise2_academic_presentation_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage5_exercise2_academic_presentation_id_seq" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."ai_tutor_stage5_exercise3_interview_mastery" TO "anon";
-GRANT ALL ON TABLE "public"."ai_tutor_stage5_exercise3_interview_mastery" TO "authenticated";
-GRANT ALL ON TABLE "public"."ai_tutor_stage5_exercise3_interview_mastery" TO "service_role";
-
-
-
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage5_exercise3_interview_mastery_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage5_exercise3_interview_mastery_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage5_exercise3_interview_mastery_id_seq" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."ai_tutor_stage6_exercise1_spontaneous_speaking" TO "anon";
-GRANT ALL ON TABLE "public"."ai_tutor_stage6_exercise1_spontaneous_speaking" TO "authenticated";
-GRANT ALL ON TABLE "public"."ai_tutor_stage6_exercise1_spontaneous_speaking" TO "service_role";
-
-
-
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage6_exercise1_spontaneous_speaking_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage6_exercise1_spontaneous_speaking_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage6_exercise1_spontaneous_speaking_id_seq" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."ai_tutor_stage6_exercise2_diplomatic_communication" TO "anon";
-GRANT ALL ON TABLE "public"."ai_tutor_stage6_exercise2_diplomatic_communication" TO "authenticated";
-GRANT ALL ON TABLE "public"."ai_tutor_stage6_exercise2_diplomatic_communication" TO "service_role";
-
-
-
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage6_exercise2_diplomatic_communication_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage6_exercise2_diplomatic_communication_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage6_exercise2_diplomatic_communication_id_seq" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."ai_tutor_stage6_exercise3_academic_debate" TO "anon";
-GRANT ALL ON TABLE "public"."ai_tutor_stage6_exercise3_academic_debate" TO "authenticated";
-GRANT ALL ON TABLE "public"."ai_tutor_stage6_exercise3_academic_debate" TO "service_role";
-
-
-
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage6_exercise3_academic_debate_id_seq" TO "anon";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage6_exercise3_academic_debate_id_seq" TO "authenticated";
-GRANT ALL ON SEQUENCE "public"."ai_tutor_stage6_exercise3_academic_debate_id_seq" TO "service_role";
 
 
 
