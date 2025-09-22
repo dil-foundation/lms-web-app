@@ -6066,6 +6066,7 @@ const CourseBuilder = () => {
                     courseTitle={courseData.title}
                     courseDescription={courseData.description}
                     currentThumbnail={courseData.image}
+                    courseStatus={courseData.status}
                     onThumbnailGenerated={(imageUrl) => {
                       setCourseData(prev => ({ ...prev, image: imageUrl }));
                       toast.success('AI thumbnail applied to your course!');
