@@ -31,7 +31,8 @@ import {
   Sparkles,
   Calendar,
   GripVertical,
-  Info
+  Info,
+  Image as ImageIcon
 } from 'lucide-react';
 import {
   DndContext,
@@ -56,6 +57,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { cn } from '@/lib/utils';
 import AccessLogService from '@/services/accessLogService';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface CourseContentProps {
   courseId?: string;
@@ -88,6 +90,72 @@ const getContentItemIcon = (item: any, currentContentItemId: string | null) => {
       case 'quiz': return <HelpCircle className="w-5 h-5 text-primary" />;
       default: return <Circle className="w-5 h-5 text-gray-400" />;
     }
+};
+
+// Component for displaying quiz question images with signed URL
+const QuizQuestionImage = ({ imageUrl, onClick }: { imageUrl: string, onClick: () => void }) => {
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadSignedUrl = async () => {
+      if (imageUrl.startsWith('http')) {
+        // Already a signed URL
+        setSignedUrl(imageUrl);
+        setLoading(false);
+      } else {
+        // It's a file path, create signed URL
+        try {
+          const { data, error } = await supabase.storage
+            .from('dil-lms')
+            .createSignedUrl(imageUrl, 3600); // 1 hour expiry
+          
+          if (error) {
+            console.error('Error creating signed URL:', error);
+            setLoading(false);
+            return;
+          }
+          
+          setSignedUrl(data.signedUrl);
+        } catch (error) {
+          console.error('Error creating signed URL:', error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadSignedUrl();
+  }, [imageUrl]);
+
+  if (loading) {
+    return (
+      <div className="relative w-8 h-8 rounded-md overflow-hidden border border-purple-200 dark:border-purple-700 bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+        <div className="w-3 h-3 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (!signedUrl) {
+    return (
+      <div className="relative w-8 h-8 rounded-md overflow-hidden border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
+        <ImageIcon className="w-3 h-3 text-red-500" />
+      </div>
+    );
+  }
+
+  return (
+    <div 
+      className="relative w-8 h-8 rounded-md overflow-hidden border border-purple-200 dark:border-purple-700 cursor-pointer hover:border-purple-400 dark:hover:border-purple-500 transition-colors"
+      onClick={onClick}
+    >
+      <img 
+        src={signedUrl} 
+        alt="Question image" 
+        className="w-full h-full object-cover"
+      />
+    </div>
+  );
 };
 
 // SortableContentItem component for drag and drop functionality
@@ -179,11 +247,50 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
   const [mathDrawings, setMathDrawings] = useState<Record<string, string>>({});
   const [isQuizSubmitted, setIsQuizSubmitted] = useState(false);
   const [quizResults, setQuizResults] = useState<Record<string, boolean>>({});
+  const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string>('');
+  const [imageLoading, setImageLoading] = useState(false);
 
   // Memoized function to handle drawing changes
   const handleDrawingChange = useCallback((questionId: string, drawingData: string) => {
     setMathDrawings(prev => ({ ...prev, [questionId]: drawingData }));
   }, []);
+
+  // Helper function to open image modal
+  const openImageModal = async (imageUrl: string) => {
+    setImageLoading(true);
+    setImageModalOpen(true);
+    setSelectedImageUrl(''); // Clear previous image
+    
+    // Check if it's already a signed URL or if we need to create one
+    let signedUrl = imageUrl;
+    if (!imageUrl.startsWith('http')) {
+      // It's a file path, create signed URL
+      try {
+        const { data, error } = await supabase.storage
+          .from('dil-lms')
+          .createSignedUrl(imageUrl, 3600);
+        
+        if (error) {
+          console.error('Error creating signed URL:', error);
+          toast.error('Failed to load image');
+          setImageLoading(false);
+          setImageModalOpen(false);
+          return;
+        }
+        
+        signedUrl = data.signedUrl;
+      } catch (error) {
+        console.error('Error creating signed URL:', error);
+        toast.error('Failed to load image');
+        setImageLoading(false);
+        setImageModalOpen(false);
+        return;
+      }
+    }
+    setSelectedImageUrl(signedUrl);
+    setImageLoading(false);
+  };
 
   const actualCourseId = courseId || id;
 
@@ -329,7 +436,9 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
               math_expression: q.math_expression || null,
               math_tolerance: q.math_tolerance || null,
               math_hint: q.math_hint || null,
-              math_allow_drawing: q.math_allow_drawing === true
+              math_allow_drawing: q.math_allow_drawing === true,
+              // Ensure image_url is included
+              image_url: q.image_url || null
             }));
           }
           
@@ -889,7 +998,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       }
       setIsLoading(true);
       try {
-        const { data, error } = await supabase.from('courses').select(`*,sections:course_sections(*,lessons:course_lessons(*,contentItems:course_lesson_content(*,quiz:quiz_questions(*,math_expression,math_tolerance,math_hint,math_allow_drawing,options:question_options(*)))))`).eq('id', actualCourseId).single();
+        const { data, error } = await supabase.from('courses').select(`*,sections:course_sections(*,lessons:course_lessons(*,contentItems:course_lesson_content(*,quiz:quiz_questions(*,math_expression,math_tolerance,math_hint,math_allow_drawing,image_url,options:question_options(*)))))`).eq('id', actualCourseId).single();
         if (error) throw error;
         if (data) {
           for (const section of data.sections) {
@@ -1246,6 +1355,13 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                       >
                         {isMultipleChoice ? 'Multiple Choice' : isTextAnswer ? 'Text Answer' : isMathExpression ? 'Math Expression' : 'Single Choice'}
                       </Badge>
+                      {/* Quiz Question Image */}
+                      {q.image_url && (
+                        <QuizQuestionImage 
+                          imageUrl={q.image_url}
+                          onClick={() => openImageModal(q.image_url)}
+                        />
+                      )}
                     </div>
                     
                     {isMathExpression ? (
@@ -1910,6 +2026,53 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
           </div>
         </div>
       </div>
+
+      {/* Image Modal */}
+      <Dialog open={imageModalOpen} onOpenChange={(open) => {
+        setImageModalOpen(open);
+        if (!open) {
+          setImageLoading(false);
+          setSelectedImageUrl('');
+        }
+      }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Question Image</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-center p-4 min-h-[400px]">
+            {imageLoading ? (
+              <div className="flex flex-col items-center justify-center space-y-4">
+                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                <div className="text-center">
+                  <p className="text-lg font-medium text-foreground">Loading Image</p>
+                  <p className="text-sm text-muted-foreground">Please wait while we prepare the image...</p>
+                </div>
+              </div>
+            ) : selectedImageUrl ? (
+              <img 
+                src={selectedImageUrl} 
+                alt="Question image preview" 
+                className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg transition-opacity duration-300"
+                onLoad={() => setImageLoading(false)}
+                onError={() => {
+                  setImageLoading(false);
+                  toast.error('Failed to load image');
+                }}
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center space-y-4">
+                <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
+                  <ImageIcon className="w-8 h-8 text-red-500" />
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-medium text-foreground">Image Not Available</p>
+                  <p className="text-sm text-muted-foreground">The image could not be loaded</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
