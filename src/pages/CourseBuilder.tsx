@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Save, Eye, Upload, Plus, GripVertical, X, ChevronDown, ChevronUp, BookOpen, Info, UploadCloud, FileText, RefreshCw, Calendar, Edit, Sparkles } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Upload, Plus, GripVertical, X, ChevronDown, ChevronUp, BookOpen, Info, UploadCloud, FileText, RefreshCw, Calendar, Edit, Sparkles, Image as ImageIcon, Trash2 } from 'lucide-react';
 import { AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { FileUpload } from '@/components/ui/FileUpload';
@@ -117,6 +117,8 @@ interface QuizQuestion {
   math_tolerance?: number;
   math_hint?: string;
   math_allow_drawing?: boolean;
+  // Image field for question
+  image_url?: string;
 }
 
 interface QuestionOption {
@@ -1241,8 +1243,77 @@ SortableContentItemComponent.displayName = "SortableContentItemComponent";
 // #endregion
 
 // #region QuizBuilder Component
+// Component for displaying quiz question images with signed URL
+const QuizQuestionImage = ({ imageUrl, onClick }: { imageUrl: string, onClick: () => void }) => {
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadSignedUrl = async () => {
+      if (imageUrl.startsWith('http')) {
+        // Already a signed URL
+        setSignedUrl(imageUrl);
+        setLoading(false);
+      } else {
+        // It's a file path, create signed URL
+        try {
+          const { data, error } = await supabase.storage
+            .from('dil-lms')
+            .createSignedUrl(imageUrl, 3600); // 1 hour expiry
+          
+          if (error) {
+            console.error('Error creating signed URL:', error);
+            setLoading(false);
+            return;
+          }
+          
+          setSignedUrl(data.signedUrl);
+        } catch (error) {
+          console.error('Error creating signed URL:', error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadSignedUrl();
+  }, [imageUrl]);
+
+  if (loading) {
+    return (
+      <div className="relative w-8 h-8 rounded-md overflow-hidden border border-purple-200 dark:border-purple-700 bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+        <div className="w-3 h-3 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (!signedUrl) {
+    return (
+      <div className="relative w-8 h-8 rounded-md overflow-hidden border border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
+        <X className="w-3 h-3 text-red-500" />
+      </div>
+    );
+  }
+
+  return (
+    <div 
+      className="relative w-8 h-8 rounded-md overflow-hidden border border-purple-200 dark:border-purple-700 cursor-pointer hover:border-purple-400 dark:hover:border-purple-500 transition-colors"
+      onClick={onClick}
+    >
+      <img 
+        src={signedUrl} 
+        alt="Question image" 
+        className="w-full h-full object-cover"
+      />
+    </div>
+  );
+};
+
 const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (quiz: QuizData) => void }) => {
   const [showPDFUploader, setShowPDFUploader] = useState(false);
+  const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string>('');
+  const [imageLoading, setImageLoading] = useState(false);
   
   const addQuestion = () => {
     const newQuestion: QuizQuestion = {
@@ -1388,6 +1459,86 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
     );
     onQuizChange({ ...quiz, questions: updatedQuestions });
   };
+
+  const handleImageUpload = async (qIndex: number, file: File) => {
+    try {
+      // Create a unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `quiz-question-${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `quiz-images/${fileName}`;
+
+      // Upload to Supabase storage
+      const { data, error } = await supabase.storage
+        .from('dil-lms')
+        .upload(filePath, file);
+
+      if (error) {
+        toast.error('Failed to upload image');
+        return;
+      }
+
+      // Store the file path instead of public URL for later signed URL generation
+      // Update the question with the file path
+      const updatedQuestions = quiz.questions.map((q, i) => 
+        i === qIndex ? { ...q, image_url: filePath } : q
+      );
+      onQuizChange({ ...quiz, questions: updatedQuestions });
+
+      toast.success('Image uploaded successfully');
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error('Failed to upload image');
+    }
+  };
+
+  const removeImage = (qIndex: number) => {
+    const updatedQuestions = quiz.questions.map((q, i) => 
+      i === qIndex ? { ...q, image_url: undefined } : q
+    );
+    onQuizChange({ ...quiz, questions: updatedQuestions });
+    toast.success('Image removed');
+  };
+
+  const getSignedImageUrl = async (filePath: string): Promise<string | null> => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('dil-lms')
+        .createSignedUrl(filePath, 3600); // 1 hour expiry
+      
+      if (error) {
+        console.error('Error creating signed URL:', error);
+        return null;
+      }
+      
+      return data.signedUrl;
+    } catch (error) {
+      console.error('Error creating signed URL:', error);
+      return null;
+    }
+  };
+
+  const openImageModal = async (imageUrl: string) => {
+    setImageLoading(true);
+    setImageModalOpen(true);
+    setSelectedImageUrl(''); // Clear previous image
+    
+    // Check if it's already a signed URL or if we need to create one
+    let signedUrl = imageUrl;
+    if (!imageUrl.startsWith('http')) {
+      // It's a file path, create signed URL
+      const url = await getSignedImageUrl(imageUrl);
+      if (url) {
+        signedUrl = url;
+      } else {
+        toast.error('Failed to load image');
+        setImageLoading(false);
+        setImageModalOpen(false);
+        return;
+      }
+    }
+    setSelectedImageUrl(signedUrl);
+    setImageLoading(false);
+  };
   
   return (
     <div className="w-full space-y-6">
@@ -1532,6 +1683,51 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
               >
                 {question.question_type === 'single_choice' ? 'Single Choice' : question.question_type === 'multiple_choice' ? 'Multiple Choice' : question.question_type === 'math_expression' ? 'Math Expression' : 'Text Answer'}
               </Badge>
+              
+              {/* Compact Image Upload Button */}
+              {question.image_url ? (
+                <div className="flex items-center gap-2">
+                  <QuizQuestionImage 
+                    imageUrl={question.image_url}
+                    onClick={() => openImageModal(question.image_url!)}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeImage(qIndex)}
+                    className="h-6 w-6 p-0 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
+                </div>
+              ) : (
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file && file.size <= 5 * 1024 * 1024) {
+                        handleImageUpload(qIndex, file);
+                      } else if (file) {
+                        toast.error('File size must be less than 5MB');
+                      }
+                    }}
+                    className="hidden"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-6 px-2 text-xs border-purple-200 dark:border-purple-700 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                    asChild
+                  >
+                    <span>
+                      <ImageIcon className="w-3 h-3 mr-1" />
+                      Image
+                    </span>
+                  </Button>
+                </label>
+              )}
             </div>
           </CardHeader>
           <CardContent className="p-6 space-y-4">
@@ -1705,6 +1901,53 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
           </Dialog>
         </div>
       ) : null}
+      
+      {/* Image Modal */}
+      <Dialog open={imageModalOpen} onOpenChange={(open) => {
+        setImageModalOpen(open);
+        if (!open) {
+          setImageLoading(false);
+          setSelectedImageUrl('');
+        }
+      }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Question Image</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-center p-4 min-h-[400px]">
+            {imageLoading ? (
+              <div className="flex flex-col items-center justify-center space-y-4">
+                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                <div className="text-center">
+                  <p className="text-lg font-medium text-foreground">Loading Image</p>
+                  <p className="text-sm text-muted-foreground">Please wait while we prepare the image...</p>
+                </div>
+              </div>
+            ) : selectedImageUrl ? (
+              <img 
+                src={selectedImageUrl} 
+                alt="Question image preview" 
+                className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg transition-opacity duration-300"
+                onLoad={() => setImageLoading(false)}
+                onError={() => {
+                  setImageLoading(false);
+                  toast.error('Failed to load image');
+                }}
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center space-y-4">
+                <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
+                  <ImageIcon className="w-8 h-8 text-red-500" />
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-medium text-foreground">Image Not Available</p>
+                  <p className="text-sm text-muted-foreground">The image could not be loaded</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -3089,6 +3332,7 @@ const CourseBuilder = () => {
                       math_tolerance,
                       math_hint,
                       math_allow_drawing,
+                      image_url,
                       options:question_options(*)
                     )
                   )
@@ -3192,7 +3436,9 @@ const CourseBuilder = () => {
                             math_expression: q.math_expression || null,
                             math_tolerance: q.math_tolerance || null,
                             math_hint: q.math_hint || null,
-                            math_allow_drawing: q.math_allow_drawing === true
+                            math_allow_drawing: q.math_allow_drawing === true,
+                            // Store the file path (not signed URL) - signed URLs will be generated in the component
+                            image_url: q.image_url || null
                           }));
                           quizData = { id: ci.id, questions: quizQuestions };
                         }
@@ -3802,7 +4048,8 @@ const CourseBuilder = () => {
                           math_expression: question.math_expression || null,
                           math_tolerance: question.math_tolerance || null,
                           math_hint: question.math_hint || null,
-                          math_allow_drawing: question.math_allow_drawing === true
+                          math_allow_drawing: question.math_allow_drawing === true,
+                          image_url: question.image_url || null
                         })
                         .eq('id', existingQuestion.id);
                       
@@ -3853,7 +4100,8 @@ const CourseBuilder = () => {
                           math_expression: question.math_expression || null,
                           math_tolerance: question.math_tolerance || null,
                           math_hint: question.math_hint || null,
-                          math_allow_drawing: question.math_allow_drawing === true
+                          math_allow_drawing: question.math_allow_drawing === true,
+                          image_url: question.image_url || null
                         })
                         .select('id')
                         .single();
@@ -4310,7 +4558,8 @@ const CourseBuilder = () => {
                               math_expression: question.math_expression || null,
                               math_tolerance: question.math_tolerance || null,
                               math_hint: question.math_hint || null,
-                              math_allow_drawing: question.math_allow_drawing === true
+                              math_allow_drawing: question.math_allow_drawing === true,
+                              image_url: question.image_url || null
                           })
                           .select('id').single();
 
