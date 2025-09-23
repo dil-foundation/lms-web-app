@@ -432,6 +432,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
             processedItem.quiz = item.quiz.map((q: any) => ({
               ...q,
               question_type: q.question_type || 'single_choice', // Default for backward compatibility
+              points: q.points || 1, // Default to 1 point if not specified
               // Ensure math fields are included
               math_expression: q.math_expression || null,
               math_tolerance: q.math_tolerance || null,
@@ -742,7 +743,21 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       }
       return true;
     });
-    const score = autoGradedQuestions.length > 0 ? (correctAnswers / autoGradedQuestions.length) * 100 : 0;
+    
+    // Calculate score based on points instead of question count
+    let earnedPoints = 0;
+    let totalAutoGradedPoints = 0;
+    
+    autoGradedQuestions.forEach((q: any) => {
+      const questionPoints = q.points || 1;
+      totalAutoGradedPoints += questionPoints;
+      const isCorrect = results[q.id];
+      if (isCorrect) {
+        earnedPoints += questionPoints;
+      }
+    });
+    
+    const score = totalAutoGradedPoints > 0 ? (earnedPoints / totalAutoGradedPoints) * 100 : 0;
     
     // Combine all answer types
     const allAnswers = { ...userAnswers, ...textAnswers, ...mathAnswers, ...mathDrawings };
@@ -998,7 +1013,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       }
       setIsLoading(true);
       try {
-        const { data, error } = await supabase.from('courses').select(`*,sections:course_sections(*,lessons:course_lessons(*,contentItems:course_lesson_content(*,quiz:quiz_questions(*,math_expression,math_tolerance,math_hint,math_allow_drawing,image_url,options:question_options(*)))))`).eq('id', actualCourseId).single();
+        const { data, error } = await supabase.from('courses').select(`*,sections:course_sections(*,lessons:course_lessons(*,contentItems:course_lesson_content(*,quiz:quiz_questions(*,points,math_expression,math_tolerance,math_hint,math_allow_drawing,image_url,options:question_options(*)))))`).eq('id', actualCourseId).single();
         if (error) throw error;
         if (data) {
           for (const section of data.sections) {
@@ -1339,29 +1354,38 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                 
                 return (
                   <div key={q.id} className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <h4 className="font-medium text-gray-900 dark:text-gray-100">{index + 1}. {q.question_text}</h4>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <h4 className="font-medium text-gray-900 dark:text-gray-100">{index + 1}. {q.question_text}</h4>
+                        <Badge 
+                          variant={isMultipleChoice ? 'default' : isTextAnswer ? 'outline' : isMathExpression ? 'secondary' : 'secondary'}
+                          className={`text-xs ${
+                            isMultipleChoice 
+                              ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-700' 
+                              : isTextAnswer
+                              ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 border-orange-200 dark:border-orange-700'
+                              : isMathExpression
+                              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-700'
+                              : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-700'
+                          }`}
+                        >
+                          {isMultipleChoice ? 'Multiple Choice' : isTextAnswer ? 'Text Answer' : isMathExpression ? 'Math Expression' : 'Single Choice'}
+                        </Badge>
+                        {/* Quiz Question Image */}
+                        {q.image_url && (
+                          <QuizQuestionImage 
+                            imageUrl={q.image_url}
+                            onClick={() => openImageModal(q.image_url)}
+                          />
+                        )}
+                      </div>
+                      {/* Points Badge - Right Corner */}
                       <Badge 
-                        variant={isMultipleChoice ? 'default' : isTextAnswer ? 'outline' : isMathExpression ? 'secondary' : 'secondary'}
-                        className={`text-xs ${
-                          isMultipleChoice 
-                            ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-700' 
-                            : isTextAnswer
-                            ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 border-orange-200 dark:border-orange-700'
-                            : isMathExpression
-                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-700'
-                            : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-700'
-                        }`}
+                        variant="outline"
+                        className="text-xs bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 border-yellow-200 dark:border-yellow-700 font-semibold"
                       >
-                        {isMultipleChoice ? 'Multiple Choice' : isTextAnswer ? 'Text Answer' : isMathExpression ? 'Math Expression' : 'Single Choice'}
+                        {q.points || 1} {q.points === 1 ? 'point' : 'points'}
                       </Badge>
-                      {/* Quiz Question Image */}
-                      {q.image_url && (
-                        <QuizQuestionImage 
-                          imageUrl={q.image_url}
-                          onClick={() => openImageModal(q.image_url)}
-                        />
-                      )}
                     </div>
                     
                     {isMathExpression ? (
@@ -1750,11 +1774,19 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={() => navigate(`/dashboard/courses/${actualCourseId}`)}
+                onClick={() => {
+                  if (profile?.role === 'admin' || profile?.role === 'teacher') {
+                    // For admins and teachers, navigate back to the course builder page
+                    navigate(`/dashboard/courses/builder/${actualCourseId}`);
+                  } else {
+                    // For students, navigate to the course overview page
+                    navigate(`/dashboard/courses/${actualCourseId}`);
+                  }
+                }}
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 <ChevronLeft className="w-4 h-4 mr-1" />
-                Back to Course
+                {(profile?.role === 'admin' || profile?.role === 'teacher') ? 'Back to Course Builder' : 'Back to Course'}
               </Button>
               <div className="h-4 w-px bg-border" />
               <div className="flex items-center space-x-2 text-sm text-muted-foreground">
