@@ -12,6 +12,7 @@ import { ThemeToggle } from './header/ThemeToggle';
 import { AuthButton } from './header/AuthButton';
 import { useAILMS } from '@/contexts/AILMSContext';
 import { AILMSToggle } from '@/components/ui/AILMSToggle';
+import { useZoomIntegration } from '@/hooks/useZoomIntegration';
 
 
 
@@ -26,7 +27,8 @@ export const DashboardSidebar = ({
 }: DashboardSidebarProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { isAIMode } = useAILMS();
-  const navigationCategories = getCategorizedNavigation(userRole, isAIMode);
+  const { isEnabled: isZoomEnabled } = useZoomIntegration();
+  const navigationCategories = getCategorizedNavigation(userRole, isAIMode, isZoomEnabled);
   const location = useLocation();
 
   // Render the desktop sidebar content directly to avoid function component issues
