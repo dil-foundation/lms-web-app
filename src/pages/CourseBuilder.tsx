@@ -112,6 +112,7 @@ interface QuizQuestion {
   question_type: 'single_choice' | 'multiple_choice' | 'text_answer' | 'math_expression';
   options: QuestionOption[];
   position: number;
+  points?: number; // Points awarded for correct answer
   // Math-specific fields
   math_expression?: string;
   math_tolerance?: number;
@@ -1321,7 +1322,8 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
       question_text: '',
       question_type: 'single_choice',
       options: [],
-      position: (quiz.questions.length || 0) + 1
+      position: (quiz.questions.length || 0) + 1,
+      points: 1 // Default points
     };
     onQuizChange({ ...quiz, questions: [...quiz.questions, newQuestion] });
   };
@@ -1456,6 +1458,13 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
   const updateMathAllowDrawing = (qIndex: number, allowDrawing: boolean) => {
     const updatedQuestions = quiz.questions.map((q, i) => 
       i === qIndex ? { ...q, math_allow_drawing: allowDrawing } : q
+    );
+    onQuizChange({ ...quiz, questions: updatedQuestions });
+  };
+
+  const updateQuestionPoints = (qIndex: number, points: number) => {
+    const updatedQuestions = quiz.questions.map((q, i) => 
+      i === qIndex ? { ...q, points: points } : q
     );
     onQuizChange({ ...quiz, questions: updatedQuestions });
   };
@@ -1643,6 +1652,21 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
                   </SelectItem>
                 </SelectContent>
               </Select>
+              
+              {/* Points Input */}
+              <div className="flex items-center gap-2">
+                <Label className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                  Points:
+                </Label>
+                <Input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={question.points || 1}
+                  onChange={(e) => updateQuestionPoints(qIndex, parseInt(e.target.value) || 1)}
+                  className="w-20 h-9 border-2 border-purple-200 dark:border-purple-700 rounded-lg bg-white/60 dark:bg-gray-800/60 text-center"
+                />
+              </div>
               
               <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                 {question.question_type === 'single_choice' ? (
@@ -3432,6 +3456,8 @@ const CourseBuilder = () => {
                             ...q,
                             question_type: q.question_type || 'single_choice', // Default for backward compatibility
                             options: q.options.sort((a: any, b: any) => a.position - b.position),
+                            // Ensure points field is included
+                            points: q.points || 1,
                             // Ensure math fields are included
                             math_expression: q.math_expression || null,
                             math_tolerance: q.math_tolerance || null,
@@ -3687,10 +3713,12 @@ const CourseBuilder = () => {
                             question_text: question.question_text,
                             question_type: question.question_type,
                             position: qIndex,
+                            points: question.points || 1,
                             math_expression: question.math_expression || null,
                             math_tolerance: question.math_tolerance || null,
                             math_hint: question.math_hint || null,
-                            math_allow_drawing: question.math_allow_drawing === true
+                            math_allow_drawing: question.math_allow_drawing === true,
+                            image_url: question.image_url || null
                         })
                         .select('id').single();
 
@@ -4045,6 +4073,7 @@ const CourseBuilder = () => {
                         .update({ 
                           question_text: question.question_text,
                           question_type: question.question_type,
+                          points: question.points || 1,
                           math_expression: question.math_expression || null,
                           math_tolerance: question.math_tolerance || null,
                           math_hint: question.math_hint || null,
@@ -4097,6 +4126,7 @@ const CourseBuilder = () => {
                           question_text: question.question_text,
                           question_type: question.question_type,
                           position: qIndex,
+                          points: question.points || 1,
                           math_expression: question.math_expression || null,
                           math_tolerance: question.math_tolerance || null,
                           math_hint: question.math_hint || null,
@@ -4161,10 +4191,12 @@ const CourseBuilder = () => {
                         question_text: question.question_text,
                         question_type: question.question_type,
                         position: qIndex,
+                        points: question.points || 1,
                         math_expression: question.math_expression || null,
                         math_tolerance: question.math_tolerance || null,
                         math_hint: question.math_hint || null,
-                        math_allow_drawing: question.math_allow_drawing || false
+                        math_allow_drawing: question.math_allow_drawing || false,
+                        image_url: question.image_url || null
                       })
                       .select('id')
                       .single();
@@ -4249,7 +4281,13 @@ const CourseBuilder = () => {
                       lesson_content_id: newContent.id,
                       question_text: question.question_text,
                       question_type: question.question_type,
-                      position: qIndex
+                      position: qIndex,
+                      points: question.points || 1,
+                      math_expression: question.math_expression || null,
+                      math_tolerance: question.math_tolerance || null,
+                      math_hint: question.math_hint || null,
+                      math_allow_drawing: question.math_allow_drawing || false,
+                      image_url: question.image_url || null
                     })
                     .select('id')
                     .single();
@@ -4363,7 +4401,13 @@ const CourseBuilder = () => {
                     lesson_content_id: newContent.id,
                     question_text: question.question_text,
                     question_type: question.question_type,
-                    position: qIndex
+                    position: qIndex,
+                    points: question.points || 1,
+                    math_expression: question.math_expression || null,
+                    math_tolerance: question.math_tolerance || null,
+                    math_hint: question.math_hint || null,
+                    math_allow_drawing: question.math_allow_drawing || false,
+                    image_url: question.image_url || null
                   })
                   .select('id')
                   .single();
@@ -4555,6 +4599,7 @@ const CourseBuilder = () => {
                               question_text: question.question_text,
                               question_type: question.question_type,
                               position: qIndex,
+                              points: question.points || 1,
                               math_expression: question.math_expression || null,
                               math_tolerance: question.math_tolerance || null,
                               math_hint: question.math_hint || null,
