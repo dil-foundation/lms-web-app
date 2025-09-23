@@ -260,10 +260,12 @@ This platform has TWO separate educational systems - DO NOT CONFUSE THEM:
 
 CONTEXT-AWARE INTERPRETATION - EXTREMELY IMPORTANT:
 When users mention "AI Tutor" or "AI tutor" in their query, interpret ALL terms in AI Tutor context:
-- "courses in AI tutor" = AI Tutor stages/exercises (NOT LMS courses!)
-- "how many courses in AI tutor" = Count stages or exercises from ai_tutor_user_stage_progress
+- "courses in AI tutor" = ALWAYS means AI Tutor STAGES (NOT LMS courses, NOT exercises!)
+- "how many courses in AI tutor" = COUNT stages from ai_tutor_content_hierarchy WHERE level = 'stage'
+- "total courses in AI tutor" = COUNT stages from ai_tutor_content_hierarchy WHERE level = 'stage'
+- "number of courses in AI tutor" = COUNT stages from ai_tutor_content_hierarchy WHERE level = 'stage'
 - "students in AI tutor" = Users with AI tutor activity from ai_tutor_daily_learning_analytics
-- "list courses in AI tutor" = List stages from ai_tutor_user_stage_progress or exercises from ai_tutor_user_topic_progress
+- "list courses in AI tutor" = List stages from ai_tutor_content_hierarchy WHERE level = 'stage'
 
 Available tools: ${tools.map((t: any) => t.function.name).join(', ')}
 
@@ -278,15 +280,22 @@ LMS QUERIES:
 
 AI TUTOR QUERIES (Internal - Hide technical details from users):
 - "active users in AI tutor": SELECT DISTINCT user_id FROM ai_tutor_daily_learning_analytics WHERE sessions_count > 0
-- "courses in AI tutor": SELECT DISTINCT stage_id FROM ai_tutor_user_stage_progress OR SELECT DISTINCT exercise_id FROM ai_tutor_user_topic_progress
-- "how many courses in AI tutor": COUNT(DISTINCT stage_id) FROM ai_tutor_user_stage_progress OR COUNT(DISTINCT exercise_id) FROM ai_tutor_user_topic_progress
+- "courses in AI tutor": ALWAYS means STAGES - SELECT * FROM ai_tutor_content_hierarchy WHERE level = 'stage' (NOT LMS courses!)
+- "how many courses in AI tutor": COUNT(*) FROM ai_tutor_content_hierarchy WHERE level = 'stage' AND is_active = true
+- "total courses in AI tutor": COUNT(*) FROM ai_tutor_content_hierarchy WHERE level = 'stage' AND is_active = true
+- "number of courses in AI tutor": COUNT(*) FROM ai_tutor_content_hierarchy WHERE level = 'stage' AND is_active = true
 - "AI tutor progress": Query ai_tutor_user_progress_summary
 - "learning milestones": Query ai_tutor_learning_milestones
 - "exercise completion": Query ai_tutor_user_topic_progress
 - "daily learning analytics": Query ai_tutor_daily_learning_analytics
 - "AI tutor users": Query users who have records in ai_tutor_* tables
-- "stages in AI tutor": Query ai_tutor_user_stage_progress
-- "topics in AI tutor": Query ai_tutor_user_topic_progress
+- "stages in AI tutor": Query ai_tutor_content_hierarchy WHERE level = 'stage'
+- "topics in AI tutor": Query ai_tutor_user_topic_progress OR ai_tutor_content_hierarchy WHERE level = 'topic'
+- "exercises in AI tutor": Query ai_tutor_content_hierarchy WHERE level = 'exercise'
+- "AI tutor content structure": Query ai_tutor_content_hierarchy for hierarchical content organization
+- "stage details": Query ai_tutor_content_hierarchy WHERE level = 'stage' for stage information with titles, descriptions, difficulty levels
+- "exercise types": Query ai_tutor_content_hierarchy WHERE level = 'exercise' for exercise details with types and metadata
+- "learning content hierarchy": Query ai_tutor_content_hierarchy for complete content structure with parent-child relationships
 
 USER-FRIENDLY RESPONSE GUIDELINES:
 When providing information about AI Tutor, use these user-friendly descriptions:
@@ -302,6 +311,17 @@ GENERAL QUERIES:
 CRITICAL: When user asks about "AI tutor" or related terms, query AI tutor tables (ai_tutor_*), NOT course tables!
 CRITICAL: "courses in AI tutor" means stages/exercises in AI tutor platform, NOT LMS courses!
 CRITICAL: Always check if "AI tutor" is mentioned in the query - if yes, interpret everything in AI tutor context!
+
+MANDATORY QUERY EXECUTION FOR STAGE COUNTS:
+- For "how many ai tutor stages" or "how many stages" or similar: MUST query ai_tutor_content_hierarchy WHERE level = 'stage' AND is_active = true
+- For "how many courses in AI tutor" or "total courses in AI tutor": MUST query ai_tutor_content_hierarchy WHERE level = 'stage' AND is_active = true (courses = stages in AI tutor context)
+- NEVER return hardcoded numbers like "3 stages" without querying the database first
+- ALWAYS use database data, NEVER use mock data or assumptions
+
+EXAMPLE QUERIES FOR AI TUTOR STAGES:
+- Query: SELECT COUNT(*) FROM ai_tutor_content_hierarchy WHERE level = 'stage' AND is_active = true;
+- Query: SELECT * FROM ai_tutor_content_hierarchy WHERE level = 'stage' AND is_active = true ORDER BY stage_order;
+- Alternative: SELECT * FROM get_all_stages_with_counts();
 
 Always start by calling the appropriate tool(s) to gather information, then provide a response based on the tool results.`
         },
