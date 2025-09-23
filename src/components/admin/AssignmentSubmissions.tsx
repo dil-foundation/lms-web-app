@@ -27,6 +27,7 @@ interface Student {
 
 interface Submission {
   id: number | string;
+  submission_id?: string; // Add the missing submission_id property
   student: Student;
   status: SubmissionStatus;
   score?: number | null;
@@ -226,6 +227,7 @@ export const AssignmentSubmissions = () => {
             if (item.submission) {
               return {
                 ...item.submission,
+                submission_id: item.submission.id, // Use id as submission_id for fallback
                 student: item.student,
                 status: item.submission.status || 'submitted',
                 attempt_number: 1, // Default for legacy data
@@ -244,6 +246,7 @@ export const AssignmentSubmissions = () => {
           // Process the new data format
           const processedSubmissions = (latestSubmissions || []).map((submission: any) => ({
             ...submission,
+            submission_id: submission.submission_id, // Include the submission_id field
             student: {
               id: submission.user_id,
               name: submission.student_name,
@@ -270,6 +273,7 @@ export const AssignmentSubmissions = () => {
           if (item.submission) {
             return {
               ...item.submission,
+              submission_id: item.submission.id, // Use id as submission_id for assignments
               student: item.student,
               status: item.submission.status || 'submitted',
             }
@@ -319,7 +323,8 @@ export const AssignmentSubmissions = () => {
           avatar_url: undefined
         },
         status: attempt.manual_grading_completed ? 'graded' : 'submitted',
-        id: `${userId}-${attempt.attempt_number}`, // Create unique ID
+        id: attempt.submission_id, // Use the actual submission_id as the ID
+        submission_id: attempt.submission_id, // Include the submission_id field
         manual_grading_required: attempt.manual_grading_required,
         manual_grading_completed: attempt.manual_grading_completed,
         manual_grading_score: attempt.manual_grading_score,
@@ -478,8 +483,13 @@ export const AssignmentSubmissions = () => {
         
         // Populate individual question grades and feedback from the new text_answer_grades table
         const textAnswerQuestions = processedQuestions.filter(q => q.question_type === 'text_answer');
+        const drawingMathQuestions = processedQuestions.filter(q => 
+          q.question_type === 'math_expression' && 
+          submissionToUse?.answers?.[q.id]?.startsWith('{"paths":')
+        );
+        const manualGradingQuestions = [...textAnswerQuestions, ...drawingMathQuestions];
         
-        if (textAnswerQuestions.length > 0) {
+        if (manualGradingQuestions.length > 0) {
           // Check if we have individual grades in the submission data
           if (submissionToUse.text_answer_grades && submissionToUse.text_answer_grades.length > 0) {
             console.log('Using individual grades from submission data:', submissionToUse.text_answer_grades);
@@ -489,11 +499,15 @@ export const AssignmentSubmissions = () => {
             const feedbackMap: Record<string, string> = {};
             
             submissionToUse.text_answer_grades.forEach((gradeData: any) => {
-              grades[gradeData.question_id] = gradeData.grade;
+              // Convert percentage back to points for display
+              const question = manualGradingQuestions.find(q => q.id === gradeData.question_id);
+              const questionPoints = question?.points || 1;
+              const earnedPoints = (gradeData.grade / 100) * questionPoints;
+              grades[gradeData.question_id] = earnedPoints;
               if (gradeData.feedback) {
                 feedbackMap[gradeData.question_id] = gradeData.feedback;
               }
-              console.log('Loaded grade for question:', gradeData.question_id, '=', gradeData.grade);
+              console.log('Loaded grade for question:', gradeData.question_id, '=', gradeData.grade, '% ->', earnedPoints, 'points');
               console.log('Loaded feedback for question:', gradeData.question_id, '=', gradeData.feedback);
             });
             
@@ -502,7 +516,7 @@ export const AssignmentSubmissions = () => {
           } else {
             // Fallback: Fetch individual grades from the database
             const { data: individualGrades, error: gradesError } = await supabase
-              .rpc('get_text_answer_grades', { submission_id: submissionToUse.id });
+              .rpc('get_text_answer_grades_with_points', { submission_id: submissionToUse.id });
             
             if (gradesError) {
               console.error('Error fetching individual grades:', gradesError);
@@ -514,11 +528,15 @@ export const AssignmentSubmissions = () => {
               const feedbackMap: Record<string, string> = {};
               
               individualGrades?.forEach((gradeData: any) => {
-                grades[gradeData.question_id] = gradeData.grade;
+                // Convert percentage back to points for display
+                const question = manualGradingQuestions.find(q => q.id === gradeData.question_id);
+                const questionPoints = question?.points || 1;
+                const earnedPoints = (gradeData.grade / 100) * questionPoints;
+                grades[gradeData.question_id] = earnedPoints;
                 if (gradeData.feedback) {
                   feedbackMap[gradeData.question_id] = gradeData.feedback;
                 }
-                console.log('Loaded grade for question:', gradeData.question_id, '=', gradeData.grade);
+                console.log('Loaded grade for question:', gradeData.question_id, '=', gradeData.grade, '% ->', earnedPoints, 'points');
                 console.log('Loaded feedback for question:', gradeData.question_id, '=', gradeData.feedback);
               });
               
@@ -555,14 +573,15 @@ export const AssignmentSubmissions = () => {
         return;
       }
       
-      // Validate that all grades are valid numbers between 0 and 100
+      // Validate that all grades are valid numbers between 0 and question points
       const invalidGrades = manualGradingQuestions.filter(q => {
         const grade = manualGrades[q.id];
-        return typeof grade !== 'number' || grade < 0 || grade > 100;
+        const maxPoints = q.points || 1;
+        return typeof grade !== 'number' || grade < 0 || grade > maxPoints;
       });
       
       if (invalidGrades.length > 0) {
-        toast.error('Please ensure all grades are valid numbers between 0 and 100.');
+        toast.error('Please ensure all grades are valid numbers within the question point range.');
         return;
       }
     }
@@ -656,8 +675,7 @@ export const AssignmentSubmissions = () => {
             manualGradingQuestions.forEach(q => {
               const questionPoints = q.points || 1;
               totalPoints += questionPoints;
-              const gradePercentage = manualGrades[q.id] || 0;
-              const earnedQuestionPoints = (gradePercentage / 100) * questionPoints;
+              const earnedQuestionPoints = manualGrades[q.id] || 0; // Now stored as points directly
               earnedPoints += earnedQuestionPoints;
             });
           }
@@ -665,17 +683,32 @@ export const AssignmentSubmissions = () => {
           // Calculate final percentage based on points
           const finalPercentage = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
           
-          // Prepare grades data for the new structure
+          // Prepare grades data for the new structure - convert points to percentage for database storage
           const gradesData = manualGradingQuestions.map(q => ({
             question_id: q.id,
-            grade: manualGrades[q.id] || 0,
+            earned_points: manualGrades[q.id] || 0, // Store as points
             feedback: manualFeedback[q.id] || ''
           }));
           
           // Complete manual grading using the new structure
-          const { error } = await supabase.rpc('complete_manual_grading_v2', {
-            submission_id: selectedSubmission.id,
+          console.log('🔍 DEBUGGING MANUAL GRADING CALL:', {
+            submission_id: selectedSubmission.submission_id,
             teacher_id: user?.id,
+            grades_data: gradesData,
+            selectedSubmission: selectedSubmission
+          });
+          
+          if (!selectedSubmission.submission_id) {
+            throw new Error('Submission ID is missing');
+          }
+          
+          if (!user?.id) {
+            throw new Error('User ID is missing');
+          }
+          
+          const { error } = await supabase.rpc('complete_manual_grading_v2', {
+            submission_id: selectedSubmission.submission_id,
+            teacher_id: user.id,
             grades_data: gradesData
           });
           
@@ -685,9 +718,9 @@ export const AssignmentSubmissions = () => {
           const manualGradingCount = manualGradingQuestions.length;
           
           if (autoGradedCount > 0 && manualGradingCount > 0) {
-            toast.success(`Grading completed! Final score: ${finalPercentage}% (Auto-graded: ${autoGradedCount} questions, Manual: ${manualGradingCount} questions)`);
+            toast.success(`Grading completed! Final score: ${finalPercentage}% (${Math.round(earnedPoints)}/${Math.round(totalPoints)} points) - Auto-graded: ${autoGradedCount} questions, Manual: ${manualGradingCount} questions`);
           } else if (manualGradingCount > 0) {
-            toast.success(`Manual grading completed! Final score: ${finalPercentage}%`);
+            toast.success(`Manual grading completed! Final score: ${finalPercentage}% (${Math.round(earnedPoints)}/${Math.round(totalPoints)} points)`);
           }
           
           // Log quiz grading
@@ -1235,10 +1268,10 @@ export const AssignmentSubmissions = () => {
                                 <div className="space-y-4">
                                   <div>
                                     <Label className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-2">
-                                      Grade (0-100):
+                                      Grade (0-{question.points || 1} points):
                                       {manualGrades[question.id] !== undefined && manualGrades[question.id] !== null && (
                                         <Badge variant="success" className="text-xs">
-                                          Grade: {manualGrades[question.id]}%
+                                          Grade: {manualGrades[question.id]} points
                                         </Badge>
                                       )}
                                     </Label>
@@ -1247,11 +1280,12 @@ export const AssignmentSubmissions = () => {
                                       value={manualGrades[question.id] ?? ''}
                                       onChange={(e) => {
                                         const value = e.target.value;
+                                        const maxPoints = question.points || 1;
                                         // Only allow numbers and empty string
-                                        if (value === '' || /^\d+$/.test(value)) {
-                                          const numValue = value === '' ? 0 : parseInt(value);
-                                          // Ensure value is between 0 and 100
-                                          if (numValue >= 0 && numValue <= 100) {
+                                        if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                                          const numValue = value === '' ? 0 : parseFloat(value);
+                                          // Ensure value is between 0 and max points
+                                          if (numValue >= 0 && numValue <= maxPoints) {
                                             setManualGrades(prev => ({
                                               ...prev,
                                               [question.id]: numValue
@@ -1260,7 +1294,7 @@ export const AssignmentSubmissions = () => {
                                         }
                                       }}
                                       className="bg-background border-2 border-gray-200 dark:border-gray-700 focus:border-orange-500 focus-visible:ring-2 focus-visible:ring-orange-500/20 focus-visible:ring-offset-0 focus-visible:outline-none text-gray-900 dark:text-gray-100"
-                                      placeholder="Enter grade (0-100)"
+                                      placeholder={`Enter grade (0-${question.points || 1} points)`}
                                     />
                                   </div>
                                   
@@ -1294,7 +1328,13 @@ export const AssignmentSubmissions = () => {
                                     {(() => {
                                       try {
                                         const drawingData = JSON.parse(studentAnswer);
-                                        const hasMathExpression = drawingData.mathExpression && drawingData.mathExpression.trim() !== '';
+                                        console.log('🔍 Drawing data for question', question.id, ':', drawingData);
+                                        
+                                        // Check for text input in multiple possible fields
+                                        const mathExpression = drawingData.mathExpression || drawingData.textInput || drawingData.text || drawingData.expression || '';
+                                        const hasMathExpression = mathExpression && mathExpression.trim() !== '';
+                                        
+                                        console.log('🔍 Math expression found:', mathExpression, 'Has expression:', hasMathExpression);
                                         
                                         return (
                                           <>
@@ -1325,7 +1365,7 @@ export const AssignmentSubmissions = () => {
                                                 </h4>
                                                 <div className="p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg border border-purple-200/50 dark:border-purple-700/30">
                                                   <p className="text-gray-900 dark:text-gray-100 font-mono text-lg leading-relaxed">
-                                                    {drawingData.mathExpression}
+                                                    {mathExpression}
                                                   </p>
                                                 </div>
                                               </div>
@@ -1367,7 +1407,8 @@ export const AssignmentSubmissions = () => {
                                         {(() => {
                                           try {
                                             const drawingData = JSON.parse(studentAnswer);
-                                            const hasMathExpression = drawingData.mathExpression && drawingData.mathExpression.trim() !== '';
+                                            const mathExpression = drawingData.mathExpression || drawingData.textInput || drawingData.text || drawingData.expression || '';
+                                            const hasMathExpression = mathExpression && mathExpression.trim() !== '';
                                             return hasMathExpression ? 'Grade This Answer (Drawing + Text Input):' : 'Grade This Drawing:';
                                           } catch (error) {
                                             return 'Grade This Drawing:';
@@ -1377,10 +1418,10 @@ export const AssignmentSubmissions = () => {
                                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
                                           <Label className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-2">
-                                            Grade (0-100):
+                                            Grade (0-{question.points || 1} points):
                                             {manualGrades[question.id] !== undefined && manualGrades[question.id] !== null && (
                                               <Badge variant="success" className="text-xs">
-                                                Grade: {manualGrades[question.id]}%
+                                                Grade: {manualGrades[question.id]} points
                                               </Badge>
                                             )}
                                           </Label>
@@ -1389,9 +1430,12 @@ export const AssignmentSubmissions = () => {
                                             value={manualGrades[question.id] ?? ''}
                                             onChange={(e) => {
                                               const value = e.target.value;
-                                              if (value === '' || /^\d+$/.test(value)) {
-                                                const numValue = value === '' ? 0 : parseInt(value);
-                                                if (numValue >= 0 && numValue <= 100) {
+                                              const maxPoints = question.points || 1;
+                                              // Only allow numbers and empty string
+                                              if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                                                const numValue = value === '' ? 0 : parseFloat(value);
+                                                // Ensure value is between 0 and max points
+                                                if (numValue >= 0 && numValue <= maxPoints) {
                                                   setManualGrades(prev => ({
                                                     ...prev,
                                                     [question.id]: numValue
@@ -1400,7 +1444,7 @@ export const AssignmentSubmissions = () => {
                                               }
                                             }}
                                             className="bg-background border-2 border-gray-200 dark:border-gray-700 focus:border-orange-500 focus-visible:ring-2 focus-visible:ring-orange-500/20 focus-visible:ring-offset-0 focus-visible:outline-none text-gray-900 dark:text-gray-100"
-                                            placeholder="Enter grade (0-100)"
+                                            placeholder={`Enter grade (0-${question.points || 1} points)`}
                                           />
                                         </div>
                                         
@@ -1423,7 +1467,8 @@ export const AssignmentSubmissions = () => {
                                             placeholder={(() => {
                                               try {
                                                 const drawingData = JSON.parse(studentAnswer);
-                                                const hasMathExpression = drawingData.mathExpression && drawingData.mathExpression.trim() !== '';
+                                                const mathExpression = drawingData.mathExpression || drawingData.textInput || drawingData.text || drawingData.expression || '';
+                                                const hasMathExpression = mathExpression && mathExpression.trim() !== '';
                                                 return hasMathExpression ? 'Provide feedback for this answer (drawing and text input)...' : 'Provide feedback for this drawing...';
                                               } catch (error) {
                                                 return 'Provide feedback for this drawing...';
