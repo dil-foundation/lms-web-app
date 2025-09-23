@@ -1775,18 +1775,18 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                 variant="ghost" 
                 size="sm" 
                 onClick={() => {
-                  if (profile?.role === 'admin') {
-                    // For admins, navigate back to the course builder page
+                  if (profile?.role === 'admin' || profile?.role === 'teacher') {
+                    // For admins and teachers, navigate back to the course builder page
                     navigate(`/dashboard/courses/builder/${actualCourseId}`);
                   } else {
-                    // For students/teachers, navigate to the course overview page
+                    // For students, navigate to the course overview page
                     navigate(`/dashboard/courses/${actualCourseId}`);
                   }
                 }}
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 <ChevronLeft className="w-4 h-4 mr-1" />
-                {profile?.role === 'admin' ? 'Back to Course Builder' : 'Back to Course'}
+                {(profile?.role === 'admin' || profile?.role === 'teacher') ? 'Back to Course Builder' : 'Back to Course'}
               </Button>
               <div className="h-4 w-px bg-border" />
               <div className="flex items-center space-x-2 text-sm text-muted-foreground">
