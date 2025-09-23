@@ -30,6 +30,8 @@ const AITeacherProgress = lazy(() => import('@/components/dashboard/AITeacherPro
 const AIStudentProgress = lazy(() => import('@/components/dashboard/AIStudentProgress').then(module => ({ default: module.AIStudentProgress })));
 const AIStudentPractice = lazy(() => import('@/components/dashboard/AIStudentPractice').then(module => ({ default: module.AIStudentPractice })));
 const RolePlaceholder = lazy(() => import('@/components/dashboard/RolePlaceholder').then(module => ({ default: module.RolePlaceholder })));
+const TeacherMeetings = lazy(() => import('@/components/dashboard/TeacherMeetings').then(module => ({ default: module.TeacherMeetings })));
+const StudentMeetings = lazy(() => import('@/components/dashboard/StudentMeetings').then(module => ({ default: module.StudentMeetings })));
 const UsersManagement = lazy(() => import('@/components/admin/UsersManagement').then(module => ({ default: module.UsersManagement })));
 const ClassManagement = lazy(() => import('@/components/admin/ClassManagement'));
 const CourseManagement = lazy(() => import('@/components/admin/CourseManagement'));
@@ -317,6 +319,7 @@ const Dashboard = () => {
                       <Route path="/messages" element={<MessagesPage />} />
                       <Route path="/discussion" element={<DiscussionsPage />} />
                       <Route path="/discussion/:id" element={<DiscussionViewPage />} />
+                      <Route path="/meetings" element={<StudentMeetings userProfile={finalProfile} />} />
                         </>
                       )}
                     </>
@@ -368,6 +371,7 @@ const Dashboard = () => {
                           <Route path="/messages" element={<MessagesPage />} />
                           <Route path="/discussion" element={<DiscussionsPage />} />
                           <Route path="/discussion/:id" element={<DiscussionViewPage />} />
+                          <Route path="/meetings" element={<TeacherMeetings userProfile={finalProfile} />} />
                         </>
                       )}
                     </>
