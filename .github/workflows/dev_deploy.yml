@@ -1,4 +1,4 @@
-name: Build & Deploy (Vite → S3 + CloudFront)
+name: Dev Build & Deploy
 
 on:
   # push:
@@ -10,11 +10,11 @@ on:
       environment:
         description: 'Environment to deploy to'
         required: true
-        default: 'production'
+        default: 'development'
         type: choice
         options:
         - production
-        - staging
+        - development
       skip_deploy:
         description: 'Skip deployment (build only)'
         required: false
