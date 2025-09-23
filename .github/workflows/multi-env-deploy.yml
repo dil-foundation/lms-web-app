@@ -1,0 +1,254 @@
+name: Multi-Environment Build & Deploy
+
+on:
+  # push:
+  #   branches: 
+  #     - main        # Triggers production deployment
+  #     - develop     # Triggers staging deployment
+  #     - feature/*   # Triggers development deployment
+  # pull_request:
+  #   branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+        - development
+        - staging
+        - production
+      skip_deploy:
+        description: 'Skip deployment (build only)'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  # Determine environment based on branch or manual input
+  determine-environment:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.set-env.outputs.environment }}
+      aws_region: ${{ steps.set-env.outputs.aws_region }}
+      s3_bucket: ${{ steps.set-env.outputs.s3_bucket }}
+      cloudfront_id: ${{ steps.set-env.outputs.cloudfront_id }}
+    steps:
+      - name: Determine environment
+        id: set-env
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            ENV="${{ inputs.environment }}"
+          elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            ENV="production"
+          elif [ "${{ github.ref }}" = "refs/heads/develop" ]; then
+            ENV="staging"
+          else
+            ENV="development"
+          fi
+          
+          echo "environment=$ENV" >> $GITHUB_OUTPUT
+          
+          # Set environment-specific configurations
+          case $ENV in
+            production)
+              echo "aws_region=us-east-2" >> $GITHUB_OUTPUT
+              echo "s3_bucket=${{ secrets.PROD_S3_BUCKET_NAME }}" >> $GITHUB_OUTPUT
+              echo "cloudfront_id=${{ secrets.PROD_CLOUDFRONT_DISTRIBUTION_ID }}" >> $GITHUB_OUTPUT
+              ;;
+            staging)
+              echo "aws_region=us-east-2" >> $GITHUB_OUTPUT
+              echo "s3_bucket=${{ secrets.STAGING_S3_BUCKET_NAME }}" >> $GITHUB_OUTPUT
+              echo "cloudfront_id=${{ secrets.STAGING_CLOUDFRONT_DISTRIBUTION_ID }}" >> $GITHUB_OUTPUT
+              ;;
+            development)
+              echo "aws_region=us-east-2" >> $GITHUB_OUTPUT
+              echo "s3_bucket=${{ secrets.DEV_S3_BUCKET_NAME }}" >> $GITHUB_OUTPUT
+              echo "cloudfront_id=${{ secrets.DEV_CLOUDFRONT_DISTRIBUTION_ID }}" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+  build-and-deploy:
+    needs: determine-environment
+    runs-on: ubuntu-latest
+    environment: ${{ needs.determine-environment.outputs.environment }}
+    
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create environment file
+        run: |
+          ENV="${{ needs.determine-environment.outputs.environment }}"
+          echo "🔧 Creating environment file for: $ENV"
+          
+          case $ENV in
+            production)
+              echo "VITE_SUPABASE_URL=${{ secrets.PROD_VITE_SUPABASE_URL }}" >> .env.production
+              echo "VITE_SUPABASE_ANON_KEY=${{ secrets.PROD_VITE_SUPABASE_ANON_KEY }}" >> .env.production
+              echo "VITE_API_BASE_URL=${{ secrets.PROD_VITE_API_BASE_URL }}" >> .env.production
+              echo "VITE_AUTH_TOKEN=${{ secrets.PROD_VITE_AUTH_TOKEN }}" >> .env.production
+              echo "VITE_MCP_ADAPTER_URL=${{ secrets.PROD_VITE_MCP_ADAPTER_URL }}" >> .env.production
+              echo "VITE_MCP_SSE_URL=${{ secrets.PROD_VITE_MCP_SSE_URL }}" >> .env.production
+              echo "VITE_OPENAI_API_KEY=${{ secrets.PROD_VITE_OPENAI_API_KEY }}" >> .env.production
+              echo "VITE_BULK_UPLOAD_XLSX_TEMPLATE_URL=${{ secrets.PROD_VITE_BULK_UPLOAD_XLSX_TEMPLATE_URL }}" >> .env.production
+              echo "VITE_DEBUG_MODE=false" >> .env.production
+              echo "VITE_LOG_LEVEL=error" >> .env.production
+              ;;
+            staging)
+              echo "VITE_SUPABASE_URL=${{ secrets.STAGING_VITE_SUPABASE_URL }}" >> .env.staging
+              echo "VITE_SUPABASE_ANON_KEY=${{ secrets.STAGING_VITE_SUPABASE_ANON_KEY }}" >> .env.staging
+              echo "VITE_API_BASE_URL=${{ secrets.STAGING_VITE_API_BASE_URL }}" >> .env.staging
+              echo "VITE_AUTH_TOKEN=${{ secrets.STAGING_VITE_AUTH_TOKEN }}" >> .env.staging
+              echo "VITE_MCP_ADAPTER_URL=${{ secrets.STAGING_VITE_MCP_ADAPTER_URL }}" >> .env.staging
+              echo "VITE_MCP_SSE_URL=${{ secrets.STAGING_VITE_MCP_SSE_URL }}" >> .env.staging
+              echo "VITE_OPENAI_API_KEY=${{ secrets.STAGING_VITE_OPENAI_API_KEY }}" >> .env.staging
+              echo "VITE_BULK_UPLOAD_XLSX_TEMPLATE_URL=${{ secrets.STAGING_VITE_BULK_UPLOAD_XLSX_TEMPLATE_URL }}" >> .env.staging
+              echo "VITE_DEBUG_MODE=true" >> .env.staging
+              echo "VITE_LOG_LEVEL=info" >> .env.staging
+              ;;
+            development)
+              echo "VITE_SUPABASE_URL=${{ secrets.DEV_VITE_SUPABASE_URL }}" >> .env.development
+              echo "VITE_SUPABASE_ANON_KEY=${{ secrets.DEV_VITE_SUPABASE_ANON_KEY }}" >> .env.development
+              echo "VITE_API_BASE_URL=${{ secrets.DEV_VITE_API_BASE_URL }}" >> .env.development
+              echo "VITE_AUTH_TOKEN=${{ secrets.DEV_VITE_AUTH_TOKEN }}" >> .env.development
+              echo "VITE_MCP_ADAPTER_URL=${{ secrets.DEV_VITE_MCP_ADAPTER_URL }}" >> .env.development
+              echo "VITE_MCP_SSE_URL=${{ secrets.DEV_VITE_MCP_SSE_URL }}" >> .env.development
+              echo "VITE_OPENAI_API_KEY=${{ secrets.DEV_VITE_OPENAI_API_KEY }}" >> .env.development
+              echo "VITE_BULK_UPLOAD_XLSX_TEMPLATE_URL=${{ secrets.DEV_VITE_BULK_UPLOAD_XLSX_TEMPLATE_URL }}" >> .env.development
+              echo "VITE_DEBUG_MODE=true" >> .env.development
+              echo "VITE_LOG_LEVEL=debug" >> .env.development
+              ;;
+          esac
+
+      - name: Validate environment variables
+        run: |
+          ENV="${{ needs.determine-environment.outputs.environment }}"
+          echo "🔍 Validating environment variables for: $ENV"
+          
+          # Check if environment file was created
+          if [ ! -f ".env.$ENV" ]; then
+            echo "❌ Environment file .env.$ENV not found"
+            exit 1
+          fi
+          
+          # Validate required variables exist (redacted output)
+          echo "📋 Environment file contents (redacted):"
+          sed 's/=.*/=***REDACTED***/g' .env.$ENV
+
+      - name: Build application
+        run: |
+          ENV="${{ needs.determine-environment.outputs.environment }}"
+          echo "🏗️ Building application for environment: $ENV"
+          
+          case $ENV in
+            production)
+              npm run build:prod
+              ;;
+            staging)
+              npm run build --mode staging
+              ;;
+            development)
+              npm run build:dev
+              ;;
+          esac
+
+      - name: Verify build output
+        run: |
+          echo "📊 Build verification:"
+          if [ ! -d "dist" ]; then
+            echo "❌ Build failed - dist directory not found"
+            exit 1
+          fi
+          
+          echo "✅ Build successful"
+          echo "📁 Build output size: $(du -sh dist/)"
+          echo "📄 Files in dist: $(find dist -type f | wc -l)"
+
+      - name: Configure AWS credentials
+        if: ${{ !inputs.skip_deploy }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ needs.determine-environment.outputs.aws_region }}
+
+      - name: Deploy to S3
+        if: ${{ !inputs.skip_deploy }}
+        run: |
+          BUCKET="${{ needs.determine-environment.outputs.s3_bucket }}"
+          ENV="${{ needs.determine-environment.outputs.environment }}"
+          
+          echo "🚀 Deploying to S3 bucket: $BUCKET (Environment: $ENV)"
+          
+          # Sync files with appropriate cache headers
+          aws s3 sync dist/ s3://$BUCKET --delete
+          
+          # Upload HTML files with shorter cache
+          # aws s3 sync dist/ s3://$BUCKET \
+          #   --cache-control "public,max-age=300" \
+          #   --exclude "*" \
+          #   --include "*.html" \
+          #   --include "*.json"
+
+          aws s3 cp s3://$BUCKET/index.html s3://$BUCKET/index.html \
+            --metadata-directive REPLACE \
+            --content-type "text/html; charset=utf-8" \
+            --cache-control "public, max-age=300"
+
+      - name: Invalidate CloudFront
+        if: ${{ !inputs.skip_deploy && needs.determine-environment.outputs.cloudfront_id != '' }}
+        run: |
+          DISTRIBUTION_ID="${{ needs.determine-environment.outputs.cloudfront_id }}"
+          echo "🔄 Invalidating CloudFront distribution: $DISTRIBUTION_ID"
+          
+          aws cloudfront create-invalidation \
+            --distribution-id $DISTRIBUTION_ID \
+            --paths "/*"
+
+      - name: Deployment summary
+        if: ${{ !inputs.skip_deploy }}
+        run: |
+          ENV="${{ needs.determine-environment.outputs.environment }}"
+          BUCKET="${{ needs.determine-environment.outputs.s3_bucket }}"
+          
+          echo "🎉 Deployment completed successfully!"
+          echo "📍 Environment: $ENV"
+          echo "🪣 S3 Bucket: $BUCKET"
+          echo "🌐 CloudFront: ${{ needs.determine-environment.outputs.cloudfront_id }}"
+          echo "📅 Deployed at: $(date)"
+          echo "👤 Deployed by: ${{ github.actor }}"
+          echo "🔗 Commit: ${{ github.sha }}"
+
+  # Notification job (optional)
+  notify:
+    needs: [determine-environment, build-and-deploy]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Notify deployment status
+        run: |
+          ENV="${{ needs.determine-environment.outputs.environment }}"
+          STATUS="${{ needs.build-and-deploy.result }}"
+          
+          echo "📢 Deployment notification:"
+          echo "Environment: $ENV"
+          echo "Status: $STATUS"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          
+          # Here you could add Slack, Discord, or email notifications
