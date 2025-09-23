@@ -3717,7 +3717,8 @@ const CourseBuilder = () => {
                             math_expression: question.math_expression || null,
                             math_tolerance: question.math_tolerance || null,
                             math_hint: question.math_hint || null,
-                            math_allow_drawing: question.math_allow_drawing === true
+                            math_allow_drawing: question.math_allow_drawing === true,
+                            image_url: question.image_url || null
                         })
                         .select('id').single();
 
@@ -4194,7 +4195,8 @@ const CourseBuilder = () => {
                         math_expression: question.math_expression || null,
                         math_tolerance: question.math_tolerance || null,
                         math_hint: question.math_hint || null,
-                        math_allow_drawing: question.math_allow_drawing || false
+                        math_allow_drawing: question.math_allow_drawing || false,
+                        image_url: question.image_url || null
                       })
                       .select('id')
                       .single();
@@ -4280,7 +4282,12 @@ const CourseBuilder = () => {
                       question_text: question.question_text,
                       question_type: question.question_type,
                       position: qIndex,
-                      points: question.points || 1
+                      points: question.points || 1,
+                      math_expression: question.math_expression || null,
+                      math_tolerance: question.math_tolerance || null,
+                      math_hint: question.math_hint || null,
+                      math_allow_drawing: question.math_allow_drawing || false,
+                      image_url: question.image_url || null
                     })
                     .select('id')
                     .single();
@@ -4395,7 +4402,12 @@ const CourseBuilder = () => {
                     question_text: question.question_text,
                     question_type: question.question_type,
                     position: qIndex,
-                    points: question.points || 1
+                    points: question.points || 1,
+                    math_expression: question.math_expression || null,
+                    math_tolerance: question.math_tolerance || null,
+                    math_hint: question.math_hint || null,
+                    math_allow_drawing: question.math_allow_drawing || false,
+                    image_url: question.image_url || null
                   })
                   .select('id')
                   .single();
