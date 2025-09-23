@@ -56,7 +56,7 @@ export const getRoleNavigation = (role?: UserRole): NavigationItem[] => {
   }
 };
 
-export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean): NavigationCategory[] => {
+export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean, isZoomEnabled?: boolean): NavigationCategory[] => {
   if (!role) {
     return [];
   }
@@ -89,7 +89,7 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean): N
           items: [
             { title: 'Messages', path: '/dashboard/messages', icon: MessageSquare },
             { title: 'Discussions', path: '/dashboard/discussion', icon: MessageCircle },
-            { title: 'Meetings', path: '/dashboard/meetings', icon: Video },
+            ...(isZoomEnabled ? [{ title: 'Meetings', path: '/dashboard/meetings', icon: Video }] : []),
           ]
         }
       ];
@@ -117,7 +117,7 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean): N
           items: [
             { title: 'Messages', path: '/dashboard/messages', icon: MessageSquare },
             { title: 'Discussion', path: '/dashboard/discussion', icon: MessageCircle },
-            { title: 'Meetings', path: '/dashboard/meetings', icon: Video },
+            ...(isZoomEnabled ? [{ title: 'Meetings', path: '/dashboard/meetings', icon: Video }] : []),
           ]
         }
       ];

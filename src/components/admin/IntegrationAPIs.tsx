@@ -36,16 +36,24 @@ interface IntegrationDisplay extends Integration {
 
 // Helper function to get integration display data
 const getIntegrationDisplayData = (integration: Integration): IntegrationDisplay => {
-  const displayData: Record<string, { description: string; icon: React.ElementType; category: 'Communication' | 'Payment' | 'Productivity' }> = {
+  const displayData: Record<string, { description: string; icon: React.ElementType; category: 'Communication' | 'Payment' | 'Productivity'; displayName?: string }> = {
     'Zoom': {
-      description: 'Video conferencing and virtual classroom integration',
+      description: 'Virtual classroom and video conferencing solution for online learning and student meetings.',
       icon: Video,
-      category: 'Communication'
+      category: 'Communication',
+      displayName: 'Zoom'
+    },
+    'zoom': {
+      description: 'Virtual classroom and video conferencing solution for online learning and student meetings.',
+      icon: Video,
+      category: 'Communication',
+      displayName: 'Zoom'
     },
     'Stripe': {
       description: 'Payment processing for course enrollments and subscriptions',
       icon: CreditCard,
-      category: 'Payment'
+      category: 'Payment',
+      displayName: 'Stripe'
     }
   };
 
@@ -55,18 +63,19 @@ const getIntegrationDisplayData = (integration: Integration): IntegrationDisplay
     category: 'Productivity' as const
   };
 
-  const data = displayData[integration.name] || defaultData;
+  const data = displayData[integration.name] || displayData[integration.name.toLowerCase()] || defaultData;
   
   return {
     ...integration,
-    ...data
+    ...data,
+    name: data.displayName || integration.name
   };
 };
 
 const getStatusColor = (status: Integration['status']) => {
   switch (status) {
     case 'enabled':
-      return 'bg-green-500/10 text-green-700 dark:text-green-400';
+      return 'bg-primary/10 text-primary dark:text-primary';
     case 'disabled':
       return 'bg-gray-500/10 text-gray-700 dark:text-gray-400';
     case 'error':
@@ -145,12 +154,23 @@ export const IntegrationAPIs = ({ userProfile }: IntegrationAPIsProps) => {
 
   const handleToggleIntegration = async (integrationId: string) => {
     const integration = integrations.find(i => i.id === integrationId);
-    if (!integration) return;
+    if (!integration) {
+      console.error('Integration not found:', integrationId);
+      return;
+    }
 
     const newStatus = integration.status === 'enabled' ? 'disabled' : 'enabled';
     
+    console.log('Toggling integration:', {
+      id: integrationId,
+      name: integration.name,
+      currentStatus: integration.status,
+      newStatus
+    });
+    
     try {
       await integrationService.updateIntegrationStatus(integrationId, newStatus);
+      console.log('Database update successful');
       
       setIntegrations(prev => prev.map(integration => {
         if (integration.id === integrationId) {
@@ -187,16 +207,26 @@ export const IntegrationAPIs = ({ userProfile }: IntegrationAPIsProps) => {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-            Integration APIs
-          </h1>
-          <p className="text-muted-foreground">
-            Central hub to manage connections with external tools and services
-          </p>
+    <div className="space-y-8">
+      {/* Premium Header Section */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
+        <div className="relative p-4 md:p-8 rounded-3xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                <Plug className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                  Integration APIs
+                </h1>
+                <p className="text-sm md:text-lg text-muted-foreground font-light">
+                  Central hub to manage connections with external tools and services
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -212,19 +242,19 @@ export const IntegrationAPIs = ({ userProfile }: IntegrationAPIsProps) => {
           </CardContent>
         </Card>
         
-        <Card className="bg-gradient-to-br from-card to-blue-500/5 dark:bg-card">
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active</CardTitle>
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold">
               {stats.active}
             </div>
           </CardContent>
         </Card>
         
-        <Card className="bg-gradient-to-br from-card to-yellow-500/5 dark:bg-card">
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Configured</CardTitle>
             <Settings className="h-4 w-4 text-muted-foreground" />
@@ -236,13 +266,13 @@ export const IntegrationAPIs = ({ userProfile }: IntegrationAPIsProps) => {
           </CardContent>
         </Card>
         
-        <Card className="bg-gradient-to-br from-card to-red-500/5 dark:bg-card">
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Errors</CardTitle>
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
+            <div className="text-2xl font-bold">
               {stats.errors}
             </div>
           </CardContent>
@@ -271,71 +301,72 @@ export const IntegrationAPIs = ({ userProfile }: IntegrationAPIsProps) => {
           const IntegrationIcon = integration.icon;
           
           return (
-            <Card key={integration.id} className="relative">
+            <Card key={integration.id} className="relative overflow-hidden flex flex-col">
               <CardHeader className="pb-4">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-muted rounded-lg">
-                      <IntegrationIcon className="h-6 w-6" />
+                    <div className="p-3 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl">
+                      <IntegrationIcon className="h-6 w-6 text-primary" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg">{integration.name}</CardTitle>
-                      <Badge variant="outline" className="mt-1">
+                      <CardTitle className="text-lg font-semibold">{integration.name}</CardTitle>
+                      <Badge variant="outline" className="mt-1 text-xs">
                         {integration.category}
                       </Badge>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Badge className={getStatusColor(integration.status)}>
-                      <StatusIcon className="h-3 w-3 mr-1" />
-                      {integration.status}
-                    </Badge>
-                  </div>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  {integration.description}
-                </p>
-                
-                {integration.status === 'error' && (
-                  <Alert>
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertDescription>
-                      Connection error. Please check configuration and try again.
-                    </AlertDescription>
-                  </Alert>
-                )}
-                
-                <div className="space-y-2 text-sm">
-                  {integration.version && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Version:</span>
-                      <span>{integration.version}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Last Sync:</span>
-                    <span>{formatLastSync(integration.last_sync)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Configured:</span>
-                    <span>{integration.is_configured ? 'Yes' : 'No'}</span>
-                  </div>
-                </div>
-                
-                <Separator />
-                
-                <div className="flex items-center justify-center">
+                  
+                  {/* Status Toggle in top right */}
                   <div className="flex items-center space-x-2">
                     <Switch
                       checked={integration.status === 'enabled'}
                       onCheckedChange={() => handleToggleIntegration(integration.id)}
                     />
-                    <Label className="text-sm">
-                      {integration.status === 'enabled' ? 'Enabled' : 'Disabled'}
-                    </Label>
+                  </div>
+                </div>
+                
+                {/* Status Badge below header */}
+                <div className="mt-3">
+                  <Badge className={getStatusColor(integration.status)} variant="secondary">
+                    <StatusIcon className="h-3 w-3 mr-1" />
+                    {integration.status}
+                  </Badge>
+                </div>
+              </CardHeader>
+              
+              <CardContent className="flex-1 flex flex-col justify-between pt-0">
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {integration.description}
+                  </p>
+                  
+                  {integration.status === 'error' && (
+                    <Alert className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/20">
+                      <AlertTriangle className="h-4 w-4 text-red-600" />
+                      <AlertDescription className="text-red-800 dark:text-red-200">
+                        Connection error. Please check configuration and try again.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+                
+                {/* Configuration Details - Always at bottom */}
+                <div className="bg-muted/30 rounded-lg p-3 space-y-2 mt-4">
+                  {integration.version && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Version:</span>
+                      <span className="font-medium">{integration.version}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Last Sync:</span>
+                    <span className="font-medium">{formatLastSync(integration.last_sync)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Configured:</span>
+                    <span className={`font-medium ${integration.is_configured ? 'text-primary' : 'text-muted-foreground'}`}>
+                      {integration.is_configured ? 'Yes' : 'No'}
+                    </span>
                   </div>
                 </div>
               </CardContent>

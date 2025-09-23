@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   Video, 
   Plus, 
@@ -23,7 +24,8 @@ import {
   AlertCircle,
   Copy,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  Ban
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ContentLoader } from '@/components/ContentLoader';
@@ -49,10 +51,18 @@ interface Course {
   title: string;
 }
 
+interface Class {
+  id: string;
+  name: string;
+  code: string;
+  grade: string;
+}
+
 export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
   const [meetings, setMeetings] = useState<ZoomMeeting[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [classes, setClasses] = useState<Class[]>([]); // NEW: State for classes
   const [stats, setStats] = useState<MeetingStats>({ total: 0, upcoming: 0, oneOnOne: 0, classMeetings: 0 });
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -69,7 +79,8 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
     scheduled_time: '',
     duration: 60,
     student_id: '',
-    course_id: ''
+    course_id: '',
+    class_id: '' // NEW: Support for class-based meetings
   });
 
   // Load data on component mount
@@ -82,16 +93,18 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
       setLoading(true);
       
       // Load all data in parallel
-      const [meetingsData, studentsData, coursesData, statsData] = await Promise.all([
+      const [meetingsData, studentsData, coursesData, classesData, statsData] = await Promise.all([
         meetingService.getTeacherMeetings(userProfile.id),
         meetingService.getAvailableStudents(userProfile.id),
         meetingService.getTeacherCourses(userProfile.id),
+        meetingService.getTeacherClasses(userProfile.id), // NEW: Load teacher's classes
         meetingService.getMeetingStats(userProfile.id)
       ]);
 
       setMeetings(meetingsData);
       setStudents(studentsData);
       setCourses(coursesData);
+      setClasses(classesData); // NEW: Set classes data
       setStats(statsData);
     } catch (error) {
       console.error('Error loading meeting data:', error);
@@ -116,8 +129,8 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
         return;
       }
 
-      if (formData.meeting_type === 'class' && !formData.course_id) {
-        toast.error('Please select a course for class meeting');
+      if (formData.meeting_type === 'class' && !formData.class_id) {
+        toast.error('Please select a class for class meeting');
         return;
       }
 
@@ -139,7 +152,8 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
         scheduled_time: scheduledDateTime,
         duration: formData.duration,
         student_id: formData.meeting_type === '1-on-1' ? formData.student_id : undefined,
-        course_id: formData.meeting_type === 'class' ? formData.course_id : undefined
+        course_id: undefined, // No longer using courses for class meetings
+        class_id: formData.meeting_type === 'class' ? formData.class_id : undefined
       };
 
       const newMeeting = await meetingService.createMeeting(userProfile.id, meetingRequest);
@@ -160,7 +174,8 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
         scheduled_time: '',
         duration: 60,
         student_id: '',
-        course_id: ''
+        course_id: '',
+        class_id: ''
       });
       setIsCreateModalOpen(false);
       
@@ -249,32 +264,47 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-            Zoom Meetings
-          </h1>
-          <p className="text-muted-foreground">
-            Schedule and manage virtual meetings with students
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={loadData} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-          <Button onClick={() => setIsCreateModalOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Schedule Meeting
-          </Button>
+    <TooltipProvider>
+      <div className="space-y-8">
+      {/* Premium Header Section */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
+        <div className="relative p-4 md:p-8 rounded-3xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                <Video className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                  Zoom Meetings
+                </h1>
+                <p className="text-sm md:text-lg text-muted-foreground font-light">
+                  Schedule and manage virtual meetings with students
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={loadData} disabled={loading}>
+                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+              <Button 
+                onClick={() => setIsCreateModalOpen(true)}
+                className="h-10 px-6 rounded-xl bg-gradient-to-r from-brand-green-500 to-brand-green-600 hover:from-brand-green-600 hover:to-brand-green-500 text-white shadow-lg hover:shadow-xl hover:shadow-brand-green-500/25 transition-all duration-300 hover:-translate-y-0.5"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Schedule Meeting
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-gradient-to-br from-card to-blue-500/5 dark:bg-card">
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Meetings</CardTitle>
             <Video className="h-4 w-4 text-muted-foreground" />
@@ -290,11 +320,11 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.upcoming}</div>
+            <div className="text-2xl font-bold">{stats.upcoming}</div>
           </CardContent>
         </Card>
         
-        <Card className="bg-gradient-to-br from-card to-purple-500/5 dark:bg-card">
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">1-on-1 Sessions</CardTitle>
             <User className="h-4 w-4 text-muted-foreground" />
@@ -304,7 +334,7 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
           </CardContent>
         </Card>
         
-        <Card className="bg-gradient-to-br from-card to-orange-500/5 dark:bg-card">
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Class Meetings</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -390,37 +420,67 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
                         <TableCell>
                           <div className="flex items-center space-x-2">
                             {meeting.zoom_join_url && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => copyMeetingLink(meeting.zoom_join_url!)}
-                              >
-                                <Copy className="h-4 w-4" />
-                              </Button>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => copyMeetingLink(meeting.zoom_join_url!)}
+                                  >
+                                    <Copy className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Copy meeting link</p>
+                                </TooltipContent>
+                              </Tooltip>
                             )}
                             {meeting.zoom_join_url && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => window.open(meeting.zoom_join_url, '_blank')}
-                              >
-                                <ExternalLink className="h-4 w-4" />
-                              </Button>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => window.open(meeting.zoom_join_url, '_blank')}
+                                  >
+                                    <ExternalLink className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Open meeting in new tab</p>
+                                </TooltipContent>
+                              </Tooltip>
                             )}
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleCancelMeeting(meeting.id)}
-                            >
-                              <AlertCircle className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleDeleteMeeting(meeting.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleCancelMeeting(meeting.id)}
+                                  className="hover:bg-orange-50 dark:hover:bg-orange-950/20"
+                                >
+                                  <Ban className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Cancel meeting (keeps record)</p>
+                              </TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleDeleteMeeting(meeting.id)}
+                                  className="hover:bg-red-50 dark:hover:bg-red-950/20"
+                                >
+                                  <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Delete meeting permanently</p>
+                              </TooltipContent>
+                            </Tooltip>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -576,18 +636,23 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
 
             {formData.meeting_type === 'class' && (
               <div className="grid gap-2">
-                <Label htmlFor="course">Course *</Label>
+                <Label htmlFor="class">Class *</Label>
                 <Select
-                  value={formData.course_id}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, course_id: value }))}
+                  value={formData.class_id}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, class_id: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a course" />
+                    <SelectValue placeholder="Select a class" />
                   </SelectTrigger>
                   <SelectContent>
-                    {courses.map((course) => (
-                      <SelectItem key={course.id} value={course.id}>
-                        {course.title}
+                    {classes.map((classItem) => (
+                      <SelectItem key={classItem.id} value={classItem.id}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{classItem.name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {classItem.code} • Grade {classItem.grade}
+                          </span>
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -656,6 +721,7 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </TooltipProvider>
   );
 };

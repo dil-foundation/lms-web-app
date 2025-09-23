@@ -16,7 +16,9 @@ import {
   BookOpen,
   Timer,
   RefreshCw,
-  Copy
+  Copy,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ContentLoader } from '@/components/ContentLoader';
@@ -40,6 +42,7 @@ interface StudentMeetingStats {
 export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
   const [meetings, setMeetings] = useState<ZoomMeeting[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAllPast, setShowAllPast] = useState(false);
   const [stats, setStats] = useState<StudentMeetingStats>({ 
     total: 0, 
     upcoming: 0, 
@@ -113,7 +116,24 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
     const meetingTime = new Date(scheduledTime);
     const diffMs = meetingTime.getTime() - now.getTime();
     
-    if (diffMs < 0) return 'Past';
+    // If meeting has started but still within join window (2 hours)
+    if (diffMs < 0) {
+      const absDiffMs = Math.abs(diffMs);
+      const twoHours = 2 * 60 * 60 * 1000;
+      
+      if (absDiffMs <= twoHours) {
+        const elapsedHours = Math.floor(absDiffMs / (1000 * 60 * 60));
+        const elapsedMinutes = Math.floor((absDiffMs % (1000 * 60 * 60)) / (1000 * 60));
+        
+        if (elapsedHours === 0) {
+          return elapsedMinutes === 0 ? 'Just started' : `Started ${elapsedMinutes}m ago`;
+        } else {
+          return `Started ${elapsedHours}h ${elapsedMinutes}m ago`;
+        }
+      } else {
+        return 'Past';
+      }
+    }
     
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
@@ -164,15 +184,35 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
   };
 
   const upcomingMeetings = meetings
-    .filter(m => m.status === 'scheduled' && new Date(m.scheduled_time) > new Date())
+    .filter(m => {
+      if (m.status !== 'scheduled') return false;
+      
+      const now = new Date();
+      const meetingTime = new Date(m.scheduled_time);
+      const diffMs = meetingTime.getTime() - now.getTime();
+      
+      // Keep in upcoming if meeting hasn't started yet OR is within 2-hour join window
+      return diffMs > 0 || diffMs >= -2 * 60 * 60 * 1000;
+    })
     .sort((a, b) => new Date(a.scheduled_time).getTime() - new Date(b.scheduled_time).getTime());
   
   const pastMeetings = meetings
-    .filter(m => m.status === 'completed' || m.status === 'cancelled' || 
-      (m.status === 'scheduled' && new Date(m.scheduled_time) <= new Date()))
+    .filter(m => {
+      if (m.status === 'completed' || m.status === 'cancelled') return true;
+      
+      if (m.status === 'scheduled') {
+        const now = new Date();
+        const meetingTime = new Date(m.scheduled_time);
+        const diffMs = meetingTime.getTime() - now.getTime();
+        
+        // Move to past only after 2-hour join window expires
+        return diffMs < -2 * 60 * 60 * 1000;
+      }
+      
+      return false;
+    })
     .sort((a, b) => new Date(b.scheduled_time).getTime() - new Date(a.scheduled_time).getTime());
 
-  const nextMeeting = upcomingMeetings[0];
 
   if (loading) {
     return (
@@ -183,65 +223,37 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-            My Meetings
-          </h1>
-          <p className="text-muted-foreground">
-            View and join your scheduled Zoom meetings
-          </p>
-        </div>
-        <Button variant="outline" onClick={loadMeetings} disabled={loading}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
-      </div>
-
-      {/* Next Meeting Alert */}
-      {nextMeeting && (
-        <Alert className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950">
-          <Video className="h-4 w-4 text-blue-600" />
-          <AlertDescription className="text-blue-800 dark:text-blue-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <strong>Next Meeting:</strong> {nextMeeting.title} with {getTeacherName(nextMeeting)}
-                <br />
-                <span className="text-sm">
-                  {formatDateTime(nextMeeting.scheduled_time).date} at {formatDateTime(nextMeeting.scheduled_time).time}
-                  {' • '}{getTimeUntilMeeting(nextMeeting.scheduled_time)}
-                </span>
+    <div className="space-y-8">
+      {/* Premium Header Section */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
+        <div className="relative p-4 md:p-8 rounded-3xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                <Video className="w-5 h-5 md:w-6 md:h-6 text-primary" />
               </div>
-              <div className="flex items-center gap-2">
-                {nextMeeting.zoom_join_url && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleCopyMeetingLink(nextMeeting)}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                )}
-                {canJoinMeeting(nextMeeting.scheduled_time) && (
-                  <Button
-                    onClick={() => handleJoinMeeting(nextMeeting)}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <Play className="h-4 w-4 mr-2" />
-                    Join Now
-                  </Button>
-                )}
+              <div>
+                <h1 className="text-2xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
+                  My Meetings
+                </h1>
+                <p className="text-sm md:text-lg text-muted-foreground font-light">
+                  View and join your scheduled Zoom meetings
+                </p>
               </div>
             </div>
-          </AlertDescription>
-        </Alert>
-      )}
+            
+            <Button variant="outline" onClick={loadMeetings} disabled={loading}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
+        </div>
+      </div>
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-gradient-to-br from-card to-blue-500/5 dark:bg-card">
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Meetings</CardTitle>
             <Video className="h-4 w-4 text-muted-foreground" />
@@ -257,11 +269,11 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.upcoming}</div>
+            <div className="text-2xl font-bold">{stats.upcoming}</div>
           </CardContent>
         </Card>
         
-        <Card className="bg-gradient-to-br from-card to-purple-500/5 dark:bg-card">
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">1-on-1 Sessions</CardTitle>
             <User className="h-4 w-4 text-muted-foreground" />
@@ -271,7 +283,7 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
           </CardContent>
         </Card>
         
-        <Card className="bg-gradient-to-br from-card to-orange-500/5 dark:bg-card">
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Class Meetings</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -283,20 +295,31 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
       </div>
 
       {/* Upcoming Meetings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Upcoming Meetings
-          </CardTitle>
+      <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card border-0 shadow-lg">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-3 text-xl">
+              <div className="p-2 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl">
+                <Calendar className="h-5 w-5 text-primary" />
+              </div>
+              Upcoming Meetings
+            </CardTitle>
+            {upcomingMeetings.length > 0 && (
+              <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                {upcomingMeetings.length} meeting{upcomingMeetings.length !== 1 ? 's' : ''}
+              </Badge>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {upcomingMeetings.length === 0 ? (
-            <div className="text-center py-8">
-              <Video className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No upcoming meetings scheduled</p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Your teachers will schedule meetings that will appear here
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Video className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">No upcoming meetings</h3>
+              <p className="text-muted-foreground max-w-sm mx-auto">
+                Your teachers will schedule meetings that will appear here. Check back later or contact your teacher.
               </p>
             </div>
           ) : (
@@ -311,65 +334,66 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
                 return (
                   <div
                     key={meeting.id}
-                    className={`p-4 border rounded-lg transition-all ${
-                      canJoin 
-                        ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950' 
-                        : 'border-border'
-                    }`}
+                    className="group p-4 border rounded-xl transition-all duration-200 hover:shadow-md hover:border-primary/30 bg-gradient-to-r from-card to-muted/30"
                   >
                     <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className="p-2 bg-muted rounded-lg">
-                            {meeting.meeting_type === '1-on-1' ? (
-                              <User className="h-4 w-4" />
-                            ) : (
-                              <Users className="h-4 w-4" />
-                            )}
-                          </div>
-                          <div>
-                            <h3 className="font-semibold">{meeting.title}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              with {teacherName}
-                              {courseTitle && ` • ${courseTitle}`}
-                            </p>
-                          </div>
+                      <div className="flex items-center gap-4 flex-1">
+                        <div className="p-2 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl">
+                          {meeting.meeting_type === '1-on-1' ? (
+                            <User className="h-5 w-5 text-primary" />
+                          ) : (
+                            <Users className="h-5 w-5 text-primary" />
+                          )}
                         </div>
-                        
-                        {meeting.description && (
-                          <p className="text-sm text-muted-foreground mb-3 ml-11">
-                            {meeting.description}
+                        <div className="flex-1">
+                          <h3 className="text-base font-semibold mb-1 group-hover:text-primary transition-colors">
+                            {meeting.title}
+                          </h3>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            with {teacherName}
+                            {courseTitle && (
+                              <span className="ml-2 px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">
+                                {courseTitle}
+                              </span>
+                            )}
                           </p>
-                        )}
-                        
-                        <div className="flex items-center gap-4 ml-11 text-sm">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {date}
+                          
+                          {meeting.description && (
+                            <p className="text-sm text-muted-foreground mb-2 p-2 bg-muted/50 rounded-lg">
+                              {meeting.description}
+                            </p>
+                          )}
+                          
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              <span>{date}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              <span>{time}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Timer className="h-3 w-3" />
+                              <span>{meeting.duration} min</span>
+                            </div>
+                            <Badge 
+                              variant="secondary" 
+                              className="bg-primary/10 text-primary border-primary/20 text-xs"
+                            >
+                              {timeUntil}
+                            </Badge>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {time}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Timer className="h-3 w-3" />
-                            {meeting.duration} min
-                          </div>
-                          <Badge variant="outline" className="text-xs">
-                            {timeUntil}
-                          </Badge>
-                          <Badge className={getStatusColor(meeting.status)}>
-                            {meeting.status}
-                          </Badge>
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 ml-4">
                         {meeting.zoom_join_url && (
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleCopyMeetingLink(meeting)}
+                            className="hover:bg-primary/10 hover:text-primary hover:border-primary/30"
                           >
                             <Copy className="h-4 w-4" />
                           </Button>
@@ -377,7 +401,7 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
                         {canJoin ? (
                           <Button
                             onClick={() => handleJoinMeeting(meeting)}
-                            className="bg-green-600 hover:bg-green-700"
+                            className="bg-gradient-to-r from-brand-green-500 to-brand-green-600 hover:from-brand-green-600 hover:to-brand-green-500 text-white shadow-lg hover:shadow-xl hover:shadow-brand-green-500/25 transition-all duration-300 hover:-translate-y-0.5"
                           >
                             <Play className="h-4 w-4 mr-2" />
                             Join Meeting
@@ -386,6 +410,7 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
                           <Button
                             variant="outline"
                             disabled
+                            className="opacity-50"
                           >
                             <Clock className="h-4 w-4 mr-2" />
                             Not Yet Available
@@ -402,22 +427,36 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
       </Card>
 
       {/* Past Meetings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5" />
-            Past Meetings
-          </CardTitle>
+      <Card className="bg-gradient-to-br from-card to-slate-500/5 dark:bg-card border-0 shadow-lg">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-3 text-xl">
+              <div className="p-2 bg-gradient-to-br from-slate-500/10 to-slate-500/20 rounded-xl">
+                <CheckCircle className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+              </div>
+              Past Meetings
+            </CardTitle>
+            {pastMeetings.length > 0 && (
+              <Badge variant="secondary" className="bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
+                {pastMeetings.length} meeting{pastMeetings.length !== 1 ? 's' : ''}
+              </Badge>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {pastMeetings.length === 0 ? (
-            <div className="text-center py-8">
-              <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No past meetings yet</p>
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gradient-to-br from-slate-500/10 to-slate-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Clock className="h-8 w-8 text-slate-600 dark:text-slate-400" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">No past meetings yet</h3>
+              <p className="text-muted-foreground max-w-sm mx-auto">
+                Completed and cancelled meetings will appear here for your reference.
+              </p>
             </div>
           ) : (
             <div className="space-y-3">
-              {pastMeetings.slice(0, 5).map((meeting) => {
+              {pastMeetings.slice(0, showAllPast ? pastMeetings.length : 5).map((meeting) => {
                 const { date, time } = formatDateTime(meeting.scheduled_time);
                 const teacherName = getTeacherName(meeting);
                 const courseTitle = getCourseTitle(meeting);
@@ -425,41 +464,98 @@ export const StudentMeetings = ({ userProfile }: StudentMeetingsProps) => {
                 return (
                   <div
                     key={meeting.id}
-                    className="flex items-center justify-between p-3 border rounded-lg"
+                    className="group p-4 border rounded-xl transition-all duration-200 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600 bg-gradient-to-r from-card to-slate-50/50 dark:to-slate-900/50"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-muted rounded-lg">
-                        {meeting.meeting_type === '1-on-1' ? (
-                          <User className="h-4 w-4" />
-                        ) : (
-                          <Users className="h-4 w-4" />
-                        )}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className={`p-3 rounded-xl ${
+                          meeting.status === 'completed' 
+                            ? 'bg-green-100 dark:bg-green-900/50' 
+                            : meeting.status === 'cancelled'
+                            ? 'bg-orange-100 dark:bg-orange-900/50'
+                            : 'bg-slate-100 dark:bg-slate-800'
+                        }`}>
+                          {meeting.meeting_type === '1-on-1' ? (
+                            <User className={`h-4 w-4 ${
+                              meeting.status === 'completed' 
+                                ? 'text-green-600 dark:text-green-400' 
+                                : meeting.status === 'cancelled'
+                                ? 'text-orange-600 dark:text-orange-400'
+                                : 'text-slate-600 dark:text-slate-400'
+                            }`} />
+                          ) : (
+                            <Users className={`h-4 w-4 ${
+                              meeting.status === 'completed' 
+                                ? 'text-green-600 dark:text-green-400' 
+                                : meeting.status === 'cancelled'
+                                ? 'text-orange-600 dark:text-orange-400'
+                                : 'text-slate-600 dark:text-slate-400'
+                            }`} />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-base mb-1 group-hover:text-primary transition-colors">
+                            {meeting.title}
+                          </h4>
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <span className="font-medium">{teacherName}</span>
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {date}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {time}
+                            </div>
+                            {courseTitle && (
+                              <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">
+                                {courseTitle}
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-medium">{meeting.title}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {teacherName} • {date} at {time}
-                          {courseTitle && ` • ${courseTitle}`}
-                        </p>
+                      <div className="flex items-center gap-3">
+                        <Badge 
+                          variant="secondary"
+                          className={`font-medium ${
+                            meeting.status === 'completed' 
+                              ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700' 
+                              : meeting.status === 'cancelled'
+                              ? 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/50 dark:text-orange-300 dark:border-orange-700'
+                              : 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
+                          }`}
+                        >
+                          {meeting.status}
+                        </Badge>
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <Timer className="h-3 w-3" />
+                          <span className="font-medium">{meeting.duration} min</span>
+                        </div>
                       </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Badge className={getStatusColor(meeting.status)}>
-                        {meeting.status}
-                      </Badge>
-                      <span className="text-sm text-muted-foreground">
-                        {meeting.duration} min
-                      </span>
                     </div>
                   </div>
                 );
               })}
               
               {pastMeetings.length > 5 && (
-                <div className="text-center pt-4">
-                  <Button variant="outline" size="sm">
-                    View All Past Meetings ({pastMeetings.length - 5} more)
+                <div className="text-center pt-6">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowAllPast(!showAllPast)}
+                    className="hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600"
+                  >
+                    {showAllPast ? (
+                      <>
+                        <ChevronUp className="h-4 w-4 mr-2" />
+                        Show Less
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="h-4 w-4 mr-2" />
+                        Show All {pastMeetings.length} Meetings
+                      </>
+                    )}
                   </Button>
                 </div>
               )}

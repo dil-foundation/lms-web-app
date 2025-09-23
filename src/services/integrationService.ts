@@ -47,17 +47,27 @@ class IntegrationService {
   }
 
   async updateIntegrationStatus(id: string, status: 'enabled' | 'disabled'): Promise<void> {
-    const { error } = await supabase
+    console.log('Updating integration status:', { id, status });
+    
+    const { data, error } = await supabase
       .from('integrations')
       .update({ 
         status,
         updated_at: new Date().toISOString()
       })
-      .eq('id', id);
+      .eq('id', id)
+      .select();
+
+    console.log('Update result:', { data, error });
 
     if (error) {
       console.error('Error updating integration status:', error);
       throw new Error('Failed to update integration status');
+    }
+
+    if (!data || data.length === 0) {
+      console.error('No rows updated - integration ID might not exist:', id);
+      throw new Error('Integration not found or no changes made');
     }
   }
 

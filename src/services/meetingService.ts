@@ -10,6 +10,7 @@ export interface ZoomMeeting {
   teacher_id: string;
   student_id?: string;
   course_id?: string;
+  class_id?: string; // NEW: Support for class-based meetings
   zoom_meeting_id?: string;
   zoom_join_url?: string;
   zoom_password?: string;
@@ -24,6 +25,7 @@ export interface ZoomMeeting {
   // Joined data from database function
   student_name?: string;
   course_title?: string;
+  class_name?: string; // NEW: Class name for class-based meetings
   participant_names?: string[];
 }
 
@@ -35,6 +37,7 @@ export interface CreateMeetingRequest {
   duration: number;
   student_id?: string;
   course_id?: string;
+  class_id?: string; // NEW: Support for class-based meetings
 }
 
 export interface UpdateMeetingRequest {
@@ -137,10 +140,24 @@ class MeetingService {
    */
   async getTeacherMeetings(teacherId: string): Promise<ZoomMeeting[]> {
     try {
-      // Use a simple query without foreign key relationships to avoid cache issues
+      // Query meetings with joined student, course, and class information
       const { data, error } = await supabase
         .from('zoom_meetings')
-        .select('*')
+        .select(`
+          *,
+          student:profiles!zoom_meetings_student_id_fkey(
+            first_name,
+            last_name
+          ),
+          course:courses!zoom_meetings_course_id_fkey(
+            title
+          ),
+          class:classes!zoom_meetings_class_id_fkey(
+            name,
+            code,
+            grade
+          )
+        `)
         .eq('teacher_id', teacherId)
         .order('scheduled_time', { ascending: false });
 
@@ -153,12 +170,16 @@ class MeetingService {
         return [];
       }
 
-      // For now, return the basic meeting data without joined data
-      // We can enhance this later once the basic functionality works
+      // Map the data to include student, course, and class names
       return data.map(meeting => ({
         ...meeting,
-        student_name: undefined, // Will be populated later when we fix the relationships
-        course_title: undefined,
+        student_name: meeting.student 
+          ? `${meeting.student.first_name} ${meeting.student.last_name}`.trim()
+          : undefined,
+        course_title: meeting.class 
+          ? `${meeting.class.name} (${meeting.class.code})` 
+          : meeting.course?.title || undefined,
+        class_name: meeting.class?.name || undefined,
         participant_names: []
       }));
     } catch (error) {
@@ -242,6 +263,7 @@ class MeetingService {
           teacher_id: teacherId,
           student_id: meetingData.student_id,
           course_id: meetingData.course_id,
+          class_id: meetingData.class_id, // NEW: Support for class-based meetings
           status: 'scheduled'
         })
         .select()
@@ -493,6 +515,41 @@ class MeetingService {
   }
 
   /**
+   * Get classes taught by the teacher (NEW - Better approach for meetings)
+   */
+  async getTeacherClasses(teacherId: string): Promise<Array<{id: string, name: string, code: string, grade: string}>> {
+    try {
+      const { data, error } = await supabase
+        .from('class_teachers')
+        .select(`
+          class_id,
+          is_primary,
+          classes!inner(id, name, code, grade)
+        `)
+        .eq('teacher_id', teacherId);
+
+      if (error) {
+        console.error('Error fetching teacher classes:', error);
+        return [];
+      }
+
+      if (!data || !Array.isArray(data)) {
+        return [];
+      }
+
+      return data.map(item => ({
+        id: item.classes.id,
+        name: item.classes.name,
+        code: item.classes.code,
+        grade: item.classes.grade
+      }));
+    } catch (error) {
+      console.error('Error fetching teacher classes:', error);
+      return [];
+    }
+  }
+
+  /**
    * Get meetings for a student - Enhanced version with better error handling
    */
   async getStudentMeetings(studentId: string): Promise<ZoomMeeting[]> {
@@ -522,22 +579,62 @@ class MeetingService {
         console.error('Error fetching student courses:', coursesError);
       }
 
+      // Step 3: Get classes the student is enrolled in (NEW)
+      console.log('🔍 DEBUG: Checking classes for student ID:', studentId);
+      const { data: studentClasses, error: classesError } = await supabase
+        .from('class_students')
+        .select('class_id, enrollment_status')
+        .eq('student_id', studentId);
+
+      console.log('🔍 DEBUG: Student classes query result:', { studentClasses, classesError });
+
+      if (classesError) {
+        console.error('Error fetching student classes:', classesError);
+      }
+
       let classMeetings: any[] = [];
+      
+      // Get course-based class meetings (existing logic)
       if (studentCourses && studentCourses.length > 0) {
         const courseIds = studentCourses.map(sc => sc.course_id);
         
-        // Step 3: Get class meetings for those courses
-        const { data: classMeetingsData, error: classError } = await supabase
+        const { data: courseMeetingsData, error: courseError } = await supabase
           .from('zoom_meetings')
           .select('*')
           .eq('meeting_type', 'class')
           .in('course_id', courseIds)
           .order('scheduled_time', { ascending: false });
 
-        if (classError) {
-          console.error('Error fetching class meetings:', classError);
+        if (courseError) {
+          console.error('Error fetching course-based class meetings:', courseError);
         } else {
-          classMeetings = classMeetingsData || [];
+          classMeetings = [...classMeetings, ...(courseMeetingsData || [])];
+        }
+      }
+
+      // Get class-based meetings (NEW)
+      if (studentClasses && studentClasses.length > 0) {
+        const activeClasses = studentClasses.filter(sc => sc.enrollment_status === 'active');
+        console.log('🔍 DEBUG: Active classes for student:', activeClasses);
+        
+        if (activeClasses.length > 0) {
+          const classIds = activeClasses.map(sc => sc.class_id);
+          console.log('🔍 DEBUG: Looking for meetings with class IDs:', classIds);
+          
+          const { data: classBasedMeetingsData, error: classBasedError } = await supabase
+            .from('zoom_meetings')
+            .select('*')
+            .eq('meeting_type', 'class')
+            .in('class_id', classIds)
+            .order('scheduled_time', { ascending: false });
+
+          console.log('🔍 DEBUG: Class-based meetings found:', { classBasedMeetingsData, classBasedError });
+
+          if (classBasedError) {
+            console.error('Error fetching class-based meetings:', classBasedError);
+          } else {
+            classMeetings = [...classMeetings, ...(classBasedMeetingsData || [])];
+          }
         }
       }
 
@@ -567,20 +664,38 @@ class MeetingService {
             console.warn('Could not fetch teacher profile for meeting:', meeting.id);
           }
 
-          // Get course information for class meetings
-          if (meeting.meeting_type === 'class' && meeting.course_id) {
-            try {
-              const { data: course } = await supabase
-                .from('courses')
-                .select('title')
-                .eq('id', meeting.course_id)
-                .single();
+          // Get course or class information for class meetings
+          if (meeting.meeting_type === 'class') {
+            if (meeting.class_id) {
+              // Get class information (NEW)
+              try {
+                const { data: classInfo } = await supabase
+                  .from('classes')
+                  .select('name, code, grade')
+                  .eq('id', meeting.class_id)
+                  .single();
 
-              if (course) {
-                courseTitle = course.title;
+                if (classInfo) {
+                  courseTitle = `${classInfo.name} (${classInfo.code})`;
+                }
+              } catch (error) {
+                console.warn('Could not fetch class info for meeting:', meeting.id);
               }
-            } catch (error) {
-              console.warn('Could not fetch course info for meeting:', meeting.id);
+            } else if (meeting.course_id) {
+              // Get course information (existing)
+              try {
+                const { data: course } = await supabase
+                  .from('courses')
+                  .select('title')
+                  .eq('id', meeting.course_id)
+                  .single();
+
+                if (course) {
+                  courseTitle = course.title;
+                }
+              } catch (error) {
+                console.warn('Could not fetch course info for meeting:', meeting.id);
+              }
             }
           }
 
@@ -630,8 +745,8 @@ class MeetingService {
       throw new Error('Student is required for 1-on-1 meetings');
     }
 
-    if (meetingData.meeting_type === 'class' && !meetingData.course_id) {
-      throw new Error('Course is required for class meetings');
+    if (meetingData.meeting_type === 'class' && !meetingData.class_id && !meetingData.course_id) {
+      throw new Error('Class or Course is required for class meetings');
     }
   }
 
@@ -752,23 +867,40 @@ class MeetingService {
         });
       }
 
-      // For class meetings, we'll handle participants separately
-      if (meeting.meeting_type === 'class' && meeting.course_id) {
-        // Get all students in the course
-        const { data: courseMembers } = await supabase
-          .from('course_members')
-          .select('user_id')
-          .eq('course_id', meeting.course_id)
-          .eq('role', 'student');
+      // For class meetings, handle participants based on class or course
+      if (meeting.meeting_type === 'class') {
+        if (meeting.class_id) {
+          // NEW: Get all students in the class
+          const { data: classStudents } = await supabase
+            .from('class_students')
+            .select('student_id')
+            .eq('class_id', meeting.class_id);
 
-        courseMembers?.forEach(member => {
-          notifications.push({
-            meeting_id: meeting.id,
-            user_id: member.user_id,
-            notification_type: 'reminder',
-            scheduled_for: reminderTime.toISOString()
+          classStudents?.forEach(member => {
+            notifications.push({
+              meeting_id: meeting.id,
+              user_id: member.student_id,
+              notification_type: 'reminder',
+              scheduled_for: reminderTime.toISOString()
+            });
           });
-        });
+        } else if (meeting.course_id) {
+          // EXISTING: Get all students in the course (fallback)
+          const { data: courseMembers } = await supabase
+            .from('course_members')
+            .select('user_id')
+            .eq('course_id', meeting.course_id)
+            .eq('role', 'student');
+
+          courseMembers?.forEach(member => {
+            notifications.push({
+              meeting_id: meeting.id,
+              user_id: member.user_id,
+              notification_type: 'reminder',
+              scheduled_for: reminderTime.toISOString()
+            });
+          });
+        }
       }
 
       if (notifications.length > 0) {
@@ -811,21 +943,39 @@ class MeetingService {
         });
       }
 
-      if (meeting.meeting_type === 'class' && meeting.course_id) {
-        const { data: courseMembers } = await supabase
-          .from('course_members')
-          .select('user_id')
-          .eq('course_id', meeting.course_id)
-          .eq('role', 'student');
+      if (meeting.meeting_type === 'class') {
+        if (meeting.class_id) {
+          // NEW: Get all students in the class
+          const { data: classStudents } = await supabase
+            .from('class_students')
+            .select('student_id')
+            .eq('class_id', meeting.class_id);
 
-        courseMembers?.forEach(member => {
-          notifications.push({
-            meeting_id: meetingId,
-            user_id: member.user_id,
-            notification_type: 'cancelled',
-            scheduled_for: now.toISOString()
+          classStudents?.forEach(member => {
+            notifications.push({
+              meeting_id: meetingId,
+              user_id: member.student_id,
+              notification_type: 'cancelled',
+              scheduled_for: now.toISOString()
+            });
           });
-        });
+        } else if (meeting.course_id) {
+          // EXISTING: Get all students in the course (fallback)
+          const { data: courseMembers } = await supabase
+            .from('course_members')
+            .select('user_id')
+            .eq('course_id', meeting.course_id)
+            .eq('role', 'student');
+
+          courseMembers?.forEach(member => {
+            notifications.push({
+              meeting_id: meetingId,
+              user_id: member.user_id,
+              notification_type: 'cancelled',
+              scheduled_for: now.toISOString()
+            });
+          });
+        }
       }
 
       if (notifications.length > 0) {
