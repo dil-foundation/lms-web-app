@@ -266,6 +266,50 @@ Please log in again to continue using IRIS.
 3. Try your request again`;
     }
     
+    // Handle different types of token/rate limit errors
+    if (errorMessage.includes('maximum context length') || 
+        errorMessage.includes('128000 tokens') ||
+        errorMessage.includes('185403 tokens') ||
+        errorMessage.includes('Conversation Too Long')) {
+      return `📊 **Conversation Too Long**
+
+Our conversation has become too lengthy for me to process effectively. This happens when we've exchanged many messages or discussed complex topics with lots of data.
+
+**What you can do:**
+- **Start a new conversation** by refreshing the page
+- **Ask a shorter, more specific question** 
+- **Break complex requests into smaller parts**
+
+**Why this happens:**
+- Each conversation builds up context from previous messages
+- Large data responses add to this context
+- There's a limit to how much I can remember at once
+
+**Tip:** For the best experience, start fresh conversations for new topics or when you notice responses getting slower.`;
+    }
+    
+    if (errorMessage.includes('429') || 
+        errorMessage.includes('Request too large') ||
+        errorMessage.includes('TPM') ||
+        errorMessage.includes('tokens per min') ||
+        errorMessage.includes('Request Processing Issue') ||
+        (errorMessage.includes('tokens') && errorMessage.includes('exceeded'))) {
+      return `⚡ **Request Processing Issue**
+
+I'm having trouble processing your request right now. This could be due to system load or the complexity of your query.
+
+**What you can do:**
+- **Ask a simpler, more specific question**
+- **Break complex requests into smaller parts**
+
+**Why this happens:**
+- The system has limits on how much data can be processed at once
+- Your question might require analyzing a lot of information
+- There may be temporary high usage on the AI service
+
+**Tip:** Try asking for specific information rather than broad queries (e.g., "How many students?" instead of "Tell me about all platform data").`;
+    }
+    
     if (errorMessage.includes('MCP') || errorMessage.includes('tools')) {
       return `🔧 **Database Connection Issue**
 
