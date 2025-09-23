@@ -1,13 +1,13 @@
 name: Multi-Environment Build & Deploy
 
 on:
-  push:
-    branches: 
-      - main        # Triggers production deployment
-      - develop     # Triggers staging deployment
-      - feature/*   # Triggers development deployment
-  pull_request:
-    branches: [main, develop]
+  # push:
+  #   branches: 
+  #     - main        # Triggers production deployment
+  #     - develop     # Triggers staging deployment
+  #     - feature/*   # Triggers development deployment
+  # pull_request:
+  #   branches: [main, develop]
   workflow_dispatch:
     inputs:
       environment:
@@ -196,18 +196,19 @@ jobs:
           echo "🚀 Deploying to S3 bucket: $BUCKET (Environment: $ENV)"
           
           # Sync files with appropriate cache headers
-          aws s3 sync dist/ s3://$BUCKET \
-            --delete \
-            --cache-control "public,max-age=31536000,immutable" \
-            --exclude "*.html" \
-            --exclude "*.json"
+          aws s3 sync dist/ s3://$BUCKET --delete
           
           # Upload HTML files with shorter cache
-          aws s3 sync dist/ s3://$BUCKET \
-            --cache-control "public,max-age=300" \
-            --exclude "*" \
-            --include "*.html" \
-            --include "*.json"
+          # aws s3 sync dist/ s3://$BUCKET \
+          #   --cache-control "public,max-age=300" \
+          #   --exclude "*" \
+          #   --include "*.html" \
+          #   --include "*.json"
+
+          aws s3 cp s3://$BUCKET/index.html s3://$BUCKET/index.html \
+            --metadata-directive REPLACE \
+            --content-type "text/html; charset=utf-8" \
+            --cache-control "public, max-age=300"
 
       - name: Invalidate CloudFront
         if: ${{ !inputs.skip_deploy && needs.determine-environment.outputs.cloudfront_id != '' }}
