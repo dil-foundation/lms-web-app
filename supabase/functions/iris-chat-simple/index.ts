@@ -71,7 +71,10 @@ This platform has TWO separate educational systems:
 
 CONTEXT-AWARE QUERY INTERPRETATION:
 When users mention "AI Tutor" or "AI tutor" in their query, ALL subsequent terms should be interpreted in AI Tutor context:
-- "courses in AI tutor" → AI Tutor stages/exercises (NOT LMS courses)
+- "courses in AI tutor" → ALWAYS means AI Tutor STAGES (NOT LMS courses, NOT exercises)
+- "how many courses in AI tutor" → COUNT stages from ai_tutor_content_hierarchy WHERE level = 'stage'
+- "total courses in AI tutor" → COUNT stages from ai_tutor_content_hierarchy WHERE level = 'stage'
+- "number of courses in AI tutor" → COUNT stages from ai_tutor_content_hierarchy WHERE level = 'stage'
 - "students in AI tutor" → Users with AI tutor activity (ai_tutor_daily_learning_analytics)
 - "progress in AI tutor" → AI tutor progress data (ai_tutor_user_progress_summary)
 - "analytics in AI tutor" → AI tutor analytics (ai_tutor_daily_learning_analytics)
@@ -86,14 +89,35 @@ When users ask about:
 
 AI TUTOR SPECIFIC QUERIES (Internal - Do NOT expose table names to users):
 - "active users in AI tutor" → Query ai_tutor_daily_learning_analytics for users with sessions > 0
-- "courses in AI tutor" → Query ai_tutor_user_stage_progress for stages OR ai_tutor_user_topic_progress for exercises (NOT LMS courses table)
+- "courses in AI tutor" → ALWAYS means STAGES - Query ai_tutor_content_hierarchy WHERE level = 'stage' (NOT LMS courses table)
+- "how many courses in AI tutor" → COUNT(*) FROM ai_tutor_content_hierarchy WHERE level = 'stage' AND is_active = true
+- "total courses in AI tutor" → COUNT(*) FROM ai_tutor_content_hierarchy WHERE level = 'stage' AND is_active = true
+- "number of courses in AI tutor" → COUNT(*) FROM ai_tutor_content_hierarchy WHERE level = 'stage' AND is_active = true
 - "AI tutor progress" → Query ai_tutor_user_progress_summary, ai_tutor_user_stage_progress
 - "learning milestones" → Query ai_tutor_learning_milestones
 - "exercise completion" → Query ai_tutor_user_topic_progress
 - "daily learning analytics" → Query ai_tutor_daily_learning_analytics
 - "AI tutor settings" → Query ai_tutor_settings
-- "stages in AI tutor" → Query ai_tutor_user_stage_progress
-- "topics in AI tutor" → Query ai_tutor_user_topic_progress
+- "stages in AI tutor" → Query ai_tutor_content_hierarchy WHERE level = 'stage'
+- "topics in AI tutor" → Query ai_tutor_user_topic_progress OR ai_tutor_content_hierarchy WHERE level = 'topic'
+- "exercises in AI tutor" → Query ai_tutor_content_hierarchy WHERE level = 'exercise'
+- "AI tutor content structure" → Query ai_tutor_content_hierarchy for hierarchical content organization
+- "stage details" → Query ai_tutor_content_hierarchy WHERE level = 'stage' for stage information
+- "exercise types" → Query ai_tutor_content_hierarchy WHERE level = 'exercise' for exercise details
+- "learning content hierarchy" → Query ai_tutor_content_hierarchy for complete content structure
+
+CRITICAL QUERY PRIORITIES - MANDATORY EXECUTION:
+- For "how many ai tutor stages" or "how many stages" or "how many ai tutor stage": ALWAYS query ai_tutor_content_hierarchy WHERE level = 'stage' AND is_active = true
+- For "how many courses in AI tutor" or "total courses in AI tutor": ALWAYS query ai_tutor_content_hierarchy WHERE level = 'stage' AND is_active = true (courses = stages in AI tutor context)
+- For stage details: ALWAYS use ai_tutor_content_hierarchy table as the authoritative source
+- For exercise information: ALWAYS use ai_tutor_content_hierarchy WHERE level = 'exercise'
+- NEVER use hardcoded numbers like "3 stages" - ALWAYS query the database first
+- IGNORE any mock data or frontend constants - use ONLY database data
+
+EXAMPLE QUERIES FOR AI TUTOR STAGES:
+- Query: SELECT COUNT(*) FROM ai_tutor_content_hierarchy WHERE level = 'stage' AND is_active = true;
+- Query: SELECT * FROM ai_tutor_content_hierarchy WHERE level = 'stage' AND is_active = true ORDER BY stage_order;
+- Alternative: SELECT * FROM get_all_stages_with_counts();
 
 USER-FRIENDLY AI TUTOR RESPONSES:
 When asked about AI Tutor information, respond with user-friendly descriptions:
