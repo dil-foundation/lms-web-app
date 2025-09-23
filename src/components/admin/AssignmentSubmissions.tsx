@@ -70,6 +70,7 @@ interface QuizQuestion {
     position: number;
   }[];
   position: number;
+  points?: number; // Points awarded for correct answer
   // Math-specific fields
   math_expression?: string;
   math_tolerance?: number;
@@ -436,7 +437,12 @@ export const AssignmentSubmissions = () => {
           question_text,
           question_type,
           position,
+          points,
           image_url,
+          math_expression,
+          math_tolerance,
+          math_hint,
+          math_allow_drawing,
           options:question_options(
             id,
             option_text,
@@ -451,6 +457,7 @@ export const AssignmentSubmissions = () => {
 
       const processedQuestions = questions?.map(q => ({
         ...q,
+        points: q.points || 1, // Default to 1 point if not specified
         options: q.options.sort((a: any, b: any) => a.position - b.position)
       })) || [];
 
@@ -629,26 +636,34 @@ export const AssignmentSubmissions = () => {
             !(q.question_type === 'math_expression' && selectedSubmission?.answers?.[q.id]?.startsWith('{"paths":'))
           );
           
-          let finalScore = 0;
-          let totalQuestions = quizQuestions.length;
+          let earnedPoints = 0;
+          let totalPoints = 0;
           
-          // Calculate score from auto-graded questions
+          // Calculate points from auto-graded questions
           if (autoGradedQuestions.length > 0 && selectedSubmission.results) {
-            const autoGradedScore = autoGradedQuestions.reduce((sum, q) => {
+            autoGradedQuestions.forEach(q => {
+              const questionPoints = q.points || 1;
+              totalPoints += questionPoints;
               const isCorrect = selectedSubmission.results[q.id];
-              return sum + (isCorrect ? 100 : 0);
-            }, 0);
-            finalScore += autoGradedScore;
+              if (isCorrect) {
+                earnedPoints += questionPoints;
+              }
+            });
           }
           
-          // Calculate score from manually graded questions (text answers + drawing math expressions)
+          // Calculate points from manually graded questions (text answers + drawing math expressions)
           if (manualGradingQuestions.length > 0) {
-            const manualScore = manualGradingQuestions.reduce((sum, q) => sum + (manualGrades[q.id] || 0), 0);
-            finalScore += manualScore;
+            manualGradingQuestions.forEach(q => {
+              const questionPoints = q.points || 1;
+              totalPoints += questionPoints;
+              const gradePercentage = manualGrades[q.id] || 0;
+              const earnedQuestionPoints = (gradePercentage / 100) * questionPoints;
+              earnedPoints += earnedQuestionPoints;
+            });
           }
           
-          // Calculate final percentage
-          const finalPercentage = Math.round(finalScore / totalQuestions);
+          // Calculate final percentage based on points
+          const finalPercentage = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
           
           // Prepare grades data for the new structure
           const gradesData = manualGradingQuestions.map(q => ({
@@ -1158,6 +1173,13 @@ export const AssignmentSubmissions = () => {
                                   {question.question_type === 'multiple_choice' ? 'Multiple Choice' : 
                                    question.question_type === 'text_answer' ? 'Text Answer' : 
                                    question.question_type === 'math_expression' ? 'Math Expression' : 'Single Choice'}
+                                </Badge>
+                                {/* Points Badge */}
+                                <Badge 
+                                  variant="outline"
+                                  className="text-xs bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 border-yellow-200 dark:border-yellow-700 font-semibold"
+                                >
+                                  {question.points || 1} {question.points === 1 ? 'point' : 'points'}
                                 </Badge>
                               </div>
                               <div className="flex items-center gap-3">
