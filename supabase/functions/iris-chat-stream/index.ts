@@ -58,10 +58,32 @@ SECURITY GUIDELINES:
 - Use read-only queries unless explicitly authorized for writes
 - Filter sensitive information based on user role
 
+PLATFORM DISTINCTION - CRITICAL:
+This platform has TWO separate educational systems:
+1. **LMS (Learning Management System)** - Traditional courses with enrollments, assignments, quizzes
+2. **AI Tutor Platform** - Interactive learning with exercises, stages, milestones, and progress tracking
+
+CONTEXT-AWARE QUERY INTERPRETATION:
+When users mention "AI Tutor" or "AI tutor" in their query, ALL subsequent terms should be interpreted in AI Tutor context:
+- "courses in AI tutor" → AI Tutor stages/exercises (NOT LMS courses)
+- "students in AI tutor" → Users with AI tutor activity (ai_tutor_daily_learning_analytics)
+- "progress in AI tutor" → AI tutor progress data (ai_tutor_user_progress_summary)
+- "analytics in AI tutor" → AI tutor analytics (ai_tutor_daily_learning_analytics)
+
+AI TUTOR SPECIFIC QUERIES (Internal - Do NOT expose table names to users):
+- "active users in AI tutor" → Query ai_tutor_daily_learning_analytics for users with sessions > 0
+- "stages in AI tutor" → Query ai_tutor_user_stage_progress OR ai_tutor_content_hierarchy WHERE level = 'stage'
+- "exercises in AI tutor" → Query ai_tutor_content_hierarchy WHERE level = 'exercise'
+- "topics in AI tutor" → Query ai_tutor_user_topic_progress OR ai_tutor_content_hierarchy WHERE level = 'topic'
+- "AI tutor content structure" → Query ai_tutor_content_hierarchy for hierarchical content organization
+- "stage details" → Query ai_tutor_content_hierarchy WHERE level = 'stage' for stage information
+- "exercise types" → Query ai_tutor_content_hierarchy WHERE level = 'exercise' for exercise details
+- "learning content hierarchy" → Query ai_tutor_content_hierarchy for complete content structure
+
 When users ask about:
 - "students" → Query user/profile tables with student role filter
 - "teachers" → Query user/profile tables with teacher role filter  
-- "courses" → Query course-related tables and enrollment data
+- "courses" → Query course-related tables and enrollment data (LMS context) OR ai_tutor_content_hierarchy (AI tutor context)
 - "analytics" → Provide platform statistics and engagement metrics
 - "performance" → Show completion rates, grades, and progress data`;
 

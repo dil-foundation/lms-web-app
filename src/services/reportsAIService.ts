@@ -1008,6 +1008,15 @@ PLATFORM-SPECIFIC FOCUS:
 - For AI Tutor requests, create reports with titles like "AI Tutor Learning Analytics Report" or "Daily Learning Analytics Report"
 - For LMS requests, create reports with titles like "LMS Course Analytics Report" or "Student Enrollment Report"
 
+AI TUTOR CONTENT STRUCTURE AWARENESS:
+- The platform now includes a structured content hierarchy with stages, exercises, and topics
+- When asked about "AI tutor stages", refer to the learning progression levels (Stage 0-6)
+- When asked about "exercises", refer to the different exercise types within each stage
+- When asked about "topics", refer to the specific learning topics within exercises
+- Stage information includes titles, descriptions, difficulty levels, and hierarchical organization
+- Exercise types include lesson, pronunciation, response, dialogue, conversation, roleplay, storytelling, etc.
+- Content is organized hierarchically: Stages → Exercises → Topics
+
 AVAILABLE LMS DISCUSSION DATA:
 - Total Discussions: Use lmsTotalDiscussions field
 - Total Replies: Use lmsTotalReplies field  
