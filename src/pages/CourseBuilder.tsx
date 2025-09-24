@@ -4541,15 +4541,17 @@ const CourseBuilder = () => {
     // Check if this is the same course scenario (admin unpublish/republish)
     const isSameCourse = courseToSave.id === courseToSave.published_course_id;
     
-    // Save curriculum if:
-    // 1. This is NOT a draft of a published course (new course or teacher draft), OR
-    // 2. This IS the same course scenario (admin unpublish/republish) - we need to save changes
-    const shouldSaveCurriculum = !isDraftOfPublished || isSameCourse;
+    // Always save curriculum - the key is HOW we save it to preserve student progress
+    const shouldSaveCurriculum = true;
     
     if (shouldSaveCurriculum) {
       if (isSameCourse) {
         // For same course scenario, we need to update existing content items instead of deleting/recreating
         // to preserve student progress
+        await updateCurriculumPreservingProgress(currentCourseId, courseToSave.sections);
+      } else if (isDraftOfPublished && !isSameCourse) {
+        // For draft of published course, we also need to preserve progress by updating existing content
+        // instead of deleting/recreating
         await updateCurriculumPreservingProgress(currentCourseId, courseToSave.sections);
       } else {
         // A. Delete existing curriculum for this course to handle reordering/deletions
@@ -4745,12 +4747,28 @@ const CourseBuilder = () => {
     setSaveAction('draft');
     try {
       const courseToSave = { ...courseData, status: 'Draft' as const };
-      const savedId = await saveCourseData(courseToSave);
-      if (savedId) {
-        toast.success("Draft saved successfully!");
-        setCourseData(prev => ({...prev, id: savedId, status: 'Draft'}));
-        if (courseId === 'new' && savedId) {
-          navigate(`/dashboard/courses/builder/${savedId}`, { replace: true });
+      
+      // Check if this is a draft of a published course (has published_course_id)
+      // If so, use saveCourseWithCurriculum to preserve student progress
+      if (courseToSave.published_course_id && courseToSave.id) {
+        console.log('Saving draft of published course - using saveCourseWithCurriculum to preserve progress');
+        const savedId = await saveCourseWithCurriculum(courseToSave);
+        if (savedId) {
+          toast.success("Draft saved successfully!");
+          setCourseData(prev => ({...prev, id: savedId, status: 'Draft'}));
+          if (courseId === 'new' && savedId) {
+            navigate(`/dashboard/courses/builder/${savedId}`, { replace: true });
+          }
+        }
+      } else {
+        // For new courses or drafts without published_course_id, use regular saveCourseData
+        const savedId = await saveCourseData(courseToSave);
+        if (savedId) {
+          toast.success("Draft saved successfully!");
+          setCourseData(prev => ({...prev, id: savedId, status: 'Draft'}));
+          if (courseId === 'new' && savedId) {
+            navigate(`/dashboard/courses/builder/${savedId}`, { replace: true });
+          }
         }
       }
     } catch (error: any) {
@@ -5106,7 +5124,18 @@ const CourseBuilder = () => {
     try {
       // First, ensure the course is saved as a draft. This will create a new one if it's new,
       // or update the existing one.
-      const savedId = await saveCourseData({ ...courseData, status: 'Draft' });
+      const courseToSave = { ...courseData, status: 'Draft' as const };
+      
+      // Check if this is a draft of a published course (has published_course_id)
+      // If so, use saveCourseWithCurriculum to preserve student progress
+      let savedId: string | null;
+      if (courseToSave.published_course_id && courseToSave.id) {
+        console.log('Submitting draft of published course for review - using saveCourseWithCurriculum to preserve progress');
+        savedId = await saveCourseWithCurriculum(courseToSave);
+      } else {
+        // For new courses or drafts without published_course_id, use regular saveCourseData
+        savedId = await saveCourseData(courseToSave);
+      }
       
       if (!savedId) {
         throw new Error("Failed to save the course before submitting for review.");

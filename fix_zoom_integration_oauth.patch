@@ -1,0 +1,26 @@
+--- src/services/meetingService.ts.original
++++ src/services/meetingService.ts
+@@ -88,10 +88,21 @@
+       };
+     }
+ 
+-    const enabled = data?.status === 'enabled' && data?.is_configured && data?.settings?.api_key;
++    // Check for OAuth credentials (client_id = api_key, client_secret = api_secret)
++    const hasOAuthCredentials = data?.settings?.client_id && data?.settings?.client_secret;
++    const hasLegacyCredentials = data?.settings?.api_key;
++    const enabled = data?.status === 'enabled' && data?.is_configured && (hasOAuthCredentials || hasLegacyCredentials);
+     
+     return {
+       enabled,
+-      config: enabled ? data.settings as ZoomApiConfig : undefined
++      config: enabled ? {
++        // Map OAuth credentials to expected format
++        api_key: data.settings.client_id || data.settings.api_key,
++        api_secret: data.settings.client_secret || data.settings.api_secret,
++        webhook_url: data.settings.webhook_url || '',
++        // Include OAuth-specific fields
++        account_id: data.settings.account_id,
++        user_id: data.settings.user_id
++      } : undefined
+     };
+   } catch (error) {

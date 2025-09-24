@@ -253,8 +253,31 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
 
   // Memoized function to handle drawing changes
   const handleDrawingChange = useCallback((questionId: string, drawingData: string) => {
-    setMathDrawings(prev => ({ ...prev, [questionId]: drawingData }));
-  }, []);
+    // If drawingData is empty (cleared), just save it as is
+    if (!drawingData || drawingData.trim() === '') {
+      setMathDrawings(prev => ({ ...prev, [questionId]: drawingData }));
+      return;
+    }
+    
+    try {
+      // Parse the drawing data to add the current text input
+      const parsedDrawingData = JSON.parse(drawingData);
+      const currentTextInput = mathAnswers[questionId] || '';
+      
+      // Add the mathExpression field to the drawing data
+      const combinedData = {
+        ...parsedDrawingData,
+        mathExpression: currentTextInput
+      };
+      
+      console.log('🔍 Combining drawing and text data for question', questionId, ':', combinedData);
+      setMathDrawings(prev => ({ ...prev, [questionId]: JSON.stringify(combinedData) }));
+    } catch (error) {
+      console.error('Error parsing drawing data:', error);
+      // Fallback: save as is
+      setMathDrawings(prev => ({ ...prev, [questionId]: drawingData }));
+    }
+  }, [mathAnswers]);
 
   // Helper function to open image modal
   const openImageModal = async (imageUrl: string) => {
@@ -378,6 +401,9 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                   // If there's also a math expression in the drawing data, extract it
                   if (drawingData.mathExpression) {
                     mathAnswersData[questionId] = drawingData.mathExpression;
+                    console.log('🔍 Extracted math expression for question', questionId, ':', drawingData.mathExpression);
+                  } else {
+                    console.log('🔍 No math expression found in drawing data for question', questionId, ':', drawingData);
                   }
                 } catch (error) {
                   console.error('Error parsing drawing data:', error);
@@ -422,9 +448,20 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         const contentItems = lesson.contentItems?.sort((a:any, b:any) => a.position - b.position).map((item: any) => {
           totalItems++;
           const itemProgress = progress.find(p => p.lesson_content_id === item.id);
-          const isCompleted = !!itemProgress?.completed_at;
-          if (isCompleted) completedItems++;
-          let submission = quizSubmissions.find(s => s.lesson_content_id === item.id) || null;
+            const isCompleted = !!itemProgress?.completed_at;
+            if (isCompleted) completedItems++;
+            
+            // Get the latest submission for this quiz (highest attempt_number)
+            let submission = null;
+            if (item.content_type === 'quiz') {
+              const quizSubmissionsForItem = quizSubmissions.filter(s => s.lesson_content_id === item.id);
+              if (quizSubmissionsForItem.length > 0) {
+                // Sort by attempt_number descending to get the latest attempt
+                submission = quizSubmissionsForItem.sort((a, b) => (b.attempt_number || 0) - (a.attempt_number || 0))[0];
+              }
+            } else {
+              submission = quizSubmissions.find(s => s.lesson_content_id === item.id) || null;
+            }
           
           // Handle quiz questions with question_type field
           let processedItem = { ...item };
@@ -993,14 +1030,18 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     if (hasTextAnswers) {
       const autoGradedCount = autoGradedQuestions.length;
       const textAnswerCount = questions.length - autoGradedCount;
+      const autoGradedPoints = autoGradedQuestions.reduce((sum: number, q: any) => sum + (q.points || 1), 0);
+      const earnedAutoGradedPoints = Math.round(((score || 0) / 100) * autoGradedPoints);
       
       if (autoGradedCount > 0) {
-        toast.success(`Quiz submitted! Auto-graded questions: ${(score || 0).toFixed(0)}%. ${textAnswerCount} question(s) require manual grading.`);
+        toast.success(`Quiz submitted! Auto-graded: ${earnedAutoGradedPoints}/${autoGradedPoints} points (${(score || 0).toFixed(0)}%). ${textAnswerCount} question(s) require manual grading.`);
       } else {
         toast.success(`Quiz submitted! All ${textAnswerCount} question(s) require manual grading by your teacher.`);
       }
     } else {
-      toast.success(`Quiz submitted! Your score: ${(score || 0).toFixed(0)}%`);
+      const totalPoints = questions.reduce((sum: number, q: any) => sum + (q.points || 1), 0);
+      const earnedPoints = Math.round(((score || 0) / 100) * totalPoints);
+      toast.success(`Quiz submitted! Your score: ${earnedPoints}/${totalPoints} points (${(score || 0).toFixed(0)}%)`);
     }
   };
 
@@ -1037,7 +1078,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
               // Fetch individual text answer grades for each submission
               if (submissionsData && submissionsData.length > 0) {
                 for (const submission of submissionsData) {
-                  const { data: gradesData } = await supabase.rpc('get_text_answer_grades', { submission_id: submission.id });
+                  const { data: gradesData } = await supabase.rpc('get_text_answer_grades_with_points', { submission_id: submission.id });
                   submission.text_answer_grades = gradesData || [];
                 }
               }
@@ -1393,7 +1434,23 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                         <MathExpressionInput
                           questionId={q.id}
                           value={mathAnswer || ''}
-                          onChange={(value) => setMathAnswers(prev => ({ ...prev, [q.id]: value }))}
+                          onChange={(value) => {
+                            setMathAnswers(prev => ({ ...prev, [q.id]: value }));
+                            // Also update the drawing data to include the new text input
+                            const currentDrawingData = mathDrawings[q.id];
+                            if (currentDrawingData && currentDrawingData.trim() !== '') {
+                              try {
+                                const parsedDrawingData = JSON.parse(currentDrawingData);
+                                const combinedData = {
+                                  ...parsedDrawingData,
+                                  mathExpression: value
+                                };
+                                setMathDrawings(prev => ({ ...prev, [q.id]: JSON.stringify(combinedData) }));
+                              } catch (error) {
+                                console.error('Error updating drawing data with text input:', error);
+                              }
+                            }
+                          }}
                           disabled={hasSubmitted}
                           showValidation={!hasSubmitted}
                           expectedAnswer={q.math_expression}
@@ -1414,9 +1471,12 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                               </h4>
                               <div className="p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg border border-blue-200/50 dark:border-blue-700/30">
                                 <p className="text-gray-900 dark:text-gray-100 font-mono text-lg leading-relaxed">
-                                  {mathAnswer || (
-                                    <span className="text-gray-500 dark:text-gray-400 italic">No answer provided</span>
-                                  )}
+                                  {(() => {
+                                    console.log('🔍 Displaying math answer for question', q.id, ':', mathAnswer);
+                                    return mathAnswer || (
+                                      <span className="text-gray-500 dark:text-gray-400 italic">No answer provided</span>
+                                    );
+                                  })()}
                                 </p>
                               </div>
                             </div>
@@ -1474,6 +1534,14 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                                 {currentContentItem.submission?.manual_grading_completed && currentContentItem.submission?.manual_grading_score !== null && (
                                   <div className="text-sm text-orange-700 dark:text-orange-300 mt-2">
                                     <span className="font-medium">Your Grade:</span> {currentContentItem.submission.manual_grading_score}%
+                                    {(() => {
+                                      const earnedPoints = Math.round((currentContentItem.submission.manual_grading_score / 100) * (q.points || 1));
+                                      return (
+                                        <span className="block">
+                                          ({earnedPoints} out of {q.points || 1} points)
+                                        </span>
+                                      );
+                                    })()}
                                   </div>
                                 )}
                               </div>
@@ -1515,9 +1583,14 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                                 <div className="space-y-2">
                                   <div className="flex items-center justify-between">
                                     <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Your Grade for the above question</span>
-                                    <span className="text-lg font-bold text-blue-700 dark:text-blue-300">
-                                      {currentContentItem.submission.text_answer_grades.find((grade: any) => grade.question_id === q.id)?.grade || 0}%
-                                    </span>
+                                    <div className="text-right">
+                                      <div className="text-lg font-bold text-blue-700 dark:text-blue-300">
+                                        {currentContentItem.submission.text_answer_grades.find((grade: any) => grade.question_id === q.id)?.earned_points || 0} / {q.points || 1} points
+                                      </div>
+                                      <div className="text-sm text-blue-600 dark:text-blue-400">
+                                        ({currentContentItem.submission.text_answer_grades.find((grade: any) => grade.question_id === q.id)?.grade || 0}%)
+                                      </div>
+                                    </div>
                                   </div>
                                   {currentContentItem.submission.text_answer_grades.find((grade: any) => grade.question_id === q.id)?.feedback && 
                                    currentContentItem.submission.text_answer_grades.find((grade: any) => grade.question_id === q.id)?.feedback.trim() && (
@@ -1653,7 +1726,20 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                      {currentContentItem.submission && 
                       (currentContentItem.submission.score !== null || 
                        (currentContentItem.submission.manual_grading_completed && currentContentItem.submission.manual_grading_score !== null)) ? (
-                       `You scored ${((currentContentItem.submission.manual_grading_score ?? currentContentItem.submission.score) || 0).toFixed(0)}%.`
+                       <span>
+                         You scored <span className="font-semibold text-primary">{((currentContentItem.submission.manual_grading_score ?? currentContentItem.submission.score) || 0).toFixed(0)}%</span>.
+                         {(() => {
+                           // Calculate total points for display
+                           const totalQuestions = questions.length;
+                           const totalPoints = questions.reduce((sum: number, q: any) => sum + (q.points || 1), 0);
+                           const earnedPoints = Math.round((((currentContentItem.submission.manual_grading_score ?? currentContentItem.submission.score) || 0) / 100) * totalPoints);
+                           return (
+                             <span className="block mt-1 text-xs">
+                               ({earnedPoints} out of {totalPoints} total points)
+                             </span>
+                           );
+                         })()}
+                       </span>
                      ) : (
                        'Your score will be available after manual grading by your teacher.'
                      )}

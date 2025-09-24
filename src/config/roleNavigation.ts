@@ -1,5 +1,5 @@
 
-import { Home, BookOpen, FileQuestion, TrendingUp, Users, Settings, BarChart3, GraduationCap, ClipboardList, Award, UserCheck, Database, Shield, MessageSquare, Link, Eye, MessageCircle, Bot, Brain, Zap, Target, Sparkles, BookCheck, FileText, Cog, Settings2, ShieldCheck, Plug, Building2, Download, MapPin, Users2, MessageCircle as AIAssistant } from 'lucide-react';
+import { Home, BookOpen, FileQuestion, TrendingUp, Users, Settings, BarChart3, GraduationCap, ClipboardList, Award, UserCheck, Database, Shield, MessageSquare, Link, Eye, MessageCircle, Bot, Brain, Zap, Target, Sparkles, BookCheck, FileText, Cog, Settings2, ShieldCheck, Plug, Building2, Download, MapPin, Users2, MessageCircle as AIAssistant, Video } from 'lucide-react';
 
 export type UserRole = 'student' | 'teacher' | 'admin';
 
@@ -56,7 +56,7 @@ export const getRoleNavigation = (role?: UserRole): NavigationItem[] => {
   }
 };
 
-export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean): NavigationCategory[] => {
+export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean, isZoomEnabled?: boolean): NavigationCategory[] => {
   if (!role) {
     return [];
   }
@@ -89,6 +89,7 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean): N
           items: [
             { title: 'Messages', path: '/dashboard/messages', icon: MessageSquare },
             { title: 'Discussions', path: '/dashboard/discussion', icon: MessageCircle },
+            ...(isZoomEnabled ? [{ title: 'Meetings', path: '/dashboard/meetings', icon: Video }] : []),
           ]
         }
       ];
@@ -116,6 +117,7 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean): N
           items: [
             { title: 'Messages', path: '/dashboard/messages', icon: MessageSquare },
             { title: 'Discussion', path: '/dashboard/discussion', icon: MessageCircle },
+            ...(isZoomEnabled ? [{ title: 'Meetings', path: '/dashboard/meetings', icon: Video }] : []),
           ]
         }
       ];
