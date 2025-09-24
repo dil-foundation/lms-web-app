@@ -18,6 +18,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
+import { createConversation, getConversations } from '@/services/messagingService';
 import { 
   Users, 
   Activity, 
@@ -153,6 +155,7 @@ export default function StudentsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const { preferences, setTeacherStudentView } = useViewPreferences();
+  const navigate = useNavigate();
   
   // State
   const [searchTerm, setSearchTerm] = useState('');
@@ -204,6 +207,82 @@ export default function StudentsPage() {
   const [availableCourses, setAvailableCourses] = useState<AvailableCourse[]>([]);
   const [loadingEnrollData, setLoadingEnrollData] = useState(false);
   const [filterableCourses, setFilterableCourses] = useState<string[]>([]);
+
+  // Handle messaging a student
+  const handleMessageStudent = async (student: any) => {
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to send messages.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      console.log('🎯 Starting handleMessageStudent for:', student.name, 'ID:', student.id);
+
+      // First, check if a conversation already exists with this student
+      let conversationId: string | null = null;
+      
+      try {
+        const existingConversations = await getConversations(1, 50); // Get more conversations to find existing one
+        
+        // Look for existing conversation with this student
+        const existingConversation = existingConversations.conversations.find(conv => 
+          conv.participants?.some(p => p.user_id === student.id)
+        );
+        
+        if (existingConversation) {
+          conversationId = existingConversation.id;
+          console.log('✅ Found existing conversation:', conversationId, 'with', student.name);
+        }
+      } catch (error) {
+        console.log('Could not check existing conversations, will create new one');
+      }
+
+      // If no existing conversation found, create a new one
+      if (!conversationId) {
+        try {
+          const conversation = await createConversation({
+            type: 'direct',
+            participant_ids: [student.id]
+          });
+          conversationId = conversation.id;
+          console.log('✅ Created new conversation:', conversationId, 'with', student.name);
+        } catch (createError) {
+          console.error('Error creating conversation:', createError);
+          // If creation fails, just navigate to messages page
+          navigate('/dashboard/messages');
+          toast({
+            title: "Messages",
+            description: `Opening messages. Please look for ${student.name} in your conversations.`,
+          });
+          return;
+        }
+      }
+
+      // Navigate to messages page with the conversation ID
+      if (conversationId) {
+        console.log('🚀 Navigating to messages with conversation ID:', conversationId);
+        // Small delay to ensure the conversation is properly created/found
+        setTimeout(() => {
+          navigate(`/dashboard/messages?conversation=${conversationId}`);
+        }, 100);
+      } else {
+        // Fallback: navigate with student ID to create conversation on Messages page
+        console.log('🔄 Fallback: navigating with student ID:', student.id);
+        navigate(`/dashboard/messages?student=${student.id}&studentName=${encodeURIComponent(student.name)}`);
+      }
+    } catch (error) {
+      console.error('Error in handleMessageStudent:', error);
+      navigate('/dashboard/messages');
+      toast({
+        title: "Messages",
+        description: `Opening messages. Please look for ${student.name} in your conversations.`,
+      });
+    }
+  };
 
   const fetchStudentStats = async () => {
     if(!user) return;
@@ -954,9 +1033,7 @@ export default function StudentsPage() {
                         setIsProfileModalOpen(true);
                       }
                     }}
-                    onMessage={(student) => {
-                      // Handle message functionality
-                    }}
+                    onMessage={handleMessageStudent}
                     onViewProfile={(student) => {
                       const originalStudent = filteredStudents.find(s => s.id === student.id);
                       if (originalStudent) {
@@ -1010,13 +1087,7 @@ export default function StudentsPage() {
                       setModalMode('view');
                       setIsProfileModalOpen(true);
                     }}
-                    onMessage={(student) => {
-                      // Handle message functionality
-                      toast({
-                        title: "Message",
-                        description: `Messaging ${student.name}...`,
-                      });
-                    }}
+                    onMessage={handleMessageStudent}
                     onViewProfile={(student) => {
                       setSelectedStudent(student);
                       setModalMode('view');
@@ -1072,13 +1143,7 @@ export default function StudentsPage() {
                       setModalMode('view');
                       setIsProfileModalOpen(true);
                     }}
-                    onMessage={(student) => {
-                      // Handle message functionality
-                      toast({
-                        title: "Message",
-                        description: `Messaging ${student.name}...`,
-                      });
-                    }}
+                    onMessage={handleMessageStudent}
                     onViewProfile={(student) => {
                       setSelectedStudent(student);
                       setModalMode('view');

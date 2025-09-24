@@ -1600,7 +1600,7 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
                 value={question.question_text}
                 onChange={(e) => updateQuestion(qIndex, e.target.value)}
                 placeholder={`Question ${qIndex + 1}`}
-                  className="w-full border-0 bg-white/60 dark:bg-gray-800/60 rounded-xl px-4 py-3 focus-visible:ring-2 focus-visible:ring-purple-500/20 placeholder:text-gray-500 dark:placeholder:text-gray-400 [&]:text-gray-900 [&]:dark:text-white"
+                className="w-full border border-purple-200 dark:border-purple-700 bg-white dark:bg-gray-800 rounded-xl px-4 py-3 focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:border-purple-500 placeholder:text-gray-500 dark:placeholder:text-gray-400 text-gray-900 dark:text-white hover:border-purple-300 dark:hover:border-purple-600 transition-colors"
               />
               </div>
               <Button 
@@ -1857,7 +1857,7 @@ const QuizBuilder = ({ quiz, onQuizChange }: { quiz: QuizData, onQuizChange: (qu
                       value={option.option_text}
                       onChange={(e) => updateOption(qIndex, oIndex, e.target.value)}
                       placeholder={`Option ${oIndex + 1}`}
-                        className="w-full border-0 bg-white/60 dark:bg-gray-800/60 rounded-xl px-4 py-3 focus-visible:ring-2 focus-visible:ring-purple-500/20 placeholder:text-gray-500 dark:placeholder:text-gray-400 [&]:text-gray-900 [&]:dark:text-white"
+                      className="w-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-xl px-4 py-3 focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:border-purple-500 placeholder:text-gray-500 dark:placeholder:text-gray-400 text-gray-900 dark:text-white hover:border-gray-300 dark:hover:border-gray-500 transition-colors"
                     />
                     </div>
                     <Button
@@ -7390,15 +7390,15 @@ const CourseBuilder = () => {
 
       {/* Create Class Dialog */}
       <Dialog open={isClassCreateDialogOpen} onOpenChange={setIsClassCreateDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+        <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle>Create New Class</DialogTitle>
             <DialogDescription>
               Add a new class or academic section to the system. Fill in the required information below.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+          <div className="flex-1 overflow-y-auto pr-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4 px-2">
               <div className="space-y-2">
                 <Label htmlFor="class-name">Class Name *</Label>
                 <Input

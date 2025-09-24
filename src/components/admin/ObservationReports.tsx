@@ -852,7 +852,7 @@ export const ObservationReports = () => {
                 id="teal-toggle"
                 checked={showTealObservations}
                 onCheckedChange={setShowTealObservations}
-                className="data-[state=checked]:bg-blue-600 data-[state=unchecked]:bg-gray-200"
+                className="data-[state=checked]:bg-blue-600 data-[state=unchecked]:bg-gray-200 data-[state=unchecked]:dark:bg-gray-700"
               />
             </div>
           </CardContent>
