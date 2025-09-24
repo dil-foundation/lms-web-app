@@ -318,7 +318,7 @@ export const MathDrawingCanvas: React.FC<MathDrawingCanvasProps> = ({
                   <button
                     key={width}
                     className={`w-8 h-6 rounded border ${
-                      selectedWidth === width ? 'bg-blue-500 text-white' : 'bg-gray-200'
+                      selectedWidth === width ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-700'
                     }`}
                     onClick={() => setSelectedWidth(width)}
                     disabled={disabled}

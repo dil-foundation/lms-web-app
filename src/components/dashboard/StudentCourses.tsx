@@ -304,7 +304,7 @@ export const StudentCourses = ({ userProfile }: StudentCoursesProps) => {
                       Completed
                     </Badge>
                   )}
-                  {course.progress && course.progress > 0 && course.progress < 100 && (
+                  {course.progress !== undefined && course.progress !== null && course.progress > 0 && course.progress < 100 && (
                     <Badge variant="secondary" className="absolute top-2 left-2">
                       In Progress
                     </Badge>
@@ -315,7 +315,9 @@ export const StudentCourses = ({ userProfile }: StudentCoursesProps) => {
                   <p className="text-sm text-muted-foreground">{course.subtitle}</p>
                   <div className="flex justify-between text-sm text-muted-foreground">
                     <span>{course.total_lessons || 0} lessons</span>
-                    <span>{course.progress || 0}% complete</span>
+                    {course.progress !== undefined && course.progress !== null && (
+                      <span>{course.progress}% complete</span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Clock className="h-4 w-4" />

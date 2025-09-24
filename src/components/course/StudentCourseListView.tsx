@@ -88,14 +88,23 @@ export const StudentCourseListView: React.FC<StudentCourseListViewProps> = ({
                   </div>
                   
                   <div className="text-sm text-muted-foreground flex flex-col justify-center space-y-1">
-                    <p className="flex items-center gap-1">
-                      <Users className="w-3 h-3 flex-shrink-0" />
-                      <span>{course.completed_lessons || 0}</span>
-                    </p>
-                    <p className="flex items-center gap-1">
-                      <BookOpen className="w-3 h-3 flex-shrink-0" />
-                      <span>{course.total_lessons || 0}</span>
-                    </p>
+                    {(course.total_lessons && course.total_lessons > 0) ? (
+                      <>
+                        <p className="flex items-center gap-1">
+                          <Users className="w-3 h-3 flex-shrink-0" />
+                          <span>{course.completed_lessons !== undefined && course.completed_lessons !== null ? course.completed_lessons : 0}/{course.total_lessons} completed</span>
+                        </p>
+                        <p className="flex items-center gap-1">
+                          <BookOpen className="w-3 h-3 flex-shrink-0" />
+                          <span>{course.total_lessons} lessons</span>
+                        </p>
+                      </>
+                    ) : (
+                      <p className="flex items-center gap-1">
+                        <BookOpen className="w-3 h-3 flex-shrink-0" />
+                        <span>Course content loading...</span>
+                      </p>
+                    )}
                   </div>
                   
                   <div className="text-sm text-muted-foreground flex flex-col justify-center space-y-1">
@@ -103,16 +112,18 @@ export const StudentCourseListView: React.FC<StudentCourseListViewProps> = ({
                       <Clock className="w-3 h-3 flex-shrink-0" />
                       <span>{course.last_accessed ? new Date(course.last_accessed).toLocaleDateString() : 'Never'}</span>
                     </p>
-                    <p className="flex items-center gap-1">
-                      <User className="w-3 h-3 flex-shrink-0" />
-                      <span>{course.progress || 0}%</span>
-                    </p>
+                    {course.progress !== undefined && course.progress !== null && (
+                      <p className="flex items-center gap-1">
+                        <User className="w-3 h-3 flex-shrink-0" />
+                        <span>{course.progress}%</span>
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 {/* Progress and Action */}
                 <div className="flex items-center gap-4">
-                  {course.progress !== undefined && (
+                  {course.progress !== undefined && course.progress !== null && (
                     <div className="w-24">
                       <div className="flex items-center justify-between text-xs mb-1">
                         <span className="text-muted-foreground">Progress</span>

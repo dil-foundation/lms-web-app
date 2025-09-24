@@ -173,18 +173,96 @@ export default function NewsSummaryChallenge() {
       toast.success('Evaluation completed!');
       
       // Check if the exercise is completed based on API response
-      if (result.exercise_completion?.exercise_completed) {
-        // Exercise is completed according to the API
+      // The backend can indicate completion in multiple ways, check all of them
+      
+      console.log(`🔍 DEBUGGING NEWS SUMMARY COMPLETION LOGIC:`, {
+        exercise_completion_status_exercise_completed: result.exercise_completion_status?.exercise_completed,
+        exercise_completion_exercise_completed: result.exercise_completion?.exercise_completed,
+        completed: result.completed,
+        success: result.success,
+        score: result.score,
+        is_correct: result.is_correct,
+        answer_relevance_score: result.answer_relevance_score,
+        isCompleted: isCompleted
+      });
+      
+      // 1. Check exercise_completion_status.exercise_completed (actual structure from response)
+      if (result.exercise_completion_status?.exercise_completed === true) {
         setIsCompleted(true);
         setShowCompletionDialog(true);
         markExerciseCompleted();
-        console.log('✅ Exercise completed according to API response');
-      } else if (!isCompleted) {
-        // Fallback: mark as completed after receiving evaluation (existing behavior)
+        console.log(`✅ CONDITION 1 TRIGGERED: Exercise completed according to API response (exercise_completion_status)`);
+      }
+      // 2. Check legacy exercise_completion.exercise_completed (for backward compatibility)
+      else if (result.exercise_completion?.exercise_completed === true) {
         setIsCompleted(true);
         setShowCompletionDialog(true);
         markExerciseCompleted();
-        console.log('✅ Exercise marked as completed (fallback logic)');
+        console.log(`✅ CONDITION 2 TRIGGERED: Exercise completed according to API response (exercise_completion)`);
+      }
+      // 3. Check direct 'completed' field
+      else if (result.completed === true) {
+        setIsCompleted(true);
+        setShowCompletionDialog(true);
+        markExerciseCompleted();
+        console.log(`✅ CONDITION 3 TRIGGERED: Exercise completed according to API response (completed field)`);
+      }
+      // 4. If ANY completion indicator is explicitly false, OR if we have negative feedback indicators, do NOT complete
+      // Based on expected response structure with multiple completion indicators
+      else if (
+        // Check nested exercise_completion_status structure (primary indicator)
+        result.exercise_completion_status?.exercise_completed === false ||
+        // Check legacy exercise_completion structure  
+        result.exercise_completion?.exercise_completed === false ||
+        // Check direct completion fields
+        result.completed === false ||
+        result.success === false ||
+        result.is_correct === false ||
+        // Check performance indicators that suggest inadequate response
+        (result.answer_relevance_score !== undefined && result.answer_relevance_score === 0) ||
+        (result.score !== undefined && result.score <= 20) ||
+        // Check evaluation nested structure
+        (result.evaluation?.answer_relevance_score !== undefined && result.evaluation.answer_relevance_score === 0) ||
+        (result.evaluation?.overall_score !== undefined && result.evaluation.overall_score <= 20)
+      ) {
+        console.log(`❌ CONDITION 4 TRIGGERED: Exercise NOT completed - backend indicated poor performance or explicit false`);
+        console.log(`   - exercise_completion_status.exercise_completed: ${result.exercise_completion_status?.exercise_completed}`);
+        console.log(`   - completed: ${result.completed}`);
+        console.log(`   - success: ${result.success}`);
+        console.log(`   - is_correct: ${result.is_correct}`);
+        console.log(`   - answer_relevance_score: ${result.answer_relevance_score}`);
+        console.log(`   - score: ${result.score}`);
+        console.log(`   - evaluation.answer_relevance_score: ${result.evaluation?.answer_relevance_score}`);
+        console.log(`   - evaluation.overall_score: ${result.evaluation?.overall_score}`);
+        // Explicitly do NOT set completion here - this should prevent congratulations
+      }
+      // 5. Only use fallback logic for genuinely good responses
+      else if (
+        !isCompleted && 
+        result.score !== undefined && 
+        result.score > 20 && // Higher threshold for completion
+        // Only complete if we have positive indicators OR no negative indicators
+        (
+          (result.exercise_completion_status?.exercise_completed === true) ||
+          (result.exercise_completion?.exercise_completed === true) ||
+          (result.completed === true) ||
+          // If completion fields are undefined, only complete if we have good performance indicators
+          (
+            result.exercise_completion_status?.exercise_completed === undefined &&
+            result.exercise_completion?.exercise_completed === undefined &&
+            result.completed === undefined &&
+            result.success !== false &&
+            (result.answer_relevance_score === undefined || result.answer_relevance_score > 0) &&
+            (result.is_correct !== false)
+          )
+        )
+      ) {
+        setIsCompleted(true);
+        setShowCompletionDialog(true);
+        markExerciseCompleted();
+        console.log(`✅ CONDITION 5 TRIGGERED: Exercise marked as completed (good performance indicators)`);
+      } else {
+        console.log(`ℹ️ NO CONDITIONS TRIGGERED: Evaluation completed but not marking as exercise completed (score: ${result.score}, success: ${result.success}, exercise_completed: ${result.exercise_completion_status?.exercise_completed}, answer_relevance_score: ${result.answer_relevance_score}, is_correct: ${result.is_correct})`);
       }
       
     } catch (error) {
@@ -659,7 +737,7 @@ export default function NewsSummaryChallenge() {
                       Redo Exercise
                     </Button>
                     <Button
-                      onClick={() => navigate('/dashboard/practice')}
+                      onClick={() => navigate('/dashboard/practice/stage-4')}
                       className="flex-1 h-12 px-6 bg-gradient-to-r from-[#8DC63F] to-[#8DC63F]/90 hover:from-[#8DC63F]/90 hover:to-[#8DC63F] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 border-0 rounded-xl"
                     >
                       Continue Learning

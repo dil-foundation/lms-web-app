@@ -1598,7 +1598,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                                       : 'border-gray-300 dark:border-gray-600'
                                   }`}>
                                     {isSelected && (
-                                      <div className="w-2 h-2 rounded-full bg-white" />
+                                      <div className="w-2 h-2 rounded-full bg-white dark:bg-gray-900" />
                                     )}
                                   </div>
                                 )}

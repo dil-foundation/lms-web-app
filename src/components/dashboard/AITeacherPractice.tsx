@@ -10,7 +10,6 @@ import {
   BookOpen,
   Edit3,
   MoreVertical,
-  Plus,
   Trash2,
   Copy,
   Sparkles
@@ -337,14 +336,6 @@ export const AITeacherPractice: React.FC = () => {
                     Preview and customize practice stages for your students
                   </p>
                 </div>
-              </div>
-              
-              {/* Action Controls */}
-              <div className="flex items-center gap-3">
-                <Button className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 border-0">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Assignment
-                </Button>
               </div>
             </div>
           </div>

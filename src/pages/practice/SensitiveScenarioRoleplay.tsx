@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
 import { CompletionDialog } from '@/components/practice/CompletionDialog';
-import { ArrowLeft, Mic, Users, User, Heart, Shield, AlertTriangle, Loader2, Zap, Play, Pause, Target, MessageSquare, CheckCircle, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Mic, Users, User, Heart, Shield, AlertTriangle, Loader2, Zap, Play, Pause, Target, MessageSquare, CheckCircle, RotateCcw, Square } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { 
@@ -63,15 +63,22 @@ export default function SensitiveScenarioRoleplay() {
       try {
         setLoading(true);
         const fetchedScenarios = await sensitiveScenarioService.getAllScenarios();
-        setScenarios(fetchedScenarios);
         
-        // Set first scenario as default if available
-        if (fetchedScenarios.length > 0) {
-          setSelectedScenario(fetchedScenarios[0]);
+        if (fetchedScenarios && Array.isArray(fetchedScenarios)) {
+          setScenarios(fetchedScenarios);
+          
+          // Set first scenario as default if available
+          if (fetchedScenarios.length > 0) {
+            setSelectedScenario(fetchedScenarios[0]);
+          }
+        } else {
+          console.error('Invalid scenarios response format:', fetchedScenarios);
+          setScenarios([]);
         }
       } catch (error) {
         console.error('Error loading scenarios:', error);
         toast.error('Failed to load sensitive scenario scenarios');
+        setScenarios([]);
       } finally {
         setLoading(false);
       }
@@ -394,38 +401,38 @@ export default function SensitiveScenarioRoleplay() {
 
             {scenarios.length > 0 ? (
               <div className="space-y-4">
-                {scenarios.map((scenario) => (
-                  <Card 
-                    key={scenario.id}
-                    className="cursor-pointer transition-all hover:shadow-xl hover:scale-[1.02] border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden"
-                    onClick={() => handleScenarioClick(scenario)}
-                  >
-                    <CardContent className="p-5 sm:p-6">
-                      <div className="flex items-center space-x-3 sm:space-x-4">
-                        <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center flex-shrink-0 border border-primary/30">
-                          <Users className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <span className="font-semibold text-primary text-sm sm:text-base">Context:</span> {scenario.context}
+                {scenarios.map((scenario, index) => (
+                    <Card 
+                      key={scenario.id}
+                      className="cursor-pointer transition-all hover:shadow-xl hover:scale-[1.02] border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden"
+                      onClick={() => handleScenarioClick(scenario)}
+                    >
+                      <CardContent className="p-5 sm:p-6">
+                        <div className="flex items-center space-x-3 sm:space-x-4">
+                          <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center flex-shrink-0 border border-primary/30">
+                            <Users className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <span className="font-semibold text-primary text-sm sm:text-base">Scenario:</span> {scenario.scenario || scenario.context || scenario.description || 'No content available'}
+                              </div>
+                              {(scenario.difficulty || scenario.difficulty_level) && (
+                                <span className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium ml-3 sm:ml-4 flex-shrink-0 border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm ${
+                                  (scenario.difficulty === 'Advanced' || scenario.difficulty_level === 'Advanced')
+                                    ? 'text-red-600 dark:text-red-400' 
+                                    : (scenario.difficulty === 'Intermediate' || scenario.difficulty_level === 'Intermediate')
+                                    ? 'text-orange-600 dark:text-orange-400'
+                                    : 'text-green-600 dark:text-green-400'
+                                }`}>
+                                  {scenario.difficulty || scenario.difficulty_level}
+                                </span>
+                              )}
                             </div>
-                            {(scenario.difficulty || scenario.difficulty_level) && (
-                              <span className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium ml-3 sm:ml-4 flex-shrink-0 border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm ${
-                                (scenario.difficulty === 'Advanced' || scenario.difficulty_level === 'Advanced')
-                                  ? 'text-red-600 dark:text-red-400' 
-                                  : (scenario.difficulty === 'Intermediate' || scenario.difficulty_level === 'Intermediate')
-                                  ? 'text-orange-600 dark:text-orange-400'
-                                  : 'text-green-600 dark:text-green-400'
-                              }`}>
-                                {scenario.difficulty || scenario.difficulty_level}
-                              </span>
-                            )}
                           </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
                 ))}
               </div>
             ) : (
@@ -537,111 +544,109 @@ export default function SensitiveScenarioRoleplay() {
             {selectedScenario && (
               <div className="mb-6 space-y-4">
                 {/* Scenario Header */}
-                <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <h2 className="text-xl sm:text-2xl font-bold text-primary mb-2 sm:mb-3">
-                          {selectedScenario.title}
-                        </h2>
-                        {selectedScenario.description && (
-                          <p className="text-muted-foreground mb-3 sm:mb-4 leading-relaxed text-sm sm:text-base">
-                            {selectedScenario.description}
-                          </p>
-                        )}
-                      </div>
-                      <div className="ml-4 flex-shrink-0 flex items-center space-x-3">
-                        {/* Audio Button */}
-                        <Button
-                          onClick={handlePlayAudio}
-                          disabled={isLoadingAudio}
-                          className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full shadow-lg transition-all duration-300 ${
-                            isLoadingAudio
-                              ? 'bg-gray-600 cursor-not-allowed text-white border-2 border-gray-500'
-                              : isPlayingAudio
-                              ? 'bg-[#1582B4] hover:bg-[#1582B4]/90 text-white hover:scale-105'
-                              : 'bg-[#1582B4] hover:bg-[#1582B4]/90 text-white hover:scale-105'
-                          }`}
-                          size="icon"
-                        >
-                          {isLoadingAudio ? (
-                            <div className="w-7 h-7 sm:w-8 sm:h-8 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
-                          ) : isPlayingAudio ? (
-                            <Pause className="w-7 h-7 sm:w-8 sm:h-8" />
-                          ) : (
-                            <Play className="w-7 h-7 sm:w-8 sm:h-8" />
-                          )}
-                        </Button>
+                <Card className="border-0 bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 rounded-3xl shadow-xl overflow-hidden backdrop-blur-sm">
+                  <CardContent className="p-0">
+                    {/* Header Section */}
+                    <div className="bg-gradient-to-r from-primary/20 via-primary/30 to-primary/20 p-6 border-b border-primary/10">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg">
+                            <Users className="h-6 w-6 text-white" />
+                          </div>
+                          <div>
+                            <h2 className="text-xl sm:text-2xl font-bold text-primary">
+                              Sensitive Scenario Practice
+                            </h2>
+                            <p className="text-primary/70 text-sm">
+                              Handle this situation with empathy and professionalism
+                            </p>
+                          </div>
+                        </div>
                         
-                        {/* Difficulty Badge */}
-                        {(selectedScenario.difficulty || selectedScenario.difficulty_level) && (
-                          <span className={`px-4 py-2 rounded-full text-sm font-medium border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm ${
-                            (selectedScenario.difficulty === 'Advanced' || selectedScenario.difficulty_level === 'Advanced')
-                              ? 'text-red-600 dark:text-red-400' 
-                              : (selectedScenario.difficulty === 'Intermediate' || selectedScenario.difficulty_level === 'Intermediate')
-                              ? 'text-orange-600 dark:text-orange-400'
-                              : 'text-green-600 dark:text-green-400'
-                          }`}>
-                            {selectedScenario.difficulty || selectedScenario.difficulty_level}
-                          </span>
-                        )}
+                        <div className="flex items-center space-x-3">
+                          {/* Audio Button */}
+                          <Button
+                            onClick={handlePlayAudio}
+                            disabled={isLoadingAudio}
+                            className={`w-12 h-12 rounded-full shadow-lg transition-all duration-300 ${
+                              isLoadingAudio
+                                ? 'bg-gray-500 cursor-not-allowed text-white'
+                                : isPlayingAudio
+                                ? 'bg-[#1582B4] hover:bg-[#1582B4]/90 text-white hover:scale-105'
+                                : 'bg-[#1582B4] hover:bg-[#1582B4]/90 text-white hover:scale-105'
+                            }`}
+                            size="icon"
+                          >
+                            {isLoadingAudio ? (
+                              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            ) : isPlayingAudio ? (
+                              <Pause className="w-5 h-5" />
+                            ) : (
+                              <Play className="w-5 h-5" />
+                            )}
+                          </Button>
+                          
+                          {/* Difficulty Badge */}
+                          {(selectedScenario.difficulty || selectedScenario.difficulty_level) && (
+                            <span className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide ${
+                              (selectedScenario.difficulty === 'Advanced' || selectedScenario.difficulty_level === 'Advanced')
+                                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' 
+                                : (selectedScenario.difficulty === 'Intermediate' || selectedScenario.difficulty_level === 'Intermediate')
+                                ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
+                                : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                            }`}>
+                              {selectedScenario.difficulty || selectedScenario.difficulty_level}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
-                    {/* Scenario Section */}
-                    {(selectedScenario as any).scenario && (
-                      <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm p-4 rounded-2xl border border-primary/20 mb-4">
-                        <h3 className="font-semibold text-primary mb-2 flex items-center">
-                          <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center mr-3 border border-primary/30">
-                            <AlertTriangle className="h-4 w-4 text-white" />
+                    {/* Scenario Content */}
+                    <div className="p-6">
+                      <div className="bg-gradient-to-br from-white/80 to-white/60 dark:from-gray-800/80 dark:to-gray-800/60 backdrop-blur-sm p-6 rounded-2xl border border-primary/20 shadow-inner">
+                        <div className="flex items-start space-x-4">
+                          <div className="w-10 h-10 bg-gradient-to-br from-primary/20 to-primary/30 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <AlertTriangle className="h-5 w-5 text-primary" />
                           </div>
-                          Scenario
-                        </h3>
-                        <p className="text-muted-foreground">
-                          {(selectedScenario as any).scenario}
-                        </p>
-                      </div>
-                    )}
-                    
-                    {/* Your Role Section */}
-                    <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm p-4 rounded-2xl border border-primary/20">
-                      <h3 className="font-semibold text-primary mb-2 flex items-center">
-                        <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center mr-3 border border-primary/30">
-                          <User className="h-4 w-4 text-white" />
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-primary mb-3 text-lg">
+                              Scenario
+                            </h3>
+                            <p className="text-foreground leading-relaxed text-base">
+                              {(selectedScenario as any).scenario || selectedScenario.context || 'No scenario description available'}
+                            </p>
+                          </div>
                         </div>
-                        Your Role
-                      </h3>
-                      <p className="text-muted-foreground">
-                        {selectedScenario.context}
-                      </p>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
 
               {/* Expected Keywords Section */}
               {selectedScenario.expected_keywords && selectedScenario.expected_keywords.length > 0 && (
-                <Card className="border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
+                <Card className="border-0 bg-gradient-to-br from-[#1582B4]/5 via-[#1582B4]/10 to-[#1582B4]/5 rounded-3xl shadow-xl overflow-hidden backdrop-blur-sm">
                   <CardContent className="p-6">
-                    <div className="flex items-start space-x-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center mt-1 border border-primary/30">
-                        <Zap className="h-5 w-5 text-white" />
+                    <div className="flex items-start space-x-4">
+                      <div className="w-10 h-10 bg-gradient-to-br from-[#1582B4]/20 to-[#1582B4]/30 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <Zap className="h-5 w-5 text-[#1582B4]" />
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-semibold text-[#1582B4] mb-2 sm:mb-3 text-base sm:text-lg">
-                          Expected Keywords & Concepts
+                        <h3 className="font-semibold text-[#1582B4] mb-3 text-lg">
+                          Key Concepts to Include
                         </h3>
-                        <div className="flex flex-wrap gap-2 mb-3">
+                        <div className="flex flex-wrap gap-2 mb-4">
                           {selectedScenario.expected_keywords.map((keyword, index) => (
                             <span 
                               key={index}
-                              className="px-3 py-1.5 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm text-[#1582B4] text-xs sm:text-sm rounded-full border border-primary/30 font-medium"
+                              className="px-3 py-2 bg-gradient-to-r from-[#1582B4]/10 to-[#1582B4]/20 text-[#1582B4] text-sm rounded-full border border-[#1582B4]/20 font-medium hover:bg-[#1582B4]/20 transition-colors duration-200"
                             >
                               {keyword}
                             </span>
                           ))}
                         </div>
-                        <p className="text-muted-foreground text-sm sm:text-base">
-                          Try to incorporate these concepts naturally in your responses to demonstrate professional communication skills.
+                        <p className="text-muted-foreground text-sm leading-relaxed">
+                          Incorporate these concepts naturally to demonstrate professional communication skills.
                         </p>
                       </div>
                     </div>
@@ -659,10 +664,10 @@ export default function SensitiveScenarioRoleplay() {
           {isEvaluating && (
             <Card className="mb-6 border-0 bg-gradient-to-br from-primary/10 to-primary/20 rounded-3xl shadow-lg overflow-hidden">
               <CardContent className="p-6 text-center">
-                <div className="flex items-center justify-center space-x-3">
-                  <Loader2 className="h-10 w-10 animate-spin text-[#1582B4]" />
+                <div className="flex flex-col items-center justify-center space-y-4">
+                  <Loader2 className="h-12 w-12 animate-spin text-primary" />
                   <div>
-                    <h4 className="font-medium text-[#1582B4] text-lg">Evaluating Your Response</h4>
+                    <h4 className="font-medium text-primary text-lg">Evaluating Your Response</h4>
                     <p className="text-muted-foreground text-base">
                       Please wait while we analyze your communication skills...
                     </p>
@@ -674,152 +679,174 @@ export default function SensitiveScenarioRoleplay() {
 
           {/* Evaluation Results */}
           {evaluationResult && !isEvaluating && (
-            <Card className="mb-6 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="font-semibold text-green-600 dark:text-green-400">Communication Evaluation</h4>
-                  <Button
-                    onClick={() => setEvaluationResult(null)}
-                    variant="outline"
-                    size="sm"
-                    className="hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
-                  >
-                    Close
-                  </Button>
+            <Card className="mb-6 border-0 bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 rounded-3xl shadow-xl overflow-hidden backdrop-blur-sm">
+              <CardContent className="p-0">
+                {/* Header */}
+                <div className="bg-gradient-to-r from-primary/20 via-primary/30 to-primary/20 p-6 border-b border-primary/20">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg">
+                        <CheckCircle className="h-5 w-5 text-white" />
+                      </div>
+                      <h4 className="font-semibold text-primary text-lg">
+                        Communication Evaluation
+                      </h4>
+                    </div>
+                    <Button
+                      onClick={() => setEvaluationResult(null)}
+                      variant="outline"
+                      size="sm"
+                      className="border-primary/30 text-primary hover:bg-primary/10"
+                    >
+                      Close
+                    </Button>
+                  </div>
                 </div>
                 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                  <div className="text-center">
-                    <div className={`text-2xl font-bold ${
-                      (evaluationResult.overall_score || 0) === 0 
-                        ? 'text-red-600 dark:text-red-400' 
-                        : 'text-green-600 dark:text-green-400'
-                    }`}>
-                      {evaluationResult.overall_score || 0}
+                {/* Content */}
+                <div className="p-6 space-y-6">
+                  {/* Scores Grid */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="text-center p-4 bg-white/60 dark:bg-gray-800/60 rounded-xl border border-primary/20">
+                      <div className={`text-2xl font-bold ${
+                        (evaluationResult.overall_score || 0) === 0 
+                          ? 'text-red-600 dark:text-red-400' 
+                          : 'text-primary'
+                      }`}>
+                        {evaluationResult.overall_score || 0}
+                      </div>
+                      <div className="text-xs text-muted-foreground font-medium">Overall</div>
                     </div>
-                    <div className="text-xs text-muted-foreground">Overall</div>
-                  </div>
-                  <div className="text-center">
-                    <div className={`text-2xl font-bold ${
-                      (evaluationResult.fluency_score || 0) === 0 
-                        ? 'text-red-600 dark:text-red-400' 
-                        : 'text-green-600 dark:text-green-400'
-                    }`}>
-                      {evaluationResult.fluency_score || 0}
+                    <div className="text-center p-4 bg-white/60 dark:bg-gray-800/60 rounded-xl border border-primary/20">
+                      <div className={`text-2xl font-bold ${
+                        (evaluationResult.fluency_score || 0) === 0 
+                          ? 'text-red-600 dark:text-red-400' 
+                          : 'text-primary'
+                      }`}>
+                        {evaluationResult.fluency_score || 0}
+                      </div>
+                      <div className="text-xs text-muted-foreground font-medium">Fluency</div>
                     </div>
-                    <div className="text-xs text-muted-foreground">Fluency</div>
-                  </div>
-                  <div className="text-center">
-                    <div className={`text-2xl font-bold ${
-                      (evaluationResult.vocabulary_score || 0) === 0 
-                        ? 'text-red-600 dark:text-red-400' 
-                        : 'text-green-600 dark:text-green-400'
-                    }`}>
-                      {evaluationResult.vocabulary_score || 0}
+                    <div className="text-center p-4 bg-white/60 dark:bg-gray-800/60 rounded-xl border border-primary/20">
+                      <div className={`text-2xl font-bold ${
+                        (evaluationResult.vocabulary_score || 0) === 0 
+                          ? 'text-red-600 dark:text-red-400' 
+                          : 'text-primary'
+                      }`}>
+                        {evaluationResult.vocabulary_score || 0}
+                      </div>
+                      <div className="text-xs text-muted-foreground font-medium">Vocabulary</div>
                     </div>
-                    <div className="text-xs text-muted-foreground">Vocabulary</div>
-                  </div>
-                  <div className="text-center">
-                    <div className={`text-2xl font-bold ${
-                      (evaluationResult.content_relevance_score || 0) === 0 
-                        ? 'text-red-600 dark:text-red-400' 
-                        : 'text-green-600 dark:text-green-400'
-                    }`}>
-                      {evaluationResult.content_relevance_score || 0}
+                    <div className="text-center p-4 bg-white/60 dark:bg-gray-800/60 rounded-xl border border-primary/20">
+                      <div className={`text-2xl font-bold ${
+                        (evaluationResult.content_relevance_score || 0) === 0 
+                          ? 'text-red-600 dark:text-red-400' 
+                          : 'text-primary'
+                      }`}>
+                        {evaluationResult.content_relevance_score || 0}
+                      </div>
+                      <div className="text-xs text-muted-foreground font-medium">Relevance</div>
                     </div>
-                    <div className="text-xs text-muted-foreground">Relevance</div>
                   </div>
-                </div>
 
-                {evaluationResult.feedback && (
-                  <div className="mb-3">
-                    <p className="text-sm text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/30 p-3 rounded-lg">
-                      {evaluationResult.feedback}
-                    </p>
-                  </div>
-                )}
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  {evaluationResult.strengths && evaluationResult.strengths.length > 0 && (
-                    <div>
-                      <h5 className="font-medium text-green-600 dark:text-green-400 mb-2 text-sm">Strengths</h5>
-                      <ul className="text-sm text-muted-foreground space-y-1">
-                        {evaluationResult.strengths.slice(0, 3).map((strength: string, index: number) => (
-                          <li key={index} className="flex items-start space-x-2">
-                            <span className="text-green-500 mt-0.5">•</span>
-                            <span>{strength}</span>
-                          </li>
-                        ))}
-                      </ul>
+                  {/* Feedback */}
+                  {evaluationResult.feedback && (
+                    <div className="bg-gradient-to-br from-primary/10 to-primary/20 p-4 rounded-xl border border-primary/20">
+                      <p className="text-sm text-primary leading-relaxed">
+                        {evaluationResult.feedback}
+                      </p>
                     </div>
                   )}
 
-                  {evaluationResult.areas_for_improvement && evaluationResult.areas_for_improvement.length > 0 && (
-                    <div>
-                      <h5 className="font-medium text-orange-600 dark:text-orange-400 mb-2 text-sm">Areas for Improvement</h5>
-                      <ul className="text-sm text-muted-foreground space-y-1">
-                        {evaluationResult.areas_for_improvement.slice(0, 3).map((area: string, index: number) => (
-                          <li key={index} className="flex items-start space-x-2">
-                            <span className="text-orange-500 mt-0.5">•</span>
-                            <span>{area}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                  {/* Strengths and Improvements */}
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {evaluationResult.strengths && evaluationResult.strengths.length > 0 && (
+                      <div className="bg-white/60 dark:bg-gray-800/60 p-4 rounded-xl border border-primary/20">
+                        <h5 className="font-semibold text-primary mb-3 text-sm flex items-center">
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Strengths
+                        </h5>
+                        <ul className="text-sm text-muted-foreground space-y-2">
+                          {evaluationResult.strengths.slice(0, 3).map((strength: string, index: number) => (
+                            <li key={index} className="flex items-start space-x-2">
+                              <span className="text-primary mt-0.5 font-bold">•</span>
+                              <span className="leading-relaxed">{strength}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {evaluationResult.areas_for_improvement && evaluationResult.areas_for_improvement.length > 0 && (
+                      <div className="bg-white/60 dark:bg-gray-800/60 p-4 rounded-xl border border-orange-200/50 dark:border-orange-700/50">
+                        <h5 className="font-semibold text-orange-600 dark:text-orange-400 mb-3 text-sm flex items-center">
+                          <Target className="h-4 w-4 mr-2" />
+                          Areas for Improvement
+                        </h5>
+                        <ul className="text-sm text-muted-foreground space-y-2">
+                          {evaluationResult.areas_for_improvement.slice(0, 3).map((area: string, index: number) => (
+                            <li key={index} className="flex items-start space-x-2">
+                              <span className="text-orange-500 mt-0.5 font-bold">•</span>
+                              <span className="leading-relaxed">{area}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
           )}
 
           {/* Action Buttons Section */}
-          <div className="text-center space-y-6">
+          <div className="space-y-8">
             {/* Primary Action Button */}
             <div className="flex justify-center">
-            {!isRecording && !isEvaluating ? (
-              <Button
-                onClick={handleStartRecording}
-                  className="group bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white w-full sm:w-auto px-10 sm:px-12 py-3 sm:py-4 rounded-2xl text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none"
-                size="lg"
-                disabled={!selectedScenario}
-              >
+              {!isRecording && !isEvaluating ? (
+                <Button
+                  onClick={handleStartRecording}
+                  className="group bg-gradient-to-r from-primary via-primary/90 to-primary hover:from-primary/90 hover:via-primary hover:to-primary/90 text-white px-12 py-4 rounded-2xl text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none"
+                  size="lg"
+                  disabled={!selectedScenario}
+                >
                   <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center mr-3 group-hover:bg-white/30 transition-all duration-300">
                     <Mic className="h-4 w-4 text-white" />
                   </div>
-                Start Conversation
-              </Button>
-            ) : isRecording ? (
-              <Button
-                onClick={handleStopRecording}
-                  className="group bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white w-full sm:w-auto px-10 sm:px-12 py-3 sm:py-4 rounded-2xl text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:scale-105"
-                size="lg"
-              >
+                  Start Recording Response
+                </Button>
+              ) : isRecording ? (
+                <Button
+                  onClick={handleStopRecording}
+                  className="group bg-gradient-to-r from-red-500 via-red-600 to-red-500 hover:from-red-600 hover:via-red-700 hover:to-red-600 text-white px-12 py-4 rounded-2xl text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:scale-105 animate-pulse"
+                  size="lg"
+                >
                   <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center mr-3 group-hover:bg-white/30 transition-all duration-300">
-                    <Mic className="h-4 w-4 text-white" />
+                    <Square className="h-4 w-4 text-white" />
                   </div>
-                Stop Recording
-              </Button>
-            ) : null}
+                  Stop Recording
+                </Button>
+              ) : null}
             </div>
 
             {/* Secondary Action Buttons */}
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4">
-                <Button
-                  onClick={resetRoleplay}
-                  variant="outline"
-                className="group w-full sm:w-auto px-8 py-3 rounded-2xl border-2 border-primary/20 hover:border-primary/40 hover:bg-primary/5 hover:text-primary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg font-medium text-primary hover:bg-gradient-to-r hover:from-primary/5 hover:to-primary/10"
-                >
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+              <Button
+                onClick={resetRoleplay}
+                variant="outline"
+                className="group px-6 py-3 rounded-xl border-2 border-primary/30 hover:border-primary/50 hover:bg-primary/10 text-primary transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg font-medium"
+              >
                 <Users className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform duration-300" />
-                  Choose Different Scenario
-                </Button>
-                <Button
-                  onClick={() => navigate('/dashboard/practice/stage-6')}
-                  variant="outline"
-                className="group w-full sm:w-auto px-8 py-3 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg font-medium text-secondary hover:bg-gradient-to-r hover:from-secondary/5 hover:to-secondary/10"
-                >
+                Choose Different Scenario
+              </Button>
+              <Button
+                onClick={() => navigate('/dashboard/practice/stage-6')}
+                variant="outline"
+                className="group px-6 py-3 rounded-xl border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg font-medium"
+              >
                 <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform duration-300" />
-                  Back to Stage 6
-                </Button>
+                Back to Stage 6
+              </Button>
             </div>
           </div>
         </div>
