@@ -114,6 +114,59 @@ class IntegrationService {
     }
   }
 
+  // Get available integrations that can be added
+  getAvailableIntegrations(): Array<{
+    name: string;
+    type: 'communication' | 'payment' | 'productivity';
+    description: string;
+    icon: string;
+  }> {
+    return [
+      {
+        name: 'Slack',
+        type: 'communication',
+        description: 'Team communication and collaboration platform for course discussions and notifications.',
+        icon: 'MessageSquare'
+      },
+      {
+        name: 'Stripe',
+        type: 'payment',
+        description: 'Payment processing for course enrollments and subscriptions.',
+        icon: 'CreditCard'
+      },
+      {
+        name: 'OneDrive',
+        type: 'productivity',
+        description: 'Cloud storage integration for course materials and student file sharing.',
+        icon: 'Cloud'
+      },
+      {
+        name: 'Google Drive',
+        type: 'productivity',
+        description: 'Google cloud storage for collaborative documents and file management.',
+        icon: 'HardDrive'
+      },
+      {
+        name: 'Figma',
+        type: 'productivity',
+        description: 'Design collaboration tool for creative courses and design projects.',
+        icon: 'Palette'
+      },
+      {
+        name: 'Miro',
+        type: 'productivity',
+        description: 'Online whiteboard platform for visual collaboration and brainstorming.',
+        icon: 'Layout'
+      },
+      {
+        name: 'Jira',
+        type: 'productivity',
+        description: 'Project management and issue tracking for software development courses.',
+        icon: 'Briefcase'
+      }
+    ];
+  }
+
   // Initialize default integrations if they don't exist
   async initializeDefaultIntegrations(): Promise<void> {
     try {
