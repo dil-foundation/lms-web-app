@@ -640,18 +640,94 @@ export default function MockInterviewPractice() {
       setFeedback(evaluationResult);
       
       // Check if the exercise is completed based on API response
-      if (evaluationResult.exercise_completion?.exercise_completed) {
-        // Exercise is completed according to the API
+      // The backend can indicate completion in multiple ways, check all of them
+      
+      console.log(`🔍 DEBUGGING COMPLETION LOGIC ${evaluationId}:`, {
+        exercise_completion_status_exercise_completed: evaluationResult.exercise_completion_status?.exercise_completed,
+        exercise_completion_exercise_completed: evaluationResult.exercise_completion?.exercise_completed,
+        completed: evaluationResult.completed,
+        success: evaluationResult.success,
+        score: evaluationResult.score,
+        isCompleted: isCompleted
+      });
+      
+      // 1. Check exercise_completion_status.exercise_completed (actual structure from response)
+      if (evaluationResult.exercise_completion_status?.exercise_completed === true) {
         setIsCompleted(true);
         setShowCompletionDialog(true);
         markExerciseCompleted();
-        console.log(`✅ Exercise completed according to API response ${evaluationId}`);
-      } else if (!isCompleted) {
-        // Fallback: mark as completed after receiving feedback (existing behavior)
+        console.log(`✅ CONDITION 1 TRIGGERED: Exercise completed according to API response (exercise_completion_status) ${evaluationId}`);
+      }
+      // 2. Check legacy exercise_completion.exercise_completed (for backward compatibility)
+      else if (evaluationResult.exercise_completion?.exercise_completed === true) {
         setIsCompleted(true);
         setShowCompletionDialog(true);
         markExerciseCompleted();
-        console.log(`✅ Exercise marked as completed (fallback logic) ${evaluationId}`);
+        console.log(`✅ CONDITION 2 TRIGGERED: Exercise completed according to API response (exercise_completion) ${evaluationId}`);
+      }
+      // 3. Check direct 'completed' field
+      else if (evaluationResult.completed === true) {
+        setIsCompleted(true);
+        setShowCompletionDialog(true);
+        markExerciseCompleted();
+        console.log(`✅ CONDITION 3 TRIGGERED: Exercise completed according to API response (completed field) ${evaluationId}`);
+      }
+      // 4. If ANY completion indicator is explicitly false, OR if we have negative feedback indicators, do NOT complete
+      // Based on expected response structure with multiple completion indicators
+      else if (
+        // Check nested exercise_completion_status structure (primary indicator)
+        evaluationResult.exercise_completion_status?.exercise_completed === false ||
+        // Check legacy exercise_completion structure  
+        evaluationResult.exercise_completion?.exercise_completed === false ||
+        // Check direct completion fields
+        evaluationResult.completed === false ||
+        evaluationResult.success === false ||
+        evaluationResult.is_correct === false ||
+        // Check performance indicators that suggest inadequate response
+        (evaluationResult.answer_relevance_score !== undefined && evaluationResult.answer_relevance_score === 0) ||
+        (evaluationResult.score !== undefined && evaluationResult.score <= 20) ||
+        // Check evaluation nested structure
+        (evaluationResult.evaluation?.answer_relevance_score !== undefined && evaluationResult.evaluation.answer_relevance_score === 0) ||
+        (evaluationResult.evaluation?.overall_score !== undefined && evaluationResult.evaluation.overall_score <= 20)
+      ) {
+        console.log(`❌ CONDITION 4 TRIGGERED: Exercise NOT completed - backend indicated poor performance or explicit false`);
+        console.log(`   - exercise_completion_status.exercise_completed: ${evaluationResult.exercise_completion_status?.exercise_completed}`);
+        console.log(`   - completed: ${evaluationResult.completed}`);
+        console.log(`   - success: ${evaluationResult.success}`);
+        console.log(`   - is_correct: ${evaluationResult.is_correct}`);
+        console.log(`   - answer_relevance_score: ${evaluationResult.answer_relevance_score}`);
+        console.log(`   - score: ${evaluationResult.score}`);
+        console.log(`   - evaluation.answer_relevance_score: ${evaluationResult.evaluation?.answer_relevance_score}`);
+        console.log(`   - evaluation.overall_score: ${evaluationResult.evaluation?.overall_score}`);
+        // Explicitly do NOT set completion here - this should prevent congratulations
+      }
+      // 5. Only use fallback logic for genuinely good responses
+      else if (
+        !isCompleted && 
+        evaluationResult.score !== undefined && 
+        evaluationResult.score > 20 && // Higher threshold for completion
+        // Only complete if we have positive indicators OR no negative indicators
+        (
+          (evaluationResult.exercise_completion_status?.exercise_completed === true) ||
+          (evaluationResult.exercise_completion?.exercise_completed === true) ||
+          (evaluationResult.completed === true) ||
+          // If completion fields are undefined, only complete if we have good performance indicators
+          (
+            evaluationResult.exercise_completion_status?.exercise_completed === undefined &&
+            evaluationResult.exercise_completion?.exercise_completed === undefined &&
+            evaluationResult.completed === undefined &&
+            evaluationResult.success !== false &&
+            (evaluationResult.answer_relevance_score === undefined || evaluationResult.answer_relevance_score > 0) &&
+            (evaluationResult.is_correct !== false)
+          )
+        )
+      ) {
+        setIsCompleted(true);
+        setShowCompletionDialog(true);
+        markExerciseCompleted();
+        console.log(`✅ CONDITION 5 TRIGGERED: Exercise marked as completed (good performance indicators) ${evaluationId}`);
+      } else {
+        console.log(`ℹ️ NO CONDITIONS TRIGGERED: Evaluation completed but not marking as exercise completed (score: ${evaluationResult.score}, success: ${evaluationResult.success}, exercise_completed: ${evaluationResult.exercise_completion_status?.exercise_completed}, answer_relevance_score: ${evaluationResult.answer_relevance_score}, is_correct: ${evaluationResult.is_correct}) ${evaluationId}`);
       }
 
     } catch (error) {

@@ -1271,7 +1271,7 @@ export default function StorytellingPractice() {
                     Redo Exercise
                   </Button>
                   <Button
-                    onClick={() => navigate('/dashboard/practice')}
+                    onClick={() => navigate('/dashboard/practice/stage-3')}
                     className="flex-1 h-12 px-6 bg-gradient-to-r from-[#8DC63F] to-[#8DC63F]/90 hover:from-[#8DC63F]/90 hover:to-[#8DC63F] text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 border-0 rounded-xl"
                   >
                     Continue Learning

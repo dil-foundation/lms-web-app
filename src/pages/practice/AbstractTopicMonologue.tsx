@@ -147,7 +147,7 @@ export default function AbstractTopicMonologue() {
         };
         
         setFeedback(errorFeedback);
-        console.log('⚠️ Evaluation completed with speech recognition error');
+        console.log('⚠️ Evaluation completed with speech recognition error - NOT marking as completed');
         return;
       }
       
@@ -160,12 +160,14 @@ export default function AbstractTopicMonologue() {
         setShowCompletionDialog(true);
         markExerciseCompleted();
         console.log('✅ Exercise completed according to API response');
-      } else {
-        // Fallback: mark as completed after receiving feedback (existing behavior)
+      } else if (evaluationResult.success !== false && evaluationResult.score !== undefined && evaluationResult.score > 0) {
+        // Only mark as completed if we have a successful evaluation with a valid score
         setIsCompleted(true);
         setShowCompletionDialog(true);
         markExerciseCompleted();
-        console.log('✅ Exercise marked as completed (fallback logic)');
+        console.log('✅ Exercise marked as completed (valid speech detected with score)');
+      } else {
+        console.log('ℹ️ Evaluation completed but not marking as exercise completed (no valid speech or score)');
       }
       
     } catch (error: any) {
