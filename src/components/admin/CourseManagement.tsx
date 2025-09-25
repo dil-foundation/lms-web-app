@@ -81,6 +81,7 @@ import {
 } from "@/components/ui/pagination";
 import { PaginationControls } from '@/components/ui/PaginationControls';
 import AccessLogService from "@/services/accessLogService";
+import { useBatchUpload } from "@/hooks/useBatchUpload";
 
 type CourseStatus = "Published" | "Draft" | "Under Review" | "Rejected";
 
@@ -180,9 +181,14 @@ const CourseManagement = () => {
   
   // Bulk upload states
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
-  const [isBulkUploading, setIsBulkUploading] = useState(false);
-  const [uploadResult, setUploadResult] = useState<any>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  
+  // Batch upload hook
+  const { 
+    state: batchState, 
+    resetState: resetBatchState, 
+    startBatchUpload 
+  } = useBatchUpload();
 
   const fetchStats = useCallback(async () => {
     if (!user) {
@@ -414,188 +420,22 @@ const CourseManagement = () => {
       return;
     }
 
-    setIsBulkUploading(true);
-    setUploadResult(null);
-
     try {
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-
-      let responseData = null;
-      let supabaseError = null;
+      const result = await startBatchUpload(selectedFile);
       
-      try {
-        const { data, error } = await supabase.functions.invoke('bulk-upload-courses', {
-          body: formData,
-        });
-
-        if (error) {
-          supabaseError = error;
-        } else {
-          responseData = data;
-        }
-      } catch (caughtError: any) {
-        console.log('=== CAUGHT ERROR DEBUG ===');
-        console.log('Caught error:', caughtError);
-        console.log('Error context:', caughtError.context);
-        console.log('Error status:', caughtError.status);
-        console.log('Error response:', caughtError.response);
-        console.log('Error message:', caughtError.message);
-        console.log('=== END CAUGHT ERROR ===');
+      if (result && result.success) {
+        // Refresh the course list and stats
+        fetchData();
+        fetchStats();
         
-        supabaseError = caughtError;
-      }
-
-      // If we have response data, process it
-      if (responseData) {
-        // Check if it's a simple error response (like insufficient data)
-        if (responseData.success === false && responseData.error) {
-          const userFriendlyMessage = responseData.error.includes('insufficient data') 
-            ? 'The Excel file is empty or has no data. Please add course information to the file and try again.'
-            : responseData.error.includes('Invalid XLSX file')
-            ? 'The Excel file format is invalid. Please ensure you\'re using a valid .xlsx file.'
-            : responseData.error;
-          
-          toast.error("Upload failed", { description: userFriendlyMessage });
-          setUploadResult({
-            success: false,
-            totalRows: 0,
-            createdCourses: 0,
-            skippedCourses: 0,
-            errors: [{
-              row: 1,
-              field: 'File',
-              message: userFriendlyMessage
-            }],
-            message: userFriendlyMessage
-          });
-          return;
-        }
-        
-        setUploadResult(responseData);
-        
-        if (responseData.createdCourses > 0) {
-          // Refresh the course list
-          fetchData();
-          fetchStats();
-        }
-        
-        if (responseData.success === true) {
-          toast.success("Bulk upload completed successfully!", {
-            description: `Created ${responseData.createdCourses} courses${responseData.skippedCourses > 0 ? `, skipped ${responseData.skippedCourses} existing courses` : ''}`
-          });
-          
-          // Close the dialog
-          setIsBulkUploadOpen(false);
-          setSelectedFile(null);
-          setUploadResult(null);
-        } else {
-          toast.error("Upload completed with errors", { 
-            description: `Created ${responseData.createdCourses} courses with ${responseData.errors?.length || 0} errors.` 
-          });
-        }
-      } else if (supabaseError) {
-        // Try to extract response data from error context
-        try {
-          if (typeof supabaseError.context === 'string') {
-            responseData = JSON.parse(supabaseError.context);
-          } else if (supabaseError.context && typeof supabaseError.context === 'object') {
-            // Check if it's a Response object
-            if (supabaseError.context instanceof Response) {
-              const responseText = await supabaseError.context.text();
-              responseData = JSON.parse(responseText);
-            } else {
-              responseData = supabaseError.context;
-            }
-          }
-        } catch (parseError) {
-          // Failed to parse error context
-        }
-        
-        if (responseData) {
-          // Check if it's a simple error response (like insufficient data)
-          if (responseData.success === false && responseData.error) {
-            const userFriendlyMessage = responseData.error.includes('insufficient data') 
-              ? 'The Excel file is empty or has no data. Please add course information to the file and try again.'
-              : responseData.error.includes('Invalid XLSX file')
-              ? 'The Excel file format is invalid. Please ensure you\'re using a valid .xlsx file.'
-              : responseData.error;
-            
-            toast.error("Upload failed", { description: userFriendlyMessage });
-            setUploadResult({
-              success: false,
-              totalRows: 0,
-              createdCourses: 0,
-              skippedCourses: 0,
-              errors: [{
-                row: 1,
-                field: 'File',
-                message: userFriendlyMessage
-              }],
-              message: userFriendlyMessage
-            });
-          } else if (responseData.errors) {
-            setUploadResult(responseData);
-            toast.error("Upload completed with errors", { 
-              description: `Created ${responseData.createdCourses} courses with ${responseData.errors?.length || 0} errors.` 
-            });
-          } else {
-            throw supabaseError;
-          }
-        } else {
-          throw supabaseError;
-        }
+        // Close the dialog
+        setIsBulkUploadOpen(false);
+        setSelectedFile(null);
+        resetBatchState();
       }
     } catch (error: any) {
-      // Try to extract response data from the error
-      let responseData = null;
-      try {
-        if (error.context) {
-          if (typeof error.context === 'string') {
-            responseData = JSON.parse(error.context);
-          } else if (error.context && typeof error.context === 'object') {
-            responseData = error.context;
-          }
-        }
-      } catch (parseError) {
-        // Failed to parse error context
-      }
-      
-      if (responseData) {
-        // Check if it's a simple error response (like insufficient data)
-        if (responseData.success === false && responseData.error) {
-          const userFriendlyMessage = responseData.error.includes('insufficient data') 
-            ? 'The Excel file is empty or has no data. Please add course information to the file and try again.'
-            : responseData.error.includes('Invalid XLSX file')
-            ? 'The Excel file format is invalid. Please ensure you\'re using a valid .xlsx file.'
-            : responseData.error;
-          
-          toast.error("Upload failed", { description: userFriendlyMessage });
-          setUploadResult({
-            success: false,
-            totalRows: 0,
-            createdCourses: 0,
-            skippedCourses: 0,
-            errors: [{
-              row: 1,
-              field: 'File',
-              message: userFriendlyMessage
-            }],
-            message: userFriendlyMessage
-          });
-        } else if (responseData.errors) {
-          setUploadResult(responseData);
-          toast.error("Upload completed with errors", { 
-            description: `Created ${responseData.createdCourses} courses with ${responseData.errors?.length || 0} errors.` 
-          });
-        } else {
-          toast.error("Upload failed", { description: error.message });
-        }
-      } else {
-        toast.error("Upload failed", { description: error.message });
-      }
-    } finally {
-      setIsBulkUploading(false);
+      console.error('Batch upload error:', error);
+      // Error handling is done in the hook
     }
   };
 
@@ -1013,7 +853,7 @@ const CourseManagement = () => {
                   onUpload={setSelectedFile}
                   label={selectedFile ? selectedFile.name : "Choose Excel file"}
                   acceptedFileTypes={['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']}
-                  disabled={isBulkUploading}
+                  disabled={batchState.isUploading || batchState.isParsing || batchState.isProcessing}
                   maxSize={10 * 1024 * 1024} // 10MB
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
@@ -1022,72 +862,92 @@ const CourseManagement = () => {
               </div>
 
               {/* Upload Status */}
-              {isBulkUploading && (
-                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                  <span>Uploading courses...</span>
+              {(batchState.isUploading || batchState.isParsing || batchState.isProcessing) && (
+                <div className="space-y-4">
+                  {/* Progress Bar */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="font-medium">
+                        {batchState.isParsing ? 'Parsing file...' : 
+                         batchState.isProcessing ? `Processing batch ${batchState.currentBatch}/${batchState.totalBatches}...` : 
+                         'Uploading...'}
+                      </span>
+                      <span className="text-muted-foreground">{batchState.progress}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-primary h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${batchState.progress}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  {/* Batch Progress */}
+                  {batchState.isProcessing && (
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
+                        <div className="font-medium text-blue-900 dark:text-blue-100">Current Batch</div>
+                        <div className="text-2xl font-bold text-blue-600">{batchState.currentBatch}</div>
+                        <div className="text-xs text-blue-700 dark:text-blue-300">of {batchState.totalBatches}</div>
+                      </div>
+                      <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg">
+                        <div className="font-medium text-green-900 dark:text-green-100">Processed Courses</div>
+                        <div className="text-2xl font-bold text-green-600">{batchState.processedCourses}</div>
+                        <div className="text-xs text-green-700 dark:text-green-300">of {batchState.totalCourses}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Parsing Status */}
+                  {batchState.isParsing && (
+                    <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                      <span>Analyzing Excel file and extracting course data...</span>
+                    </div>
+                  )}
+
+                  {/* Processing Status */}
+                  {batchState.isProcessing && (
+                    <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                      <span>Creating courses in batches of 2...</span>
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* Upload Results */}
-              {uploadResult && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm font-medium">
-                    {(uploadResult.success === true || (uploadResult.createdCourses > 0 && (!uploadResult.errors || uploadResult.errors.length === 0))) ? (
-                      <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    ) : uploadResult.createdCourses > 0 ? (
-                      <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                    ) : (
-                      <XCircle className="h-4 w-4 text-red-600" />
-                    )}
-                    <span className={
-                      (uploadResult.success === true || (uploadResult.createdCourses > 0 && (!uploadResult.errors || uploadResult.errors.length === 0))) ? "text-green-700 dark:text-green-300" : 
-                      uploadResult.createdCourses > 0 ? "text-yellow-700 dark:text-yellow-300" : "text-red-700 dark:text-red-300"
-                    }>
-                      {uploadResult.message}
-                    </span>
+              {/* Error Display */}
+              {batchState.errors.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-medium text-red-700 dark:text-red-300">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span>Processing Errors ({batchState.errors.length})</span>
                   </div>
-                  
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <div className="font-medium text-gray-900 dark:text-white">Total Rows</div>
-                      <div className="text-2xl font-bold text-primary">{uploadResult.totalRows || 0}</div>
-                    </div>
-                    <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <div className="font-medium text-gray-900 dark:text-white">Created</div>
-                      <div className="text-2xl font-bold text-green-600">{uploadResult.createdCourses || 0}</div>
-                    </div>
-                  </div>
-
-                  {uploadResult.errors && uploadResult.errors.length > 0 && (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm font-medium text-red-700 dark:text-red-300">
-                        <AlertTriangle className="h-4 w-4" />
-                        <span>Validation Errors ({uploadResult.errors.length})</span>
-                      </div>
-                      <div className="max-h-48 overflow-y-auto space-y-2 border border-red-200 rounded-lg p-3 bg-red-50 dark:bg-red-900/20">
-                        {uploadResult.errors.map((error: any, index: number) => (
-                          <div key={index} className="flex items-start gap-3 p-3 bg-white rounded border border-red-200 shadow-sm">
-                            <div className="w-2 h-2 bg-red-500 rounded-full mt-1.5 flex-shrink-0"></div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="text-sm font-semibold text-red-700">
-                                  Row {error.row}
-                                </span>
+                  <div className="max-h-48 overflow-y-auto space-y-2 border border-red-200 rounded-lg p-3 bg-red-50 dark:bg-red-900/20">
+                    {batchState.errors.map((error: any, index: number) => (
+                      <div key={index} className="flex items-start gap-3 p-3 bg-white rounded border border-red-200 shadow-sm">
+                        <div className="w-2 h-2 bg-red-500 rounded-full mt-1.5 flex-shrink-0"></div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm font-semibold text-red-700">
+                              {error.batch ? `Batch ${error.batch}` : `Row ${error.row || 'N/A'}`}
+                            </span>
+                            {error.field && (
+                              <>
                                 <span className="text-xs text-gray-500">•</span>
                                 <span className="text-sm font-medium text-red-600">
                                   {error.field}
                                 </span>
-                              </div>
-                              <p className="text-sm text-red-600 leading-relaxed">
-                                {error.message}
-                              </p>
-                            </div>
+                              </>
+                            )}
                           </div>
-                        ))}
+                          <p className="text-sm text-red-600 leading-relaxed">
+                            {error.message || error.error}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -1099,21 +959,23 @@ const CourseManagement = () => {
               onClick={() => {
                 setIsBulkUploadOpen(false);
                 setSelectedFile(null);
-                setUploadResult(null);
+                resetBatchState();
               }}
-              disabled={isBulkUploading}
+              disabled={batchState.isUploading || batchState.isParsing || batchState.isProcessing}
             >
               Cancel
             </Button>
             <Button 
               onClick={handleBulkUpload}
-              disabled={!selectedFile || isBulkUploading}
+              disabled={!selectedFile || batchState.isUploading || batchState.isParsing || batchState.isProcessing}
               className="bg-primary hover:bg-primary/90"
             >
-              {isBulkUploading ? (
+              {(batchState.isUploading || batchState.isParsing || batchState.isProcessing) ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Uploading...
+                  {batchState.isParsing ? 'Parsing...' : 
+                   batchState.isProcessing ? 'Processing...' : 
+                   'Uploading...'}
                 </>
               ) : (
                 <>
