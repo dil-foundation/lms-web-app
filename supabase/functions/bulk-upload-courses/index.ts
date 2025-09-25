@@ -50,6 +50,24 @@ interface ValidationError {
   message: string;
 }
 
+// Map API question types to database question types
+function mapQuestionType(apiType: string): string {
+  switch (apiType) {
+    case 'single':
+      return 'single_choice';
+    case 'multiple':
+      return 'multiple_choice';
+    case 'short_answer':
+      return 'text_answer';
+    case 'true_or_false':
+      return 'single_choice'; // True/false questions are single choice with 2 options
+    case 'math_expression':
+      return 'math_expression';
+    default:
+      return 'single_choice'; // Default fallback
+  }
+}
+
 // Parse XLSX content using proper XLSX library
 function parseXLSX(xlsxContent: ArrayBuffer): CourseData[] {
   try {
@@ -200,6 +218,8 @@ function parseContentItems(course: any, sectionIndex: number, lessonIndex: numbe
   console.log(`\n=== CONTENT PARSING DEBUG ===`);
   console.log(`Parsing content for section ${sectionIndex}, lesson ${lessonIndex}`);
   console.log(`Raw course object keys:`, Object.keys(course));
+  console.log(`Looking for content patterns like: Content ${sectionIndex}.${lessonIndex}.1 Type`);
+  console.log(`Available content-related keys:`, Object.keys(course).filter(key => key.includes('Content')));
   
   // Look for content patterns like "Content 1.1.1 Type", "Content 1.1.2 Type", etc.
   let contentIndex = 1;
@@ -219,6 +239,13 @@ function parseContentItems(course: any, sectionIndex: number, lessonIndex: numbe
     console.log(`  Due Date: "${dueDate}"`);
     console.log(`  Assignment Instructions: "${assignmentInstructions}"`);
     
+    console.log(`🔍 Validating content item...`);
+    console.log(`  Content Type: "${contentType}"`);
+    console.log(`  Valid types: ['video', 'attachment', 'assignment', 'quiz']`);
+    console.log(`  Is valid type: ${['video', 'attachment', 'assignment', 'quiz'].includes(contentType)}`);
+    console.log(`  Content Type exists: ${!!contentType}`);
+    console.log(`  Content Type length: ${contentType?.length || 0}`);
+    
     if (contentType && ['video', 'attachment', 'assignment', 'quiz'].includes(contentType)) {
       const contentItem: CourseContentItem = {
         type: contentType as 'video' | 'attachment' | 'assignment' | 'quiz',
@@ -232,6 +259,7 @@ function parseContentItems(course: any, sectionIndex: number, lessonIndex: numbe
       contentItems.push(contentItem);
     } else {
       console.log(`❌ Invalid content type or empty: "${contentType}"`);
+      console.log(`❌ Content type validation failed. Skipping this content item.`);
     }
     
     contentIndex++;
@@ -642,9 +670,11 @@ serve(async (req) => {
     let skippedCourses = 0;
     const startTime = Date.now();
 
-    console.log('Starting course bulk upload process...');
-    console.log('File name:', file.name);
-    console.log('File size:', file.size);
+    console.log('🚀 Starting course bulk upload process...');
+    console.log('📁 File name:', file.name);
+    console.log('📁 File size:', file.size);
+    console.log('📁 File type:', file.type);
+    console.log('📁 File last modified:', file.lastModified);
 
     // Parse XLSX file
     const xlsxContent = await file.arrayBuffer();
@@ -722,6 +752,13 @@ serve(async (req) => {
     for (let i = 0; i < courses.length; i++) {
       const course = courses[i];
       
+      console.log(`\n🏗️  Creating course ${i + 1}/${courses.length}`);
+      console.log(`📚 Course title: ${course.courseTitle}`);
+      console.log(`📚 Course sections: ${course.sections.length}`);
+      console.log(`📚 Total lessons: ${course.sections.reduce((total, section) => total + section.lessons.length, 0)}`);
+      console.log(`📚 Total content items: ${course.sections.reduce((total, section) => 
+        total + section.lessons.reduce((lessonTotal, lesson) => lessonTotal + lesson.contentItems.length, 0), 0)}`);
+      
       try {
         // Get reference IDs
         const categoryId = referenceData.categories.find((cat: any) => cat.name.toLowerCase() === course.category.toLowerCase())?.id;
@@ -789,7 +826,11 @@ serve(async (req) => {
         const courseId = courseData.id;
 
         // Create sections, lessons, and content items
+        console.log(`📖 Creating ${course.sections.length} sections...`);
         for (const [sectionIndex, section] of course.sections.entries()) {
+          console.log(`📖 Creating section ${sectionIndex + 1}: "${section.title}"`);
+          console.log(`📖 Section lessons: ${section.lessons.length}`);
+          
           const { data: sectionData, error: sectionError } = await supabaseAdmin
             .from('course_sections')
             .insert({
@@ -801,9 +842,17 @@ serve(async (req) => {
             .select('id')
             .single();
 
-          if (sectionError) throw sectionError;
+          if (sectionError) {
+            console.error(`❌ Error creating section ${sectionIndex + 1}:`, sectionError);
+            throw sectionError;
+          }
+          
+          console.log(`✅ Created section ${sectionIndex + 1} with ID: ${sectionData.id}`);
 
           for (const [lessonIndex, lesson] of section.lessons.entries()) {
+            console.log(`📚 Creating lesson ${lessonIndex + 1}: "${lesson.title}"`);
+            console.log(`📚 Lesson content items: ${lesson.contentItems.length}`);
+            
             const { data: lessonData, error: lessonError } = await supabaseAdmin
               .from('course_lessons')
               .insert({
@@ -815,7 +864,12 @@ serve(async (req) => {
               .select('id')
               .single();
 
-            if (lessonError) throw lessonError;
+            if (lessonError) {
+              console.error(`❌ Error creating lesson ${lessonIndex + 1}:`, lessonError);
+              throw lessonError;
+            }
+            
+            console.log(`✅ Created lesson ${lessonIndex + 1} with ID: ${lessonData.id}`);
 
             for (const [contentIndex, contentItem] of lesson.contentItems.entries()) {
               console.log(`\n=== PROCESSING CONTENT ITEM ${contentIndex + 1} ===`);
@@ -1121,25 +1175,35 @@ serve(async (req) => {
               console.log(`Has content path: ${!!contentPath}`);
               console.log(`Should trigger extraction: ${contentItem.type === 'quiz' && contentPath && contentPath.startsWith('bulk-upload-content/')}`);
               
-              // Check if this should be treated as a quiz based on file extension
-              const isPdfFile = contentPath && (
-                contentPath.toLowerCase().includes('.pdf') || 
-                contentItem.title?.toLowerCase().includes('quiz') ||
-                contentItem.title?.toLowerCase().includes('test') ||
-                contentItem.title?.toLowerCase().includes('exam')
-              );
-              console.log(`Is PDF file or quiz-related: ${isPdfFile}`);
-              console.log(`Content title: ${contentItem.title}`);
+              // Check if this should be treated as a quiz based on content type AND file extension
+              const isPdfFile = contentPath && contentPath.toLowerCase().includes('.pdf');
+              const isQuizType = contentItem.type === 'quiz';
+              // More precise quiz detection - only consider titles that are explicitly quiz-related
+              const title = contentItem.title?.toLowerCase() || '';
+              const isQuizRelated = title.includes('quiz') ||
+                                   (title.includes('test') && !title.includes('assignment') && !title.includes('attachment')) ||
+                                   title.includes('exam') ||
+                                   title.includes('assessment');
               
-              // Trigger quiz extraction for:
-              // 1. Explicit quiz content types
-              // 2. PDF files that might contain quiz content
-              const shouldExtractQuiz = (contentItem.type === 'quiz' && contentPath && contentPath.startsWith('bulk-upload-content/')) ||
-                                      (isPdfFile && contentPath && contentPath.startsWith('bulk-upload-content/'));
+              // Only extract quiz data if it's explicitly a quiz type OR if it's a PDF with quiz-related title
+              const shouldExtractQuiz = isQuizType || (isPdfFile && isQuizRelated);
               
+              console.log(`\n=== QUIZ DETECTION DEBUG ===`);
+              console.log(`Content Path: ${contentPath}`);
+              console.log(`Content Title: ${contentItem.title}`);
+              console.log(`Content Type: ${contentItem.type}`);
+              console.log(`Is PDF file: ${isPdfFile}`);
+              console.log(`Is quiz type: ${isQuizType}`);
+              console.log(`Is quiz-related title: ${isQuizRelated}`);
               console.log(`Should extract quiz: ${shouldExtractQuiz}`);
+              console.log(`Content type: ${contentItem.type}`);
+              console.log(`Path starts with bulk-upload-content/: ${contentPath?.startsWith('bulk-upload-content/')}`);
+              console.log(`=== END QUIZ DETECTION DEBUG ===\n`);
               
-              if (shouldExtractQuiz) {
+              // Use the shouldExtractQuiz variable we already calculated above
+              console.log(`Final should extract quiz: ${shouldExtractQuiz}`);
+              
+              if (shouldExtractQuiz && contentPath && contentPath.startsWith('bulk-upload-content/')) {
                 console.log(`\n=== QUIZ PDF EXTRACTION DEBUG ===`);
                 console.log(`Processing quiz content for PDF extraction: ${contentPath}`);
                 
@@ -1161,11 +1225,16 @@ serve(async (req) => {
                     // Call the PDF quiz extraction API
                     const apiBaseUrl = Deno.env.get('API_BASE_URL');
                     console.log(`🔧 API_BASE_URL: ${apiBaseUrl}`);
+                    console.log(`🔧 API_BASE_URL exists: ${!!apiBaseUrl}`);
+                    console.log(`🔧 API_BASE_URL length: ${apiBaseUrl?.length || 0}`);
                     
                     if (apiBaseUrl) {
-                      console.log(`🚀 Calling quiz extraction API: ${apiBaseUrl}/api/quiz/ai-based-quiz-from-pdf-upload`);
+                      const apiUrl = `${apiBaseUrl}/api/quiz/ai-based-quiz-from-pdf-upload`;
+                      console.log(`🚀 Calling quiz extraction API: ${apiUrl}`);
                       console.log(`🔧 File size being sent: ${quizFile.size} bytes`);
                       console.log(`🔧 File type being sent: ${quizFile.type}`);
+                      console.log(`🔧 Authorization token available: ${!!token}`);
+                      console.log(`🔧 Token length: ${token?.length || 0}`);
                       
                       const formData = new FormData();
                       formData.append('file', quizFile);
@@ -1186,36 +1255,68 @@ serve(async (req) => {
                       clearTimeout(timeoutId);
                       
                       console.log(`📡 API Response Status: ${extractionResponse.status}`);
+                      console.log(`📡 API Response OK: ${extractionResponse.ok}`);
+                      console.log(`📡 API Response Status Text: ${extractionResponse.statusText}`);
                       console.log(`📡 API Response Headers:`, Object.fromEntries(extractionResponse.headers.entries()));
                       
-                      // Get response body for debugging
-                      const responseText = await extractionResponse.text();
-                      console.log(`📡 API Response Body: ${responseText}`);
-                      
                       if (extractionResponse.ok) {
-                        const extractionResult = await extractionResponse.json();
-                        console.log(`✅ Quiz extraction successful:`, JSON.stringify(extractionResult, null, 2));
+                        console.log(`✅ API call successful, parsing response...`);
+                        
+                        // Get response body for debugging and parsing
+                        const responseText = await extractionResponse.text();
+                        console.log(`📡 API Response Body Length: ${responseText.length} characters`);
+                        console.log(`📡 API Response Body: ${responseText}`);
+                        
+                        // Parse the response text as JSON
+                        let extractionResult;
+                        try {
+                          extractionResult = JSON.parse(responseText);
+                          console.log(`✅ Quiz extraction successful:`, JSON.stringify(extractionResult, null, 2));
+                        } catch (parseError) {
+                          console.error(`❌ Failed to parse API response as JSON:`, parseError);
+                          console.error(`❌ Response text that failed to parse: ${responseText}`);
+                          throw new Error(`Invalid JSON response from quiz extraction API: ${parseError.message}`);
+                        }
+                        console.log(`📊 Extraction result type: ${typeof extractionResult}`);
+                        console.log(`📊 Extraction result keys: ${Object.keys(extractionResult || {})}`);
+                        console.log(`📊 Questions array exists: ${!!extractionResult.questions}`);
+                        console.log(`📊 Questions array length: ${extractionResult.questions?.length || 0}`);
                         
                         if (extractionResult.questions && extractionResult.questions.length > 0) {
+                          console.log(`🔄 Converting ${extractionResult.questions.length} questions to quiz format...`);
+                          console.log(`📋 Sample original question:`, JSON.stringify(extractionResult.questions[0], null, 2));
+                          
                           // Convert to our quiz format
                           extractedQuizData = {
                             id: `extracted_quiz_${Date.now()}`,
-                            questions: extractionResult.questions.map((q: any, index: number) => ({
-                              id: `question_${Date.now()}_${index}`,
-                              question_text: q.question,
-                              question_type: q.type === 'single' ? 'single_choice' : q.type || 'single_choice',
-                              options: q.options ? q.options.map((option: string, optIndex: number) => ({
-                                id: `option_${Date.now()}_${index}_${optIndex}`,
-                                option_text: option,
-                                is_correct: q.answer === option || q.answer === String.fromCharCode(65 + optIndex),
-                                position: optIndex + 1
-                              })) : [],
-                              position: index + 1,
-                              points: 1
-                            }))
+                            questions: extractionResult.questions.map((q: any, index: number) => {
+                              console.log(`🔄 Processing question ${index + 1}:`, {
+                                question: q.question,
+                                type: q.type,
+                                options: q.options,
+                                answer: q.answer
+                              });
+                              
+                              const mappedQuestionType = mapQuestionType(q.type);
+                              console.log(`🔄 Mapped question type: ${q.type} -> ${mappedQuestionType}`);
+                              
+                              return {
+                                id: `question_${Date.now()}_${index}`,
+                                question_text: q.question,
+                                question_type: mappedQuestionType,
+                                options: q.options ? q.options.map((option: string, optIndex: number) => ({
+                                  id: `option_${Date.now()}_${index}_${optIndex}`,
+                                  option_text: option,
+                                  is_correct: q.answer === option || q.answer === String.fromCharCode(65 + optIndex),
+                                  position: optIndex + 1
+                                })) : [],
+                                position: index + 1,
+                                points: 1
+                              };
+                            })
                           };
                           console.log(`✅ Extracted ${extractedQuizData.questions.length} quiz questions`);
-                          console.log(`📋 Sample extracted question:`, JSON.stringify(extractedQuizData.questions[0], null, 2));
+                          console.log(`📋 Sample converted question:`, JSON.stringify(extractedQuizData.questions[0], null, 2));
                         } else {
                           console.log(`⚠️  No questions extracted from PDF`);
                           console.log(`❌ Quiz extraction failed: No questions found in PDF`);
@@ -1223,11 +1324,14 @@ serve(async (req) => {
                         }
                       } else {
                         console.error(`❌ Quiz extraction API failed: ${extractionResponse.status}`);
-                        console.error(`Error details: ${responseText}`);
+                        
+                        // Get response body for error debugging
+                        const errorResponseText = await extractionResponse.text();
+                        console.error(`Error details: ${errorResponseText}`);
                         
                         // Try to parse error response for more details
                         try {
-                          const errorData = JSON.parse(responseText);
+                          const errorData = JSON.parse(errorResponseText);
                           console.error(`Parsed error data:`, errorData);
                         } catch (parseError) {
                           console.error(`Could not parse error response as JSON: ${parseError.message}`);
@@ -1238,6 +1342,8 @@ serve(async (req) => {
                       }
                     } else {
                       console.error(`❌ API_BASE_URL not configured for quiz extraction`);
+                      console.error(`❌ Environment variable API_BASE_URL is missing or empty`);
+                      console.error(`❌ Available environment variables:`, Object.keys(Deno.env.toObject()));
                     }
                   }
                 } catch (extractionError) {
@@ -1321,6 +1427,14 @@ serve(async (req) => {
               if (contentError) throw contentError;
 
               // Handle quiz creation if it's a quiz type OR if we extracted quiz data from a PDF
+              console.log(`\n=== QUIZ CREATION CHECK ===`);
+              console.log(`Content Item Type: ${contentItem.type}`);
+              console.log(`Content Item Title: ${contentItem.title}`);
+              console.log(`Content Path: ${contentPath}`);
+              console.log(`Extracted Quiz Data Available: ${extractedQuizData ? 'Yes' : 'No'}`);
+              console.log(`Content Item Quiz Available: ${contentItem.quiz ? 'Yes' : 'No'}`);
+              console.log(`Should Create Quiz: ${contentItem.type === 'quiz' || (extractedQuizData && extractedQuizData.questions && extractedQuizData.questions.length > 0)}`);
+              
               if (contentItem.type === 'quiz' || (extractedQuizData && extractedQuizData.questions && extractedQuizData.questions.length > 0)) {
                 console.log(`\n=== QUIZ CREATION DEBUG ===`);
                 console.log(`Content Item Type: ${contentItem.type}`);
