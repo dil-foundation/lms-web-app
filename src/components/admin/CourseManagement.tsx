@@ -13,7 +13,13 @@ import {
   PlusCircle,
   Search,
   MoreHorizontal,
-  Trash2
+  Trash2,
+  Upload,
+  Download,
+  FileSpreadsheet,
+  AlertTriangle,
+  CheckCircle2,
+  XCircle
 } from "lucide-react"
 import {
   Card,
@@ -54,6 +60,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { FileUpload } from "@/components/ui/FileUpload"
 import { ContentLoader } from "../ContentLoader";
 import { cn } from "@/lib/utils";
 import {
@@ -162,6 +177,12 @@ const CourseManagement = () => {
   const [totalStudents, setTotalStudents] = useState(0);
   const [loadingStats, setLoadingStats] = useState(true);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  
+  // Bulk upload states
+  const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
+  const [isBulkUploading, setIsBulkUploading] = useState(false);
+  const [uploadResult, setUploadResult] = useState<any>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const fetchStats = useCallback(async () => {
     if (!user) {
@@ -387,6 +408,212 @@ const CourseManagement = () => {
     navigate('/dashboard/courses/builder/new');
   }
 
+  const handleBulkUpload = async () => {
+    if (!selectedFile) {
+      toast.error("Please select a file to upload");
+      return;
+    }
+
+    setIsBulkUploading(true);
+    setUploadResult(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      let responseData = null;
+      let supabaseError = null;
+      
+      try {
+        const { data, error } = await supabase.functions.invoke('bulk-upload-courses', {
+          body: formData,
+        });
+
+        if (error) {
+          supabaseError = error;
+        } else {
+          responseData = data;
+        }
+      } catch (caughtError: any) {
+        console.log('=== CAUGHT ERROR DEBUG ===');
+        console.log('Caught error:', caughtError);
+        console.log('Error context:', caughtError.context);
+        console.log('Error status:', caughtError.status);
+        console.log('Error response:', caughtError.response);
+        console.log('Error message:', caughtError.message);
+        console.log('=== END CAUGHT ERROR ===');
+        
+        supabaseError = caughtError;
+      }
+
+      // If we have response data, process it
+      if (responseData) {
+        // Check if it's a simple error response (like insufficient data)
+        if (responseData.success === false && responseData.error) {
+          const userFriendlyMessage = responseData.error.includes('insufficient data') 
+            ? 'The Excel file is empty or has no data. Please add course information to the file and try again.'
+            : responseData.error.includes('Invalid XLSX file')
+            ? 'The Excel file format is invalid. Please ensure you\'re using a valid .xlsx file.'
+            : responseData.error;
+          
+          toast.error("Upload failed", { description: userFriendlyMessage });
+          setUploadResult({
+            success: false,
+            totalRows: 0,
+            createdCourses: 0,
+            skippedCourses: 0,
+            errors: [{
+              row: 1,
+              field: 'File',
+              message: userFriendlyMessage
+            }],
+            message: userFriendlyMessage
+          });
+          return;
+        }
+        
+        setUploadResult(responseData);
+        
+        if (responseData.createdCourses > 0) {
+          // Refresh the course list
+          fetchData();
+          fetchStats();
+        }
+        
+        if (responseData.success === true) {
+          toast.success("Bulk upload completed successfully!", {
+            description: `Created ${responseData.createdCourses} courses${responseData.skippedCourses > 0 ? `, skipped ${responseData.skippedCourses} existing courses` : ''}`
+          });
+          
+          // Close the dialog
+          setIsBulkUploadOpen(false);
+          setSelectedFile(null);
+          setUploadResult(null);
+        } else {
+          toast.error("Upload completed with errors", { 
+            description: `Created ${responseData.createdCourses} courses with ${responseData.errors?.length || 0} errors.` 
+          });
+        }
+      } else if (supabaseError) {
+        // Try to extract response data from error context
+        try {
+          if (typeof supabaseError.context === 'string') {
+            responseData = JSON.parse(supabaseError.context);
+          } else if (supabaseError.context && typeof supabaseError.context === 'object') {
+            // Check if it's a Response object
+            if (supabaseError.context instanceof Response) {
+              const responseText = await supabaseError.context.text();
+              responseData = JSON.parse(responseText);
+            } else {
+              responseData = supabaseError.context;
+            }
+          }
+        } catch (parseError) {
+          // Failed to parse error context
+        }
+        
+        if (responseData) {
+          // Check if it's a simple error response (like insufficient data)
+          if (responseData.success === false && responseData.error) {
+            const userFriendlyMessage = responseData.error.includes('insufficient data') 
+              ? 'The Excel file is empty or has no data. Please add course information to the file and try again.'
+              : responseData.error.includes('Invalid XLSX file')
+              ? 'The Excel file format is invalid. Please ensure you\'re using a valid .xlsx file.'
+              : responseData.error;
+            
+            toast.error("Upload failed", { description: userFriendlyMessage });
+            setUploadResult({
+              success: false,
+              totalRows: 0,
+              createdCourses: 0,
+              skippedCourses: 0,
+              errors: [{
+                row: 1,
+                field: 'File',
+                message: userFriendlyMessage
+              }],
+              message: userFriendlyMessage
+            });
+          } else if (responseData.errors) {
+            setUploadResult(responseData);
+            toast.error("Upload completed with errors", { 
+              description: `Created ${responseData.createdCourses} courses with ${responseData.errors?.length || 0} errors.` 
+            });
+          } else {
+            throw supabaseError;
+          }
+        } else {
+          throw supabaseError;
+        }
+      }
+    } catch (error: any) {
+      // Try to extract response data from the error
+      let responseData = null;
+      try {
+        if (error.context) {
+          if (typeof error.context === 'string') {
+            responseData = JSON.parse(error.context);
+          } else if (error.context && typeof error.context === 'object') {
+            responseData = error.context;
+          }
+        }
+      } catch (parseError) {
+        // Failed to parse error context
+      }
+      
+      if (responseData) {
+        // Check if it's a simple error response (like insufficient data)
+        if (responseData.success === false && responseData.error) {
+          const userFriendlyMessage = responseData.error.includes('insufficient data') 
+            ? 'The Excel file is empty or has no data. Please add course information to the file and try again.'
+            : responseData.error.includes('Invalid XLSX file')
+            ? 'The Excel file format is invalid. Please ensure you\'re using a valid .xlsx file.'
+            : responseData.error;
+          
+          toast.error("Upload failed", { description: userFriendlyMessage });
+          setUploadResult({
+            success: false,
+            totalRows: 0,
+            createdCourses: 0,
+            skippedCourses: 0,
+            errors: [{
+              row: 1,
+              field: 'File',
+              message: userFriendlyMessage
+            }],
+            message: userFriendlyMessage
+          });
+        } else if (responseData.errors) {
+          setUploadResult(responseData);
+          toast.error("Upload completed with errors", { 
+            description: `Created ${responseData.createdCourses} courses with ${responseData.errors?.length || 0} errors.` 
+          });
+        } else {
+          toast.error("Upload failed", { description: error.message });
+        }
+      } else {
+        toast.error("Upload failed", { description: error.message });
+      }
+    } finally {
+      setIsBulkUploading(false);
+    }
+  };
+
+  const downloadTemplate = () => {
+    const xlsxUrl = import.meta.env.VITE_COURSE_BULK_UPLOAD_XLSX_TEMPLATE_URL;
+    
+    if (xlsxUrl) {
+      const link = document.createElement('a');
+      link.href = xlsxUrl;
+      link.download = 'course-bulk-upload-template.xlsx';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      toast.error("Template not available", { description: "Template URL not configured." });
+    }
+  };
+
   const handleDeleteConfirmed = async () => {
     if (!courseToDelete) return;
 
@@ -511,13 +738,23 @@ const CourseManagement = () => {
               </div>
             </div>
             
-            <Button 
-              onClick={handleCreateCourse}
-              className="h-10 px-6 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
-            >
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Create Course
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="outline"
+                onClick={() => setIsBulkUploadOpen(true)}
+                className="h-10 px-6 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Bulk Upload
+              </Button>
+              <Button 
+                onClick={handleCreateCourse}
+                className="h-10 px-6 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+              >
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Create Course
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -727,6 +964,167 @@ const CourseManagement = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Bulk Upload Dialog */}
+      <Dialog open={isBulkUploadOpen} onOpenChange={setIsBulkUploadOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="h-5 w-5 text-primary" />
+              Bulk Upload Courses
+            </DialogTitle>
+            <DialogDescription>
+              Upload multiple courses at once using an Excel template. All courses will be created as drafts.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Template Download Section */}
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl">
+              <div className="flex items-start gap-3">
+                <Download className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                <div className="flex-1">
+                  <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                    Download Template
+                  </h4>
+                  <p className="text-sm text-blue-800 dark:text-blue-200 mb-3">
+                    Download the Excel template to see the required format and structure for bulk upload.
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={downloadTemplate}
+                    className="bg-blue-100 hover:bg-blue-200 dark:bg-blue-800 dark:hover:bg-blue-700 text-blue-700 dark:text-blue-200 border-blue-300 dark:border-blue-600"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download Template
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* File Upload Section */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                  Select Excel File
+                </label>
+                <FileUpload 
+                  onUpload={setSelectedFile}
+                  label={selectedFile ? selectedFile.name : "Choose Excel file"}
+                  acceptedFileTypes={['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']}
+                  disabled={isBulkUploading}
+                  maxSize={10 * 1024 * 1024} // 10MB
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  Supported format: .xlsx (Excel 2007+). Maximum file size: 10MB.
+                </p>
+              </div>
+
+              {/* Upload Status */}
+              {isBulkUploading && (
+                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                  <span>Uploading courses...</span>
+                </div>
+              )}
+
+              {/* Upload Results */}
+              {uploadResult && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    {(uploadResult.success === true || (uploadResult.createdCourses > 0 && (!uploadResult.errors || uploadResult.errors.length === 0))) ? (
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    ) : uploadResult.createdCourses > 0 ? (
+                      <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-red-600" />
+                    )}
+                    <span className={
+                      (uploadResult.success === true || (uploadResult.createdCourses > 0 && (!uploadResult.errors || uploadResult.errors.length === 0))) ? "text-green-700 dark:text-green-300" : 
+                      uploadResult.createdCourses > 0 ? "text-yellow-700 dark:text-yellow-300" : "text-red-700 dark:text-red-300"
+                    }>
+                      {uploadResult.message}
+                    </span>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div className="font-medium text-gray-900 dark:text-white">Total Rows</div>
+                      <div className="text-2xl font-bold text-primary">{uploadResult.totalRows || 0}</div>
+                    </div>
+                    <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div className="font-medium text-gray-900 dark:text-white">Created</div>
+                      <div className="text-2xl font-bold text-green-600">{uploadResult.createdCourses || 0}</div>
+                    </div>
+                  </div>
+
+                  {uploadResult.errors && uploadResult.errors.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm font-medium text-red-700 dark:text-red-300">
+                        <AlertTriangle className="h-4 w-4" />
+                        <span>Validation Errors ({uploadResult.errors.length})</span>
+                      </div>
+                      <div className="max-h-48 overflow-y-auto space-y-2 border border-red-200 rounded-lg p-3 bg-red-50 dark:bg-red-900/20">
+                        {uploadResult.errors.map((error: any, index: number) => (
+                          <div key={index} className="flex items-start gap-3 p-3 bg-white rounded border border-red-200 shadow-sm">
+                            <div className="w-2 h-2 bg-red-500 rounded-full mt-1.5 flex-shrink-0"></div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-sm font-semibold text-red-700">
+                                  Row {error.row}
+                                </span>
+                                <span className="text-xs text-gray-500">•</span>
+                                <span className="text-sm font-medium text-red-600">
+                                  {error.field}
+                                </span>
+                              </div>
+                              <p className="text-sm text-red-600 leading-relaxed">
+                                {error.message}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsBulkUploadOpen(false);
+                setSelectedFile(null);
+                setUploadResult(null);
+              }}
+              disabled={isBulkUploading}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleBulkUpload}
+              disabled={!selectedFile || isBulkUploading}
+              className="bg-primary hover:bg-primary/90"
+            >
+              {isBulkUploading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload Courses
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   )
 }
