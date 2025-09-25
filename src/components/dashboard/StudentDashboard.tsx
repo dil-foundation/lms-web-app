@@ -373,14 +373,16 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
                             </h3>
                             <p className="text-xs text-muted-foreground truncate">{course.subtitle}</p>
                           </div>
-                          <div className="flex items-center gap-2 ml-3 flex-shrink-0">
-                            <span className="text-xs font-medium text-primary">
-                              {course.progress || 0}%
-                            </span>
-                            {course.progress === 100 && (
-                              <Star className="w-3 h-3 text-yellow-500 fill-current" />
-                            )}
-                          </div>
+                          {course.progress !== undefined && course.progress !== null && (
+                            <div className="flex items-center gap-2 ml-3 flex-shrink-0">
+                              <span className="text-xs font-medium text-primary">
+                                {course.progress}%
+                              </span>
+                              {course.progress === 100 && (
+                                <Star className="w-3 h-3 text-yellow-500 fill-current" />
+                              )}
+                            </div>
+                          )}
                         </div>
 
                         {/* Course Metrics */}
@@ -388,7 +390,7 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
                           {course.total_lessons && (
                             <div className="flex items-center gap-1">
                               <BookOpen className="w-3 h-3" />
-                              <span>{course.completed_lessons || 0}/{course.total_lessons} lessons</span>
+                              <span>{course.completed_lessons !== undefined && course.completed_lessons !== null ? course.completed_lessons : 0}/{course.total_lessons} lessons</span>
                             </div>
                           )}
                           <div className="flex items-center gap-1">

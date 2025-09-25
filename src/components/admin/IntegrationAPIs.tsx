@@ -14,10 +14,19 @@ import {
   AlertTriangle,
   Video,
   CreditCard,
-  Loader2
+  Loader2,
+  Plus,
+  MessageSquare,
+  Cloud,
+  HardDrive,
+  Palette,
+  Layout,
+  Briefcase,
+  Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { integrationService, type Integration, type IntegrationStats } from '@/services/integrationService';
+import { AddIntegrationModal } from './AddIntegrationModal';
 
 interface IntegrationAPIsProps {
   userProfile: {
@@ -54,11 +63,47 @@ const getIntegrationDisplayData = (integration: Integration): IntegrationDisplay
       icon: CreditCard,
       category: 'Payment',
       displayName: 'Stripe'
+    },
+    'Slack': {
+      description: 'Team communication and collaboration platform for course discussions and notifications.',
+      icon: MessageSquare,
+      category: 'Communication',
+      displayName: 'Slack'
+    },
+    'OneDrive': {
+      description: 'Cloud storage integration for course materials and student file sharing.',
+      icon: Cloud,
+      category: 'Productivity',
+      displayName: 'OneDrive'
+    },
+    'Google Drive': {
+      description: 'Google cloud storage for collaborative documents and file management.',
+      icon: HardDrive,
+      category: 'Productivity',
+      displayName: 'Google Drive'
+    },
+    'Figma': {
+      description: 'Design collaboration tool for creative courses and design projects.',
+      icon: Palette,
+      category: 'Productivity',
+      displayName: 'Figma'
+    },
+    'Miro': {
+      description: 'Online whiteboard platform for visual collaboration and brainstorming.',
+      icon: Layout,
+      category: 'Productivity',
+      displayName: 'Miro'
+    },
+    'Jira': {
+      description: 'Project management and issue tracking for software development courses.',
+      icon: Briefcase,
+      category: 'Productivity',
+      displayName: 'Jira'
     }
   };
 
   const defaultData = {
-    description: 'External service integration',
+    description: integration.settings?.description || 'External service integration',
     icon: Plug,
     category: 'Productivity' as const
   };
@@ -68,7 +113,8 @@ const getIntegrationDisplayData = (integration: Integration): IntegrationDisplay
   return {
     ...integration,
     ...data,
-    name: data.displayName || integration.name
+    name: data.displayName || integration.settings?.title || integration.name,
+    description: integration.settings?.description || data.description
   };
 };
 
@@ -103,52 +149,54 @@ export const IntegrationAPIs = ({ userProfile }: IntegrationAPIsProps) => {
   const [stats, setStats] = useState<IntegrationStats>({ total: 0, active: 0, configured: 0, errors: 0 });
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [showAddModal, setShowAddModal] = useState(false);
 
-  const categories = ['all', 'Communication', 'Payment'];
+  const categories = ['all', 'Communication', 'Payment', 'Productivity'];
   
   const filteredIntegrations = selectedCategory === 'all' 
     ? integrations 
     : integrations.filter(integration => integration.category === selectedCategory);
 
-  // Load integrations on component mount
-  useEffect(() => {
-    const loadIntegrations = async () => {
-      try {
-        setLoading(true);
+  // Load integrations function
+  const loadIntegrations = async () => {
+    try {
+      setLoading(true);
+      
+      // Load integrations and stats first
+      const [integrationsData, statsData] = await Promise.all([
+        integrationService.getIntegrations(),
+        integrationService.getIntegrationStats()
+      ]);
+      
+      // If no integrations exist, initialize defaults
+      if (integrationsData.length === 0) {
+        await integrationService.initializeDefaultIntegrations();
         
-        // Load integrations and stats first
-        const [integrationsData, statsData] = await Promise.all([
+        // Reload after initialization
+        const [newIntegrationsData, newStatsData] = await Promise.all([
           integrationService.getIntegrations(),
           integrationService.getIntegrationStats()
         ]);
         
-        // If no integrations exist, initialize defaults
-        if (integrationsData.length === 0) {
-          await integrationService.initializeDefaultIntegrations();
-          
-          // Reload after initialization
-          const [newIntegrationsData, newStatsData] = await Promise.all([
-            integrationService.getIntegrations(),
-            integrationService.getIntegrationStats()
-          ]);
-          
-          const displayIntegrations = newIntegrationsData.map(getIntegrationDisplayData);
-          setIntegrations(displayIntegrations);
-          setStats(newStatsData);
-        } else {
-          // Map to display format
-          const displayIntegrations = integrationsData.map(getIntegrationDisplayData);
-          setIntegrations(displayIntegrations);
-          setStats(statsData);
-        }
-      } catch (error) {
-        console.error('Error loading integrations:', error);
-        toast.error('Failed to load integrations');
-      } finally {
-        setLoading(false);
+        const displayIntegrations = newIntegrationsData.map(getIntegrationDisplayData);
+        setIntegrations(displayIntegrations);
+        setStats(newStatsData);
+      } else {
+        // Map to display format
+        const displayIntegrations = integrationsData.map(getIntegrationDisplayData);
+        setIntegrations(displayIntegrations);
+        setStats(statsData);
       }
-    };
+    } catch (error) {
+      console.error('Error loading integrations:', error);
+      toast.error('Failed to load integrations');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // Load integrations on component mount
+  useEffect(() => {
     loadIntegrations();
   }, []);
 
@@ -190,6 +238,27 @@ export const IntegrationAPIs = ({ userProfile }: IntegrationAPIsProps) => {
     }
   };
 
+  const handleDeleteIntegration = async (integrationId: string, integrationName: string) => {
+    // Prevent deletion of Zoom integration
+    if (integrationName.toLowerCase() === 'zoom') {
+      toast.error('Zoom integration cannot be removed as it is a core system integration.');
+      return;
+    }
+
+    // Show confirmation
+    if (!window.confirm(`Are you sure you want to remove the ${integrationName} integration? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await integrationService.deleteIntegration(integrationId);
+      toast.success(`${integrationName} integration has been removed successfully.`);
+      await loadIntegrations(); // Reload the list
+    } catch (error) {
+      console.error('Error deleting integration:', error);
+      toast.error('Failed to remove integration. Please try again.');
+    }
+  };
 
   const formatLastSync = (lastSync?: string | null) => {
     if (!lastSync) return 'Never';
@@ -279,19 +348,30 @@ export const IntegrationAPIs = ({ userProfile }: IntegrationAPIsProps) => {
         </Card>
       </div>
 
-      {/* Category Filter */}
-      <div className="flex flex-wrap gap-2">
-        {categories.map((category) => (
-          <Button
-            key={category}
-            variant={selectedCategory === category ? "default" : "outline"}
-            size="sm"
-            onClick={() => setSelectedCategory(category)}
-            className="capitalize"
-          >
-            {category}
-          </Button>
-        ))}
+      {/* Category Filter and Add Integration Button */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-wrap gap-2">
+          {categories.map((category) => (
+            <Button
+              key={category}
+              variant={selectedCategory === category ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSelectedCategory(category)}
+              className="capitalize"
+            >
+              {category}
+            </Button>
+          ))}
+        </div>
+        
+        <Button
+          onClick={() => setShowAddModal(true)}
+          className="flex items-center gap-2"
+          size="sm"
+        >
+          <Plus className="h-4 w-4" />
+          Add New Integration
+        </Button>
       </div>
 
       {/* Integrations Grid */}
@@ -316,22 +396,20 @@ export const IntegrationAPIs = ({ userProfile }: IntegrationAPIsProps) => {
                     </div>
                   </div>
                   
-                  {/* Status Toggle in top right */}
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      checked={integration.status === 'enabled'}
-                      onCheckedChange={() => handleToggleIntegration(integration.id)}
-                    />
-                  </div>
+                  {/* Delete Button - Only show for non-Zoom integrations */}
+                  {integration.name.toLowerCase() !== 'zoom' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteIntegration(integration.id, integration.name)}
+                      className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      title="Remove Integration"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
                 
-                {/* Status Badge below header */}
-                <div className="mt-3">
-                  <Badge className={getStatusColor(integration.status)} variant="secondary">
-                    <StatusIcon className="h-3 w-3 mr-1" />
-                    {integration.status}
-                  </Badge>
-                </div>
               </CardHeader>
               
               <CardContent className="flex-1 flex flex-col justify-between pt-0">
@@ -374,6 +452,14 @@ export const IntegrationAPIs = ({ userProfile }: IntegrationAPIsProps) => {
           );
         })}
       </div>
+
+      {/* Add Integration Modal */}
+      <AddIntegrationModal
+        open={showAddModal}
+        onOpenChange={setShowAddModal}
+        onIntegrationAdded={loadIntegrations}
+        existingIntegrations={integrations.map(i => i.name)}
+      />
     </div>
   );
 };

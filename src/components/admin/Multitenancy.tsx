@@ -7076,14 +7076,15 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
         setIsSchoolCreateDialogOpen(open);
         if (!open) resetSchoolForm();
       }}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
+        <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Create New School</DialogTitle>
             <DialogDescription>
               Add a new school or educational institution to the system. Fill in the required information below.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4 max-h-[60vh] overflow-y-auto">
+          <div className="flex-1 overflow-y-auto pr-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4 px-2">
             <div className="space-y-2">
               <Label htmlFor="school-name" className={schoolValidationErrors.name ? 'text-red-500' : ''}>School Name *</Label>
               <Input
@@ -7371,7 +7372,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
               </p>
             </div>
           </div>
-          <DialogFooter>
+          </div>
+          <DialogFooter className="flex-shrink-0">
             <Button variant="outline" onClick={() => setIsSchoolCreateDialogOpen(false)}>
               Cancel
             </Button>
@@ -7395,14 +7397,15 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
 
       {/* Edit School Dialog */}
       <Dialog open={isSchoolEditDialogOpen} onOpenChange={setIsSchoolEditDialogOpen}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
+        <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Edit School</DialogTitle>
             <DialogDescription>
               Update the information for {editingSchool?.name}.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4 max-h-[60vh] overflow-y-auto">
+          <div className="flex-1 overflow-y-auto pr-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4 px-2">
             <div className="space-y-2">
               <Label htmlFor="edit-school-name" className={schoolValidationErrors.name ? 'text-red-500' : ''}>School Name *</Label>
               <Input
@@ -7690,7 +7693,8 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
               </p>
             </div>
           </div>
-          <DialogFooter>
+          </div>
+          <DialogFooter className="flex-shrink-0">
             <Button variant="outline" onClick={() => setIsSchoolEditDialogOpen(false)}>
               Cancel
             </Button>
@@ -7714,16 +7718,17 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
 
       {/* View School Dialog */}
       <Dialog open={isSchoolViewDialogOpen} onOpenChange={setIsSchoolViewDialogOpen}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
+        <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>School Details</DialogTitle>
             <DialogDescription>
               View detailed information about {viewingSchool?.name}.
             </DialogDescription>
           </DialogHeader>
           {viewingSchool && (
-            <div className="space-y-6 py-4 max-h-[60vh] overflow-y-auto">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex-1 overflow-y-auto pr-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800">
+              <div className="space-y-6 py-4 px-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
                     <Label className="text-sm font-medium text-muted-foreground">School Name</Label>
@@ -7810,8 +7815,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                 </div>
               </div>
             </div>
+            </div>
           )}
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0">
             <Button variant="outline" onClick={() => setIsSchoolViewDialogOpen(false)}>
               Close
             </Button>

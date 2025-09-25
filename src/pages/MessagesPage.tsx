@@ -53,6 +53,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { ContentLoader } from '@/components/ContentLoader';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
 import { 
@@ -251,6 +252,7 @@ export default function MessagesPage() {
   const { user } = useAuth();
   const { profile } = useUserProfile();
   const isMobile = useIsMobile();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [chats, setChats] = useState<Chat[]>([]);
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [newMessage, setNewMessage] = useState('');
@@ -636,7 +638,113 @@ export default function MessagesPage() {
       }
   }, [user?.id, conversationsSearchQuery]);
 
+  // Handle conversation selection from URL parameters
+  useEffect(() => {
+    const conversationId = searchParams.get('conversation');
+    const studentId = searchParams.get('student');
+    const studentName = searchParams.get('studentName');
+    console.log('URL Parameter Effect - conversationId:', conversationId, 'studentId:', studentId, 'chats.length:', chats.length, 'selectedChat:', selectedChat?.id);
+    
+    if (conversationId && chats.length > 0) {
+      // Find the conversation in the loaded chats
+      const targetChat = chats.find(chat => chat.id === conversationId);
+      console.log('Looking for conversation:', conversationId, 'Found:', targetChat?.name || 'NOT FOUND');
+      console.log('Available chats:', chats.map(c => ({ id: c.id, name: c.name })));
+      
+      if (targetChat && (!selectedChat || selectedChat.id !== conversationId)) {
+        console.log('✅ Auto-selecting conversation from URL:', conversationId, targetChat.name);
+        console.log('🔍 Target chat object:', targetChat);
+        console.log('🔍 Current selectedChat before selection:', selectedChat);
+        handleSelectChat(targetChat);
+        console.log('✅ handleSelectChat called for:', targetChat.name);
+        // Clear the URL parameter after selection
+        setTimeout(() => {
+          setSearchParams(prev => {
+            const newParams = new URLSearchParams(prev);
+            newParams.delete('conversation');
+            return newParams;
+          });
+        }, 1000); // Wait a bit before clearing to ensure selection works
+      } else if (!targetChat && conversationsLoaded && initialLoadComplete) {
+        // If conversation not found but conversations are loaded, it might be a new conversation
+        console.log('❌ Conversation not found in current list, refreshing conversations...');
+        // Force a refresh by clearing the loaded flag temporarily
+        setConversationsLoaded(false);
+        setInitialLoadComplete(false);
+        initialLoadCompleteRef.current = false;
+      }
+    } else if (studentId && chats.length > 0 && !selectedChat) {
+      // Fallback: look for existing conversation with this student
+      console.log('🔍 Looking for conversation with student ID:', studentId);
+      const targetChat = chats.find(chat => chat.userId === studentId);
+      if (targetChat) {
+        console.log('✅ Found existing conversation with student:', targetChat.name);
+        handleSelectChat(targetChat);
+        // Clear the URL parameters after selection
+        setTimeout(() => {
+          setSearchParams(prev => {
+            const newParams = new URLSearchParams(prev);
+            newParams.delete('student');
+            newParams.delete('studentName');
+            return newParams;
+          });
+        }, 1000);
+      } else if (conversationsLoaded && initialLoadComplete) {
+        // No existing conversation found, open new chat dialog with this student pre-selected
+        console.log('📝 No existing conversation found, opening new chat dialog for:', studentName);
+        // We could auto-create the conversation here, but for now let's just open the new chat dialog
+        // and let the user confirm
+        setShowNewChatDialog(true);
+      }
+    }
+  }, [chats, searchParams, selectedChat, conversationsLoaded, initialLoadComplete]);
 
+  // Additional effect to handle conversation selection more aggressively
+  useEffect(() => {
+    const conversationId = searchParams.get('conversation');
+    const studentId = searchParams.get('student');
+    
+    if (conversationId && chats.length > 0 && !selectedChat) {
+      // Try to find and select the conversation immediately
+      const targetChat = chats.find(chat => chat.id === conversationId);
+      if (targetChat) {
+        console.log('🎯 Direct selection attempt:', conversationId, targetChat.name);
+        console.log('🔍 Before direct selection - selectedChat:', selectedChat);
+        setSelectedChat(targetChat);
+        setCurrentConversationId(targetChat.id);
+        console.log('✅ Direct selection completed for:', targetChat.name);
+        
+        // Load messages for this chat
+        if (targetChat.messages.length === 0) {
+          loadMessagesForChat(targetChat);
+        }
+        
+        // Join WebSocket room
+        wsManager.joinConversation(targetChat.id);
+      }
+    } else if (studentId && chats.length > 0 && !selectedChat) {
+      // Fallback: try to find conversation by student ID
+      const targetChat = chats.find(chat => chat.userId === studentId);
+      if (targetChat) {
+        console.log('🎯 Direct selection by student ID:', studentId, targetChat.name);
+        setSelectedChat(targetChat);
+        setCurrentConversationId(targetChat.id);
+        
+        // Load messages for this chat
+        if (targetChat.messages.length === 0) {
+          loadMessagesForChat(targetChat);
+        }
+        
+        // Join WebSocket room
+        wsManager.joinConversation(targetChat.id);
+      }
+    }
+  }, [chats, searchParams, selectedChat]);
+
+  // Monitor selectedChat changes for debugging
+  useEffect(() => {
+    console.log('📊 selectedChat changed to:', selectedChat?.name || 'null', 'ID:', selectedChat?.id || 'null');
+  }, [selectedChat]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -1055,13 +1163,19 @@ export default function MessagesPage() {
   };
 
   const handleSelectChat = async (chat: Chat) => {
+    console.log('🔧 handleSelectChat called with:', chat.name, 'ID:', chat.id);
+    console.log('🔧 Current selectedChat:', selectedChat?.name || 'none');
+    
     // Prevent duplicate selection
     if (selectedChat?.id === chat.id) {
+      console.log('🔧 Duplicate selection prevented');
       return;
     }
     
+    console.log('🔧 Setting selectedChat to:', chat.name);
     setSelectedChat(chat);
     setCurrentConversationId(chat.id);
+    console.log('🔧 selectedChat and currentConversationId set');
     setMessagesPage(1);
     setHasMoreMessages(true); // Will be updated by loadMessagesForChat if needed
 

@@ -87,34 +87,49 @@ export const StudentCourseTileView: React.FC<StudentCourseTileViewProps> = ({
 
               {/* Compact Course Stats - Horizontal Layout */}
               <div className="flex items-center justify-between text-xs text-muted-foreground mb-2 flex-1 min-h-0">
-                <div className="flex items-center gap-1 min-w-0 flex-1">
-                  <Users className="w-2.5 h-2.5 flex-shrink-0" />
-                  <span className="truncate">
-                    {course.completed_lessons || 0}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1 min-w-0 flex-1 justify-center">
-                  <BookOpen className="w-2.5 h-2.5 flex-shrink-0" />
-                  <span className="truncate">
-                    {course.total_lessons || 0}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1 min-w-0 flex-1 justify-end">
-                  <Clock className="w-2.5 h-2.5 flex-shrink-0" />
-                  <span className="truncate">
-                    {course.last_accessed ? new Date(course.last_accessed).toLocaleDateString() : 'Never'}
-                  </span>
-                </div>
+                {(course.total_lessons && course.total_lessons > 0) ? (
+                  <>
+                    <div className="flex items-center gap-1 min-w-0 flex-1">
+                      <Users className="w-2.5 h-2.5 flex-shrink-0" />
+                      <span className="truncate">
+                        {course.completed_lessons !== undefined && course.completed_lessons !== null ? course.completed_lessons : 0}/{course.total_lessons}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1 min-w-0 flex-1 justify-center">
+                      <BookOpen className="w-2.5 h-2.5 flex-shrink-0" />
+                      <span className="truncate">
+                        {course.total_lessons} lessons
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1 min-w-0 flex-1 justify-end">
+                      <Clock className="w-2.5 h-2.5 flex-shrink-0" />
+                      <span className="truncate">
+                        {course.last_accessed ? new Date(course.last_accessed).toLocaleDateString() : 'Never'}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center justify-center w-full">
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-2.5 h-2.5 flex-shrink-0" />
+                      <span className="truncate">
+                        {course.last_accessed ? new Date(course.last_accessed).toLocaleDateString() : 'Never'}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Progress Section */}
-              <div className="space-y-1 mb-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground text-xs">Progress</span>
-                  <span className="font-medium text-primary text-xs">{course.progress || 0}%</span>
+              {course.progress !== undefined && course.progress !== null && (
+                <div className="space-y-1 mb-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground text-xs">Progress</span>
+                    <span className="font-medium text-primary text-xs">{course.progress}%</span>
+                  </div>
+                  <Progress value={course.progress} className="h-1.5" />
                 </div>
-                <Progress value={course.progress || 0} className="h-1.5" />
-              </div>
+              )}
 
               {/* Compact Action Button */}
               <div className="mt-auto pt-1">

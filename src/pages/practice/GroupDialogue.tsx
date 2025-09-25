@@ -796,8 +796,8 @@ export default function GroupDialogue() {
         setIsCompleted(true);
         setShowCompletionDialog(true);
         markExerciseCompleted();
-      } else if (!isCompleted) {
-        // Mark exercise as completed after receiving feedback (fallback logic)
+      } else if (!isCompleted && feedback.overall_score !== undefined && feedback.overall_score > 0) {
+        // Only mark as completed if we have a successful evaluation with a valid score
         setIsCompleted(true);
         setShowCompletionDialog(true);
         markExerciseCompleted();
@@ -1392,7 +1392,7 @@ export default function GroupDialogue() {
                       {feedback.overall_score}/100
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                     <div 
                       className={`h-2 rounded-full ${feedback.overall_score === 0 ? 'bg-red-600' : 'bg-green-600'}`}
                       style={{ width: `${feedback.overall_score}%` }}

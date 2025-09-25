@@ -992,15 +992,15 @@ const ClassManagement: React.FC = () => {
 
       {/* Create Class Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+        <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle>Create New Class</DialogTitle>
             <DialogDescription>
               Add a new class or academic section to the system. Fill in the required information below.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+          <div className="flex-1 overflow-y-auto pr-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4 px-2">
             <div className="space-y-2">
               <Label htmlFor="name" className={validationErrors.name ? 'text-red-500' : ''}>Class Name *</Label>
               <Input
@@ -1256,15 +1256,15 @@ const ClassManagement: React.FC = () => {
 
       {/* Edit Class Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col border-primary/20">
+        <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col border-primary/20">
           <DialogHeader className="flex-shrink-0 border-b border-primary/10 pb-4">
             <DialogTitle className="text-primary text-xl font-semibold">Edit Class</DialogTitle>
             <DialogDescription className="text-muted-foreground">
               Update the information for {editingClass?.name}.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+          <div className="flex-1 overflow-y-auto pr-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4 px-2">
             <div className="space-y-2">
               <Label htmlFor="edit-name" className={validationErrors.name ? 'text-red-500' : ''}>Class Name *</Label>
               <Input
@@ -1520,7 +1520,7 @@ const ClassManagement: React.FC = () => {
 
       {/* View Class Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="max-w-4xl border-primary/20">
+        <DialogContent className="max-w-5xl border-primary/20">
           <DialogHeader className="border-b border-primary/10 pb-4">
             <DialogTitle className="text-primary text-xl font-semibold">Class Details</DialogTitle>
             <DialogDescription className="text-muted-foreground">
@@ -1528,7 +1528,7 @@ const ClassManagement: React.FC = () => {
             </DialogDescription>
           </DialogHeader>
           {viewingClass && (
-            <div className="space-y-6 py-4">
+            <div className="space-y-6 py-4 px-2">
               {/* Basic Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">

@@ -280,7 +280,7 @@ export const QuizRetryInterface: React.FC<QuizRetryInterfaceProps> = ({
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Current Score Display */}
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
             <div className="flex items-center gap-2">
               <Target className="w-4 h-4 text-muted-foreground" />
               <span className="text-sm font-medium">Your Score</span>
@@ -348,7 +348,7 @@ export const QuizRetryInterface: React.FC<QuizRetryInterfaceProps> = ({
               <h4 className="text-sm font-medium">Attempt History</h4>
               <div className="space-y-2">
                 {attempts.map((attempt, index) => (
-                  <div key={attempt.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                  <div key={attempt.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium">Attempt {attempt.attemptNumber}</span>
                       {attempt.teacherApprovalRequired && (
