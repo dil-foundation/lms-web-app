@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Save, Eye, Upload, Plus, GripVertical, X, ChevronDown, ChevronUp, BookOpen, Info, UploadCloud, FileText, RefreshCw, Calendar, Edit, Sparkles, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Upload, Plus, GripVertical, X, ChevronDown, ChevronUp, BookOpen, Info, UploadCloud, FileText, RefreshCw, Calendar, Edit, Sparkles, Image as ImageIcon, Trash2, Download } from 'lucide-react';
 import { AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { FileUpload } from '@/components/ui/FileUpload';
@@ -514,6 +514,7 @@ interface LessonContentItemProps {
 
 const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, onRemove, isRemovable, courseId, canReorder = false, dragHandleProps = {}, courseStatus }: LessonContentItemProps) => {
   const [isUploading, setIsUploading] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [attachmentInfo, setAttachmentInfo] = useState<{ url: string; name: string } | null>(null);
   const [isConfirmingChange, setIsConfirmingChange] = useState(false);
@@ -619,6 +620,31 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
     }
   };
 
+  const handleDownload = async (url: string, filename: string) => {
+    if (!url) {
+      toast.error('No attachment URL found.');
+      return;
+    }
+    setIsDownloading(true);
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const blob = await response.blob();
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(link.href);
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error('Failed to download the attachment.');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   const handleAssignmentImageUpload = useCallback(async (file: File) => {
     if (!file) throw new Error("No file selected.");
     const filePath = `assignment-assets/images/${courseId || 'new'}/${lessonId}/${item.id}/${crypto.randomUUID()}/${file.name}`;
@@ -640,7 +666,7 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
     try {
       const { error: uploadError } = await supabase.storage.from('dil-lms').upload(filePath, file);
       if (uploadError) throw uploadError;
-      const { data, error: urlError } = await supabase.storage.from('dil-lms').createSignedUrl(filePath, 3600 * 24 * 7); // 7 days
+      const { data, error: urlError } = await supabase.storage.from('dil-lms').createSignedUrl(filePath, 60 * 60 * 24 * 365 * 1000); // 1000 years
       if (urlError) throw urlError;
       return data.signedUrl;
     } catch (error: any) {
@@ -704,16 +730,28 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
                   {attachmentInfo.name}
                 </a>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setAttachmentInfo(null);
-                  onUpdate(lessonId, item.id, { content_path: undefined });
-                }}
-              >
-                Remove
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDownload(attachmentInfo.url, attachmentInfo.name)}
+                  disabled={isDownloading}
+                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                >
+                  <Download className="h-4 w-4 mr-1" />
+                  {isDownloading ? 'Downloading...' : 'Download'}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setAttachmentInfo(null);
+                    onUpdate(lessonId, item.id, { content_path: undefined });
+                  }}
+                >
+                  Remove
+                </Button>
+              </div>
             </div>
           );
         }
