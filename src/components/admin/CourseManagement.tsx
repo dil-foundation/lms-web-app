@@ -864,6 +864,22 @@ const CourseManagement = () => {
               {/* Upload Status */}
               {(batchState.isUploading || batchState.isParsing || batchState.isProcessing) && (
                 <div className="space-y-4">
+                  {/* Disclaimer */}
+                  <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-amber-900 dark:text-amber-100 mb-1">
+                          Important Notice
+                        </h4>
+                        <p className="text-sm text-amber-800 dark:text-amber-200">
+                          <strong>Do not refresh the page or close this dialog</strong> while the upload is in progress. 
+                          This may cause data loss or incomplete course creation. Please wait for the process to complete.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Progress Bar */}
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
