@@ -59,15 +59,105 @@ export const useBatchUpload = () => {
       const formData = new FormData();
       formData.append('file', file);
 
-      const { data, error } = await supabase.functions.invoke('parse-bulk-upload', {
+      console.log('🚀 Starting parse-bulk-upload request...');
+      
+      // Use direct fetch to handle 400 status codes properly
+      console.log('🔍 Using direct fetch to handle validation errors...');
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+      
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(`${supabaseUrl}/functions/v1/parse-bulk-upload`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
         body: formData,
       });
+      
+      console.log('🔍 Direct fetch response status:', response.status);
+      console.log('🔍 Direct fetch response headers:', Object.fromEntries(response.headers.entries()));
+      
+      const responseText = await response.text();
+      console.log('🔍 Direct fetch response body:', responseText);
+      
+      let data, error;
+      
+      if (response.status === 200) {
+        // Success case
+        try {
+          data = JSON.parse(responseText);
+          error = null;
+        } catch (parseError) {
+          throw new Error('Failed to parse successful response');
+        }
+      } else if (response.status === 400) {
+        // Validation error case
+        try {
+          const errorData = JSON.parse(responseText);
+          console.log('📋 Parsed validation error data:', errorData);
+          
+          if (errorData.errors && errorData.errors.length > 0) {
+            console.log('🔍 Validation errors found:', errorData.errors);
+            setState(prev => ({
+              ...prev,
+              isParsing: false,
+              isUploading: false,
+              errors: errorData.errors
+            }));
+            
+            toast.error("Validation failed", {
+              description: `Found ${errorData.errors.length} validation errors. Please fix them and try again.`
+            });
+            
+            return { success: false, errors: errorData.errors };
+          } else {
+            throw new Error(errorData.message || 'Validation failed');
+          }
+        } catch (parseError) {
+          console.error('❌ Failed to parse validation error response:', parseError);
+          throw new Error('Failed to parse validation error response');
+        }
+      } else {
+        // Other error cases
+        throw new Error(`Request failed with status ${response.status}`);
+      }
+
+      console.log('📡 Parse response received:', { data, error });
 
       if (error) {
+        console.error('❌ Parse error:', error);
         throw error;
       }
 
       if (!data.success) {
+        console.log('⚠️ Parse failed, checking for validation errors...');
+        console.log('📋 Data received:', data);
+        
+        // Handle validation errors
+        if (data.errors && data.errors.length > 0) {
+          console.log('🔍 Validation errors found:', data.errors);
+          setState(prev => ({
+            ...prev,
+            isParsing: false,
+            isUploading: false,
+            errors: data.errors
+          }));
+          
+          toast.error("Validation failed", {
+            description: `Found ${data.errors.length} validation errors. Please fix them and try again.`
+          });
+          
+          // Don't throw error for validation failures - let the UI handle it
+          return { success: false, errors: data.errors };
+        }
+        
+        console.log('❌ Parse failed without validation errors:', data.error);
         throw new Error(data.error || 'Failed to parse file');
       }
 
@@ -80,7 +170,8 @@ export const useBatchUpload = () => {
         parsedCourses: courses,
         totalCourses: courses.length,
         totalBatches,
-        progress: 0
+        progress: 0,
+        errors: [] // Clear any previous errors
       }));
 
       toast.success(`Successfully parsed ${courses.length} courses`, {
@@ -234,6 +325,11 @@ export const useBatchUpload = () => {
     try {
       // First parse the file
       const parseResult = await parseFile(file);
+      
+      // If parsing failed with validation errors, don't proceed
+      if (!parseResult.success) {
+        return parseResult;
+      }
       
       // Then start processing all batches with the parsed courses
       return await processAllBatches(parseResult.courses);
