@@ -2167,11 +2167,36 @@ const CourseBuilder = () => {
     );
     
     // Update course data with teachers and students from selected classes
-    setCourseData(prev => ({
-      ...prev,
-      teachers: uniqueTeachers,
-      students: uniqueStudents
-    }));
+    // BUT preserve any additional teachers/students that are not from classes
+    setCourseData(prev => {
+      // Get current class IDs to identify which members are from classes
+      const currentClassIds = prev.class_ids || [];
+      const currentClassObjects = dbClasses.filter(cls => currentClassIds.includes(cls.id));
+      const currentClassTeacherIds = currentClassObjects.flatMap(cls => cls.teachers.map(t => t.id));
+      const currentClassStudentIds = currentClassObjects.flatMap(cls => cls.students.map(s => s.id));
+      
+      // Preserve teachers and students that are NOT from classes (additional members)
+      const additionalTeachers = prev.teachers.filter(teacher => !currentClassTeacherIds.includes(teacher.id));
+      const additionalStudents = prev.students.filter(student => !currentClassStudentIds.includes(student.id));
+      
+      // Merge class members with additional members
+      const mergedTeachers = [...uniqueTeachers, ...additionalTeachers];
+      const mergedStudents = [...uniqueStudents, ...additionalStudents];
+      
+      // Remove duplicates from merged arrays
+      const finalTeachers = mergedTeachers.filter((teacher, index, self) => 
+        index === self.findIndex(t => t.id === teacher.id)
+      );
+      const finalStudents = mergedStudents.filter((student, index, self) => 
+        index === self.findIndex(s => s.id === student.id)
+      );
+      
+      return {
+        ...prev,
+        teachers: finalTeachers,
+        students: finalStudents
+      };
+    });
   };
 
   // Refresh course teachers and students from enrolled classes
@@ -5806,10 +5831,43 @@ const CourseBuilder = () => {
           avatar_url: user.avatar_url 
         }));
     
-    setCourseData(prev => ({
-        ...prev,
-        [role]: selectedUsers
-    }));
+    setCourseData(prev => {
+      // Get current class members to preserve them
+      const currentClassIds = prev.class_ids || [];
+      const currentClassObjects = dbClasses.filter(cls => currentClassIds.includes(cls.id));
+      const classTeacherIds = currentClassObjects.flatMap(cls => cls.teachers.map(t => t.id));
+      const classStudentIds = currentClassObjects.flatMap(cls => cls.students.map(s => s.id));
+      
+      if (role === 'teachers') {
+        // Preserve class teachers and add manually selected teachers
+        const classTeachers = prev.teachers.filter(teacher => classTeacherIds.includes(teacher.id));
+        const mergedTeachers = [...classTeachers, ...selectedUsers];
+        
+        // Remove duplicates
+        const finalTeachers = mergedTeachers.filter((teacher, index, self) => 
+          index === self.findIndex(t => t.id === teacher.id)
+        );
+        
+        return {
+          ...prev,
+          teachers: finalTeachers
+        };
+      } else {
+        // Preserve class students and add manually selected students
+        const classStudents = prev.students.filter(student => classStudentIds.includes(student.id));
+        const mergedStudents = [...classStudents, ...selectedUsers];
+        
+        // Remove duplicates
+        const finalStudents = mergedStudents.filter((student, index, self) => 
+          index === self.findIndex(s => s.id === student.id)
+        );
+        
+        return {
+          ...prev,
+          students: finalStudents
+        };
+      }
+    });
   };
 
   // Content Type Selector handlers
