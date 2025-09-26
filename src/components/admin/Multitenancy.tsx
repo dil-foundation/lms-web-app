@@ -17,6 +17,7 @@ import { useCountries, useRegions, useCities, useProjects, useBoards, useSchools
 import { Country as CountryType, CountryInsert, RegionInsert, CityInsert, ProjectInsert, BoardInsert, SchoolInsert, Region, City, Project, Board, School, MultitenancyService } from '@/services/multitenancyService';
 import { ContentLoader } from '@/components/ContentLoader';
 import { supabase } from '@/integrations/supabase/client';
+import MultitenancyNotificationService from '@/services/multitenancyNotificationService';
 
 interface MultitenancyProps {
   userProfile: {
@@ -333,6 +334,14 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     email: '',
     website: ''
   });
+
+  // Helper function to get current user info for notifications
+  const getCurrentUserInfo = () => {
+    return {
+      id: userProfile.id,
+      name: `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim() || 'Admin'
+    };
+  };
 
   // Country validation functions
   const validateCountryName = (name: string): string => {
@@ -931,7 +940,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     }
 
     try {
-      await createCountry({
+      const newCountry = await createCountry({
       name: countryFormData.name.trim(),
       code: countryFormData.code.trim().toUpperCase(),
         description: countryFormData.description.trim()
@@ -941,6 +950,22 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       // Refresh statistics
       const stats = await getCountriesWithStats();
       setCountriesStats(stats);
+      
+      // Send notification to all admins
+      try {
+        await MultitenancyNotificationService.notifyCountryChange(
+          'created',
+          {
+            id: newCountry.id,
+            name: newCountry.name,
+            code: newCountry.code
+          },
+          getCurrentUserInfo()
+        );
+      } catch (notificationError) {
+        console.error('Error sending country creation notification:', notificationError);
+        // Don't fail the main operation if notification fails
+      }
     } catch (error: any) {
       console.error('Error creating country:', error);
       
@@ -985,6 +1010,22 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       // Refresh statistics
       const stats = await getCountriesWithStats();
       setCountriesStats(stats);
+      
+      // Send notification to all admins
+      try {
+        await MultitenancyNotificationService.notifyCountryChange(
+          'updated',
+          {
+            id: editingCountry.id,
+            name: countryFormData.name.trim(),
+            code: countryFormData.code.trim().toUpperCase()
+          },
+          getCurrentUserInfo()
+        );
+      } catch (notificationError) {
+        console.error('Error sending country update notification:', notificationError);
+        // Don't fail the main operation if notification fails
+      }
     } catch (error: any) {
       console.error('Error updating country:', error);
       
@@ -1129,14 +1170,34 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   const handleCountryDeleteConfirm = async () => {
     if (!countryToDelete) return;
 
+    // Capture entity info before deletion
+    const countryInfo = {
+      id: countryToDelete.id,
+      name: countryToDelete.name,
+      code: countryToDelete.code
+    };
+
     // Add delay to prevent aria-hidden conflicts
     setTimeout(async () => {
       try {
-        await deleteCountry(countryToDelete.id);
+        
+        await deleteCountry(countryInfo.id);
         // Refresh statistics
         const stats = await getCountriesWithStats();
         setCountriesStats(stats);
         toast.success('Country deleted successfully');
+        
+        // Send notification to all admins
+        try {
+          await MultitenancyNotificationService.notifyCountryChange(
+            'deleted',
+            countryInfo,
+            getCurrentUserInfo()
+          );
+        } catch (notificationError) {
+          console.error('Error sending country deletion notification:', notificationError);
+          // Don't fail the main operation if notification fails
+        }
         
         // Reset state
         setCountryToDelete(null);
@@ -1264,11 +1325,36 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   const handleRegionDeleteConfirm = async () => {
     if (!regionToDelete) return;
 
+    // Capture entity info before deletion
+    const regionInfo = {
+      id: regionToDelete.id,
+      name: regionToDelete.name,
+      code: regionToDelete.code
+    };
+    
+    // Get country name for notification before deletion
+    const country = countries.find(c => c.id === regionToDelete.country_id);
+
     // Add delay to prevent aria-hidden conflicts
     setTimeout(async () => {
       try {
-        await deleteRegion(regionToDelete.id);
+        await deleteRegion(regionInfo.id);
         toast.success('Region deleted successfully');
+        
+        // Send notification to all admins
+        if (country) {
+          try {
+            await MultitenancyNotificationService.notifyRegionChange(
+              'deleted',
+              regionInfo,
+              { name: country.name },
+              getCurrentUserInfo()
+            );
+          } catch (notificationError) {
+            console.error('Error sending region deletion notification:', notificationError);
+            // Don't fail the main operation if notification fails
+          }
+        }
         
         // Reset state
         setRegionToDelete(null);
@@ -1383,11 +1469,38 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   const handleCityDeleteConfirm = async () => {
     if (!cityToDelete) return;
 
+    // Capture entity info before deletion
+    const cityInfo = {
+      id: cityToDelete.id,
+      name: cityToDelete.name,
+      code: cityToDelete.code
+    };
+    
+    // Get region and country names for notification before deletion
+    const region = regions.find(r => r.id === cityToDelete.region_id);
+    const country = countries.find(c => c.id === cityToDelete.country_id);
+
     // Add delay to prevent aria-hidden conflicts
     setTimeout(async () => {
       try {
-        await deleteCity(cityToDelete.id);
+        await deleteCity(cityInfo.id);
         toast.success('City deleted successfully');
+        
+        // Send notification to all admins
+        if (region && country) {
+          try {
+            await MultitenancyNotificationService.notifyCityChange(
+              'deleted',
+              cityInfo,
+              { name: region.name },
+              { name: country.name },
+              getCurrentUserInfo()
+            );
+          } catch (notificationError) {
+            console.error('Error sending city deletion notification:', notificationError);
+            // Don't fail the main operation if notification fails
+          }
+        }
         
         // Reset state
         setCityToDelete(null);
@@ -1489,11 +1602,36 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   const handleProjectDeleteConfirm = async () => {
     if (!projectToDelete) return;
 
+    // Capture entity info before deletion
+    const projectInfo = {
+      id: projectToDelete.id,
+      name: projectToDelete.name,
+      code: projectToDelete.code
+    };
+    
+    // Get city name for notification before deletion
+    const city = cities.find(c => c.id === projectToDelete.city_id);
+
     // Add delay to prevent aria-hidden conflicts
     setTimeout(async () => {
       try {
-        await deleteProject(projectToDelete.id);
+        await deleteProject(projectInfo.id);
         toast.success('Project deleted successfully');
+        
+        // Send notification to all admins
+        if (city) {
+          try {
+            await MultitenancyNotificationService.notifyProjectChange(
+              'deleted',
+              projectInfo,
+              { name: city.name },
+              getCurrentUserInfo()
+            );
+          } catch (notificationError) {
+            console.error('Error sending project deletion notification:', notificationError);
+            // Don't fail the main operation if notification fails
+          }
+        }
         
         // Reset state
         setProjectToDelete(null);
@@ -1582,11 +1720,36 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   const handleBoardDeleteConfirm = async () => {
     if (!boardToDelete) return;
 
+    // Capture entity info before deletion
+    const boardInfo = {
+      id: boardToDelete.id,
+      name: boardToDelete.name,
+      code: boardToDelete.code
+    };
+    
+    // Get project name for notification before deletion
+    const project = projects.find(p => p.id === boardToDelete.project_id);
+
     // Add delay to prevent aria-hidden conflicts
     setTimeout(async () => {
       try {
-        await deleteBoard(boardToDelete.id);
+        await deleteBoard(boardInfo.id);
         toast.success('Board deleted successfully');
+        
+        // Send notification to all admins
+        if (project) {
+          try {
+            await MultitenancyNotificationService.notifyBoardChange(
+              'deleted',
+              boardInfo,
+              { name: project.name },
+              getCurrentUserInfo()
+            );
+          } catch (notificationError) {
+            console.error('Error sending board deletion notification:', notificationError);
+            // Don't fail the main operation if notification fails
+          }
+        }
         
         // Reset state
         setBoardToDelete(null);
@@ -1651,11 +1814,36 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   const handleSchoolDeleteConfirm = async () => {
     if (!schoolToDelete) return;
 
+    // Capture entity info before deletion
+    const schoolInfo = {
+      id: schoolToDelete.id,
+      name: schoolToDelete.name,
+      code: schoolToDelete.code
+    };
+    
+    // Get board name for notification before deletion
+    const board = boards.find(b => b.id === schoolToDelete.board_id);
+
     // Add delay to prevent aria-hidden conflicts
     setTimeout(async () => {
       try {
-        await deleteSchool(schoolToDelete.id);
+        await deleteSchool(schoolInfo.id);
         toast.success('School deleted successfully');
+        
+        // Send notification to all admins
+        if (board) {
+          try {
+            await MultitenancyNotificationService.notifySchoolChange(
+              'deleted',
+              schoolInfo,
+              { name: board.name },
+              getCurrentUserInfo()
+            );
+          } catch (notificationError) {
+            console.error('Error sending school deletion notification:', notificationError);
+            // Don't fail the main operation if notification fails
+          }
+        }
         
         // Reset state
         setSchoolToDelete(null);
@@ -1771,7 +1959,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     }
 
     try {
-      await createRegion({
+      const newRegion = await createRegion({
       name: regionFormData.name.trim(),
       code: regionFormData.code.trim().toUpperCase(),
         country_id: regionFormData.country,
@@ -1779,6 +1967,27 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       });
     setIsRegionCreateDialogOpen(false);
     resetRegionForm();
+    
+    // Get country name for notification
+    const selectedCountry = countries.find(c => c.id === regionFormData.country);
+    if (selectedCountry) {
+      // Send notification to all admins
+      try {
+        await MultitenancyNotificationService.notifyRegionChange(
+          'created',
+          {
+            id: newRegion.id,
+            name: newRegion.name,
+            code: newRegion.code
+          },
+          { name: selectedCountry.name },
+          getCurrentUserInfo()
+        );
+      } catch (notificationError) {
+        console.error('Error sending region creation notification:', notificationError);
+        // Don't fail the main operation if notification fails
+      }
+    }
     } catch (error: any) {
       console.error('Error creating region:', error);
       
@@ -1821,6 +2030,27 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     setIsRegionEditDialogOpen(false);
     setEditingRegion(null);
     resetRegionForm();
+    
+    // Get country name for notification
+    const selectedCountry = countries.find(c => c.id === regionFormData.country);
+    if (selectedCountry) {
+      // Send notification to all admins
+      try {
+        await MultitenancyNotificationService.notifyRegionChange(
+          'updated',
+          {
+            id: editingRegion.id,
+            name: regionFormData.name.trim(),
+            code: regionFormData.code.trim().toUpperCase()
+          },
+          { name: selectedCountry.name },
+          getCurrentUserInfo()
+        );
+      } catch (notificationError) {
+        console.error('Error sending region update notification:', notificationError);
+        // Don't fail the main operation if notification fails
+      }
+    }
     } catch (error: any) {
       console.error('Error updating region:', error);
       
@@ -1902,7 +2132,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     }
 
     try {
-      await createCity({
+      const newCity = await createCity({
       name: cityFormData.name.trim(),
       code: cityFormData.code.trim().toUpperCase(),
         country_id: cityFormData.country,
@@ -1911,6 +2141,29 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       });
     setIsCityCreateDialogOpen(false);
     resetCityForm();
+    
+    // Get region and country names for notification
+    const selectedRegion = regions.find(r => r.id === cityFormData.region);
+    const selectedCountry = countries.find(c => c.id === cityFormData.country);
+    if (selectedRegion && selectedCountry) {
+      // Send notification to all admins
+      try {
+        await MultitenancyNotificationService.notifyCityChange(
+          'created',
+          {
+            id: newCity.id,
+            name: newCity.name,
+            code: newCity.code
+          },
+          { name: selectedRegion.name },
+          { name: selectedCountry.name },
+          getCurrentUserInfo()
+        );
+      } catch (notificationError) {
+        console.error('Error sending city creation notification:', notificationError);
+        // Don't fail the main operation if notification fails
+      }
+    }
     } catch (error: any) {
       console.error('Error creating city:', error);
       
@@ -1954,6 +2207,29 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     setIsCityEditDialogOpen(false);
     setEditingCity(null);
     resetCityForm();
+    
+    // Get region and country names for notification
+    const selectedRegion = regions.find(r => r.id === cityFormData.region);
+    const selectedCountry = countries.find(c => c.id === cityFormData.country);
+    if (selectedRegion && selectedCountry) {
+      // Send notification to all admins
+      try {
+        await MultitenancyNotificationService.notifyCityChange(
+          'updated',
+          {
+            id: editingCity.id,
+            name: cityFormData.name.trim(),
+            code: cityFormData.code.trim().toUpperCase()
+          },
+          { name: selectedRegion.name },
+          { name: selectedCountry.name },
+          getCurrentUserInfo()
+        );
+      } catch (notificationError) {
+        console.error('Error sending city update notification:', notificationError);
+        // Don't fail the main operation if notification fails
+      }
+    }
     } catch (error: any) {
       console.error('Error updating city:', error);
       
@@ -2039,7 +2315,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     }
 
     try {
-      await createProject({
+      const newProject = await createProject({
       name: projectFormData.name.trim(),
       code: projectFormData.code.trim().toUpperCase(),
         country_id: projectFormData.country,
@@ -2050,6 +2326,27 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       });
     setIsProjectCreateDialogOpen(false);
     resetProjectForm();
+    
+    // Get city name for notification
+    const selectedCity = cities.find(c => c.id === projectFormData.city);
+    if (selectedCity) {
+      // Send notification to all admins
+      try {
+        await MultitenancyNotificationService.notifyProjectChange(
+          'created',
+          {
+            id: newProject.id,
+            name: newProject.name,
+            code: newProject.code
+          },
+          { name: selectedCity.name },
+          getCurrentUserInfo()
+        );
+      } catch (notificationError) {
+        console.error('Error sending project creation notification:', notificationError);
+        // Don't fail the main operation if notification fails
+      }
+    }
     } catch (error: any) {
       console.error('Error creating project:', error);
       
@@ -2094,6 +2391,27 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     setIsProjectEditDialogOpen(false);
     setEditingProject(null);
     resetProjectForm();
+    
+    // Get city name for notification
+    const selectedCity = cities.find(c => c.id === projectFormData.city);
+    if (selectedCity) {
+      // Send notification to all admins
+      try {
+        await MultitenancyNotificationService.notifyProjectChange(
+          'updated',
+          {
+            id: editingProject.id,
+            name: projectFormData.name.trim(),
+            code: projectFormData.code.trim().toUpperCase()
+          },
+          { name: selectedCity.name },
+          getCurrentUserInfo()
+        );
+      } catch (notificationError) {
+        console.error('Error sending project update notification:', notificationError);
+        // Don't fail the main operation if notification fails
+      }
+    }
     } catch (error: any) {
       console.error('Error updating project:', error);
       
@@ -2183,7 +2501,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     }
 
     try {
-      await createBoard({
+      const newBoard = await createBoard({
       name: boardFormData.name.trim(),
       code: boardFormData.code.trim().toUpperCase(),
         country_id: boardFormData.country,
@@ -2196,6 +2514,27 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       });
     setIsBoardCreateDialogOpen(false);
     resetBoardForm();
+    
+    // Get project name for notification
+    const selectedProject = projects.find(p => p.id === boardFormData.project);
+    if (selectedProject) {
+      // Send notification to all admins
+      try {
+        await MultitenancyNotificationService.notifyBoardChange(
+          'created',
+          {
+            id: newBoard.id,
+            name: newBoard.name,
+            code: newBoard.code
+          },
+          { name: selectedProject.name },
+          getCurrentUserInfo()
+        );
+      } catch (notificationError) {
+        console.error('Error sending board creation notification:', notificationError);
+        // Don't fail the main operation if notification fails
+      }
+    }
     } catch (error: any) {
       console.error('Error creating board:', error);
       
@@ -2241,6 +2580,27 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     setIsBoardEditDialogOpen(false);
     setEditingBoard(null);
     resetBoardForm();
+    
+    // Get project name for notification
+    const selectedProject = projects.find(p => p.id === boardFormData.project);
+    if (selectedProject) {
+      // Send notification to all admins
+      try {
+        await MultitenancyNotificationService.notifyBoardChange(
+          'updated',
+          {
+            id: editingBoard.id,
+            name: boardFormData.name.trim(),
+            code: boardFormData.code.trim().toUpperCase()
+          },
+          { name: selectedProject.name },
+          getCurrentUserInfo()
+        );
+      } catch (notificationError) {
+        console.error('Error sending board update notification:', notificationError);
+        // Don't fail the main operation if notification fails
+      }
+    }
     } catch (error: any) {
       console.error('Error updating board:', error);
       
@@ -2334,7 +2694,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     }
 
     try {
-      await createSchool({
+      const newSchool = await createSchool({
       name: schoolFormData.name.trim(),
       code: schoolFormData.code.trim().toUpperCase(),
         school_type: schoolFormData.type as 'Private' | 'Public' | 'International' | 'Charter' | 'Religious',
@@ -2355,6 +2715,27 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       });
     setIsSchoolCreateDialogOpen(false);
     resetSchoolForm();
+    
+    // Get board name for notification
+    const selectedBoard = boards.find(b => b.id === schoolFormData.board);
+    if (selectedBoard) {
+      // Send notification to all admins
+      try {
+        await MultitenancyNotificationService.notifySchoolChange(
+          'created',
+          {
+            id: newSchool.id,
+            name: newSchool.name,
+            code: newSchool.code
+          },
+          { name: selectedBoard.name },
+          getCurrentUserInfo()
+        );
+      } catch (notificationError) {
+        console.error('Error sending school creation notification:', notificationError);
+        // Don't fail the main operation if notification fails
+      }
+    }
     } catch (error: any) {
       console.error('Error creating school:', error);
       
@@ -2405,6 +2786,27 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     setIsSchoolEditDialogOpen(false);
     setEditingSchool(null);
     resetSchoolForm();
+    
+    // Get board name for notification
+    const selectedBoard = boards.find(b => b.id === schoolFormData.board);
+    if (selectedBoard) {
+      // Send notification to all admins
+      try {
+        await MultitenancyNotificationService.notifySchoolChange(
+          'updated',
+          {
+            id: editingSchool.id,
+            name: schoolFormData.name.trim(),
+            code: schoolFormData.code.trim().toUpperCase()
+          },
+          { name: selectedBoard.name },
+          getCurrentUserInfo()
+        );
+      } catch (notificationError) {
+        console.error('Error sending school update notification:', notificationError);
+        // Don't fail the main operation if notification fails
+      }
+    }
     } catch (error: any) {
       console.error('Error updating school:', error);
       
