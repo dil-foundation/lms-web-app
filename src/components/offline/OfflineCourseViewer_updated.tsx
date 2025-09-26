@@ -31,7 +31,6 @@ import { useOfflineProgress } from '@/hooks/useOfflineProgress';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import OfflineVideoPlayer from './OfflineVideoPlayer';
 import OfflineQuizTaker from './OfflineQuizTaker';
-import OfflineAssignmentSubmitter from './OfflineAssignmentSubmitter';
 import { toast } from 'sonner';
 
 interface OfflineCourseViewerProps {
@@ -176,21 +175,33 @@ const OfflineCourseViewer: React.FC<OfflineCourseViewerProps> = ({ courseData: p
 
   const renderAssignmentContent = (content: any) => {
     return (
-      <OfflineAssignmentSubmitter
-        assignmentContent={content}
-        courseId={courseId || ''}
-        contentId={content.id}
-        onSubmit={(submission) => {
-          console.log('[OfflineCourseViewer] Assignment submitted:', submission);
-          toast.success('Assignment submitted successfully!');
-          
-          // Update progress
-          updateProgress(courseId || '', content.id, 'completed', {
-            submittedAt: new Date(),
-            submissionId: submission.id
-          });
-        }}
-      />
+      <div className="space-y-6">
+        <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-gray-900 dark:text-gray-100">Assignment Details</CardTitle>
+            {content.due_date && (
+              <div className="flex items-center gap-2 text-sm text-yellow-600 dark:text-yellow-400">
+                <Calendar className="h-4 w-4" />
+                <span className="font-medium">Due:</span>
+                <span>{new Date(content.due_date).toLocaleString()}</span>
+              </div>
+            )}
+          </CardHeader>
+          <CardContent>
+            <div className="prose prose-sm max-w-none dark:prose-invert">
+              <div dangerouslySetInnerHTML={{ 
+                __html: content.content_path || 'Assignment content not available offline.'
+              }} />
+            </div>
+          </CardContent>
+        </Card>
+        <div className="text-center">
+          <Button disabled className="opacity-50">
+            <ClipboardList className="w-4 h-4 mr-2" />
+            Submit Assignment (Requires Online)
+          </Button>
+        </div>
+      </div>
     );
   };
 

@@ -28,6 +28,8 @@ import { useOfflineManager } from '@/hooks/useOfflineManager';
 import { NetworkStatusBanner } from '@/components/offline/NetworkStatusBanner';
 import { StorageUsageCard } from '@/components/offline/StorageUsageCard';
 import { SyncStatusPanel } from '@/components/offline/SyncStatusPanel';
+import SyncStatusIndicator from '../offline/SyncStatusIndicator';
+import { backgroundSyncService } from '@/services/backgroundSyncService';
 import { formatBytes } from '@/utils/formatBytes';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -89,6 +91,15 @@ export const OfflineLearning: React.FC<OfflineLearningProps> = ({ userProfile })
 
   useEffect(() => {
     fetchCourses(true); // Initial load
+    
+    // Initialize background sync service
+    backgroundSyncService.init().catch(error => {
+      console.error('[OfflineLearning] Failed to initialize background sync:', error);
+    });
+    
+    return () => {
+      backgroundSyncService.destroy();
+    };
   }, [user]);
 
   // Refresh when network status changes
@@ -512,6 +523,7 @@ export const OfflineLearning: React.FC<OfflineLearningProps> = ({ userProfile })
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <SyncStatusIndicator />
           <Button onClick={handleSync} variant="outline" size="sm">
             <RefreshCw className="w-4 h-4 mr-2" />
             Sync Now
