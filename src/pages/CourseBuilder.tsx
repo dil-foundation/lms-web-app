@@ -64,6 +64,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { ContentLoader } from '@/components/ContentLoader';
 import AccessLogService from '@/services/accessLogService';
+import CourseNotificationService from '@/services/courseNotificationService';
 import { CourseOverview } from './CourseOverview';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
@@ -3813,16 +3814,10 @@ const CourseBuilder = () => {
       role: role as 'teacher' | 'student'
     }));
 
-    if (desiredMembers.length > 0) {
-      const { error: upsertError } = await supabase
-        .from('course_members')
-        .upsert(desiredMembers, { onConflict: 'course_id,user_id' });
-      if (upsertError) throw new Error(`There was an issue updating course members: ${upsertError.message}`);
-    }
-
+    // Get current members for comparison
     const { data: currentDbMembers, error: fetchError } = await supabase
       .from('course_members')
-      .select('user_id')
+      .select('user_id, role')
       .eq('course_id', currentCourseId);
 
     if (fetchError) {
@@ -3852,6 +3847,49 @@ const CourseBuilder = () => {
                  toast.warning("Failed to remove all course members.", { description: deleteAllError.message });
             }
         }
+    }
+
+    if (desiredMembers.length > 0) {
+      const { error: upsertError } = await supabase
+        .from('course_members')
+        .upsert(desiredMembers, { onConflict: 'course_id,user_id' });
+      if (upsertError) throw new Error(`There was an issue updating course members: ${upsertError.message}`);
+    }
+
+    // Send notifications for teacher changes
+    try {
+      const currentTeacherIds = currentDbMembers
+        ?.filter(member => member.role === 'teacher')
+        .map(member => member.user_id) || [];
+      
+      const newTeacherIds = courseToSave.teachers
+        .filter(teacher => !currentTeacherIds.includes(teacher.id))
+        .map(teacher => teacher.id);
+      
+      const existingTeacherIds = courseToSave.teachers
+        .filter(teacher => currentTeacherIds.includes(teacher.id))
+        .map(teacher => teacher.id);
+
+      // Get teacher details for notifications
+      const newTeachers = await CourseNotificationService.getTeacherDetails(newTeacherIds);
+      const existingTeachers = await CourseNotificationService.getTeacherDetails(existingTeacherIds);
+
+      // Send notifications
+      if (newTeachers.length > 0 || existingTeachers.length > 0) {
+        await CourseNotificationService.notifyCourseMemberChanges(
+          currentCourseId,
+          newTeachers,
+          existingTeachers,
+          {
+            id: user.id,
+            name: user.user_metadata?.full_name || user.email || 'Unknown User',
+            email: user.email || 'unknown@email.com'
+          }
+        );
+      }
+    } catch (notificationError) {
+      console.error('Error sending course notifications:', notificationError);
+      // Don't throw error to avoid breaking the main course operation
     }
     
     return currentCourseId;
@@ -4715,7 +4753,7 @@ const CourseBuilder = () => {
 
     const { data: currentDbMembers, error: fetchError } = await supabase
       .from('course_members')
-      .select('user_id')
+      .select('user_id, role')
       .eq('course_id', currentCourseId);
 
     if (fetchError) {
@@ -4745,6 +4783,42 @@ const CourseBuilder = () => {
                  toast.warning("Failed to remove all course members.", { description: deleteAllError.message });
             }
         }
+    }
+
+    // Send notifications for teacher changes
+    try {
+      const currentTeacherIds = currentDbMembers
+        ?.filter(member => member.role === 'teacher')
+        .map(member => member.user_id) || [];
+      
+      const newTeacherIds = courseToSave.teachers
+        .filter(teacher => !currentTeacherIds.includes(teacher.id))
+        .map(teacher => teacher.id);
+      
+      const existingTeacherIds = courseToSave.teachers
+        .filter(teacher => currentTeacherIds.includes(teacher.id))
+        .map(teacher => teacher.id);
+
+      // Get teacher details for notifications
+      const newTeachers = await CourseNotificationService.getTeacherDetails(newTeacherIds);
+      const existingTeachers = await CourseNotificationService.getTeacherDetails(existingTeacherIds);
+
+      // Send notifications
+      if (newTeachers.length > 0 || existingTeachers.length > 0) {
+        await CourseNotificationService.notifyCourseMemberChanges(
+          currentCourseId,
+          newTeachers,
+          existingTeachers,
+          {
+            id: user.id,
+            name: user.user_metadata?.full_name || user.email || 'Unknown User',
+            email: user.email || 'unknown@email.com'
+          }
+        );
+      }
+    } catch (notificationError) {
+      console.error('Error sending course notifications:', notificationError);
+      // Don't throw error to avoid breaking the main course operation
     }
     
     return currentCourseId;
@@ -4980,6 +5054,31 @@ const CourseBuilder = () => {
             console.error('Error logging course publish:', logError);
           }
         }
+
+        // Send notifications to students and teachers about course publication
+        try {
+          const studentIds = courseData.students.map(student => student.id);
+          const teacherIds = courseData.teachers.map(teacher => teacher.id);
+          
+          if (studentIds.length > 0 || teacherIds.length > 0) {
+            const studentDetails = studentIds.length > 0 ? await CourseNotificationService.getStudentDetails(studentIds) : [];
+            const teacherDetails = teacherIds.length > 0 ? await CourseNotificationService.getTeacherDetails(teacherIds) : [];
+            
+            await CourseNotificationService.notifyCoursePublication(
+              courseData.id,
+              studentDetails,
+              teacherDetails,
+              {
+                id: user.id,
+                name: user.user_metadata?.full_name || user.email || 'Unknown User',
+                email: user.email || 'unknown@email.com'
+              }
+            );
+          }
+        } catch (notificationError) {
+          console.error('Error sending course publication notifications:', notificationError);
+          // Don't throw error to avoid breaking the main course operation
+        }
         
         toast.success("Course published successfully!");
         navigate('/dashboard/courses');
@@ -5000,6 +5099,31 @@ const CourseBuilder = () => {
             } catch (logError) {
               console.error('Error logging course publish:', logError);
             }
+          }
+
+          // Send notifications to students and teachers about course publication
+          try {
+            const studentIds = courseData.students.map(student => student.id);
+            const teacherIds = courseData.teachers.map(teacher => teacher.id);
+            
+            if (studentIds.length > 0 || teacherIds.length > 0) {
+              const studentDetails = studentIds.length > 0 ? await CourseNotificationService.getStudentDetails(studentIds) : [];
+              const teacherDetails = teacherIds.length > 0 ? await CourseNotificationService.getTeacherDetails(teacherIds) : [];
+              
+              await CourseNotificationService.notifyCoursePublication(
+                savedId,
+                studentDetails,
+                teacherDetails,
+                {
+                  id: user.id,
+                  name: user.user_metadata?.full_name || user.email || 'Unknown User',
+                  email: user.email || 'unknown@email.com'
+                }
+              );
+            }
+          } catch (notificationError) {
+            console.error('Error sending course publication notifications:', notificationError);
+            // Don't throw error to avoid breaking the main course operation
           }
           
           toast.success("Course published successfully!");
@@ -5046,6 +5170,35 @@ const CourseBuilder = () => {
         } catch (logError) {
           console.error('Error logging course unpublish:', logError);
         }
+      }
+
+      // Send notifications to teachers and students about course unpublishing
+      try {
+        const teacherIds = courseData.teachers.map(teacher => teacher.id);
+        const studentIds = courseData.students.map(student => student.id);
+        
+        if (teacherIds.length > 0 || studentIds.length > 0) {
+          const teacherDetails = teacherIds.length > 0 ? await CourseNotificationService.getTeacherDetails(teacherIds) : [];
+          const studentDetails = studentIds.length > 0 ? await CourseNotificationService.getStudentDetails(studentIds) : [];
+          
+          await CourseNotificationService.notifyCourseUnpublished({
+            courseId: courseData.id,
+            courseName: courseData.title,
+            courseTitle: courseData.title,
+            courseSubtitle: courseData.subtitle,
+            action: 'course_unpublished',
+            existingTeachers: teacherDetails,
+            students: studentDetails,
+            performedBy: {
+              id: user.id,
+              name: user.user_metadata?.full_name || user.email || 'Unknown User',
+              email: user.email || 'unknown@email.com'
+            }
+          });
+        }
+      } catch (notificationError) {
+        console.error('Error sending course unpublish notifications:', notificationError);
+        // Don't throw error to avoid breaking the main course operation
       }
       
       toast.success("Course unpublished and saved as a draft.");
@@ -5146,6 +5299,35 @@ const CourseBuilder = () => {
         } catch (logError) {
           console.error('Error logging course deletion:', logError);
         }
+      }
+
+      // Send notifications to teachers and students about course deletion
+      try {
+        const teacherIds = courseData.teachers.map(teacher => teacher.id);
+        const studentIds = courseData.students.map(student => student.id);
+        
+        if (teacherIds.length > 0 || studentIds.length > 0) {
+          const teacherDetails = teacherIds.length > 0 ? await CourseNotificationService.getTeacherDetails(teacherIds) : [];
+          const studentDetails = studentIds.length > 0 ? await CourseNotificationService.getStudentDetails(studentIds) : [];
+          
+          await CourseNotificationService.notifyCourseDeleted({
+            courseId: courseData.id,
+            courseName: courseData.title,
+            courseTitle: courseData.title,
+            courseSubtitle: courseData.subtitle,
+            action: 'course_deleted',
+            existingTeachers: teacherDetails,
+            students: studentDetails,
+            performedBy: {
+              id: user.id,
+              name: user.user_metadata?.full_name || user.email || 'Unknown User',
+              email: user.email || 'unknown@email.com'
+            }
+          });
+        }
+      } catch (notificationError) {
+        console.error('Error sending course deletion notifications:', notificationError);
+        // Don't throw error to avoid breaking the main course operation
       }
       
       toast.success(`Course "${courseData.title}" deleted successfully.`);
