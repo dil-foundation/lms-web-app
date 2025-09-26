@@ -64,6 +64,10 @@ const ClassManagement: React.FC = () => {
   const [editingClass, setEditingClass] = useState<ClassWithMembers | null>(null);
   const [viewingClass, setViewingClass] = useState<ClassWithMembers | null>(null);
   
+  // Loading states for create and update operations
+  const [isCreating, setIsCreating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  
   // Class deletion dependency state
   const [classDependencies, setClassDependencies] = useState<{
     courses: any[];
@@ -152,33 +156,47 @@ const ClassManagement: React.FC = () => {
   };
 
   const handleCreate = async () => {
+    // Prevent multiple submissions
+    if (isCreating) return;
+    
     // Validate form before submission
     if (!validateClassForm()) {
       toast.error('Please fix the validation errors before submitting');
       return;
     }
 
-    const classData: CreateClassData = {
-      name: formData.name.trim(),
-      code: formData.code.trim().toUpperCase(),
-      grade: formData.grade,
-      school_id: formData.school_id,
-      board_id: formData.board_id,
-      description: formData.description.trim(),
-      max_students: parseInt(formData.max_students.trim()),
-      teacher_ids: formData.teachers,
-      student_ids: formData.students
-    };
+    setIsCreating(true);
+    
+    try {
+      const classData: CreateClassData = {
+        name: formData.name.trim(),
+        code: formData.code.trim().toUpperCase(),
+        grade: formData.grade,
+        school_id: formData.school_id,
+        board_id: formData.board_id,
+        description: formData.description.trim(),
+        max_students: parseInt(formData.max_students.trim()),
+        teacher_ids: formData.teachers,
+        student_ids: formData.students
+      };
 
-    const result = await createClass(classData);
-    if (result) {
-      setIsCreateDialogOpen(false);
-      resetForm();
-      refetchClasses(); // Refresh paginated data
+      const result = await createClass(classData);
+      if (result) {
+        setIsCreateDialogOpen(false);
+        resetForm();
+        refetchClasses(); // Refresh paginated data
+      }
+    } catch (error) {
+      console.error('Error creating class:', error);
+    } finally {
+      setIsCreating(false);
     }
   };
 
   const handleEdit = async () => {
+    // Prevent multiple submissions
+    if (isUpdating) return;
+    
     if (!editingClass) {
       toast.error('No class selected for editing');
       return;
@@ -190,25 +208,33 @@ const ClassManagement: React.FC = () => {
       return;
     }
 
-    const classData: UpdateClassData = {
-      id: editingClass.id,
-      name: formData.name.trim(),
-      code: formData.code.trim().toUpperCase(),
-      grade: formData.grade,
-      school_id: formData.school_id,
-      board_id: formData.board_id,
-      description: formData.description.trim(),
-      max_students: parseInt(formData.max_students.trim()),
-      teacher_ids: formData.teachers,
-      student_ids: formData.students
-    };
+    setIsUpdating(true);
+    
+    try {
+      const classData: UpdateClassData = {
+        id: editingClass.id,
+        name: formData.name.trim(),
+        code: formData.code.trim().toUpperCase(),
+        grade: formData.grade,
+        school_id: formData.school_id,
+        board_id: formData.board_id,
+        description: formData.description.trim(),
+        max_students: parseInt(formData.max_students.trim()),
+        teacher_ids: formData.teachers,
+        student_ids: formData.students
+      };
 
-    const result = await updateClass(classData);
-    if (result) {
-      setIsEditDialogOpen(false);
-      setEditingClass(null);
-      resetForm();
-      refetchClasses(); // Refresh paginated data
+      const result = await updateClass(classData);
+      if (result) {
+        setIsEditDialogOpen(false);
+        setEditingClass(null);
+        resetForm();
+        refetchClasses(); // Refresh paginated data
+      }
+    } catch (error) {
+      console.error('Error updating class:', error);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -346,6 +372,9 @@ const ClassManagement: React.FC = () => {
       description: '',
       max_students: ''
     });
+    // Reset loading states
+    setIsCreating(false);
+    setIsUpdating(false);
   };
 
   const getGradeBadge = (grade: string) => {
@@ -991,7 +1020,12 @@ const ClassManagement: React.FC = () => {
       </Card>
 
       {/* Create Class Dialog */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+      <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
+        setIsCreateDialogOpen(open);
+        if (!open) {
+          resetForm();
+        }
+      }}>
         <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle>Create New Class</DialogTitle>
@@ -1233,15 +1267,19 @@ const ClassManagement: React.FC = () => {
             </div>
           </div>
           <DialogFooter className="flex-shrink-0">
-            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsCreateDialogOpen(false)}
+              disabled={isCreating}
+            >
               Cancel
             </Button>
             <Button 
               onClick={handleCreate} 
               className="bg-[#8DC63F] hover:bg-[#7AB82F] text-white"
-              disabled={loading || !!validationErrors.name || !!validationErrors.code || !!validationErrors.grade || !!validationErrors.board_id || !!validationErrors.school_id || !!validationErrors.max_students || !!validationErrors.description}
+              disabled={isCreating || !!validationErrors.name || !!validationErrors.code || !!validationErrors.grade || !!validationErrors.board_id || !!validationErrors.school_id || !!validationErrors.max_students || !!validationErrors.description}
             >
-              {loading ? (
+              {isCreating ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                   Creating...
@@ -1255,7 +1293,13 @@ const ClassManagement: React.FC = () => {
       </Dialog>
 
       {/* Edit Class Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+      <Dialog open={isEditDialogOpen} onOpenChange={(open) => {
+        setIsEditDialogOpen(open);
+        if (!open) {
+          setEditingClass(null);
+          resetForm();
+        }
+      }}>
         <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col border-primary/20">
           <DialogHeader className="flex-shrink-0 border-b border-primary/10 pb-4">
             <DialogTitle className="text-primary text-xl font-semibold">Edit Class</DialogTitle>
@@ -1497,15 +1541,20 @@ const ClassManagement: React.FC = () => {
             </div>
           </div>
           <DialogFooter className="flex-shrink-0 border-t border-primary/10 pt-4">
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} className="border-primary/20 text-primary hover:bg-primary/5">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsEditDialogOpen(false)} 
+              className="border-primary/20 text-primary hover:bg-primary/5"
+              disabled={isUpdating}
+            >
               Cancel
             </Button>
             <Button 
               onClick={handleEdit} 
               className="bg-primary hover:bg-primary/90 text-white"
-              disabled={loading || !!validationErrors.name || !!validationErrors.code || !!validationErrors.grade || !!validationErrors.board_id || !!validationErrors.school_id || !!validationErrors.max_students || !!validationErrors.description}
+              disabled={isUpdating || !!validationErrors.name || !!validationErrors.code || !!validationErrors.grade || !!validationErrors.board_id || !!validationErrors.school_id || !!validationErrors.max_students || !!validationErrors.description}
             >
-              {loading ? (
+              {isUpdating ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                   Updating...
