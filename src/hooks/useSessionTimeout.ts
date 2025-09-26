@@ -4,10 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import SecurityService from '@/services/securityService';
 import SessionService from '@/services/sessionService';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 
 export const useSessionTimeout = () => {
   const { user, session, signOut } = useAuth();
   const navigate = useNavigate();
+  const { isOnline } = useNetworkStatus();
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const warningRef = useRef<NodeJS.Timeout | null>(null);
   const lastActivityRef = useRef<number>(Date.now());
@@ -20,6 +22,13 @@ export const useSessionTimeout = () => {
 
   // Get session timeout setting from security settings
   const getSessionTimeout = useCallback(async () => {
+    // Skip fetching settings when offline - use default
+    if (!isOnline || !navigator.onLine) {
+      console.log('[SessionTimeout] Offline - using default timeout (30 minutes)');
+      sessionTimeoutRef.current = 30;
+      return 30;
+    }
+
     try {
       const settings = await SecurityService.getSecuritySettings();
       const timeoutSetting = settings.find(s => s.setting_key === 'session_timeout_minutes');
@@ -33,7 +42,7 @@ export const useSessionTimeout = () => {
       console.error('Error getting session timeout setting:', error);
       return 30; // Default fallback
     }
-  }, []);
+  }, [isOnline]);
 
   // Update last activity timestamp
   const updateLastActivity = useCallback(() => {
@@ -187,11 +196,15 @@ export const useSessionTimeout = () => {
       // Set up periodic timeout checking
       setupTimeoutChecking();
       
-      // Update session activity in database
-      try {
-        await SessionService.updateSessionActivity(session.access_token);
-      } catch (error) {
-        console.error('Error updating session activity:', error);
+      // Update session activity in database (only when online)
+      if (isOnline && navigator.onLine) {
+        try {
+          await SessionService.updateSessionActivity(session.access_token);
+        } catch (error) {
+          console.error('Error updating session activity:', error);
+        }
+      } else {
+        console.log('[SessionTimeout] Offline - skipping session activity update');
       }
 
       return cleanupListeners;
@@ -223,22 +236,27 @@ export const useSessionTimeout = () => {
     };
   }, [user, session, getSessionTimeout, setupActivityListeners, setupTimeoutChecking]);
 
-  // Update session activity in database periodically
+  // Update session activity in database periodically (only when online)
   useEffect(() => {
     if (!user || !session) return;
 
     const updateActivityInterval = setInterval(async () => {
-      try {
-        await SessionService.updateSessionActivity(session.access_token);
-      } catch (error) {
-        console.error('Error updating session activity:', error);
+      // Only update session activity when online
+      if (isOnline && navigator.onLine) {
+        try {
+          await SessionService.updateSessionActivity(session.access_token);
+        } catch (error) {
+          console.error('Error updating session activity:', error);
+        }
+      } else {
+        console.log('[SessionTimeout] Offline - skipping periodic session activity update');
       }
     }, 5 * 60 * 1000); // Update every 5 minutes
 
     return () => {
       clearInterval(updateActivityInterval);
     };
-  }, [user, session]);
+  }, [user, session, isOnline]);
 
   return {
     updateLastActivity,

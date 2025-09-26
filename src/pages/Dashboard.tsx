@@ -13,6 +13,9 @@ import { ContentLoader } from '@/components/ContentLoader';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { APEX } from '@/components/ui/AIAssistant';
 import { requestNotificationPermission } from '@/utils/fcm';
+import OfflineErrorBoundary from '@/components/OfflineErrorBoundary';
+import { OfflineDashboardOverview } from '@/components/dashboard/OfflineDashboardOverview';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 
 const AIStudentLearn = lazy(() => import('@/components/dashboard/AIStudentLearn').then(module => ({ default: module.AIStudentLearn })));
 const StudentDashboard = lazy(() => import('@/components/dashboard/StudentDashboard').then(module => ({ default: module.StudentDashboard })));
@@ -76,7 +79,9 @@ const AITutorSettings = lazy(() => import('@/components/admin/AITutorSettings').
 const AISafetyEthicsSettings = lazy(() => import('@/components/admin/AISafetyEthicsSettings').then(module => ({ default: module.AISafetyEthicsSettings })));
 const IntegrationAPIs = lazy(() => import('@/components/admin/IntegrationAPIs').then(module => ({ default: module.IntegrationAPIs })));
 const Multitenancy = lazy(() => import('@/components/admin/Multitenancy').then(module => ({ default: module.Multitenancy })));
-const OfflineLearning = lazy(() => import('@/components/admin/OfflineLearning').then(module => ({ default: module.OfflineLearning })));
+import { OfflineLearning } from '@/components/admin/OfflineLearning';
+import OfflineCourseViewer from '@/components/offline/OfflineCourseViewer';
+import OfflineAwareCourseContent from '@/components/offline/OfflineAwareCourseContent';
 const CourseCategories = lazy(() => import('@/components/admin/CourseCategories').then(module => ({ default: module.CourseCategories })));
 const CourseBuilder = lazy(() => import('./CourseBuilder'));
 const CourseOverview = lazy(() => import('./CourseOverview').then(module => ({ default: module.CourseOverview })));
@@ -93,6 +98,7 @@ const Dashboard = () => {
   const { profile, loading: profileLoading, error: profileError } = useUserProfile();
   const { isAIMode } = useAILMS();
   const { isMaintenanceMode, loading: maintenanceLoading } = useMaintenanceCheck();
+  const { isOnline } = useNetworkStatus();
   const navigate = useNavigate();
   const location = useLocation();
   const [loadingTimeout, setLoadingTimeout] = useState(false);
@@ -245,6 +251,11 @@ const Dashboard = () => {
     const finalProfile = { ...profile, role: finalRole, id: profile.id };
 
   const DashboardOverview = () => {
+      // If offline, show offline dashboard for students
+      if (!isOnline && finalRole === 'student') {
+        return <OfflineDashboardOverview />;
+      }
+
       if (isAIMode) {
         switch (finalRole) {
           case 'student': return <AIStudentDashboard userProfile={finalProfile} />;
@@ -264,19 +275,21 @@ const Dashboard = () => {
 
   return (
     <div className="p-0 sm:p-0 lg:p-0 h-full">
-      <Suspense fallback={
-        <div className="flex items-center justify-center h-full">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-muted-foreground">Loading page...</p>
+      <OfflineErrorBoundary>
+        <Suspense fallback={
+          <div className="flex items-center justify-center h-full">
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-muted-foreground">Loading page...</p>
+            </div>
           </div>
-        </div>
-      }>
-        <Routes>
+        }>
+          <Routes>
           <Route path="/" element={<DashboardOverview />} />
           <Route path="/profile-settings" element={<ProfileSettings />} />
           <Route path="/courses/:id" element={<CourseOverview />} />
-          <Route path="/courses/:id/content" element={<CourseContent key={location.pathname} />} />
+          <Route path="/courses/:id/content" element={<OfflineAwareCourseContent key={location.pathname} />} />
+          <Route path="/offline-course/:courseId" element={<OfflineCourseViewer />} />
           {finalRole === 'student' && (
                     <>
                       {isAIMode ? (
@@ -320,6 +333,7 @@ const Dashboard = () => {
                       <Route path="/discussion" element={<DiscussionsPage />} />
                       <Route path="/discussion/:id" element={<DiscussionViewPage />} />
                       <Route path="/meetings" element={<StudentMeetings userProfile={finalProfile} />} />
+                      <Route path="/offline-learning" element={<OfflineLearning userProfile={finalProfile} />} />
                         </>
                       )}
                     </>
@@ -372,6 +386,7 @@ const Dashboard = () => {
                           <Route path="/discussion" element={<DiscussionsPage />} />
                           <Route path="/discussion/:id" element={<DiscussionViewPage />} />
                           <Route path="/meetings" element={<TeacherMeetings userProfile={finalProfile} />} />
+                          <Route path="/offline-learning" element={<OfflineLearning userProfile={finalProfile} />} />
                         </>
                       )}
                     </>
@@ -443,8 +458,9 @@ const Dashboard = () => {
                       )}
                     </>
                   )}
-        </Routes>
-      </Suspense>
+          </Routes>
+        </Suspense>
+      </OfflineErrorBoundary>
     </div>
     );
   };

@@ -4,6 +4,7 @@ import { SupabaseMFASetup } from './SupabaseMFASetup';
 import { useAuth } from '@/hooks/useAuth';
 import { ContentLoader } from '@/components/ContentLoader';
 import { supabase } from '@/integrations/supabase/client';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 
 interface SupabaseMFARequirementProps {
   children: React.ReactNode;
@@ -12,6 +13,7 @@ interface SupabaseMFARequirementProps {
 export const SupabaseMFARequirement: React.FC<SupabaseMFARequirementProps> = ({ children }) => {
   const { user } = useAuth();
   const { mfaStatus, isMFARequired, loading, checkMFARequirement } = useSupabaseMFA();
+  const { isOnline } = useNetworkStatus();
   const [showMFASetup, setShowMFASetup] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
   const [hasCheckedRequirement, setHasCheckedRequirement] = useState(false);
@@ -19,6 +21,14 @@ export const SupabaseMFARequirement: React.FC<SupabaseMFARequirementProps> = ({ 
 
   useEffect(() => {
     const checkRequirements = async () => {
+      // Skip MFA checks when offline - assume user is authenticated if they have a user object
+      if (!isOnline) {
+        console.log('[MFA] Offline mode - skipping MFA requirement check');
+        setHasCheckedRequirement(true);
+        setIsChecking(false);
+        return;
+      }
+
       // Only check if user exists and we haven't checked yet
       if (user && !hasCheckedRequirement) {
         setIsChecking(true);
@@ -27,6 +37,11 @@ export const SupabaseMFARequirement: React.FC<SupabaseMFARequirementProps> = ({ 
           setHasCheckedRequirement(true);
         } catch (error) {
           console.error('Error checking MFA requirement:', error);
+          // If offline or network error, assume authenticated
+          if (!navigator.onLine || error.message?.includes('fetch')) {
+            console.log('[MFA] Network error during MFA check - assuming authenticated offline');
+            setHasCheckedRequirement(true);
+          }
         } finally {
           setIsChecking(false);
         }
@@ -37,7 +52,7 @@ export const SupabaseMFARequirement: React.FC<SupabaseMFARequirementProps> = ({ 
     };
 
     checkRequirements();
-  }, [user, hasCheckedRequirement]); // Remove checkMFARequirement dependency to prevent loops
+  }, [user, hasCheckedRequirement, isOnline]); // Add isOnline dependency
 
   // Add timeout for loading states to prevent infinite loading
   useEffect(() => {
@@ -55,8 +70,8 @@ export const SupabaseMFARequirement: React.FC<SupabaseMFARequirementProps> = ({ 
 
 
 
-  // Show loading while checking MFA status
-  if ((isChecking || loading) && !loadingTimeout) {
+  // Show loading while checking MFA status (but not when offline)
+  if ((isChecking || loading) && !loadingTimeout && isOnline) {
     return (
       <div className="flex items-center justify-center min-h-screen w-full">
         <div className="flex flex-col items-center gap-4 text-center">
@@ -78,13 +93,28 @@ export const SupabaseMFARequirement: React.FC<SupabaseMFARequirementProps> = ({ 
             </svg>
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-foreground">Security check is taking longer than expected</h3>
-            <p className="text-muted-foreground mt-2">Please check your connection and try refreshing the page.</p>
+            <h3 className="text-lg font-semibold text-foreground">
+              {isOnline ? 'Security check is taking longer than expected' : 'Authentication check timed out offline'}
+            </h3>
+            <p className="text-muted-foreground mt-2">
+              {isOnline 
+                ? 'Please check your connection and try refreshing the page.'
+                : 'You appear to be offline. The app will continue with cached authentication.'}
+            </p>
             <button 
-              onClick={() => window.location.reload()} 
+              onClick={() => {
+                if (isOnline) {
+                  window.location.reload();
+                } else {
+                  // Skip MFA checks and continue offline
+                  setHasCheckedRequirement(true);
+                  setIsChecking(false);
+                  setLoadingTimeout(false);
+                }
+              }} 
               className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
             >
-              Refresh Page
+              {isOnline ? 'Refresh Page' : 'Continue Offline'}
             </button>
           </div>
         </div>

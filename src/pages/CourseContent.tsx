@@ -54,7 +54,7 @@ import {
   CSS,
 } from '@dnd-kit/utilities';
 import { useAuth } from '@/hooks/useAuth';
-import { useUserProfile } from '@/hooks/useUserProfile';
+import { useOfflineUserProfile } from '@/hooks/useOfflineUserProfile';
 import { cn } from '@/lib/utils';
 import AccessLogService from '@/services/accessLogService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -236,7 +236,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [openSectionIds, setOpenSectionIds] = useState<string[]>([]);
   const { user } = useAuth();
-  const { profile } = useUserProfile();
+  const { profile } = useOfflineUserProfile();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const lastUpdateTimeRef = useRef(0);
   const [isSheetOpen, setIsSheetOpen] = useState(false);

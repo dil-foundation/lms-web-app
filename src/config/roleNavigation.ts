@@ -91,6 +91,12 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean, is
             { title: 'Discussions', path: '/dashboard/discussion', icon: MessageCircle },
             ...(isZoomEnabled ? [{ title: 'Meetings', path: '/dashboard/meetings', icon: Video }] : []),
           ]
+        },
+        {
+          title: 'OFFLINE',
+          items: [
+            { title: 'Offline Learning', path: '/dashboard/offline-learning', icon: Download },
+          ]
         }
       ];
     
@@ -118,6 +124,12 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean, is
             { title: 'Messages', path: '/dashboard/messages', icon: MessageSquare },
             { title: 'Discussion', path: '/dashboard/discussion', icon: MessageCircle },
             ...(isZoomEnabled ? [{ title: 'Meetings', path: '/dashboard/meetings', icon: Video }] : []),
+          ]
+        },
+        {
+          title: 'OFFLINE',
+          items: [
+            { title: 'Offline Learning', path: '/dashboard/offline-learning', icon: Download },
           ]
         }
       ];

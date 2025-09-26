@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from 'sonner';
 import SessionService from '@/services/sessionService';
 import { useAuth } from '@/hooks/useAuth';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 
 interface SessionTimeoutWarningProps {
   isVisible: boolean;
@@ -20,6 +21,7 @@ export const SessionTimeoutWarning: React.FC<SessionTimeoutWarningProps> = ({
   onDismiss
 }) => {
   const { session } = useAuth();
+  const { isOnline } = useNetworkStatus();
   const [isExtending, setIsExtending] = useState(false);
   const [countdown, setCountdown] = useState(timeRemaining);
 
@@ -51,16 +53,26 @@ export const SessionTimeoutWarning: React.FC<SessionTimeoutWarningProps> = ({
     try {
       setIsExtending(true);
       
-      // Update session activity in database
-      await SessionService.updateSessionActivity(session.access_token);
+      // Update session activity in database (only when online)
+      if (isOnline && navigator.onLine) {
+        await SessionService.updateSessionActivity(session.access_token);
+        toast.success('Session extended successfully');
+      } else {
+        // When offline, just extend locally without server update
+        toast.success('Session extended locally (will sync when online)');
+      }
       
       // Call the parent's extend session handler
       onExtendSession();
       
-      toast.success('Session extended successfully');
     } catch (error) {
       console.error('Error extending session:', error);
-      toast.error('Failed to extend session. Please log in again.');
+      if (isOnline) {
+        toast.error('Failed to extend session. Please log in again.');
+      } else {
+        toast.success('Session extended locally (offline mode)');
+        onExtendSession(); // Still extend locally
+      }
     } finally {
       setIsExtending(false);
     }

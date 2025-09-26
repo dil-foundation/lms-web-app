@@ -164,6 +164,7 @@ export const CourseListView: React.FC<CourseListViewProps> = ({
                     Manage
                   </Button>
                   
+                  
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button

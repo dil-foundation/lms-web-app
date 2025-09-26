@@ -580,6 +580,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                         >
                           {course.progress.percentage > 0 ? 'Continue Learning' : 'Start Learning'}
                         </Button>
+                        
 
                         {course.progress.percentage > 0 && (
                           <p className="text-center text-sm text-muted-foreground">

@@ -11,12 +11,17 @@ import { SecureLinksProvider } from "@/contexts/SecureLinksContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { APEXProvider } from "@/contexts/AIAssistantContext";
 import { ViewPreferencesProvider } from "@/contexts/ViewPreferencesContext";
+import { OfflineProvider } from "@/contexts/OfflineContext";
 import ScrollToTop from "@/components/ScrollToTop";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { SessionTimeoutWarning } from "@/components/SessionTimeoutWarning";
 import { SupabaseMFARequirement } from "@/components/auth/SupabaseMFARequirement";
 import { MFAProtectedRoute } from "@/components/auth/MFAProtectedRoute";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { FloatingOfflineIndicator } from "@/components/offline/OfflineIndicator";
+import { FloatingSyncStatus } from "@/components/offline/SyncStatusPanel";
+import { GlobalProfileCacher } from "@/components/offline/GlobalProfileCacher";
+import { useOfflineManager } from "@/hooks/useOfflineManager";
 
 
 // Component to handle session timeout and activity tracking
@@ -28,18 +33,31 @@ const SessionTimeoutTracker = () => {
     handleDismissWarning
   } = useSessionTimeout();
 
-
-
   return (
     <>
-
-      
       <SessionTimeoutWarning
         isVisible={showWarning}
         timeRemaining={warningTimeRemaining}
         onExtendSession={handleExtendSession}
         onDismiss={handleDismissWarning}
       />
+    </>
+  );
+};
+
+// Component to handle offline functionality
+const OfflineManager = () => {
+  const { syncData, isInitialized } = useOfflineManager();
+
+  // Only render offline components when system is initialized
+  if (!isInitialized) {
+    return null;
+  }
+
+  return (
+    <>
+      <FloatingOfflineIndicator onSync={syncData} />
+      <FloatingSyncStatus onSync={syncData} />
     </>
   );
 };
@@ -78,10 +96,11 @@ const AppContent = () => {
           <BrowserRouter>
             <ScrollToTop />
             <AuthProvider>
-              <SessionTimeoutTracker />
-              <AILMSProvider>
-                <ObservationReportsProvider>
-                  <SecureLinksProvider>
+              <GlobalProfileCacher />
+              <OfflineProvider>
+                <AILMSProvider>
+                  <ObservationReportsProvider>
+                    <SecureLinksProvider>
                     {/* Temporarily disabled ErrorBoundary to prevent notification service error display */}
                     {/* <ErrorBoundary fallback={
                       <div className="flex items-center justify-center h-screen">
@@ -135,11 +154,16 @@ const AppContent = () => {
                         </Suspense>
                           </APEXProvider>
                         </ViewPreferencesProvider>
+                        
+                        {/* Components that need AuthProvider */}
+                        <OfflineManager />
+                        <SessionTimeoutTracker />
                       </NotificationProvider>
                     {/* </ErrorBoundary> */}
-                  </SecureLinksProvider>
-                </ObservationReportsProvider>
-              </AILMSProvider>
+                    </SecureLinksProvider>
+                  </ObservationReportsProvider>
+                </AILMSProvider>
+              </OfflineProvider>
             </AuthProvider>
           </BrowserRouter>
         </TooltipProvider>

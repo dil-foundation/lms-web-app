@@ -116,7 +116,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
           }
         )
         .subscribe((status) => {
-          console.log('Subscription status:', status);
           if (status === 'SUBSCRIBED') {
             setConnectionStatus('connected');
             reconnectAttemptsRef.current = 0;
@@ -131,7 +130,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       subscriptionRef.current = subscription;
 
     } catch (err: any) {
-      console.error('Failed to setup realtime subscription:', err);
       setConnectionStatus('error');
       isConnectingRef.current = false;
       handleDisconnect();
@@ -139,8 +137,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   }, [user?.id]);
 
   const handleRealtimeUpdate = useCallback((payload: any) => {
-    console.log('Realtime update received:', payload);
-    
     const { eventType, new: newRecord, old: oldRecord } = payload;
 
     switch (eventType) {
@@ -252,14 +248,13 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         break;
 
       default:
-        console.log('Unknown event type:', eventType);
+        break;
     }
   }, []);
 
   const startPolling = useCallback(() => {
     if (!user?.id || pollingIntervalRef.current) return;
 
-    console.log('Starting polling fallback for notifications');
     setConnectionStatus('connected'); // Show as connected to user
     
     // Initial load
@@ -277,7 +272,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     if (pollingIntervalRef.current) {
       clearInterval(pollingIntervalRef.current);
       pollingIntervalRef.current = null;
-      console.log('Stopped polling fallback');
     }
   }, []);
 
@@ -292,13 +286,10 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       const delay = baseReconnectDelay * Math.pow(2, reconnectAttemptsRef.current);
       reconnectAttemptsRef.current++;
       
-      console.log(`Attempting to reconnect in ${delay}ms (attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts})`);
-      
       reconnectTimeoutRef.current = setTimeout(() => {
         setupRealtimeSubscription();
       }, delay);
     } else {
-      console.log('Max reconnection attempts reached, falling back to polling');
       setConnectionStatus('connected'); // Show as connected to user
       setError(null); // Clear any error state
       startPolling(); // Silently start polling
@@ -316,7 +307,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       setNotifications(data);
     } catch (err: any) {
       setError(err.message);
-      console.error('Failed to load notifications:', err);
     } finally {
       setLoading(false);
     }
@@ -329,12 +319,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       const count = await NotificationService.getUnreadCount(user.id);
       setUnreadCount(count);
     } catch (err: any) {
-      console.error('Failed to load unread count:', err);
+      // Silently handle error
     }
   };
 
   const reconnect = useCallback(async () => {
-    console.log('Manual reconnection requested');
     reconnectAttemptsRef.current = 0;
     setError(null);
     
@@ -369,7 +358,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       setUnreadCount(prev => prev + 1);
       
       toast.error('Failed to mark notification as read');
-      console.error('Failed to mark notification as read:', err);
     }
   };
 
@@ -388,7 +376,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       toast.success('All notifications marked as read');
     } catch (err: any) {
       toast.error('Failed to mark all notifications as read');
-      console.error('Failed to mark all notifications as read:', err);
     }
   };
 
@@ -410,7 +397,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       toast.success('Notification deleted');
     } catch (err: any) {
       toast.error('Failed to delete notification');
-      console.error('Failed to delete notification:', err);
     }
   };
 
@@ -427,7 +413,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       toast.success('All notifications cleared');
     } catch (err: any) {
       toast.error('Failed to clear notifications');
-      console.error('Failed to clear notifications:', err);
     }
   };
 
@@ -450,7 +435,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       setUnreadCount(prev => prev + 1);
     } catch (err: any) {
       toast.error('Failed to create notification');
-      console.error('Failed to create notification:', err);
     }
   };
 

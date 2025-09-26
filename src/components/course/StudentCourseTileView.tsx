@@ -131,8 +131,8 @@ export const StudentCourseTileView: React.FC<StudentCourseTileViewProps> = ({
                 </div>
               )}
 
-              {/* Compact Action Button */}
-              <div className="mt-auto pt-1">
+              {/* Action Buttons */}
+              <div className="mt-auto pt-1 space-y-1">
                 <Button
                   size="sm"
                   className="w-full h-7 text-xs"
@@ -148,6 +148,7 @@ export const StudentCourseTileView: React.FC<StudentCourseTileViewProps> = ({
                   )}
                   {course.progress === 100 ? 'Review' : 'Continue'}
                 </Button>
+                
               </div>
             </CardContent>
           </Card>
