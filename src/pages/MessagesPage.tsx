@@ -766,10 +766,14 @@ export default function MessagesPage() {
   // Initialize WebSocket connection and status management
   useEffect(() => {
     if (user?.id) {
+      // Only initialize if online
+      if (!navigator.onLine) {
+        console.log('🔴 MessagesPage: Offline - skipping WebSocket and status initialization');
+        return;
+      }
+
       // Start proactive token refresh
       startTokenRefreshInterval();
-      
-
       
       initializeWebSocket();
       
@@ -778,25 +782,51 @@ export default function MessagesPage() {
         console.error('Error updating user status to online:', error);
       });
 
-      // Set up periodic status refresh to keep status synchronized
+      // Set up periodic status refresh to keep status synchronized (with offline checks)
       const statusRefreshInterval = setInterval(async () => {
-        try {
-          await updateUserStatus({ status: 'online' });
-        } catch (error) {
-          console.error('Error refreshing user status:', error);
+        // Only refresh status if still online
+        if (navigator.onLine) {
+          try {
+            await updateUserStatus({ status: 'online' });
+          } catch (error) {
+            console.error('Error refreshing user status:', error);
+          }
+        } else {
+          console.log('🔴 MessagesPage: Offline - skipping status refresh');
         }
       }, 30000); // Refresh every 30 seconds
 
+      // Listen for online/offline events
+      const handleOnline = () => {
+        console.log('🟢 MessagesPage: Back online - reconnecting WebSocket');
+        initializeWebSocket();
+        updateUserStatus({ status: 'online' }).catch(error => {
+          console.error('Error updating user status to online:', error);
+        });
+      };
+
+      const handleOffline = () => {
+        console.log('🔴 MessagesPage: Gone offline - disconnecting WebSocket');
+        disconnectWebSocket();
+      };
+
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
+
       return () => {
         clearInterval(statusRefreshInterval);
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
         
         // Stop proactive token refresh
         stopTokenRefreshInterval();
         
-        // Update user status to offline when disconnecting
-        updateUserStatus({ status: 'offline' }).catch(error => {
-          console.error('Error updating user status to offline:', error);
-        });
+        // Update user status to offline when disconnecting (only if online)
+        if (navigator.onLine) {
+          updateUserStatus({ status: 'offline' }).catch(error => {
+            console.error('Error updating user status to offline:', error);
+          });
+        }
         disconnectWebSocket();
       };
     }

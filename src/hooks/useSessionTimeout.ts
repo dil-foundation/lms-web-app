@@ -18,8 +18,15 @@ export const useSessionTimeout = () => {
   const [warningTimeRemaining, setWarningTimeRemaining] = useState(0);
   const WARNING_BEFORE_TIMEOUT = 5 * 60; // Show warning 5 minutes before timeout
 
-  // Get session timeout setting from security settings
+  // Get session timeout setting from security settings (with offline awareness)
   const getSessionTimeout = useCallback(async () => {
+    // Skip security settings fetch when offline, use default
+    if (!navigator.onLine) {
+      console.log('🔴 useSessionTimeout: Offline - using default session timeout');
+      sessionTimeoutRef.current = 30;
+      return 30;
+    }
+
     try {
       const settings = await SecurityService.getSecuritySettings();
       const timeoutSetting = settings.find(s => s.setting_key === 'session_timeout_minutes');
@@ -153,10 +160,16 @@ export const useSessionTimeout = () => {
     };
   }, [updateLastActivity]);
 
-  // Set up periodic timeout checking
+  // Set up periodic timeout checking (with offline awareness)
   const setupTimeoutChecking = useCallback(() => {
-    // Check every 60 seconds to reduce frequency (was 30 seconds)
-    timeoutRef.current = setInterval(checkSessionTimeout, 60 * 1000);
+    // Check every 60 seconds to reduce frequency (was 30 seconds), but only when online
+    timeoutRef.current = setInterval(() => {
+      if (navigator.onLine) {
+        checkSessionTimeout();
+      } else {
+        console.log('🔴 useSessionTimeout: Offline - skipping timeout check');
+      }
+    }, 60 * 1000);
   }, [checkSessionTimeout]);
 
   // Initialize session timeout management
@@ -187,11 +200,15 @@ export const useSessionTimeout = () => {
       // Set up periodic timeout checking
       setupTimeoutChecking();
       
-      // Update session activity in database
-      try {
-        await SessionService.updateSessionActivity(session.access_token);
-      } catch (error) {
-        console.error('Error updating session activity:', error);
+      // Update session activity in database (only if online)
+      if (navigator.onLine) {
+        try {
+          await SessionService.updateSessionActivity(session.access_token);
+        } catch (error) {
+          console.error('Error updating session activity:', error);
+        }
+      } else {
+        console.log('🔴 useSessionTimeout: Offline - skipping session activity update');
       }
 
       return cleanupListeners;

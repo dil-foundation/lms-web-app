@@ -46,9 +46,15 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   // Load initial data when user changes
   useEffect(() => {
     if (user?.id) {
-      loadNotifications();
-      loadUnreadCount();
-      setupRealtimeSubscription();
+      // Only load data if online
+      if (navigator.onLine) {
+        loadNotifications();
+        loadUnreadCount();
+        setupRealtimeSubscription();
+      } else {
+        console.log('🔴 NotificationContext: Offline - skipping initial data load');
+        setConnectionStatus('disconnected');
+      }
     } else {
       // Reset state when user logs out
       cleanupSubscription();
@@ -69,6 +75,29 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       cleanupSubscription();
     };
   }, []);
+
+  // Listen for online/offline events to manage polling
+  useEffect(() => {
+    const handleOnline = () => {
+      console.log('🟢 NotificationContext: Back online - resuming notifications');
+      if (user?.id) {
+        setupRealtimeSubscription();
+      }
+    };
+
+    const handleOffline = () => {
+      console.log('🔴 NotificationContext: Gone offline - stopping notifications');
+      cleanupSubscription();
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [user?.id]);
 
   const cleanupSubscription = useCallback(() => {
     if (subscriptionRef.current) {
@@ -259,17 +288,30 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   const startPolling = useCallback(() => {
     if (!user?.id || pollingIntervalRef.current) return;
 
-    console.log('Starting polling fallback for notifications');
+    // Only start polling if online
+    if (!navigator.onLine) {
+      console.log('🔴 NotificationContext: Cannot start polling - offline');
+      setConnectionStatus('disconnected');
+      return;
+    }
+
+    console.log('🟢 NotificationContext: Starting polling fallback for notifications');
     setConnectionStatus('connected'); // Show as connected to user
     
     // Initial load
     loadNotifications();
     loadUnreadCount();
     
-    // Set up polling interval
+    // Set up polling interval with offline checks
     pollingIntervalRef.current = setInterval(() => {
-      loadNotifications();
-      loadUnreadCount();
+      // Only poll if still online
+      if (navigator.onLine) {
+        loadNotifications();
+        loadUnreadCount();
+      } else {
+        console.log('🔴 NotificationContext: Stopping polling - went offline');
+        stopPolling();
+      }
     }, pollingInterval);
   }, [user?.id, pollingInterval]);
 

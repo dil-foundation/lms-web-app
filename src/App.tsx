@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from "react";
+import React, { Suspense, lazy, useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,6 +17,12 @@ import { SessionTimeoutWarning } from "@/components/SessionTimeoutWarning";
 import { SupabaseMFARequirement } from "@/components/auth/SupabaseMFARequirement";
 import { MFAProtectedRoute } from "@/components/auth/MFAProtectedRoute";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { setupOfflineRequestHandler } from "@/utils/offlineRequestHandler";
+import { offlineStateManager } from "@/utils/offlineStateManager";
+import { registerServiceWorker } from "@/utils/serviceWorker";
+import { ServiceWorkerUpdater } from "@/components/ServiceWorkerUpdater";
+import { OfflineDatabaseTest } from "@/components/dev/OfflineDatabaseTest";
+import { initOfflineDatabase } from "@/services/offlineDatabase";
 
 
 // Component to handle session timeout and activity tracking
@@ -69,6 +75,47 @@ const queryClient = new QueryClient({
 });
 
 const AppContent = () => {
+  const [swRegistration, setSwRegistration] = useState<ServiceWorkerRegistration | undefined>();
+
+  // Setup global offline request handler and state manager on app initialization
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        // Setup offline infrastructure
+        setupOfflineRequestHandler();
+        offlineStateManager.setup();
+        
+        // Initialize offline database
+        try {
+          await initOfflineDatabase();
+          console.log('📦 App: Offline database initialized successfully');
+        } catch (dbError) {
+          console.error('❌ App: Failed to initialize offline database:', dbError);
+          // Continue with app initialization even if database fails
+        }
+        
+        // Register service worker for app asset caching
+        registerServiceWorker({
+          onSuccess: (registration) => {
+            console.log('🎯 App: Service worker registered successfully - app assets cached for offline use');
+            setSwRegistration(registration);
+          },
+          onUpdate: (registration) => {
+            console.log('🔄 App: New service worker available - app will update on next reload');
+            setSwRegistration(registration);
+          },
+          onOfflineReady: () => {
+            console.log('📱 App: App is ready for offline use');
+          }
+        });
+      } catch (error) {
+        console.error('❌ App: Failed to initialize offline features:', error);
+      }
+    };
+
+    initializeApp();
+  }, []);
+
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
@@ -142,6 +189,12 @@ const AppContent = () => {
               </AILMSProvider>
             </AuthProvider>
           </BrowserRouter>
+          
+          {/* Service Worker Update Notification */}
+          <ServiceWorkerUpdater registration={swRegistration} />
+          
+          {/* Development Database Test Panel */}
+          <OfflineDatabaseTest />
         </TooltipProvider>
       </QueryClientProvider>
     </ErrorBoundary>

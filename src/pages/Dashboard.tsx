@@ -13,15 +13,19 @@ import { ContentLoader } from '@/components/ContentLoader';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { APEX } from '@/components/ui/AIAssistant';
 import { requestNotificationPermission } from '@/utils/fcm';
+import { OfflineRouteGuard } from '@/components/auth/OfflineRouteGuard';
+import { OfflineAwareSuspense } from '@/components/ui/OfflineAwareSuspense';
 
 const AIStudentLearn = lazy(() => import('@/components/dashboard/AIStudentLearn').then(module => ({ default: module.AIStudentLearn })));
-const StudentDashboard = lazy(() => import('@/components/dashboard/StudentDashboard').then(module => ({ default: module.StudentDashboard })));
+// Import StudentDashboard eagerly since it's needed for offline overview access
+import { StudentDashboard } from '@/components/dashboard/StudentDashboard';
 const StudentCourses = lazy(() => import('@/components/dashboard/StudentCourses').then(module => ({ default: module.StudentCourses })));
 const StudentProgress = lazy(() => import('@/components/dashboard/StudentProgress').then(module => ({ default: module.StudentProgress })));
 const StudentAssignments = lazy(() => import('@/components/dashboard/StudentAssignments').then(module => ({ default: module.StudentAssignments })));
 const TeacherDashboard = lazy(() => import('@/components/dashboard/TeacherDashboard').then(module => ({ default: module.TeacherDashboard })));
 const AdminDashboard = lazy(() => import('@/components/dashboard/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
-const AIStudentDashboard = lazy(() => import('@/components/dashboard/AIStudentDashboard').then(module => ({ default: module.AIStudentDashboard })));
+// Import AIStudentDashboard eagerly since it's needed for offline overview access
+import { AIStudentDashboard } from '@/components/dashboard/AIStudentDashboard';
 const AITeacherDashboard = lazy(() => import('@/components/dashboard/AITeacherDashboard').then(module => ({ default: module.AITeacherDashboard })));
 const AIAdminDashboard = lazy(() => import('@/components/dashboard/AIAdminDashboard').then(module => ({ default: module.AIAdminDashboard })));
 const AIAdminPractice = lazy(() => import('@/components/dashboard/AIAdminPractice').then(module => ({ default: module.AIAdminPractice })));
@@ -32,6 +36,8 @@ const AIStudentPractice = lazy(() => import('@/components/dashboard/AIStudentPra
 const RolePlaceholder = lazy(() => import('@/components/dashboard/RolePlaceholder').then(module => ({ default: module.RolePlaceholder })));
 const TeacherMeetings = lazy(() => import('@/components/dashboard/TeacherMeetings').then(module => ({ default: module.TeacherMeetings })));
 const StudentMeetings = lazy(() => import('@/components/dashboard/StudentMeetings').then(module => ({ default: module.StudentMeetings })));
+// Import OfflineLearning eagerly since it's specifically for offline use
+import { OfflineLearning as StudentOfflineLearning } from '@/components/student/OfflineLearning';
 const UsersManagement = lazy(() => import('@/components/admin/UsersManagement').then(module => ({ default: module.UsersManagement })));
 const ClassManagement = lazy(() => import('@/components/admin/ClassManagement'));
 const CourseManagement = lazy(() => import('@/components/admin/CourseManagement'));
@@ -76,11 +82,11 @@ const AITutorSettings = lazy(() => import('@/components/admin/AITutorSettings').
 const AISafetyEthicsSettings = lazy(() => import('@/components/admin/AISafetyEthicsSettings').then(module => ({ default: module.AISafetyEthicsSettings })));
 const IntegrationAPIs = lazy(() => import('@/components/admin/IntegrationAPIs').then(module => ({ default: module.IntegrationAPIs })));
 const Multitenancy = lazy(() => import('@/components/admin/Multitenancy').then(module => ({ default: module.Multitenancy })));
-const OfflineLearning = lazy(() => import('@/components/admin/OfflineLearning').then(module => ({ default: module.OfflineLearning })));
 const CourseCategories = lazy(() => import('@/components/admin/CourseCategories').then(module => ({ default: module.CourseCategories })));
 const CourseBuilder = lazy(() => import('./CourseBuilder'));
 const CourseOverview = lazy(() => import('./CourseOverview').then(module => ({ default: module.CourseOverview })));
-const CourseContent = lazy(() => import('./CourseContent').then(module => ({ default: module.CourseContent })));
+// Import CourseContent eagerly since it might be needed for offline course viewing
+import { CourseContent } from './CourseContent';
 const StudentsPage = lazy(() => import('./StudentsPage'));
 const ReportsPage = lazy(() => import('./ReportsPage'));
 const DiscussionsPage = lazy(() => import('./DiscussionsPage'));
@@ -264,67 +270,98 @@ const Dashboard = () => {
 
   return (
     <div className="p-0 sm:p-0 lg:p-0 h-full">
-      <Suspense fallback={
-        <div className="flex items-center justify-center h-full">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-muted-foreground">Loading page...</p>
-          </div>
-        </div>
-      }>
-        <Routes>
-          <Route path="/" element={<DashboardOverview />} />
-          <Route path="/profile-settings" element={<ProfileSettings />} />
-          <Route path="/courses/:id" element={<CourseOverview />} />
-          <Route path="/courses/:id/content" element={<CourseContent key={location.pathname} />} />
-          {finalRole === 'student' && (
-                    <>
-                      {isAIMode ? (
-                        <>
-                          <Route path="/ai-learn" element={<AIStudentLearn />} />
-                          <Route path="/ai-practice" element={<AIStudentPractice />} />
-                          <Route path="/ai-progress" element={<AIStudentProgress />} />
-                          <Route path="/practice/stage-0" element={<StageZero />} />
-                          <Route path="/practice/stage-0/lesson/:lessonId" element={<LessonDetail />} />
-                          <Route path="/practice/stage-1" element={<StageOne />} />
-                          <Route path="/practice/stage-1/repeat-after-me" element={<RepeatAfterMe />} />
-                          <Route path="/practice/stage-1/quick-response" element={<QuickResponse />} />
-                          <Route path="/practice/stage-1/listen-and-reply" element={<ListenAndReply />} />
-                          <Route path="/practice/stage-2" element={<StageTwo />} />
-                          <Route path="/practice/stage-2/daily-routine" element={<DailyRoutine />} />
-                          <Route path="/practice/stage-2/quick-answer" element={<QuickAnswer />} />
-                          <Route path="/practice/stage-2/roleplay-simulation" element={<RoleplaySimulation />} />
-                          <Route path="/practice/stage-3" element={<StageThree />} />
-                          <Route path="/practice/stage-3/storytelling" element={<StorytellingPractice />} />
-                          <Route path="/practice/stage-3/group-dialogue" element={<GroupDialogue />} />
-                          <Route path="/practice/stage-3/problem-solving" element={<ProblemSolvingSimulations />} />
-                          <Route path="/practice/stage-4" element={<StageFour />} />
-                          <Route path="/practice/stage-4/abstract-topic" element={<AbstractTopicMonologue />} />
-                          <Route path="/practice/stage-4/mock-interview" element={<MockInterviewPractice />} />
-                          <Route path="/practice/stage-4/news-summary" element={<NewsSummaryChallenge />} />
-                          <Route path="/practice/stage-5" element={<StageFive />} />
-                          <Route path="/practice/stage-5/critical-thinking" element={<CriticalThinkingDialogues />} />
-                          <Route path="/practice/stage-5/academic-presentations" element={<AcademicPresentations />} />
-                          <Route path="/practice/stage-5/indepth-interview" element={<InDepthInterviewSimulation />} />
-                          <Route path="/practice/stage-6" element={<StageSix />} />
-                          <Route path="/practice/stage-6/spontaneous-speech" element={<AIGuidedSpontaneousSpeech />} />
-                          <Route path="/practice/stage-6/sensitive-scenario" element={<SensitiveScenarioRoleplay />} />
-                          <Route path="/practice/stage-6/opinion-builder" element={<CriticalOpinionBuilder />} />
-                        </>
-                      ) : (
-                    <>
-                      <Route path="/courses" element={<StudentCourses userProfile={finalProfile} />} />
-                      <Route path="/assignments" element={<StudentAssignments userProfile={finalProfile} />} />
-                      <Route path="/progress" element={<StudentProgress userProfile={finalProfile} />} />
-                      <Route path="/messages" element={<MessagesPage />} />
-                      <Route path="/discussion" element={<DiscussionsPage />} />
-                      <Route path="/discussion/:id" element={<DiscussionViewPage />} />
-                      <Route path="/meetings" element={<StudentMeetings userProfile={finalProfile} />} />
-                        </>
-                      )}
-                    </>
-                  )}
-          {finalRole === 'teacher' && (
+      {finalRole === 'student' ? (
+        <OfflineRouteGuard 
+          userRole={finalRole}
+          onRedirect={(from, to, reason) => {
+            console.log(`🔄 Student redirected from ${from} to ${to} due to ${reason}`);
+          }}
+        >
+          <OfflineAwareSuspense 
+            allowOfflineRoutes={['/dashboard/offline-learning', '/dashboard/courses/:id/content']}
+            fallback={
+              <div className="flex items-center justify-center h-full">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                  <p className="text-muted-foreground">Loading page...</p>
+                </div>
+              </div>
+            }
+          >
+            <Routes>
+              <Route path="/" element={<DashboardOverview />} />
+              <Route path="/profile-settings" element={<ProfileSettings />} />
+              <Route path="/courses/:id" element={<CourseOverview />} />
+              <Route path="/courses/:id/content" element={<CourseContent key={location.pathname} />} />
+              
+              {isAIMode ? (
+                <>
+                  <Route path="/ai-learn" element={<AIStudentLearn />} />
+                  <Route path="/ai-practice" element={<AIStudentPractice />} />
+                  <Route path="/ai-progress" element={<AIStudentProgress />} />
+                  <Route path="/practice/stage-0" element={<StageZero />} />
+                  <Route path="/practice/stage-0/lesson/:lessonId" element={<LessonDetail />} />
+                  <Route path="/practice/stage-1" element={<StageOne />} />
+                  <Route path="/practice/stage-1/repeat-after-me" element={<RepeatAfterMe />} />
+                  <Route path="/practice/stage-1/quick-response" element={<QuickResponse />} />
+                  <Route path="/practice/stage-1/listen-and-reply" element={<ListenAndReply />} />
+                  <Route path="/practice/stage-2" element={<StageTwo />} />
+                  <Route path="/practice/stage-2/daily-routine" element={<DailyRoutine />} />
+                  <Route path="/practice/stage-2/quick-answer" element={<QuickAnswer />} />
+                  <Route path="/practice/stage-2/roleplay-simulation" element={<RoleplaySimulation />} />
+                  <Route path="/practice/stage-3" element={<StageThree />} />
+                  <Route path="/practice/stage-3/storytelling" element={<StorytellingPractice />} />
+                  <Route path="/practice/stage-3/group-dialogue" element={<GroupDialogue />} />
+                  <Route path="/practice/stage-3/problem-solving" element={<ProblemSolvingSimulations />} />
+                  <Route path="/practice/stage-4" element={<StageFour />} />
+                  <Route path="/practice/stage-4/abstract-topic" element={<AbstractTopicMonologue />} />
+                  <Route path="/practice/stage-4/mock-interview" element={<MockInterviewPractice />} />
+                  <Route path="/practice/stage-4/news-summary" element={<NewsSummaryChallenge />} />
+                  <Route path="/practice/stage-5" element={<StageFive />} />
+                  <Route path="/practice/stage-5/critical-thinking" element={<CriticalThinkingDialogues />} />
+                  <Route path="/practice/stage-5/academic-presentations" element={<AcademicPresentations />} />
+                  <Route path="/practice/stage-5/indepth-interview" element={<InDepthInterviewSimulation />} />
+                  <Route path="/practice/stage-6" element={<StageSix />} />
+                  <Route path="/practice/stage-6/spontaneous-speech" element={<AIGuidedSpontaneousSpeech />} />
+                  <Route path="/practice/stage-6/sensitive-scenario" element={<SensitiveScenarioRoleplay />} />
+                  <Route path="/practice/stage-6/opinion-builder" element={<CriticalOpinionBuilder />} />
+                </>
+              ) : (
+                <>
+                  <Route path="/courses" element={<StudentCourses userProfile={finalProfile} />} />
+                  <Route path="/assignments" element={<StudentAssignments userProfile={finalProfile} />} />
+                  <Route path="/progress" element={<StudentProgress userProfile={finalProfile} />} />
+                  <Route path="/messages" element={<MessagesPage />} />
+                  <Route path="/discussion" element={<DiscussionsPage />} />
+                  <Route path="/discussion/:id" element={<DiscussionViewPage />} />
+                  <Route path="/meetings" element={<StudentMeetings userProfile={finalProfile} />} />
+                  <Route path="/offline-learning" element={<StudentOfflineLearning userProfile={finalProfile} />} />
+                </>
+              )}
+            </Routes>
+          </OfflineAwareSuspense>
+        </OfflineRouteGuard>
+      ) : (
+        <OfflineAwareSuspense 
+          allowOfflineRoutes={[]} // Teachers/admins have no offline restrictions
+          fallback={
+            <div className="flex items-center justify-center h-full">
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-muted-foreground">Loading page...</p>
+              </div>
+            </div>
+          }
+        >
+          <Routes>
+            {/* Common routes for all users */}
+            <Route path="/" element={<DashboardOverview />} />
+            <Route path="/profile-settings" element={<ProfileSettings />} />
+            <Route path="/courses/:id" element={<CourseOverview />} />
+            <Route path="/courses/:id/content" element={<CourseContent key={location.pathname} />} />
+            
+            {/* Teacher routes */}
+            {finalRole === 'teacher' && (
                     <>
                       {isAIMode ? (
                         <>
@@ -438,15 +475,15 @@ const Dashboard = () => {
                           <Route path="/security" element={<AdminSecurity />} />
                           <Route path="/integration-apis" element={<IntegrationAPIs userProfile={finalProfile} />} />
                           <Route path="/multitenancy" element={<Multitenancy userProfile={finalProfile} />} />
-                          <Route path="/offline-learning" element={<OfflineLearning userProfile={finalProfile} />} />
                         </>
                       )}
                     </>
                   )}
-        </Routes>
-      </Suspense>
+          </Routes>
+        </OfflineAwareSuspense>
+      )}
     </div>
-    );
+  );
   };
 
   return (

@@ -14,6 +14,15 @@ export const useMaintenanceCheck = () => {
     try {
       setLoading(true);
       setError(null);
+      
+      // Skip maintenance check when offline - assume not in maintenance mode
+      if (!navigator.onLine) {
+        console.log('🔴 useMaintenanceCheck: Offline - assuming no maintenance mode');
+        setIsMaintenanceMode(false);
+        setLoading(false);
+        return;
+      }
+      
       const status = await MaintenanceService.getMaintenanceStatus();
       setIsMaintenanceMode(status.maintenance_mode);
     } catch (err) {

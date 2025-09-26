@@ -27,6 +27,7 @@ import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { offlineStateManager } from '@/utils/offlineStateManager';
 import { ContentLoader } from '../ContentLoader';
 
 type Profile = {
@@ -89,9 +90,29 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Register cleanup callback to clear cached data when going offline
+  useEffect(() => {
+    const unregister = offlineStateManager.registerCleanup(() => {
+      console.log('🔴 StudentDashboard: Clearing cached course data (offline)');
+      setCourses([]);
+      setDashboardStats(null);
+      setUpcomingAssignments([]);
+      setRecentActivity([]);
+    });
+
+    return unregister;
+  }, []);
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       if (!userProfile?.id) {
+        setLoading(false);
+        return;
+      }
+
+      // Skip fetch when offline to prevent failed requests
+      if (!navigator.onLine) {
+        console.log('🔴 StudentDashboard: Offline - skipping dashboard data fetch');
         setLoading(false);
         return;
       }
@@ -146,19 +167,25 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
           setDashboardStats(statsData[0]);
         }
 
-        // Process courses with signed URLs
+        // Process courses with signed URLs (only when online)
         if (coursesData) {
           const coursesWithSignedUrls = await Promise.all(coursesData.map(async (course: any) => {
             let imageUrl = '/placeholder.svg';
-            if (course.image_url) {
-              const { data: signedUrlData, error } = await supabase.storage
-                .from('dil-lms')
-                .createSignedUrl(course.image_url, 60);
+            // Only create signed URLs if online
+            if (course.image_url && navigator.onLine) {
+              try {
+                const { data: signedUrlData, error } = await supabase.storage
+                  .from('dil-lms')
+                  .createSignedUrl(course.image_url, 60);
 
-              if (error) {
-                console.error(`Failed to get signed URL for course image: ${course.image_url}`, error);
-              } else {
-                imageUrl = signedUrlData.signedUrl;
+                if (error) {
+                  console.error(`Failed to get signed URL for course image: ${course.image_url}`, error);
+                } else {
+                  imageUrl = signedUrlData.signedUrl;
+                }
+              } catch (error) {
+                console.log('🔴 StudentDashboard: Failed to create signed URL (might be offline):', error);
+                // Keep placeholder image
               }
             }
 

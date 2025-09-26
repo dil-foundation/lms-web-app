@@ -127,28 +127,68 @@ export const SecureLinksProvider: React.FC<SecureLinksProviderProps> = ({ childr
     }
   };
 
-  // Load links when user changes or component mounts
+  // Load links when user changes or component mounts (only when online)
   useEffect(() => {
-    loadLinks();
+    if (navigator.onLine) {
+      loadLinks();
+    } else {
+      console.log('🔴 SecureLinksContext: Offline - skipping initial links load');
+      setIsLoading(false);
+    }
   }, [user?.id]);
 
-  // Auto-refresh every 30 seconds to check for expired links (only when polling is enabled)
+  // Auto-refresh every 30 seconds to check for expired links (only when polling is enabled and online)
   useEffect(() => {
     if (!user?.id || !isPollingEnabled) return;
 
+    // Only start polling if online
+    if (!navigator.onLine) {
+      console.log('🔴 SecureLinksContext: Offline - skipping expired links polling');
+      return;
+    }
+
     const interval = setInterval(async () => {
-      try {
-        const expiredCount = await SecureLinksService.updateExpiredLinks(user.id);
-        if (expiredCount > 0) {
-          // Refresh links if any were expired
-          await loadLinks();
+      // Only check for expired links if still online
+      if (navigator.onLine) {
+        try {
+          const expiredCount = await SecureLinksService.updateExpiredLinks(user.id);
+          if (expiredCount > 0) {
+            // Refresh links if any were expired
+            await loadLinks();
+          }
+        } catch (err) {
+          console.error('Error checking for expired links:', err);
         }
-      } catch (err) {
-        console.error('Error checking for expired links:', err);
+      } else {
+        console.log('🔴 SecureLinksContext: Offline - skipping expired links check');
       }
     }, 30000); // 30 seconds
 
-    return () => clearInterval(interval);
+    // Listen for online/offline events
+    const handleOnline = () => {
+      console.log('🟢 SecureLinksContext: Back online - resuming expired links checks');
+      // Trigger immediate check when back online
+      SecureLinksService.updateExpiredLinks(user.id)
+        .then(expiredCount => {
+          if (expiredCount > 0) {
+            loadLinks();
+          }
+        })
+        .catch(err => console.error('Error checking for expired links on reconnect:', err));
+    };
+
+    const handleOffline = () => {
+      console.log('🔴 SecureLinksContext: Gone offline - pausing expired links checks');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, [user?.id, isPollingEnabled]);
 
   const addLink = async (link: SecureLink): Promise<void> => {
