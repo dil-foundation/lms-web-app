@@ -79,8 +79,10 @@ class MultitenancyNotificationService {
             entityId: notificationData.entityId,
             entityName: entityName,
             entityCode: entityCode,
-            parentEntity: parentEntity,
-            performedBy: performedBy,
+            parentEntityType: parentEntity?.type || '',
+            parentEntityName: parentEntity?.name || '',
+            performedById: performedBy.id,
+            performedByName: performedBy.name,
             timestamp: new Date().toISOString()
           },
           targetUsers: adminIds

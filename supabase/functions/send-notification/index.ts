@@ -12,7 +12,17 @@ type NotificationType =
   | "new_discussion"
   | "new_message"
   | "message_deleted"
-  | "conversation_deleted";
+  | "conversation_deleted"
+  | "course_published"
+  | "course_updated"
+  | "course_access_granted"
+  | "course_unpublished"
+  | "course_deleted"
+  | "class_created"
+  | "class_updated"
+  | "class_deleted"
+  | "added_to_class"
+  | "removed_from_class";
 
 interface NotificationPayload {
   type: NotificationType;
@@ -233,7 +243,7 @@ serve(async (req) => {
 
     const settings = adminSettings && adminSettings.length > 0 ? adminSettings[0] : {
       system_notifications: true,
-      push_notifications: false
+      push_notifications: true  // Enable push notifications by default
     };
 
     // If system notifications are disabled, skip all notifications
@@ -270,6 +280,7 @@ serve(async (req) => {
 
     userProfiles.forEach((profile: any) => {
       const preferences = profile.notification_preferences || { push: false, inApp: true };
+      console.log(`User ${profile.id} preferences:`, preferences);
       
       // If system notifications (inApp) are enabled, save to database
       if (preferences.inApp !== false) {
@@ -309,6 +320,8 @@ serve(async (req) => {
     }
 
     // Send FCM notifications only if global push notifications are enabled AND user has real time notifications enabled
+    console.log(`Push notification settings: global=${settings.push_notifications}, usersWithPush=${usersForPushNotifications.length}`);
+    
     if (settings.push_notifications && usersForPushNotifications.length > 0) {
       const { data: tokensResult, error: tokensError } = await supabaseAdmin.rpc('get_fcm_tokens_for_users', { user_ids: usersForPushNotifications });
       if (tokensError) {

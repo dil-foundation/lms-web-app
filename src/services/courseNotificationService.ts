@@ -35,7 +35,9 @@ class CourseNotificationService {
                 courseName: courseName,
                 courseTitle: courseTitle,
                 action: 'access_granted',
-                performedBy: performedBy,
+                performedById: performedBy.id,
+                performedByName: performedBy.name,
+                performedByEmail: performedBy.email,
                 timestamp: new Date().toISOString()
               },
               targetUsers: [teacher.id]
@@ -75,7 +77,9 @@ class CourseNotificationService {
                 courseName: courseName,
                 courseTitle: courseTitle,
                 action: 'course_updated',
-                performedBy: performedBy,
+                performedById: performedBy.id,
+                performedByName: performedBy.name,
+                performedByEmail: performedBy.email,
                 timestamp: new Date().toISOString()
               },
               targetUsers: [teacher.id]
@@ -171,7 +175,9 @@ class CourseNotificationService {
                 courseName: courseName,
                 courseTitle: courseTitle,
                 action: 'course_published',
-                performedBy: performedBy,
+                performedById: performedBy.id,
+                performedByName: performedBy.name,
+                performedByEmail: performedBy.email,
                 timestamp: new Date().toISOString()
               },
               targetUsers: [student.id]
@@ -288,7 +294,9 @@ class CourseNotificationService {
                 courseName: courseName,
                 courseTitle: courseTitle,
                 action: 'course_published',
-                performedBy: performedBy,
+                performedById: performedBy.id,
+                performedByName: performedBy.name,
+                performedByEmail: performedBy.email,
                 timestamp: new Date().toISOString()
               },
               targetUsers: [teacher.id]
@@ -361,10 +369,19 @@ class CourseNotificationService {
     try {
       const { courseId, courseName, courseTitle, existingTeachers, students, performedBy } = notificationData;
       
+      console.log('🔔 Sending course unpublished notifications:', {
+        courseId,
+        courseName,
+        teachersCount: existingTeachers?.length || 0,
+        studentsCount: students?.length || 0
+      });
+      
       // Send notifications to teachers
       if (existingTeachers && existingTeachers.length > 0) {
+        console.log('🔔 Sending unpublished notifications to teachers:', existingTeachers.map(t => t.name));
         for (const teacher of existingTeachers) {
           try {
+            console.log(`🔔 Sending unpublished notification to teacher: ${teacher.name} (${teacher.id})`);
             await supabase.functions.invoke('send-notification', {
               body: {
                 type: 'course_unpublished',
@@ -375,7 +392,9 @@ class CourseNotificationService {
                   courseName: courseName,
                   courseTitle: courseTitle,
                   action: 'course_unpublished',
-                  performedBy: performedBy,
+                  performedById: performedBy.id,
+                  performedByName: performedBy.name,
+                  performedByEmail: performedBy.email,
                   timestamp: new Date().toISOString()
                 },
                 targetUsers: [teacher.id]
@@ -389,8 +408,10 @@ class CourseNotificationService {
 
       // Send notifications to students
       if (students && students.length > 0) {
+        console.log('🔔 Sending unpublished notifications to students:', students.map(s => s.name));
         for (const student of students) {
           try {
+            console.log(`🔔 Sending unpublished notification to student: ${student.name} (${student.id})`);
             await supabase.functions.invoke('send-notification', {
               body: {
                 type: 'course_unpublished',
@@ -401,7 +422,9 @@ class CourseNotificationService {
                   courseName: courseName,
                   courseTitle: courseTitle,
                   action: 'course_unpublished',
-                  performedBy: performedBy,
+                  performedById: performedBy.id,
+                  performedByName: performedBy.name,
+                  performedByEmail: performedBy.email,
                   timestamp: new Date().toISOString()
                 },
                 targetUsers: [student.id]
@@ -441,7 +464,9 @@ class CourseNotificationService {
                   courseName: courseName,
                   courseTitle: courseTitle,
                   action: 'course_deleted',
-                  performedBy: performedBy,
+                  performedById: performedBy.id,
+                  performedByName: performedBy.name,
+                  performedByEmail: performedBy.email,
                   timestamp: new Date().toISOString()
                 },
                 targetUsers: [teacher.id]
@@ -467,7 +492,9 @@ class CourseNotificationService {
                   courseName: courseName,
                   courseTitle: courseTitle,
                   action: 'course_deleted',
-                  performedBy: performedBy,
+                  performedById: performedBy.id,
+                  performedByName: performedBy.name,
+                  performedByEmail: performedBy.email,
                   timestamp: new Date().toISOString()
                 },
                 targetUsers: [student.id]
