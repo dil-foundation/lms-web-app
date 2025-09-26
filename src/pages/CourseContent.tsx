@@ -14,6 +14,7 @@ import { QuizRetryInterface } from '@/components/QuizRetryInterface';
 import { MathExpressionInput } from '@/components/quiz/MathExpressionInput';
 // import { MathQuizService } from '@/services/mathQuizService';
 import { evaluateMathExpression } from '@/utils/mathEvaluation';
+import CourseNotificationService from '@/services/courseNotificationService';
 import { 
   PlayCircle,
   CheckCircle, 
@@ -1026,6 +1027,39 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     
     console.log('✅ COURSE STATE UPDATE COMPLETED');
     await markContentAsComplete(currentContentItem.id, currentLesson.id, course.id);
+    
+    // Send notification to course teachers
+    try {
+      // Get course information
+      const courseInfo = await CourseNotificationService.getCourseInfo(course.id);
+      if (courseInfo) {
+        // Get course teachers
+        const teachers = await CourseNotificationService.getCourseTeachers(course.id);
+        
+        if (teachers.length > 0) {
+          // Send notification to teachers
+          await CourseNotificationService.notifyQuizSubmission({
+            courseId: course.id,
+            courseName: courseInfo.courseName,
+            courseTitle: courseInfo.courseTitle,
+            courseSubtitle: courseInfo.courseSubtitle,
+            action: 'quiz_submitted',
+            existingTeachers: teachers,
+            quizTitle: currentContentItem?.title || 'Unknown Quiz',
+            studentName: `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim() || 'Unknown Student',
+            manualGradingRequired: hasTextAnswers,
+            performedBy: {
+              id: user.id,
+              name: `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim() || 'Unknown Student',
+              email: user.email || 'unknown@email.com'
+            }
+          });
+        }
+      }
+    } catch (notificationError) {
+      console.error('Error sending quiz submission notification:', notificationError);
+      // Don't fail the submission if notification fails
+    }
     
     if (hasTextAnswers) {
       const autoGradedCount = autoGradedQuestions.length;

@@ -5,11 +5,17 @@ export interface CourseNotificationData {
   courseName: string;
   courseTitle: string;
   courseSubtitle?: string;
-  action: 'course_access_granted' | 'course_updated' | 'course_published' | 'course_unpublished' | 'course_deleted';
+  action: 'course_access_granted' | 'course_updated' | 'course_published' | 'course_unpublished' | 'course_deleted' | 'assignment_submitted' | 'quiz_submitted';
   addedTeachers?: Array<{ id: string; name: string; email: string }>;
   existingTeachers?: Array<{ id: string; name: string; email: string }>;
   students?: Array<{ id: string; name: string; email: string }>;
   performedBy: { id: string; name: string; email: string };
+  // Assignment-specific fields
+  assignmentTitle?: string;
+  studentName?: string;
+  // Quiz-specific fields
+  quizTitle?: string;
+  manualGradingRequired?: boolean;
 }
 
 class CourseNotificationService {
@@ -510,6 +516,137 @@ class CourseNotificationService {
     } catch (error) {
       console.error('Error sending course deleted notifications:', error);
       // Don't throw error to avoid breaking the main course operation
+    }
+  }
+
+  /**
+   * Send notifications when a student submits an assignment to course teachers
+   */
+  static async notifyAssignmentSubmission(notificationData: CourseNotificationData): Promise<void> {
+    try {
+      const { courseId, courseName, courseTitle, existingTeachers, assignmentTitle, studentName, performedBy } = notificationData;
+      
+      if (!existingTeachers || existingTeachers.length === 0) {
+        console.log('No teachers to notify for assignment submission');
+        return;
+      }
+
+      // Send notifications to all course teachers
+      for (const teacher of existingTeachers) {
+        try {
+          await supabase.functions.invoke('send-notification', {
+            body: {
+              type: 'assignment_submitted',
+              title: 'Assignment Submitted',
+              body: `${studentName} has submitted the assignment "${assignmentTitle}" for the course "${courseName}"`,
+              data: {
+                courseId: courseId,
+                courseName: courseName,
+                courseTitle: courseTitle,
+                assignmentTitle: assignmentTitle,
+                studentName: studentName,
+                action: 'assignment_submitted',
+                performedById: performedBy.id,
+                performedByName: performedBy.name,
+                performedByEmail: performedBy.email,
+                timestamp: new Date().toISOString()
+              },
+              targetUsers: [teacher.id]
+            }
+          });
+        } catch (error) {
+          console.error(`Error sending assignment submission notification to teacher ${teacher.name}:`, error);
+        }
+      }
+
+      console.log(`✅ Notified ${existingTeachers.length} teachers about assignment submission`);
+    } catch (error) {
+      console.error('Error sending assignment submission notifications:', error);
+      // Don't throw error to avoid breaking the main assignment submission operation
+    }
+  }
+
+  /**
+   * Send notifications when a student submits a quiz to course teachers
+   */
+  static async notifyQuizSubmission(notificationData: CourseNotificationData): Promise<void> {
+    try {
+      const { courseId, courseName, courseTitle, existingTeachers, quizTitle, studentName, manualGradingRequired, performedBy } = notificationData;
+      
+      if (!existingTeachers || existingTeachers.length === 0) {
+        console.log('No teachers to notify for quiz submission');
+        return;
+      }
+
+      // Create notification message based on manual grading requirement
+      const baseMessage = `${studentName} has submitted the quiz "${quizTitle}" for the course "${courseName}"`;
+      const message = manualGradingRequired 
+        ? `${baseMessage}. Manual grading is required.`
+        : baseMessage;
+
+      // Send notifications to all course teachers
+      for (const teacher of existingTeachers) {
+        try {
+          await supabase.functions.invoke('send-notification', {
+            body: {
+              type: 'quiz_submitted',
+              title: 'Quiz Submitted',
+              body: message,
+              data: {
+                courseId: courseId,
+                courseName: courseName,
+                courseTitle: courseTitle,
+                quizTitle: quizTitle,
+                studentName: studentName,
+                manualGradingRequired: manualGradingRequired?.toString() || 'false',
+                action: 'quiz_submitted',
+                performedById: performedBy.id,
+                performedByName: performedBy.name,
+                performedByEmail: performedBy.email,
+                timestamp: new Date().toISOString()
+              },
+              targetUsers: [teacher.id]
+            }
+          });
+        } catch (error) {
+          console.error(`Error sending quiz submission notification to teacher ${teacher.name}:`, error);
+        }
+      }
+
+      console.log(`✅ Notified ${existingTeachers.length} teachers about quiz submission`);
+    } catch (error) {
+      console.error('Error sending quiz submission notifications:', error);
+      // Don't throw error to avoid breaking the main quiz submission operation
+    }
+  }
+
+  /**
+   * Get course teachers for a specific course
+   */
+  static async getCourseTeachers(courseId: string): Promise<Array<{ id: string; name: string; email: string }>> {
+    try {
+      const { data: courseMembers, error } = await supabase
+        .from('course_members')
+        .select(`
+          user_id,
+          profiles!inner(id, first_name, last_name, email)
+        `)
+        .eq('course_id', courseId)
+        .eq('role', 'teacher');
+
+      if (error) {
+        console.error('Error fetching course teachers:', error);
+        return [];
+      }
+
+      return courseMembers?.map((member: any) => ({
+        id: member.profiles.id,
+        name: `${member.profiles.first_name} ${member.profiles.last_name}`,
+        email: member.profiles.email
+      })) || [];
+    } catch (error) {
+      console.error('Error getting course teachers:', error);
+      return [];
     }
   }
 }

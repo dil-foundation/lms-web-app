@@ -18,6 +18,8 @@ type NotificationType =
   | "course_access_granted"
   | "course_unpublished"
   | "course_deleted"
+  | "assignment_submitted"
+  | "quiz_submitted"
   | "class_created"
   | "class_updated"
   | "class_deleted"
