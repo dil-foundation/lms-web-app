@@ -14,6 +14,7 @@ import { ContentLoader } from '@/components/ContentLoader';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import AccessLogService from '@/services/accessLogService';
+import { GradingNotificationService } from '@/services/gradingNotificationService';
 import { MathDrawingCanvas } from '@/components/quiz/MathDrawingCanvas';
 
 // Types
@@ -633,6 +634,47 @@ export const AssignmentSubmissions = () => {
             console.error('Error logging assignment grading:', logError);
           }
         }
+
+        // Send notification to student about graded assignment
+        try {
+          // Check if this is a grade update (submission already has a grade)
+          const isUpdate = selectedSubmission.score !== null && selectedSubmission.score !== undefined;
+          const previousScore = isUpdate ? selectedSubmission.score : undefined;
+          
+          // Get course information
+          const courseInfo = await GradingNotificationService.getCourseInfo(assignmentDetails.course_id);
+          if (courseInfo) {
+            // Get student information
+            const studentInfo = await GradingNotificationService.getStudentInfo(selectedSubmission.student.id);
+            if (studentInfo) {
+              // Send notification to student
+              await GradingNotificationService.notifyStudentGrading({
+                studentId: selectedSubmission.student.id,
+                studentName: studentInfo.name,
+                studentEmail: studentInfo.email,
+                assignmentId: assignmentId || 'unknown',
+                assignmentTitle: assignmentDetails.title,
+                assignmentType: 'assignment',
+                courseId: assignmentDetails.course_id,
+                courseName: courseInfo.courseName,
+                courseTitle: courseInfo.courseTitle,
+                courseSubtitle: courseInfo.courseSubtitle,
+                score: parseFloat(grade) || 0,
+                feedback: feedback,
+                gradedBy: {
+                  id: user.id,
+                  name: user.user_metadata?.full_name || user.email || 'Unknown Teacher',
+                  email: user.email || 'unknown@email.com'
+                },
+                isUpdate: isUpdate,
+                previousScore: previousScore
+              });
+            }
+          }
+        } catch (notificationError) {
+          console.error('Error sending assignment grading notification:', notificationError);
+          // Don't fail the grading if notification fails
+        }
         }
       } else if (assignmentDetails?.type === 'quiz') {
         // Handle quiz grading
@@ -740,6 +782,47 @@ export const AssignmentSubmissions = () => {
               console.error('Error logging quiz grading:', logError);
             }
           }
+
+          // Send notification to student about graded quiz
+          try {
+            // Check if this is a grade update (submission already has a grade)
+            const isUpdate = selectedSubmission.score !== null && selectedSubmission.score !== undefined;
+            const previousScore = isUpdate ? selectedSubmission.score : undefined;
+            
+            // Get course information
+            const courseInfo = await GradingNotificationService.getCourseInfo(assignmentDetails.course_id);
+            if (courseInfo) {
+              // Get student information
+              const studentInfo = await GradingNotificationService.getStudentInfo(selectedSubmission.student.id);
+              if (studentInfo) {
+                // Send notification to student
+                await GradingNotificationService.notifyStudentGrading({
+                  studentId: selectedSubmission.student.id,
+                  studentName: studentInfo.name,
+                  studentEmail: studentInfo.email,
+                  assignmentId: assignmentId || 'unknown',
+                  assignmentTitle: assignmentDetails.title,
+                  assignmentType: 'quiz',
+                  courseId: assignmentDetails.course_id,
+                  courseName: courseInfo.courseName,
+                  courseTitle: courseInfo.courseTitle,
+                  courseSubtitle: courseInfo.courseSubtitle,
+                  score: finalPercentage,
+                  feedback: feedback,
+                  gradedBy: {
+                    id: user.id,
+                    name: user.user_metadata?.full_name || user.email || 'Unknown Teacher',
+                    email: user.email || 'unknown@email.com'
+                  },
+                  isUpdate: isUpdate,
+                  previousScore: previousScore
+                });
+              }
+            }
+          } catch (notificationError) {
+            console.error('Error sending quiz grading notification:', notificationError);
+            // Don't fail the grading if notification fails
+          }
         } else {
           // Regular quiz grading (for quizzes with only auto-graded questions)
           const { error } = await supabase
@@ -770,6 +853,47 @@ export const AssignmentSubmissions = () => {
             } catch (logError) {
               console.error('Error logging quiz grading:', logError);
             }
+          }
+
+          // Send notification to student about graded quiz
+          try {
+            // Check if this is a grade update (submission already has a grade)
+            const isUpdate = selectedSubmission.score !== null && selectedSubmission.score !== undefined;
+            const previousScore = isUpdate ? selectedSubmission.score : undefined;
+            
+            // Get course information
+            const courseInfo = await GradingNotificationService.getCourseInfo(assignmentDetails.course_id);
+            if (courseInfo) {
+              // Get student information
+              const studentInfo = await GradingNotificationService.getStudentInfo(selectedSubmission.student.id);
+              if (studentInfo) {
+                // Send notification to student
+                await GradingNotificationService.notifyStudentGrading({
+                  studentId: selectedSubmission.student.id,
+                  studentName: studentInfo.name,
+                  studentEmail: studentInfo.email,
+                  assignmentId: assignmentId || 'unknown',
+                  assignmentTitle: assignmentDetails.title,
+                  assignmentType: 'quiz',
+                  courseId: assignmentDetails.course_id,
+                  courseName: courseInfo.courseName,
+                  courseTitle: courseInfo.courseTitle,
+                  courseSubtitle: courseInfo.courseSubtitle,
+                  score: selectedSubmission.score || 0,
+                  feedback: feedback,
+                  gradedBy: {
+                    id: user.id,
+                    name: user.user_metadata?.full_name || user.email || 'Unknown Teacher',
+                    email: user.email || 'unknown@email.com'
+                  },
+                  isUpdate: isUpdate,
+                  previousScore: previousScore
+                });
+              }
+            }
+          } catch (notificationError) {
+            console.error('Error sending quiz grading notification:', notificationError);
+            // Don't fail the grading if notification fails
           }
         }
     }
