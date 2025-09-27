@@ -1042,9 +1042,6 @@ export default function StudentsPage() {
                         setIsProfileModalOpen(true);
                       }
                     }}
-                    onGrade={(student) => {
-                      // Handle grade functionality
-                    }}
                     onEdit={(student) => {
                       const originalStudent = filteredStudents.find(s => s.id === student.id);
                       if (originalStudent) {
@@ -1092,13 +1089,6 @@ export default function StudentsPage() {
                       setSelectedStudent(student);
                       setModalMode('view');
                       setIsProfileModalOpen(true);
-                    }}
-                    onGrade={(student) => {
-                      // Handle grade functionality
-                      toast({
-                        title: "Grade",
-                        description: `Grading ${student.name}...`,
-                      });
                     }}
                     onEdit={(student) => {
                       setSelectedStudent(student);
@@ -1148,13 +1138,6 @@ export default function StudentsPage() {
                       setSelectedStudent(student);
                       setModalMode('view');
                       setIsProfileModalOpen(true);
-                    }}
-                    onGrade={(student) => {
-                      // Handle grade functionality
-                      toast({
-                        title: "Grade",
-                        description: `Grading ${student.name}...`,
-                      });
                     }}
                     onEdit={(student) => {
                       setSelectedStudent(student);

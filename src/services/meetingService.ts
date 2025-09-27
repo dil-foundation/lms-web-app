@@ -74,24 +74,52 @@ class MeetingService {
   async getZoomIntegrationStatus(): Promise<{ enabled: boolean; config?: ZoomApiConfig }> {
     try {
       // Check if Zoom integration is enabled in the integrations table
-      const { data, error } = await supabase
+      console.log('🔍 Looking for Zoom integration with name = "zoom"');
+      
+      // First, let's see all integrations to debug
+      const { data: allIntegrations, error: allError } = await supabase
         .from('integrations')
-        .select('status, settings, is_configured')
-        .eq('name', 'zoom')
-        .single();
+        .select('name, status, is_configured');
+      
+      console.log('📋 All integrations query result:', { data: allIntegrations, error: allError });
+      
+      if (allError) {
+        console.error('❌ Cannot access integrations table:', allError);
+        return { enabled: false };
+      }
+      
+      // Try different name variations
+      const zoomVariations = ['zoom', 'Zoom', 'ZOOM'];
+      let data = null;
+      let error = null;
+      
+      for (const name of zoomVariations) {
+        const result = await supabase
+          .from('integrations')
+          .select('status, settings, is_configured')
+          .eq('name', name)
+          .single();
+          
+        console.log(`🔍 Trying name = "${name}":`, result);
+        
+        if (!result.error) {
+          data = result.data;
+          error = result.error;
+          console.log(`✅ Found Zoom integration with name = "${name}"`);
+          break;
+        }
+      }
 
       if (error) {
-        console.error('Error checking Zoom integration:', error);
-        // For development, let's be more lenient and allow meeting creation even if integration check fails
-        console.warn('Zoom integration check failed, but allowing meeting creation for development');
-        return { 
-          enabled: true, // Allow for development
-          config: {
-            api_key: 'dev_key',
-            api_secret: 'dev_secret',
-            webhook_url: ''
-          }
-        };
+        // Silently handle missing integration record - this is expected when Zoom is not configured
+        if (error.code === 'PGRST116') {
+          // No rows returned - Zoom integration not configured
+          return { enabled: false };
+        }
+        
+        // For other errors, log but don't throw
+        console.warn('Zoom integration check failed:', error.message);
+        return { enabled: false };
       }
 
       // Check for OAuth credentials (client_id = api_key, client_secret = api_secret)
@@ -99,14 +127,17 @@ class MeetingService {
       const hasLegacyCredentials = data?.settings?.api_key;
       const enabled = data?.status === 'enabled' && data?.is_configured && (hasOAuthCredentials || hasLegacyCredentials);
       
-      console.log('Zoom integration check:', {
-        status: data?.status,
-        is_configured: data?.is_configured,
-        hasOAuthCredentials,
-        hasLegacyCredentials,
-        enabled,
-        settings: data?.settings
-      });
+      // Only log in development mode to reduce console noise
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Zoom integration check:', {
+          status: data?.status,
+          is_configured: data?.is_configured,
+          hasOAuthCredentials,
+          hasLegacyCredentials,
+          enabled,
+          settings: data?.settings
+        });
+      }
       
       return {
         enabled,

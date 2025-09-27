@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -51,6 +51,24 @@ export const ReportsAnalytics = () => {
     enableAutoRefresh: false // Disable auto-refresh for now
   });
 
+  // Track screen size for responsive chart sizing
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+
+    // Check initial size
+    checkScreenSize();
+
+    // Add event listener
+    window.addEventListener('resize', checkScreenSize);
+
+    // Cleanup
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
   // Extract data from hook
   const practiceStageData = data?.practiceStagePerformance || null;
   const userEngagementData = data?.userEngagement || null;
@@ -82,30 +100,30 @@ export const ReportsAnalytics = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header Section */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-3xl"></div>
-        <div className="relative p-8 rounded-3xl">
-          <div className="flex items-center justify-between mb-6">
+        <div className="relative p-4 sm:p-6 lg:p-8 rounded-3xl">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-6 mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
-                <BarChart3 className="w-6 h-6 text-primary" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
+                <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent" style={{ lineHeight: '3rem' }}>
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent leading-tight">
                   Performance Analytics
                 </h1>
-                <p className="text-lg text-muted-foreground font-light">
-                  Comprehensive insights into student engagement and learning outcomes
+                <p className="text-sm sm:text-base lg:text-lg text-muted-foreground font-light mt-1">
+                  Monitor platform performance and user engagement
                 </p>
               </div>
             </div>
             
             {/* Filter Controls */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 w-full lg:w-auto">
               <Select value={dateRange} onValueChange={handleTimeRangeChange}>
-                <SelectTrigger className="w-full sm:w-48">
+                <SelectTrigger className="flex-1 lg:w-48">
                   <SelectValue placeholder="Select time range" />
                 </SelectTrigger>
                 <SelectContent>
@@ -119,7 +137,7 @@ export const ReportsAnalytics = () => {
               <button
                 onClick={handleRefresh}
                 disabled={refreshing}
-                className="p-2 bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors disabled:opacity-50"
+                className="p-2 bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors disabled:opacity-50 shrink-0"
                 title="Refresh reports data"
               >
                 <RefreshCw className={`w-4 h-4 text-primary ${refreshing ? 'animate-spin' : ''}`} />
@@ -212,22 +230,22 @@ export const ReportsAnalytics = () => {
 
       {/* Practice Stage Performance & User Engagement */}
       {(practiceStageData || userEngagementData) && (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
         <Card className="border-0 shadow-lg bg-gradient-to-br from-card to-blue-50/30 dark:to-blue-950/20">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <BarChart3 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          <CardHeader className="pb-3 sm:pb-4">
+            <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg font-semibold">
+              <div className="p-1.5 sm:p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400" />
               </div>
               Practice Stage Performance
             </CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
               Performance metrics across all learning stages
             </p>
           </CardHeader>
           <CardContent className="pt-0">
 
-            <div className="h-[320px] practice-stage-chart">
+            <div className="h-[280px] sm:h-[320px] practice-stage-chart">
               {(() => {
                 // Create stages 1-6 with data from API or default values
                 const stageNumbers = [1, 2, 3, 4, 5, 6];
@@ -252,11 +270,11 @@ export const ReportsAnalytics = () => {
                 });
 
                 const maxValue = 100;
-                const chartHeight = 240;
-                const chartWidth = 500;
-                const barWidth = 60;
-                const barSpacing = 20;
-                const startX = 60;
+                const chartHeight = 200;
+                const chartWidth = 450;
+                const barWidth = isMobile ? 45 : 60;
+                const barSpacing = isMobile ? 15 : 20;
+                const startX = isMobile ? 45 : 60;
                 const startY = 40;
 
                 return (
@@ -266,9 +284,10 @@ export const ReportsAnalytics = () => {
                       <svg 
                         width="100%" 
                         height="100%" 
-                        viewBox={`0 0 ${chartWidth + 120} ${chartHeight + 80}`} 
+                        viewBox={`0 0 ${chartWidth + 100} ${chartHeight + 80}`} 
                         className="overflow-visible"
-                        style={{ minHeight: '320px' }}
+                        style={{ minHeight: isMobile ? '280px' : '320px' }}
+                        preserveAspectRatio="xMidYMid meet"
                       >
                       <defs>
                         <linearGradient id="customBarGradient" x1="0" y1="0" x2="0" y2="1">
@@ -421,19 +440,19 @@ export const ReportsAnalytics = () => {
         </Card>
 
         <Card className="border-0 shadow-lg bg-gradient-to-br from-card to-green-50/30 dark:to-green-950/20">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                <Users className="h-5 w-5 text-green-600 dark:text-green-400" />
+          <CardHeader className="pb-3 sm:pb-4">
+            <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg font-semibold">
+              <div className="p-1.5 sm:p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                <Users className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-400" />
               </div>
               User Engagement Overview
             </CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
               Distribution of user activity types
             </p>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="h-[240px] mb-6">
+            <div className="h-[200px] sm:h-[240px] mb-4 sm:mb-6">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <defs>
@@ -445,8 +464,8 @@ export const ReportsAnalytics = () => {
                     data={userEngagementData?.engagementTypes || []}
                     cx="50%"
                     cy="50%"
-                    innerRadius={65}
-                    outerRadius={95}
+                    innerRadius={isMobile ? 50 : 65}
+                    outerRadius={isMobile ? 75 : 95}
                     paddingAngle={3}
                     dataKey="value"
                     filter="url(#shadow)"
@@ -503,19 +522,19 @@ export const ReportsAnalytics = () => {
       {/* Time of Day Usage */}
       {timeUsageData && (
       <Card className="border-0 shadow-lg bg-gradient-to-br from-card to-purple-50/30 dark:to-purple-950/20">
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-            <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-              <Clock className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+        <CardHeader className="pb-3 sm:pb-4">
+          <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg font-semibold">
+            <div className="p-1.5 sm:p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+              <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600 dark:text-purple-400" />
             </div>
             Time of Day Usage Patterns
           </CardTitle>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             Peak usage hours throughout the day
           </p>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="h-[320px]">
+          <div className="h-[280px] sm:h-[320px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart 
                 data={timeUsageData?.patterns || []}
@@ -612,28 +631,28 @@ export const ReportsAnalytics = () => {
       {/* Top Content Accessed */}
       {topContentData && (
       <Card className="border-0 shadow-lg bg-gradient-to-br from-card to-orange-50/30 dark:to-orange-950/20">
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-            <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-              <Star className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+        <CardHeader className="pb-3 sm:pb-4">
+          <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg font-semibold">
+            <div className="p-1.5 sm:p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+              <Star className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600 dark:text-orange-400" />
             </div>
             Top Content Accessed
           </CardTitle>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             Most popular learning content and materials
           </p>
         </CardHeader>
         <CardContent className="pt-0">
           <div className="space-y-3">
             {(topContentData?.content || []).slice(0, 5).map((content, index) => (
-              <div key={index} className="group relative p-4 rounded-xl border-0 bg-gradient-to-r from-background to-muted/20 hover:from-muted/30 hover:to-muted/40 transition-all duration-300 shadow-sm hover:shadow-md">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4 flex-1">
-                    <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 group-hover:from-primary/20 group-hover:to-primary/10 transition-colors">
-                      <div className="text-lg font-bold text-primary">#{index + 1}</div>
+              <div key={index} className="group relative p-3 sm:p-4 rounded-xl border-0 bg-gradient-to-r from-background to-muted/20 hover:from-muted/30 hover:to-muted/40 transition-all duration-300 shadow-sm hover:shadow-md">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="flex items-center gap-3 sm:gap-4 flex-1">
+                    <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 group-hover:from-primary/20 group-hover:to-primary/10 transition-colors shrink-0">
+                      <div className="text-sm sm:text-lg font-bold text-primary">#{index + 1}</div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                      <h3 className="font-semibold text-sm sm:text-base text-foreground truncate group-hover:text-primary transition-colors">
                         {content.title}
                       </h3>
                       <div className="flex items-center gap-2 mt-1">
@@ -649,11 +668,11 @@ export const ReportsAnalytics = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-6">
+                  <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-6">
                     <div className="text-center">
                       <div className="flex items-center gap-1 justify-center">
                         <Eye className="h-3 w-3 text-blue-500" />
-                        <span className="text-sm font-bold text-foreground">
+                        <span className="text-xs sm:text-sm font-bold text-foreground">
                           {content.accessCount.toLocaleString()}
                         </span>
                       </div>
@@ -662,14 +681,14 @@ export const ReportsAnalytics = () => {
                     <div className="text-center">
                       <div className="flex items-center gap-1 justify-center">
                         <Star className="h-3 w-3 text-yellow-500 fill-current" />
-                        <span className="text-sm font-bold text-foreground">
+                        <span className="text-xs sm:text-sm font-bold text-foreground">
                           {content.avgRating.toFixed(1)}
                         </span>
                       </div>
                       <div className="text-xs text-muted-foreground font-medium">rating</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-sm font-bold text-green-600 dark:text-green-400">
+                      <div className="text-xs sm:text-sm font-bold text-green-600 dark:text-green-400">
                         {Math.round(content.completionRate)}%
                       </div>
                       <div className="text-xs text-muted-foreground font-medium">completion</div>

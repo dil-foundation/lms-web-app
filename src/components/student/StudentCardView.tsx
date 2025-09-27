@@ -23,7 +23,6 @@ interface StudentCardViewProps {
   onStudentClick: (student: Student) => void;
   onMessage: (student: Student) => void;
   onViewProfile: (student: Student) => void;
-  onGrade: (student: Student) => void;
   onEdit: (student: Student) => void;
   onRemove: (student: Student) => void;
   className?: string;
@@ -34,7 +33,6 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
   onStudentClick,
   onMessage,
   onViewProfile,
-  onGrade,
   onEdit,
   onRemove,
   className
@@ -48,27 +46,35 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
   };
   const handleMessage = (e: React.MouseEvent, student: Student) => {
     e.stopPropagation();
-    onMessage(student);
+    // Small delay to ensure dropdown is fully closed
+    setTimeout(() => {
+      onMessage(student);
+    }, 100);
   };
 
   const handleViewProfile = (e: React.MouseEvent, student: Student) => {
     e.stopPropagation();
-    onViewProfile(student);
+    // Small delay to ensure dropdown is fully closed
+    setTimeout(() => {
+      onViewProfile(student);
+    }, 100);
   };
 
-  const handleGrade = (e: React.MouseEvent, student: Student) => {
-    e.stopPropagation();
-    onGrade(student);
-  };
 
   const handleEdit = (e: React.MouseEvent, student: Student) => {
     e.stopPropagation();
-    onEdit(student);
+    // Small delay to ensure dropdown is fully closed
+    setTimeout(() => {
+      onEdit(student);
+    }, 100);
   };
 
   const handleRemove = (e: React.MouseEvent, student: Student) => {
     e.stopPropagation();
-    onRemove(student);
+    // Small delay to ensure dropdown is fully closed
+    setTimeout(() => {
+      onRemove(student);
+    }, 100);
   };
 
   const getStatusBadge = (status: string) => {
@@ -133,9 +139,9 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
                       <Mail className="w-4 h-4 mr-2" />
                       Send Message
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={(e) => handleGrade(e, student)}>
+                    <DropdownMenuItem onClick={(e) => handleEdit(e, student)}>
                       <Edit className="w-4 h-4 mr-2" />
-                      Grade Student
+                      Edit
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
