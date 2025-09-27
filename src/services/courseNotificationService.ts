@@ -5,7 +5,7 @@ export interface CourseNotificationData {
   courseName: string;
   courseTitle: string;
   courseSubtitle?: string;
-  action: 'course_access_granted' | 'course_updated' | 'course_published' | 'course_unpublished' | 'course_deleted' | 'assignment_submitted' | 'quiz_submitted';
+  action: 'course_access_granted' | 'course_updated' | 'course_published' | 'course_unpublished' | 'course_deleted' | 'assignment_submitted' | 'quiz_submitted' | 'course_submitted_for_review' | 'course_approved' | 'course_rejected';
   addedTeachers?: Array<{ id: string; name: string; email: string }>;
   existingTeachers?: Array<{ id: string; name: string; email: string }>;
   students?: Array<{ id: string; name: string; email: string }>;
@@ -16,6 +16,8 @@ export interface CourseNotificationData {
   // Quiz-specific fields
   quizTitle?: string;
   manualGradingRequired?: boolean;
+  // Course review fields
+  rejectionFeedback?: string;
 }
 
 class CourseNotificationService {
@@ -647,6 +649,177 @@ class CourseNotificationService {
     } catch (error) {
       console.error('Error getting course teachers:', error);
       return [];
+    }
+  }
+
+  /**
+   * Get all admin users from the database
+   */
+  private static async getAllAdmins(): Promise<Array<{ id: string; name: string; email: string }>> {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, email')
+        .eq('role', 'admin');
+
+      if (error) {
+        console.error('Error fetching admin users:', error);
+        return [];
+      }
+
+      return data?.map(admin => ({
+        id: admin.id,
+        name: `${admin.first_name || ''} ${admin.last_name || ''}`.trim() || 'Admin',
+        email: admin.email || ''
+      })) || [];
+    } catch (error) {
+      console.error('Error getting admin users:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Send notifications to all admins when a course is submitted for review
+   */
+  static async notifyAdminsCourseSubmittedForReview(notificationData: CourseNotificationData): Promise<void> {
+    try {
+      const { courseId, courseName, courseTitle, performedBy } = notificationData;
+      
+      // Get all admin users
+      const admins = await this.getAllAdmins();
+      
+      if (admins.length === 0) {
+        console.warn('No admin users found to notify about course submission for review');
+        return;
+      }
+
+      // Send notifications to all admins
+      for (const admin of admins) {
+        try {
+          await supabase.functions.invoke('send-notification', {
+            body: {
+              type: 'course_submitted_for_review',
+              title: 'Course Submitted for Review',
+              body: `The course "${courseName}" has been submitted for review by ${performedBy.name}`,
+              data: {
+                courseId: courseId,
+                courseName: courseName,
+                courseTitle: courseTitle,
+                action: 'course_submitted_for_review',
+                performedById: performedBy.id,
+                performedByName: performedBy.name,
+                performedByEmail: performedBy.email,
+                timestamp: new Date().toISOString()
+              },
+              targetUsers: [admin.id]
+            }
+          });
+        } catch (error) {
+          console.error(`Error sending course submission notification to admin ${admin.name}:`, error);
+        }
+      }
+
+      console.log(`✅ Notified ${admins.length} admins about course submission for review`);
+    } catch (error) {
+      console.error('Error sending course submission notifications to admins:', error);
+      // Don't throw error to avoid breaking the main course operation
+    }
+  }
+
+  /**
+   * Send notifications to course teachers when a course is approved
+   */
+  static async notifyTeachersCourseApproved(notificationData: CourseNotificationData): Promise<void> {
+    try {
+      const { courseId, courseName, courseTitle, existingTeachers, performedBy } = notificationData;
+      
+      if (!existingTeachers || existingTeachers.length === 0) {
+        console.warn('No teachers found to notify about course approval');
+        return;
+      }
+
+      // Send notifications to all course teachers
+      for (const teacher of existingTeachers) {
+        try {
+          await supabase.functions.invoke('send-notification', {
+            body: {
+              type: 'course_approved',
+              title: 'Course Approved',
+              body: `Your course "${courseName}" has been approved and published by ${performedBy.name}`,
+              data: {
+                courseId: courseId,
+                courseName: courseName,
+                courseTitle: courseTitle,
+                action: 'course_approved',
+                performedById: performedBy.id,
+                performedByName: performedBy.name,
+                performedByEmail: performedBy.email,
+                timestamp: new Date().toISOString()
+              },
+              targetUsers: [teacher.id]
+            }
+          });
+        } catch (error) {
+          console.error(`Error sending course approval notification to teacher ${teacher.name}:`, error);
+        }
+      }
+
+      console.log(`✅ Notified ${existingTeachers.length} teachers about course approval`);
+    } catch (error) {
+      console.error('Error sending course approval notifications to teachers:', error);
+      // Don't throw error to avoid breaking the main course operation
+    }
+  }
+
+  /**
+   * Send notifications to course teachers when a course is rejected
+   */
+  static async notifyTeachersCourseRejected(notificationData: CourseNotificationData): Promise<void> {
+    try {
+      const { courseId, courseName, courseTitle, existingTeachers, performedBy, rejectionFeedback } = notificationData;
+      
+      if (!existingTeachers || existingTeachers.length === 0) {
+        console.warn('No teachers found to notify about course rejection');
+        return;
+      }
+
+      // Create notification message with feedback
+      const baseMessage = `Your course "${courseName}" has been rejected by ${performedBy.name}`;
+      const message = rejectionFeedback 
+        ? `${baseMessage}. Feedback: ${rejectionFeedback}`
+        : baseMessage;
+
+      // Send notifications to all course teachers
+      for (const teacher of existingTeachers) {
+        try {
+          await supabase.functions.invoke('send-notification', {
+            body: {
+              type: 'course_rejected',
+              title: 'Course Rejected',
+              body: message,
+              data: {
+                courseId: courseId,
+                courseName: courseName,
+                courseTitle: courseTitle,
+                action: 'course_rejected',
+                performedById: performedBy.id,
+                performedByName: performedBy.name,
+                performedByEmail: performedBy.email,
+                rejectionFeedback: rejectionFeedback || '',
+                timestamp: new Date().toISOString()
+              },
+              targetUsers: [teacher.id]
+            }
+          });
+        } catch (error) {
+          console.error(`Error sending course rejection notification to teacher ${teacher.name}:`, error);
+        }
+      }
+
+      console.log(`✅ Notified ${existingTeachers.length} teachers about course rejection`);
+    } catch (error) {
+      console.error('Error sending course rejection notifications to teachers:', error);
+      // Don't throw error to avoid breaking the main course operation
     }
   }
 }
