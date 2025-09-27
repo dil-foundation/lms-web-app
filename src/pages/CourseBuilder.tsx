@@ -5404,6 +5404,25 @@ const CourseBuilder = () => {
           console.error('Error logging course submission:', logError);
         }
       }
+
+      // Send notifications to all admins about course submission for review
+      try {
+        await CourseNotificationService.notifyAdminsCourseSubmittedForReview({
+          courseId: savedId,
+          courseName: courseData.title,
+          courseTitle: courseData.title,
+          courseSubtitle: courseData.subtitle,
+          action: 'course_submitted_for_review',
+          performedBy: {
+            id: user.id,
+            name: user.user_metadata?.full_name || user.email || 'Unknown User',
+            email: user.email || 'unknown@email.com'
+          }
+        });
+      } catch (notificationError) {
+        console.error('Error sending course submission notifications to admins:', notificationError);
+        // Don't throw error to avoid breaking the main course operation
+      }
       
       toast.success("Course submitted for review successfully!");
       // Update the local state to reflect the new status and ID if it was a new course
@@ -5435,6 +5454,26 @@ const CourseBuilder = () => {
         } catch (logError) {
           console.error('Error logging course approval:', logError);
         }
+      }
+
+      // Send notifications to course teachers about course approval
+      try {
+        await CourseNotificationService.notifyTeachersCourseApproved({
+          courseId: courseData.id,
+          courseName: courseData.title,
+          courseTitle: courseData.title,
+          courseSubtitle: courseData.subtitle,
+          action: 'course_approved',
+          existingTeachers: courseData.teachers,
+          performedBy: {
+            id: user.id,
+            name: user.user_metadata?.full_name || user.email || 'Unknown Admin',
+            email: user.email || 'unknown@email.com'
+          }
+        });
+      } catch (notificationError) {
+        console.error('Error sending course approval notifications to teachers:', notificationError);
+        // Don't throw error to avoid breaking the main course operation
       }
       
       setPersistentFeedback(null);
@@ -5473,6 +5512,27 @@ const CourseBuilder = () => {
         } catch (logError) {
           console.error('Error logging course rejection:', logError);
         }
+      }
+
+      // Send notifications to course teachers about course rejection
+      try {
+        await CourseNotificationService.notifyTeachersCourseRejected({
+          courseId: courseData.id,
+          courseName: courseData.title,
+          courseTitle: courseData.title,
+          courseSubtitle: courseData.subtitle,
+          action: 'course_rejected',
+          existingTeachers: courseData.teachers,
+          performedBy: {
+            id: user.id,
+            name: user.user_metadata?.full_name || user.email || 'Unknown Admin',
+            email: user.email || 'unknown@email.com'
+          },
+          rejectionFeedback: rejectionFeedback
+        });
+      } catch (notificationError) {
+        console.error('Error sending course rejection notifications to teachers:', notificationError);
+        // Don't throw error to avoid breaking the main course operation
       }
       
       setPersistentFeedback(rejectionFeedback);
