@@ -64,6 +64,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { ContentLoader } from '@/components/ContentLoader';
 import AccessLogService from '@/services/accessLogService';
+import CourseNotificationService from '@/services/courseNotificationService';
 import { CourseOverview } from './CourseOverview';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
@@ -2166,11 +2167,36 @@ const CourseBuilder = () => {
     );
     
     // Update course data with teachers and students from selected classes
-    setCourseData(prev => ({
-      ...prev,
-      teachers: uniqueTeachers,
-      students: uniqueStudents
-    }));
+    // BUT preserve any additional teachers/students that are not from classes
+    setCourseData(prev => {
+      // Get current class IDs to identify which members are from classes
+      const currentClassIds = prev.class_ids || [];
+      const currentClassObjects = dbClasses.filter(cls => currentClassIds.includes(cls.id));
+      const currentClassTeacherIds = currentClassObjects.flatMap(cls => cls.teachers.map(t => t.id));
+      const currentClassStudentIds = currentClassObjects.flatMap(cls => cls.students.map(s => s.id));
+      
+      // Preserve teachers and students that are NOT from classes (additional members)
+      const additionalTeachers = prev.teachers.filter(teacher => !currentClassTeacherIds.includes(teacher.id));
+      const additionalStudents = prev.students.filter(student => !currentClassStudentIds.includes(student.id));
+      
+      // Merge class members with additional members
+      const mergedTeachers = [...uniqueTeachers, ...additionalTeachers];
+      const mergedStudents = [...uniqueStudents, ...additionalStudents];
+      
+      // Remove duplicates from merged arrays
+      const finalTeachers = mergedTeachers.filter((teacher, index, self) => 
+        index === self.findIndex(t => t.id === teacher.id)
+      );
+      const finalStudents = mergedStudents.filter((student, index, self) => 
+        index === self.findIndex(s => s.id === student.id)
+      );
+      
+      return {
+        ...prev,
+        teachers: finalTeachers,
+        students: finalStudents
+      };
+    });
   };
 
   // Refresh course teachers and students from enrolled classes
@@ -3813,16 +3839,10 @@ const CourseBuilder = () => {
       role: role as 'teacher' | 'student'
     }));
 
-    if (desiredMembers.length > 0) {
-      const { error: upsertError } = await supabase
-        .from('course_members')
-        .upsert(desiredMembers, { onConflict: 'course_id,user_id' });
-      if (upsertError) throw new Error(`There was an issue updating course members: ${upsertError.message}`);
-    }
-
+    // Get current members for comparison
     const { data: currentDbMembers, error: fetchError } = await supabase
       .from('course_members')
-      .select('user_id')
+      .select('user_id, role')
       .eq('course_id', currentCourseId);
 
     if (fetchError) {
@@ -3852,6 +3872,49 @@ const CourseBuilder = () => {
                  toast.warning("Failed to remove all course members.", { description: deleteAllError.message });
             }
         }
+    }
+
+    if (desiredMembers.length > 0) {
+      const { error: upsertError } = await supabase
+        .from('course_members')
+        .upsert(desiredMembers, { onConflict: 'course_id,user_id' });
+      if (upsertError) throw new Error(`There was an issue updating course members: ${upsertError.message}`);
+    }
+
+    // Send notifications for teacher changes
+    try {
+      const currentTeacherIds = currentDbMembers
+        ?.filter(member => member.role === 'teacher')
+        .map(member => member.user_id) || [];
+      
+      const newTeacherIds = courseToSave.teachers
+        .filter(teacher => !currentTeacherIds.includes(teacher.id))
+        .map(teacher => teacher.id);
+      
+      const existingTeacherIds = courseToSave.teachers
+        .filter(teacher => currentTeacherIds.includes(teacher.id))
+        .map(teacher => teacher.id);
+
+      // Get teacher details for notifications
+      const newTeachers = await CourseNotificationService.getTeacherDetails(newTeacherIds);
+      const existingTeachers = await CourseNotificationService.getTeacherDetails(existingTeacherIds);
+
+      // Send notifications
+      if (newTeachers.length > 0 || existingTeachers.length > 0) {
+        await CourseNotificationService.notifyCourseMemberChanges(
+          currentCourseId,
+          newTeachers,
+          existingTeachers,
+          {
+            id: user.id,
+            name: user.user_metadata?.full_name || user.email || 'Unknown User',
+            email: user.email || 'unknown@email.com'
+          }
+        );
+      }
+    } catch (notificationError) {
+      console.error('Error sending course notifications:', notificationError);
+      // Don't throw error to avoid breaking the main course operation
     }
     
     return currentCourseId;
@@ -4715,7 +4778,7 @@ const CourseBuilder = () => {
 
     const { data: currentDbMembers, error: fetchError } = await supabase
       .from('course_members')
-      .select('user_id')
+      .select('user_id, role')
       .eq('course_id', currentCourseId);
 
     if (fetchError) {
@@ -4745,6 +4808,42 @@ const CourseBuilder = () => {
                  toast.warning("Failed to remove all course members.", { description: deleteAllError.message });
             }
         }
+    }
+
+    // Send notifications for teacher changes
+    try {
+      const currentTeacherIds = currentDbMembers
+        ?.filter(member => member.role === 'teacher')
+        .map(member => member.user_id) || [];
+      
+      const newTeacherIds = courseToSave.teachers
+        .filter(teacher => !currentTeacherIds.includes(teacher.id))
+        .map(teacher => teacher.id);
+      
+      const existingTeacherIds = courseToSave.teachers
+        .filter(teacher => currentTeacherIds.includes(teacher.id))
+        .map(teacher => teacher.id);
+
+      // Get teacher details for notifications
+      const newTeachers = await CourseNotificationService.getTeacherDetails(newTeacherIds);
+      const existingTeachers = await CourseNotificationService.getTeacherDetails(existingTeacherIds);
+
+      // Send notifications
+      if (newTeachers.length > 0 || existingTeachers.length > 0) {
+        await CourseNotificationService.notifyCourseMemberChanges(
+          currentCourseId,
+          newTeachers,
+          existingTeachers,
+          {
+            id: user.id,
+            name: user.user_metadata?.full_name || user.email || 'Unknown User',
+            email: user.email || 'unknown@email.com'
+          }
+        );
+      }
+    } catch (notificationError) {
+      console.error('Error sending course notifications:', notificationError);
+      // Don't throw error to avoid breaking the main course operation
     }
     
     return currentCourseId;
@@ -4980,6 +5079,31 @@ const CourseBuilder = () => {
             console.error('Error logging course publish:', logError);
           }
         }
+
+        // Send notifications to students and teachers about course publication
+        try {
+          const studentIds = courseData.students.map(student => student.id);
+          const teacherIds = courseData.teachers.map(teacher => teacher.id);
+          
+          if (studentIds.length > 0 || teacherIds.length > 0) {
+            const studentDetails = studentIds.length > 0 ? await CourseNotificationService.getStudentDetails(studentIds) : [];
+            const teacherDetails = teacherIds.length > 0 ? await CourseNotificationService.getTeacherDetails(teacherIds) : [];
+            
+            await CourseNotificationService.notifyCoursePublication(
+              courseData.id,
+              studentDetails,
+              teacherDetails,
+              {
+                id: user.id,
+                name: user.user_metadata?.full_name || user.email || 'Unknown User',
+                email: user.email || 'unknown@email.com'
+              }
+            );
+          }
+        } catch (notificationError) {
+          console.error('Error sending course publication notifications:', notificationError);
+          // Don't throw error to avoid breaking the main course operation
+        }
         
         toast.success("Course published successfully!");
         navigate('/dashboard/courses');
@@ -5000,6 +5124,31 @@ const CourseBuilder = () => {
             } catch (logError) {
               console.error('Error logging course publish:', logError);
             }
+          }
+
+          // Send notifications to students and teachers about course publication
+          try {
+            const studentIds = courseData.students.map(student => student.id);
+            const teacherIds = courseData.teachers.map(teacher => teacher.id);
+            
+            if (studentIds.length > 0 || teacherIds.length > 0) {
+              const studentDetails = studentIds.length > 0 ? await CourseNotificationService.getStudentDetails(studentIds) : [];
+              const teacherDetails = teacherIds.length > 0 ? await CourseNotificationService.getTeacherDetails(teacherIds) : [];
+              
+              await CourseNotificationService.notifyCoursePublication(
+                savedId,
+                studentDetails,
+                teacherDetails,
+                {
+                  id: user.id,
+                  name: user.user_metadata?.full_name || user.email || 'Unknown User',
+                  email: user.email || 'unknown@email.com'
+                }
+              );
+            }
+          } catch (notificationError) {
+            console.error('Error sending course publication notifications:', notificationError);
+            // Don't throw error to avoid breaking the main course operation
           }
           
           toast.success("Course published successfully!");
@@ -5046,6 +5195,35 @@ const CourseBuilder = () => {
         } catch (logError) {
           console.error('Error logging course unpublish:', logError);
         }
+      }
+
+      // Send notifications to teachers and students about course unpublishing
+      try {
+        const teacherIds = courseData.teachers.map(teacher => teacher.id);
+        const studentIds = courseData.students.map(student => student.id);
+        
+        if (teacherIds.length > 0 || studentIds.length > 0) {
+          const teacherDetails = teacherIds.length > 0 ? await CourseNotificationService.getTeacherDetails(teacherIds) : [];
+          const studentDetails = studentIds.length > 0 ? await CourseNotificationService.getStudentDetails(studentIds) : [];
+          
+          await CourseNotificationService.notifyCourseUnpublished({
+            courseId: courseData.id,
+            courseName: courseData.title,
+            courseTitle: courseData.title,
+            courseSubtitle: courseData.subtitle,
+            action: 'course_unpublished',
+            existingTeachers: teacherDetails,
+            students: studentDetails,
+            performedBy: {
+              id: user.id,
+              name: user.user_metadata?.full_name || user.email || 'Unknown User',
+              email: user.email || 'unknown@email.com'
+            }
+          });
+        }
+      } catch (notificationError) {
+        console.error('Error sending course unpublish notifications:', notificationError);
+        // Don't throw error to avoid breaking the main course operation
       }
       
       toast.success("Course unpublished and saved as a draft.");
@@ -5146,6 +5324,35 @@ const CourseBuilder = () => {
         } catch (logError) {
           console.error('Error logging course deletion:', logError);
         }
+      }
+
+      // Send notifications to teachers and students about course deletion
+      try {
+        const teacherIds = courseData.teachers.map(teacher => teacher.id);
+        const studentIds = courseData.students.map(student => student.id);
+        
+        if (teacherIds.length > 0 || studentIds.length > 0) {
+          const teacherDetails = teacherIds.length > 0 ? await CourseNotificationService.getTeacherDetails(teacherIds) : [];
+          const studentDetails = studentIds.length > 0 ? await CourseNotificationService.getStudentDetails(studentIds) : [];
+          
+          await CourseNotificationService.notifyCourseDeleted({
+            courseId: courseData.id,
+            courseName: courseData.title,
+            courseTitle: courseData.title,
+            courseSubtitle: courseData.subtitle,
+            action: 'course_deleted',
+            existingTeachers: teacherDetails,
+            students: studentDetails,
+            performedBy: {
+              id: user.id,
+              name: user.user_metadata?.full_name || user.email || 'Unknown User',
+              email: user.email || 'unknown@email.com'
+            }
+          });
+        }
+      } catch (notificationError) {
+        console.error('Error sending course deletion notifications:', notificationError);
+        // Don't throw error to avoid breaking the main course operation
       }
       
       toast.success(`Course "${courseData.title}" deleted successfully.`);
@@ -5624,10 +5831,43 @@ const CourseBuilder = () => {
           avatar_url: user.avatar_url 
         }));
     
-    setCourseData(prev => ({
-        ...prev,
-        [role]: selectedUsers
-    }));
+    setCourseData(prev => {
+      // Get current class members to preserve them
+      const currentClassIds = prev.class_ids || [];
+      const currentClassObjects = dbClasses.filter(cls => currentClassIds.includes(cls.id));
+      const classTeacherIds = currentClassObjects.flatMap(cls => cls.teachers.map(t => t.id));
+      const classStudentIds = currentClassObjects.flatMap(cls => cls.students.map(s => s.id));
+      
+      if (role === 'teachers') {
+        // Preserve class teachers and add manually selected teachers
+        const classTeachers = prev.teachers.filter(teacher => classTeacherIds.includes(teacher.id));
+        const mergedTeachers = [...classTeachers, ...selectedUsers];
+        
+        // Remove duplicates
+        const finalTeachers = mergedTeachers.filter((teacher, index, self) => 
+          index === self.findIndex(t => t.id === teacher.id)
+        );
+        
+        return {
+          ...prev,
+          teachers: finalTeachers
+        };
+      } else {
+        // Preserve class students and add manually selected students
+        const classStudents = prev.students.filter(student => classStudentIds.includes(student.id));
+        const mergedStudents = [...classStudents, ...selectedUsers];
+        
+        // Remove duplicates
+        const finalStudents = mergedStudents.filter((student, index, self) => 
+          index === self.findIndex(s => s.id === student.id)
+        );
+        
+        return {
+          ...prev,
+          students: finalStudents
+        };
+      }
+    });
   };
 
   // Content Type Selector handlers

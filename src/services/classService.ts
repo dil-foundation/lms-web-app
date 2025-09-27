@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import CourseClassSyncService from './courseClassSyncService';
+import ClassNotificationService from './classNotificationService';
 
 export interface Class {
   id: string;
@@ -338,6 +339,50 @@ class ClassService {
       }
     }
 
+    // Send notifications for new class members
+    try {
+      const classInfo = await ClassNotificationService.getClassInfo(classId);
+      if (classInfo && (classData.teacher_ids.length > 0 || classData.student_ids.length > 0)) {
+        // Get teacher and student details for notifications
+        const teacherDetails = classData.teacher_ids.length > 0 
+          ? await this.getAvailableTeachers()
+          : [];
+        const studentDetails = classData.student_ids.length > 0 
+          ? await this.getAvailableStudents()
+          : [];
+
+        await ClassNotificationService.notifyMembersAdded({
+          classId: classId,
+          className: classInfo.className,
+          classCode: classInfo.classCode,
+          schoolName: classInfo.schoolName,
+          boardName: classInfo.boardName,
+          grade: classInfo.grade,
+          addedMembers: {
+            teachers: classData.teacher_ids.map(id => {
+              const teacher = teacherDetails.find(t => t.id === id);
+              return {
+                id: id,
+                name: teacher?.name || 'Unknown Teacher',
+                email: teacher?.email || ''
+              };
+            }),
+            students: classData.student_ids.map(id => {
+              const student = studentDetails.find(s => s.id === id);
+              return {
+                id: id,
+                name: student?.name || 'Unknown Student',
+                email: student?.email || ''
+              };
+            })
+          }
+        });
+      }
+    } catch (notificationError) {
+      console.error('Error sending class creation notifications:', notificationError);
+      // Don't fail the class creation if notifications fail
+    }
+
     // Fetch the created class with all its data
     return this.getClassById(classId);
   }
@@ -443,6 +488,85 @@ class ClassService {
       }
     }
 
+    // Send notifications for member changes
+    try {
+      const classInfo = await ClassNotificationService.getClassInfo(classData.id);
+      if (classInfo) {
+        // Get teacher and student details for notifications
+        const teacherDetails = await this.getAvailableTeachers();
+        const studentDetails = await this.getAvailableStudents();
+
+        // Determine added and removed members
+        const addedTeachers = classData.teacher_ids.filter(id => !oldTeacherIds.includes(id));
+        const removedTeachers = oldTeacherIds.filter(id => !classData.teacher_ids.includes(id));
+        const addedStudents = classData.student_ids.filter(id => !oldStudentIds.includes(id));
+        const removedStudents = oldStudentIds.filter(id => !classData.student_ids.includes(id));
+
+        // Send notifications for added members
+        if (addedTeachers.length > 0 || addedStudents.length > 0) {
+          await ClassNotificationService.notifyMembersAdded({
+            classId: classData.id,
+            className: classInfo.className,
+            classCode: classInfo.classCode,
+            schoolName: classInfo.schoolName,
+            boardName: classInfo.boardName,
+            grade: classInfo.grade,
+            addedMembers: {
+              teachers: addedTeachers.map(id => {
+                const teacher = teacherDetails.find(t => t.id === id);
+                return {
+                  id: id,
+                  name: teacher?.name || 'Unknown Teacher',
+                  email: teacher?.email || ''
+                };
+              }),
+              students: addedStudents.map(id => {
+                const student = studentDetails.find(s => s.id === id);
+                return {
+                  id: id,
+                  name: student?.name || 'Unknown Student',
+                  email: student?.email || ''
+                };
+              })
+            }
+          });
+        }
+
+        // Send notifications for removed members
+        if (removedTeachers.length > 0 || removedStudents.length > 0) {
+          await ClassNotificationService.notifyMembersRemoved({
+            classId: classData.id,
+            className: classInfo.className,
+            classCode: classInfo.classCode,
+            schoolName: classInfo.schoolName,
+            boardName: classInfo.boardName,
+            grade: classInfo.grade,
+            removedMembers: {
+              teachers: removedTeachers.map(id => {
+                const teacher = teacherDetails.find(t => t.id === id);
+                return {
+                  id: id,
+                  name: teacher?.name || 'Unknown Teacher',
+                  email: teacher?.email || ''
+                };
+              }),
+              students: removedStudents.map(id => {
+                const student = studentDetails.find(s => s.id === id);
+                return {
+                  id: id,
+                  name: student?.name || 'Unknown Student',
+                  email: student?.email || ''
+                };
+              })
+            }
+          });
+        }
+      }
+    } catch (notificationError) {
+      console.error('Error sending class update notifications:', notificationError);
+      // Don't fail the class update if notifications fail
+    }
+
     // Sync course members if there were changes
     try {
       const memberChanges = await CourseClassSyncService.getClassMemberChanges(
@@ -484,6 +608,14 @@ class ClassService {
     const oldTeacherIds = currentClass.teachers.map(t => t.id);
     const oldStudentIds = currentClass.students.map(s => s.id);
 
+    // Get class info for notifications BEFORE deletion
+    let classInfo = null;
+    try {
+      classInfo = await ClassNotificationService.getClassInfo(id);
+    } catch (error) {
+      console.error('Error fetching class info for notifications:', error);
+    }
+
     // Delete the class
     const { error } = await supabase
       .from('classes')
@@ -492,6 +624,27 @@ class ClassService {
 
     if (error) {
       throw new Error(`Failed to delete class: ${error.message}`);
+    }
+
+    // Send notifications for class deletion
+    try {
+      if (classInfo) {
+        // Send notifications to all class members about class deletion
+        const allMemberIds = [...oldTeacherIds, ...oldStudentIds];
+        
+        await ClassNotificationService.notifyClassDeleted(
+          id,
+          classInfo.className,
+          classInfo.classCode,
+          classInfo.schoolName,
+          classInfo.boardName,
+          classInfo.grade,
+          allMemberIds
+        );
+      }
+    } catch (notificationError) {
+      console.error('Error sending class deletion notifications:', notificationError);
+      // Don't fail the class deletion if notifications fail
     }
 
     // Sync course members after class deletion
