@@ -13,7 +13,6 @@ import {
   Activity,
   CheckCircle,
   AlertCircle,
-  UserX,
   MoreHorizontal
 } from 'lucide-react';
 import {
@@ -46,7 +45,6 @@ interface StudentTileViewProps {
   onMessage?: (student: Student) => void;
   onViewProfile?: (student: Student) => void;
   onEdit?: (student: Student) => void;
-  onRemove?: (student: Student) => void;
   className?: string;
 }
 
@@ -56,7 +54,6 @@ export const StudentTileView: React.FC<StudentTileViewProps> = ({
   onMessage,
   onViewProfile,
   onEdit,
-  onRemove,
   className
 }) => {
   const getGradeBadge = (grade: string) => {
@@ -103,15 +100,6 @@ export const StudentTileView: React.FC<StudentTileViewProps> = ({
     }
   };
 
-  const handleRemove = (e: React.MouseEvent, student: Student) => {
-    e.stopPropagation();
-    if (onRemove) {
-      // Small delay to ensure dropdown is fully closed
-      setTimeout(() => {
-        onRemove(student);
-      }, 100);
-    }
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -135,7 +123,7 @@ export const StudentTileView: React.FC<StudentTileViewProps> = ({
       case 'unverified':
         return <AlertCircle className="w-3 h-3" />;
       default:
-        return <UserX className="w-3 h-3" />;
+        return <AlertCircle className="w-3 h-3" />;
     }
   };
 
@@ -274,14 +262,6 @@ export const StudentTileView: React.FC<StudentTileViewProps> = ({
                     <DropdownMenuItem onClick={(e) => handleEdit(e, student)}>
                       <Users className="w-4 h-4 mr-2" />
                       Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem 
-                      onClick={(e) => handleRemove(e, student)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <UserX className="w-4 h-4 mr-2" />
-                      Remove
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
