@@ -501,6 +501,32 @@ export class OfflineDatabase {
     });
   }
 
+  /**
+   * Get a specific asset by ID
+   */
+  async getAsset(assetId: string): Promise<OfflineAsset | null> {
+    return this.performTransaction(STORES.ASSETS, 'readonly', (store) => {
+      return new Promise<OfflineAsset | null>((resolve, reject) => {
+        const request = (store as IDBObjectStore).get(assetId);
+        request.onsuccess = () => resolve(request.result || null);
+        request.onerror = () => reject(request.error);
+      });
+    });
+  }
+
+  /**
+   * Get all assets
+   */
+  async getAllAssets(): Promise<OfflineAsset[]> {
+    return this.performTransaction(STORES.ASSETS, 'readonly', (store) => {
+      return new Promise<OfflineAsset[]>((resolve, reject) => {
+        const request = (store as IDBObjectStore).getAll();
+        request.onsuccess = () => resolve(request.result || []);
+        request.onerror = () => reject(request.error);
+      });
+    });
+  }
+
   // ==================== PROGRESS OPERATIONS ====================
 
   /**

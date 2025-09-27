@@ -320,6 +320,39 @@ export class OfflineDatabaseUtils {
   }
 
   /**
+   * Get all courses
+   */
+  async getAllCourses(): Promise<OfflineCourse[]> {
+    await this.db.init();
+    return this.db.getAllCourses();
+  }
+
+  /**
+   * Check if a course is available offline
+   */
+  async isCourseAvailableOffline(courseId: string): Promise<boolean> {
+    await this.db.init();
+    const course = await this.db.getCourse(courseId);
+    return course?.downloadStatus === 'completed';
+  }
+
+  /**
+   * Get assets for a specific course
+   */
+  async getAssetsByCourse(courseId: string): Promise<OfflineAsset[]> {
+    await this.db.init();
+    return this.db.getAssetsByCourse(courseId);
+  }
+
+  /**
+   * Delete a course and all its related data
+   */
+  async deleteCourse(courseId: string): Promise<void> {
+    await this.db.init();
+    return this.db.deleteCourse(courseId);
+  }
+
+  /**
    * Get courses that need attention (failed downloads, old courses, etc.)
    */
   async getCoursesNeedingAttention(): Promise<{

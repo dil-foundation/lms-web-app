@@ -22,8 +22,11 @@ import {
   BookOpen,
   Play,
   Pause,
-  RotateCcw
+  RotateCcw,
+  Loader2
 } from 'lucide-react';
+import { getCourseDownloadService, DownloadOptions } from '@/services/courseDownloadService';
+import { getOfflineDatabaseUtils } from '@/services/offlineDatabaseUtils';
 
 interface OfflineLearningProps {
   userProfile: {
@@ -59,38 +62,13 @@ export const OfflineLearning = ({ userProfile }: OfflineLearningProps) => {
   const [storageUsed, setStorageUsed] = useState(0);
   const [storageLimit] = useState(5000); // 5GB limit in MB
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [downloadingCourses, setDownloadingCourses] = useState<Set<string>>(new Set());
+  const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
   const navigate = useNavigate();
 
-  // Mock data for demonstration - replace with actual data fetching
-  const mockDownloadedCourses: DownloadedCourse[] = [
-    {
-      id: '1',
-      title: 'Introduction to React',
-      subtitle: 'Learn the basics of React development',
-      image_url: '/placeholder.svg',
-      progress: 75,
-      total_lessons: 12,
-      completed_lessons: 9,
-      last_accessed: '2024-01-15',
-      downloadDate: '2024-01-10',
-      size: '245 MB',
-      downloadStatus: 'completed'
-    },
-    {
-      id: '2',
-      title: 'Advanced JavaScript',
-      subtitle: 'Master JavaScript concepts',
-      image_url: '/placeholder.svg',
-      progress: 30,
-      total_lessons: 15,
-      completed_lessons: 4,
-      last_accessed: '2024-01-14',
-      downloadDate: '2024-01-12',
-      size: '180 MB',
-      downloadStatus: 'downloading',
-      downloadProgress: 65
-    }
-  ];
+  // Services
+  const downloadService = getCourseDownloadService();
+  const dbUtils = getOfflineDatabaseUtils();
 
   // Define fetchEnrolledCourses function with useCallback to prevent dependency issues
   const fetchEnrolledCourses = useCallback(async () => {
@@ -147,9 +125,9 @@ export const OfflineLearning = ({ userProfile }: OfflineLearningProps) => {
           setEnrolledCourses(coursesWithSignedUrls);
         }
 
-        // Set mock downloaded courses for demo
-        setDownloadedCourses(mockDownloadedCourses);
-        setStorageUsed(425); // Mock storage usage
+        // Load real downloaded courses and storage info
+        await loadDownloadedCourses();
+        await loadStorageInfo();
       } catch (error) {
         console.error('Error:', error);
         toast.error('Failed to load courses.');
@@ -188,25 +166,178 @@ export const OfflineLearning = ({ userProfile }: OfflineLearningProps) => {
     fetchEnrolledCourses();
   }, [fetchEnrolledCourses]);
 
-  const handleDownloadCourse = (courseId: string) => {
+  const handleDownloadCourse = async (courseId: string) => {
     if (!isOnline) {
       toast.error('You need an internet connection to download courses.');
       return;
     }
 
-    // Mock download implementation
-    toast.success('Course download started!');
-    console.log('Downloading course:', courseId);
+    if (downloadingCourses.has(courseId)) {
+      toast.warning('This course is already being downloaded.');
+      return;
+    }
+
+    try {
+      // Check storage space
+      const estimatedSize = await downloadService.estimateDownloadSize(courseId);
+      const storageInfo = await dbUtils.getStorageInfo();
+      
+      if (storageInfo.available < estimatedSize) {
+        toast.error('Not enough storage space. Please free up some space and try again.');
+        return;
+      }
+
+      // Start download
+      setDownloadingCourses(prev => new Set(prev).add(courseId));
+      setDownloadProgress(prev => ({ ...prev, [courseId]: 0 }));
+
+      toast.success('Course download started!');
+
+      const downloadOptions: DownloadOptions = {
+        videoQuality: 'auto',
+        compressVideos: true,
+        includeAssets: true,
+        onProgress: (progress) => {
+          setDownloadProgress(prev => ({ ...prev, [courseId]: progress.progress }));
+          
+          if (progress.error) {
+            toast.error(`Download error: ${progress.error}`);
+          }
+        }
+      };
+
+      const result = await downloadService.downloadCourse(courseId, downloadOptions);
+
+      if (result.success) {
+        toast.success(`Course downloaded successfully! (${formatBytes(result.totalSize)})`);
+        // Refresh downloaded courses list
+        await loadDownloadedCourses();
+      } else {
+        toast.error(`Download failed: ${result.error}`);
+      }
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`Download failed: ${errorMessage}`);
+      console.error('Course download error:', error);
+    } finally {
+      setDownloadingCourses(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(courseId);
+        return newSet;
+      });
+      setDownloadProgress(prev => {
+        const newProgress = { ...prev };
+        delete newProgress[courseId];
+        return newProgress;
+      });
+    }
   };
 
   const handleViewCourse = (courseId: string) => {
-    navigate(`/dashboard/courses/content/${courseId}`);
+    navigate(`/dashboard/courses/${courseId}/content`);
   };
 
-  const handleDeleteCourse = (courseId: string) => {
-    // Mock delete implementation
-    setDownloadedCourses(prev => prev.filter(course => course.id !== courseId));
-    toast.success('Course removed from offline storage.');
+  const handleDeleteCourse = async (courseId: string) => {
+    try {
+      // Get course info before deletion for toast message
+      const course = downloadedCourses.find(c => c.id === courseId);
+      const courseName = course?.title || 'Course';
+
+      // Delete from offline database
+      await dbUtils.deleteCourse(courseId);
+      
+      // Update UI
+      setDownloadedCourses(prev => prev.filter(course => course.id !== courseId));
+      await loadStorageInfo();
+      
+      toast.success(`${courseName} removed from offline storage.`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`Failed to delete course: ${errorMessage}`);
+      console.error('Course deletion error:', error);
+    }
+  };
+
+  // Load downloaded courses from offline database
+  const loadDownloadedCourses = async () => {
+    try {
+      const offlineCourses = await dbUtils.getAllCourses();
+      
+      const downloadedCoursesData: DownloadedCourse[] = await Promise.all(
+        offlineCourses.map(async (course) => {
+          let imageUrl = '/placeholder.svg';
+          
+          // Try to get offline image if available
+          if (course.image_url) {
+            try {
+              // Check if we have the course image stored as an asset
+              const courseAssets = await dbUtils.getAssetsByCourse(course.id);
+              const imageAsset = courseAssets.find(asset => 
+                asset.type === 'image' && asset.filename?.includes('course-image')
+              );
+              
+              if (imageAsset) {
+                // Create blob URL for offline image
+                imageUrl = URL.createObjectURL(imageAsset.blob);
+              } else if (navigator.onLine && course.image_url) {
+                // Fallback to online signed URL if online and no offline image
+                try {
+                  const { data: signedUrlData } = await supabase.storage
+                    .from('dil-lms')
+                    .createSignedUrl(course.image_url, 3600);
+                  if (signedUrlData) {
+                    imageUrl = signedUrlData.signedUrl;
+                  }
+                } catch (error) {
+                  console.log('Failed to create signed URL for offline course image:', error);
+                }
+              }
+            } catch (error) {
+              console.log('Failed to load offline course image:', error);
+            }
+          }
+          
+          return {
+            id: course.id,
+            title: course.title,
+            subtitle: course.subtitle || '',
+            image_url: imageUrl,
+            progress: 0, // Will be calculated from progress data
+            total_lessons: course.total_lessons,
+            completed_lessons: 0, // Will be calculated from progress data
+            last_accessed: course.lastAccessed ? new Date(course.lastAccessed).toISOString() : new Date().toISOString(),
+            downloadDate: new Date(course.downloadDate).toISOString(),
+            size: formatBytes(course.totalSize),
+            downloadStatus: course.downloadStatus
+          };
+        })
+      );
+
+      setDownloadedCourses(downloadedCoursesData);
+    } catch (error) {
+      console.error('Failed to load downloaded courses:', error);
+    }
+  };
+
+  // Load storage information
+  const loadStorageInfo = async () => {
+    try {
+      const storageInfo = await dbUtils.getStorageInfo();
+      setStorageUsed(Math.round(storageInfo.used / 1024 / 1024)); // Convert to MB
+    } catch (error) {
+      console.error('Failed to load storage info:', error);
+    }
+  };
+
+
+  // Format bytes to human readable format
+  const formatBytes = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   const handlePauseResume = (courseId: string, action: 'pause' | 'resume') => {
@@ -359,17 +490,37 @@ export const OfflineLearning = ({ userProfile }: OfflineLearningProps) => {
                       </div>
 
                       {/* Action Button */}
-                      <div className="flex-shrink-0">
-                        <Button
-                          onClick={() => handleDownloadCourse(course.id)}
-                          disabled={!isOnline}
-                          size="sm"
-                          className="min-w-[140px]"
-                        >
-                          <Download className="w-4 h-4 mr-2" />
-                          Download Course
-                        </Button>
-                      </div>
+                     <div className="flex-shrink-0">
+                       {downloadingCourses.has(course.id) ? (
+                         <div className="min-w-[140px]">
+                           <Button
+                             disabled
+                             size="sm"
+                             className="w-full mb-1"
+                           >
+                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                             Downloading...
+                           </Button>
+                           <div className="text-xs text-center text-muted-foreground">
+                             {downloadProgress[course.id]?.toFixed(0) || 0}%
+                           </div>
+                           <Progress 
+                             value={downloadProgress[course.id] || 0} 
+                             className="h-1 mt-1" 
+                           />
+                         </div>
+                       ) : (
+                         <Button
+                           onClick={() => handleDownloadCourse(course.id)}
+                           disabled={!isOnline}
+                           size="sm"
+                           className="min-w-[140px]"
+                         >
+                           <Download className="w-4 h-4 mr-2" />
+                           Download Course
+                         </Button>
+                       )}
+                     </div>
                     </div>
                   </CardContent>
                 </Card>

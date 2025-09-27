@@ -58,6 +58,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { cn } from '@/lib/utils';
 import AccessLogService from '@/services/accessLogService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { getCourseDataLayer } from '@/services/courseDataLayer';
 
 interface CourseContentProps {
   courseId?: string;
@@ -240,6 +241,10 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const lastUpdateTimeRef = useRef(0);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isOfflineMode, setIsOfflineMode] = useState(false);
+  
+  // Data layer service
+  const dataLayer = getCourseDataLayer();
 
   const [userAnswers, setUserAnswers] = useState<Record<string, string | string[]>>({});
   const [textAnswers, setTextAnswers] = useState<Record<string, string>>({});
@@ -528,6 +533,13 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
 
   const markContentAsComplete = useCallback(async (contentId: string, lessonId: string, courseId: string, duration?: number) => {
     if (!user) return;
+    
+    // Skip database update when offline
+    if (!navigator.onLine) {
+      console.log('🔴 CourseContent: Offline - skipping progress update');
+      return;
+    }
+    
     const { error } = await supabase.from('user_content_item_progress').upsert(
       {
         user_id: user.id,
@@ -558,19 +570,24 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         contentTitle = contentData?.title || 'Unknown Content';
       }
 
-      await AccessLogService.logStudentCourseAction(
-        user.id,
-        user.email || 'unknown@email.com',
-        'content_completed',
-        courseId,
-        contentTitle,
-        {
-          content_id: contentId,
-          lesson_id: lessonId,
-          content_type: currentContentItem?.content_type,
-          duration: duration
-        }
-      );
+      // Skip access logging when offline
+      if (navigator.onLine) {
+        await AccessLogService.logStudentCourseAction(
+          user.id,
+          user.email || 'unknown@email.com',
+          'content_completed',
+          courseId,
+          contentTitle,
+          {
+            content_id: contentId,
+            lesson_id: lessonId,
+            content_type: currentContentItem?.content_type,
+            duration: duration
+          }
+        );
+      } else {
+        console.log('🔴 CourseContent: Offline - skipping content completion logging');
+      }
     } catch (logError) {
       console.error('Error logging content completion:', logError);
     }
@@ -600,6 +617,12 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       if (newTotalProgress === 100 && prevCourse.totalProgress < 100) {
         // Use setTimeout to avoid blocking the state update
         setTimeout(async () => {
+          // Skip course completion logging when offline
+          if (!navigator.onLine) {
+            console.log('🔴 CourseContent: Offline - skipping course completion logging');
+            return;
+          }
+          
           try {
             await AccessLogService.logStudentCourseAction(
               user.id,
@@ -632,6 +655,13 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     const now = Date.now();
     if (now - lastUpdateTimeRef.current > 15000) {
       lastUpdateTimeRef.current = now;
+      
+      // Skip database update when offline
+      if (!navigator.onLine) {
+        console.log('🔴 CourseContent: Offline - skipping video progress update');
+        return;
+      }
+      
       supabase.from('user_content_item_progress').upsert({
         user_id: user.id,
         course_id: actualCourseId,
@@ -948,40 +978,44 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     //   }
     // }
     
-    // Log quiz submission
-    try {
-      // Log as student course action (existing)
-      await AccessLogService.logStudentCourseAction(
-        user.id,
-        user.email || 'unknown@email.com',
-        'quiz_submitted',
-        course.id,
-        currentContentItem?.title || 'Unknown Quiz',
-        {
-          content_id: currentContentItem.id,
-          lesson_id: currentLesson.id,
-          submission_id: newSubmission?.id,
-          score: finalScore,
-          has_text_answers: hasTextAnswers,
-          correct_answers: correctAnswers,
-          total_questions: questions.length,
-          attempt_number: newSubmission?.attempt_number || 1,
-          is_retry: isRetry
-        }
-      );
-      
-      // Also log as quiz submission (new)
-      await AccessLogService.logQuizSubmission(
-        user.id,
-        user.email || 'unknown@email.com',
-        currentContentItem.id,
-        currentContentItem?.title || 'Unknown Quiz',
-        course.id,
-        course.title,
-        finalScore
-      );
-    } catch (logError) {
-      console.error('Error logging quiz submission:', logError);
+    // Log quiz submission (skip when offline)
+    if (navigator.onLine) {
+      try {
+        // Log as student course action (existing)
+        await AccessLogService.logStudentCourseAction(
+          user.id,
+          user.email || 'unknown@email.com',
+          'quiz_submitted',
+          course.id,
+          currentContentItem?.title || 'Unknown Quiz',
+          {
+            content_id: currentContentItem.id,
+            lesson_id: currentLesson.id,
+            submission_id: newSubmission?.id,
+            score: finalScore,
+            has_text_answers: hasTextAnswers,
+            correct_answers: correctAnswers,
+            total_questions: questions.length,
+            attempt_number: newSubmission?.attempt_number || 1,
+            is_retry: isRetry
+          }
+        );
+        
+        // Also log as quiz submission (new)
+        await AccessLogService.logQuizSubmission(
+          user.id,
+          user.email || 'unknown@email.com',
+          currentContentItem.id,
+          currentContentItem?.title || 'Unknown Quiz',
+          course.id,
+          course.title,
+          finalScore
+        );
+      } catch (logError) {
+        console.error('Error logging quiz submission:', logError);
+      }
+    } else {
+      console.log('🔴 CourseContent: Offline - skipping quiz submission logging');
     }
     
     setQuizResults(results);
@@ -1054,7 +1088,65 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       }
       setIsLoading(true);
       try {
-        const { data, error } = await supabase.from('courses').select(`*,sections:course_sections(*,lessons:course_lessons(*,contentItems:course_lesson_content(*,quiz:quiz_questions(*,points,math_expression,math_tolerance,math_hint,math_allow_drawing,image_url,options:question_options(*)))))`).eq('id', actualCourseId).single();
+        // Try to use the data layer first (handles online/offline automatically)
+        let data: any = null;
+        let error: any = null;
+        
+        try {
+          const courseData = await dataLayer.getCourseData(actualCourseId, user?.id);
+          if (courseData) {
+            // Transform data layer format to existing format
+            data = {
+              id: courseData.id,
+              title: courseData.title,
+              subtitle: courseData.subtitle,
+              description: courseData.description,
+              image_url: courseData.image_url,
+              instructor_name: courseData.instructor_name,
+              sections: courseData.sections.map(section => ({
+                id: section.id,
+                title: section.title,
+                description: section.description,
+                order: section.order,
+                lessons: section.lessons.map(lesson => ({
+                  id: lesson.id,
+                  title: lesson.title,
+                  description: lesson.description,
+                  content: lesson.content,
+                  order: lesson.order,
+                  duration: lesson.duration,
+                  contentItems: lesson.contentItems.map(item => ({
+                    id: item.id,
+                    title: item.title,
+                    content_type: item.content_type,
+                    content_path: item.content_path,
+                    signedUrl: item.signedUrl,
+                    content: item.content,
+                    order: item.order,
+                    quiz: item.quiz || []
+                  }))
+                }))
+              }))
+            };
+            setIsOfflineMode(courseData.isOfflineAvailable && !navigator.onLine);
+            console.log(`📊 CourseContent: Loaded course via data layer (${courseData.isOfflineAvailable ? 'offline' : 'online'} mode)`);
+          } else {
+            throw new Error('Course not found via data layer');
+          }
+        } catch (dataLayerError) {
+          console.log('📊 CourseContent: Data layer failed, falling back to direct Supabase:', dataLayerError);
+          
+          // Only fallback to Supabase if online
+          if (navigator.onLine) {
+            const response = await supabase.from('courses').select(`*,sections:course_sections(*,lessons:course_lessons(*,contentItems:course_lesson_content(*,quiz:quiz_questions(*,points,math_expression,math_tolerance,math_hint,math_allow_drawing,image_url,options:question_options(*)))))`).eq('id', actualCourseId).single();
+            data = response.data;
+            error = response.error;
+            setIsOfflineMode(false);
+          } else {
+            // If offline and data layer failed, show appropriate error
+            throw new Error('Course not available offline. Please download the course when online.');
+          }
+        }
         if (error) throw error;
         if (data) {
           for (const section of data.sections) {
@@ -1068,7 +1160,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
             }
           }
           let userProgress: any[] = [], quizSubmissions: any[] = [];
-          if (user) {
+          if (user && navigator.onLine) {
             const contentItemIds = data.sections.flatMap((s: any) => s.lessons.flatMap((l: any) => l.contentItems.map((ci: any) => ci.id)));
             if (contentItemIds.length > 0) {
               const { data: progressData } = await supabase.from('user_content_item_progress').select('*').eq('user_id', user.id).in('lesson_content_id', contentItemIds);
@@ -1084,12 +1176,14 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
               }
               quizSubmissions = submissionsData || [];
             }
+          } else if (!navigator.onLine) {
+            console.log('🔴 CourseContent: Offline - skipping progress and quiz data fetch');
           }
           const transformedCourse = transformCourseData(data, userProgress, quizSubmissions);
           setCourse(transformedCourse);
           
-          // Log course started if this is the first time accessing
-          if (transformedCourse && userProgress.length === 0) {
+          // Log course started if this is the first time accessing (skip when offline)
+          if (transformedCourse && userProgress.length === 0 && navigator.onLine) {
             try {
               AccessLogService.logStudentCourseAction(
                 user.id,
