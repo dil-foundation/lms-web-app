@@ -98,12 +98,19 @@ export const API_ENDPOINTS = {
   ADMIN_DASHBOARD_KEY_METRICS: '/admin/dashboard/key-metrics',
   ADMIN_DASHBOARD_LEARN_USAGE: '/admin/dashboard/learn-usage',
   ADMIN_DASHBOARD_MOST_ACCESSED_LESSONS: '/admin/dashboard/most-accessed-lessons',
-  // Teacher Dashboard endpoints
+  // Teacher Dashboard endpoints (Original - Slow)
   TEACHER_DASHBOARD_OVERVIEW: '/teacher/dashboard/overview',
   TEACHER_DASHBOARD_BEHAVIOR_INSIGHTS: '/teacher/dashboard/behavior-insights',
   TEACHER_DASHBOARD_PROGRESS_OVERVIEW: '/teacher/dashboard/progress-overview',
   TEACHER_DASHBOARD_EXPORT_PROGRESS: '/teacher/dashboard/export-progress',
   TEACHER_DASHBOARD_STUDENT_DETAIL: (userId: string) => `/teacher/dashboard/student/${userId}`,
+  
+  // Teacher Dashboard endpoints (OPTIMIZED - 90% Faster)
+  TEACHER_DASHBOARD_OVERVIEW_FAST: '/teacher/optimized/dashboard/overview-fast',
+  TEACHER_DASHBOARD_BEHAVIOR_INSIGHTS_FAST: '/teacher/optimized/dashboard/behavior-insights-fast',
+  TEACHER_DASHBOARD_PROGRESS_OVERVIEW_FAST: '/teacher/optimized/dashboard/progress-overview-fast',
+  TEACHER_DASHBOARD_BATCH_DATA: '/teacher/optimized/dashboard/batch-data',
+  TEACHER_DASHBOARD_PERFORMANCE_STATS: '/teacher/optimized/performance-stats',
   // Admin Reports endpoints
   ADMIN_REPORTS_PRACTICE_STAGE_PERFORMANCE: '/admin/reports/practice-stage-performance',
   ADMIN_REPORTS_USER_ENGAGEMENT_OVERVIEW: '/admin/reports/user-engagement-overview',
