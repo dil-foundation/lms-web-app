@@ -43,6 +43,296 @@ interface CourseContentItem {
   assignmentInstructions?: string;
 }
 
+interface ValidationError {
+  row: number;
+  field: string;
+  message: string;
+}
+
+// Validate course data
+function validateCourseData(course: CourseData, row: number, referenceData: any): ValidationError[] {
+  const errors: ValidationError[] = [];
+  
+  // Validate course title (optional for draft)
+  if (course.courseTitle && course.courseTitle.trim().length > 100) {
+    errors.push({
+      row,
+      field: 'Course Title',
+      message: 'Title must be 100 characters or less'
+    });
+  }
+  
+  // Validate course subtitle (optional for draft)
+  if (course.courseSubtitle && course.courseSubtitle.trim().length > 150) {
+    errors.push({
+      row,
+      field: 'Course Subtitle',
+      message: 'Subtitle must be 150 characters or less'
+    });
+  }
+  
+  // Validate course description (optional for draft)
+  if (course.courseDescription && course.courseDescription.trim().length > 0 && course.courseDescription.trim().length < 20) {
+    errors.push({
+      row,
+      field: 'Course Description',
+      message: 'Description must be at least 20 characters if provided'
+    });
+  }
+  
+  // Validate category against database (if provided)
+  if (course.category && course.category.trim().length > 0) {
+    const categoryExists = referenceData.categories.some((cat: any) => cat.name.toLowerCase() === course.category.toLowerCase());
+    if (!categoryExists) {
+      errors.push({
+        row,
+        field: 'Category',
+        message: `Category "${course.category}" does not exist, please create the category`
+      });
+    }
+  }
+  
+  // Validate language against database (if provided)
+  if (course.language && course.language.trim().length > 0) {
+    const languageExists = referenceData.languages.some((lang: any) => lang.name.toLowerCase() === course.language.toLowerCase());
+    if (!languageExists) {
+      errors.push({
+        row,
+        field: 'Language',
+        message: `Language "${course.language}" does not exist, please create the language`
+      });
+    }
+  }
+  
+  // Validate level against database (if provided)
+  if (course.level && course.level.trim().length > 0) {
+    const levelExists = referenceData.levels.some((level: any) => level.name.toLowerCase() === course.level.toLowerCase());
+    if (!levelExists) {
+      errors.push({
+        row,
+        field: 'Level',
+        message: `Level "${course.level}" does not exist, please create the level`
+      });
+    }
+  }
+  
+  // Validate country codes against database (if provided)
+  if (course.countryCodes && course.countryCodes.length > 0) {
+    for (const code of course.countryCodes) {
+      const countryExists = referenceData.countries.some((country: any) => country.code.toLowerCase() === code.toLowerCase());
+      if (!countryExists) {
+        errors.push({
+          row,
+          field: 'Country Codes',
+          message: `Country code "${code}" does not exist, please create the country`
+        });
+      }
+    }
+  }
+  
+  // Validate region codes against database (if provided)
+  if (course.regionCodes && course.regionCodes.length > 0) {
+    for (const code of course.regionCodes) {
+      const regionExists = referenceData.regions.some((region: any) => region.code.toLowerCase() === code.toLowerCase());
+      if (!regionExists) {
+        errors.push({
+          row,
+          field: 'Region Codes',
+          message: `Region code "${code}" does not exist, please create the region`
+        });
+      }
+    }
+  }
+  
+  // Validate city codes against database (if provided)
+  if (course.cityCodes && course.cityCodes.length > 0) {
+    for (const code of course.cityCodes) {
+      const cityExists = referenceData.cities.some((city: any) => city.code.toLowerCase() === code.toLowerCase());
+      if (!cityExists) {
+        errors.push({
+          row,
+          field: 'City Codes',
+          message: `City code "${code}" does not exist, please create the city`
+        });
+      }
+    }
+  }
+  
+  // Validate project codes against database (if provided)
+  if (course.projectCodes && course.projectCodes.length > 0) {
+    for (const code of course.projectCodes) {
+      const projectExists = referenceData.projects.some((project: any) => project.code.toLowerCase() === code.toLowerCase());
+      if (!projectExists) {
+        errors.push({
+          row,
+          field: 'Project Codes',
+          message: `Project code "${code}" does not exist, please create the project`
+        });
+      }
+    }
+  }
+  
+  // Validate board codes against database (if provided)
+  if (course.boardCodes && course.boardCodes.length > 0) {
+    for (const code of course.boardCodes) {
+      const boardExists = referenceData.boards.some((board: any) => board.code.toLowerCase() === code.toLowerCase());
+      if (!boardExists) {
+        errors.push({
+          row,
+          field: 'Board Codes',
+          message: `Board code "${code}" does not exist, please create the board`
+        });
+      }
+    }
+  }
+  
+  // Validate school codes against database (if provided)
+  if (course.schoolCodes && course.schoolCodes.length > 0) {
+    for (const code of course.schoolCodes) {
+      const schoolExists = referenceData.schools.some((school: any) => school.code.toLowerCase() === code.toLowerCase());
+      if (!schoolExists) {
+        errors.push({
+          row,
+          field: 'School Codes',
+          message: `School code "${code}" does not exist, please create the school`
+        });
+      }
+    }
+  }
+  
+  // Validate class codes against database (if provided)
+  if (course.classCodes && course.classCodes.length > 0) {
+    for (const code of course.classCodes) {
+      const classExists = referenceData.classes.some((cls: any) => cls.code.toLowerCase() === code.toLowerCase());
+      if (!classExists) {
+        errors.push({
+          row,
+          field: 'Class Codes',
+          message: `Class code "${code}" does not exist, please create the class`
+        });
+      }
+    }
+  }
+  
+  // Validate duration (optional)
+  if (course.duration && course.duration.trim().length > 0) {
+    if (course.duration.trim().length < 3 || course.duration.trim().length > 50) {
+      errors.push({
+        row,
+        field: 'Duration',
+        message: 'Duration must be 3-50 characters if provided'
+      });
+    }
+  }
+  
+  // Validate sections (optional for draft)
+  if (course.sections.length > 0) {
+    for (let i = 0; i < course.sections.length; i++) {
+      const section = course.sections[i];
+      
+      // Validate section title
+      if (!section.title || section.title.trim().length < 3 || section.title.trim().length > 100) {
+        errors.push({
+          row,
+          field: `Section ${i + 1} Title`,
+          message: 'Section title must be 3-100 characters'
+        });
+      }
+      
+      // Validate section overview (optional)
+      if (section.overview && (section.overview.trim().length < 5 || section.overview.trim().length > 500)) {
+        errors.push({
+          row,
+          field: `Section ${i + 1} Overview`,
+          message: 'Section overview must be 5-500 characters if provided'
+        });
+      }
+      
+      // Validate lessons (optional for draft)
+      if (section.lessons.length > 0) {
+        for (let j = 0; j < section.lessons.length; j++) {
+          const lesson = section.lessons[j];
+          
+          // Validate lesson title
+          if (!lesson.title || lesson.title.trim().length < 3 || lesson.title.trim().length > 100) {
+            errors.push({
+              row,
+              field: `Lesson ${i + 1}.${j + 1} Title`,
+              message: 'Lesson title must be 3-100 characters'
+            });
+          }
+          
+          // Validate lesson overview (optional)
+          if (lesson.overview && (lesson.overview.trim().length < 5 || lesson.overview.trim().length > 500)) {
+            errors.push({
+              row,
+              field: `Lesson ${i + 1}.${j + 1} Overview`,
+              message: 'Lesson overview must be 5-500 characters if provided'
+            });
+          }
+          
+          // Validate content items
+          for (let k = 0; k < lesson.contentItems.length; k++) {
+            const content = lesson.contentItems[k];
+            
+            // Validate content type
+            if (!['video', 'attachment', 'assignment', 'quiz'].includes(content.type)) {
+              errors.push({
+                row,
+                field: `Content ${i + 1}.${j + 1}.${k + 1} Type`,
+                message: 'Content type must be one of: video, attachment, assignment, quiz'
+              });
+            }
+            
+            // Validate content title
+            if (!content.title || content.title.trim().length < 3 || content.title.trim().length > 100) {
+              errors.push({
+                row,
+                field: `Content ${i + 1}.${j + 1}.${k + 1} Title`,
+                message: 'Content title must be 3-100 characters'
+              });
+            }
+            
+            // Validate content path for video and attachment types
+            if ((content.type === 'video' || content.type === 'attachment') && (!content.path || content.path.trim().length === 0)) {
+              errors.push({
+                row,
+                field: `Content ${i + 1}.${j + 1}.${k + 1} Path`,
+                message: 'Path is required for video and attachment content types'
+              });
+            }
+
+            // For assignments, validate that either path (attachment) or instructions are provided
+            if (content.type === 'assignment') {
+              const hasPath = content.path && content.path.trim().length > 0;
+              const hasInstructions = content.assignmentInstructions && content.assignmentInstructions.trim().length > 0;
+              
+              if (!hasPath && !hasInstructions) {
+                errors.push({
+                  row,
+                  field: `Content ${i + 1}.${j + 1}.${k + 1}`,
+                  message: 'Assignment must have either a content path (attachment) or assignment instructions'
+                });
+              }
+            }
+
+            // Validate assignment instructions for assignment type
+            if (content.type === 'assignment' && content.assignmentInstructions && content.assignmentInstructions.trim().length < 10) {
+              errors.push({
+                row,
+                field: `Content ${i + 1}.${j + 1}.${k + 1} Assignment Instructions`,
+                message: 'Assignment instructions must be at least 10 characters if provided'
+              });
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  return errors;
+}
+
 // Parse XLSX content using proper XLSX library
 function parseXLSX(xlsxContent: ArrayBuffer): CourseData[] {
   try {
@@ -312,12 +602,73 @@ serve(async (req) => {
 
     console.log(`✅ Successfully parsed ${courses.length} courses`);
 
+    // Fetch reference data for validation
+    console.log('🔍 Fetching reference data for validation...');
+    const [categoriesRes, languagesRes, levelsRes, countriesRes, regionsRes, citiesRes, projectsRes, boardsRes, schoolsRes, classesRes] = await Promise.all([
+      supabaseAdmin.from('course_categories').select('id, name'),
+      supabaseAdmin.from('course_languages').select('id, name'),
+      supabaseAdmin.from('course_levels').select('id, name'),
+      supabaseAdmin.from('countries').select('id, name, code'),
+      supabaseAdmin.from('regions').select('id, name, code'),
+      supabaseAdmin.from('cities').select('id, name, code'),
+      supabaseAdmin.from('projects').select('id, name, code'),
+      supabaseAdmin.from('boards').select('id, name, code'),
+      supabaseAdmin.from('schools').select('id, name, code'),
+      supabaseAdmin.from('classes').select('id, name, code')
+    ]);
+
+    const categories = categoriesRes.data || [];
+    const languages = languagesRes.data || [];
+    const levels = levelsRes.data || [];
+    const countries = countriesRes.data || [];
+    const regions = regionsRes.data || [];
+    const cities = citiesRes.data || [];
+    const projects = projectsRes.data || [];
+    const boards = boardsRes.data || [];
+    const schools = schoolsRes.data || [];
+    const classes = classesRes.data || [];
+
+    const referenceData = {
+      categories,
+      languages,
+      levels,
+      countries,
+      regions,
+      cities,
+      projects,
+      boards,
+      schools,
+      classes
+    };
+
+    // Validate all courses
+    console.log('🔍 Validating all courses...');
+    const errors: ValidationError[] = [];
+    for (let i = 0; i < courses.length; i++) {
+      const courseErrors = validateCourseData(courses[i], i + 1, referenceData);
+      errors.push(...courseErrors);
+    }
+
+    // If there are validation errors, return them
+    if (errors.length > 0) {
+      return new Response(JSON.stringify({
+        success: false,
+        errors,
+        message: 'Validation failed'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      });
+    }
+
+    console.log(`✅ All courses validated successfully`);
+
     // Return parsed data for frontend processing
     return new Response(JSON.stringify({
       success: true,
       courses: courses,
       totalCourses: courses.length,
-      message: `Successfully parsed ${courses.length} courses. Ready for batch processing.`
+      message: `Successfully parsed and validated ${courses.length} courses. Ready for batch processing.`
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,

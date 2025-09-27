@@ -47,6 +47,7 @@ import { toast } from 'sonner';
 import { ContentLoader } from '../ContentLoader';
 import { useAuth } from '@/hooks/useAuth';
 import AccessLogService from '@/services/accessLogService';
+import CourseNotificationService from '@/services/courseNotificationService';
 import { useViewPreferences } from '@/contexts/ViewPreferencesContext';
 import { ViewToggle } from '@/components/ui/ViewToggle';
 import { AssignmentTileView } from '@/components/assignment/AssignmentTileView';
@@ -560,6 +561,13 @@ const isOverdue = (dueDate: string, status: string) => {
   return dueDate && new Date(dueDate) < new Date() && status === 'pending';
 };
 
+// Helper function to strip HTML tags and get plain text
+const stripHtmlTags = (html: string) => {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  return tmp.textContent || tmp.innerText || '';
+};
+
 export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -786,6 +794,38 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
         } catch (logError) {
           console.error('Error logging successful assignment submission:', logError);
         }
+
+        // Send notification to course teachers
+        try {
+          // Get course information
+          const courseInfo = await CourseNotificationService.getCourseInfo(selectedAssignment.courseId);
+          if (courseInfo) {
+            // Get course teachers
+            const teachers = await CourseNotificationService.getCourseTeachers(selectedAssignment.courseId);
+            
+            if (teachers.length > 0) {
+              // Send notification to teachers
+              await CourseNotificationService.notifyAssignmentSubmission({
+                courseId: selectedAssignment.courseId,
+                courseName: courseInfo.courseName,
+                courseTitle: courseInfo.courseTitle,
+                courseSubtitle: courseInfo.courseSubtitle,
+                action: 'assignment_submitted',
+                existingTeachers: teachers,
+                assignmentTitle: selectedAssignment.title,
+                studentName: `${userProfile.first_name} ${userProfile.last_name}`,
+                performedBy: {
+                  id: user.id,
+                  name: `${userProfile.first_name} ${userProfile.last_name}`,
+                  email: user.email || 'unknown@email.com'
+                }
+              });
+            }
+          }
+        } catch (notificationError) {
+          console.error('Error sending assignment submission notification:', notificationError);
+          // Don't fail the submission if notification fails
+        }
     }
   };
 
@@ -827,12 +867,6 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
   };
 
   const AssignmentCard = ({ assignment }: { assignment: Assignment }) => {
-    // Helper function to strip HTML tags and get plain text
-    const stripHtmlTags = (html: string) => {
-      const tmp = document.createElement('div');
-      tmp.innerHTML = html;
-      return tmp.textContent || tmp.innerText || '';
-    };
 
     return (
       <Card className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-md bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-primary/30 dark:hover:border-primary/30 h-96 flex flex-col overflow-hidden">
@@ -875,19 +909,13 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
             {/* Detailed Assignment Stats - Horizontal Layout */}
             <div className="p-3 bg-muted/30 rounded-lg mb-4">
               <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <div className="flex items-center gap-1 w-1/3">
+                <div className="flex items-center gap-1 w-1/2">
                   <Calendar className="w-4 h-4 flex-shrink-0" />
                   <span className="font-medium text-foreground truncate">
                     {formatDate(assignment.dueDate)}
                   </span>
                 </div>
-                <div className="flex items-center gap-1 w-1/3 justify-center">
-                  <Clock className="w-4 h-4 flex-shrink-0" />
-                  <span className="font-medium text-foreground">
-                    {assignment.points || 0} pts
-                  </span>
-                </div>
-                <div className="flex items-center gap-1 w-1/3 justify-end">
+                <div className="flex items-center gap-1 w-1/2 justify-end">
                   <CheckCircle className="w-4 h-4 flex-shrink-0" />
                   <span className="font-medium text-foreground truncate">
                     {assignment.status === 'graded' ? `${assignment.score || 0}%` : assignment.status.charAt(0).toUpperCase() + assignment.status.slice(1)}
@@ -897,8 +925,8 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
             </div>
           </div>
 
-          {/* Action Button - Always at bottom with fixed positioning */}
-          <div className="mt-auto pt-6 pb-1">
+          {/* Action Buttons - Always at bottom with fixed positioning */}
+          <div className="mt-auto pt-6 pb-1 space-y-2">
             <Button
               size="sm"
               className="w-full h-10 text-sm"
@@ -909,6 +937,17 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
             >
               <Eye className="w-4 h-4 mr-2" />
               View Details
+            </Button>
+            <Button
+              size="sm"
+              className="w-full h-10 text-sm bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary"
+              onClick={() => {
+                setSelectedAssignment(assignment);
+                setIsSubmissionModalOpen(true);
+              }}
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              Submit
             </Button>
           </div>
         </CardContent>
@@ -1100,14 +1139,14 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
                   assignments={currentAssignments.map(assignment => ({
                     id: assignment.id,
                     title: assignment.title,
-                    description: assignment.description,
+                    description: stripHtmlTags(assignment.description),
                     due_date: assignment.dueDate,
                     course_title: assignment.courseTitle,
                     course_id: assignment.courseId,
                     status: assignment.status,
                     submission_type: assignment.submissionType === 'link' ? 'url' : (assignment.submissionType === 'file' ? 'file' : 'text'),
-                    points: 100,
-                    grade: assignment.score,
+                    points: undefined,
+                    grade: assignment.status === 'graded' ? assignment.score : undefined,
                     feedback: assignment.feedback,
                     created_at: new Date().toISOString(),
                     submitted_at: assignment.submittedAt,
@@ -1139,14 +1178,14 @@ export const StudentAssignments = ({ userProfile }: StudentAssignmentsProps) => 
                   assignments={currentAssignments.map(assignment => ({
                     id: assignment.id,
                     title: assignment.title,
-                    description: assignment.description,
+                    description: stripHtmlTags(assignment.description),
                     due_date: assignment.dueDate,
                     course_title: assignment.courseTitle,
                     course_id: assignment.courseId,
                     status: assignment.status,
                     submission_type: assignment.submissionType === 'link' ? 'url' : (assignment.submissionType === 'file' ? 'file' : 'text'),
-                    points: 100,
-                    grade: assignment.score,
+                    points: undefined,
+                    grade: assignment.status === 'graded' ? assignment.score : undefined,
                     feedback: assignment.feedback,
                     created_at: new Date().toISOString(),
                     submitted_at: assignment.submittedAt,

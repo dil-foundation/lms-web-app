@@ -420,10 +420,17 @@ const CourseManagement = () => {
       return;
     }
 
+    console.log('🚀 Starting bulk upload process...');
+    console.log('📁 Selected file:', selectedFile.name);
+    console.log('📊 Current batch state:', batchState);
+
     try {
       const result = await startBatchUpload(selectedFile);
       
+      console.log('📡 Upload result received:', result);
+      
       if (result && result.success) {
+        console.log('✅ Upload successful, refreshing data...');
         // Refresh the course list and stats
         fetchData();
         fetchStats();
@@ -432,9 +439,20 @@ const CourseManagement = () => {
         setIsBulkUploadOpen(false);
         setSelectedFile(null);
         resetBatchState();
+      } else if (result && !result.success && result.errors) {
+        console.log('⚠️ Validation errors occurred:', result.errors);
+        // Validation errors occurred - keep dialog open to show errors
+        // The errors are already set in the state by the hook
+      } else {
+        console.log('❌ Upload failed without specific result:', result);
       }
     } catch (error: any) {
-      console.error('Batch upload error:', error);
+      console.error('❌ Batch upload error:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack
+      });
       // Error handling is done in the hook
     }
   };
@@ -864,6 +882,22 @@ const CourseManagement = () => {
               {/* Upload Status */}
               {(batchState.isUploading || batchState.isParsing || batchState.isProcessing) && (
                 <div className="space-y-4">
+                  {/* Disclaimer */}
+                  <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-amber-900 dark:text-amber-100 mb-1">
+                          Important Notice
+                        </h4>
+                        <p className="text-sm text-amber-800 dark:text-amber-200">
+                          <strong>Do not refresh the page or close this dialog</strong> while the upload is in progress. 
+                          This may cause data loss or incomplete course creation. Please wait for the process to complete.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Progress Bar */}
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
@@ -916,12 +950,15 @@ const CourseManagement = () => {
                 </div>
               )}
 
+
               {/* Error Display */}
               {batchState.errors.length > 0 && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm font-medium text-red-700 dark:text-red-300">
                     <AlertTriangle className="h-4 w-4" />
-                    <span>Processing Errors ({batchState.errors.length})</span>
+                    <span>
+                      {batchState.isParsing ? 'Validation Errors' : 'Processing Errors'} ({batchState.errors.length})
+                    </span>
                   </div>
                   <div className="max-h-48 overflow-y-auto space-y-2 border border-red-200 rounded-lg p-3 bg-red-50 dark:bg-red-900/20">
                     {batchState.errors.map((error: any, index: number) => (
@@ -948,6 +985,36 @@ const CourseManagement = () => {
                       </div>
                     ))}
                   </div>
+                  
+                  {/* Validation Error Actions */}
+                  {batchState.isParsing && batchState.errors.length > 0 && (
+                    <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-amber-900 dark:text-amber-100 mb-1">
+                            Fix Required
+                          </h4>
+                          <p className="text-sm text-amber-800 dark:text-amber-200 mb-3">
+                            Please fix the validation errors in your Excel file and upload again. 
+                            All courses must pass validation before they can be created.
+                          </p>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => {
+                              setIsBulkUploadOpen(false);
+                              setSelectedFile(null);
+                              resetBatchState();
+                            }}
+                            className="bg-amber-100 hover:bg-amber-200 dark:bg-amber-800 dark:hover:bg-amber-700 text-amber-700 dark:text-amber-200 border-amber-300 dark:border-amber-600"
+                          >
+                            Close and Fix File
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -967,7 +1034,7 @@ const CourseManagement = () => {
             </Button>
             <Button 
               onClick={handleBulkUpload}
-              disabled={!selectedFile || batchState.isUploading || batchState.isParsing || batchState.isProcessing}
+              disabled={!selectedFile || batchState.isUploading || batchState.isParsing || batchState.isProcessing || (batchState.isParsing && batchState.errors.length > 0)}
               className="bg-primary hover:bg-primary/90"
             >
               {(batchState.isUploading || batchState.isParsing || batchState.isProcessing) ? (
@@ -980,7 +1047,7 @@ const CourseManagement = () => {
               ) : (
                 <>
                   <Upload className="h-4 w-4 mr-2" />
-                  Upload Courses
+                  {batchState.isParsing && batchState.errors.length > 0 ? 'Fix Errors First' : 'Upload Courses'}
                 </>
               )}
             </Button>

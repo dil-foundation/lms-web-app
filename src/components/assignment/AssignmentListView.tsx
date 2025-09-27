@@ -201,12 +201,6 @@ export const AssignmentListView: React.FC<AssignmentListViewProps> = ({
                           </div>
                         )}
                         
-                        {assignment.points && (
-                          <div className="flex items-center gap-1">
-                            <GraduationCap className="w-4 h-4" />
-                            <span>{assignment.points} points</span>
-                          </div>
-                        )}
 
                         {assignment.teacher && (
                           <div className="flex items-center gap-1">
@@ -237,10 +231,10 @@ export const AssignmentListView: React.FC<AssignmentListViewProps> = ({
                       {assignment.grade !== undefined && (
                         <div className="text-right">
                           <div className="text-lg font-bold text-primary">
-                            {assignment.grade}/{assignment.points}
+                            {assignment.grade}%
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            {Math.round((assignment.grade / assignment.points!) * 100)}%
+                            Score
                           </div>
                         </div>
                       )}
