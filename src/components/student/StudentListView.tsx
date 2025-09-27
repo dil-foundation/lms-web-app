@@ -13,7 +13,6 @@ import {
   Activity,
   CheckCircle,
   AlertCircle,
-  UserX,
   MoreHorizontal,
   Calendar,
   GraduationCap
@@ -48,7 +47,6 @@ interface StudentListViewProps {
   onMessage?: (student: Student) => void;
   onViewProfile?: (student: Student) => void;
   onEdit?: (student: Student) => void;
-  onRemove?: (student: Student) => void;
   className?: string;
 }
 
@@ -58,7 +56,6 @@ export const StudentListView: React.FC<StudentListViewProps> = ({
   onMessage,
   onViewProfile,
   onEdit,
-  onRemove,
   className
 }) => {
   const getGradeBadge = (grade: string) => {
@@ -105,15 +102,6 @@ export const StudentListView: React.FC<StudentListViewProps> = ({
     }
   };
 
-  const handleRemove = (e: React.MouseEvent, student: Student) => {
-    e.stopPropagation();
-    if (onRemove) {
-      // Small delay to ensure dropdown is fully closed
-      setTimeout(() => {
-        onRemove(student);
-      }, 100);
-    }
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -137,7 +125,7 @@ export const StudentListView: React.FC<StudentListViewProps> = ({
       case 'unverified':
         return <AlertCircle className="w-4 h-4" />;
       default:
-        return <UserX className="w-4 h-4" />;
+        return <AlertCircle className="w-4 h-4" />;
     }
   };
 
@@ -301,14 +289,6 @@ export const StudentListView: React.FC<StudentListViewProps> = ({
                             <DropdownMenuItem onClick={(e) => handleEdit(e, student)}>
                               <Users className="w-4 h-4 mr-2" />
                               Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem 
-                              onClick={(e) => handleRemove(e, student)}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <UserX className="w-4 h-4 mr-2" />
-                              Remove
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>

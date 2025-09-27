@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Mail, Users, Edit, Trash2, MoreHorizontal, Calendar, Clock } from 'lucide-react';
+import { Mail, Users, Edit, MoreHorizontal, Calendar, Clock } from 'lucide-react';
 
 interface Student {
   id: string;
@@ -24,7 +24,6 @@ interface StudentCardViewProps {
   onMessage: (student: Student) => void;
   onViewProfile: (student: Student) => void;
   onEdit: (student: Student) => void;
-  onRemove: (student: Student) => void;
   className?: string;
 }
 
@@ -34,7 +33,6 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
   onMessage,
   onViewProfile,
   onEdit,
-  onRemove,
   className
 }) => {
   const getGradeBadge = (grade: string) => {
@@ -69,13 +67,6 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
     }, 100);
   };
 
-  const handleRemove = (e: React.MouseEvent, student: Student) => {
-    e.stopPropagation();
-    // Small delay to ensure dropdown is fully closed
-    setTimeout(() => {
-      onRemove(student);
-    }, 100);
-  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -142,14 +133,6 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
                     <DropdownMenuItem onClick={(e) => handleEdit(e, student)}>
                       <Edit className="w-4 h-4 mr-2" />
                       Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={(e) => handleRemove(e, student)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Remove Student
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

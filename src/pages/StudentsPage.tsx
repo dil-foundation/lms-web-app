@@ -1056,9 +1056,6 @@ export default function StudentsPage() {
                         setIsProfileModalOpen(true);
                       }
                     }}
-                    onRemove={(student) => {
-                      // Handle remove functionality
-                    }}
                   />
                 )}
 
@@ -1101,13 +1098,6 @@ export default function StudentsPage() {
                       setModalMode('edit');
                       setIsProfileModalOpen(true);
                     }}
-                    onRemove={(student) => {
-                      // Handle remove functionality
-                      toast({
-                        title: "Remove Student",
-                        description: `Removing ${student.name}...`,
-                      });
-                    }}
                   />
                 )}
 
@@ -1149,13 +1139,6 @@ export default function StudentsPage() {
                       });
                       setModalMode('edit');
                       setIsProfileModalOpen(true);
-                    }}
-                    onRemove={(student) => {
-                      // Handle remove functionality
-                      toast({
-                        title: "Remove Student",
-                        description: `Removing ${student.name}...`,
-                      });
                     }}
                   />
                 )}
