@@ -13,7 +13,6 @@ import { APEXProvider } from "@/contexts/AIAssistantContext";
 import { ViewPreferencesProvider } from "@/contexts/ViewPreferencesContext";
 import ScrollToTop from "@/components/ScrollToTop";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
-import { SessionTimeoutWarning } from "@/components/SessionTimeoutWarning";
 import { SupabaseMFARequirement } from "@/components/auth/SupabaseMFARequirement";
 import { MFAProtectedRoute } from "@/components/auth/MFAProtectedRoute";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -21,27 +20,9 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Component to handle session timeout and activity tracking
 const SessionTimeoutTracker = () => {
-  const {
-    showWarning,
-    warningTimeRemaining,
-    handleExtendSession,
-    handleDismissWarning
-  } = useSessionTimeout();
+  useSessionTimeout(); // Just initialize the session timeout tracking
 
-
-
-  return (
-    <>
-
-      
-      <SessionTimeoutWarning
-        isVisible={showWarning}
-        timeRemaining={warningTimeRemaining}
-        onExtendSession={handleExtendSession}
-        onDismiss={handleDismissWarning}
-      />
-    </>
-  );
+  return null; // No UI needed since we removed the warning dialog
 };
 
 const Home = lazy(() => import("./pages/Home"));
