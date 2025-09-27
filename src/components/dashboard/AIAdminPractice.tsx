@@ -183,8 +183,8 @@ const StageConfigurationCard = ({ stage }) => {
         <div className="absolute top-2 right-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 bg-white/80">
-                <MoreVertical className="h-4 w-4" />
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 bg-white/90 hover:bg-white dark:bg-gray-800/90 dark:hover:bg-gray-700 border border-white/20 dark:border-gray-600/50 shadow-sm">
+                <MoreVertical className="h-4 w-4 text-gray-700 dark:text-gray-200" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -222,9 +222,9 @@ const StageConfigurationCard = ({ stage }) => {
           </div>
         </div>
 
-        <div className="flex gap-2 mt-auto">
+        <div className="flex flex-col gap-2 mt-auto">
           <Button 
-            className="flex-1 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-semibold shadow-sm hover:shadow-md transition-all duration-300" 
+            className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-semibold shadow-sm hover:shadow-md transition-all duration-300" 
             onClick={handleViewStage}
             size="sm"
           >
@@ -233,7 +233,7 @@ const StageConfigurationCard = ({ stage }) => {
           </Button>
           <Button 
             variant="outline" 
-            className="flex-1 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800" 
+            className="w-full hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800 border-2" 
             size="sm"
             onClick={() => setIsEditOpen(true)}
           >
@@ -332,13 +332,6 @@ export const AIAdminPractice = () => {
               </div>
             </div>
             
-            {/* Action Controls */}
-            <div className="flex items-center gap-3">
-              <Button className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
-                <Plus className="mr-2 h-4 w-4" />
-                Add New Stage
-              </Button>
-            </div>
           </div>
         </div>
       </div>

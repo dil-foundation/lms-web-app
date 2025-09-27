@@ -45,7 +45,6 @@ interface StudentTileViewProps {
   onStudentClick?: (student: Student) => void;
   onMessage?: (student: Student) => void;
   onViewProfile?: (student: Student) => void;
-  onGrade?: (student: Student) => void;
   onEdit?: (student: Student) => void;
   onRemove?: (student: Student) => void;
   className?: string;
@@ -56,7 +55,6 @@ export const StudentTileView: React.FC<StudentTileViewProps> = ({
   onStudentClick,
   onMessage,
   onViewProfile,
-  onGrade,
   onEdit,
   onRemove,
   className
@@ -77,35 +75,41 @@ export const StudentTileView: React.FC<StudentTileViewProps> = ({
   const handleMessage = (e: React.MouseEvent, student: Student) => {
     e.stopPropagation();
     if (onMessage) {
-      onMessage(student);
+      // Small delay to ensure dropdown is fully closed
+      setTimeout(() => {
+        onMessage(student);
+      }, 100);
     }
   };
 
   const handleViewProfile = (e: React.MouseEvent, student: Student) => {
     e.stopPropagation();
     if (onViewProfile) {
-      onViewProfile(student);
+      // Small delay to ensure dropdown is fully closed
+      setTimeout(() => {
+        onViewProfile(student);
+      }, 100);
     }
   };
 
-  const handleGrade = (e: React.MouseEvent, student: Student) => {
-    e.stopPropagation();
-    if (onGrade) {
-      onGrade(student);
-    }
-  };
 
   const handleEdit = (e: React.MouseEvent, student: Student) => {
     e.stopPropagation();
     if (onEdit) {
-      onEdit(student);
+      // Small delay to ensure dropdown is fully closed
+      setTimeout(() => {
+        onEdit(student);
+      }, 100);
     }
   };
 
   const handleRemove = (e: React.MouseEvent, student: Student) => {
     e.stopPropagation();
     if (onRemove) {
-      onRemove(student);
+      // Small delay to ensure dropdown is fully closed
+      setTimeout(() => {
+        onRemove(student);
+      }, 100);
     }
   };
 
@@ -267,10 +271,6 @@ export const StudentTileView: React.FC<StudentTileViewProps> = ({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={(e) => handleGrade(e, student)}>
-                      <Target className="w-4 h-4 mr-2" />
-                      Grade
-                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={(e) => handleEdit(e, student)}>
                       <Users className="w-4 h-4 mr-2" />
                       Edit

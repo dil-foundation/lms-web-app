@@ -780,10 +780,10 @@ export default function ReportsPage() {
                                   <Badge
                                     className={cn(
                                       "capitalize",
-                                      student.status.replace('_', ' ') === 'Completed' && 'bg-blue-100 text-white',
-                                      student.status.replace('_', ' ') === 'In Progress' && 'bg-green-100 text-green-800',
-                                      student.status.replace('_', ' ') === 'Not Started' && 'bg-gray-100 text-gray-800',
-                                      student.status.replace('_', ' ') === 'Behind' && 'bg-red-100 text-red-800'
+                                      student.status.replace('_', ' ') === 'Completed' && 'bg-green-100 text-green-800 border-green-200',
+                                      student.status.replace('_', ' ') === 'In Progress' && 'bg-blue-100 text-blue-800 border-blue-200',
+                                      student.status.replace('_', ' ') === 'Not Started' && 'bg-gray-100 text-gray-800 border-gray-200',
+                                      student.status.replace('_', ' ') === 'Behind' && 'bg-red-100 text-red-800 border-red-200'
                                     )}
                                   >
                                     {student.status.replace('_', ' ').replace(/\b\w/g, char => char.toUpperCase())}
