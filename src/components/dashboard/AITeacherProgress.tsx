@@ -50,7 +50,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { 
   TeacherProgressOverviewData, 
-  StudentProgressData
+  StudentProgressData,
+  teacherDashboardService
 } from '@/services/teacherDashboardService';
 import { useTeacherProgress } from '@/hooks/useTeacherProgress';
 
@@ -171,6 +172,7 @@ export const AITeacherProgress = () => {
   const [selectedStudent, setSelectedStudent] = useState<StudentProgressData | null>(null);
   const [studentDetailData, setStudentDetailData] = useState<StudentDetailData | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isLoadingStudentDetail, setIsLoadingStudentDetail] = useState(false);
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -253,7 +255,7 @@ export const AITeacherProgress = () => {
   const handleViewStudentDetail = async (student: StudentProgressData) => {
     try {
       setSelectedStudent(student);
-      setLoading(true);
+      setIsLoadingStudentDetail(true);
       
       console.log('🔄 Fetching detailed data for student:', student.id);
       
@@ -330,7 +332,7 @@ export const AITeacherProgress = () => {
         description: error.message || 'Unable to fetch detailed student information.'
       });
     } finally {
-      setLoading(false);
+      setIsLoadingStudentDetail(false);
     }
   };
 
@@ -464,7 +466,7 @@ export const AITeacherProgress = () => {
               size="sm" 
               variant="outline" 
               className="ml-2" 
-              onClick={() => fetchProgressData()}
+              onClick={handleRefresh}
             >
               Retry
             </Button>

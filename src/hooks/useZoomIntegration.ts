@@ -14,9 +14,10 @@ export const useZoomIntegration = () => {
         setIsEnabled(enabled);
         setError(null);
       } catch (err) {
-        console.error('Error checking Zoom integration:', err);
-        setError(err instanceof Error ? err.message : 'Failed to check Zoom integration');
-        setIsEnabled(false);
+        // Silently handle the error and default to disabled
+        // This prevents console errors on app load when Zoom integration is not set up
+        setError(null); // Don't show error to user
+        setIsEnabled(false); // Default to disabled
       } finally {
         setLoading(false);
       }
