@@ -21,8 +21,6 @@ interface AssessmentTileViewProps {
   assessments: Assessment[];
   onAssessmentClick: (assessment: Assessment) => void;
   onGrade: (assessment: Assessment) => void;
-  onEdit: (assessment: Assessment) => void;
-  onDelete: (assessment: Assessment) => void;
   onViewSubmissions: (assessment: Assessment) => void;
   className?: string;
 }
@@ -31,8 +29,6 @@ export const AssessmentTileView: React.FC<AssessmentTileViewProps> = ({
   assessments,
   onAssessmentClick,
   onGrade,
-  onEdit,
-  onDelete,
   onViewSubmissions,
   className
 }) => {
@@ -41,15 +37,6 @@ export const AssessmentTileView: React.FC<AssessmentTileViewProps> = ({
     onGrade(assessment);
   };
 
-  const handleEdit = (e: React.MouseEvent, assessment: Assessment) => {
-    e.stopPropagation();
-    onEdit(assessment);
-  };
-
-  const handleDelete = (e: React.MouseEvent, assessment: Assessment) => {
-    e.stopPropagation();
-    onDelete(assessment);
-  };
 
   const handleViewSubmissions = (e: React.MouseEvent, assessment: Assessment) => {
     e.stopPropagation();
@@ -122,18 +109,6 @@ export const AssessmentTileView: React.FC<AssessmentTileViewProps> = ({
                     <DropdownMenuItem onClick={(e) => handleGrade(e, assessment)}>
                       <CheckCircle className="w-4 h-4 mr-2" />
                       Grade
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={(e) => handleEdit(e, assessment)}>
-                      <FileText className="w-4 h-4 mr-2" />
-                      Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={(e) => handleDelete(e, assessment)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <MoreHorizontal className="w-4 h-4 mr-2" />
-                      Delete
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

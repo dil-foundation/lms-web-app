@@ -350,12 +350,6 @@ export const GradeAssignments = () => {
                           onGrade={(assessment) => {
                             window.location.href = `/dashboard/grade-assignments/${assessment.id}`;
                           }}
-                          onEdit={(assessment) => {
-                            // Handle edit functionality
-                          }}
-                          onDelete={(assessment) => {
-                            // Handle delete functionality
-                          }}
                           onViewSubmissions={(assessment) => {
                             window.location.href = `/dashboard/grade-assignments/${assessment.id}`;
                           }}
@@ -381,12 +375,6 @@ export const GradeAssignments = () => {
                           onGrade={(assessment) => {
                             window.location.href = `/dashboard/grade-assignments/${assessment.id}`;
                           }}
-                          onEdit={(assessment) => {
-                            // Handle edit functionality
-                          }}
-                          onDelete={(assessment) => {
-                            // Handle delete functionality
-                          }}
                           onViewSubmissions={(assessment) => {
                             window.location.href = `/dashboard/grade-assignments/${assessment.id}`;
                           }}
@@ -411,12 +399,6 @@ export const GradeAssignments = () => {
                           }}
                           onGrade={(assessment) => {
                             window.location.href = `/dashboard/grade-assignments/${assessment.id}`;
-                          }}
-                          onEdit={(assessment) => {
-                            // Handle edit functionality
-                          }}
-                          onDelete={(assessment) => {
-                            // Handle delete functionality
                           }}
                           onViewSubmissions={(assessment) => {
                             window.location.href = `/dashboard/grade-assignments/${assessment.id}`;

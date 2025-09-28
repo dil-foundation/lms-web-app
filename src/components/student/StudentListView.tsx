@@ -13,7 +13,6 @@ import {
   Activity,
   CheckCircle,
   AlertCircle,
-  UserX,
   MoreHorizontal,
   Calendar,
   GraduationCap
@@ -47,9 +46,7 @@ interface StudentListViewProps {
   onStudentClick?: (student: Student) => void;
   onMessage?: (student: Student) => void;
   onViewProfile?: (student: Student) => void;
-  onGrade?: (student: Student) => void;
   onEdit?: (student: Student) => void;
-  onRemove?: (student: Student) => void;
   className?: string;
 }
 
@@ -58,9 +55,7 @@ export const StudentListView: React.FC<StudentListViewProps> = ({
   onStudentClick,
   onMessage,
   onViewProfile,
-  onGrade,
   onEdit,
-  onRemove,
   className
 }) => {
   const getGradeBadge = (grade: string) => {
@@ -79,37 +74,34 @@ export const StudentListView: React.FC<StudentListViewProps> = ({
   const handleMessage = (e: React.MouseEvent, student: Student) => {
     e.stopPropagation();
     if (onMessage) {
-      onMessage(student);
+      // Small delay to ensure dropdown is fully closed
+      setTimeout(() => {
+        onMessage(student);
+      }, 100);
     }
   };
 
   const handleViewProfile = (e: React.MouseEvent, student: Student) => {
     e.stopPropagation();
     if (onViewProfile) {
-      onViewProfile(student);
+      // Small delay to ensure dropdown is fully closed
+      setTimeout(() => {
+        onViewProfile(student);
+      }, 100);
     }
   };
 
-  const handleGrade = (e: React.MouseEvent, student: Student) => {
-    e.stopPropagation();
-    if (onGrade) {
-      onGrade(student);
-    }
-  };
 
   const handleEdit = (e: React.MouseEvent, student: Student) => {
     e.stopPropagation();
     if (onEdit) {
-      onEdit(student);
+      // Small delay to ensure dropdown is fully closed
+      setTimeout(() => {
+        onEdit(student);
+      }, 100);
     }
   };
 
-  const handleRemove = (e: React.MouseEvent, student: Student) => {
-    e.stopPropagation();
-    if (onRemove) {
-      onRemove(student);
-    }
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -133,7 +125,7 @@ export const StudentListView: React.FC<StudentListViewProps> = ({
       case 'unverified':
         return <AlertCircle className="w-4 h-4" />;
       default:
-        return <UserX className="w-4 h-4" />;
+        return <AlertCircle className="w-4 h-4" />;
     }
   };
 
@@ -294,21 +286,9 @@ export const StudentListView: React.FC<StudentListViewProps> = ({
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={(e) => handleGrade(e, student)}>
-                              <Target className="w-4 h-4 mr-2" />
-                              Grade
-                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={(e) => handleEdit(e, student)}>
                               <Users className="w-4 h-4 mr-2" />
                               Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem 
-                              onClick={(e) => handleRemove(e, student)}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <UserX className="w-4 h-4 mr-2" />
-                              Remove
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>

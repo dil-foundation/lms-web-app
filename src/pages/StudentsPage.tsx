@@ -1042,9 +1042,6 @@ export default function StudentsPage() {
                         setIsProfileModalOpen(true);
                       }
                     }}
-                    onGrade={(student) => {
-                      // Handle grade functionality
-                    }}
                     onEdit={(student) => {
                       const originalStudent = filteredStudents.find(s => s.id === student.id);
                       if (originalStudent) {
@@ -1058,9 +1055,6 @@ export default function StudentsPage() {
                         setModalMode('edit');
                         setIsProfileModalOpen(true);
                       }
-                    }}
-                    onRemove={(student) => {
-                      // Handle remove functionality
                     }}
                   />
                 )}
@@ -1093,13 +1087,6 @@ export default function StudentsPage() {
                       setModalMode('view');
                       setIsProfileModalOpen(true);
                     }}
-                    onGrade={(student) => {
-                      // Handle grade functionality
-                      toast({
-                        title: "Grade",
-                        description: `Grading ${student.name}...`,
-                      });
-                    }}
                     onEdit={(student) => {
                       setSelectedStudent(student);
                       setEditableStudent({
@@ -1110,13 +1097,6 @@ export default function StudentsPage() {
                       });
                       setModalMode('edit');
                       setIsProfileModalOpen(true);
-                    }}
-                    onRemove={(student) => {
-                      // Handle remove functionality
-                      toast({
-                        title: "Remove Student",
-                        description: `Removing ${student.name}...`,
-                      });
                     }}
                   />
                 )}
@@ -1149,13 +1129,6 @@ export default function StudentsPage() {
                       setModalMode('view');
                       setIsProfileModalOpen(true);
                     }}
-                    onGrade={(student) => {
-                      // Handle grade functionality
-                      toast({
-                        title: "Grade",
-                        description: `Grading ${student.name}...`,
-                      });
-                    }}
                     onEdit={(student) => {
                       setSelectedStudent(student);
                       setEditableStudent({
@@ -1166,13 +1139,6 @@ export default function StudentsPage() {
                       });
                       setModalMode('edit');
                       setIsProfileModalOpen(true);
-                    }}
-                    onRemove={(student) => {
-                      // Handle remove functionality
-                      toast({
-                        title: "Remove Student",
-                        description: `Removing ${student.name}...`,
-                      });
                     }}
                   />
                 )}

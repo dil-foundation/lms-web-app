@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import SecurityService from '@/services/securityService';
 import SessionService from '@/services/sessionService';
+import { useCrossTabSessionSync } from './useCrossTabSessionSync';
 
 export const useSessionTimeout = () => {
   const { user, session, signOut } = useAuth();
@@ -12,11 +13,17 @@ export const useSessionTimeout = () => {
   const warningRef = useRef<NodeJS.Timeout | null>(null);
   const lastActivityRef = useRef<number>(Date.now());
   const sessionTimeoutRef = useRef<number>(30); // Default 30 minutes
+  const isHandlingTimeoutRef = useRef<boolean>(false); // Prevent multiple simultaneous timeouts
   
-  // Warning state
-  const [showWarning, setShowWarning] = useState(false);
-  const [warningTimeRemaining, setWarningTimeRemaining] = useState(0);
-  const WARNING_BEFORE_TIMEOUT = 5 * 60; // Show warning 5 minutes before timeout
+  // Remove warning state - we'll logout directly when timeout occurs
+
+  // Cross-tab session sync
+  const {
+    broadcastSessionExtended,
+    broadcastSessionTimeout,
+    subscribeToSessionExtended,
+    subscribeToSessionTimeout
+  } = useCrossTabSessionSync();
 
   // Get session timeout setting from security settings (with offline awareness)
   const getSessionTimeout = useCallback(async () => {
@@ -45,79 +52,94 @@ export const useSessionTimeout = () => {
   // Update last activity timestamp
   const updateLastActivity = useCallback(() => {
     lastActivityRef.current = Date.now();
+  }, []);
+
+  // Handle session timeout
+  const handleSessionTimeout = useCallback(async (isFromCrossTab = false) => {
+    // Prevent multiple simultaneous timeout handling
+    if (isHandlingTimeoutRef.current) {
+      console.log('⚠️ Session timeout already being handled, ignoring duplicate');
+      return;
+    }
     
-    // Hide warning if user is active
-    if (showWarning) {
-      setShowWarning(false);
+    isHandlingTimeoutRef.current = true;
+    console.log(`🔄 Session timeout triggered - From cross-tab: ${isFromCrossTab}, Timeout: ${sessionTimeoutRef.current} minutes`);
+    
+    try {
+      // Only broadcast if this timeout originated from this tab (not from cross-tab communication)
+      if (!isFromCrossTab) {
+        console.log('📡 Broadcasting session timeout to other tabs');
+        broadcastSessionTimeout();
+      } else {
+        console.log('📨 Received timeout from another tab, not broadcasting');
+      }
+      
+      // Clear any pending timeouts
       if (warningRef.current) {
         clearTimeout(warningRef.current);
         warningRef.current = null;
       }
+      
+      // Clear the main timeout interval
+      if (timeoutRef.current) {
+        clearInterval(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      
+      // Show logout message (only once per tab)
+      if (!isFromCrossTab) {
+        console.log('🚨 Showing session expired toast');
+        toast.error('Your session has expired due to inactivity. Please log in again.');
+      }
+      
+      // Sign out the user
+      console.log('🚪 Signing out user');
+      await signOut();
+      
+      // Navigate to login page
+      console.log('🔄 Navigating to login page');
+      navigate('/auth', { replace: true });
+    } catch (error) {
+      console.error('❌ Error during session timeout handling:', error);
+    } finally {
+      // Reset the flag after a delay to allow for cleanup
+      setTimeout(() => {
+        isHandlingTimeoutRef.current = false;
+      }, 1000);
     }
-  }, [showWarning]);
+  }, [signOut, navigate, broadcastSessionTimeout]);
 
   // Check if session has timed out
   const checkSessionTimeout = useCallback(async () => {
-    if (!user || !session) return;
+    if (!user || !session) {
+      console.log('🔍 Session timeout check skipped - no user/session');
+      return;
+    }
 
     const now = Date.now();
     const timeSinceLastActivity = now - lastActivityRef.current;
     const timeoutMs = sessionTimeoutRef.current * 60 * 1000; // Convert minutes to milliseconds
-    const warningMs = (sessionTimeoutRef.current - WARNING_BEFORE_TIMEOUT / 60) * 60 * 1000;
+    
+    console.log(`🔍 Session timeout check - Time since last activity: ${Math.round(timeSinceLastActivity / 1000)}s, Timeout: ${sessionTimeoutRef.current} minutes`);
 
-    // Check if we should show warning
-    if (timeSinceLastActivity >= warningMs && !showWarning) {
-      const remainingTime = timeoutMs - timeSinceLastActivity;
-      setWarningTimeRemaining(Math.max(0, Math.floor(remainingTime / 1000)));
-      setShowWarning(true);
-      
-      // Set timeout for actual logout
-      warningRef.current = setTimeout(() => {
-        handleSessionTimeout();
-      }, remainingTime);
-    }
-
-    // Check if session has completely timed out
+    // Check if session has timed out - logout immediately
     if (timeSinceLastActivity >= timeoutMs) {
+      console.log('⏰ Session timeout detected, triggering logout');
       handleSessionTimeout();
     }
-  }, [user, session, showWarning]);
+  }, [user, session, handleSessionTimeout]);
 
-  // Handle session timeout
-  const handleSessionTimeout = useCallback(async () => {
-    console.log(`Session timed out after ${sessionTimeoutRef.current} minutes of inactivity`);
-    
-    // Clear any pending warnings
-    setShowWarning(false);
-    if (warningRef.current) {
-      clearTimeout(warningRef.current);
-      warningRef.current = null;
-    }
-    
-    // Show warning toast
-    toast.error('Your session has expired due to inactivity. Please log in again.');
-    
-    // Sign out the user
-    await signOut();
-    
-    // Navigate to login page
-    navigate('/auth', { replace: true });
-  }, [signOut, navigate]);
-
-  // Handle extending session
+  // Handle extending session (no longer needed since we don't show warnings)
   const handleExtendSession = useCallback(() => {
     updateLastActivity();
-    setShowWarning(false);
-    if (warningRef.current) {
-      clearTimeout(warningRef.current);
-      warningRef.current = null;
-    }
-  }, [updateLastActivity]);
+    
+    // Broadcast session extension to other tabs
+    broadcastSessionExtended();
+  }, [updateLastActivity, broadcastSessionExtended]);
 
-  // Handle dismissing warning
+  // Handle dismissing warning (no longer needed)
   const handleDismissWarning = useCallback(() => {
-    setShowWarning(false);
-    // Don't clear the timeout - let it expire naturally
+    // No longer needed since we don't show warnings
   }, []);
 
   // Set up activity listeners
@@ -133,14 +155,7 @@ export const useSessionTimeout = () => {
 
     const handleActivity = (event: Event) => {
       try {
-        // Don't update activity if the event originated from the warning dialog
-        const target = event.target as Element;
-        if (target && typeof target.closest === 'function') {
-          const warningElement = target.closest('[data-session-warning]');
-          if (warningElement) {
-            return; // Event originated from warning dialog, don't update activity
-          }
-        }
+        // No need to check for warning dialog since we removed it
         updateLastActivity();
       } catch (error) {
         // If there's any error with the target checking, just update activity
@@ -172,6 +187,30 @@ export const useSessionTimeout = () => {
     }, 60 * 1000);
   }, [checkSessionTimeout]);
 
+  // Set up cross-tab event listeners
+  useEffect(() => {
+    if (!user || !session) return;
+
+    // Listen for session extensions from other tabs
+    const unsubscribeSessionExtended = subscribeToSessionExtended((message) => {
+      console.log('Received session extended from another tab:', message);
+      updateLastActivity();
+    });
+
+    // No longer need to listen for session warnings since we removed the warning system
+
+    // Listen for session timeouts from other tabs
+    const unsubscribeSessionTimeout = subscribeToSessionTimeout((message) => {
+      console.log('📨 Received session timeout from another tab:', message);
+      handleSessionTimeout(true); // Pass true to indicate this is from cross-tab communication
+    });
+
+    return () => {
+      unsubscribeSessionExtended();
+      unsubscribeSessionTimeout();
+    };
+  }, [user, session, subscribeToSessionExtended, subscribeToSessionTimeout, updateLastActivity, handleSessionTimeout]);
+
   // Initialize session timeout management
   useEffect(() => {
     if (!user || !session) {
@@ -184,11 +223,8 @@ export const useSessionTimeout = () => {
         clearTimeout(warningRef.current);
         warningRef.current = null;
       }
-      setShowWarning(false);
       return;
     }
-
-
 
     const initializeTimeout = async () => {
       // Get current session timeout setting
@@ -236,7 +272,6 @@ export const useSessionTimeout = () => {
       if (warningRef.current) {
         clearTimeout(warningRef.current);
       }
-
     };
   }, [user, session, getSessionTimeout, setupActivityListeners, setupTimeoutChecking]);
 
@@ -260,8 +295,6 @@ export const useSessionTimeout = () => {
   return {
     updateLastActivity,
     getSessionTimeout: () => sessionTimeoutRef.current,
-    showWarning,
-    warningTimeRemaining,
     handleExtendSession,
     handleDismissWarning
   };

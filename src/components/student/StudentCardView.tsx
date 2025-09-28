@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Mail, Users, Edit, Trash2, MoreHorizontal, Calendar, Clock } from 'lucide-react';
+import { Mail, Users, Edit, MoreHorizontal, Calendar, Clock } from 'lucide-react';
 
 interface Student {
   id: string;
@@ -23,9 +23,7 @@ interface StudentCardViewProps {
   onStudentClick: (student: Student) => void;
   onMessage: (student: Student) => void;
   onViewProfile: (student: Student) => void;
-  onGrade: (student: Student) => void;
   onEdit: (student: Student) => void;
-  onRemove: (student: Student) => void;
   className?: string;
 }
 
@@ -34,9 +32,7 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
   onStudentClick,
   onMessage,
   onViewProfile,
-  onGrade,
   onEdit,
-  onRemove,
   className
 }) => {
   const getGradeBadge = (grade: string) => {
@@ -48,28 +44,29 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
   };
   const handleMessage = (e: React.MouseEvent, student: Student) => {
     e.stopPropagation();
-    onMessage(student);
+    // Small delay to ensure dropdown is fully closed
+    setTimeout(() => {
+      onMessage(student);
+    }, 100);
   };
 
   const handleViewProfile = (e: React.MouseEvent, student: Student) => {
     e.stopPropagation();
-    onViewProfile(student);
+    // Small delay to ensure dropdown is fully closed
+    setTimeout(() => {
+      onViewProfile(student);
+    }, 100);
   };
 
-  const handleGrade = (e: React.MouseEvent, student: Student) => {
-    e.stopPropagation();
-    onGrade(student);
-  };
 
   const handleEdit = (e: React.MouseEvent, student: Student) => {
     e.stopPropagation();
-    onEdit(student);
+    // Small delay to ensure dropdown is fully closed
+    setTimeout(() => {
+      onEdit(student);
+    }, 100);
   };
 
-  const handleRemove = (e: React.MouseEvent, student: Student) => {
-    e.stopPropagation();
-    onRemove(student);
-  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -133,17 +130,9 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
                       <Mail className="w-4 h-4 mr-2" />
                       Send Message
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={(e) => handleGrade(e, student)}>
+                    <DropdownMenuItem onClick={(e) => handleEdit(e, student)}>
                       <Edit className="w-4 h-4 mr-2" />
-                      Grade Student
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={(e) => handleRemove(e, student)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Remove Student
+                      Edit
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

@@ -45,7 +45,8 @@ begin
 end;
 $$ language plpgsql;
 
-create trigger if not exists update_integrations_updated_at 
+drop trigger if exists update_integrations_updated_at on integrations;
+create trigger update_integrations_updated_at 
   before update on integrations 
   for each row 
   execute function update_updated_at_column();
