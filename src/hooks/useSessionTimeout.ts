@@ -213,8 +213,6 @@ export const useSessionTimeout = () => {
       return;
     }
 
-
-
     const initializeTimeout = async () => {
       // Get current session timeout setting
       await getSessionTimeout();
@@ -257,7 +255,6 @@ export const useSessionTimeout = () => {
       if (warningRef.current) {
         clearTimeout(warningRef.current);
       }
-
     };
   }, [user, session, getSessionTimeout, setupActivityListeners, setupTimeoutChecking]);
 

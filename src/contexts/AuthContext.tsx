@@ -93,12 +93,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Handle auth errors
         if (event === 'TOKEN_REFRESHED' && session) {
           try {
-            // Check if user still exists in database
-            const { data: profile, error } = await supabase
+            // Check if user still exists in database with timeout
+            const profileCheckPromise = supabase
               .from('profiles')
               .select('id')
               .eq('id', session.user.id)
               .single();
+            
+            // Add timeout to prevent blocking
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Profile check timeout')), 5000)
+            );
+            
+            const { data: profile, error } = await Promise.race([
+              profileCheckPromise,
+              timeoutPromise
+            ]) as any;
             
             if (error && error.code === 'PGRST116') {
               // User not found in database, sign them out
@@ -111,6 +121,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
           } catch (profileError) {
             console.error('Error checking user profile during auth state change:', profileError);
+            // Don't block the auth flow if profile check fails
+            console.log('Continuing with auth flow despite profile check error');
           }
         }
         
