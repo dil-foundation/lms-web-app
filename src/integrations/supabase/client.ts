@@ -31,16 +31,26 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
 supabase.auth.onAuthStateChange(async (event, session) => {
   if (event === 'TOKEN_REFRESHED' && session) {
     try {
-      // Check if the user still exists in the database
-      const { data: profile, error } = await supabase
+      // Check if the user still exists in the database with timeout
+      const profileCheckPromise = supabase
         .from('profiles')
         .select('id')
         .eq('id', session.user.id)
         .single();
       
+      // Add timeout to prevent blocking
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Profile check timeout')), 3000)
+      );
+      
+      const { data: profile, error } = await Promise.race([
+        profileCheckPromise,
+        timeoutPromise
+      ]) as any;
+      
       if (error && error.code === 'PGRST116') {
         // User not found in database, sign them out
-        console.warn('User not found in database, signing out automatically');
+        console.warn('User not found in database, signing out');
         await supabase.auth.signOut({ scope: 'global' });
         
         // Clear local storage
@@ -57,6 +67,8 @@ supabase.auth.onAuthStateChange(async (event, session) => {
       }
     } catch (profileError) {
       console.error('Error checking user profile:', profileError);
+      // Don't block the auth flow if profile check fails
+      console.log('Continuing with auth flow despite profile check error');
     }
   }
 });
