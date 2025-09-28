@@ -70,71 +70,155 @@ export const OfflineLearning = ({ userProfile }: OfflineLearningProps) => {
   const downloadService = getCourseDownloadService();
   const dbUtils = getOfflineDatabaseUtils();
 
+  // Format bytes to human readable format
+  const formatBytes = useCallback((bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }, []);
+
+  // Load downloaded courses from offline database
+  const loadDownloadedCourses = useCallback(async () => {
+    try {
+      const offlineCourses = await dbUtils.getAllCourses();
+      
+      const downloadedCoursesData: DownloadedCourse[] = await Promise.all(
+        offlineCourses.map(async (course) => {
+          let imageUrl = '/placeholder.svg';
+          
+          // Try to get offline image if available
+          if (course.image_url) {
+            try {
+              // Check if we have the course image stored as an asset
+              const courseAssets = await dbUtils.getAssetsByCourse(course.id);
+              const imageAsset = courseAssets.find(asset => 
+                asset.type === 'image' && asset.filename?.includes('course-image')
+              );
+              
+              if (imageAsset) {
+                // Create blob URL for offline image
+                imageUrl = URL.createObjectURL(imageAsset.blob);
+              } else if (navigator.onLine && course.image_url) {
+                // Fallback to online signed URL if online and no offline image
+                try {
+                  const { data: signedUrlData } = await supabase.storage
+                    .from('dil-lms')
+                    .createSignedUrl(course.image_url, 3600);
+                  if (signedUrlData) {
+                    imageUrl = signedUrlData.signedUrl;
+                  }
+                } catch (error) {
+                  console.log('Failed to create signed URL for offline course image:', error);
+                }
+              }
+            } catch (error) {
+              console.log('Failed to load offline course image:', error);
+            }
+          }
+          
+          return {
+            id: course.id,
+            title: course.title,
+            subtitle: course.subtitle || '',
+            image_url: imageUrl,
+            progress: 0, // Will be calculated from progress data
+            total_lessons: course.total_lessons,
+            completed_lessons: 0, // Will be calculated from progress data
+            last_accessed: course.lastAccessed ? new Date(course.lastAccessed).toISOString() : new Date().toISOString(),
+            downloadDate: new Date(course.downloadDate).toISOString(),
+            size: formatBytes(course.totalSize),
+            downloadStatus: course.downloadStatus
+          };
+        })
+      );
+
+      setDownloadedCourses(downloadedCoursesData);
+      console.log(`📱 OfflineLearning: Loaded ${downloadedCoursesData.length} downloaded courses`);
+    } catch (error) {
+      console.error('Failed to load downloaded courses:', error);
+    }
+  }, [dbUtils, formatBytes]);
+
+  // Load storage information
+  const loadStorageInfo = useCallback(async () => {
+    try {
+      const storageInfo = await dbUtils.getStorageInfo();
+      setStorageUsed(Math.round(storageInfo.used / 1024 / 1024)); // Convert to MB
+      console.log(`💾 OfflineLearning: Storage used: ${Math.round(storageInfo.used / 1024 / 1024)} MB`);
+    } catch (error) {
+      console.error('Failed to load storage info:', error);
+    }
+  }, [dbUtils]);
+
   // Define fetchEnrolledCourses function with useCallback to prevent dependency issues
   const fetchEnrolledCourses = useCallback(async () => {
     if (!userProfile?.id) return;
 
-    // Skip fetch when offline to prevent failed requests
-    if (!navigator.onLine) {
-      console.log('🔴 OfflineLearning: Offline - skipping courses fetch, using empty state');
-      setEnrolledCourses([]);
-      setLoading(false);
-      return;
-    }
-
     setLoading(true);
     try {
+      // Always load downloaded courses and storage info first
+      await loadDownloadedCourses();
+      await loadStorageInfo();
+
+      // Only fetch online courses if we're online
+      if (!navigator.onLine) {
+        console.log('🔴 OfflineLearning: Offline - skipping online courses fetch, showing offline content only');
+        setEnrolledCourses([]);
+        setLoading(false);
+        return;
+      }
+
+      console.log('🟢 OfflineLearning: Online - fetching enrolled courses');
       const { data, error } = await supabase.rpc('get_student_courses_with_progress', { 
         student_id: userProfile.id 
       });
 
-        if (error) {
-          console.error('Error fetching courses:', error);
-          toast.error('Failed to load your courses.');
-          return;
-        }
-
-        if (data) {
-          const coursesWithSignedUrls = await Promise.all(data.map(async (course: any) => {
-            let imageUrl = '/placeholder.svg';
-            // Only create signed URLs if online
-            if (course.image_url && navigator.onLine) {
-              try {
-                const { data: signedUrlData } = await supabase.storage
-                  .from('dil-lms')
-                  .createSignedUrl(course.image_url, 3600);
-                if (signedUrlData) {
-                  imageUrl = signedUrlData.signedUrl;
-                }
-              } catch (error) {
-                console.log('🔴 OfflineLearning: Failed to create signed URL (might be offline):', error);
-                // Keep placeholder image
-              }
-            }
-            return {
-              id: course.course_id,
-              title: course.title,
-              subtitle: course.subtitle,
-              image_url: imageUrl,
-              progress: course.progress_percentage,
-              total_lessons: course.total_lessons,
-              completed_lessons: course.completed_lessons,
-              last_accessed: course.last_accessed,
-            };
-          }));
-          setEnrolledCourses(coursesWithSignedUrls);
-        }
-
-        // Load real downloaded courses and storage info
-        await loadDownloadedCourses();
-        await loadStorageInfo();
-      } catch (error) {
-        console.error('Error:', error);
-        toast.error('Failed to load courses.');
-      } finally {
-        setLoading(false);
+      if (error) {
+        console.error('Error fetching courses:', error);
+        toast.error('Failed to load your courses.');
+        return;
       }
-    }, [userProfile?.id]);
+
+      if (data) {
+        const coursesWithSignedUrls = await Promise.all(data.map(async (course: any) => {
+          let imageUrl = '/placeholder.svg';
+          // Only create signed URLs if online
+          if (course.image_url && navigator.onLine) {
+            try {
+              const { data: signedUrlData } = await supabase.storage
+                .from('dil-lms')
+                .createSignedUrl(course.image_url, 3600);
+              if (signedUrlData) {
+                imageUrl = signedUrlData.signedUrl;
+              }
+            } catch (error) {
+              console.log('🔴 OfflineLearning: Failed to create signed URL (might be offline):', error);
+              // Keep placeholder image
+            }
+          }
+          return {
+            id: course.course_id,
+            title: course.title,
+            subtitle: course.subtitle,
+            image_url: imageUrl,
+            progress: course.progress_percentage,
+            total_lessons: course.total_lessons,
+            completed_lessons: course.completed_lessons,
+            last_accessed: course.last_accessed,
+          };
+        }));
+        setEnrolledCourses(coursesWithSignedUrls);
+      }
+
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Failed to load courses.');
+    } finally {
+      setLoading(false);
+    }
+  }, [userProfile?.id, loadDownloadedCourses, loadStorageInfo]);
 
   useEffect(() => {
     // Listen for online/offline status
@@ -259,86 +343,7 @@ export const OfflineLearning = ({ userProfile }: OfflineLearningProps) => {
     }
   };
 
-  // Load downloaded courses from offline database
-  const loadDownloadedCourses = async () => {
-    try {
-      const offlineCourses = await dbUtils.getAllCourses();
-      
-      const downloadedCoursesData: DownloadedCourse[] = await Promise.all(
-        offlineCourses.map(async (course) => {
-          let imageUrl = '/placeholder.svg';
-          
-          // Try to get offline image if available
-          if (course.image_url) {
-            try {
-              // Check if we have the course image stored as an asset
-              const courseAssets = await dbUtils.getAssetsByCourse(course.id);
-              const imageAsset = courseAssets.find(asset => 
-                asset.type === 'image' && asset.filename?.includes('course-image')
-              );
-              
-              if (imageAsset) {
-                // Create blob URL for offline image
-                imageUrl = URL.createObjectURL(imageAsset.blob);
-              } else if (navigator.onLine && course.image_url) {
-                // Fallback to online signed URL if online and no offline image
-                try {
-                  const { data: signedUrlData } = await supabase.storage
-                    .from('dil-lms')
-                    .createSignedUrl(course.image_url, 3600);
-                  if (signedUrlData) {
-                    imageUrl = signedUrlData.signedUrl;
-                  }
-                } catch (error) {
-                  console.log('Failed to create signed URL for offline course image:', error);
-                }
-              }
-            } catch (error) {
-              console.log('Failed to load offline course image:', error);
-            }
-          }
-          
-          return {
-            id: course.id,
-            title: course.title,
-            subtitle: course.subtitle || '',
-            image_url: imageUrl,
-            progress: 0, // Will be calculated from progress data
-            total_lessons: course.total_lessons,
-            completed_lessons: 0, // Will be calculated from progress data
-            last_accessed: course.lastAccessed ? new Date(course.lastAccessed).toISOString() : new Date().toISOString(),
-            downloadDate: new Date(course.downloadDate).toISOString(),
-            size: formatBytes(course.totalSize),
-            downloadStatus: course.downloadStatus
-          };
-        })
-      );
 
-      setDownloadedCourses(downloadedCoursesData);
-    } catch (error) {
-      console.error('Failed to load downloaded courses:', error);
-    }
-  };
-
-  // Load storage information
-  const loadStorageInfo = async () => {
-    try {
-      const storageInfo = await dbUtils.getStorageInfo();
-      setStorageUsed(Math.round(storageInfo.used / 1024 / 1024)); // Convert to MB
-    } catch (error) {
-      console.error('Failed to load storage info:', error);
-    }
-  };
-
-
-  // Format bytes to human readable format
-  const formatBytes = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
 
   const handlePauseResume = (courseId: string, action: 'pause' | 'resume') => {
     // Mock pause/resume implementation

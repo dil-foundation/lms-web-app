@@ -471,6 +471,14 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
           
           // Handle quiz questions with question_type field
           let processedItem = { ...item };
+          
+          // CRITICAL FIX: Ensure signedUrl is preserved for video and attachment items
+          if ((item.content_type === 'video' || item.content_type === 'attachment') && !processedItem.signedUrl) {
+            console.log(`🔧 transformCourseData: signedUrl missing for ${item.content_type} ${item.id}, attempting to preserve from original data`);
+            // The signedUrl might be missing from item but should be preserved
+            // This is a fallback to ensure it doesn't get lost
+          }
+          
           if (item.content_type === 'quiz' && item.quiz) {
             processedItem.quiz = item.quiz.map((q: any) => ({
               ...q,
@@ -486,13 +494,16 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
             }));
           }
           
-          return {
+          const finalItem = {
             ...processedItem,
             completed: isCompleted,
             status: isCompleted ? 'completed' : (itemProgress ? 'in_progress' : 'not_started'),
             progressSeconds: itemProgress?.progress_data?.seconds || 0,
             submission,
           };
+          
+          
+          return finalItem;
         }) || [];
         const allContentItemsCompleted = contentItems.length > 0 && contentItems.every((ci: any) => ci.completed);
         return { ...lesson, contentItems, completed: allContentItemsCompleted };
@@ -1036,14 +1047,6 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       text_answer_grades: []
     };
     
-    console.log('🔄 UPDATING COURSE STATE WITH NEW SUBMISSION:', {
-      currentContentItemId: currentContentItem.id,
-      newSubmission: submissionWithGrades,
-      hasScore: submissionWithGrades?.score !== null && submissionWithGrades?.score !== undefined,
-      score: submissionWithGrades?.score,
-      manualGradingRequired: submissionWithGrades?.manual_grading_required,
-      manualGradingCompleted: submissionWithGrades?.manual_grading_completed
-    });
     
     setCourse((prevCourse: any) => {
         if (!prevCourse) return null;
@@ -1128,7 +1131,10 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         
         try {
           const courseData = await dataLayer.getCourseData(actualCourseId, user?.id);
+          
+          
           if (courseData) {
+             
             // Transform data layer format to existing format
             data = {
               id: courseData.id,
@@ -1149,7 +1155,15 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                   content: lesson.content,
                   order: lesson.order,
                   duration: lesson.duration,
-                  contentItems: lesson.contentItems.map(item => ({
+                  contentItems: lesson.contentItems.map(item => {
+                    console.log(`🔧 CourseContent: Mapping content item ${item.id} (${item.title}):`, {
+                      content_type: item.content_type,
+                      hasSignedUrl: !!item.signedUrl,
+                      signedUrl: item.signedUrl,
+                      signedUrlPreview: item.signedUrl?.substring(0, 50)
+                    });
+                    
+                    const mappedItem = {
                     id: item.id,
                     title: item.title,
                     content_type: item.content_type,
@@ -1158,28 +1172,50 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                     content: item.content,
                     order: item.order,
                     quiz: item.quiz || []
-                  }))
+                    };
+                    
+                    // Debug: Verify the mapped item has signedUrl
+                    if (item.content_type === 'video' || item.content_type === 'attachment') {
+                      console.log(`🔧 CourseContent: Mapped item result for ${item.content_type} ${item.id}:`, {
+                        hasSignedUrl: !!mappedItem.signedUrl,
+                        signedUrl: mappedItem.signedUrl,
+                        signedUrlPreview: mappedItem.signedUrl?.substring(0, 50)
+                      });
+                      
+                      // CRITICAL DEBUG: Log what we're actually returning
+                      console.log(`🔧 CourseContent: RETURNING MAPPED ITEM:`, JSON.stringify({
+                        id: mappedItem.id,
+                        title: mappedItem.title,
+                        content_type: mappedItem.content_type,
+                        signedUrl: mappedItem.signedUrl,
+                        hasSignedUrl: !!mappedItem.signedUrl
+                      }, null, 2));
+                    }
+                    
+                    return mappedItem;
+                  })
                 }))
               }))
             };
+             
             setIsOfflineMode(courseData.isOfflineAvailable && !navigator.onLine);
-            console.log(`📊 CourseContent: Loaded course via data layer (${courseData.isOfflineAvailable ? 'offline' : 'online'} mode)`);
+            
           } else {
             throw new Error('Course not found via data layer');
           }
         } catch (dataLayerError) {
-          console.log('📊 CourseContent: Data layer failed, falling back to direct Supabase:', dataLayerError);
           
-          // Only fallback to Supabase if online
-          if (navigator.onLine) {
+          // Only fallback to Supabase if online AND we don't already have data
+          if (navigator.onLine && !data) {
             const response = await supabase.from('courses').select(`*,sections:course_sections(*,lessons:course_lessons(*,contentItems:course_lesson_content(*,quiz:quiz_questions(*,points,math_expression,math_tolerance,math_hint,math_allow_drawing,image_url,options:question_options(*)))))`).eq('id', actualCourseId).single();
             data = response.data;
             error = response.error;
             setIsOfflineMode(false);
-          } else {
+          } else if (!data) {
             // If offline and data layer failed, show appropriate error
             throw new Error('Course not available offline. Please download the course when online.');
           }
+          // If we already have data from courseDataLayer, don't overwrite it
         }
         if (error) throw error;
         if (data) {
@@ -1211,9 +1247,11 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
               quizSubmissions = submissionsData || [];
             }
           } else if (!navigator.onLine) {
-            console.log('🔴 CourseContent: Offline - skipping progress and quiz data fetch');
           }
+           
           const transformedCourse = transformCourseData(data, userProgress, quizSubmissions);
+           
+           
           setCourse(transformedCourse);
           
           // Log course started if this is the first time accessing (skip when offline)
@@ -1240,6 +1278,8 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
             const allContentItems = transformedCourse.modules.flatMap((m: any) => m.lessons.flatMap((l: any) => l.contentItems));
             const firstUncompleted = allContentItems.find((item: any) => !item.completed);
             const itemToStartWith = firstUncompleted || allContentItems[0];
+             
+             
             if (itemToStartWith) {
               setCurrentContentItemId(itemToStartWith.id);
               let sectionIdToOpen;
@@ -1378,19 +1418,143 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
 
   const renderContent = () => {
     if (!currentContentItem) return null;
+    
+    
+    // AUTOMATIC FIX: If it's a video or attachment without signedUrl and we're offline, load it directly
+    if ((currentContentItem.content_type === 'video' || currentContentItem.content_type === 'attachment') && !currentContentItem.signedUrl && isOfflineMode) {
+      
+      // Load content directly from IndexedDB
+      const loadContentDirectly = async () => {
+        try {
+          const offlineDbModule = await import('../services/offlineDatabase');
+          const dbUtils = offlineDbModule.getOfflineDatabase();
+          
+          if (currentContentItem.content_type === 'video') {
+            const courseVideos = await dbUtils.getVideosByCourse(actualCourseId);
+            
+            if (courseVideos.length > 0) {
+              const video = courseVideos[0];
+              const blobUrl = URL.createObjectURL(video.blob);
+              
+              // Set the signedUrl directly on the currentContentItem
+              currentContentItem.signedUrl = blobUrl;
+              
+              // Force a re-render by updating the state
+              setCourse(prevCourse => ({ ...prevCourse }));
+            }
+          } else if (currentContentItem.content_type === 'attachment') {
+            // Get all assets for the current course
+            const courseAssets = await dbUtils.getAssetsByCourse(actualCourseId);
+            
+            if (courseAssets.length > 0) {
+              // Try to find the specific asset by ID first, then use first available
+              let asset = courseAssets.find(a => a.id === currentContentItem.id);
+              if (!asset) {
+                asset = courseAssets[0]; // Use first asset as fallback
+              }
+              
+              
+              
+              // Ensure correct MIME type for the blob
+              let blobToUse = asset.blob;
+              
+              // Get filename from multiple sources
+              const filename = asset.filename || currentContentItem.content_path?.split('/').pop() || currentContentItem.title || '';
+              
+              // Always check and correct MIME type, especially for incorrect ones like 'text/html'
+              if (!asset.blob.type || 
+                  asset.blob.type === 'application/octet-stream' || 
+                  asset.blob.type === 'text/html' ||
+                  asset.blob.type.startsWith('text/') && filename.toLowerCase().includes('pdf')) {
+                
+                let mimeType = 'application/octet-stream';
+                
+                // Check filename extension
+                if (filename.toLowerCase().endsWith('.pdf') || filename.toLowerCase().includes('.pdf')) {
+                  mimeType = 'application/pdf';
+                } else if (filename.toLowerCase().endsWith('.doc') || filename.toLowerCase().endsWith('.docx')) {
+                  mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+                } else if (filename.toLowerCase().endsWith('.jpg') || filename.toLowerCase().endsWith('.jpeg')) {
+                  mimeType = 'image/jpeg';
+                } else if (filename.toLowerCase().endsWith('.png')) {
+                  mimeType = 'image/png';
+                } else if (filename.toLowerCase().endsWith('.txt')) {
+                  mimeType = 'text/plain';
+                } else {
+                  // If no extension, try to detect from content_path or assume PDF for common cases
+                  const contentPath = currentContentItem.content_path || '';
+                  if (contentPath.toLowerCase().includes('.pdf') || contentPath.toLowerCase().includes('pdf')) {
+                    mimeType = 'application/pdf';
+                  } else if (contentPath.toLowerCase().includes('task') || contentPath.toLowerCase().includes('lesson')) {
+                    // Common pattern: lesson tasks are usually PDFs
+                    mimeType = 'application/pdf';
+                  }
+                }
+                
+                blobToUse = new Blob([asset.blob], { type: mimeType });
+              }
+              
+              const blobUrl = URL.createObjectURL(blobToUse);
+              
+              // Set the signedUrl directly on the currentContentItem
+              currentContentItem.signedUrl = blobUrl;
+              
+              // Force a re-render by updating the state
+              setCourse(prevCourse => ({ ...prevCourse }));
+            }
+          }
+        } catch (error) {
+          console.error(`AUTO-FIX failed:`, error);
+        }
+      };
+      
+      loadContentDirectly();
+    }
+    
     switch (currentContentItem.content_type) {
       case 'video':
         return (
           <div className="space-y-6">
             {currentContentItem.signedUrl ? (
               <div className="relative aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl">
-                 <video ref={videoRef} controls className="w-full h-full" key={currentContentItem.id} src={currentContentItem.signedUrl} onTimeUpdate={handleTimeUpdate} onLoadedMetadata={handleLoadedMetadata} />
+                 <video 
+                   ref={videoRef} 
+                   controls 
+                   className="w-full h-full" 
+                   key={currentContentItem.id} 
+                   src={currentContentItem.signedUrl} 
+                   onTimeUpdate={handleTimeUpdate} 
+                   onLoadedMetadata={handleLoadedMetadata}
+                   onError={(e) => {
+                     console.error('🎥 Video playback error:', e);
+                     console.error('🎥 Video src:', currentContentItem.signedUrl);
+                     console.error('🎥 Video element:', e.target);
+                   }}
+                   preload="metadata"
+                 >
+                   <p className="text-white p-4">
+                     Your browser does not support the video tag or the video format.
+                     <br />
+                     <a href={currentContentItem.signedUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">
+                       Try opening the video directly
+                     </a>
+                   </p>
+                 </video>
               </div>
             ) : (
-              <div className="relative aspect-video bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-3xl overflow-hidden flex items-center justify-center shadow-xl">
-                <div className="text-center p-8">
+              <div className="relative aspect-video bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-3xl overflow-hidden shadow-xl">
+                <div className="text-center p-4">
                   <PlayCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground text-lg font-medium">No video content available</p>
+                  <p className="text-muted-foreground text-lg font-medium">
+                    No video content available
+                    {isOfflineMode && (
+                      <span className="block text-sm mt-2 text-red-500">
+                        DEBUG: Offline mode - signedUrl missing for item {currentContentItem.id}
+                      </span>
+                    )}
+                  </p>
+                  
+                  
                 </div>
               </div>
             )}

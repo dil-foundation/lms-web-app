@@ -126,6 +126,139 @@ export class CourseDataLayer {
   }
 
   /**
+   * Detect video MIME type based on format and URL
+   */
+  private detectVideoMimeType(format: string, originalUrl: string): string {
+    // Try to detect from format first
+    if (format) {
+      switch (format.toLowerCase()) {
+        case 'mp4':
+        case 'mpeg4':
+          return 'video/mp4';
+        case 'webm':
+          return 'video/webm';
+        case 'ogg':
+        case 'ogv':
+          return 'video/ogg';
+        case 'avi':
+          return 'video/x-msvideo';
+        case 'mov':
+        case 'quicktime':
+          return 'video/quicktime';
+        case 'wmv':
+          return 'video/x-ms-wmv';
+        case 'flv':
+          return 'video/x-flv';
+        case '3gp':
+          return 'video/3gpp';
+        case 'mkv':
+          return 'video/x-matroska';
+      }
+    }
+
+    // Try to detect from URL extension
+    if (originalUrl) {
+      const urlLower = originalUrl.toLowerCase();
+      if (urlLower.includes('.mp4')) return 'video/mp4';
+      if (urlLower.includes('.webm')) return 'video/webm';
+      if (urlLower.includes('.ogg') || urlLower.includes('.ogv')) return 'video/ogg';
+      if (urlLower.includes('.avi')) return 'video/x-msvideo';
+      if (urlLower.includes('.mov')) return 'video/quicktime';
+      if (urlLower.includes('.wmv')) return 'video/x-ms-wmv';
+      if (urlLower.includes('.flv')) return 'video/x-flv';
+      if (urlLower.includes('.3gp')) return 'video/3gpp';
+      if (urlLower.includes('.mkv')) return 'video/x-matroska';
+    }
+
+    // Default fallback
+    console.warn(`🎥 CourseDataLayer: Could not detect MIME type for format: ${format}, URL: ${originalUrl}, using default mp4`);
+    return 'video/mp4';
+  }
+
+  /**
+   * Debug method to list all stored data for a course
+   */
+  public async debugListVideos(courseId: string): Promise<void> {
+    try {
+      console.log(`==================== COURSE DEBUG START ====================`);
+      
+      // Get course info
+      const course = await this.db.getCourse(courseId);
+      console.log(`📋 Course Info:`, {
+        id: course?.id,
+        title: course?.title,
+        subtitle: course?.subtitle,
+        image_url: course?.image_url,
+        total_lessons: course?.total_lessons,
+        downloadStatus: course?.downloadStatus,
+        downloadDate: course?.downloadDate ? new Date(course.downloadDate).toISOString() : 'N/A',
+        totalSize: course?.totalSize ? `${(course.totalSize / 1024 / 1024).toFixed(2)} MB` : 'N/A'
+      });
+      
+      // Get all lessons for the course
+      const lessons = await this.db.getLessonsByCourse(courseId);
+      console.log(`📚 Found ${lessons.length} lessons for course ${courseId}`);
+      
+      for (const lesson of lessons) {
+        console.log(`\n📖 Lesson ${lesson.id}:`);
+        console.log(`  - Title: ${lesson.title}`);
+        console.log(`  - Type: ${lesson.type}`);
+        console.log(`  - VideoId: ${lesson.videoId}`);
+        console.log(`  - Order: ${lesson.order}`);
+        console.log(`  - Duration: ${lesson.duration || 'N/A'}`);
+        console.log(`  - AssetIds: [${lesson.assetIds?.join(', ') || 'none'}]`);
+        console.log(`  - Metadata:`, lesson.metadata);
+        
+        // Check original data content items
+        if (lesson.metadata?.originalData?.contentItems) {
+          console.log(`  - Original Content Items (${lesson.metadata.originalData.contentItems.length}):`);
+          lesson.metadata.originalData.contentItems.forEach((item: any, index: number) => {
+            console.log(`    ${index + 1}. ${item.content_type.toUpperCase()}: ${item.title} (ID: ${item.id})`);
+            console.log(`       - content_path: ${item.content_path || 'N/A'}`);
+            console.log(`       - order: ${item.order}`);
+          });
+        }
+        
+        // Get videos for this lesson
+        const videos = await this.db.getVideosByLesson(lesson.id);
+        console.log(`  🎥 Videos for lesson (${videos.length}):`);
+        for (const video of videos) {
+          console.log(`    📹 Video ID: ${video.id}`);
+          console.log(`       - Original URL: ${video.originalUrl}`);
+          console.log(`       - Size: ${(video.size / 1024 / 1024).toFixed(2)} MB`);
+          console.log(`       - Quality: ${video.quality}`);
+          console.log(`       - Format: ${video.format}`);
+          console.log(`       - Compressed: ${video.compressed}`);
+          console.log(`       - Download Date: ${new Date(video.downloadDate).toISOString()}`);
+          console.log(`       - Metadata:`, video.metadata);
+        }
+      }
+      
+      // Get all videos for the course directly
+      const allVideos = await this.db.getVideosByCourse(courseId);
+      console.log(`\n🎬 All videos in course ${courseId} (${allVideos.length}):`);
+      allVideos.forEach((video, index) => {
+        console.log(`  ${index + 1}. Video ID: ${video.id} | Lesson: ${video.lessonId} | Size: ${(video.size / 1024 / 1024).toFixed(2)} MB`);
+      });
+      
+      // Get all assets for the course
+      const allAssets = await this.db.getAssetsByCourse(courseId);
+      console.log(`\n📎 All assets in course ${courseId} (${allAssets.length}):`);
+      allAssets.forEach((asset, index) => {
+        console.log(`  ${index + 1}. Asset ID: ${asset.id} | Type: ${asset.type} | Filename: ${asset.filename}`);
+        console.log(`       - Size: ${(asset.size / 1024).toFixed(2)} KB`);
+        console.log(`       - Lesson: ${asset.lessonId || 'N/A'}`);
+        console.log(`       - Download Date: ${new Date(asset.downloadDate).toISOString()}`);
+      });
+      
+      console.log(`==================== COURSE DEBUG END ====================`);
+      
+    } catch (error) {
+      console.error(`❌ CourseDataLayer: Debug failed:`, error);
+    }
+  }
+
+  /**
    * Get course data with automatic online/offline switching
    */
   async getCourseData(courseId: string, userId?: string): Promise<CourseData | null> {
@@ -514,30 +647,132 @@ export class CourseDataLayer {
       
       // Generate blob URLs for offline content
       if (item.content_type === 'video') {
+        console.log(`🎥 VIDEO PROCESSING START FOR ITEM ${item.id}`);
         console.log(`🎥 CourseDataLayer: Processing video item ${item.id}, lesson.videoId: ${lesson.videoId}`);
         
-        // Always try the content item ID first (this is what we store videos as)
-        signedUrl = await this.getVideoUrlOffline(item.id);
-        console.log(`🎥 CourseDataLayer: Video URL from item.id: ${signedUrl ? 'SUCCESS' : 'FAILED'}`);
+        // First, let's see what videos are actually stored for this lesson
+        try {
+          const allVideosForLesson = await this.db.getVideosByLesson(lesson.id);
+          console.log(`🎥 CourseDataLayer: Found ${allVideosForLesson.length} videos stored for lesson ${lesson.id}:`);
+          allVideosForLesson.forEach(v => {
+            console.log(`  📹 Video ID: ${v.id}, originalUrl: ${v.originalUrl}, size: ${(v.size / 1024 / 1024).toFixed(2)}MB`);
+          });
+        } catch (error) {
+          console.warn(`🎥 CourseDataLayer: Error listing videos for lesson: ${error}`);
+        }
         
-        // If that fails and we have a different lesson.videoId, try that too
-        if (!signedUrl && lesson.videoId && lesson.videoId !== item.id) {
-          signedUrl = await this.getVideoUrlOffline(lesson.videoId);
-          console.log(`🎥 CourseDataLayer: Video URL from lesson.videoId: ${signedUrl ? 'SUCCESS' : 'FAILED'}`);
+        // Try multiple strategies to find the video
+        const videoSearchIds = [
+          item.id,                    // Content item ID (primary)
+          lesson.videoId,             // Lesson's video ID
+          `${lesson.id}_video`,       // Lesson ID + suffix
+          lesson.id                   // Lesson ID itself
+        ].filter(Boolean).filter((id, index, arr) => arr.indexOf(id) === index); // Remove duplicates
+        
+        console.log(`🎥 CourseDataLayer: Will try video search IDs: ${videoSearchIds.join(', ')}`);
+        
+        for (const videoId of videoSearchIds) {
+          if (signedUrl) break; // Already found
+          
+          console.log(`🎥 CourseDataLayer: Trying video ID: ${videoId}`);
+          signedUrl = await this.getVideoUrlOffline(videoId);
+          
+          if (signedUrl) {
+            console.log(`🎥 CourseDataLayer: ✅ Found video with ID: ${videoId}`);
+            break;
+          }
+        }
+        
+        // If still no video found, try to find by lesson ID in the videos store
+        if (!signedUrl) {
+          console.log(`🎥 CourseDataLayer: Trying to find video by lesson ID: ${lesson.id}`);
+          try {
+            const videosByLesson = await this.db.getVideosByLesson(lesson.id);
+            if (videosByLesson.length > 0) {
+              const video = videosByLesson[0]; // Take the first video for this lesson
+              console.log(`🎥 CourseDataLayer: Using first video found: ${video.id} (${video.originalUrl})`);
+              
+              // Apply MIME type fix
+              let videoBlob = video.blob;
+              if (!videoBlob.type || videoBlob.type === 'application/octet-stream') {
+                console.log(`🎥 CourseDataLayer: Fixing MIME type for video ${video.id}`);
+                const mimeType = this.detectVideoMimeType(video.format, video.originalUrl);
+                videoBlob = new Blob([videoBlob], { type: mimeType });
+              }
+              
+              const blobUrl = URL.createObjectURL(videoBlob);
+              this.blobUrlCache.set(`video-${video.id}`, blobUrl);
+              signedUrl = blobUrl;
+              console.log(`🎥 CourseDataLayer: ✅ Found video by lesson lookup: ${video.id}, blob URL: ${blobUrl}`);
+            }
+          } catch (error) {
+            console.warn(`🎥 CourseDataLayer: Failed to lookup videos by lesson: ${error}`);
+          }
         }
         
         if (!signedUrl) {
-          console.warn(`🎥 CourseDataLayer: No video URL found for item ${item.id}, lesson videoId: ${lesson.videoId}`);
+          console.warn(`🎥 CourseDataLayer: ❌ No video URL found for item ${item.id}, lesson videoId: ${lesson.videoId}, tried IDs: ${videoSearchIds.join(', ')}`);
         }
       } else if (item.content_type === 'attachment') {
         console.log(`📎 CourseDataLayer: Processing attachment item ${item.id}`);
-        signedUrl = await this.getAssetUrlOffline(item.id);
+        
+        // First, let's see what assets are actually stored for this lesson
+        try {
+          const allAssetsForLesson = await this.db.getAssetsByLesson(lesson.id);
+          console.log(`📎 CourseDataLayer: Found ${allAssetsForLesson.length} assets stored for lesson ${lesson.id}:`);
+          allAssetsForLesson.forEach(a => {
+            console.log(`  📎 Asset ID: ${a.id}, filename: ${a.filename}, type: ${a.type}, size: ${(a.size / 1024).toFixed(2)}KB`);
+          });
+        } catch (error) {
+          console.warn(`📎 CourseDataLayer: Error listing assets for lesson: ${error}`);
+        }
+        
+        // Try multiple strategies to find the attachment
+        const assetSearchIds = [
+          item.id,                    // Content item ID (primary)
+          `${lesson.id}_attachment`,  // Lesson ID + suffix
+          lesson.id                   // Lesson ID itself
+        ].filter(Boolean).filter((id, index, arr) => arr.indexOf(id) === index);
+        
+        console.log(`📎 CourseDataLayer: Will try asset search IDs: ${assetSearchIds.join(', ')}`);
+        
+        for (const assetId of assetSearchIds) {
+          if (signedUrl) break; // Already found
+          
+          console.log(`📎 CourseDataLayer: Trying asset ID: ${assetId}`);
+          signedUrl = await this.getAssetUrlOffline(assetId);
+          
+          if (signedUrl) {
+            console.log(`📎 CourseDataLayer: ✅ Found asset with ID: ${assetId}`);
+            break;
+          }
+        }
+        
+        // If still no asset found, try to find by lesson ID
+        if (!signedUrl) {
+          console.log(`📎 CourseDataLayer: Trying to find asset by lesson ID: ${lesson.id}`);
+          try {
+            const assetsByLesson = await this.db.getAssetsByLesson(lesson.id);
+            if (assetsByLesson.length > 0) {
+              const asset = assetsByLesson[0]; // Take the first asset for this lesson
+              console.log(`📎 CourseDataLayer: Using first asset found: ${asset.id} (${asset.filename})`);
+              
+              const blobUrl = URL.createObjectURL(asset.blob);
+              this.blobUrlCache.set(`asset-${asset.id}`, blobUrl);
+              signedUrl = blobUrl;
+              console.log(`📎 CourseDataLayer: ✅ Found asset by lesson lookup: ${asset.id}, blob URL: ${blobUrl}`);
+            }
+          } catch (error) {
+            console.warn(`📎 CourseDataLayer: Failed to lookup assets by lesson: ${error}`);
+          }
+        }
+        
         console.log(`📎 CourseDataLayer: Attachment URL: ${signedUrl ? 'SUCCESS' : 'FAILED'}`);
       } else if (item.content_type === 'quiz') {
         console.log(`🧠 CourseDataLayer: Processing quiz item ${item.id} with ${item.quiz?.length || 0} questions`);
       }
       
-      items.push({
+      const contentItem = {
         id: item.id,
         title: item.title,
         content_type: item.content_type,
@@ -547,7 +782,27 @@ export class CourseDataLayer {
         order: item.order,
         quiz: item.quiz || [],
         isAvailableOffline: true
+      };
+      
+      console.log(`📚 CourseDataLayer: Created content item:`, {
+        id: contentItem.id,
+        title: contentItem.title,
+        content_type: contentItem.content_type,
+        hasSignedUrl: !!contentItem.signedUrl,
+        signedUrlPreview: contentItem.signedUrl?.substring(0, 100)
       });
+      
+      // Special debug for video items
+      if (contentItem.content_type === 'video') {
+        console.log(`🎥 FINAL VIDEO CONTENT ITEM:`, {
+          id: contentItem.id,
+          title: contentItem.title,
+          hasSignedUrl: !!contentItem.signedUrl,
+          signedUrl: contentItem.signedUrl
+        });
+      }
+      
+      items.push(contentItem);
     }
 
     console.log(`📚 CourseDataLayer: Transformed ${items.length} content items for lesson ${lesson.id}`);
@@ -567,27 +822,98 @@ export class CourseDataLayer {
       // Check cache first
       if (this.blobUrlCache.has(`video-${videoId}`)) {
         const cachedUrl = this.blobUrlCache.get(`video-${videoId}`)!;
-        console.log(`🎥 CourseDataLayer: Using cached blob URL for video ${videoId}`);
+        console.log(`🎥 CourseDataLayer: ✅ Using cached blob URL for video ${videoId}: ${cachedUrl.substring(0, 50)}...`);
         return cachedUrl;
       }
       
+      console.log(`🎥 CourseDataLayer: Cache miss, querying IndexedDB for video ${videoId}`);
       const video = await this.db.getVideo(videoId);
       
       if (!video) {
-        console.warn(`🎥 CourseDataLayer: No video found in IndexedDB for ID: ${videoId}`);
+        console.warn(`🎥 CourseDataLayer: ❌ No video found in IndexedDB for ID: ${videoId}`);
         return null;
       }
 
+      console.log(`🎥 CourseDataLayer: ✅ Found video in IndexedDB:`, {
+        id: video.id,
+        lessonId: video.lessonId,
+        courseId: video.courseId,
+        size: `${(video.size / 1024 / 1024).toFixed(2)} MB`,
+        format: video.format,
+        quality: video.quality,
+        originalUrl: video.originalUrl,
+        blobType: video.blob.type,
+        blobSize: video.blob.size
+      });
+
+      // Debug: Check if blob is valid and has content
+      console.log(`🔍 CourseDataLayer: Blob validation:`, {
+        hasBlob: !!video.blob,
+        blobSize: video.blob.size,
+        blobType: video.blob.type,
+        isValidSize: video.blob.size > 0,
+        expectedMimeTypes: ['video/mp4', 'video/quicktime', 'video/webm', 'video/ogg']
+      });
+
+      // Check if blob type is supported
+      const supportedTypes = ['video/mp4', 'video/quicktime', 'video/webm', 'video/ogg', 'video/avi'];
+      const isTypeSupported = supportedTypes.includes(video.blob.type) || video.blob.type.startsWith('video/');
+      
+      if (!isTypeSupported && video.blob.type) {
+        console.warn(`⚠️ CourseDataLayer: Potentially unsupported video type: ${video.blob.type}`);
+      }
+
+      // Try to create a proper video blob with correct MIME type if needed
+      let videoBlob = video.blob;
+      
+      // If blob has no type or wrong type, try to fix it based on format
+      if (!video.blob.type || !video.blob.type.startsWith('video/')) {
+        console.log(`🔧 CourseDataLayer: Fixing blob MIME type based on format: ${video.format}`);
+        
+        let mimeType = 'video/mp4'; // Default
+        switch (video.format?.toLowerCase()) {
+          case 'quicktime':
+          case 'mov':
+            mimeType = 'video/quicktime';
+            break;
+          case 'mp4':
+            mimeType = 'video/mp4';
+            break;
+          case 'webm':
+            mimeType = 'video/webm';
+            break;
+          case 'ogg':
+            mimeType = 'video/ogg';
+            break;
+          default:
+            // Try to detect from original URL
+            if (video.originalUrl) {
+              if (video.originalUrl.includes('.mov')) mimeType = 'video/quicktime';
+              else if (video.originalUrl.includes('.mp4')) mimeType = 'video/mp4';
+              else if (video.originalUrl.includes('.webm')) mimeType = 'video/webm';
+            }
+        }
+        
+        console.log(`🔧 CourseDataLayer: Creating new blob with MIME type: ${mimeType}`);
+        videoBlob = new Blob([video.blob], { type: mimeType });
+      }
+
       // Create blob URL for offline video
-      const blobUrl = URL.createObjectURL(video.blob);
+      const blobUrl = URL.createObjectURL(videoBlob);
       
       // Cache the blob URL
       this.blobUrlCache.set(`video-${videoId}`, blobUrl);
       
-      console.log(`🎥 CourseDataLayer: Created blob URL for video ${videoId}: ${blobUrl.substring(0, 50)}...`);
+      console.log(`🎥 CourseDataLayer: ✅ Created blob URL for video ${videoId}: ${blobUrl}`);
+      console.log(`🔍 CourseDataLayer: Final blob info:`, {
+        finalBlobType: videoBlob.type,
+        finalBlobSize: videoBlob.size,
+        blobUrl: blobUrl
+      });
+      
       return blobUrl;
     } catch (error) {
-      console.error(`🎥 CourseDataLayer: Failed to get offline video URL for ${videoId}:`, error);
+      console.error(`🎥 CourseDataLayer: ❌ Failed to get offline video URL for ${videoId}:`, error);
       return null;
     }
   }
@@ -623,9 +949,21 @@ export class CourseDataLayer {
       }
       
       if (!asset) {
-        console.warn(`📎 CourseDataLayer: No asset found for ID: ${assetId}`);
+        console.warn(`📎 CourseDataLayer: ❌ No asset found for ID: ${assetId}`);
         return null;
       }
+
+      console.log(`📎 CourseDataLayer: ✅ Found asset in IndexedDB:`, {
+        id: asset.id,
+        filename: asset.filename,
+        type: asset.type,
+        size: `${(asset.size / 1024).toFixed(2)} KB`,
+        courseId: asset.courseId,
+        lessonId: asset.lessonId,
+        blobType: asset.blob.type,
+        blobSize: asset.blob.size,
+        metadata: asset.metadata
+      });
 
       // Create blob URL for offline asset
       const blobUrl = URL.createObjectURL(asset.blob);
@@ -633,7 +971,7 @@ export class CourseDataLayer {
       // Cache the blob URL
       this.blobUrlCache.set(`asset-${assetId}`, blobUrl);
       
-      console.log(`📎 CourseDataLayer: Created blob URL for asset ${assetId}: ${blobUrl.substring(0, 50)}...`);
+      console.log(`📎 CourseDataLayer: ✅ Created blob URL for asset ${assetId}: ${blobUrl}`);
       return blobUrl;
     } catch (error) {
       console.error(`📎 CourseDataLayer: Failed to get offline asset URL for ${assetId}:`, error);

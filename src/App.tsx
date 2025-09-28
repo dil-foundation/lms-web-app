@@ -21,7 +21,6 @@ import { setupOfflineRequestHandler } from "@/utils/offlineRequestHandler";
 import { offlineStateManager } from "@/utils/offlineStateManager";
 import { registerServiceWorker } from "@/utils/serviceWorker";
 import { ServiceWorkerUpdater } from "@/components/ServiceWorkerUpdater";
-import { OfflineDatabaseTest } from "@/components/dev/OfflineDatabaseTest";
 import { initOfflineDatabase } from "@/services/offlineDatabase";
 
 
@@ -193,8 +192,6 @@ const AppContent = () => {
           {/* Service Worker Update Notification */}
           <ServiceWorkerUpdater registration={swRegistration} />
           
-          {/* Development Database Test Panel */}
-          <OfflineDatabaseTest />
         </TooltipProvider>
       </QueryClientProvider>
     </ErrorBoundary>

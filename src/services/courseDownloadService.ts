@@ -611,10 +611,36 @@ export class CourseDownloadService {
   }
 
   private async getVideoUrl(lesson: OfflineLesson): Promise<string | null> {
-    // This would get the actual video URL from the lesson metadata
-    // For now, return a placeholder - will be implemented with actual video URLs
-    return lesson.metadata?.originalData?.contentItems
-      ?.find((item: any) => item.content_type === 'video')?.content_path || null;
+    try {
+      const videoItem = lesson.metadata?.originalData?.contentItems
+        ?.find((item: any) => item.content_type === 'video');
+      
+      if (!videoItem?.content_path) {
+        console.warn(`No video content_path found for lesson ${lesson.title}`);
+        return null;
+      }
+
+      // If it's already a full URL (signed URL), use it directly
+      if (videoItem.content_path.startsWith('http') || videoItem.content_path.startsWith('blob:')) {
+        return videoItem.content_path;
+      }
+
+      // Create signed URL from storage path
+      const { data: signedUrlData } = await supabase.storage
+        .from('dil-lms')
+        .createSignedUrl(videoItem.content_path, 3600);
+      
+      if (signedUrlData?.signedUrl) {
+        console.log(`✅ Created signed URL for video in lesson ${lesson.title}`);
+        return signedUrlData.signedUrl;
+      } else {
+        console.error(`Failed to create signed URL for video: ${videoItem.content_path}`);
+        return null;
+      }
+    } catch (error) {
+      console.error(`Error getting video URL for lesson ${lesson.title}:`, error);
+      return null;
+    }
   }
 
   private async downloadVideoFile(url: string, signal: AbortSignal): Promise<Blob> {
@@ -675,17 +701,40 @@ export class CourseDownloadService {
 
     // Lesson assets
     for (const lesson of lessons) {
-      const lessonAssets = lesson.metadata?.originalData?.contentItems
-        ?.filter((item: any) => item.content_type === 'attachment' && item.content_path)
-        ?.map((item: any) => ({
-          url: item.content_path,
-          filename: (item.title && typeof item.title === 'string') ? item.title : `asset-${item.id}`,
-          lessonId: lesson.id,
-          source: 'lesson',
-          contentItemId: item.id // Include content item ID for proper mapping
-        })) || [];
+      const attachmentItems = lesson.metadata?.originalData?.contentItems
+        ?.filter((item: any) => item.content_type === 'attachment' && item.content_path) || [];
       
-      assets.push(...lessonAssets);
+      for (const item of attachmentItems) {
+        let attachmentUrl = item.content_path;
+        
+        // Convert storage path to signed URL if needed
+        if (!attachmentUrl.startsWith('http') && !attachmentUrl.startsWith('blob:')) {
+          try {
+            const { data: signedUrlData } = await supabase.storage
+              .from('dil-lms')
+              .createSignedUrl(item.content_path, 3600);
+            if (signedUrlData) {
+              attachmentUrl = signedUrlData.signedUrl;
+            } else {
+              console.warn(`Failed to create signed URL for attachment: ${item.content_path}`);
+              continue; // Skip this attachment if we can't get a valid URL
+            }
+          } catch (error) {
+            console.warn(`Error creating signed URL for attachment:`, error);
+            continue; // Skip this attachment if we can't get a valid URL
+          }
+        }
+        
+        if (attachmentUrl) {
+          assets.push({
+            url: attachmentUrl,
+            filename: (item.title && typeof item.title === 'string') ? item.title : `asset-${item.id}`,
+            lessonId: lesson.id,
+            source: 'lesson',
+            contentItemId: item.id // Include content item ID for proper mapping
+          });
+        }
+      }
     }
 
     return assets;

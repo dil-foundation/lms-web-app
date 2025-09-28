@@ -472,6 +472,34 @@ export class OfflineDatabase {
     });
   }
 
+  /**
+   * Get all videos for a course
+   */
+  async getVideosByCourse(courseId: string): Promise<OfflineVideo[]> {
+    return this.performTransaction(STORES.VIDEOS, 'readonly', (store) => {
+      return new Promise<OfflineVideo[]>((resolve, reject) => {
+        const index = (store as IDBObjectStore).index('courseId');
+        const request = index.getAll(courseId);
+        request.onsuccess = () => resolve(request.result || []);
+        request.onerror = () => reject(request.error);
+      });
+    });
+  }
+
+  /**
+   * Get assets for a lesson
+   */
+  async getAssetsByLesson(lessonId: string): Promise<OfflineAsset[]> {
+    return this.performTransaction(STORES.ASSETS, 'readonly', (store) => {
+      return new Promise<OfflineAsset[]>((resolve, reject) => {
+        const index = (store as IDBObjectStore).index('lessonId');
+        const request = index.getAll(lessonId);
+        request.onsuccess = () => resolve(request.result || []);
+        request.onerror = () => reject(request.error);
+      });
+    });
+  }
+
   // ==================== ASSET OPERATIONS ====================
 
   /**
