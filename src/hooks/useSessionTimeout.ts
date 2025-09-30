@@ -120,7 +120,7 @@ export const useSessionTimeout = () => {
     const timeSinceLastActivity = now - lastActivityRef.current;
     const timeoutMs = sessionTimeoutRef.current * 60 * 1000; // Convert minutes to milliseconds
     
-    console.log(`🔍 Session timeout check - Time since last activity: ${Math.round(timeSinceLastActivity / 1000)}s, Timeout: ${sessionTimeoutRef.current} minutes`);
+    console.log(`🔍 Session timeout check - Time since last activity: ${Math.round(timeSinceLastActivity / 1000)}s, Timeout: ${Math.round(timeoutMs / 1000)}s`);
 
     // Check if session has timed out - logout immediately
     if (timeSinceLastActivity >= timeoutMs) {
@@ -227,6 +227,9 @@ export const useSessionTimeout = () => {
     }
 
     const initializeTimeout = async () => {
+      // Update last activity time when user/session becomes available
+      lastActivityRef.current = Date.now();
+      
       // Get current session timeout setting
       await getSessionTimeout();
       

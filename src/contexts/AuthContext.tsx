@@ -93,22 +93,46 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Handle auth errors
         if (event === 'TOKEN_REFRESHED' && session) {
           try {
-            // Check if user still exists in database with timeout
-            const profileCheckPromise = supabase
-              .from('profiles')
-              .select('id')
-              .eq('id', session.user.id)
-              .single();
+            // Check if user still exists in database with retry
+            const checkUserProfileWithRetry = async (userId: string, maxRetries: number = 2) => {
+              for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                try {
+                  console.log(`AuthContext profile check attempt ${attempt}/${maxRetries} for user ${userId}`);
+                  
+                  const profileCheckPromise = supabase
+                    .from('profiles')
+                    .select('id')
+                    .eq('id', userId)
+                    .single();
+                  
+                  // Add timeout to prevent blocking - increased from 5s to 15s
+                  const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Profile check timeout')), 15000)
+                  );
+                  
+                  const result = await Promise.race([
+                    profileCheckPromise,
+                    timeoutPromise
+                  ]) as any;
+                  
+                  return result;
+                } catch (error) {
+                  console.warn(`AuthContext profile check attempt ${attempt} failed:`, error);
+                  
+                  if (attempt === maxRetries) {
+                    // Last attempt failed, return the error
+                    return { data: null, error };
+                  }
+                  
+                  // Wait before retry (exponential backoff)
+                  await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+                }
+              }
+              
+              return { data: null, error: new Error('All profile check attempts failed') };
+            };
             
-            // Add timeout to prevent blocking
-            const timeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Profile check timeout')), 5000)
-            );
-            
-            const { data: profile, error } = await Promise.race([
-              profileCheckPromise,
-              timeoutPromise
-            ]) as any;
+            const { data: profile, error } = await checkUserProfileWithRetry(session.user.id);
             
             if (error && error.code === 'PGRST116') {
               // User not found in database, sign them out
@@ -118,9 +142,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               setUser(null);
               navigate('/auth', { replace: true });
               return;
+            } else if (error) {
+              // Other errors (including timeouts) - don't logout
+              console.warn('Profile check failed during auth state change but continuing with auth flow:', error.message);
+            } else {
+              console.log('AuthContext profile check successful');
             }
           } catch (profileError) {
             console.error('Error checking user profile during auth state change:', profileError);
+            
             // Don't block the auth flow if profile check fails
             console.log('Continuing with auth flow despite profile check error');
           }

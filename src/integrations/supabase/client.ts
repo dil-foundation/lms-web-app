@@ -27,26 +27,51 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   }
 });
 
+// Helper function to check user profile with retry
+const checkUserProfileWithRetry = async (userId: string, maxRetries: number = 2): Promise<{ data: any; error: any }> => {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`Profile check attempt ${attempt}/${maxRetries} for user ${userId}`);
+      
+      const profileCheckPromise = supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', userId)
+        .single();
+      
+      // Add timeout to prevent blocking - increased from 3s to 15s
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Profile check timeout')), 15000)
+      );
+      
+      const result = await Promise.race([
+        profileCheckPromise,
+        timeoutPromise
+      ]) as any;
+      
+      return result;
+    } catch (error) {
+      console.warn(`Profile check attempt ${attempt} failed:`, error);
+      
+      if (attempt === maxRetries) {
+        // Last attempt failed, return the error
+        return { data: null, error };
+      }
+      
+      // Wait before retry (exponential backoff)
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+    }
+  }
+  
+  return { data: null, error: new Error('All profile check attempts failed') };
+};
+
 // Global error interceptor for handling user_not_found errors
 supabase.auth.onAuthStateChange(async (event, session) => {
   if (event === 'TOKEN_REFRESHED' && session) {
     try {
-      // Check if the user still exists in the database with timeout
-      const profileCheckPromise = supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', session.user.id)
-        .single();
-      
-      // Add timeout to prevent blocking
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Profile check timeout')), 3000)
-      );
-      
-      const { data: profile, error } = await Promise.race([
-        profileCheckPromise,
-        timeoutPromise
-      ]) as any;
+      // Check if the user still exists in the database with retry
+      const { data: profile, error } = await checkUserProfileWithRetry(session.user.id);
       
       if (error && error.code === 'PGRST116') {
         // User not found in database, sign them out
@@ -64,9 +89,15 @@ supabase.auth.onAuthStateChange(async (event, session) => {
         if (window.location.pathname.startsWith('/dashboard')) {
           window.location.href = '/auth';
         }
+      } else if (error) {
+        // Other errors (including timeouts) - don't logout
+        console.warn('Profile check failed but continuing with auth flow:', error.message);
+      } else {
+        console.log('Profile check successful');
       }
     } catch (profileError) {
       console.error('Error checking user profile:', profileError);
+      
       // Don't block the auth flow if profile check fails
       console.log('Continuing with auth flow despite profile check error');
     }
