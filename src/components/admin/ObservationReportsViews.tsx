@@ -132,9 +132,10 @@ export const ObservationReportsViews: React.FC<ObservationReportsViewsProps> = (
 }) => {
   if (viewMode === 'list') {
     return (
-      <Card className={className}>
-        <CardContent className="p-0">
-          <Table>
+      <div className="mb-20">
+        <Card className={className}>
+          <CardContent className="p-0">
+            <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Observer</TableHead>
@@ -220,8 +221,9 @@ export const ObservationReportsViews: React.FC<ObservationReportsViewsProps> = (
               })}
             </TableBody>
           </Table>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
@@ -403,8 +405,8 @@ export const ObservationReportsViews: React.FC<ObservationReportsViewsProps> = (
             </CardContent>
 
             <div className="p-4 pt-0 mt-auto">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 flex-1">
+              <div className="flex flex-col sm:flex-row items-stretch gap-2">
+                <div className="flex items-center gap-2 flex-1">
                   <Button
                     size="sm"
                     variant="outline"
@@ -431,16 +433,16 @@ export const ObservationReportsViews: React.FC<ObservationReportsViewsProps> = (
                     {isDownloading(report.id) ? 'Gen...' : 'PDF'}
                   </Button>
                 </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete(report);
-                    }}
-                    disabled={isDeleting(report.id)}
-                    className="h-9 px-3 text-xs hover:bg-red-600 hover:text-white transition-all duration-200 text-red-600"
-                  >
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(report);
+                  }}
+                  disabled={isDeleting(report.id)}
+                  className="h-9 px-3 text-xs hover:bg-red-600 hover:text-white transition-all duration-200 text-red-600 sm:flex-shrink-0"
+                >
                   <Trash2 className="w-3 h-3 mr-1" />
                   {isDeleting(report.id) ? 'Del...' : 'Delete'}
                 </Button>

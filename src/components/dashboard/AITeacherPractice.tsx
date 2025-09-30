@@ -180,7 +180,10 @@ const TeacherStageCard = ({ stage }) => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="rounded-xl border-0 shadow-xl">
-              <DropdownMenuItem onClick={() => setIsEditOpen(true)} className="rounded-lg">
+              <DropdownMenuItem onClick={() => {
+                // Small delay to ensure dropdown is fully closed
+                setTimeout(() => setIsEditOpen(true), 100);
+              }} className="rounded-lg">
                 <Edit3 className="mr-2 h-4 w-4" />
                 Customize for Class
               </DropdownMenuItem>
