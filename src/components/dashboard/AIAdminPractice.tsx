@@ -188,7 +188,10 @@ const StageConfigurationCard = ({ stage }) => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setIsEditOpen(true)}>
+              <DropdownMenuItem onClick={() => {
+                // Small delay to ensure dropdown is fully closed
+                setTimeout(() => setIsEditOpen(true), 100);
+              }}>
                 <Edit3 className="mr-2 h-4 w-4" />
                 Configure Stage
               </DropdownMenuItem>
