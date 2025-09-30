@@ -30,7 +30,9 @@ import {
   Calendar,
   BarChart3,
   GraduationCap,
-  Sparkles
+  Sparkles,
+  CreditCard,
+  Lock
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { ContentLoader } from '@/components/ContentLoader';
@@ -58,6 +60,9 @@ interface CourseData {
   duration?: string;
   level?: string;
   language?: string;
+  // Stripe payment fields
+  payment_type?: 'free' | 'paid';
+  course_price?: number; // Price in USD cents
 }
 
 interface CourseOverviewProps {
@@ -73,9 +78,74 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
   const [course, setCourse] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isStripeEnabled, setIsStripeEnabled] = useState(false);
+  const [originalCourseData, setOriginalCourseData] = useState<any>(null);
   const { user } = useAuth();
 
   const courseId = propCourseId || paramId;
+
+  // Check Stripe integration status
+  useEffect(() => {
+    const checkStripeIntegration = async () => {
+      try {
+        console.log('Checking Stripe integration...');
+        
+        // Try both 'Stripe' and 'stripe' to handle case sensitivity
+        let { data, error } = await supabase
+          .from('integrations')
+          .select('status, is_configured')
+          .eq('name', 'Stripe')
+          .single();
+        
+        // If not found, try lowercase
+        if (error && error.code === 'PGRST116') {
+          console.log('Trying lowercase "stripe"...');
+          const result = await supabase
+            .from('integrations')
+            .select('status, is_configured')
+            .eq('name', 'stripe')
+            .single();
+          data = result.data;
+          error = result.error;
+        }
+        
+        console.log('Stripe integration data:', data);
+        console.log('Stripe integration error:', error);
+        
+        if (!error && data) {
+          const isEnabled = data.status === 'enabled' && data.is_configured;
+          console.log('Stripe integration data:', data);
+          console.log('Stripe enabled:', isEnabled);
+          console.log('Status:', data.status, 'Configured:', data.is_configured);
+          setIsStripeEnabled(isEnabled);
+        } else {
+          console.log('Stripe integration not found or error occurred');
+          console.log('Error details:', error);
+          setIsStripeEnabled(false);
+        }
+      } catch (error) {
+        console.error('Error checking Stripe integration:', error);
+        setIsStripeEnabled(false);
+      }
+    };
+    
+    checkStripeIntegration();
+  }, []);
+
+  // Debug logging for Stripe and payment status
+  useEffect(() => {
+    console.log('Stripe and payment status changed:', {
+      isStripeEnabled,
+      coursePayment: course?.payment,
+      shouldShowPaymentButton: isStripeEnabled && course?.payment?.isPaid,
+      paymentDetails: course?.payment ? {
+        type: course.payment.type,
+        price: course.payment.price,
+        priceFormatted: course.payment.priceFormatted,
+        isPaid: course.payment.isPaid
+      } : 'No payment data'
+    });
+  }, [isStripeEnabled, course?.payment]);
 
   // Helper function to determine if a URL is a valid video
   const isValidVideoUrl = (url: string | null | undefined): boolean => {
@@ -105,7 +175,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
     return isVideo && !isPlaceholder;
   };
 
-  const mapDataToCourse = (data: any, instructorExtraData?: any, progressData: any[] = []) => {
+  const mapDataToCourse = (data: any, instructorExtraData?: any, progressData: any[] = [], stripeEnabled: boolean = false) => {
     const allLessons = data.sections?.flatMap((s: any) => s.lessons) || [];
     const totalLessons = allLessons.length;
 
@@ -207,6 +277,30 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
       ],
       whatYouLearn: data.learning_outcomes || [],
       requirements: data.requirements || [],
+      // Payment information
+      payment: (() => {
+        const paymentType = stripeEnabled ? (data.payment_type || 'free') : 'free';
+        const price = stripeEnabled ? (data.course_price || 0) : 0;
+        const priceFormatted = stripeEnabled && data.course_price ? `$${(data.course_price / 100).toFixed(2)}` : 'Free';
+        const isPaid = stripeEnabled && data.payment_type === 'paid' && (data.course_price || 0) > 0;
+        
+        console.log('Payment calculation in mapDataToCourse:', {
+          stripeEnabled,
+          rawPaymentType: data.payment_type,
+          rawCoursePrice: data.course_price,
+          calculatedType: paymentType,
+          calculatedPrice: price,
+          calculatedPriceFormatted: priceFormatted,
+          calculatedIsPaid: isPaid
+        });
+        
+        return {
+          type: paymentType,
+          price: price,
+          priceFormatted: priceFormatted,
+          isPaid: isPaid
+        };
+      })(),
       curriculum: data.sections?.map((section: any, index: number) => ({
         id: section.id,
         title: section.title,
@@ -332,7 +426,18 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
               data.image = signedUrlData.signedUrl;
             }
           }
-          const finalCourseObject = mapDataToCourse(data, instructorExtraData, userProgress);
+          console.log('Course data payment info:', {
+            payment_type: data.payment_type,
+            course_price: data.course_price,
+            isStripeEnabled: isStripeEnabled
+          });
+          
+          // Store original course data for re-processing
+          console.log('Storing original course data:', { payment_type: data.payment_type, course_price: data.course_price });
+          setOriginalCourseData({ data, instructorExtraData, userProgress });
+          
+          const finalCourseObject = mapDataToCourse(data, instructorExtraData, userProgress, isStripeEnabled);
+          console.log('Final course payment object:', finalCourseObject.payment);
           setCourse(finalCourseObject);
         } else {
           throw new Error("Course not found.");
@@ -362,7 +467,14 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
         };
       }
       
-      const mappedCourse = mapDataToCourse(initialCourseData, instructorExtraData);
+      // Store original course data for re-processing in preview mode too
+      console.log('Storing original course data (preview mode):', { 
+        payment_type: initialCourseData.payment_type, 
+        course_price: initialCourseData.course_price 
+      });
+      setOriginalCourseData({ data: initialCourseData, instructorExtraData, userProgress: [] });
+      
+      const mappedCourse = mapDataToCourse(initialCourseData, instructorExtraData, [], isStripeEnabled);
       setCourse(mappedCourse);
       setIsLoading(false);
     } else if (courseId) {
@@ -374,6 +486,90 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
     }
   }, [initialCourseData, courseId, user, isPreviewMode]);
 
+  // Re-check Stripe status when course data changes (in case of timing issues)
+  useEffect(() => {
+    if (course && !isStripeEnabled) {
+      console.log('Re-checking Stripe status due to course data change');
+      const checkStripeIntegration = async () => {
+        try {
+          let { data, error } = await supabase
+            .from('integrations')
+            .select('status, is_configured')
+            .eq('name', 'Stripe')
+            .single();
+          
+          if (error && error.code === 'PGRST116') {
+            const result = await supabase
+              .from('integrations')
+              .select('status, is_configured')
+              .eq('name', 'stripe')
+              .single();
+            data = result.data;
+            error = result.error;
+          }
+          
+          if (!error && data) {
+            const isEnabled = data.status === 'enabled' && data.is_configured;
+            console.log('Re-check Stripe enabled:', isEnabled);
+            setIsStripeEnabled(isEnabled);
+          }
+        } catch (error) {
+          console.error('Error re-checking Stripe integration:', error);
+        }
+      };
+      
+      checkStripeIntegration();
+    }
+  }, [course, isStripeEnabled]);
+
+  // Re-process course data when Stripe status changes from false to true
+  useEffect(() => {
+    console.log('Re-processing effect triggered:', {
+      originalCourseData: !!originalCourseData,
+      isStripeEnabled,
+      course: !!course,
+      coursePayment: course?.payment,
+      shouldReprocess: originalCourseData && isStripeEnabled && course && course.payment && course.payment.type === 'free' && course.payment.price === 0
+    });
+    
+    if (originalCourseData && isStripeEnabled && course && course.payment && course.payment.type === 'free' && course.payment.price === 0) {
+      console.log('Re-processing course data with Stripe enabled using original data');
+      
+      // Re-process the course data with Stripe enabled using original data
+      const finalCourseObject = mapDataToCourse(originalCourseData.data, originalCourseData.instructorExtraData, originalCourseData.userProgress, isStripeEnabled);
+      console.log('Re-processed course payment object:', finalCourseObject.payment);
+      setCourse(finalCourseObject);
+    }
+  }, [isStripeEnabled, originalCourseData, course]);
+
+  // Alternative approach: Force re-process when Stripe becomes enabled
+  useEffect(() => {
+    if (isStripeEnabled && course && course.payment && course.payment.type === 'free' && course.payment.price === 0) {
+      console.log('Alternative re-processing triggered - Stripe enabled but course shows as free');
+      
+      // Force update the course payment to paid if we have the original data
+      if (originalCourseData && originalCourseData.data.payment_type === 'paid' && originalCourseData.data.course_price > 0) {
+        console.log('Forcing payment update with original data:', {
+          payment_type: originalCourseData.data.payment_type,
+          course_price: originalCourseData.data.course_price
+        });
+        
+        const updatedCourse = {
+          ...course,
+          payment: {
+            type: 'paid',
+            price: originalCourseData.data.course_price,
+            priceFormatted: `$${(originalCourseData.data.course_price / 100).toFixed(2)}`,
+            isPaid: true
+          }
+        };
+        
+        console.log('Updated course payment:', updatedCourse.payment);
+        setCourse(updatedCourse);
+      }
+    }
+  }, [isStripeEnabled, course, originalCourseData]);
+
   const handleStartLearning = () => {
     if (course) {
       navigate(`/dashboard/courses/${course.id}/content`);
@@ -382,6 +578,13 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
 
   const handlePreview = () => {
     setIsVideoPlaying(true);
+  };
+
+  const handleProceedToPayment = () => {
+    // TODO: Implement Stripe checkout flow
+    toast.info("Payment integration coming soon!", {
+      description: "Stripe checkout will be implemented here."
+    });
   };
 
   if (isLoading) {
@@ -492,6 +695,20 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                   <BookOpen className="w-5 h-5 text-primary" />
                   <span className="font-medium text-gray-900 dark:text-gray-100">{course.stats.lessons} lessons</span>
                 </div>
+                {/* Course Price Display */}
+                <div className="flex items-center gap-2 bg-gradient-to-br from-card/80 to-card/60 dark:bg-card/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-gray-200/50 dark:border-gray-600/50 shadow-lg">
+                  {course.payment.isPaid ? (
+                    <>
+                      <CreditCard className="w-5 h-5 text-primary" />
+                      <span className="font-medium text-gray-900 dark:text-gray-100">{course.payment.priceFormatted}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Award className="w-5 h-5 text-primary" />
+                      <span className="font-medium text-gray-900 dark:text-gray-100">Free</span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -573,17 +790,36 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
 
                       {/* Enhanced CTA Section */}
                       <div className="space-y-4">
-                        <Button 
-                          onClick={handleStartLearning}
-                          className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-4 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
-                          size="lg"
-                        >
-                          {course.progress.percentage > 0 ? 'Continue Learning' : 'Start Learning'}
-                        </Button>
+                        {/* Show different buttons based on payment status and Stripe integration */}
+                        {isStripeEnabled && course.payment.isPaid ? (
+                          <Button 
+                            onClick={handleProceedToPayment}
+                            disabled={true}
+                            className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-4 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                            size="lg"
+                          >
+                            <Lock className="w-5 h-5 mr-2" />
+                            Proceed to Payment
+                          </Button>
+                        ) : (
+                          <Button 
+                            onClick={handleStartLearning}
+                            className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-4 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
+                            size="lg"
+                          >
+                            {course.progress.percentage > 0 ? 'Continue Learning' : 'Start Learning'}
+                          </Button>
+                        )}
 
-                        {course.progress.percentage > 0 && (
+                        {course.progress.percentage > 0 && !(isStripeEnabled && course.payment.isPaid) && (
                           <p className="text-center text-sm text-muted-foreground">
                             Next lesson: {course.progress.nextLesson}
+                          </p>
+                        )}
+
+                        {isStripeEnabled && course.payment.isPaid && (
+                          <p className="text-center text-sm text-muted-foreground">
+                            Complete payment to access course content
                           </p>
                         )}
                       </div>
@@ -845,20 +1081,39 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <Button 
-                    onClick={handleStartLearning}
-                    className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-3 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
-                  >
-                    {course.progress.percentage > 0 ? 'Continue Learning' : 'Start Learning'}
-                  </Button>
+                  {/* Show different buttons based on payment status and Stripe integration */}
+                  {isStripeEnabled && course.payment.isPaid ? (
+                    <Button 
+                      onClick={handleProceedToPayment}
+                      disabled={true}
+                      className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-3 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Lock className="w-4 h-4 mr-2" />
+                      Proceed to Payment
+                    </Button>
+                  ) : (
+                    <Button 
+                      onClick={handleStartLearning}
+                      className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-3 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                    >
+                      {course.progress.percentage > 0 ? 'Continue Learning' : 'Start Learning'}
+                    </Button>
+                  )}
                   
-                  {course.progress.percentage > 0 && (
+                  {course.progress.percentage > 0 && !(isStripeEnabled && course.payment.isPaid) && (
                     <div className="text-center p-3 rounded-xl bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/10 dark:to-green-800/10 border border-green-200/50 dark:border-green-700/30">
                       <p className="text-sm font-medium text-green-800 dark:text-green-200 mb-1">Next lesson:</p>
                       <p className="text-xs text-green-700 dark:text-green-300">{course.progress.nextLesson}</p>
-                  </div>
-                )}
-              </CardContent>
+                    </div>
+                  )}
+
+                  {isStripeEnabled && course.payment.isPaid && (
+                    <div className="text-center p-3 rounded-xl bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-900/10 dark:to-amber-800/10 border border-amber-200/50 dark:border-amber-700/30">
+                      <p className="text-sm font-medium text-amber-800 dark:text-amber-200 mb-1">Payment Required</p>
+                      <p className="text-xs text-amber-700 dark:text-amber-300">Complete payment to access course content</p>
+                    </div>
+                  )}
+                </CardContent>
             </Card>
             )}
 

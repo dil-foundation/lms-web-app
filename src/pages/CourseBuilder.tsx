@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Save, Eye, Upload, Plus, GripVertical, X, ChevronDown, ChevronUp, BookOpen, Info, UploadCloud, FileText, RefreshCw, Calendar, Edit, Sparkles, Image as ImageIcon, Trash2, Download } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Upload, Plus, GripVertical, X, ChevronDown, ChevronUp, BookOpen, Info, UploadCloud, FileText, RefreshCw, Calendar, Edit, Sparkles, Image as ImageIcon, Trash2, Download, CreditCard } from 'lucide-react';
 import { AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { FileUpload } from '@/components/ui/FileUpload';
@@ -156,9 +156,15 @@ interface CourseData {
   published_course_id?: string;
   authorId?: string;
   review_feedback?: string;
+  // Stripe payment fields
+  payment_type?: 'free' | 'paid';
+  course_price?: number; // Price in USD cents
 }
 
-type ValidationErrors = Partial<Record<keyof Omit<CourseData, 'sections'|'teachers'|'students'|'image'|'status'|'duration'|'published_course_id'|'authorId'|'id'|'review_feedback'>, string>>;
+type ValidationErrors = Partial<Record<keyof Omit<CourseData, 'sections'|'teachers'|'students'|'image'|'status'|'duration'|'published_course_id'|'authorId'|'id'|'review_feedback'>, string>> & {
+  payment_type?: string;
+  course_price?: string;
+};
 
 const validateCourseData = (data: CourseData): ValidationErrors => {
   const errors: ValidationErrors = {};
@@ -187,6 +193,11 @@ const validateCourseData = (data: CourseData): ValidationErrors => {
   }
   if (!data.learningOutcomes || data.learningOutcomes.length === 0 || data.learningOutcomes.every(o => !o.trim())) {
     errors.learningOutcomes = 'At least one learning outcome is required.';
+  }
+
+  // Payment validation
+  if (data.payment_type === 'paid' && (!data.course_price || data.course_price <= 0)) {
+    errors.course_price = 'Course price is required for paid courses';
   }
 
   return errors;
@@ -2027,6 +2038,8 @@ const CourseBuilder = () => {
   const [isCreateDraftConfirmOpen, setIsCreateDraftConfirmOpen] = useState(false);
   const [isRejectionDialogOpen, setIsRejectionDialogOpen] = useState(false);
   const [rejectionFeedback, setRejectionFeedback] = useState("");
+  const [isStripeEnabled, setIsStripeEnabled] = useState(false);
+  const [priceInputValue, setPriceInputValue] = useState('');
   const [persistentFeedback, setPersistentFeedback] = useState<string | null>(null);
   const [isSchoolRemovalDialogOpen, setIsSchoolRemovalDialogOpen] = useState(false);
   const [schoolsToRemove, setSchoolsToRemove] = useState<string[]>([]);
@@ -2251,6 +2264,9 @@ const CourseBuilder = () => {
     teachers: [],
     students: [],
     review_feedback: '',
+    // Stripe payment fields
+    payment_type: 'free',
+    course_price: 0,
   }));
 
   // Filter classes based on selected schools
@@ -2269,6 +2285,67 @@ const CourseBuilder = () => {
     // Real-time validation as user types
     setValidationErrors(validateCourseData(courseData));
   }, [courseData]);
+
+  // Check Stripe integration status
+  useEffect(() => {
+    const checkStripeIntegration = async () => {
+      try {
+        console.log('Checking Stripe integration...');
+        
+        // Try both 'Stripe' and 'stripe' to handle case sensitivity
+        let { data, error } = await supabase
+          .from('integrations')
+          .select('status, is_configured')
+          .eq('name', 'Stripe')
+          .single();
+        
+        // If not found, try lowercase
+        if (error && error.code === 'PGRST116') {
+          console.log('Trying lowercase "stripe"...');
+          const result = await supabase
+            .from('integrations')
+            .select('status, is_configured')
+            .eq('name', 'stripe')
+            .single();
+          data = result.data;
+          error = result.error;
+        }
+        
+        console.log('Stripe integration data:', data);
+        console.log('Stripe integration error:', error);
+        
+        if (!error && data) {
+          const isEnabled = data.status === 'enabled' && data.is_configured;
+          console.log('Stripe enabled:', isEnabled);
+          setIsStripeEnabled(isEnabled);
+        } else {
+          console.log('Stripe integration not found or error occurred');
+          setIsStripeEnabled(false);
+        }
+      } catch (error) {
+        console.error('Error checking Stripe integration:', error);
+        setIsStripeEnabled(false);
+      }
+    };
+    
+    checkStripeIntegration();
+  }, []);
+
+  // Sync price input value with course data
+  useEffect(() => {
+    if (courseData.course_price && courseData.course_price > 0) {
+      setPriceInputValue((courseData.course_price / 100).toString());
+    } else {
+      setPriceInputValue('');
+    }
+  }, [courseData.course_price]);
+
+  // Reset price input when switching to free course
+  useEffect(() => {
+    if (courseData.payment_type === 'free') {
+      setPriceInputValue('');
+    }
+  }, [courseData.payment_type]);
 
   // Create a hash of the selected classes' member data to detect changes
   const selectedClassesMembersHash = useMemo(() => {
@@ -3505,6 +3582,9 @@ const CourseBuilder = () => {
               status: data.status || 'Draft',
               published_course_id: data.published_course_id,
               review_feedback: data.review_feedback,
+              // Stripe payment fields
+              payment_type: data.payment_type || 'free',
+              course_price: data.course_price || 0,
               sections: data.sections.sort((a: any, b: any) => a.position - b.position).map((s: any) => ({
                 ...s,
                 lessons: s.lessons
@@ -3693,6 +3773,9 @@ const CourseBuilder = () => {
       board_ids: courseToSave.board_ids,
       school_ids: courseToSave.school_ids,
       class_ids: courseToSave.class_ids,
+      // Stripe payment fields
+      payment_type: courseToSave.payment_type || 'free',
+      course_price: courseToSave.course_price || 0,
     };
 
     let savedCourse: { id: string } | null = null;
@@ -3949,6 +4032,9 @@ const CourseBuilder = () => {
       board_ids: courseToSave.board_ids,
       school_ids: courseToSave.school_ids,
       class_ids: courseToSave.class_ids,
+      // Stripe payment fields
+      payment_type: courseToSave.payment_type || 'free',
+      course_price: courseToSave.course_price || 0,
     };
 
     let savedCourse: { id: string } | null = null;
@@ -4618,6 +4704,9 @@ const CourseBuilder = () => {
       board_ids: courseToSave.board_ids,
       school_ids: courseToSave.school_ids,
       class_ids: courseToSave.class_ids,
+      // Stripe payment fields
+      payment_type: courseToSave.payment_type || 'free',
+      course_price: courseToSave.course_price || 0,
     };
 
     let savedCourse: { id: string } | null = null;
@@ -6637,6 +6726,100 @@ const CourseBuilder = () => {
                       Help students understand the time commitment required
                     </p>
                   </div>
+
+                  {/* Payment Settings - Only show when Stripe is enabled */}
+                  {isStripeEnabled && (
+                    <div className="space-y-6 border-t pt-6">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Payment Settings</h3>
+                      
+                      {/* Payment Type Dropdown */}
+                      <div className="space-y-3">
+                        <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                          Course Type
+                        </label>
+                        <Select
+                          value={courseData.payment_type || 'free'}
+                          onValueChange={(value: 'free' | 'paid') => {
+                            setCourseData(prev => ({
+                              ...prev,
+                              payment_type: value,
+                              course_price: value === 'free' ? 0 : prev.course_price || 0
+                            }));
+                          }}
+                        >
+                          <SelectTrigger className="h-11 text-base font-medium border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-4 focus:ring-primary/10">
+                            <SelectValue placeholder="Select course type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="free">Free Course</SelectItem>
+                            <SelectItem value="paid">Paid Course</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      {/* Course Price Field - Only show for paid courses */}
+                      {courseData.payment_type === 'paid' && (
+                        <div className="space-y-3">
+                          <label className="block text-sm font-semibold text-gray-900 dark:text-white">
+                            Course Price (USD)
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400">$</span>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              placeholder="0.00"
+                              value={priceInputValue}
+                              onChange={(e) => {
+                                const inputValue = e.target.value;
+                                setPriceInputValue(inputValue);
+                                
+                                // Allow empty input for editing
+                                if (inputValue === '') {
+                                  setCourseData(prev => ({
+                                    ...prev,
+                                    course_price: 0
+                                  }));
+                                  return;
+                                }
+                                
+                                const value = parseFloat(inputValue);
+                                if (!isNaN(value) && value >= 0) {
+                                  setCourseData(prev => ({
+                                    ...prev,
+                                    course_price: Math.round(value * 100) // Convert to cents
+                                  }));
+                                }
+                              }}
+                              className="h-11 text-base font-medium border-2 rounded-2xl transition-all duration-300 focus:scale-[1.02] focus:shadow-lg bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-4 focus:ring-primary/10 placeholder:text-gray-400 dark:placeholder:text-gray-500 pl-8"
+                            />
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            Enter the price in USD (e.g., 9.99 for $9.99)
+                          </p>
+                          {validationErrors.course_price && (
+                            <p className="text-sm text-red-500">{validationErrors.course_price}</p>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* Payment Info Display */}
+                      {courseData.payment_type === 'paid' && courseData.course_price && courseData.course_price > 0 && (
+                        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                          <div className="flex items-center space-x-2">
+                            <CreditCard className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                            <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                              This course will be sold for ${(courseData.course_price / 100).toFixed(2)} USD
+                            </span>
+                          </div>
+                          <p className="text-xs text-blue-600 dark:text-blue-300 mt-1">
+                            Students will need to purchase this course to access the content.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 

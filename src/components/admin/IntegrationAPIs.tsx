@@ -113,7 +113,7 @@ const getIntegrationDisplayData = (integration: Integration): IntegrationDisplay
   return {
     ...integration,
     ...data,
-    name: data.displayName || integration.settings?.title || integration.name,
+    name: ('displayName' in data ? data.displayName : undefined) || integration.settings?.title || integration.name,
     description: integration.settings?.description || data.description
   };
 };
@@ -239,9 +239,9 @@ export const IntegrationAPIs = ({ userProfile }: IntegrationAPIsProps) => {
   };
 
   const handleDeleteIntegration = async (integrationId: string, integrationName: string) => {
-    // Prevent deletion of Zoom integration
-    if (integrationName.toLowerCase() === 'zoom') {
-      toast.error('Zoom integration cannot be removed as it is a core system integration.');
+    // Prevent deletion of core integrations
+    if (integrationName.toLowerCase() === 'zoom' || integrationName.toLowerCase() === 'stripe') {
+      toast.error(`${integrationName} integration cannot be removed as it is a core system integration.`);
       return;
     }
 
@@ -348,30 +348,19 @@ export const IntegrationAPIs = ({ userProfile }: IntegrationAPIsProps) => {
         </Card>
       </div>
 
-      {/* Category Filter and Add Integration Button */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex flex-wrap gap-2">
-          {categories.map((category) => (
-            <Button
-              key={category}
-              variant={selectedCategory === category ? "default" : "outline"}
-              size="sm"
-              onClick={() => setSelectedCategory(category)}
-              className="capitalize"
-            >
-              {category}
-            </Button>
-          ))}
-        </div>
-        
-        <Button
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2"
-          size="sm"
-        >
-          <Plus className="h-4 w-4" />
-          Add New Integration
-        </Button>
+      {/* Category Filter */}
+      <div className="flex flex-wrap gap-2">
+        {categories.map((category) => (
+          <Button
+            key={category}
+            variant={selectedCategory === category ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSelectedCategory(category)}
+            className="capitalize"
+          >
+            {category}
+          </Button>
+        ))}
       </div>
 
       {/* Integrations Grid */}
@@ -396,8 +385,8 @@ export const IntegrationAPIs = ({ userProfile }: IntegrationAPIsProps) => {
                     </div>
                   </div>
                   
-                  {/* Delete Button - Only show for non-Zoom integrations */}
-                  {integration.name.toLowerCase() !== 'zoom' && (
+                  {/* Delete Button - Only show for non-core integrations */}
+                  {integration.name.toLowerCase() !== 'zoom' && integration.name.toLowerCase() !== 'stripe' && (
                     <Button
                       variant="ghost"
                       size="sm"
@@ -445,6 +434,30 @@ export const IntegrationAPIs = ({ userProfile }: IntegrationAPIsProps) => {
                     <span className={`font-medium ${integration.is_configured ? 'text-primary' : 'text-muted-foreground'}`}>
                       {integration.is_configured ? 'Yes' : 'No'}
                     </span>
+                  </div>
+                  
+                  <Separator className="my-2" />
+                  
+                  {/* Enable/Disable Toggle */}
+                  <div className="flex items-center justify-between pt-2">
+                    <div className="flex items-center space-x-2">
+                      <StatusIcon className={`h-4 w-4 ${
+                        integration.status === 'enabled' ? 'text-primary' :
+                        integration.status === 'error' ? 'text-red-600' :
+                        'text-gray-400'
+                      }`} />
+                      <Label htmlFor={`toggle-${integration.id}`} className="text-sm font-medium cursor-pointer">
+                        {integration.status === 'enabled' ? 'Enabled' : 
+                         integration.status === 'error' ? 'Error' : 'Disabled'}
+                      </Label>
+                    </div>
+                    <Switch
+                      id={`toggle-${integration.id}`}
+                      checked={integration.status === 'enabled'}
+                      onCheckedChange={() => handleToggleIntegration(integration.id)}
+                      disabled={integration.status === 'error'}
+                      className="data-[state=checked]:bg-primary"
+                    />
                   </div>
                 </div>
               </CardContent>
