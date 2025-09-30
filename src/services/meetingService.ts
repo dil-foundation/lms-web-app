@@ -1,16 +1,20 @@
 import { supabase } from '@/integrations/supabase/client';
 
+export type MeetingType = '1-on-1' | 'class' | 'teacher-to-teacher' | 'admin-to-teacher';
+
 export interface ZoomMeeting {
   id: string;
   title: string;
   description?: string;
-  meeting_type: '1-on-1' | 'class';
+  meeting_type: MeetingType;
   scheduled_time: string;
   duration: number;
   teacher_id: string;
   student_id?: string;
   course_id?: string;
-  class_id?: string; // NEW: Support for class-based meetings
+  class_id?: string; // Support for class-based meetings
+  participant_id?: string; // NEW: Generic participant reference
+  participant_role?: 'student' | 'teacher' | 'admin'; // NEW: Participant role
   zoom_meeting_id?: string;
   zoom_join_url?: string;
   zoom_password?: string;
@@ -25,19 +29,23 @@ export interface ZoomMeeting {
   // Joined data from database function
   student_name?: string;
   course_title?: string;
-  class_name?: string; // NEW: Class name for class-based meetings
+  class_name?: string; // Class name for class-based meetings
+  participant_name?: string; // NEW: For teacher-to-teacher and admin-to-teacher meetings
   participant_names?: string[];
+  host_name?: string; // Host/creator name (for meetings where user is participant)
 }
 
 export interface CreateMeetingRequest {
   title: string;
   description?: string;
-  meeting_type: '1-on-1' | 'class';
+  meeting_type: MeetingType;
   scheduled_time: string;
   duration: number;
   student_id?: string;
+  participant_id?: string; // NEW: Generic participant
+  participant_role?: 'student' | 'teacher' | 'admin'; // NEW: Participant role
   course_id?: string;
-  class_id?: string; // NEW: Support for class-based meetings
+  class_id?: string; // Support for class-based meetings
 }
 
 export interface UpdateMeetingRequest {
@@ -65,6 +73,8 @@ export interface MeetingStats {
   upcoming: number;
   oneOnOne: number;
   classMeetings: number;
+  teacherToTeacher: number; // NEW
+  adminToTeacher: number; // NEW
 }
 
 class MeetingService {
@@ -171,7 +181,8 @@ class MeetingService {
    */
   async getTeacherMeetings(teacherId: string): Promise<ZoomMeeting[]> {
     try {
-      // Query meetings with joined student, course, and class information
+      // Query meetings with joined student, course, class, and participant information
+      // Fetch meetings where teacher is either the host OR the participant
       const { data, error } = await supabase
         .from('zoom_meetings')
         .select(`
@@ -180,6 +191,11 @@ class MeetingService {
             first_name,
             last_name
           ),
+          participant:profiles!zoom_meetings_participant_id_fkey(
+            first_name,
+            last_name,
+            email
+          ),
           course:courses!zoom_meetings_course_id_fkey(
             title
           ),
@@ -187,9 +203,14 @@ class MeetingService {
             name,
             code,
             grade
+          ),
+          host:profiles!zoom_meetings_teacher_id_fkey(
+            first_name,
+            last_name,
+            email
           )
         `)
-        .eq('teacher_id', teacherId)
+        .or(`teacher_id.eq.${teacherId},participant_id.eq.${teacherId}`)
         .order('scheduled_time', { ascending: false });
 
       if (error) {
@@ -201,11 +222,17 @@ class MeetingService {
         return [];
       }
 
-      // Map the data to include student, course, and class names
+      // Map the data to include student, course, class, participant, and host names
       return data.map(meeting => ({
         ...meeting,
         student_name: meeting.student 
           ? `${meeting.student.first_name} ${meeting.student.last_name}`.trim()
+          : undefined,
+        participant_name: meeting.participant
+          ? `${meeting.participant.first_name || ''} ${meeting.participant.last_name || ''}`.trim() || meeting.participant.email
+          : undefined,
+        host_name: meeting.host
+          ? `${meeting.host.first_name || ''} ${meeting.host.last_name || ''}`.trim() || meeting.host.email
           : undefined,
         course_title: meeting.class 
           ? `${meeting.class.name} (${meeting.class.code})` 
@@ -227,7 +254,7 @@ class MeetingService {
       const { data, error } = await supabase
         .from('zoom_meetings')
         .select('meeting_type, status, scheduled_time')
-        .eq('teacher_id', teacherId);
+        .or(`teacher_id.eq.${teacherId},participant_id.eq.${teacherId}`);
 
       if (error) {
         console.error('Error fetching meeting stats:', error);
@@ -235,7 +262,9 @@ class MeetingService {
           total: 0,
           upcoming: 0,
           oneOnOne: 0,
-          classMeetings: 0
+          classMeetings: 0,
+          teacherToTeacher: 0,
+          adminToTeacher: 0
         };
       }
 
@@ -244,16 +273,28 @@ class MeetingService {
           total: 0,
           upcoming: 0,
           oneOnOne: 0,
-          classMeetings: 0
+          classMeetings: 0,
+          teacherToTeacher: 0,
+          adminToTeacher: 0
         };
       }
 
       const now = new Date();
+      const twoHoursInMs = 2 * 60 * 60 * 1000;
+      
       const stats: MeetingStats = {
         total: data.length,
-        upcoming: data.filter(m => m.status === 'scheduled' && new Date(m.scheduled_time) > now).length,
+        // Include 2-hour grace period: meetings are "upcoming" until 2 hours after scheduled time
+        upcoming: data.filter(m => {
+          if (m.status !== 'scheduled') return false;
+          const scheduledTime = new Date(m.scheduled_time);
+          const gracePeriodEnd = new Date(scheduledTime.getTime() + twoHoursInMs);
+          return now < gracePeriodEnd;
+        }).length,
         oneOnOne: data.filter(m => m.meeting_type === '1-on-1').length,
-        classMeetings: data.filter(m => m.meeting_type === 'class').length
+        classMeetings: data.filter(m => m.meeting_type === 'class').length,
+        teacherToTeacher: data.filter(m => m.meeting_type === 'teacher-to-teacher').length,
+        adminToTeacher: data.filter(m => m.meeting_type === 'admin-to-teacher').length
       };
 
       return stats;
@@ -263,7 +304,9 @@ class MeetingService {
         total: 0,
         upcoming: 0,
         oneOnOne: 0,
-        classMeetings: 0
+        classMeetings: 0,
+        teacherToTeacher: 0,
+        adminToTeacher: 0
       };
     }
   }
@@ -293,8 +336,10 @@ class MeetingService {
           duration: meetingData.duration,
           teacher_id: teacherId,
           student_id: meetingData.student_id,
+          participant_id: meetingData.participant_id, // NEW: Generic participant reference
+          participant_role: meetingData.participant_role, // NEW: Participant role
           course_id: meetingData.course_id,
-          class_id: meetingData.class_id, // NEW: Support for class-based meetings
+          class_id: meetingData.class_id, // Support for class-based meetings
           status: 'scheduled'
         })
         .select()
@@ -581,18 +626,80 @@ class MeetingService {
   }
 
   /**
+   * Get available teachers for scheduling meetings (NEW)
+   * Excludes the current user from the list
+   */
+  async getAvailableTeachers(currentUserId: string): Promise<Array<{id: string, name: string, email: string}>> {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, email')
+        .eq('role', 'teacher')
+        .neq('id', currentUserId);
+
+      if (error) {
+        console.error('Error fetching teachers:', error);
+        return [];
+      }
+
+      if (!data || !Array.isArray(data)) {
+        return [];
+      }
+
+      return data.map(teacher => ({
+        id: teacher.id,
+        name: `${teacher.first_name || ''} ${teacher.last_name || ''}`.trim() || teacher.email,
+        email: teacher.email
+      }));
+    } catch (error) {
+      console.error('Error fetching available teachers:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get available admins for scheduling meetings (NEW)
+   */
+  async getAvailableAdmins(currentUserId: string): Promise<Array<{id: string, name: string, email: string}>> {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, email')
+        .eq('role', 'admin');
+
+      if (error) {
+        console.error('Error fetching admins:', error);
+        return [];
+      }
+
+      if (!data || !Array.isArray(data)) {
+        return [];
+      }
+
+      return data.map(admin => ({
+        id: admin.id,
+        name: `${admin.first_name || ''} ${admin.last_name || ''}`.trim() || admin.email,
+        email: admin.email
+      }));
+    } catch (error) {
+      console.error('Error fetching available admins:', error);
+      return [];
+    }
+  }
+
+  /**
    * Get meetings for a student - Enhanced version with better error handling
    */
   async getStudentMeetings(studentId: string): Promise<ZoomMeeting[]> {
     try {
       console.log('Fetching meetings for student:', studentId);
       
-      // Step 1: Get 1-on-1 meetings where student is the participant
+      // Step 1: Get 1-on-1 meetings where student is the participant (check both student_id and participant_id)
       const { data: oneOnOneMeetings, error: oneOnOneError } = await supabase
         .from('zoom_meetings')
         .select('*')
-        .eq('student_id', studentId)
         .eq('meeting_type', '1-on-1')
+        .or(`student_id.eq.${studentId},participant_id.eq.${studentId}`)
         .order('scheduled_time', { ascending: false });
 
       if (oneOnOneError) {
@@ -672,6 +779,13 @@ class MeetingService {
       // Step 4: Get teacher and course information separately for better reliability
       const allMeetings = [...(oneOnOneMeetings || []), ...classMeetings];
       
+      console.log('🔍 DEBUG: Total meetings found for student:', {
+        oneOnOneCount: oneOnOneMeetings?.length || 0,
+        classMeetingsCount: classMeetings.length,
+        totalCount: allMeetings.length,
+        allMeetingIds: allMeetings.map(m => ({ id: m.id, title: m.title, type: m.meeting_type, class_id: m.class_id }))
+      });
+      
       // Enhance meetings with teacher and course information
       const enhancedMeetings = await Promise.all(
         allMeetings.map(async (meeting) => {
@@ -739,7 +853,17 @@ class MeetingService {
         })
       );
 
-      console.log(`Found ${enhancedMeetings.length} meetings for student`);
+      console.log('🔍 DEBUG: Returning enhanced meetings:', {
+        count: enhancedMeetings.length,
+        meetings: enhancedMeetings.map(m => ({ 
+          id: m.id, 
+          title: m.title, 
+          type: m.meeting_type, 
+          class_id: m.class_id,
+          scheduled_time: m.scheduled_time 
+        }))
+      });
+      
       return enhancedMeetings.sort((a, b) => 
         new Date(a.scheduled_time).getTime() - new Date(b.scheduled_time).getTime()
       );
@@ -772,12 +896,35 @@ class MeetingService {
       throw new Error('Meeting duration must be between 15 minutes and 8 hours');
     }
 
-    if (meetingData.meeting_type === '1-on-1' && !meetingData.student_id) {
-      throw new Error('Student is required for 1-on-1 meetings');
+    // Validate based on meeting type
+    if (meetingData.meeting_type === '1-on-1') {
+      if (!meetingData.student_id && !meetingData.participant_id) {
+        throw new Error('Student is required for 1-on-1 meetings');
+      }
     }
 
-    if (meetingData.meeting_type === 'class' && !meetingData.class_id && !meetingData.course_id) {
-      throw new Error('Class or Course is required for class meetings');
+    if (meetingData.meeting_type === 'class') {
+      if (!meetingData.class_id && !meetingData.course_id) {
+        throw new Error('Class or Course is required for class meetings');
+      }
+    }
+
+    if (meetingData.meeting_type === 'teacher-to-teacher') {
+      if (!meetingData.participant_id) {
+        throw new Error('Teacher participant is required for teacher-to-teacher meetings');
+      }
+      if (meetingData.participant_role !== 'teacher') {
+        throw new Error('Participant must be a teacher for teacher-to-teacher meetings');
+      }
+    }
+
+    if (meetingData.meeting_type === 'admin-to-teacher') {
+      if (!meetingData.participant_id) {
+        throw new Error('Participant is required for admin-to-teacher meetings');
+      }
+      if (!meetingData.participant_role || !['teacher', 'admin'].includes(meetingData.participant_role)) {
+        throw new Error('Participant must be a teacher or admin for admin-to-teacher meetings');
+      }
     }
   }
 

@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ContentLoader } from '@/components/ContentLoader';
-import meetingService, { ZoomMeeting, CreateMeetingRequest, MeetingStats } from '@/services/meetingService';
+import meetingService, { ZoomMeeting, CreateMeetingRequest, MeetingStats, MeetingType } from '@/services/meetingService';
 
 interface TeacherMeetingsProps {
   userProfile: {
@@ -37,6 +37,7 @@ interface TeacherMeetingsProps {
     first_name?: string;
     last_name?: string;
     teacher_id?: string;
+    role?: string;
   };
 }
 
@@ -58,12 +59,29 @@ interface Class {
   grade: string;
 }
 
+interface Teacher {
+  id: string;
+  name: string;
+  email: string;
+}
+
+interface Admin {
+  id: string;
+  name: string;
+  email: string;
+}
+
 export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
+  // Check if user is admin
+  const isAdmin = userProfile.role === 'admin';
+  
   const [meetings, setMeetings] = useState<ZoomMeeting[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
-  const [classes, setClasses] = useState<Class[]>([]); // NEW: State for classes
-  const [stats, setStats] = useState<MeetingStats>({ total: 0, upcoming: 0, oneOnOne: 0, classMeetings: 0 });
+  const [classes, setClasses] = useState<Class[]>([]); // State for classes
+  const [teachers, setTeachers] = useState<Teacher[]>([]); // NEW: State for teachers
+  const [admins, setAdmins] = useState<Admin[]>([]); // NEW: State for admins
+  const [stats, setStats] = useState<MeetingStats>({ total: 0, upcoming: 0, oneOnOne: 0, classMeetings: 0, teacherToTeacher: 0, adminToTeacher: 0 });
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -74,13 +92,15 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    meeting_type: '1-on-1' as '1-on-1' | 'class',
+    meeting_type: (isAdmin ? 'admin-to-teacher' : '1-on-1') as MeetingType,
     scheduled_date: '',
     scheduled_time: '',
     duration: 60,
     student_id: '',
+    participant_id: '', // NEW: Generic participant
+    participant_role: '' as 'student' | 'teacher' | 'admin' | '', // NEW: Participant role
     course_id: '',
-    class_id: '' // NEW: Support for class-based meetings
+    class_id: '' // Support for class-based meetings
   });
 
   // Load data on component mount
@@ -93,18 +113,22 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
       setLoading(true);
       
       // Load all data in parallel
-      const [meetingsData, studentsData, coursesData, classesData, statsData] = await Promise.all([
+      const [meetingsData, studentsData, coursesData, classesData, teachersData, adminsData, statsData] = await Promise.all([
         meetingService.getTeacherMeetings(userProfile.id),
         meetingService.getAvailableStudents(userProfile.id),
         meetingService.getTeacherCourses(userProfile.id),
-        meetingService.getTeacherClasses(userProfile.id), // NEW: Load teacher's classes
+        meetingService.getTeacherClasses(userProfile.id), // Load teacher's classes
+        meetingService.getAvailableTeachers(userProfile.id), // NEW: Load teachers
+        meetingService.getAvailableAdmins(userProfile.id), // NEW: Load admins
         meetingService.getMeetingStats(userProfile.id)
       ]);
 
       setMeetings(meetingsData);
       setStudents(studentsData);
       setCourses(coursesData);
-      setClasses(classesData); // NEW: Set classes data
+      setClasses(classesData); // Set classes data
+      setTeachers(teachersData); // NEW: Set teachers data
+      setAdmins(adminsData); // NEW: Set admins data
       setStats(statsData);
     } catch (error) {
       console.error('Error loading meeting data:', error);
@@ -134,6 +158,16 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
         return;
       }
 
+      if (formData.meeting_type === 'teacher-to-teacher' && !formData.participant_id) {
+        toast.error('Please select a teacher');
+        return;
+      }
+
+      if (formData.meeting_type === 'admin-to-teacher' && !formData.participant_id) {
+        toast.error(isAdmin ? 'Please select a teacher' : 'Please select an admin');
+        return;
+      }
+
       // Create meeting object with proper timezone handling
       // Create a Date object in local timezone, then convert to ISO string
       const localDateTime = new Date(`${formData.scheduled_date}T${formData.scheduled_time}`);
@@ -152,6 +186,15 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
         scheduled_time: scheduledDateTime,
         duration: formData.duration,
         student_id: formData.meeting_type === '1-on-1' ? formData.student_id : undefined,
+        // Set participant_id for ALL meeting types that have participants
+        participant_id: formData.meeting_type === '1-on-1' 
+          ? formData.student_id  // For 1-on-1, participant is the student
+          : ['teacher-to-teacher', 'admin-to-teacher'].includes(formData.meeting_type) 
+            ? formData.participant_id  // For teacher/admin meetings, use selected participant
+            : undefined,
+        participant_role: formData.meeting_type === '1-on-1'
+          ? 'student'  // For 1-on-1, role is always student
+          : formData.participant_role || undefined,
         course_id: undefined, // No longer using courses for class meetings
         class_id: formData.meeting_type === 'class' ? formData.class_id : undefined
       };
@@ -169,11 +212,13 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
       setFormData({
         title: '',
         description: '',
-        meeting_type: '1-on-1',
+        meeting_type: isAdmin ? 'admin-to-teacher' : '1-on-1',
         scheduled_date: '',
         scheduled_time: '',
         duration: 60,
         student_id: '',
+        participant_id: '',
+        participant_role: '',
         course_id: '',
         class_id: ''
       });
@@ -252,8 +297,26 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
     }
   };
 
-  const upcomingMeetings = meetings.filter(m => m.status === 'scheduled' && new Date(m.scheduled_time) > new Date());
-  const pastMeetings = meetings.filter(m => m.status === 'completed' || m.status === 'cancelled' || (m.status === 'scheduled' && new Date(m.scheduled_time) <= new Date()));
+  // Add 2-hour grace period: meetings stay in "Upcoming" for 2 hours after scheduled time
+  const now = new Date();
+  const twoHoursInMs = 2 * 60 * 60 * 1000;
+  
+  const upcomingMeetings = meetings.filter(m => {
+    if (m.status !== 'scheduled') return false;
+    const scheduledTime = new Date(m.scheduled_time);
+    const gracePeriodEnd = new Date(scheduledTime.getTime() + twoHoursInMs);
+    return now < gracePeriodEnd; // Show as upcoming until 2 hours after scheduled time
+  });
+  
+  const pastMeetings = meetings.filter(m => {
+    if (m.status === 'completed' || m.status === 'cancelled') return true;
+    if (m.status === 'scheduled') {
+      const scheduledTime = new Date(m.scheduled_time);
+      const gracePeriodEnd = new Date(scheduledTime.getTime() + twoHoursInMs);
+      return now >= gracePeriodEnd; // Move to past after 2 hours
+    }
+    return false;
+  });
 
   if (loading) {
     return (
@@ -303,7 +366,7 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
         <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Meetings</CardTitle>
@@ -343,12 +406,32 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
             <div className="text-2xl font-bold">{stats.classMeetings}</div>
           </CardContent>
         </Card>
+
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Teacher Meetings</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.teacherToTeacher}</div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-card to-green-500/5 dark:bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Admin Meetings</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.adminToTeacher}</div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Meetings Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="upcoming" className="text-green-600">
+          <TabsTrigger value="upcoming">
             Upcoming Meetings
           </TabsTrigger>
           <TabsTrigger value="past">
@@ -379,6 +462,7 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
                     <TableRow>
                       <TableHead>Meeting</TableHead>
                       <TableHead>Type</TableHead>
+                      <TableHead>Host</TableHead>
                       <TableHead>Participant(s)</TableHead>
                       <TableHead>Date & Time</TableHead>
                       <TableHead>Duration</TableHead>
@@ -401,14 +485,39 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline">
-                            {meeting.meeting_type === '1-on-1' ? '1-on-1' : 'Class'}
+                            {meeting.meeting_type === '1-on-1' && '1-on-1'}
+                            {meeting.meeting_type === 'class' && 'Class'}
+                            {meeting.meeting_type === 'teacher-to-teacher' && 'Teacher-to-Teacher'}
+                            {meeting.meeting_type === 'admin-to-teacher' && 'Admin-to-Teacher'}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {meeting.meeting_type === '1-on-1' 
-                            ? meeting.student_name || 'Unknown Student'
-                            : meeting.course_title || 'Unknown Course'
-                          }
+                          <span className="text-sm">
+                            {meeting.teacher_id === userProfile.id ? (
+                              <span className="text-green-600 font-medium">You</span>
+                            ) : (
+                              meeting.host_name || 'Unknown'
+                            )}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          {meeting.meeting_type === '1-on-1' && (meeting.student_name || 'Unknown Student')}
+                          {meeting.meeting_type === 'class' && (meeting.course_title || 'Unknown Course')}
+                          {meeting.meeting_type === 'teacher-to-teacher' && (
+                            <span className="flex items-center gap-1">
+                              <Users className="h-3 w-3" />
+                              {meeting.participant_name || 'Unknown Teacher'}
+                            </span>
+                          )}
+                          {meeting.meeting_type === 'admin-to-teacher' && (
+                            <span className="flex items-center gap-1">
+                              <Users className="h-3 w-3" />
+                              {/* Show host name if user is participant, participant name if user is host */}
+                              {meeting.teacher_id === userProfile.id 
+                                ? (meeting.participant_name || 'Unknown Participant')
+                                : (meeting.host_name || 'Unknown Host')}
+                            </span>
+                          )}
                         </TableCell>
                         <TableCell>{formatDateTime(meeting.scheduled_time)}</TableCell>
                         <TableCell>{meeting.duration} min</TableCell>
@@ -509,6 +618,7 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
                     <TableRow>
                       <TableHead>Meeting</TableHead>
                       <TableHead>Type</TableHead>
+                      <TableHead>Host</TableHead>
                       <TableHead>Participant(s)</TableHead>
                       <TableHead>Date & Time</TableHead>
                       <TableHead>Duration</TableHead>
@@ -530,14 +640,39 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline">
-                            {meeting.meeting_type === '1-on-1' ? '1-on-1' : 'Class'}
+                            {meeting.meeting_type === '1-on-1' && '1-on-1'}
+                            {meeting.meeting_type === 'class' && 'Class'}
+                            {meeting.meeting_type === 'teacher-to-teacher' && 'Teacher-to-Teacher'}
+                            {meeting.meeting_type === 'admin-to-teacher' && 'Admin-to-Teacher'}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {meeting.meeting_type === '1-on-1' 
-                            ? meeting.student_name || 'Unknown Student'
-                            : meeting.course_title || 'Unknown Course'
-                          }
+                          <span className="text-sm">
+                            {meeting.teacher_id === userProfile.id ? (
+                              <span className="text-green-600 font-medium">You</span>
+                            ) : (
+                              meeting.host_name || 'Unknown'
+                            )}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          {meeting.meeting_type === '1-on-1' && (meeting.student_name || 'Unknown Student')}
+                          {meeting.meeting_type === 'class' && (meeting.course_title || 'Unknown Course')}
+                          {meeting.meeting_type === 'teacher-to-teacher' && (
+                            <span className="flex items-center gap-1">
+                              <Users className="h-3 w-3" />
+                              {meeting.participant_name || 'Unknown Teacher'}
+                            </span>
+                          )}
+                          {meeting.meeting_type === 'admin-to-teacher' && (
+                            <span className="flex items-center gap-1">
+                              <Users className="h-3 w-3" />
+                              {/* Show host name if user is participant, participant name if user is host */}
+                              {meeting.teacher_id === userProfile.id 
+                                ? (meeting.participant_name || 'Unknown Participant')
+                                : (meeting.host_name || 'Unknown Host')}
+                            </span>
+                          )}
                         </TableCell>
                         <TableCell>{formatDateTime(meeting.scheduled_time)}</TableCell>
                         <TableCell>
@@ -594,12 +729,15 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
               <Label htmlFor="meeting_type">Meeting Type *</Label>
               <Select
                 value={formData.meeting_type}
-                onValueChange={(value: '1-on-1' | 'class') => 
+                onValueChange={(value: MeetingType) => 
                   setFormData(prev => ({ 
                     ...prev, 
                     meeting_type: value,
                     student_id: '',
-                    course_id: ''
+                    participant_id: '',
+                    participant_role: '',
+                    course_id: '',
+                    class_id: ''
                   }))
                 }
               >
@@ -607,8 +745,20 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1-on-1">1-on-1 Session</SelectItem>
-                  <SelectItem value="class">Class Meeting</SelectItem>
+                  {isAdmin ? (
+                    // Admin can only create Admin-to-Teacher meetings
+                    <>
+                      <SelectItem value="admin-to-teacher">Admin-to-Teacher Meeting</SelectItem>
+                    </>
+                  ) : (
+                    // Teachers can create meetings with students, teachers, and admins
+                    <>
+                      <SelectItem value="1-on-1">1-on-1 with Student</SelectItem>
+                      <SelectItem value="class">Class Meeting</SelectItem>
+                      <SelectItem value="teacher-to-teacher">Teacher-to-Teacher Meeting</SelectItem>
+                      <SelectItem value="admin-to-teacher">Teacher-to-Admin Meeting</SelectItem>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -655,6 +805,93 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
                         </div>
                       </SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {formData.meeting_type === 'teacher-to-teacher' && (
+              <div className="grid gap-2">
+                <Label htmlFor="teacher">Select Teacher *</Label>
+                <Select
+                  value={formData.participant_id}
+                  onValueChange={(value) => {
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      participant_id: value,
+                      participant_role: 'teacher'
+                    }));
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a teacher" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {teachers.length === 0 ? (
+                      <div className="p-2 text-sm text-muted-foreground">No other teachers available</div>
+                    ) : (
+                      teachers.map((teacher) => (
+                        <SelectItem key={teacher.id} value={teacher.id}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{teacher.name}</span>
+                            <span className="text-xs text-muted-foreground">{teacher.email}</span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {formData.meeting_type === 'admin-to-teacher' && (
+              <div className="grid gap-2">
+                <Label htmlFor="participant">
+                  {isAdmin ? 'Select Teacher *' : 'Select Admin *'}
+                </Label>
+                <Select
+                  value={formData.participant_id}
+                  onValueChange={(value) => {
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      participant_id: value,
+                      participant_role: isAdmin ? 'teacher' : 'admin'
+                    }));
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={isAdmin ? "Select a teacher" : "Select an admin"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isAdmin ? (
+                      // Admin selects a teacher
+                      teachers.length > 0 ? (
+                        teachers.map((teacher) => (
+                          <SelectItem key={teacher.id} value={teacher.id}>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{teacher.name}</span>
+                              <span className="text-xs text-muted-foreground">{teacher.email}</span>
+                            </div>
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="px-2 py-1.5 text-sm text-muted-foreground">No teachers available</div>
+                      )
+                    ) : (
+                      // Teacher selects an admin
+                      admins.length > 0 ? (
+                        admins.map((admin) => (
+                          <SelectItem key={admin.id} value={admin.id}>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{admin.name}</span>
+                              <span className="text-xs text-muted-foreground">{admin.email}</span>
+                            </div>
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="px-2 py-1.5 text-sm text-muted-foreground">No admins available</div>
+                      )
+                    )}
                   </SelectContent>
                 </Select>
               </div>

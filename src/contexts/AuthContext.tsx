@@ -162,9 +162,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const isAuthPage = currentPath.startsWith('/auth');
         const isDashboardPage = currentPath.startsWith('/dashboard');
         const isSecureFormPage = currentPath.startsWith('/secure-form');
+        const isPublicPage = ['/', '/about', '/features', '/contact', '/home-layout-2', '/home-layout-3', '/home-layout-4'].includes(currentPath);
 
-        // Only navigate to dashboard if user is fully authenticated (not pending MFA)
-        if (event === 'SIGNED_IN' && !isAuthPage && !isDashboardPage && !isSecureFormPage && !pendingMFAUser) {
+        // Only navigate to dashboard if user is fully authenticated (not pending MFA) and not on a public page
+        if (event === 'SIGNED_IN' && !isAuthPage && !isDashboardPage && !isSecureFormPage && !isPublicPage && !pendingMFAUser) {
           navigate('/dashboard', { replace: true });
         }
 

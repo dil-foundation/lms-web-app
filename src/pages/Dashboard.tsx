@@ -465,6 +465,7 @@ const Dashboard = () => {
                           <Route path="/messages" element={<MessagesPage />} />
                           <Route path="/discussion" element={<DiscussionsPage />} />
                           <Route path="/discussion/:id" element={<DiscussionViewPage />} />
+                          <Route path="/meetings" element={<TeacherMeetings userProfile={finalProfile} />} />
                           <Route path="/grade-assignments" element={<GradeAssignments />} />
                           <Route path="/grade-assignments/:id" element={<AssignmentSubmissions />} />
                           <Route path="/grade-assignments/:assignmentId/student/:studentId" element={<StudentSubmissionDetail />} />

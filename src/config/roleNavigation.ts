@@ -147,6 +147,7 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean, is
             { title: 'Assessments', path: '/dashboard/grade-assignments', icon: Award },
             { title: 'Messages', path: '/dashboard/messages', icon: MessageSquare },
             { title: 'Discussion', path: '/dashboard/discussion', icon: MessageCircle },
+            ...(isZoomEnabled ? [{ title: 'Meetings', path: '/dashboard/meetings', icon: Video }] : []),
           ]
         },
         {

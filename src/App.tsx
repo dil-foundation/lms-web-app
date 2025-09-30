@@ -31,6 +31,9 @@ const SessionTimeoutTracker = () => {
 };
 
 const Home = lazy(() => import("./pages/Home"));
+const AboutUs = lazy(() => import("./pages/AboutUs"));
+const Features = lazy(() => import("./pages/Features"));
+const Contact = lazy(() => import("./pages/Contact"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const CourseBuilder = lazy(() => import("./pages/CourseBuilder"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -125,6 +128,9 @@ const AppContent = () => {
                           <Routes>
                       {/* Public routes - no MFA requirement */}
                       <Route path="/" element={<Home />} />
+                      <Route path="/about" element={<AboutUs />} />
+                      <Route path="/features" element={<Features />} />
+                      <Route path="/contact" element={<Contact />} />
                       <Route path="/home-layout-2" element={<HomeLayout2 />} />
                       <Route path="/home-layout-3" element={<HomeLayout3 />} />
                       <Route path="/home-layout-4" element={<HomeLayout4 />} />

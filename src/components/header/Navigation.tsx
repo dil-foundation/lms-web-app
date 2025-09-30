@@ -4,10 +4,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 
 const navigation = [
-  { name: 'Home', href: '/' },
-  { name: 'About', href: '/about' },
-  { name: 'Features', href: '/features' },
-  { name: 'Contact', href: '/contact' },
+  { name: 'About Us', href: '/about' },
 ];
 
 export const Navigation = () => {

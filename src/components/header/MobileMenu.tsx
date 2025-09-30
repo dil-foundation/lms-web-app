@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
-import { Menu, X, LogOut, Settings, Home } from 'lucide-react';
+import { Menu, X, LogOut, Settings, Users } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { NotificationToggle } from './NotificationToggle';
 import { useAuth } from '@/hooks/useAuth';
@@ -129,12 +129,12 @@ export const MobileMenu = memo(() => {
                 {/* Guest Navigation */}
                 <div className="space-y-1">
                   <Link
-                    to="/"
+                    to="/about"
                     onClick={handleLinkClick}
                     className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-accent transition-colors"
                   >
-                    <Home className="h-5 w-5 text-muted-foreground" />
-                    <span className="font-medium">Home</span>
+                    <Users className="h-5 w-5 text-muted-foreground" />
+                    <span className="font-medium">About Us</span>
                   </Link>
                 </div>
 
