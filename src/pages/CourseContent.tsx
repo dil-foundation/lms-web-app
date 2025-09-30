@@ -526,16 +526,33 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     }
     setIsDownloading(true);
     try {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const blob = await response.blob();
+      // Check if the URL is already a blob URL (offline mode)
+      const isBlobUrl = url.startsWith('blob:');
+      
+      let blobUrl = url;
+      
+      // Only fetch if it's not already a blob URL
+      if (!isBlobUrl) {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const blob = await response.blob();
+        blobUrl = window.URL.createObjectURL(blob);
+      }
+      
+      // Create download link
       const link = document.createElement('a');
-      link.href = window.URL.createObjectURL(blob);
+      link.href = blobUrl;
       link.download = filename;
       document.body.appendChild(link);
       link.click();
       link.parentNode?.removeChild(link);
-      window.URL.revokeObjectURL(link.href);
+      
+      // Only revoke the blob URL if we created it
+      if (!isBlobUrl) {
+        window.URL.revokeObjectURL(blobUrl);
+      }
+      
+      toast.success('Download started!');
     } catch (error) {
       console.error('Download error:', error);
       toast.error('Failed to download the attachment.');
