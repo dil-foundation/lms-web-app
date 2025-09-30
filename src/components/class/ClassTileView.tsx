@@ -77,7 +77,8 @@ export const ClassTileView: React.FC<ClassTileViewProps> = ({
 
   const handleDelete = (e: React.MouseEvent, cls: ClassWithMembers) => {
     e.stopPropagation();
-    onDelete(cls);
+    // Small delay to ensure dropdown is fully closed
+    setTimeout(() => onDelete(cls), 100);
   };
 
   return (
