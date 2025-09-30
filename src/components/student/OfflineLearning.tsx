@@ -64,6 +64,7 @@ export const OfflineLearning = ({ userProfile }: OfflineLearningProps) => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [downloadingCourses, setDownloadingCourses] = useState<Set<string>>(new Set());
   const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
+  const [activeTab, setActiveTab] = useState<string>(isOnline ? "available" : "downloaded");
   const navigate = useNavigate();
 
   // Services
@@ -233,6 +234,8 @@ export const OfflineLearning = ({ userProfile }: OfflineLearningProps) => {
     const handleOffline = () => {
       console.log('🔴 OfflineLearning: Gone offline - showing offline state');
       setIsOnline(false);
+      // Auto-switch to downloaded tab when going offline
+      setActiveTab("downloaded");
       // Clear any existing course data that might have signed URLs
       setEnrolledCourses([]);
     };
@@ -422,20 +425,30 @@ export const OfflineLearning = ({ userProfile }: OfflineLearningProps) => {
       </Card>
 
       {/* Main Content Tabs */}
-      <Tabs defaultValue="available" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="available" className="flex items-center gap-2">
-            <Download className="w-4 h-4" />
-            Available for Download ({enrolledCourses.length})
-          </TabsTrigger>
-          <TabsTrigger value="downloaded" className="flex items-center gap-2">
-            <BookOpen className="w-4 h-4" />
-            Downloaded ({downloadedCourses.length})
-          </TabsTrigger>
-        </TabsList>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        {isOnline ? (
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="available" className="flex items-center gap-2">
+              <Download className="w-4 h-4" />
+              Available for Download ({enrolledCourses.length})
+            </TabsTrigger>
+            <TabsTrigger value="downloaded" className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4" />
+              Downloaded ({downloadedCourses.length})
+            </TabsTrigger>
+          </TabsList>
+        ) : (
+          <TabsList className="grid w-full grid-cols-1">
+            <TabsTrigger value="downloaded" className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4" />
+              Downloaded ({downloadedCourses.length})
+            </TabsTrigger>
+          </TabsList>
+        )}
 
-        {/* Available Courses Tab */}
-        <TabsContent value="available" className="space-y-4">
+        {/* Available Courses Tab - Only show when online */}
+        {isOnline && (
+          <TabsContent value="available" className="space-y-4">
           {enrolledCourses.length === 0 ? (
             <EmptyState
               icon={<BookOpen className="h-8 w-8 text-muted-foreground" />}
@@ -507,13 +520,23 @@ export const OfflineLearning = ({ userProfile }: OfflineLearningProps) => {
                              Downloading...
                            </Button>
                            <div className="text-xs text-center text-muted-foreground">
-                             {downloadProgress[course.id]?.toFixed(0) || 0}%
+                             {(downloadProgress[course.id] && !isNaN(downloadProgress[course.id])) ? downloadProgress[course.id].toFixed(0) : 0}%
                            </div>
                            <Progress 
-                             value={downloadProgress[course.id] || 0} 
+                             value={(downloadProgress[course.id] && !isNaN(downloadProgress[course.id])) ? downloadProgress[course.id] : 0} 
                              className="h-1 mt-1" 
                            />
                          </div>
+                       ) : downloadedCourses.some(dc => dc.id === course.id) ? (
+                         <Button
+                           onClick={() => handleViewCourse(course.id)}
+                           size="sm"
+                           variant="outline"
+                           className="min-w-[140px]"
+                         >
+                           <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
+                           Downloaded
+                         </Button>
                        ) : (
                          <Button
                            onClick={() => handleDownloadCourse(course.id)}
@@ -533,6 +556,7 @@ export const OfflineLearning = ({ userProfile }: OfflineLearningProps) => {
             </div>
           )}
         </TabsContent>
+        )}
 
         {/* Downloaded Courses Tab */}
         <TabsContent value="downloaded" className="space-y-4">
@@ -543,107 +567,122 @@ export const OfflineLearning = ({ userProfile }: OfflineLearningProps) => {
               description="Download some courses to access them offline."
             />
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {downloadedCourses.map((course) => (
                 <Card key={course.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-4">
+                      {/* Course Image */}
                       <img
                         src={course.image_url}
                         alt={course.title}
-                        className="w-20 h-20 rounded-lg object-cover"
+                        className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
                       />
                       
-                      <div className="flex-1 space-y-3">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <h3 className="font-semibold text-lg">{course.title}</h3>
-                            <p className="text-muted-foreground">{course.subtitle}</p>
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            {course.downloadStatus === 'completed' && (
-                              <Badge variant="default" className="bg-green-100 text-green-800">
-                                <CheckCircle className="w-3 h-3 mr-1" />
-                                Downloaded
-                              </Badge>
-                            )}
-                            {course.downloadStatus === 'downloading' && (
-                              <Badge variant="secondary">
-                                <Clock className="w-3 h-3 mr-1" />
-                                Downloading
-                              </Badge>
-                            )}
-                            {course.downloadStatus === 'error' && (
-                              <Badge variant="destructive">
-                                <AlertCircle className="w-3 h-3 mr-1" />
-                                Error
-                              </Badge>
-                            )}
-                          </div>
+                      {/* Course Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="mb-1">
+                          <h3 className="font-semibold text-base truncate">{course.title}</h3>
+                          <p className="text-sm text-muted-foreground truncate">{course.subtitle}</p>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
-                          <div>Size: {course.size}</div>
-                          <div>Downloaded: {new Date(course.downloadDate).toLocaleDateString()}</div>
-                          <div>Progress: {course.progress}% complete</div>
-                          <div>Lessons: {course.completed_lessons}/{course.total_lessons}</div>
+                        {/* Compact Info Grid */}
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span>Size: {course.size}</span>
+                          <span>•</span>
+                          <span>Downloaded: {new Date(course.downloadDate).toLocaleDateString()}</span>
+                          <span>•</span>
+                          <span>Progress: {course.progress}%</span>
+                          <span>•</span>
+                          <span>Lessons: {course.completed_lessons}/{course.total_lessons}</span>
                         </div>
 
+                        {/* Download Progress - Only show if downloading */}
                         {course.downloadStatus === 'downloading' && course.downloadProgress && (
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-xs">
+                          <div className="mt-2">
+                            <div className="flex justify-between text-xs mb-1">
                               <span>Downloading...</span>
                               <span>{course.downloadProgress}%</span>
                             </div>
-                            <Progress value={course.downloadProgress} className="h-2" />
+                            <Progress value={course.downloadProgress} className="h-1.5" />
                           </div>
                         )}
+                      </div>
 
-                        <div className="flex items-center gap-2 pt-2">
-                          {course.downloadStatus === 'completed' && (
+                      {/* Status Badge */}
+                      {course.downloadStatus === 'completed' && (
+                        <Badge variant="outline" className="text-xs flex-shrink-0 bg-green-50 text-green-700 border-green-200 self-center">
+                          <CheckCircle className="w-3 h-3 mr-1" />
+                          Downloaded
+                        </Badge>
+                      )}
+
+                      {/* Action Buttons */}
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {course.downloadStatus === 'completed' && (
+                          <>
                             <Button
                               onClick={() => handleViewCourse(course.id)}
                               size="sm"
-                              variant="default"
+                              className="h-8"
                             >
-                              <Eye className="w-4 h-4 mr-2" />
+                              <Eye className="w-3.5 h-3.5 mr-1.5" />
                               View Course
                             </Button>
-                          )}
-                          
-                          {course.downloadStatus === 'downloading' && (
+                            <Button
+                              onClick={() => handleDeleteCourse(course.id)}
+                              size="sm"
+                              variant="outline"
+                              className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </>
+                        )}
+                        
+                        {course.downloadStatus === 'downloading' && (
+                          <>
                             <Button
                               onClick={() => handlePauseResume(course.id, 'pause')}
                               size="sm"
                               variant="outline"
+                              className="h-8"
                             >
-                              <Pause className="w-4 h-4 mr-2" />
+                              <Pause className="w-3.5 h-3.5 mr-1.5" />
                               Pause
                             </Button>
-                          )}
-                          
-                          {course.downloadStatus === 'error' && (
+                            <Button
+                              onClick={() => handleDeleteCourse(course.id)}
+                              size="sm"
+                              variant="outline"
+                              className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </>
+                        )}
+                        
+                        {course.downloadStatus === 'error' && (
+                          <>
                             <Button
                               onClick={() => handleRetryDownload(course.id)}
                               size="sm"
                               variant="outline"
+                              className="h-8"
                             >
-                              <RotateCcw className="w-4 h-4 mr-2" />
+                              <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
                               Retry
                             </Button>
-                          )}
-
-                          <Button
-                            onClick={() => handleDeleteCourse(course.id)}
-                            size="sm"
-                            variant="outline"
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
-                          </Button>
-                        </div>
+                            <Button
+                              onClick={() => handleDeleteCourse(course.id)}
+                              size="sm"
+                              variant="outline"
+                              className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </CardContent>

@@ -33,7 +33,8 @@ import {
   Calendar,
   GripVertical,
   Info,
-  Image as ImageIcon
+  Image as ImageIcon,
+  WifiOff
 } from 'lucide-react';
 import {
   DndContext,
@@ -1315,10 +1316,76 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     }
   }, [currentContentItem]);
 
-  const allContentItems = useMemo(() => course?.modules.flatMap((m: any) => m.lessons.flatMap((l: any) => l.contentItems)) || [], [course]);
+  // Filter out quiz and assignment content items when in offline mode
+  const allContentItems = useMemo(() => {
+    const items = course?.modules.flatMap((m: any) => m.lessons.flatMap((l: any) => l.contentItems)) || [];
+    // Hide quiz and assignment content when offline
+    if (isOfflineMode) {
+      return items.filter((item: any) => item.content_type !== 'quiz' && item.content_type !== 'assignment');
+    }
+    return items;
+  }, [course, isOfflineMode]);
   const currentIndex = useMemo(() => allContentItems.findIndex((item: any) => item.id === currentContentItemId), [allContentItems, currentContentItemId]);
   const nextContentItem = currentIndex !== -1 ? allContentItems[currentIndex + 1] : null;
   const prevContentItem = currentIndex !== -1 ? allContentItems[currentIndex - 1] : null;
+
+  // Redirect to first available content if current item is quiz/assignment and we go offline
+  useEffect(() => {
+    if (isOfflineMode && currentContentItem && (currentContentItem.content_type === 'quiz' || currentContentItem.content_type === 'assignment')) {
+      // Find the first available (non-quiz/assignment) content item
+      const firstAvailableItem = allContentItems.find((item: any) => item.content_type !== 'quiz' && item.content_type !== 'assignment');
+      if (firstAvailableItem) {
+        console.log('📴 Redirecting from', currentContentItem.content_type, 'to first available content');
+        setCurrentContentItemId(firstAvailableItem.id);
+      }
+    }
+  }, [isOfflineMode, currentContentItem, allContentItems]);
+
+  // Monitor online/offline status changes and check course availability
+  useEffect(() => {
+    const handleOnlineStatusChange = async () => {
+      const isCurrentlyOnline = navigator.onLine;
+      console.log('🌐 Network status changed:', isCurrentlyOnline ? 'Online' : 'Offline');
+      
+      if (!isCurrentlyOnline && actualCourseId) {
+        // User went offline, check if current course is available offline
+        try {
+          const isCourseAvailableOffline = await dataLayer.utils.isCourseAvailableOffline(actualCourseId);
+          console.log('📦 Course offline availability:', isCourseAvailableOffline);
+          
+          if (isCourseAvailableOffline) {
+            // Course is available offline, switch to offline mode
+            setIsOfflineMode(true);
+            toast.info('You\'re now offline. Viewing downloaded course content.');
+          } else {
+            // Course is NOT available offline, redirect to offline learning page
+            console.log('⚠️ Course not available offline, redirecting...');
+            toast.error('This course is not available offline. Redirecting to offline learning.');
+            navigate('/dashboard/offline-learning');
+          }
+        } catch (error) {
+          console.error('Error checking course offline availability:', error);
+          // If we can't check, assume it's not available and redirect
+          toast.error('This course is not available offline.');
+          navigate('/dashboard/offline-learning');
+        }
+      } else if (isCurrentlyOnline && isOfflineMode) {
+        // User came back online, switch to online mode
+        setIsOfflineMode(false);
+        toast.success('Connection restored! You\'re back online.');
+        // Optionally reload the course to get fresh data
+        // fetchCourseData();
+      }
+    };
+
+    window.addEventListener('online', handleOnlineStatusChange);
+    window.addEventListener('offline', handleOnlineStatusChange);
+
+    return () => {
+      window.removeEventListener('online', handleOnlineStatusChange);
+      window.removeEventListener('offline', handleOnlineStatusChange);
+    };
+  }, [actualCourseId, dataLayer, isOfflineMode, navigate]);
 
   const handleNavigation = (item: any) => {
     if (!item) return;
@@ -1419,6 +1486,25 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
   const renderContent = () => {
     if (!currentContentItem) return null;
     
+    // Hide quiz and assignment content when offline
+    if (isOfflineMode && (currentContentItem.content_type === 'quiz' || currentContentItem.content_type === 'assignment')) {
+      return (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg max-w-md">
+            <CardContent className="pt-6">
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 mx-auto bg-muted rounded-full flex items-center justify-center">
+                  <WifiOff className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  No offline content available
+                </h3>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
     
     // AUTOMATIC FIX: If it's a video or attachment without signedUrl and we're offline, load it directly
     if ((currentContentItem.content_type === 'video' || currentContentItem.content_type === 'attachment') && !currentContentItem.signedUrl && isOfflineMode) {
@@ -2317,10 +2403,26 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                                           onDragEnd={handleDragEnd}
                                         >
                                           <SortableContext 
-                                            items={lesson.contentItems.map((item: any) => item.id)}
+                                            items={lesson.contentItems
+                                              .filter((item: any) => {
+                                                // Hide quiz and assignment when offline
+                                                if (isOfflineMode && (item.content_type === 'quiz' || item.content_type === 'assignment')) {
+                                                  return false;
+                                                }
+                                                return true;
+                                              })
+                                              .map((item: any) => item.id)}
                                             strategy={verticalListSortingStrategy}
                                           >
-                                            {lesson.contentItems.map((item: any, index: number) => {
+                                            {lesson.contentItems
+                                              .filter((item: any) => {
+                                                // Hide quiz and assignment when offline
+                                                if (isOfflineMode && (item.content_type === 'quiz' || item.content_type === 'assignment')) {
+                                                  return false;
+                                                }
+                                                return true;
+                                              })
+                                              .map((item: any, index: number) => {
                                               const isActive = item.id === currentContentItemId;
                                               const isCompleted = item.completed;
                                               
@@ -2340,7 +2442,15 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                                         </DndContext>
                                       ) : (
                                         // Render without drag and drop for students
-                                        lesson.contentItems.map((item: any, index: number) => {
+                                        lesson.contentItems
+                                          .filter((item: any) => {
+                                            // Hide quiz and assignment when offline
+                                            if (isOfflineMode && (item.content_type === 'quiz' || item.content_type === 'assignment')) {
+                                              return false;
+                                            }
+                                            return true;
+                                          })
+                                          .map((item: any, index: number) => {
                                           const isActive = item.id === currentContentItemId;
                                           const isCompleted = item.completed;
                                           

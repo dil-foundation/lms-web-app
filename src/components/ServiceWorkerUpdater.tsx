@@ -140,19 +140,10 @@ export const ServiceWorkerUpdater: React.FC<ServiceWorkerUpdaterProps> = ({
               </div>
             </div>
           ) : !isOnline ? (
-            <div className="space-y-3">
+            <div>
               <p className="text-sm text-muted-foreground">
                 You're currently offline. Some features may be limited.
               </p>
-              <Button
-                onClick={handleForceRefresh}
-                variant="outline"
-                size="sm"
-                className="w-full"
-              >
-                <RefreshCw className="w-3 h-3 mr-1" />
-                Check Connection
-              </Button>
             </div>
           ) : null}
         </CardContent>
