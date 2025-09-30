@@ -2,7 +2,7 @@
 
 ## 🎯 Overview
 
-The Zoom Meetings feature is now **fully functional and production-ready** for the DIL LMS Teacher Dashboard. This implementation provides comprehensive meeting management capabilities with real Zoom API integration.
+The Zoom Meetings feature is now **fully functional and production-ready** for the DIL LMS. This implementation provides comprehensive meeting management capabilities with real Zoom API integration, supporting meetings between Students, Teachers, and Admins.
 
 ---
 
@@ -36,9 +36,13 @@ The Zoom Meetings feature is now **fully functional and production-ready** for t
 ## 🚀 **Features Available:**
 
 ### **Meeting Management**
-- ✅ **Schedule Meetings** - 1-on-1 and class meetings
+- ✅ **Schedule Meetings** - Multiple meeting types supported:
+  - **1-on-1 with Student** - Teacher to Student meetings
+  - **Class Meetings** - Group meetings with entire classes
+  - **Teacher-to-Teacher** - Collaborative meetings between teachers
+  - **Admin-to-Teacher** - Administrative meetings with teachers
 - ✅ **Real-time Updates** - Live meeting status tracking
-- ✅ **Meeting Statistics** - Total, upcoming, completed metrics
+- ✅ **Meeting Statistics** - Total, upcoming, completed metrics by type
 - ✅ **Meeting History** - Past meetings with recordings
 - ✅ **Cancel/Delete** - Full meeting lifecycle management
 
@@ -71,12 +75,15 @@ The Zoom Meetings feature is now **fully functional and production-ready** for t
 - id (UUID, Primary Key)
 - title (Text, Required)
 - description (Text, Optional)
-- meeting_type ('1-on-1' | 'class')
+- meeting_type ('1-on-1' | 'class' | 'teacher-to-teacher' | 'admin-to-teacher')
 - scheduled_time (Timestamp with timezone)
 - duration (Integer, minutes)
-- teacher_id (UUID, Foreign Key to auth.users)
-- student_id (UUID, Optional, for 1-on-1 meetings)
+- teacher_id (UUID, Foreign Key to auth.users, meeting host)
+- student_id (UUID, Optional, for legacy 1-on-1 meetings)
+- participant_id (UUID, Optional, generic participant reference)
+- participant_role (Text, Optional, 'student' | 'teacher' | 'admin')
 - course_id (UUID, Optional, for class meetings)
+- class_id (UUID, Optional, for class-based meetings)
 - zoom_meeting_id (Text, Zoom's meeting ID)
 - zoom_join_url (Text, Zoom join URL)
 - zoom_password (Text, Meeting password)
@@ -88,6 +95,12 @@ The Zoom Meetings feature is now **fully functional and production-ready** for t
 - notes (Text, Optional)
 - created_at, updated_at (Timestamps)
 ```
+
+**Key Additions:**
+- `participant_id` - Generic participant reference for multi-role meetings
+- `participant_role` - Tracks whether participant is student, teacher, or admin
+- `class_id` - Direct reference to classes (preferred over course_id)
+- New meeting types: `teacher-to-teacher` and `admin-to-teacher`
 
 ### **Security Features**
 - ✅ **Row Level Security (RLS)** - Data isolation by user
@@ -166,6 +179,15 @@ getAvailableStudents(teacherId: string): Promise<Student[]>
 
 // Get teacher courses
 getTeacherCourses(teacherId: string): Promise<Course[]>
+
+// Get teacher classes
+getTeacherClasses(teacherId: string): Promise<Class[]>
+
+// Get available teachers (NEW - for teacher-to-teacher meetings)
+getAvailableTeachers(currentUserId: string): Promise<Teacher[]>
+
+// Get available admins (NEW - for admin-to-teacher meetings)
+getAvailableAdmins(currentUserId: string): Promise<Admin[]>
 ```
 
 ### **Zoom Edge Function**
@@ -186,7 +208,9 @@ POST /functions/v1/zoom-meeting-manager
 - **Total Meetings** - All meetings count
 - **Upcoming** - Scheduled future meetings
 - **1-on-1 Sessions** - Individual student meetings
-- **Class Meetings** - Group course meetings
+- **Class Meetings** - Group course/class meetings
+- **Teacher Meetings** - Teacher-to-teacher collaborative meetings
+- **Admin Meetings** - Admin-to-teacher administrative meetings
 
 ### **Meeting Management**
 - **Upcoming Tab** - Active scheduled meetings
@@ -197,8 +221,16 @@ POST /functions/v1/zoom-meeting-manager
 ### **Meeting Creation Form**
 - **Meeting Title** - Required field
 - **Description** - Optional details
-- **Meeting Type** - 1-on-1 or Class selection
-- **Participant Selection** - Student or Course picker
+- **Meeting Type** - Multiple options:
+  - 1-on-1 with Student
+  - Class Meeting
+  - Teacher-to-Teacher Meeting
+  - Admin-to-Teacher Meeting
+- **Participant Selection** - Context-aware picker:
+  - Students (for 1-on-1)
+  - Classes (for class meetings)
+  - Teachers (for teacher-to-teacher)
+  - Admins/Teachers (for admin-to-teacher)
 - **Date & Time** - Future scheduling only
 - **Duration** - 15 minutes to 8 hours
 
@@ -252,6 +284,23 @@ POST /functions/v1/zoom-meeting-manager
 
 ---
 
+## 🆕 **Recent Updates (January 2025):**
+
+### **Multi-Role Meeting Support** ✅
+- ✅ **Teacher-to-Teacher Meetings** - Collaborative sessions between educators
+- ✅ **Admin-to-Teacher Meetings** - Administrative meetings with staff
+- ✅ **Enhanced Participant Tracking** - Generic participant system for all user types
+- ✅ **Updated RLS Policies** - Admins and teachers can view meetings they participate in
+- ✅ **Backward Compatibility** - Existing 1-on-1 student meetings continue to work
+
+### **Database Migration**
+Migration: `20250131000000_add_multi_role_meeting_support.sql`
+- Added `participant_id` and `participant_role` columns
+- Updated meeting_type constraint to include new types
+- Migrated existing meetings to new structure
+- Updated RLS policies for multi-role support
+- Enhanced `get_teacher_meetings()` function
+
 ## 🔮 **Future Enhancements:**
 
 ### **Planned Features**
@@ -260,6 +309,7 @@ POST /functions/v1/zoom-meeting-manager
 - 📊 **Analytics Dashboard** - Meeting usage analytics
 - 🎥 **Recording Management** - Automatic recording handling
 - 📱 **Mobile App Support** - Native mobile experience
+- 👥 **Admin Meeting Dashboard** - Dedicated admin meeting management interface
 
 ### **Advanced Features**
 - 🤖 **AI Meeting Summaries** - Automatic meeting notes

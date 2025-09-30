@@ -571,18 +571,6 @@ class AdminDashboardService {
     return '📚'; // Default icon
   }
 
-  // Cleanup method to cancel all ongoing requests
-  public cleanup(): void {
-    console.log('🧹 Cleaning up admin dashboard service requests');
-    
-    if (this.currentController) {
-      this.currentController.abort();
-      this.currentController = null;
-    }
-
-    // Clear cache
-    this.requestCache.clear();
-  }
 
   // Clear cache method
   public clearCache(): void {

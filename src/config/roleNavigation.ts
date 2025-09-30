@@ -91,6 +91,12 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean, is
             { title: 'Discussions', path: '/dashboard/discussion', icon: MessageCircle },
             ...(isZoomEnabled ? [{ title: 'Meetings', path: '/dashboard/meetings', icon: Video }] : []),
           ]
+        },
+        {
+          title: 'OFFLINE',
+          items: [
+            { title: 'Offline Learning', path: '/dashboard/offline-learning', icon: Download },
+          ]
         }
       ];
     
@@ -141,6 +147,7 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean, is
             { title: 'Assessments', path: '/dashboard/grade-assignments', icon: Award },
             { title: 'Messages', path: '/dashboard/messages', icon: MessageSquare },
             { title: 'Discussion', path: '/dashboard/discussion', icon: MessageCircle },
+            ...(isZoomEnabled ? [{ title: 'Meetings', path: '/dashboard/meetings', icon: Video }] : []),
           ]
         },
         {
@@ -162,7 +169,6 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean, is
             { title: 'APEX Admin', path: '/dashboard/apex-admin', icon: AIAssistant },
             { title: 'Integration APIs', path: '/dashboard/integration-apis', icon: Plug },
             { title: 'Multitenancy', path: '/dashboard/multitenancy', icon: Building2 },
-            { title: 'Offline Learning', path: '/dashboard/offline-learning', icon: Download },
           ]
         }
       ];

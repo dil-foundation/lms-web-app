@@ -183,7 +183,7 @@ export const useReportsData = (
     setError(null);
   }, []);
 
-  // Setup auto refresh
+  // Setup auto refresh (with offline awareness)
   const setupAutoRefresh = useCallback(() => {
     if (!enableAutoRefresh) return;
 
@@ -193,9 +193,15 @@ export const useReportsData = (
 
     autoRefreshTimeoutRef.current = setTimeout(() => {
       if (isMountedRef.current) {
-        console.log('🔄 [useReportsData] Auto-refreshing data');
-        fetchData(true);
-        setupAutoRefresh(); // Schedule next refresh
+        // Only auto-refresh if online
+        if (navigator.onLine) {
+          console.log('🔄 [useReportsData] Auto-refreshing data');
+          fetchData(true);
+          setupAutoRefresh(); // Schedule next refresh
+        } else {
+          console.log('🔴 [useReportsData] Offline - skipping auto-refresh');
+          setupAutoRefresh(); // Still schedule next check
+        }
       }
     }, autoRefreshInterval);
   }, [enableAutoRefresh, autoRefreshInterval, fetchData]);

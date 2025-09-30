@@ -33,7 +33,8 @@ import {
   Calendar,
   GripVertical,
   Info,
-  Image as ImageIcon
+  Image as ImageIcon,
+  WifiOff
 } from 'lucide-react';
 import {
   DndContext,
@@ -59,6 +60,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { cn } from '@/lib/utils';
 import AccessLogService from '@/services/accessLogService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { getCourseDataLayer } from '@/services/courseDataLayer';
 
 interface CourseContentProps {
   courseId?: string;
@@ -241,6 +243,10 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const lastUpdateTimeRef = useRef(0);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isOfflineMode, setIsOfflineMode] = useState(false);
+  
+  // Data layer service
+  const dataLayer = getCourseDataLayer();
 
   const [userAnswers, setUserAnswers] = useState<Record<string, string | string[]>>({});
   const [textAnswers, setTextAnswers] = useState<Record<string, string>>({});
@@ -466,6 +472,14 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
           
           // Handle quiz questions with question_type field
           let processedItem = { ...item };
+          
+          // CRITICAL FIX: Ensure signedUrl is preserved for video and attachment items
+          if ((item.content_type === 'video' || item.content_type === 'attachment') && !processedItem.signedUrl) {
+            console.log(`🔧 transformCourseData: signedUrl missing for ${item.content_type} ${item.id}, attempting to preserve from original data`);
+            // The signedUrl might be missing from item but should be preserved
+            // This is a fallback to ensure it doesn't get lost
+          }
+          
           if (item.content_type === 'quiz' && item.quiz) {
             processedItem.quiz = item.quiz.map((q: any) => ({
               ...q,
@@ -481,13 +495,16 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
             }));
           }
           
-          return {
+          const finalItem = {
             ...processedItem,
             completed: isCompleted,
             status: isCompleted ? 'completed' : (itemProgress ? 'in_progress' : 'not_started'),
             progressSeconds: itemProgress?.progress_data?.seconds || 0,
             submission,
           };
+          
+          
+          return finalItem;
         }) || [];
         const allContentItemsCompleted = contentItems.length > 0 && contentItems.every((ci: any) => ci.completed);
         return { ...lesson, contentItems, completed: allContentItemsCompleted };
@@ -529,6 +546,13 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
 
   const markContentAsComplete = useCallback(async (contentId: string, lessonId: string, courseId: string, duration?: number) => {
     if (!user) return;
+    
+    // Skip database update when offline
+    if (!navigator.onLine) {
+      console.log('🔴 CourseContent: Offline - skipping progress update');
+      return;
+    }
+    
     const { error } = await supabase.from('user_content_item_progress').upsert(
       {
         user_id: user.id,
@@ -559,19 +583,24 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         contentTitle = contentData?.title || 'Unknown Content';
       }
 
-      await AccessLogService.logStudentCourseAction(
-        user.id,
-        user.email || 'unknown@email.com',
-        'content_completed',
-        courseId,
-        contentTitle,
-        {
-          content_id: contentId,
-          lesson_id: lessonId,
-          content_type: currentContentItem?.content_type,
-          duration: duration
-        }
-      );
+      // Skip access logging when offline
+      if (navigator.onLine) {
+        await AccessLogService.logStudentCourseAction(
+          user.id,
+          user.email || 'unknown@email.com',
+          'content_completed',
+          courseId,
+          contentTitle,
+          {
+            content_id: contentId,
+            lesson_id: lessonId,
+            content_type: currentContentItem?.content_type,
+            duration: duration
+          }
+        );
+      } else {
+        console.log('🔴 CourseContent: Offline - skipping content completion logging');
+      }
     } catch (logError) {
       console.error('Error logging content completion:', logError);
     }
@@ -601,6 +630,12 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       if (newTotalProgress === 100 && prevCourse.totalProgress < 100) {
         // Use setTimeout to avoid blocking the state update
         setTimeout(async () => {
+          // Skip course completion logging when offline
+          if (!navigator.onLine) {
+            console.log('🔴 CourseContent: Offline - skipping course completion logging');
+            return;
+          }
+          
           try {
             await AccessLogService.logStudentCourseAction(
               user.id,
@@ -633,6 +668,13 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     const now = Date.now();
     if (now - lastUpdateTimeRef.current > 15000) {
       lastUpdateTimeRef.current = now;
+      
+      // Skip database update when offline
+      if (!navigator.onLine) {
+        console.log('🔴 CourseContent: Offline - skipping video progress update');
+        return;
+      }
+      
       supabase.from('user_content_item_progress').upsert({
         user_id: user.id,
         course_id: actualCourseId,
@@ -949,40 +991,44 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     //   }
     // }
     
-    // Log quiz submission
-    try {
-      // Log as student course action (existing)
-      await AccessLogService.logStudentCourseAction(
-        user.id,
-        user.email || 'unknown@email.com',
-        'quiz_submitted',
-        course.id,
-        currentContentItem?.title || 'Unknown Quiz',
-        {
-          content_id: currentContentItem.id,
-          lesson_id: currentLesson.id,
-          submission_id: newSubmission?.id,
-          score: finalScore,
-          has_text_answers: hasTextAnswers,
-          correct_answers: correctAnswers,
-          total_questions: questions.length,
-          attempt_number: newSubmission?.attempt_number || 1,
-          is_retry: isRetry
-        }
-      );
-      
-      // Also log as quiz submission (new)
-      await AccessLogService.logQuizSubmission(
-        user.id,
-        user.email || 'unknown@email.com',
-        currentContentItem.id,
-        currentContentItem?.title || 'Unknown Quiz',
-        course.id,
-        course.title,
-        finalScore
-      );
-    } catch (logError) {
-      console.error('Error logging quiz submission:', logError);
+    // Log quiz submission (skip when offline)
+    if (navigator.onLine) {
+      try {
+        // Log as student course action (existing)
+        await AccessLogService.logStudentCourseAction(
+          user.id,
+          user.email || 'unknown@email.com',
+          'quiz_submitted',
+          course.id,
+          currentContentItem?.title || 'Unknown Quiz',
+          {
+            content_id: currentContentItem.id,
+            lesson_id: currentLesson.id,
+            submission_id: newSubmission?.id,
+            score: finalScore,
+            has_text_answers: hasTextAnswers,
+            correct_answers: correctAnswers,
+            total_questions: questions.length,
+            attempt_number: newSubmission?.attempt_number || 1,
+            is_retry: isRetry
+          }
+        );
+        
+        // Also log as quiz submission (new)
+        await AccessLogService.logQuizSubmission(
+          user.id,
+          user.email || 'unknown@email.com',
+          currentContentItem.id,
+          currentContentItem?.title || 'Unknown Quiz',
+          course.id,
+          course.title,
+          finalScore
+        );
+      } catch (logError) {
+        console.error('Error logging quiz submission:', logError);
+      }
+    } else {
+      console.log('🔴 CourseContent: Offline - skipping quiz submission logging');
     }
     
     setQuizResults(results);
@@ -1002,14 +1048,6 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       text_answer_grades: []
     };
     
-    console.log('🔄 UPDATING COURSE STATE WITH NEW SUBMISSION:', {
-      currentContentItemId: currentContentItem.id,
-      newSubmission: submissionWithGrades,
-      hasScore: submissionWithGrades?.score !== null && submissionWithGrades?.score !== undefined,
-      score: submissionWithGrades?.score,
-      manualGradingRequired: submissionWithGrades?.manual_grading_required,
-      manualGradingCompleted: submissionWithGrades?.manual_grading_completed
-    });
     
     setCourse((prevCourse: any) => {
         if (!prevCourse) return null;
@@ -1088,7 +1126,98 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       }
       setIsLoading(true);
       try {
-        const { data, error } = await supabase.from('courses').select(`*,sections:course_sections(*,lessons:course_lessons(*,contentItems:course_lesson_content(*,quiz:quiz_questions(*,points,math_expression,math_tolerance,math_hint,math_allow_drawing,image_url,options:question_options(*)))))`).eq('id', actualCourseId).single();
+        // Try to use the data layer first (handles online/offline automatically)
+        let data: any = null;
+        let error: any = null;
+        
+        try {
+          const courseData = await dataLayer.getCourseData(actualCourseId, user?.id);
+          
+          
+          if (courseData) {
+             
+            // Transform data layer format to existing format
+            data = {
+              id: courseData.id,
+              title: courseData.title,
+              subtitle: courseData.subtitle,
+              description: courseData.description,
+              image_url: courseData.image_url,
+              instructor_name: courseData.instructor_name,
+              sections: courseData.sections.map(section => ({
+                id: section.id,
+                title: section.title,
+                description: section.description,
+                order: section.order,
+                lessons: section.lessons.map(lesson => ({
+                  id: lesson.id,
+                  title: lesson.title,
+                  description: lesson.description,
+                  content: lesson.content,
+                  order: lesson.order,
+                  duration: lesson.duration,
+                  contentItems: lesson.contentItems.map(item => {
+                    console.log(`🔧 CourseContent: Mapping content item ${item.id} (${item.title}):`, {
+                      content_type: item.content_type,
+                      hasSignedUrl: !!item.signedUrl,
+                      signedUrl: item.signedUrl,
+                      signedUrlPreview: item.signedUrl?.substring(0, 50)
+                    });
+                    
+                    const mappedItem = {
+                    id: item.id,
+                    title: item.title,
+                    content_type: item.content_type,
+                    content_path: item.content_path,
+                    signedUrl: item.signedUrl,
+                    content: item.content,
+                    order: item.order,
+                    quiz: item.quiz || []
+                    };
+                    
+                    // Debug: Verify the mapped item has signedUrl
+                    if (item.content_type === 'video' || item.content_type === 'attachment') {
+                      console.log(`🔧 CourseContent: Mapped item result for ${item.content_type} ${item.id}:`, {
+                        hasSignedUrl: !!mappedItem.signedUrl,
+                        signedUrl: mappedItem.signedUrl,
+                        signedUrlPreview: mappedItem.signedUrl?.substring(0, 50)
+                      });
+                      
+                      // CRITICAL DEBUG: Log what we're actually returning
+                      console.log(`🔧 CourseContent: RETURNING MAPPED ITEM:`, JSON.stringify({
+                        id: mappedItem.id,
+                        title: mappedItem.title,
+                        content_type: mappedItem.content_type,
+                        signedUrl: mappedItem.signedUrl,
+                        hasSignedUrl: !!mappedItem.signedUrl
+                      }, null, 2));
+                    }
+                    
+                    return mappedItem;
+                  })
+                }))
+              }))
+            };
+             
+            setIsOfflineMode(courseData.isOfflineAvailable && !navigator.onLine);
+            
+          } else {
+            throw new Error('Course not found via data layer');
+          }
+        } catch (dataLayerError) {
+          
+          // Only fallback to Supabase if online AND we don't already have data
+          if (navigator.onLine && !data) {
+            const response = await supabase.from('courses').select(`*,sections:course_sections(*,lessons:course_lessons(*,contentItems:course_lesson_content(*,quiz:quiz_questions(*,points,math_expression,math_tolerance,math_hint,math_allow_drawing,image_url,options:question_options(*)))))`).eq('id', actualCourseId).single();
+            data = response.data;
+            error = response.error;
+            setIsOfflineMode(false);
+          } else if (!data) {
+            // If offline and data layer failed, show appropriate error
+            throw new Error('Course not available offline. Please download the course when online.');
+          }
+          // If we already have data from courseDataLayer, don't overwrite it
+        }
         if (error) throw error;
         if (data) {
           for (const section of data.sections) {
@@ -1102,7 +1231,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
             }
           }
           let userProgress: any[] = [], quizSubmissions: any[] = [];
-          if (user) {
+          if (user && navigator.onLine) {
             const contentItemIds = data.sections.flatMap((s: any) => s.lessons.flatMap((l: any) => l.contentItems.map((ci: any) => ci.id)));
             if (contentItemIds.length > 0) {
               const { data: progressData } = await supabase.from('user_content_item_progress').select('*').eq('user_id', user.id).in('lesson_content_id', contentItemIds);
@@ -1118,12 +1247,16 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
               }
               quizSubmissions = submissionsData || [];
             }
+          } else if (!navigator.onLine) {
           }
+           
           const transformedCourse = transformCourseData(data, userProgress, quizSubmissions);
+           
+           
           setCourse(transformedCourse);
           
-          // Log course started if this is the first time accessing
-          if (transformedCourse && userProgress.length === 0) {
+          // Log course started if this is the first time accessing (skip when offline)
+          if (transformedCourse && userProgress.length === 0 && navigator.onLine) {
             try {
               AccessLogService.logStudentCourseAction(
                 user.id,
@@ -1146,6 +1279,8 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
             const allContentItems = transformedCourse.modules.flatMap((m: any) => m.lessons.flatMap((l: any) => l.contentItems));
             const firstUncompleted = allContentItems.find((item: any) => !item.completed);
             const itemToStartWith = firstUncompleted || allContentItems[0];
+             
+             
             if (itemToStartWith) {
               setCurrentContentItemId(itemToStartWith.id);
               let sectionIdToOpen;
@@ -1181,10 +1316,76 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     }
   }, [currentContentItem]);
 
-  const allContentItems = useMemo(() => course?.modules.flatMap((m: any) => m.lessons.flatMap((l: any) => l.contentItems)) || [], [course]);
+  // Filter out quiz and assignment content items when in offline mode
+  const allContentItems = useMemo(() => {
+    const items = course?.modules.flatMap((m: any) => m.lessons.flatMap((l: any) => l.contentItems)) || [];
+    // Hide quiz and assignment content when offline
+    if (isOfflineMode) {
+      return items.filter((item: any) => item.content_type !== 'quiz' && item.content_type !== 'assignment');
+    }
+    return items;
+  }, [course, isOfflineMode]);
   const currentIndex = useMemo(() => allContentItems.findIndex((item: any) => item.id === currentContentItemId), [allContentItems, currentContentItemId]);
   const nextContentItem = currentIndex !== -1 ? allContentItems[currentIndex + 1] : null;
   const prevContentItem = currentIndex !== -1 ? allContentItems[currentIndex - 1] : null;
+
+  // Redirect to first available content if current item is quiz/assignment and we go offline
+  useEffect(() => {
+    if (isOfflineMode && currentContentItem && (currentContentItem.content_type === 'quiz' || currentContentItem.content_type === 'assignment')) {
+      // Find the first available (non-quiz/assignment) content item
+      const firstAvailableItem = allContentItems.find((item: any) => item.content_type !== 'quiz' && item.content_type !== 'assignment');
+      if (firstAvailableItem) {
+        console.log('📴 Redirecting from', currentContentItem.content_type, 'to first available content');
+        setCurrentContentItemId(firstAvailableItem.id);
+      }
+    }
+  }, [isOfflineMode, currentContentItem, allContentItems]);
+
+  // Monitor online/offline status changes and check course availability
+  useEffect(() => {
+    const handleOnlineStatusChange = async () => {
+      const isCurrentlyOnline = navigator.onLine;
+      console.log('🌐 Network status changed:', isCurrentlyOnline ? 'Online' : 'Offline');
+      
+      if (!isCurrentlyOnline && actualCourseId) {
+        // User went offline, check if current course is available offline
+        try {
+          const isCourseAvailableOffline = await dataLayer.utils.isCourseAvailableOffline(actualCourseId);
+          console.log('📦 Course offline availability:', isCourseAvailableOffline);
+          
+          if (isCourseAvailableOffline) {
+            // Course is available offline, switch to offline mode
+            setIsOfflineMode(true);
+            toast.info('You\'re now offline. Viewing downloaded course content.');
+          } else {
+            // Course is NOT available offline, redirect to offline learning page
+            console.log('⚠️ Course not available offline, redirecting...');
+            toast.error('This course is not available offline. Redirecting to offline learning.');
+            navigate('/dashboard/offline-learning');
+          }
+        } catch (error) {
+          console.error('Error checking course offline availability:', error);
+          // If we can't check, assume it's not available and redirect
+          toast.error('This course is not available offline.');
+          navigate('/dashboard/offline-learning');
+        }
+      } else if (isCurrentlyOnline && isOfflineMode) {
+        // User came back online, switch to online mode
+        setIsOfflineMode(false);
+        toast.success('Connection restored! You\'re back online.');
+        // Optionally reload the course to get fresh data
+        // fetchCourseData();
+      }
+    };
+
+    window.addEventListener('online', handleOnlineStatusChange);
+    window.addEventListener('offline', handleOnlineStatusChange);
+
+    return () => {
+      window.removeEventListener('online', handleOnlineStatusChange);
+      window.removeEventListener('offline', handleOnlineStatusChange);
+    };
+  }, [actualCourseId, dataLayer, isOfflineMode, navigate]);
 
   const handleNavigation = (item: any) => {
     if (!item) return;
@@ -1284,19 +1485,162 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
 
   const renderContent = () => {
     if (!currentContentItem) return null;
+    
+    // Hide quiz and assignment content when offline
+    if (isOfflineMode && (currentContentItem.content_type === 'quiz' || currentContentItem.content_type === 'assignment')) {
+      return (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg max-w-md">
+            <CardContent className="pt-6">
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 mx-auto bg-muted rounded-full flex items-center justify-center">
+                  <WifiOff className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  No offline content available
+                </h3>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+    
+    // AUTOMATIC FIX: If it's a video or attachment without signedUrl and we're offline, load it directly
+    if ((currentContentItem.content_type === 'video' || currentContentItem.content_type === 'attachment') && !currentContentItem.signedUrl && isOfflineMode) {
+      
+      // Load content directly from IndexedDB
+      const loadContentDirectly = async () => {
+        try {
+          const offlineDbModule = await import('../services/offlineDatabase');
+          const dbUtils = offlineDbModule.getOfflineDatabase();
+          
+          if (currentContentItem.content_type === 'video') {
+            const courseVideos = await dbUtils.getVideosByCourse(actualCourseId);
+            
+            if (courseVideos.length > 0) {
+              const video = courseVideos[0];
+              const blobUrl = URL.createObjectURL(video.blob);
+              
+              // Set the signedUrl directly on the currentContentItem
+              currentContentItem.signedUrl = blobUrl;
+              
+              // Force a re-render by updating the state
+              setCourse(prevCourse => ({ ...prevCourse }));
+            }
+          } else if (currentContentItem.content_type === 'attachment') {
+            // Get all assets for the current course
+            const courseAssets = await dbUtils.getAssetsByCourse(actualCourseId);
+            
+            if (courseAssets.length > 0) {
+              // Try to find the specific asset by ID first, then use first available
+              let asset = courseAssets.find(a => a.id === currentContentItem.id);
+              if (!asset) {
+                asset = courseAssets[0]; // Use first asset as fallback
+              }
+              
+              
+              
+              // Ensure correct MIME type for the blob
+              let blobToUse = asset.blob;
+              
+              // Get filename from multiple sources
+              const filename = asset.filename || currentContentItem.content_path?.split('/').pop() || currentContentItem.title || '';
+              
+              // Always check and correct MIME type, especially for incorrect ones like 'text/html'
+              if (!asset.blob.type || 
+                  asset.blob.type === 'application/octet-stream' || 
+                  asset.blob.type === 'text/html' ||
+                  asset.blob.type.startsWith('text/') && filename.toLowerCase().includes('pdf')) {
+                
+                let mimeType = 'application/octet-stream';
+                
+                // Check filename extension
+                if (filename.toLowerCase().endsWith('.pdf') || filename.toLowerCase().includes('.pdf')) {
+                  mimeType = 'application/pdf';
+                } else if (filename.toLowerCase().endsWith('.doc') || filename.toLowerCase().endsWith('.docx')) {
+                  mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+                } else if (filename.toLowerCase().endsWith('.jpg') || filename.toLowerCase().endsWith('.jpeg')) {
+                  mimeType = 'image/jpeg';
+                } else if (filename.toLowerCase().endsWith('.png')) {
+                  mimeType = 'image/png';
+                } else if (filename.toLowerCase().endsWith('.txt')) {
+                  mimeType = 'text/plain';
+                } else {
+                  // If no extension, try to detect from content_path or assume PDF for common cases
+                  const contentPath = currentContentItem.content_path || '';
+                  if (contentPath.toLowerCase().includes('.pdf') || contentPath.toLowerCase().includes('pdf')) {
+                    mimeType = 'application/pdf';
+                  } else if (contentPath.toLowerCase().includes('task') || contentPath.toLowerCase().includes('lesson')) {
+                    // Common pattern: lesson tasks are usually PDFs
+                    mimeType = 'application/pdf';
+                  }
+                }
+                
+                blobToUse = new Blob([asset.blob], { type: mimeType });
+              }
+              
+              const blobUrl = URL.createObjectURL(blobToUse);
+              
+              // Set the signedUrl directly on the currentContentItem
+              currentContentItem.signedUrl = blobUrl;
+              
+              // Force a re-render by updating the state
+              setCourse(prevCourse => ({ ...prevCourse }));
+            }
+          }
+        } catch (error) {
+          console.error(`AUTO-FIX failed:`, error);
+        }
+      };
+      
+      loadContentDirectly();
+    }
+    
     switch (currentContentItem.content_type) {
       case 'video':
         return (
           <div className="space-y-6">
             {currentContentItem.signedUrl ? (
               <div className="relative aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl">
-                 <video ref={videoRef} controls className="w-full h-full" key={currentContentItem.id} src={currentContentItem.signedUrl} onTimeUpdate={handleTimeUpdate} onLoadedMetadata={handleLoadedMetadata} />
+                 <video 
+                   ref={videoRef} 
+                   controls 
+                   className="w-full h-full" 
+                   key={currentContentItem.id} 
+                   src={currentContentItem.signedUrl} 
+                   onTimeUpdate={handleTimeUpdate} 
+                   onLoadedMetadata={handleLoadedMetadata}
+                   onError={(e) => {
+                     console.error('🎥 Video playback error:', e);
+                     console.error('🎥 Video src:', currentContentItem.signedUrl);
+                     console.error('🎥 Video element:', e.target);
+                   }}
+                   preload="metadata"
+                 >
+                   <p className="text-white p-4">
+                     Your browser does not support the video tag or the video format.
+                     <br />
+                     <a href={currentContentItem.signedUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">
+                       Try opening the video directly
+                     </a>
+                   </p>
+                 </video>
               </div>
             ) : (
-              <div className="relative aspect-video bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-3xl overflow-hidden flex items-center justify-center shadow-xl">
-                <div className="text-center p-8">
+              <div className="relative aspect-video bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-3xl overflow-hidden shadow-xl">
+                <div className="text-center p-4">
                   <PlayCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground text-lg font-medium">No video content available</p>
+                  <p className="text-muted-foreground text-lg font-medium">
+                    No video content available
+                    {isOfflineMode && (
+                      <span className="block text-sm mt-2 text-red-500">
+                        DEBUG: Offline mode - signedUrl missing for item {currentContentItem.id}
+                      </span>
+                    )}
+                  </p>
+                  
+                  
                 </div>
               </div>
             )}
@@ -2059,10 +2403,26 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                                           onDragEnd={handleDragEnd}
                                         >
                                           <SortableContext 
-                                            items={lesson.contentItems.map((item: any) => item.id)}
+                                            items={lesson.contentItems
+                                              .filter((item: any) => {
+                                                // Hide quiz and assignment when offline
+                                                if (isOfflineMode && (item.content_type === 'quiz' || item.content_type === 'assignment')) {
+                                                  return false;
+                                                }
+                                                return true;
+                                              })
+                                              .map((item: any) => item.id)}
                                             strategy={verticalListSortingStrategy}
                                           >
-                                            {lesson.contentItems.map((item: any, index: number) => {
+                                            {lesson.contentItems
+                                              .filter((item: any) => {
+                                                // Hide quiz and assignment when offline
+                                                if (isOfflineMode && (item.content_type === 'quiz' || item.content_type === 'assignment')) {
+                                                  return false;
+                                                }
+                                                return true;
+                                              })
+                                              .map((item: any, index: number) => {
                                               const isActive = item.id === currentContentItemId;
                                               const isCompleted = item.completed;
                                               
@@ -2082,7 +2442,15 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                                         </DndContext>
                                       ) : (
                                         // Render without drag and drop for students
-                                        lesson.contentItems.map((item: any, index: number) => {
+                                        lesson.contentItems
+                                          .filter((item: any) => {
+                                            // Hide quiz and assignment when offline
+                                            if (isOfflineMode && (item.content_type === 'quiz' || item.content_type === 'assignment')) {
+                                              return false;
+                                            }
+                                            return true;
+                                          })
+                                          .map((item: any, index: number) => {
                                           const isActive = item.id === currentContentItemId;
                                           const isCompleted = item.completed;
                                           

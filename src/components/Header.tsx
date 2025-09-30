@@ -2,6 +2,7 @@ import { useState, useEffect, memo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Logo } from './header/Logo';
+import { Navigation } from './header/Navigation';
 import { ThemeToggle } from './header/ThemeToggle';
 import { NotificationToggle } from './header/NotificationToggle';
 import { AuthButton } from './header/AuthButton';
@@ -36,8 +37,9 @@ export const Header = memo(() => {
             <Logo />
           </div>
 
-          {/* Desktop Navigation - Right Aligned */}
-          <div className="hidden md:flex items-center space-x-6">
+          {/* Desktop Actions - Right Aligned */}
+          <div className="hidden md:flex items-center space-x-4">
+            <Navigation />
             <ThemeToggle />
             {user && <NotificationToggle />}
             <AuthButton />

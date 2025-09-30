@@ -14,7 +14,6 @@ export const useSessionTimeout = () => {
   const lastActivityRef = useRef<number>(Date.now());
   const sessionTimeoutRef = useRef<number>(30); // Default 30 minutes
   const isHandlingTimeoutRef = useRef<boolean>(false); // Prevent multiple simultaneous timeouts
-  const loginTimeRef = useRef<number>(Date.now()); // Track when user logged in
   
   // Remove warning state - we'll logout directly when timeout occurs
 
@@ -26,8 +25,15 @@ export const useSessionTimeout = () => {
     subscribeToSessionTimeout
   } = useCrossTabSessionSync();
 
-  // Get session timeout setting from security settings
+  // Get session timeout setting from security settings (with offline awareness)
   const getSessionTimeout = useCallback(async () => {
+    // Skip security settings fetch when offline, use default
+    if (!navigator.onLine) {
+      console.log('🔴 useSessionTimeout: Offline - using default session timeout');
+      sessionTimeoutRef.current = 30;
+      return 30;
+    }
+
     try {
       const settings = await SecurityService.getSecuritySettings();
       const timeoutSetting = settings.find(s => s.setting_key === 'session_timeout_minutes');
@@ -112,17 +118,12 @@ export const useSessionTimeout = () => {
 
     const now = Date.now();
     const timeSinceLastActivity = now - lastActivityRef.current;
-    const timeSinceLogin = now - loginTimeRef.current;
     const timeoutMs = sessionTimeoutRef.current * 60 * 1000; // Convert minutes to milliseconds
     
-    // Add a 5-minute grace period after login to prevent immediate timeouts
-    const gracePeriodMs = 5 * 60 * 1000; // 5 minutes
-    const effectiveTimeoutMs = timeSinceLogin < gracePeriodMs ? gracePeriodMs : timeoutMs;
-    
-    console.log(`🔍 Session timeout check - Time since last activity: ${Math.round(timeSinceLastActivity / 1000)}s, Time since login: ${Math.round(timeSinceLogin / 1000)}s, Effective timeout: ${Math.round(effectiveTimeoutMs / 1000)}s`);
+    console.log(`🔍 Session timeout check - Time since last activity: ${Math.round(timeSinceLastActivity / 1000)}s, Timeout: ${Math.round(timeoutMs / 1000)}s`);
 
     // Check if session has timed out - logout immediately
-    if (timeSinceLastActivity >= effectiveTimeoutMs) {
+    if (timeSinceLastActivity >= timeoutMs) {
       console.log('⏰ Session timeout detected, triggering logout');
       handleSessionTimeout();
     }
@@ -174,10 +175,16 @@ export const useSessionTimeout = () => {
     };
   }, [updateLastActivity]);
 
-  // Set up periodic timeout checking
+  // Set up periodic timeout checking (with offline awareness)
   const setupTimeoutChecking = useCallback(() => {
-    // Check every 60 seconds to reduce frequency (was 30 seconds)
-    timeoutRef.current = setInterval(checkSessionTimeout, 60 * 1000);
+    // Check every 60 seconds to reduce frequency (was 30 seconds), but only when online
+    timeoutRef.current = setInterval(() => {
+      if (navigator.onLine) {
+        checkSessionTimeout();
+      } else {
+        console.log('🔴 useSessionTimeout: Offline - skipping timeout check');
+      }
+    }, 60 * 1000);
   }, [checkSessionTimeout]);
 
   // Set up cross-tab event listeners
@@ -220,8 +227,7 @@ export const useSessionTimeout = () => {
     }
 
     const initializeTimeout = async () => {
-      // Update login time when user/session becomes available
-      loginTimeRef.current = Date.now();
+      // Update last activity time when user/session becomes available
       lastActivityRef.current = Date.now();
       
       // Get current session timeout setting
@@ -233,11 +239,15 @@ export const useSessionTimeout = () => {
       // Set up periodic timeout checking
       setupTimeoutChecking();
       
-      // Update session activity in database
-      try {
-        await SessionService.updateSessionActivity(session.access_token);
-      } catch (error) {
-        console.error('Error updating session activity:', error);
+      // Update session activity in database (only if online)
+      if (navigator.onLine) {
+        try {
+          await SessionService.updateSessionActivity(session.access_token);
+        } catch (error) {
+          console.error('Error updating session activity:', error);
+        }
+      } else {
+        console.log('🔴 useSessionTimeout: Offline - skipping session activity update');
       }
 
       return cleanupListeners;

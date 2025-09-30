@@ -16,10 +16,17 @@ export const useSupabaseMFA = () => {
   const [mfaStatusCached, setMfaStatusCached] = useState(false);
   const [requirementCached, setRequirementCached] = useState(false);
 
-  // Load MFA status
+  // Load MFA status (with offline awareness)
   const loadMFAStatus = useCallback(async (force = false) => {
     if (!user) return;
     if (mfaStatusCached && !force) return; // Skip if already cached
+
+    // Skip MFA status load when offline
+    if (!navigator.onLine) {
+      console.log('🔴 useSupabaseMFA: Offline - skipping MFA status load');
+      setMfaStatusCached(true);
+      return;
+    }
 
     try {
       setLoading(true);
@@ -33,9 +40,17 @@ export const useSupabaseMFA = () => {
     }
   }, [user]); // Remove mfaStatusCached dependency to prevent recreation
 
-  // Check if MFA is required globally
+  // Check if MFA is required globally (with offline awareness)
   const checkMFARequirement = useCallback(async (force = false) => {
     if (requirementCached && !force) return; // Skip if already cached
+
+    // Skip MFA check when offline
+    if (!navigator.onLine) {
+      console.log('🔴 useSupabaseMFA: Offline - skipping MFA requirement check');
+      setIsMFARequired(false); // Assume not required when offline
+      setRequirementCached(true);
+      return;
+    }
 
     try {
       const required = await SupabaseMFAService.checkMFARequirement();

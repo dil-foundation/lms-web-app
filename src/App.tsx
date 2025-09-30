@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from "react";
+import React, { Suspense, lazy, useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,6 +16,11 @@ import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { SupabaseMFARequirement } from "@/components/auth/SupabaseMFARequirement";
 import { MFAProtectedRoute } from "@/components/auth/MFAProtectedRoute";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { setupOfflineRequestHandler } from "@/utils/offlineRequestHandler";
+import { offlineStateManager } from "@/utils/offlineStateManager";
+import { registerServiceWorker } from "@/utils/serviceWorker";
+import { ServiceWorkerUpdater } from "@/components/ServiceWorkerUpdater";
+import { initOfflineDatabase } from "@/services/offlineDatabase";
 
 
 // Component to handle session timeout and activity tracking
@@ -26,6 +31,9 @@ const SessionTimeoutTracker = () => {
 };
 
 const Home = lazy(() => import("./pages/Home"));
+const AboutUs = lazy(() => import("./pages/AboutUs"));
+const Features = lazy(() => import("./pages/Features"));
+const Contact = lazy(() => import("./pages/Contact"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const CourseBuilder = lazy(() => import("./pages/CourseBuilder"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -50,6 +58,47 @@ const queryClient = new QueryClient({
 });
 
 const AppContent = () => {
+  const [swRegistration, setSwRegistration] = useState<ServiceWorkerRegistration | undefined>();
+
+  // Setup global offline request handler and state manager on app initialization
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        // Setup offline infrastructure
+        setupOfflineRequestHandler();
+        offlineStateManager.setup();
+        
+        // Initialize offline database
+        try {
+          await initOfflineDatabase();
+          console.log('📦 App: Offline database initialized successfully');
+        } catch (dbError) {
+          console.error('❌ App: Failed to initialize offline database:', dbError);
+          // Continue with app initialization even if database fails
+        }
+        
+        // Register service worker for app asset caching
+        registerServiceWorker({
+          onSuccess: (registration) => {
+            console.log('🎯 App: Service worker registered successfully - app assets cached for offline use');
+            setSwRegistration(registration);
+          },
+          onUpdate: (registration) => {
+            console.log('🔄 App: New service worker available - app will update on next reload');
+            setSwRegistration(registration);
+          },
+          onOfflineReady: () => {
+            console.log('📱 App: App is ready for offline use');
+          }
+        });
+      } catch (error) {
+        console.error('❌ App: Failed to initialize offline features:', error);
+      }
+    };
+
+    initializeApp();
+  }, []);
+
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
@@ -79,6 +128,9 @@ const AppContent = () => {
                           <Routes>
                       {/* Public routes - no MFA requirement */}
                       <Route path="/" element={<Home />} />
+                      <Route path="/about" element={<AboutUs />} />
+                      <Route path="/features" element={<Features />} />
+                      <Route path="/contact" element={<Contact />} />
                       <Route path="/home-layout-2" element={<HomeLayout2 />} />
                       <Route path="/home-layout-3" element={<HomeLayout3 />} />
                       <Route path="/home-layout-4" element={<HomeLayout4 />} />
@@ -123,6 +175,10 @@ const AppContent = () => {
               </AILMSProvider>
             </AuthProvider>
           </BrowserRouter>
+          
+          {/* Service Worker Update Notification */}
+          <ServiceWorkerUpdater registration={swRegistration} />
+          
         </TooltipProvider>
       </QueryClientProvider>
     </ErrorBoundary>
