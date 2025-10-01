@@ -1,7 +1,24 @@
+import { memo } from 'react';
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Mail, Phone, MapPin, Globe, Sparkles } from 'lucide-react';
 import { APEX } from '@/components/ui/AIAssistant';
+
+const ContactCard = memo(({ icon: Icon, title, children }: { icon: any, title: string, children: React.ReactNode }) => (
+  <Card className="bg-card/80 backdrop-blur-sm border border-border/50 hover:shadow-2xl transition-all duration-500 rounded-3xl overflow-hidden">
+    <CardHeader className="text-center pb-6">
+      <div className="mx-auto mb-6 p-4 rounded-2xl bg-primary/10">
+        <Icon className="h-10 w-10 text-primary" />
+      </div>
+      <CardTitle className="text-2xl font-bold text-foreground">{title}</CardTitle>
+    </CardHeader>
+    <CardContent className="px-6 pb-8 text-center">
+      {children}
+    </CardContent>
+  </Card>
+));
+
+ContactCard.displayName = 'ContactCard';
 
 const Contact = () => {
   return (
@@ -41,76 +58,44 @@ const Contact = () => {
           <div className="container mx-auto max-w-5xl relative">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Main Office */}
-              <Card className="bg-card/80 backdrop-blur-sm border border-border/50 hover:shadow-2xl transition-all duration-500 rounded-3xl overflow-hidden">
-                <CardHeader className="text-center pb-6">
-                  <div className="mx-auto mb-6 p-4 rounded-2xl bg-primary/10">
-                    <MapPin className="h-10 w-10 text-primary" />
-                  </div>
-                  <CardTitle className="text-2xl font-bold text-foreground">Main Office</CardTitle>
-                </CardHeader>
-                <CardContent className="px-6 pb-8 text-center">
-                  <p className="text-muted-foreground text-lg leading-relaxed">
-                    8583 Irvine Center Drive #139<br />
-                    Irvine, CA 92618<br />
-                    United States
-                  </p>
-                </CardContent>
-              </Card>
+              <ContactCard icon={MapPin} title="Main Office">
+                <p className="text-muted-foreground text-lg leading-relaxed">
+                  8583 Irvine Center Drive #139<br />
+                  Irvine, CA 92618<br />
+                  United States
+                </p>
+              </ContactCard>
 
               {/* Phone */}
-              <Card className="bg-card/80 backdrop-blur-sm border border-border/50 hover:shadow-2xl transition-all duration-500 rounded-3xl overflow-hidden">
-                <CardHeader className="text-center pb-6">
-                  <div className="mx-auto mb-6 p-4 rounded-2xl bg-primary/10">
-                    <Phone className="h-10 w-10 text-primary" />
-                  </div>
-                  <CardTitle className="text-2xl font-bold text-foreground">Phone</CardTitle>
-                </CardHeader>
-                <CardContent className="px-6 pb-8 text-center">
-                  <p className="text-muted-foreground text-lg leading-relaxed">
-                    <a href="tel:+19494745303" className="hover:text-primary transition-colors">
-                      (949) 474-5303
-                    </a>
-                  </p>
-                </CardContent>
-              </Card>
+              <ContactCard icon={Phone} title="Phone">
+                <p className="text-muted-foreground text-lg leading-relaxed">
+                  <a href="tel:+19494745303" className="hover:text-primary transition-colors">
+                    (949) 474-5303
+                  </a>
+                </p>
+              </ContactCard>
 
               {/* Email */}
-              <Card className="bg-card/80 backdrop-blur-sm border border-border/50 hover:shadow-2xl transition-all duration-500 rounded-3xl overflow-hidden">
-                <CardHeader className="text-center pb-6">
-                  <div className="mx-auto mb-6 p-4 rounded-2xl bg-primary/10">
-                    <Mail className="h-10 w-10 text-primary" />
-                  </div>
-                  <CardTitle className="text-2xl font-bold text-foreground">Email</CardTitle>
-                </CardHeader>
-                <CardContent className="px-6 pb-8 text-center">
-                  <p className="text-muted-foreground text-lg leading-relaxed">
-                    <a href="mailto:office@dil.org" className="hover:text-primary transition-colors">
-                      office@dil.org
-                    </a>
-                  </p>
-                </CardContent>
-              </Card>
+              <ContactCard icon={Mail} title="Email">
+                <p className="text-muted-foreground text-lg leading-relaxed">
+                  <a href="mailto:office@dil.org" className="hover:text-primary transition-colors">
+                    office@dil.org
+                  </a>
+                </p>
+              </ContactCard>
 
               {/* Website */}
-              <Card className="bg-card/80 backdrop-blur-sm border border-border/50 hover:shadow-2xl transition-all duration-500 rounded-3xl overflow-hidden">
-                <CardHeader className="text-center pb-6">
-                  <div className="mx-auto mb-6 p-4 rounded-2xl bg-primary/10">
-                    <Globe className="h-10 w-10 text-primary" />
-                  </div>
-                  <CardTitle className="text-2xl font-bold text-foreground">Website</CardTitle>
-                </CardHeader>
-                <CardContent className="px-6 pb-8 text-center">
-                  <p className="text-muted-foreground text-lg leading-relaxed">
-                    <a href="https://www.dil.org" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
-                      www.dil.org
-                    </a>
-                    <br />
-                    <a href="https://www.dilpakistan.org" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors mt-2 inline-block">
-                      www.dilpakistan.org
-                    </a>
-                  </p>
-                </CardContent>
-              </Card>
+              <ContactCard icon={Globe} title="Website">
+                <p className="text-muted-foreground text-lg leading-relaxed">
+                  <a href="https://www.dil.org" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                    www.dil.org
+                  </a>
+                  <br />
+                  <a href="https://www.dilpakistan.org" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors mt-2 inline-block">
+                    www.dilpakistan.org
+                  </a>
+                </p>
+              </ContactCard>
             </div>
           </div>
         </section>
