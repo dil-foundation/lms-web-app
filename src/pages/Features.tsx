@@ -1,10 +1,10 @@
+import { memo } from 'react';
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Brain, MessageCircle, Globe, Award, Languages, Target, Sparkles, CheckCircle } from 'lucide-react';
 import { APEX } from '@/components/ui/AIAssistant';
 
-const Features = () => {
-  const features = [
+const features = [
     {
       icon: Brain,
       title: "AI-Powered Lessons",
@@ -77,8 +77,40 @@ const Features = () => {
       ],
       gradient: "from-[#1582B4] via-primary to-[#1582B4]/90"
     }
-  ];
+];
 
+const FeatureCard = memo(({ feature, index }: { feature: typeof features[0], index: number }) => (
+  <Card 
+    key={index}
+    className="bg-card/80 backdrop-blur-sm border border-border/50 hover:shadow-2xl transition-all duration-500 rounded-3xl overflow-hidden"
+  >
+    <CardHeader className="text-center pb-6">
+      <div className={`mx-auto mb-6 p-4 rounded-2xl bg-gradient-to-br ${feature.gradient}`}>
+        <feature.icon className="h-10 w-10 text-white" />
+      </div>
+      <CardTitle className="text-2xl font-bold text-foreground mb-3">
+        {feature.title}
+      </CardTitle>
+      <p className="text-muted-foreground text-base leading-relaxed">
+        {feature.description}
+      </p>
+    </CardHeader>
+    <CardContent className="px-6 pb-8">
+      <div className="space-y-3">
+        {feature.details.map((detail, idx) => (
+          <div key={idx} className="flex items-start gap-3">
+            <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+            <span className="text-muted-foreground text-sm">{detail}</span>
+          </div>
+        ))}
+      </div>
+    </CardContent>
+  </Card>
+));
+
+FeatureCard.displayName = 'FeatureCard';
+
+const Features = () => {
   return (
     <>
       <Header />
@@ -116,32 +148,7 @@ const Features = () => {
           <div className="container mx-auto max-w-7xl relative">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
               {features.map((feature, index) => (
-                <Card 
-                  key={index}
-                  className="bg-card/80 backdrop-blur-sm border border-border/50 hover:shadow-2xl transition-all duration-500 rounded-3xl overflow-hidden"
-                >
-                  <CardHeader className="text-center pb-6">
-                    <div className={`mx-auto mb-6 p-4 rounded-2xl bg-gradient-to-br ${feature.gradient}`}>
-                      <feature.icon className="h-10 w-10 text-white" />
-                    </div>
-                    <CardTitle className="text-2xl font-bold text-foreground mb-3">
-                      {feature.title}
-                    </CardTitle>
-                    <p className="text-muted-foreground text-base leading-relaxed">
-                      {feature.description}
-                    </p>
-                  </CardHeader>
-                  <CardContent className="px-6 pb-8">
-                    <div className="space-y-3">
-                      {feature.details.map((detail, idx) => (
-                        <div key={idx} className="flex items-start gap-3">
-                          <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                          <span className="text-muted-foreground text-sm">{detail}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+                <FeatureCard key={index} feature={feature} index={index} />
               ))}
             </div>
           </div>
