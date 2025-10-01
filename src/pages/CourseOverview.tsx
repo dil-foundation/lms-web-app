@@ -153,30 +153,33 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
     checkPaymentStatus();
   }, [courseId, user, isPreviewMode]);
 
-  // Handle payment success/cancel from URL params
+  // Handle payment success/cancel from URL params (run once on mount)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const paymentStatus = params.get('payment');
 
     if (paymentStatus === 'success') {
       toast.success("Payment successful!", {
-        description: "You now have access to the course. Redirecting..."
+        description: "You now have access to the course."
       });
       
-      // Remove query params and reload to show updated access
+      // Remove query params and re-check payment status
       setTimeout(() => {
         window.history.replaceState({}, '', window.location.pathname);
-        window.location.reload();
-      }, 2000);
+        // Trigger payment status re-check by setting a flag
+        setHasPaidForCourse(true);
+      }, 1500);
     } else if (paymentStatus === 'cancelled') {
       toast.error("Payment cancelled", {
         description: "You can try again when you're ready."
       });
       
       // Remove query params
-      window.history.replaceState({}, '', window.location.pathname);
+      setTimeout(() => {
+        window.history.replaceState({}, '', window.location.pathname);
+      }, 1000);
     }
-  }, []);
+  }, []); // Run only ONCE on mount to check URL params
 
   // Helper function to determine if a URL is a valid video
   const isValidVideoUrl = (url: string | null | undefined): boolean => {
