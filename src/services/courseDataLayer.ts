@@ -69,6 +69,7 @@ export interface CourseLessonData {
   completed?: boolean;
   progress?: number;
   lastAccessed?: Date;
+  metadata?: any; // For storing additional lesson metadata (e.g., sectionId, sectionTitle)
 }
 
 export interface CourseContentItemData {
@@ -611,7 +612,8 @@ export class CourseDataLayer {
       completed: lessonProgress?.completed || false,
       progress: lessonProgress?.progress || 0,
       lastAccessed: lessonProgress?.lastAccessed ? new Date(lessonProgress.lastAccessed) : undefined,
-      contentItems: await this.transformOfflineContentItems(lesson)
+      contentItems: await this.transformOfflineContentItems(lesson),
+      metadata: lesson.metadata // Preserve metadata for section information
     };
   }
 
