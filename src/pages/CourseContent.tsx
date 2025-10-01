@@ -1367,7 +1367,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       if (!isCurrentlyOnline && actualCourseId) {
         // User went offline, check if current course is available offline
         try {
-          const isCourseAvailableOffline = await dataLayer.utils.isCourseAvailableOffline(actualCourseId);
+          const isCourseAvailableOffline = await dataLayer.isCourseAvailableOffline(actualCourseId);
           console.log('📦 Course offline availability:', isCourseAvailableOffline);
           
           if (isCourseAvailableOffline) {
