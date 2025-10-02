@@ -46,8 +46,8 @@ self.addEventListener('install', (event) => {
       })
       .then(() => {
         console.log('✅ Service Worker: Critical assets cached');
-        // Force the waiting service worker to become the active service worker
-        return self.skipWaiting();
+        // Don't automatically skipWaiting - let the user decide when to update
+        // This prevents infinite reload loops during development
       })
       .catch((error) => {
         console.error('❌ Service Worker: Failed to cache critical assets:', error);
@@ -73,8 +73,8 @@ self.addEventListener('activate', (event) => {
       })
       .then(() => {
         console.log('✅ Service Worker: Activated and old caches cleaned');
-        // Take control of all clients immediately
-        return self.clients.claim();
+        // Don't automatically claim clients - this prevents reload loops
+        // The ServiceWorkerUpdater component will handle controlled updates
       })
   );
 });
@@ -208,8 +208,11 @@ function shouldCacheAsset(url) {
 // Handle messages from the main thread
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
-    console.log('📨 Service Worker: Received SKIP_WAITING message');
-    self.skipWaiting();
+    console.log('📨 Service Worker: Received SKIP_WAITING message - updating now');
+    // When user explicitly requests update, skip waiting and claim clients
+    self.skipWaiting().then(() => {
+      return self.clients.claim();
+    });
   }
   
   if (event.data && event.data.type === 'GET_VERSION') {
