@@ -284,13 +284,15 @@ export const useNetworkStatus = () => {
       connection.addEventListener('change', handleConnectionChange);
     }
 
-    // Periodic connectivity check (every 30 seconds to catch false positives from navigator.onLine)
-    // IMPORTANT: Always run the test regardless of navigator.onLine to catch cases where
-    // navigator.onLine incorrectly reports true when there's no actual internet
-    intervalRef.current = setInterval(() => {
-      console.log('⏰ Network: Periodic connectivity check...');
-      updateNetworkStatus(false); // Always perform full connectivity test
-    }, 30000); // Check every 30 seconds
+    // Periodic connectivity check DISABLED to prevent unnecessary network requests
+    // The online/offline event listeners and connection change events are sufficient
+    // for detecting network status changes in modern browsers
+    // 
+    // If needed, users can manually refresh network status via refreshNetworkStatus()
+    // intervalRef.current = setInterval(() => {
+    //   console.log('⏰ Network: Periodic connectivity check...');
+    //   updateNetworkStatus(false);
+    // }, 30000);
 
     // Cleanup
     return () => {
