@@ -153,8 +153,13 @@ serve(async (req) => {
 
     // Send notification email (optional)
     try {
-      const { data: emailData, error: emailError } = await supabaseAdmin.functions.invoke('send-email', {
-        body: {
+      const emailResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+        },
+        body: JSON.stringify({
           to: payment.user?.email || payment.customer_email,
           subject: 'Refund Processed',
           html: `
@@ -165,13 +170,13 @@ serve(async (req) => {
             <p>The refund should appear in your account within 5-10 business days.</p>
             ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ''}
           `,
-        }
+        }),
       });
 
-      if (emailError) {
-        console.error('⚠️ [Process Refund] Error sending notification email:', emailError);
-      } else {
+      if (emailResponse.ok) {
         console.log('✅ [Process Refund] Notification email sent');
+      } else {
+        console.error('⚠️ [Process Refund] Error sending notification email:', await emailResponse.text());
       }
     } catch (emailError) {
       console.error('⚠️ [Process Refund] Error sending notification email:', emailError);
