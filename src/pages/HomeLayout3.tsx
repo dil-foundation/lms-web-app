@@ -1,10 +1,22 @@
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Brain, MessageCircle, Globe, Award, Languages, Target, ArrowRight, Sparkles, BookOpen, Users, Zap, Play } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const HomeLayout3 = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const handleStartLearning = () => {
+    if (user) {
+      navigate('/dashboard');
+    } else {
+      navigate('/auth');
+    }
+  };
+
   return (
     <>
       <Header />
@@ -39,12 +51,14 @@ const HomeLayout3 = () => {
                 cultural context.
               </p>
               <div className="flex flex-col sm:flex-row gap-6 justify-center">
-                <Link to="/auth">
-                  <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-lg px-10 py-6 rounded-full hover:scale-110 transition-all duration-500 shadow-2xl hover:shadow-primary/25 group">
-                    Start Learning
-                    <ArrowRight className="ml-3 h-6 w-6 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </Link>
+                <Button 
+                  size="lg" 
+                  onClick={handleStartLearning}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-lg px-10 py-6 rounded-full hover:scale-110 transition-all duration-500 shadow-2xl hover:shadow-primary/25 group"
+                >
+                  Start Learning
+                  <ArrowRight className="ml-3 h-6 w-6 group-hover:translate-x-1 transition-transform" />
+                </Button>
                 <Button variant="outline" size="lg" className="border-2 border-primary text-primary hover:bg-primary/10 text-lg px-10 py-6 rounded-full hover:scale-110 transition-all duration-500 group">
                   <Play className="mr-3 h-6 w-6 group-hover:scale-110 transition-transform" />
                   Watch Demo

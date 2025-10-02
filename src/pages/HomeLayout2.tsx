@@ -1,10 +1,22 @@
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Brain, MessageCircle, Globe, Award, Languages, Target, ArrowRight, Sparkles, Play } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const HomeLayout2 = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const handleStartLearning = () => {
+    if (user) {
+      navigate('/dashboard');
+    } else {
+      navigate('/auth');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
@@ -28,12 +40,14 @@ const HomeLayout2 = () => {
                   cultural context.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <Link to="/auth">
-                    <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-lg px-8 py-4 rounded-2xl hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-primary/25">
-                      Start Learning
-                      <ArrowRight className="ml-2 h-5 w-5" />
-                    </Button>
-                  </Link>
+                  <Button 
+                    size="lg" 
+                    onClick={handleStartLearning}
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-lg px-8 py-4 rounded-2xl hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-primary/25"
+                  >
+                    Start Learning
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
                   <Button variant="outline" size="lg" className="border-2 border-primary text-primary hover:bg-primary/10 text-lg px-8 py-4 rounded-2xl hover:scale-105 transition-all duration-300 group">
                     <Play className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
                     Watch Demo
@@ -270,15 +284,14 @@ const HomeLayout2 = () => {
               <p className="text-xl md:text-2xl text-primary-foreground/90 mb-12 max-w-4xl mx-auto">
                 Join thousands of learners who have achieved fluency with AI Tutor
               </p>
-              <Link to="/auth">
               <Button 
-  size="lg" 
-  className="bg-white text-primary hover:bg-gray-200 font-bold text-xl px-12 py-6 rounded-2xl hover:scale-110 transition-all duration-300 shadow-2xl"
->
-  Get Started Free
-  <ArrowRight className="ml-3 h-6 w-6" />
-</Button>
-              </Link>
+                size="lg" 
+                onClick={handleStartLearning}
+                className="bg-white text-primary hover:bg-gray-200 font-bold text-xl px-12 py-6 rounded-2xl hover:scale-110 transition-all duration-300 shadow-2xl"
+              >
+                Get Started Free
+                <ArrowRight className="ml-3 h-6 w-6" />
+              </Button>
             </div>
           </div>
         </div>
