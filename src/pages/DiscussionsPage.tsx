@@ -132,6 +132,20 @@ const roles = [
   { value: 'admin', label: 'Admins', disabled: true },
 ];
 
+// Helper function to get creator display info
+const getCreatorInfo = (discussion: any) => {
+  if (!discussion.creator_first_name && !discussion.creator_last_name) {
+    return {
+      fullName: 'Deleted User',
+      initials: 'DU'
+    };
+  }
+  return {
+    fullName: `${discussion.creator_first_name || ''} ${discussion.creator_last_name || ''}`.trim(),
+    initials: `${discussion.creator_first_name?.[0] || ''}${discussion.creator_last_name?.[0] || ''}`.toUpperCase()
+  };
+};
+
 export default function DiscussionsPage() {
   const [isNewDiscussionOpen, setIsNewDiscussionOpen] = useState(false);
   const [editingDiscussion, setEditingDiscussion] = useState<any | null>(null);
@@ -705,7 +719,9 @@ export default function DiscussionsPage() {
             {/* Discussion Display based on selected view */}
             {preferences.discussionView === 'card' && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {discussions.map((discussion) => (
+            {discussions.map((discussion) => {
+              const creatorInfo = getCreatorInfo(discussion);
+              return (
               <Card 
                 key={discussion.id} 
                 className="group relative bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/60 dark:border-gray-700/60 hover:border-gray-300/80 dark:hover:border-gray-600/80 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 rounded-3xl overflow-hidden backdrop-blur-sm cursor-pointer hover:-translate-y-1"
@@ -722,7 +738,7 @@ export default function DiscussionsPage() {
                       <Avatar className="h-10 w-10 ring-2 ring-primary/20 group-hover:ring-primary/40 transition-all duration-300">
                         <AvatarImage src={undefined} />
                         <AvatarFallback className="bg-gradient-to-br from-primary/20 via-primary/30 to-primary/40 text-primary font-semibold text-sm shadow-lg">
-                          {discussion.creator_first_name?.[0]}{discussion.creator_last_name?.[0]}
+                          {creatorInfo.initials}
                         </AvatarFallback>
                       </Avatar>
                     </div>
@@ -735,7 +751,7 @@ export default function DiscussionsPage() {
                       
                       {/* Author */}
                       <div className="text-sm text-muted-foreground mb-2">
-                        <span className="font-semibold text-gray-700 dark:text-gray-300">{discussion.creator_first_name} {discussion.creator_last_name}</span>
+                        <span className="font-semibold text-gray-700 dark:text-gray-300">{creatorInfo.fullName}</span>
                       </div>
                     </div>
                   </div>
@@ -838,7 +854,8 @@ export default function DiscussionsPage() {
                   )}
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
               </div>
             )}
 

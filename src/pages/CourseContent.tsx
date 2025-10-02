@@ -61,6 +61,7 @@ import { cn } from '@/lib/utils';
 import AccessLogService from '@/services/accessLogService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { getCourseDataLayer } from '@/services/courseDataLayer';
+import StripeService from '@/services/stripeService';
 
 interface CourseContentProps {
   courseId?: string;
@@ -244,6 +245,8 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
   const lastUpdateTimeRef = useRef(0);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
+  const [isStripeEnabled, setIsStripeEnabled] = useState(false);
+  const [isCheckingAccess, setIsCheckingAccess] = useState(true);
   
   // Data layer service
   const dataLayer = getCourseDataLayer();
@@ -1326,6 +1329,99 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     fetchCourseData();
   }, [actualCourseId, user]);
 
+  // Payment Access Control - Check if user has paid for paid courses
+  useEffect(() => {
+    const checkPaymentAccess = async () => {
+      if (!actualCourseId || !user || !course) {
+        setIsCheckingAccess(false);
+        return;
+      }
+
+      // Skip payment check for admins and teachers
+      if (profile?.role === 'admin' || profile?.role === 'teacher') {
+        console.log('🔓 [Access Control] Admin/Teacher access granted');
+        setIsCheckingAccess(false);
+        return;
+      }
+
+      try {
+        console.log('🔒 [Access Control] Checking payment access for course:', actualCourseId);
+        
+        // Check if Stripe is enabled
+        let { data: stripeData, error: stripeError } = await supabase
+          .from('integrations')
+          .select('status, is_configured')
+          .eq('name', 'Stripe')
+          .single();
+        
+        // If not found, try lowercase
+        if (stripeError && stripeError.code === 'PGRST116') {
+          const result = await supabase
+            .from('integrations')
+            .select('status, is_configured')
+            .eq('name', 'stripe')
+            .single();
+          stripeData = result.data;
+          stripeError = result.error;
+        }
+        
+        const isStripeActive = !stripeError && stripeData && stripeData.status === 'enabled' && stripeData.is_configured;
+        setIsStripeEnabled(isStripeActive);
+        
+        console.log('💳 [Access Control] Stripe enabled:', isStripeActive);
+        
+        // Fetch course payment details from database
+        const { data: courseData, error: courseError } = await supabase
+          .from('courses')
+          .select('payment_type, course_price')
+          .eq('id', actualCourseId)
+          .single();
+        
+        if (courseError) {
+          console.error('❌ [Access Control] Error fetching course payment info:', courseError);
+          setIsCheckingAccess(false);
+          return;
+        }
+        
+        const isCoursePaid = isStripeActive && courseData.payment_type === 'paid' && courseData.course_price > 0;
+        
+        console.log('💰 [Access Control] Course payment info:', {
+          payment_type: courseData.payment_type,
+          course_price: courseData.course_price,
+          isCoursePaid
+        });
+        
+        // If course is paid, check if user has paid
+        if (isCoursePaid) {
+          console.log('🔍 [Access Control] Course is paid, verifying user payment...');
+          const hasPaid = await StripeService.hasUserPaidForCourse(actualCourseId);
+          
+          console.log('💵 [Access Control] User payment status:', hasPaid);
+          
+          if (!hasPaid) {
+            console.warn('⛔ [Access Control] User has not paid for this course. Redirecting to overview page.');
+            toast.error('Payment Required', {
+              description: 'Please purchase this course to access the content.'
+            });
+            navigate(`/dashboard/courses/${actualCourseId}`);
+            return;
+          }
+          
+          console.log('✅ [Access Control] Payment verified. Access granted.');
+        } else {
+          console.log('✅ [Access Control] Course is free. Access granted.');
+        }
+        
+        setIsCheckingAccess(false);
+      } catch (error) {
+        console.error('❌ [Access Control] Error checking payment access:', error);
+        setIsCheckingAccess(false);
+      }
+    };
+
+    checkPaymentAccess();
+  }, [actualCourseId, user, course, profile, navigate]);
+
   const handleLoadedMetadata = useCallback(() => {
     const videoNode = videoRef.current;
     if (videoNode && currentContentItem && currentContentItem.progressSeconds > 0 && videoNode.duration > currentContentItem.progressSeconds) {
@@ -2224,7 +2320,14 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     </div>
   );
 
+  const AccessCheckingSkeleton = () => (
+    <div className="flex h-screen bg-background">
+      <ContentLoader message="Verifying access..." />
+    </div>
+  );
+
   if (isLoading) return <PageSkeleton />;
+  if (isCheckingAccess) return <AccessCheckingSkeleton />;
   if (error) return (
     <div className="flex flex-col items-center justify-center h-full text-center p-8">
       <h2 className="text-xl font-semibold text-destructive mb-2">Failed to load course</h2>

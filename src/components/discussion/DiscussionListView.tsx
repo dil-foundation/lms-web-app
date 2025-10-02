@@ -21,13 +21,27 @@ interface Discussion {
   course_title?: string;
   creator_first_name?: string;
   creator_last_name?: string;
-  creator_id: string;
+  creator_id: string | null;
   created_at: string;
   replies_count: number;
   likes_count: number;
   is_pinned?: boolean;
   last_activity?: string;
 }
+
+// Helper function to get creator display info
+const getCreatorInfo = (discussion: Discussion) => {
+  if (!discussion.creator_first_name && !discussion.creator_last_name) {
+    return {
+      fullName: 'Deleted User',
+      initials: 'DU'
+    };
+  }
+  return {
+    fullName: `${discussion.creator_first_name || ''} ${discussion.creator_last_name || ''}`.trim(),
+    initials: `${discussion.creator_first_name?.[0] || ''}${discussion.creator_last_name?.[0] || ''}`.toUpperCase()
+  };
+};
 
 interface DiscussionListViewProps {
   discussions: Discussion[];
@@ -87,7 +101,9 @@ export const DiscussionListView: React.FC<DiscussionListViewProps> = ({
   return (
     <div className={className}>
       <div className="space-y-2">
-        {discussions.map((discussion) => (
+        {discussions.map((discussion) => {
+          const creatorInfo = getCreatorInfo(discussion);
+          return (
           <Card
             key={discussion.id}
             className="group cursor-pointer hover:shadow-md transition-all duration-200 hover:bg-muted/50 border border-border/50 shadow-sm bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-border dark:hover:border-border border-l-4 border-l-transparent hover:border-l-primary"
@@ -100,7 +116,7 @@ export const DiscussionListView: React.FC<DiscussionListViewProps> = ({
                   <Avatar className="h-10 w-10">
                     <AvatarImage src={undefined} />
                     <AvatarFallback className="bg-primary/20 text-primary">
-                      {discussion.creator_first_name?.[0]}{discussion.creator_last_name?.[0]}
+                      {creatorInfo.initials}
                     </AvatarFallback>
                   </Avatar>
                 </div>
@@ -145,7 +161,7 @@ export const DiscussionListView: React.FC<DiscussionListViewProps> = ({
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <User className="w-4 h-4" />
-                          <span>{discussion.creator_first_name} {discussion.creator_last_name}</span>
+                          <span>{creatorInfo.fullName}</span>
                         </div>
                         
                         <div className="flex items-center gap-1">
@@ -226,7 +242,8 @@ export const DiscussionListView: React.FC<DiscussionListViewProps> = ({
               </div>
             </CardContent>
           </Card>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

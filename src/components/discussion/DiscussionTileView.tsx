@@ -14,12 +14,26 @@ interface Discussion {
   course_title?: string;
   creator_first_name?: string;
   creator_last_name?: string;
-  creator_id: string;
+  creator_id: string | null;
   created_at: string;
   replies_count: number;
   likes_count: number;
   is_pinned?: boolean;
 }
+
+// Helper function to get creator display info
+const getCreatorInfo = (discussion: Discussion) => {
+  if (!discussion.creator_first_name && !discussion.creator_last_name) {
+    return {
+      fullName: 'Deleted User',
+      initials: 'DU'
+    };
+  }
+  return {
+    fullName: `${discussion.creator_first_name || ''} ${discussion.creator_last_name || ''}`.trim(),
+    initials: `${discussion.creator_first_name?.[0] || ''}${discussion.creator_last_name?.[0] || ''}`.toUpperCase()
+  };
+};
 
 interface DiscussionTileViewProps {
   discussions: Discussion[];
@@ -70,7 +84,9 @@ export const DiscussionTileView: React.FC<DiscussionTileViewProps> = ({
   return (
     <div className={className}>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-        {discussions.map((discussion) => (
+        {discussions.map((discussion) => {
+          const creatorInfo = getCreatorInfo(discussion);
+          return (
           <Card
             key={discussion.id}
             className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-border/50 shadow-sm bg-card/95 backdrop-blur-sm dark:bg-card dark:border-border/60 hover:border-primary/30 dark:hover:border-primary/30 h-40 flex flex-col overflow-hidden"
@@ -103,12 +119,12 @@ export const DiscussionTileView: React.FC<DiscussionTileViewProps> = ({
                 <Avatar className="h-5 w-5">
                   <AvatarImage src={undefined} />
                   <AvatarFallback className="text-xs bg-primary/20 text-primary">
-                    {discussion.creator_first_name?.[0]}{discussion.creator_last_name?.[0]}
+                    {creatorInfo.initials}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium text-foreground truncate">
-                    {discussion.creator_first_name} {discussion.creator_last_name}
+                    {creatorInfo.fullName}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {format(new Date(discussion.created_at), 'MMM d')}
@@ -164,7 +180,8 @@ export const DiscussionTileView: React.FC<DiscussionTileViewProps> = ({
               </div>
             </CardContent>
           </Card>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
