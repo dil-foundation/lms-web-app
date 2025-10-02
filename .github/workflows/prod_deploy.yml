@@ -56,6 +56,7 @@ jobs:
           VITE_OPENAI_API_KEY: ${{ secrets.PROD_VITE_OPENAI_API_KEY }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.PROD_VITE_SUPABASE_ANON_KEY }}
           VITE_SUPABASE_URL: ${{ secrets.PROD_VITE_SUPABASE_URL }}
+          VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.PROD_VITE_STRIPE_PUBLISHABLE_KEY }}
 
       - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
