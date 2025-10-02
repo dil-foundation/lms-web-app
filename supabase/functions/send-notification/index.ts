@@ -29,7 +29,8 @@ type NotificationType =
   | "class_updated"
   | "class_deleted"
   | "added_to_class"
-  | "removed_from_class";
+  | "removed_from_class"
+  | "payment_refunded";
 
 interface NotificationPayload {
   type: NotificationType;

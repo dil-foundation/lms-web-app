@@ -41,6 +41,7 @@ import { OfflineLearning as StudentOfflineLearning } from '@/components/student/
 const UsersManagement = lazy(() => import('@/components/admin/UsersManagement').then(module => ({ default: module.UsersManagement })));
 const ClassManagement = lazy(() => import('@/components/admin/ClassManagement'));
 const CourseManagement = lazy(() => import('@/components/admin/CourseManagement'));
+const OrdersManagement = lazy(() => import('@/components/admin/OrdersManagement'));
 const ReportsAnalytics = lazy(() => import('@/components/admin/ReportsAnalytics').then(module => ({ default: module.ReportsAnalytics })));
 const APEXAdmin = lazy(() => import('@/components/admin/AIAssistantAdmin').then(module => ({ default: module.APEXAdmin })));
 const IRIS = lazy(() => import('@/components/admin/AIAdminAssistant').then(module => ({ default: module.IRIS })));
@@ -459,6 +460,7 @@ const Dashboard = () => {
                           <Route path="/classes" element={<ClassManagement />} />
                           <Route path="/courses" element={<CourseManagement />} />
                           <Route path="/course-categories" element={<CourseCategories />} />
+                          <Route path="/orders" element={<OrdersManagement />} />
                           <Route path="/courses/builder/:courseId" element={<CourseBuilder />} />
                           <Route path="/reports" element={<ReportsOverview />} />
                           <Route path="/observation-reports" element={<ObservationReports />} />
