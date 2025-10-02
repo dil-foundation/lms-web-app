@@ -16,6 +16,7 @@ interface ViewPreferences {
   multitenancyView: ViewMode;
   observationReportsView: ViewMode;
   courseCategoriesView: ViewMode;
+  ordersView: ViewMode;
 }
 
 interface ViewPreferencesContextType {
@@ -33,6 +34,7 @@ interface ViewPreferencesContextType {
   setMultitenancyView: (view: ViewMode) => void;
   setObservationReportsView: (view: ViewMode) => void;
   setCourseCategoriesView: (view: ViewMode) => void;
+  setOrdersView: (view: ViewMode) => void;
   resetPreferences: () => void;
 }
 
@@ -49,7 +51,8 @@ const defaultPreferences: ViewPreferences = {
   teacherClassView: 'card',
   multitenancyView: 'list',
   observationReportsView: 'card',
-  courseCategoriesView: 'card'
+  courseCategoriesView: 'card',
+  ordersView: 'card'
 };
 
 const ViewPreferencesContext = createContext<ViewPreferencesContextType | undefined>(undefined);
@@ -137,6 +140,10 @@ export const ViewPreferencesProvider: React.FC<ViewPreferencesProviderProps> = (
     setPreferences(prev => ({ ...prev, courseCategoriesView: view }));
   };
 
+  const setOrdersView = (view: ViewMode) => {
+    setPreferences(prev => ({ ...prev, ordersView: view }));
+  };
+
   const resetPreferences = () => {
     setPreferences(defaultPreferences);
   };
@@ -156,6 +163,7 @@ export const ViewPreferencesProvider: React.FC<ViewPreferencesProviderProps> = (
     setMultitenancyView,
     setObservationReportsView,
     setCourseCategoriesView,
+    setOrdersView,
     resetPreferences
   };
 

@@ -226,6 +226,35 @@ serve(async (req) => {
             })
             console.log('✅ [Webhook] In-app notification sent');
 
+            // Send push notification to student
+            try {
+              const amountPaid = (session.amount_total || 0) / 100;
+              const { data: notifData, error: notifError } = await supabaseClient.functions.invoke('send-notification', {
+                body: {
+                  type: 'course_access_granted',
+                  title: 'Course Purchase Successful! 🎉',
+                  body: `You now have access to "${course.title}". Start learning now!`,
+                  data: {
+                    course_id: courseId,
+                    course_title: course.title,
+                    amount_paid: amountPaid.toString(),
+                    transaction_id: session.id,
+                    action_url: `/dashboard/courses/${courseId}/content`,
+                  },
+                  targetUsers: [userId],
+                }
+              });
+
+              if (notifError) {
+                console.error('⚠️ [Webhook] Error sending push notification:', notifError);
+              } else {
+                console.log('✅ [Webhook] Push notification sent to student for course purchase');
+              }
+            } catch (notificationError) {
+              console.error('⚠️ [Webhook] Error sending push notification:', notificationError);
+              // Don't throw error - notification is optional
+            }
+
             // Send email confirmation
             if (userProfile?.email) {
               try {
@@ -337,33 +366,23 @@ serve(async (req) => {
                 try {
                   console.log('📧 [Webhook] Calling send-email function...');
                   
-                  const supabaseUrl = Deno.env.get('SUPABASE_URL');
-                  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-                  
-                  const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'Authorization': `Bearer ${serviceRoleKey}`,
-                    },
-                    body: JSON.stringify({
+                  const { data: emailData, error: emailError } = await supabaseClient.functions.invoke('send-email', {
+                    body: {
                       to: userProfile.email,
                       subject: `Payment Confirmed - ${course.title}`,
                       html: emailHtml,
                       from: noReplyEmail,
                       fromName: appName,
-                    }),
+                    }
                   });
 
-                  if (!emailResponse.ok) {
-                    const errorData = await emailResponse.text();
-                    console.error('❌ [Webhook] Email service error:', errorData);
+                  if (emailError) {
+                    console.error('❌ [Webhook] Email service error:', emailError);
                   } else {
-                    const result = await emailResponse.json();
-                    console.log('✅ [Webhook] Email sent successfully:', result);
+                    console.log('✅ [Webhook] Email sent successfully:', emailData);
                   }
                 } catch (emailSendError) {
-                  console.error('❌ [Webhook] Failed to send email:', emailSendError.message);
+                  console.error('❌ [Webhook] Failed to send email:', emailSendError);
                   // Don't fail the webhook if email fails
                 }
               } catch (emailError) {
@@ -423,6 +442,17 @@ serve(async (req) => {
         const charge = event.data.object as Stripe.Charge
         console.log('Charge refunded:', charge.id)
 
+        // Get payment details for notification
+        const { data: payment } = await supabaseClient
+          .from('course_payments')
+          .select(`
+            *,
+            user:profiles(first_name, last_name, email),
+            course:courses(title)
+          `)
+          .eq('stripe_payment_intent_id', charge.payment_intent as string)
+          .single()
+
         // Update payment record to refunded
         await supabaseClient
           .from('course_payments')
@@ -432,8 +462,37 @@ serve(async (req) => {
           })
           .eq('stripe_payment_intent_id', charge.payment_intent as string)
 
-        // Note: You might want to revoke course access here
-        // or mark it differently in your course_members table
+        // Send push notification to student
+        if (payment) {
+          try {
+            const { data: notifData, error: notifError } = await supabaseClient.functions.invoke('send-notification', {
+              body: {
+                type: 'payment_refunded',
+                title: 'Refund Processed',
+                body: `Your refund of $${(payment.amount / 100).toFixed(2)} for ${payment.course?.title || 'a course'} has been processed.`,
+                data: {
+                  refund_id: charge.refunds?.data?.[0]?.id || 'unknown',
+                  amount: payment.amount.toString(),
+                  course_id: payment.course_id,
+                  course_title: payment.course?.title || '',
+                  payment_id: payment.id,
+                },
+                targetUsers: [payment.user_id],
+              }
+            });
+
+            if (notifError) {
+              console.error('⚠️ [Webhook] Error sending push notification:', notifError);
+            } else {
+              console.log('✅ [Webhook] Push notification sent to student for refund');
+            }
+          } catch (notificationError) {
+            console.error('⚠️ [Webhook] Error sending push notification:', notificationError);
+            // Don't throw error - notification is optional
+          }
+        }
+
+        // Note: Course access is intentionally NOT revoked to allow re-purchase
 
         break
       }

@@ -4,7 +4,7 @@
 -- Create course_payments table
 CREATE TABLE IF NOT EXISTS public.course_payments (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
     course_id UUID NOT NULL REFERENCES public.courses(id) ON DELETE CASCADE,
     stripe_session_id TEXT UNIQUE NOT NULL,
     stripe_payment_intent_id TEXT,
