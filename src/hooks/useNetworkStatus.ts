@@ -247,14 +247,9 @@ export const useNetworkStatus = () => {
 
   // Set up event listeners and periodic checks
   useEffect(() => {
-    // Initial check - skip connectivity test for faster startup
+    // Initial check - use basic navigator.onLine for fast startup
+    // Event listeners will handle any subsequent changes
     updateNetworkStatus(true);
-
-    // Follow-up check after 2 seconds to verify actual connectivity
-    const initialCheckTimeout = setTimeout(() => {
-      console.log('🔍 Network: Performing initial connectivity verification...');
-      updateNetworkStatus(false);
-    }, 2000);
 
     // Listen to online/offline events
     const handleOnline = () => {
@@ -309,10 +304,6 @@ export const useNetworkStatus = () => {
       
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
-      }
-      
-      if (initialCheckTimeout) {
-        clearTimeout(initialCheckTimeout);
       }
     };
   }, [updateNetworkStatus, refreshNetworkStatus]);
