@@ -34,11 +34,12 @@ import {
   CreditCard,
   Lock
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { ContentLoader } from '@/components/ContentLoader';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import StripeService from '@/services/stripeService';
 
 // This is a subset of the CourseData from CourseBuilder.
 // In a real app, this might live in a shared types file.
@@ -80,15 +81,18 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
   const [error, setError] = useState<string | null>(null);
   const [isStripeEnabled, setIsStripeEnabled] = useState(false);
   const [originalCourseData, setOriginalCourseData] = useState<any>(null);
+  const [hasPaidForCourse, setHasPaidForCourse] = useState(false);
+  const [isCheckingPayment, setIsCheckingPayment] = useState(false);
+  const hasProcessedStripeRef = useRef(false); // Prevent infinite re-processing
   const { user } = useAuth();
 
   const courseId = propCourseId || paramId;
 
-  // Check Stripe integration status
+  // Check Stripe integration status ONCE on mount
   useEffect(() => {
     const checkStripeIntegration = async () => {
       try {
-        console.log('Checking Stripe integration...');
+        console.log('🔵 [Stripe Check] Checking Stripe integration status...');
         
         // Try both 'Stripe' and 'stripe' to handle case sensitivity
         let { data, error } = await supabase
@@ -99,7 +103,6 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
         
         // If not found, try lowercase
         if (error && error.code === 'PGRST116') {
-          console.log('Trying lowercase "stripe"...');
           const result = await supabase
             .from('integrations')
             .select('status, is_configured')
@@ -109,43 +112,74 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
           error = result.error;
         }
         
-        console.log('Stripe integration data:', data);
-        console.log('Stripe integration error:', error);
-        
         if (!error && data) {
           const isEnabled = data.status === 'enabled' && data.is_configured;
-          console.log('Stripe integration data:', data);
-          console.log('Stripe enabled:', isEnabled);
-          console.log('Status:', data.status, 'Configured:', data.is_configured);
+          console.log('✅ [Stripe Check] Stripe enabled:', isEnabled, '| Status:', data.status, '| Configured:', data.is_configured);
           setIsStripeEnabled(isEnabled);
         } else {
-          console.log('Stripe integration not found or error occurred');
-          console.log('Error details:', error);
+          console.log('❌ [Stripe Check] Stripe not enabled or error:', error?.message);
           setIsStripeEnabled(false);
         }
       } catch (error) {
-        console.error('Error checking Stripe integration:', error);
+        console.error('❌ [Stripe Check] Error checking Stripe integration:', error);
         setIsStripeEnabled(false);
       }
     };
     
     checkStripeIntegration();
-  }, []);
+  }, []); // Run ONCE on mount
 
-  // Debug logging for Stripe and payment status
+  // Debug logging for Stripe and payment status (REMOVED - causing excessive logs)
+
+  // Check if user has paid for the course
   useEffect(() => {
-    console.log('Stripe and payment status changed:', {
-      isStripeEnabled,
-      coursePayment: course?.payment,
-      shouldShowPaymentButton: isStripeEnabled && course?.payment?.isPaid,
-      paymentDetails: course?.payment ? {
-        type: course.payment.type,
-        price: course.payment.price,
-        priceFormatted: course.payment.priceFormatted,
-        isPaid: course.payment.isPaid
-      } : 'No payment data'
-    });
-  }, [isStripeEnabled, course?.payment]);
+    const checkPaymentStatus = async () => {
+      if (!courseId || !user || isPreviewMode) {
+        console.log('💳 [Payment Check] Skipping payment check:', { courseId: !!courseId, user: !!user, isPreviewMode });
+        return;
+      }
+
+      try {
+        console.log('💳 [Payment Check] Checking if user has paid for course:', courseId);
+        const hasPaid = await StripeService.hasUserPaidForCourse(courseId);
+        setHasPaidForCourse(hasPaid);
+        
+        console.log(hasPaid ? '✅ [Payment Check] User has paid' : '⏳ [Payment Check] User has not paid');
+      } catch (error) {
+        console.error('❌ [Payment Check] Error checking payment status:', error);
+      }
+    };
+
+    checkPaymentStatus();
+  }, [courseId, user, isPreviewMode]);
+
+  // Handle payment success/cancel from URL params (run once on mount)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const paymentStatus = params.get('payment');
+
+    if (paymentStatus === 'success') {
+      toast.success("Payment successful!", {
+        description: "You now have access to the course."
+      });
+      
+      // Remove query params and re-check payment status
+      setTimeout(() => {
+        window.history.replaceState({}, '', window.location.pathname);
+        // Trigger payment status re-check by setting a flag
+        setHasPaidForCourse(true);
+      }, 1500);
+    } else if (paymentStatus === 'cancelled') {
+      toast.error("Payment cancelled", {
+        description: "You can try again when you're ready."
+      });
+      
+      // Remove query params
+      setTimeout(() => {
+        window.history.replaceState({}, '', window.location.pathname);
+      }, 1000);
+    }
+  }, []); // Run only ONCE on mount to check URL params
 
   // Helper function to determine if a URL is a valid video
   const isValidVideoUrl = (url: string | null | undefined): boolean => {
@@ -284,16 +318,6 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
         const priceFormatted = stripeEnabled && data.course_price ? `$${(data.course_price / 100).toFixed(2)}` : 'Free';
         const isPaid = stripeEnabled && data.payment_type === 'paid' && (data.course_price || 0) > 0;
         
-        console.log('Payment calculation in mapDataToCourse:', {
-          stripeEnabled,
-          rawPaymentType: data.payment_type,
-          rawCoursePrice: data.course_price,
-          calculatedType: paymentType,
-          calculatedPrice: price,
-          calculatedPriceFormatted: priceFormatted,
-          calculatedIsPaid: isPaid
-        });
-        
         return {
           type: paymentType,
           price: price,
@@ -426,18 +450,20 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
               data.image = signedUrlData.signedUrl;
             }
           }
-          console.log('Course data payment info:', {
+          
+          console.log('📦 [Course Data] Loaded course:', {
+            id: data.id,
+            title: data.title,
             payment_type: data.payment_type,
             course_price: data.course_price,
-            isStripeEnabled: isStripeEnabled
+            stripeEnabled: isStripeEnabled
           });
           
           // Store original course data for re-processing
-          console.log('Storing original course data:', { payment_type: data.payment_type, course_price: data.course_price });
           setOriginalCourseData({ data, instructorExtraData, userProgress });
           
           const finalCourseObject = mapDataToCourse(data, instructorExtraData, userProgress, isStripeEnabled);
-          console.log('Final course payment object:', finalCourseObject.payment);
+          console.log('💰 [Course Data] Payment info:', finalCourseObject.payment);
           setCourse(finalCourseObject);
         } else {
           throw new Error("Course not found.");
@@ -467,11 +493,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
         };
       }
       
-      // Store original course data for re-processing in preview mode too
-      console.log('Storing original course data (preview mode):', { 
-        payment_type: initialCourseData.payment_type, 
-        course_price: initialCourseData.course_price 
-      });
+      console.log('📦 [Preview Mode] Loading course data');
       setOriginalCourseData({ data: initialCourseData, instructorExtraData, userProgress: [] });
       
       const mappedCourse = mapDataToCourse(initialCourseData, instructorExtraData, [], isStripeEnabled);
@@ -486,89 +508,44 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
     }
   }, [initialCourseData, courseId, user, isPreviewMode]);
 
-  // Re-check Stripe status when course data changes (in case of timing issues)
+  // REMOVED: Duplicate Stripe check was causing infinite loops
+
+  // Re-process course data ONCE when Stripe status changes and we have original data
   useEffect(() => {
-    if (course && !isStripeEnabled) {
-      console.log('Re-checking Stripe status due to course data change');
-      const checkStripeIntegration = async () => {
-        try {
-          let { data, error } = await supabase
-            .from('integrations')
-            .select('status, is_configured')
-            .eq('name', 'Stripe')
-            .single();
-          
-          if (error && error.code === 'PGRST116') {
-            const result = await supabase
-              .from('integrations')
-              .select('status, is_configured')
-              .eq('name', 'stripe')
-              .single();
-            data = result.data;
-            error = result.error;
-          }
-          
-          if (!error && data) {
-            const isEnabled = data.status === 'enabled' && data.is_configured;
-            console.log('Re-check Stripe enabled:', isEnabled);
-            setIsStripeEnabled(isEnabled);
-          }
-        } catch (error) {
-          console.error('Error re-checking Stripe integration:', error);
+    // Guard: Only run if we haven't processed yet AND Stripe is enabled AND we have the data
+    if (
+      !hasProcessedStripeRef.current && 
+      isStripeEnabled && 
+      originalCourseData && 
+      course && 
+      course.payment && 
+      course.payment.type === 'free' && 
+      originalCourseData.data.payment_type === 'paid'
+    ) {
+      console.log('🔄 [Payment Reprocess] Re-processing course with Stripe enabled');
+      console.log('📊 [Payment Reprocess] Original data:', {
+        payment_type: originalCourseData.data.payment_type,
+        course_price: originalCourseData.data.course_price
+      });
+      
+      // Mark as processed to prevent re-runs
+      hasProcessedStripeRef.current = true;
+      
+      // Update course payment directly (more efficient than full re-map)
+      const updatedCourse = {
+        ...course,
+        payment: {
+          type: 'paid',
+          price: originalCourseData.data.course_price,
+          priceFormatted: `$${(originalCourseData.data.course_price / 100).toFixed(2)}`,
+          isPaid: true
         }
       };
       
-      checkStripeIntegration();
+      console.log('✅ [Payment Reprocess] Updated payment:', updatedCourse.payment);
+      setCourse(updatedCourse);
     }
-  }, [course, isStripeEnabled]);
-
-  // Re-process course data when Stripe status changes from false to true
-  useEffect(() => {
-    console.log('Re-processing effect triggered:', {
-      originalCourseData: !!originalCourseData,
-      isStripeEnabled,
-      course: !!course,
-      coursePayment: course?.payment,
-      shouldReprocess: originalCourseData && isStripeEnabled && course && course.payment && course.payment.type === 'free' && course.payment.price === 0
-    });
-    
-    if (originalCourseData && isStripeEnabled && course && course.payment && course.payment.type === 'free' && course.payment.price === 0) {
-      console.log('Re-processing course data with Stripe enabled using original data');
-      
-      // Re-process the course data with Stripe enabled using original data
-      const finalCourseObject = mapDataToCourse(originalCourseData.data, originalCourseData.instructorExtraData, originalCourseData.userProgress, isStripeEnabled);
-      console.log('Re-processed course payment object:', finalCourseObject.payment);
-      setCourse(finalCourseObject);
-    }
-  }, [isStripeEnabled, originalCourseData, course]);
-
-  // Alternative approach: Force re-process when Stripe becomes enabled
-  useEffect(() => {
-    if (isStripeEnabled && course && course.payment && course.payment.type === 'free' && course.payment.price === 0) {
-      console.log('Alternative re-processing triggered - Stripe enabled but course shows as free');
-      
-      // Force update the course payment to paid if we have the original data
-      if (originalCourseData && originalCourseData.data.payment_type === 'paid' && originalCourseData.data.course_price > 0) {
-        console.log('Forcing payment update with original data:', {
-          payment_type: originalCourseData.data.payment_type,
-          course_price: originalCourseData.data.course_price
-        });
-        
-        const updatedCourse = {
-          ...course,
-          payment: {
-            type: 'paid',
-            price: originalCourseData.data.course_price,
-            priceFormatted: `$${(originalCourseData.data.course_price / 100).toFixed(2)}`,
-            isPaid: true
-          }
-        };
-        
-        console.log('Updated course payment:', updatedCourse.payment);
-        setCourse(updatedCourse);
-      }
-    }
-  }, [isStripeEnabled, course, originalCourseData]);
+  }, [isStripeEnabled, originalCourseData?.data.payment_type, originalCourseData?.data.course_price]); // Minimal dependencies
 
   const handleStartLearning = () => {
     if (course) {
@@ -580,11 +557,26 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
     setIsVideoPlaying(true);
   };
 
-  const handleProceedToPayment = () => {
-    // TODO: Implement Stripe checkout flow
-    toast.info("Payment integration coming soon!", {
-      description: "Stripe checkout will be implemented here."
-    });
+  const handleProceedToPayment = async () => {
+    if (!course || !user) {
+      toast.error("Please log in to purchase this course");
+      return;
+    }
+
+    try {
+      setIsCheckingPayment(true);
+      toast.loading("Redirecting to checkout...");
+      
+      // Redirect to Stripe checkout
+      await StripeService.redirectToCheckout(course.id);
+    } catch (error: any) {
+      console.error('Error proceeding to payment:', error);
+      toast.error("Failed to proceed to payment", {
+        description: error.message || "Please try again later"
+      });
+    } finally {
+      setIsCheckingPayment(false);
+    }
   };
 
   if (isLoading) {
@@ -791,15 +783,15 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                       {/* Enhanced CTA Section */}
                       <div className="space-y-4">
                         {/* Show different buttons based on payment status and Stripe integration */}
-                        {isStripeEnabled && course.payment.isPaid ? (
+                        {isStripeEnabled && course.payment.isPaid && !hasPaidForCourse ? (
                           <Button 
                             onClick={handleProceedToPayment}
-                            disabled={true}
+                            disabled={isCheckingPayment}
                             className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-4 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
                             size="lg"
                           >
                             <Lock className="w-5 h-5 mr-2" />
-                            Proceed to Payment
+                            Purchase Course - {course.payment.priceFormatted}
                           </Button>
                         ) : (
                           <Button 
@@ -811,13 +803,13 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                           </Button>
                         )}
 
-                        {course.progress.percentage > 0 && !(isStripeEnabled && course.payment.isPaid) && (
+                        {course.progress.percentage > 0 && (!(isStripeEnabled && course.payment.isPaid) || hasPaidForCourse) && (
                           <p className="text-center text-sm text-muted-foreground">
                             Next lesson: {course.progress.nextLesson}
                           </p>
                         )}
 
-                        {isStripeEnabled && course.payment.isPaid && (
+                        {isStripeEnabled && course.payment.isPaid && !hasPaidForCourse && (
                           <p className="text-center text-sm text-muted-foreground">
                             Complete payment to access course content
                           </p>
@@ -1082,14 +1074,14 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {/* Show different buttons based on payment status and Stripe integration */}
-                  {isStripeEnabled && course.payment.isPaid ? (
+                  {isStripeEnabled && course.payment.isPaid && !hasPaidForCourse ? (
                     <Button 
                       onClick={handleProceedToPayment}
-                      disabled={true}
+                      disabled={isCheckingPayment}
                       className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-3 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Lock className="w-4 h-4 mr-2" />
-                      Proceed to Payment
+                      Purchase - {course.payment.priceFormatted}
                     </Button>
                   ) : (
                     <Button 
