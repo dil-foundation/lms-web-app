@@ -223,14 +223,20 @@ const OrdersManagement: React.FC = () => {
 
   // Handle view order
   const handleViewOrder = (order: Order) => {
-    setSelectedOrder(order);
-    setIsViewDialogOpen(true);
+    // Small delay to ensure dropdown is fully closed
+    setTimeout(() => {
+      setSelectedOrder(order);
+      setIsViewDialogOpen(true);
+    }, 100);
   };
 
   // Handle refund
   const handleRefundClick = (order: Order) => {
-    setSelectedOrder(order);
-    setIsRefundDialogOpen(true);
+    // Small delay to ensure dropdown is fully closed
+    setTimeout(() => {
+      setSelectedOrder(order);
+      setIsRefundDialogOpen(true);
+    }, 100);
   };
 
   const handleRefundConfirm = async () => {
@@ -497,7 +503,15 @@ const OrdersManagement: React.FC = () => {
       </Card>
 
       {/* View Order Dialog */}
-      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+      <Dialog open={isViewDialogOpen} onOpenChange={(open) => {
+        setIsViewDialogOpen(open);
+        if (!open) {
+          // Small delay to clear selected order after dialog closes
+          setTimeout(() => {
+            setSelectedOrder(null);
+          }, 100);
+        }
+      }}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Order Details</DialogTitle>
@@ -608,7 +622,16 @@ const OrdersManagement: React.FC = () => {
       </Dialog>
 
       {/* Refund Dialog */}
-      <AlertDialog open={isRefundDialogOpen} onOpenChange={setIsRefundDialogOpen}>
+      <AlertDialog open={isRefundDialogOpen} onOpenChange={(open) => {
+        setIsRefundDialogOpen(open);
+        if (!open) {
+          // Small delay to clear selected order after dialog closes
+          setTimeout(() => {
+            setSelectedOrder(null);
+            setRefundReason('');
+          }, 100);
+        }
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Process Refund</AlertDialogTitle>

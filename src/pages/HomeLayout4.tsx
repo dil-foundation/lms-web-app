@@ -1,11 +1,14 @@
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Brain, MessageCircle, Globe, Award, Languages, Target, ArrowRight, Sparkles, Play, Zap, Star, Rocket, Heart } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const HomeLayout4 = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [currentFeature, setCurrentFeature] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -34,6 +37,14 @@ const HomeLayout4 = () => {
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
+
+  const handleStartLearning = () => {
+    if (user) {
+      navigate('/dashboard');
+    } else {
+      navigate('/auth');
+    }
+  };
 
   // Get current feature icon component
   const CurrentFeatureIcon = features[currentFeature].icon;
@@ -115,18 +126,17 @@ const HomeLayout4 = () => {
 
             <div className={`transition-all duration-1000 delay-600 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
               <div className="flex flex-col sm:flex-row gap-6 justify-center">
-                <Link to="/auth">
-                  <Button 
-                    size="lg" 
-                    className="group relative bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xl px-12 py-6 rounded-2xl transition-all duration-500 hover:scale-110 hover:shadow-2xl hover:shadow-primary/25 overflow-hidden"
-                  >
-                    <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></span>
-                    <span className="relative z-10 flex items-center">
-                      Start Learning
-                      <ArrowRight className="ml-3 h-6 w-6 group-hover:translate-x-1 transition-transform" />
-                    </span>
-                  </Button>
-                </Link>
+                <Button 
+                  size="lg" 
+                  onClick={handleStartLearning}
+                  className="group relative bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xl px-12 py-6 rounded-2xl transition-all duration-500 hover:scale-110 hover:shadow-2xl hover:shadow-primary/25 overflow-hidden"
+                >
+                  <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></span>
+                  <span className="relative z-10 flex items-center">
+                    Start Learning
+                    <ArrowRight className="ml-3 h-6 w-6 group-hover:translate-x-1 transition-transform" />
+                  </span>
+                </Button>
                 <Button 
                   variant="outline" 
                   size="lg" 

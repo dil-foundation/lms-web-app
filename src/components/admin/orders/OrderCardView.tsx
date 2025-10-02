@@ -82,7 +82,7 @@ export const OrderCardView: React.FC<OrderCardViewProps> = ({
   return (
     <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {orders.map((order) => (
-        <Card key={order.id} className="hover:shadow-lg transition-shadow duration-200">
+        <Card key={order.id} className="hover:shadow-lg transition-shadow duration-200 flex flex-col h-full">
           <CardHeader className="pb-3">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -125,7 +125,7 @@ export const OrderCardView: React.FC<OrderCardViewProps> = ({
             </div>
           </CardHeader>
 
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-3 flex-1">
             <div>
               <p className="font-semibold text-sm line-clamp-2 mb-1">{order.course.title}</p>
               {order.course.subtitle && (
