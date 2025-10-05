@@ -297,76 +297,78 @@ serve(async (req) => {
       });
     }
 
-    // Create users with batch processing and rate limiting
-    const batchSize = 50; // Process 50 users at a time
-    const rateLimitDelay = 100; // 100ms delay between batches
+    // Create users with sequential processing and rate limiting
+    // Respects SMTP rate limits: 100 emails/hour and 1 second minimum interval
+    const delayBetweenEmails = 1200; // 1.2 seconds between emails (respects 1 second minimum + buffer)
     let batchesProcessed = 0;
     
-    for (let i = 0; i < users.length; i += batchSize) {
-      const batch = users.slice(i, i + batchSize);
-      const batchPromises = batch.map(async (user, batchIndex) => {
-        const userIndex = i + batchIndex;
-        
-        try {
-          // Additional email validation
-          const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
-          if (!emailRegex.test(user.email)) {
-            errors.push({
-              row: userIndex + 2,
-              field: 'Email',
-              message: `Invalid email format: ${user.email}`
-            });
-            return;
-          }
-
-          const userMetaData: { [key: string]: any } = {
-            role: user.role,
-            first_name: user.firstName,
-            last_name: user.lastName,
-            password_setup_required: true,
-          };
-
-          if (user.role === 'student' && user.grade) {
-            userMetaData.grade = user.grade;
-          } else if (user.role === 'teacher' && user.teacherId) {
-            userMetaData.teacher_id = user.teacherId;
-          }
-
-          const { error } = await supabaseAdmin.auth.admin.inviteUserByEmail(user.email, {
-            data: userMetaData,
-            redirectTo: `${Deno.env.get('APP_URL')}/dashboard/profile-settings?source=reset`,
+    for (let i = 0; i < users.length; i++) {
+      const user = users[i];
+      const userIndex = i;
+      
+      try {
+        // Additional email validation
+        const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+        if (!emailRegex.test(user.email)) {
+          errors.push({
+            row: userIndex + 2,
+            field: 'Email',
+            message: `Invalid email format: ${user.email}`
           });
+          continue;
+        }
 
-          if (error) {
-            console.error(`Error creating user ${user.email}:`, error);
-            errors.push({
-              row: userIndex + 2,
-              field: 'Email',
-              message: `Failed to create user: ${error.message}`
-            });
-          } else {
-            console.log(`Successfully created user: ${user.email}`);
-            createdUsers++;
-          }
-        } catch (error) {
-          console.error(`Exception creating user ${user.email}:`, error);
+        const userMetaData: { [key: string]: any } = {
+          role: user.role,
+          first_name: user.firstName,
+          last_name: user.lastName,
+          password_setup_required: true,
+        };
+
+        if (user.role === 'student' && user.grade) {
+          userMetaData.grade = user.grade;
+        } else if (user.role === 'teacher' && user.teacherId) {
+          userMetaData.teacher_id = user.teacherId;
+        }
+
+        const { error } = await supabaseAdmin.auth.admin.inviteUserByEmail(user.email, {
+          data: userMetaData,
+          redirectTo: `${Deno.env.get('APP_URL')}/dashboard/profile-settings?source=reset`,
+        });
+
+        if (error) {
+          console.error(`Error creating user ${user.email}:`, error);
           errors.push({
             row: userIndex + 2,
             field: 'Email',
             message: `Failed to create user: ${error.message}`
           });
+        } else {
+          console.log(`Successfully created user: ${user.email}`);
+          createdUsers++;
         }
-      });
+      } catch (error) {
+        console.error(`Exception creating user ${user.email}:`, error);
+        errors.push({
+          row: userIndex + 2,
+          field: 'Email',
+          message: `Failed to create user: ${error.message}`
+        });
+      }
 
-      // Process batch concurrently
-      await Promise.all(batchPromises);
-      batchesProcessed++;
+      // Rate limiting delay between emails (except for the last user)
+      if (i < users.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, delayBetweenEmails));
+      }
       
-      // Rate limiting delay between batches (except for the last batch)
-      if (i + batchSize < users.length) {
-        await new Promise(resolve => setTimeout(resolve, rateLimitDelay));
+      // Track progress every 10 users
+      if ((i + 1) % 10 === 0) {
+        batchesProcessed++;
+        console.log(`Progress: ${i + 1}/${users.length} users processed`);
       }
     }
+    
+    batchesProcessed = Math.ceil(users.length / 10);
 
     const processingTime = Date.now() - startTime;
     const result: UploadResult = {
