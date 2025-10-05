@@ -162,12 +162,20 @@ const StudentAuth = () => {
         // Get profile data while authenticated
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('role')
+          .select('role, is_deleted')
           .eq('id', user.id)
           .single();
 
         if (profileError || !profile) {
           throw new Error('Could not fetch user profile.');
+        }
+
+        // Check if account is deleted - show generic error to not reveal account status
+        if (profile.is_deleted) {
+          await supabase.auth.signOut();
+          setAuthError('Invalid credentials.');
+          setIsLoading(false);
+          return;
         }
 
         if (profile.role !== 'student') {
