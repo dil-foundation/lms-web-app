@@ -2,12 +2,51 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { 
     ArrowLeft, BookOpen, ChevronRight, Play, Eye, User, Handshake, Smile, Search, Users, Hand, HelpCircle, Edit, MessageCircle, Tag, SmilePlus, Smartphone, Inbox, Settings, Bell, ClipboardList, CheckSquare, Puzzle, PartyPopper, LucideIcon
 } from 'lucide-react';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
+
+// ============================================
+// SUPABASE IMAGE HELPERS FOR LESSON 4
+// ============================================
+
+const SUPABASE_STAGE0_LESSON4_BASE = 'https://otobfhnqafoyqinjenle.supabase.co/storage/v1/object/public/dil-lms-public/stage-0/lesson-4';
+
+// Convert English phrase to filename used by storage
+const slugifyToFilename = (text: string): string => {
+    const raw = (text || '').toString().trim();
+    // Remove punctuation we know is not present in filenames (., ?, !)
+    const withoutPunct = raw.replace(/[\.?!,]/g, '');
+    // Preserve apostrophes (') as %27, and encode spaces as %20
+    return withoutPunct
+        .replace(/'/g, '%27')
+        .replace(/\s+/g, '%20');
+};
+
+// Per-page overrides for filename oddities or case differences
+const LESSON4_FILENAME_OVERRIDES: Record<string, string> = {
+    // greetings
+    'greetings:My name is Ali': 'My%20name%20is%20ali',
+    // useful-words
+    "useful-words:I'm doing well.": 'I%27m%20doing%20well',
+    'useful-words:My name is Aaliyah.': 'My%20name%20is%20alyah',
+    'useful-words:How are you?': 'How%20are%20you',
+    "useful-words:What's your name?": 'What%27s%20your%20name',
+};
+
+const getLesson4ImageUrl = (pageIndex: number, english: string) => {
+    let folder = '';
+    if (pageIndex === 0) folder = 'common-sight-words';
+    else if (pageIndex === 1) folder = 'greetings';
+    else if (pageIndex === 2) folder = 'useful-words';
+    else if (pageIndex === 3) folder = 'ui-words';
+    const key = `${folder}:${(english || '').toString().trim()}`;
+    const file = LESSON4_FILENAME_OVERRIDES[key] || slugifyToFilename(english);
+    return `${SUPABASE_STAGE0_LESSON4_BASE}/${folder}/${file}.png`;
+};
 
 // --- Type Definitions ---
 interface Word {
@@ -318,33 +357,67 @@ const SightWordsLesson = () => {
                         </div>
                     </Card>
                 ) : (
-                    (currentPageContent as Word[]).map((item, index) => (
-                        <Card key={index} className="p-4 sm:p-6 flex items-center bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300">
-                            <div className="flex-1">
-                                <h3 className="text-xl sm:text-2xl font-bold flex items-center gap-2 sm:gap-3 text-gray-900 dark:text-gray-100">
-                                    {item.word}
-                                    <span className="text-sm sm:text-lg text-muted-foreground font-normal">{item.pronunciation}</span>
-                                </h3>
-                                <p className="font-urdu text-muted-foreground text-lg sm:text-xl">{item.translation}</p>
-                            </div>
-                            <Button 
-                                size="icon" 
-                                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-lg transition-all duration-300 ${
-                                    loadingAudio === item.word 
-                                        ? 'bg-primary/60 cursor-not-allowed' 
-                                        : 'bg-primary hover:bg-primary/90 hover:scale-105'
-                                }`}
-                                onClick={() => handlePlayAudio(item.word)}
-                                disabled={loadingAudio === item.word}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                        {(currentPageContent as Word[]).map((item, index) => (
+                            <Card 
+                                key={index} 
+                                className="group overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-gradient-to-br from-card to-card/50 dark:bg-card rounded-2xl"
                             >
-                                {loadingAudio === item.word ? (
-                                    <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                ) : (
-                                    <Play className="w-5 h-5 sm:w-6 sm:h-6" />
-                                )}
-                            </Button>
-                        </Card>
-                    ))
+                                {/* Image Section */}
+                                <div className="relative h-48 sm:h-56 bg-gradient-to-br from-primary/5 to-primary/10 overflow-hidden">
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                                    <img 
+                                        src={getLesson4ImageUrl(mainStep, item.word)} 
+                                        alt={item.word}
+                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                        onError={(e) => {
+                                            const target = e.target as HTMLImageElement;
+                                            target.style.display = 'none';
+                                        }}
+                                    />
+                                    {/* Play Button Overlay */}
+                                    <div className="absolute bottom-3 right-3">
+                                        <Button 
+                                            size="icon" 
+                                            className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-xl border-2 border-white/50 transition-all duration-300 ${
+                                                loadingAudio === item.word 
+                                                    ? 'bg-primary/70 cursor-not-allowed scale-95' 
+                                                    : 'bg-primary hover:bg-primary/90 hover:scale-110'
+                                            }`}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handlePlayAudio(item.word);
+                                            }}
+                                            disabled={loadingAudio === item.word}
+                                        >
+                                            {loadingAudio === item.word ? (
+                                                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                            ) : (
+                                                <Play className="w-6 h-6 text-white" fill="white" />
+                                            )}
+                                        </Button>
+                                    </div>
+                                </div>
+                                
+                                {/* Content Section */}
+                                <CardContent className="p-4 sm:p-5 space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs sm:text-sm font-medium text-muted-foreground bg-primary/10 px-3 py-1 rounded-full">
+                                            {item.pronunciation}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
+                                            {item.word}
+                                        </h3>
+                                        <p className="font-urdu text-base sm:text-lg text-muted-foreground leading-relaxed">
+                                            {item.translation}
+                                        </p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
                 )}
             </div>
 

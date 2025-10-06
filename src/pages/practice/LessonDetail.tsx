@@ -12,6 +12,53 @@ import AppUIWordsLesson from './AppUIWordsLesson';
 import { PracticeBreadcrumb } from '@/components/PracticeBreadcrumb';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 
+// ============================================
+// SUPABASE IMAGE HELPERS FOR STAGE 0
+// ============================================
+
+// Lesson 1: Alphabet Images (A-Z)
+const SUPABASE_STAGE0_LESSON1_BASE = 'https://otobfhnqafoyqinjenle.supabase.co/storage/v1/object/public/dil-lms-public/stage-0/lesson-1';
+const getLetterImageUrl = (letter: string) => {
+  const upper = (letter || '').toString().trim().charAt(0).toUpperCase();
+  const safe = upper >= 'A' && upper <= 'Z' ? upper : 'A';
+  return `${SUPABASE_STAGE0_LESSON1_BASE}/${safe}.png`;
+};
+
+// Lesson 2: Phonics/Minimal Pairs Images
+const SUPABASE_STAGE0_LESSON2_BASE = 'https://otobfhnqafoyqinjenle.supabase.co/storage/v1/object/public/dil-lms-public/stage-0/lesson-2';
+const minimalPairKeyToFilename: Record<string, string> = {
+  'b-v': 'B_Vs_V.png',
+  'ch-sh': 'CH_Vs_SH.png',
+  'd-t': 'D_Vs_T.png',
+  'j-z': 'J_Vs_Z.png',
+  'silent': 'K_Vs_B_Vs_L.png',
+  't-th': 'T_Vs_Th.png',
+  'p-f': 'P_Vs_F.png',
+  's-z': 'S_Vs_Z.png',
+  'k-g': 'K_Vs_G.png',
+  'l-r': 'L_Vs_R.png',
+};
+const getMinimalPairImageUrl = (key: string) => {
+  const filename = minimalPairKeyToFilename[key] || minimalPairKeyToFilename['b-v'];
+  return `${SUPABASE_STAGE0_LESSON2_BASE}/${filename}`;
+};
+
+// Lesson 3: Vocabulary Images (Numbers, Days, Colors, Classroom Items)
+const SUPABASE_STAGE0_LESSON3_BASE = 'https://otobfhnqafoyqinjenle.supabase.co/storage/v1/object/public/dil-lms-public/stage-0/lesson-3';
+const getLesson3ImageUrl = (category: string, item: any): string => {
+  let folder = '';
+  if (category === 'Numbers') folder = 'numbers';
+  else if (category === 'Days of the Week') folder = 'week';
+  else if (category === 'Colors') folder = 'colors';
+  else if (category === 'Classroom Items') folder = 'class-room-items';
+
+  let filename = '';
+  if (category === 'Numbers') filename = `${item.number}.png`;
+  else filename = `${(item.word || '').toString().trim().replace(/\s+/g, '_')}.png`;
+
+  return `${SUPABASE_STAGE0_LESSON3_BASE}/${folder}/${filename}`;
+};
+
 const alphabetSets = [
     [
         { letter: 'A', phonetic: '(ae-pl)', word: 'Apple', translation: 'سیب' },
@@ -50,16 +97,16 @@ const alphabetSets = [
 ];
 
 const phonicsSets = [
-    { icon: Volume2, title: 'B as in Ball vs. V as in Van', examples: ['Ball vs. Van', 'Bat vs. Vast', 'Boy vs. Voice'], urduExplanation: [{ sound: 'B', text: 'آواز لبوں کو بند کر کے ادا کی جاتی ہے' }, { sound: 'V', text: 'آواز دانتوں سے ہونٹ رگڑ کر ادا کی جاتی ہے' }] },
-    { icon: Target, title: 'T as in Time vs. TH as in Think', examples: ['Time vs. Think', 'Ten vs. Thank', 'Toy vs. Thirst'], urduExplanation: [{ sound: 'T', text: 'زبان کو دانتوں کے پیچھے رکھ کر بولتے ہیں' }, { sound: 'TH', text: 'میں زبان کو دانتوں کے بیچ رگڑ کر نرم آواز نکالی جاتی ہے' }] },
-    { icon: Wind, title: 'P as in Pen vs. F as in Fan', examples: ['Pen vs. Fan', 'Pin vs. Fin', 'Pop vs. Fun'], urduExplanation: [{ sound: 'P', text: 'آواز ہونٹوں سے زوردار نکلتی ہے' }, { sound: 'F', text: 'آواز دانتوں اور ہونٹوں کے ہلکے رگڑ سے نکلتی ہے' }] },
-    { icon: Dog, title: 'D as in Dog vs. T as in Top', examples: ['Dog vs. Top', 'Day vs. Toy', 'Dad vs. Tap'], urduExplanation: [{ sound: 'D', text: 'آواز نرم اور گہری ہوتی ہے' }, { sound: 'T', text: 'آواز سخت اور تیز ادا کی جاتی ہے' }] },
-    { icon: Sun, title: 'S as in Sun vs. Z as in Zoo', examples: ['Sun vs. Zoo', 'Sip vs. Zip', 'Sing vs. Zebra'], urduExplanation: [{ sound: 'S', text: 'آواز بغیر سانس سے آتی ہے' }, { sound: 'Z', text: 'آواز سانس اور آواز کے ساتھ ہوتی ہے، جیسے مکھی کی بھنبھناہٹ' }] },
-    { icon: Crown, title: 'K as in King vs. G as in Goat', examples: ['King vs. Goat', 'Kit vs. Gift', 'Cold vs. Gold'], urduExplanation: [{ sound: 'K', text: 'آواز بغیر سانس کے ہوتی ہے، صرف سانس سے' }, { sound: 'G', text: 'آواز گلے سے آواز کے ساتھ نکلتی ہے' }] },
-    { icon: Armchair, title: 'CH as in Chair vs. SH as in Ship', examples: ['Chair vs. Ship', 'Cheese vs. Sheet', 'Chat vs. Shine'], urduExplanation: [{ sound: 'CH', text: 'آواز \'چ\' جیسی ہوتی ہے' }, { sound: 'SH', text: 'آواز \'ش\' جیسی ہوتی ہے، زیادہ نرم اور لمبی' }] },
-    { icon: GlassWater, title: 'J as in Jam vs. Z as in Zip', examples: ['Jam vs. Zip', 'Joke vs. Zone', 'Jump vs. Zebra'], urduExplanation: [{ sound: 'J', text: 'آواز \'ج\' جیسی ہوتی ہے' }, { sound: 'Z', text: 'آواز سانس اور آواز کے ساتھ نکلتی ہے، جیسے بھنبھناہٹ' }] },
-    { icon: Cat, title: 'L as in Lion vs. R as in Rain', examples: ['Lion vs. Rain', 'Light vs. Right', 'Lock vs. Rock'], urduExplanation: [{ sound: 'L', text: 'آواز زبان کو دانتوں کے پیچھے لگا کر نکالی جاتی ہے' }, { sound: 'R', text: 'آواز زبان کو موڑ کر نکالی جاتی ہے، گول انداز میں' }] },
-    { icon: SmilePlus, title: 'Silent Letters (K, B, L)', examples: ['K in "Knife" is silent → "نائف"', 'B in "Lamb" is silent → "لیم"', 'L in "Half" is silent → "ہاف"'], urduExplanation: [{ sound: '', text: 'کچھ انگریزی الفاظ میں حروف نظر آتے ہیں مگر بولے نہیں جاتے' }, { sound: '', text: 'ان کو Silent Letters کہتے ہیں' }] },
+    { icon: Volume2, key: 'b-v', title: 'B as in Ball vs. V as in Van', examples: ['Ball vs. Van', 'Bat vs. Vast', 'Boy vs. Voice'], urduExplanation: [{ sound: 'B', text: 'آواز لبوں کو بند کر کے ادا کی جاتی ہے' }, { sound: 'V', text: 'آواز دانتوں سے ہونٹ رگڑ کر ادا کی جاتی ہے' }] },
+    { icon: Target, key: 't-th', title: 'T as in Time vs. TH as in Think', examples: ['Time vs. Think', 'Ten vs. Thank', 'Toy vs. Thirst'], urduExplanation: [{ sound: 'T', text: 'زبان کو دانتوں کے پیچھے رکھ کر بولتے ہیں' }, { sound: 'TH', text: 'میں زبان کو دانتوں کے بیچ رگڑ کر نرم آواز نکالی جاتی ہے' }] },
+    { icon: Wind, key: 'p-f', title: 'P as in Pen vs. F as in Fan', examples: ['Pen vs. Fan', 'Pin vs. Fin', 'Pop vs. Fun'], urduExplanation: [{ sound: 'P', text: 'آواز ہونٹوں سے زوردار نکلتی ہے' }, { sound: 'F', text: 'آواز دانتوں اور ہونٹوں کے ہلکے رگڑ سے نکلتی ہے' }] },
+    { icon: Dog, key: 'd-t', title: 'D as in Dog vs. T as in Top', examples: ['Dog vs. Top', 'Day vs. Toy', 'Dad vs. Tap'], urduExplanation: [{ sound: 'D', text: 'آواز نرم اور گہری ہوتی ہے' }, { sound: 'T', text: 'آواز سخت اور تیز ادا کی جاتی ہے' }] },
+    { icon: Sun, key: 's-z', title: 'S as in Sun vs. Z as in Zoo', examples: ['Sun vs. Zoo', 'Sip vs. Zip', 'Sing vs. Zebra'], urduExplanation: [{ sound: 'S', text: 'آواز بغیر سانس سے آتی ہے' }, { sound: 'Z', text: 'آواز سانس اور آواز کے ساتھ ہوتی ہے، جیسے مکھی کی بھنبھناہٹ' }] },
+    { icon: Crown, key: 'k-g', title: 'K as in King vs. G as in Goat', examples: ['King vs. Goat', 'Kit vs. Gift', 'Cold vs. Gold'], urduExplanation: [{ sound: 'K', text: 'آواز بغیر سانس کے ہوتی ہے، صرف سانس سے' }, { sound: 'G', text: 'آواز گلے سے آواز کے ساتھ نکلتی ہے' }] },
+    { icon: Armchair, key: 'ch-sh', title: 'CH as in Chair vs. SH as in Ship', examples: ['Chair vs. Ship', 'Cheese vs. Sheet', 'Chat vs. Shine'], urduExplanation: [{ sound: 'CH', text: 'آواز \'چ\' جیسی ہوتی ہے' }, { sound: 'SH', text: 'آواز \'ش\' جیسی ہوتی ہے، زیادہ نرم اور لمبی' }] },
+    { icon: GlassWater, key: 'j-z', title: 'J as in Jam vs. Z as in Zip', examples: ['Jam vs. Zip', 'Joke vs. Zone', 'Jump vs. Zebra'], urduExplanation: [{ sound: 'J', text: 'آواز \'ج\' جیسی ہوتی ہے' }, { sound: 'Z', text: 'آواز سانس اور آواز کے ساتھ نکلتی ہے، جیسے بھنبھناہٹ' }] },
+    { icon: Cat, key: 'l-r', title: 'L as in Lion vs. R as in Rain', examples: ['Lion vs. Rain', 'Light vs. Right', 'Lock vs. Rock'], urduExplanation: [{ sound: 'L', text: 'آواز زبان کو دانتوں کے پیچھے لگا کر نکالی جاتی ہے' }, { sound: 'R', text: 'آواز زبان کو موڑ کر نکالی جاتی ہے، گول انداز میں' }] },
+    { icon: SmilePlus, key: 'silent', title: 'Silent Letters (K, B, L)', examples: ['K in "Knife" is silent → "نائف"', 'B in "Lamb" is silent → "لیم"', 'L in "Half" is silent → "ہاف"'], urduExplanation: [{ sound: '', text: 'کچھ انگریزی الفاظ میں حروف نظر آتے ہیں مگر بولے نہیں جاتے' }, { sound: '', text: 'ان کو Silent Letters کہتے ہیں' }] },
 ];
 
 const vocabularySets = [
@@ -206,35 +253,68 @@ const AlphabetLesson = () => {
                 <p className="text-center text-xs sm:text-sm text-muted-foreground mt-2">{step + 1} of {alphabetSets.length}</p>
             </div>
             
-            <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
                 {alphabetSets[step].map((item, index) => (
-                    <Card key={index} className="p-3 sm:p-4 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 flex items-center">
-                        <div className="flex items-center gap-3 sm:gap-4 flex-1">
-                            <div className="bg-primary text-primary-foreground rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-xl sm:text-2xl font-bold">{item.letter}</div>
-                            <span className="text-muted-foreground text-sm sm:text-base">{item.phonetic}</span>
+                    <Card 
+                        key={index} 
+                        className="group overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-gradient-to-br from-card to-card/50 dark:bg-card rounded-2xl"
+                    >
+                        {/* Image Section */}
+                        <div className="relative h-48 sm:h-56 bg-gradient-to-br from-primary/5 to-primary/10 overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                            <img 
+                                src={getLetterImageUrl(item.letter)} 
+                                alt={item.word}
+                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                }}
+                            />
+                            {/* Letter Badge */}
+                            <div className="absolute top-3 left-3 bg-primary text-primary-foreground rounded-2xl w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center text-2xl sm:text-3xl font-bold shadow-lg border-2 border-white/50">
+                                {item.letter}
+                            </div>
+                            {/* Play Button Overlay */}
+                            <div className="absolute bottom-3 right-3">
+                                <Button 
+                                    size="icon" 
+                                    className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-xl border-2 border-white/50 transition-all duration-300 ${
+                                        loadingAudio === item.word 
+                                            ? 'bg-primary/70 cursor-not-allowed scale-95' 
+                                            : 'bg-primary hover:bg-primary/90 hover:scale-110'
+                                    }`}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handlePlayAudio(item.word);
+                                    }}
+                                    disabled={loadingAudio === item.word}
+                                >
+                                    {loadingAudio === item.word ? (
+                                        <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    ) : (
+                                        <Play className="w-6 h-6 text-white" fill="white" />
+                                    )}
+                                </Button>
+                            </div>
                         </div>
-                        <div className="flex-1 text-left sm:text-center">
-                            <h3 className="text-xl sm:text-2xl font-bold">{item.word}</h3>
-                            <p className="font-urdu text-muted-foreground text-base sm:text-lg">{item.translation}</p>
-                        </div>
-                        <div className="flex-1 flex justify-end">
-                            <Button 
-                                size="icon" 
-                                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full ${
-                                    loadingAudio === item.word 
-                                        ? 'bg-primary/60 cursor-not-allowed' 
-                                        : 'bg-primary/80 hover:bg-primary'
-                                }`}
-                                onClick={() => handlePlayAudio(item.word)}
-                                disabled={loadingAudio === item.word}
-                            >
-                                {loadingAudio === item.word ? (
-                                    <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                ) : (
-                                    <Play className="w-5 h-5 sm:w-6 sm:h-6" />
-                                )}
-                            </Button>
-                        </div>
+                        
+                        {/* Content Section */}
+                        <CardContent className="p-4 sm:p-5 space-y-3">
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs sm:text-sm font-medium text-muted-foreground bg-primary/10 px-3 py-1 rounded-full">
+                                    {item.phonetic}
+                                </span>
+                            </div>
+                            <div className="space-y-1.5">
+                                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
+                                    {item.word}
+                                </h3>
+                                <p className="font-urdu text-base sm:text-lg text-muted-foreground leading-relaxed">
+                                    {item.translation}
+                                </p>
+                            </div>
+                        </CardContent>
                     </Card>
                 ))}
             </div>
@@ -329,42 +409,95 @@ const PhonicsLesson = () => {
                 <Progress value={progress} className="h-2" />
                 <p className="text-center text-xs sm:text-sm text-muted-foreground mt-2">{step + 1} of {phonicsSets.length}</p>
             </div>
-            <div className="space-y-4 sm:space-y-6 mb-6 sm:mb-8">
-                <Card className="p-4 sm:p-6 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 flex items-center">
-                    <div className="flex items-center gap-3 sm:gap-4 flex-1">
-                        <div className="bg-primary/10 text-primary-foreground rounded-full w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center"><currentSet.icon className="w-7 h-7 sm:w-8 sm:h-8 text-primary" /></div>
-                        <h2 className="text-xl sm:text-2xl font-bold">{currentSet.title}</h2>
+            <div className="space-y-6 sm:space-y-8 mb-6 sm:mb-8">
+                {/* Main Image Card */}
+                <Card className="group overflow-hidden transition-all duration-500 hover:shadow-2xl border-0 bg-gradient-to-br from-card to-card/50 dark:bg-card rounded-2xl">
+                    {/* Image Section */}
+                    <div className="relative h-64 sm:h-80 bg-gradient-to-br from-primary/5 to-primary/10 overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                        <img 
+                            src={getMinimalPairImageUrl(currentSet.key)} 
+                            alt={currentSet.title}
+                            className="w-full h-full object-contain p-4 transition-transform duration-700 group-hover:scale-105"
+                            onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                            }}
+                        />
+                        {/* Icon Badge */}
+                        <div className="absolute top-4 left-4 bg-gradient-to-br from-primary to-primary/90 text-white rounded-2xl w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center shadow-xl border-2 border-white/50">
+                            <currentSet.icon className="w-7 h-7 sm:w-8 sm:h-8" />
+                        </div>
+                        {/* Play Button */}
+                        <div className="absolute bottom-4 right-4">
+                            <Button 
+                                size="icon" 
+                                className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full shadow-xl border-2 border-white/50 transition-all duration-300 ${
+                                    loadingAudio === currentSet.title 
+                                        ? 'bg-primary/70 cursor-not-allowed scale-95' 
+                                        : 'bg-primary hover:bg-primary/90 hover:scale-110'
+                                }`}
+                                onClick={() => handlePlayAudio(currentSet.title)}
+                                disabled={loadingAudio === currentSet.title}
+                            >
+                                {loadingAudio === currentSet.title ? (
+                                    <div className="w-7 h-7 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                    <Play className="w-7 h-7 text-white" fill="white" />
+                                )}
+                            </Button>
+                        </div>
                     </div>
-                    <Button 
-                        size="icon" 
-                        className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full ${
-                            loadingAudio === currentSet.title 
-                                ? 'bg-primary/60 cursor-not-allowed' 
-                                : 'bg-primary/80 hover:bg-primary'
-                        }`}
-                        onClick={() => handlePlayAudio(currentSet.title)}
-                        disabled={loadingAudio === currentSet.title}
-                    >
-                        {loadingAudio === currentSet.title ? (
-                            <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                            <Play className="w-5 h-5 sm:w-6 sm:h-6" />
-                        )}
-                    </Button>
+                    
+                    {/* Title Section */}
+                    <CardContent className="p-5 sm:p-6">
+                        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 text-center leading-tight">
+                            {currentSet.title}
+                        </h2>
+                    </CardContent>
                 </Card>
-                <Card className="p-6 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-                    <div className="flex items-center mb-4">
-                        <div className="p-2 bg-primary/20 rounded-full mr-3"><Pencil className="w-5 h-5 text-primary"/></div>
-                        <h3 className="text-xl font-bold">Examples:</h3>
-                    </div>
-                    <ul className="space-y-2 pl-6">{currentSet.examples.map((ex, i) => (<li key={i} className="flex items-center"><div className="w-2 h-2 bg-primary rounded-full mr-3"></div>{ex}</li>))}</ul>
+
+                {/* Examples Card */}
+                <Card className="overflow-hidden border-0 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-900/10 rounded-2xl shadow-lg">
+                    <CardContent className="p-5 sm:p-6 space-y-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2.5 sm:p-3 bg-gradient-to-br from-primary/20 to-primary/30 rounded-xl shadow-sm">
+                                <Pencil className="w-5 h-5 sm:w-6 sm:h-6 text-primary"/>
+                            </div>
+                            <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">Examples</h3>
+                        </div>
+                        <div className="space-y-3">
+                            {currentSet.examples.map((ex, i) => (
+                                <div key={i} className="flex items-center gap-3 p-3 bg-white/60 dark:bg-gray-800/40 rounded-xl transition-all duration-300 hover:bg-white/80 dark:hover:bg-gray-800/60">
+                                    <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0"></div>
+                                    <span className="text-sm sm:text-base text-gray-700 dark:text-gray-300 font-medium">{ex}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </CardContent>
                 </Card>
-                <Card className="p-6 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
-                    <div className="flex items-center mb-4">
-                        <div className="p-2 bg-red-500/20 rounded-full mr-3"><BookOpen className="w-5 h-5 text-red-500"/></div>
-                        <h3 className="text-xl font-bold">Urdu Explanation:</h3>
-                    </div>
-                    <ul className="space-y-2 pl-6 font-urdu text-lg">{currentSet.urduExplanation.map((ex, i) => (<li key={i} className="flex items-start"><div className="w-2 h-2 bg-red-500 rounded-full mr-3 mt-3"></div><span>{ex.sound && <span className="font-bold">{ex.sound} - </span>}{ex.text}</span></li>))}</ul>
+
+                {/* Urdu Explanation Card */}
+                <Card className="overflow-hidden border-0 bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-900/20 dark:to-amber-900/10 rounded-2xl shadow-lg">
+                    <CardContent className="p-5 sm:p-6 space-y-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2.5 sm:p-3 bg-gradient-to-br from-amber-500/20 to-amber-600/30 rounded-xl shadow-sm">
+                                <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-amber-600 dark:text-amber-500"/>
+                            </div>
+                            <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">Urdu Explanation</h3>
+                        </div>
+                        <div className="space-y-3 font-urdu">
+                            {currentSet.urduExplanation.map((ex, i) => (
+                                <div key={i} className="flex items-start gap-3 p-3 bg-white/60 dark:bg-gray-800/40 rounded-xl transition-all duration-300 hover:bg-white/80 dark:hover:bg-gray-800/60">
+                                    <div className="w-2 h-2 bg-amber-600 dark:bg-amber-500 rounded-full flex-shrink-0 mt-2.5"></div>
+                                    <span className="text-base sm:text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
+                                        {ex.sound && <span className="font-bold text-amber-700 dark:text-amber-400">{ex.sound} - </span>}
+                                        {ex.text}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </CardContent>
                 </Card>
             </div>
             <Button size="lg" className="w-full" onClick={handleNext}>
@@ -483,44 +616,91 @@ const VocabularyLesson = () => {
                 <Progress value={progress} className="h-2" />
                 <p className="text-center text-xs sm:text-sm text-muted-foreground mt-2">{step + 1} of {vocabularySets.length}</p>
             </div>
-            <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
-                <Card className="p-6 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-                    <div className="flex items-center mb-4">
-                        <div className="p-2 bg-primary/20 rounded-full mr-3"><BookOpen className="w-5 h-5 text-primary"/></div>
-                        <h2 className="text-xl sm:text-2xl font-bold">{currentSet.title}</h2>
-                    </div>
-                    <p className="text-muted-foreground text-sm sm:text-base">{currentSet.wordsToLearn} words to learn</p>
+            <div className="space-y-6 sm:space-y-8 mb-6 sm:mb-8">
+                {/* Category Header Card */}
+                <Card className="overflow-hidden border-0 bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl shadow-lg">
+                    <CardContent className="p-5 sm:p-6 flex items-center gap-4">
+                        <div className="p-3 sm:p-4 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl shadow-md">
+                            <currentSet.icon className="w-7 h-7 sm:w-8 sm:h-8 text-primary"/>
+                        </div>
+                        <div className="flex-1">
+                            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 leading-tight">{currentSet.title}</h2>
+                            <p className="text-sm sm:text-base text-muted-foreground mt-1">{currentSet.wordsToLearn} words to learn</p>
+                        </div>
+                    </CardContent>
                 </Card>
-                {currentSet.words.map((item, index) => {
-                    const wordToPlay = item.word || item.number || '';
-                    return (
-                        <Card key={index} className="p-3 sm:p-4 flex items-center">
-                            <div className="flex-1">
-                                <h3 className="text-xl sm:text-2xl font-bold flex items-center gap-2 sm:gap-3">
-                                    {item.number || item.word}
-                                    <span className="text-sm sm:text-lg text-muted-foreground font-normal">{item.phonetic}</span>
-                                </h3>
-                                <p className="font-urdu text-muted-foreground text-lg sm:text-xl">{item.translation}</p>
-                            </div>
-                            <Button 
-                                size="icon" 
-                                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full ${
-                                    loadingAudio === wordToPlay 
-                                        ? 'bg-primary/60 cursor-not-allowed' 
-                                        : 'bg-primary/80 hover:bg-primary'
-                                }`}
-                                onClick={() => handlePlayAudio(wordToPlay)}
-                                disabled={loadingAudio === wordToPlay}
+
+                {/* Words Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                    {currentSet.words.map((item, index) => {
+                        const wordToPlay = item.word || item.number || '';
+                        return (
+                            <Card 
+                                key={index} 
+                                className="group overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 bg-gradient-to-br from-card to-card/50 dark:bg-card rounded-2xl"
                             >
-                                {loadingAudio === wordToPlay ? (
-                                    <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                ) : (
-                                    <Play className="w-5 h-5 sm:w-6 sm:h-6" />
-                                )}
-                            </Button>
-                        </Card>
-                    );
-                })}
+                                {/* Image Section */}
+                                <div className="relative h-48 sm:h-56 bg-gradient-to-br from-primary/5 to-primary/10 overflow-hidden">
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                                    <img 
+                                        src={getLesson3ImageUrl(currentSet.title, item)} 
+                                        alt={wordToPlay}
+                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                        onError={(e) => {
+                                            const target = e.target as HTMLImageElement;
+                                            target.style.display = 'none';
+                                        }}
+                                    />
+                                    {/* Number/Word Badge (for Numbers category) */}
+                                    {item.number && (
+                                        <div className="absolute top-3 left-3 bg-primary text-primary-foreground rounded-2xl min-w-12 h-12 sm:min-w-14 sm:h-14 px-3 flex items-center justify-center text-2xl sm:text-3xl font-bold shadow-lg border-2 border-white/50">
+                                            {item.number}
+                                        </div>
+                                    )}
+                                    {/* Play Button Overlay */}
+                                    <div className="absolute bottom-3 right-3">
+                                        <Button 
+                                            size="icon" 
+                                            className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-xl border-2 border-white/50 transition-all duration-300 ${
+                                                loadingAudio === wordToPlay 
+                                                    ? 'bg-primary/70 cursor-not-allowed scale-95' 
+                                                    : 'bg-primary hover:bg-primary/90 hover:scale-110'
+                                            }`}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handlePlayAudio(wordToPlay);
+                                            }}
+                                            disabled={loadingAudio === wordToPlay}
+                                        >
+                                            {loadingAudio === wordToPlay ? (
+                                                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                            ) : (
+                                                <Play className="w-6 h-6 text-white" fill="white" />
+                                            )}
+                                        </Button>
+                                    </div>
+                                </div>
+                                
+                                {/* Content Section */}
+                                <CardContent className="p-4 sm:p-5 space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs sm:text-sm font-medium text-muted-foreground bg-primary/10 px-3 py-1 rounded-full">
+                                            {item.phonetic}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
+                                            {item.word || item.number}
+                                        </h3>
+                                        <p className="font-urdu text-base sm:text-lg text-muted-foreground leading-relaxed">
+                                            {item.translation}
+                                        </p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        );
+                    })}
+                </div>
             </div>
             <Button size="lg" className="w-full" onClick={handleNext}>
                 <ChevronRight className="w-5 h-5 mr-2" />
