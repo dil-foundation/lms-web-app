@@ -560,36 +560,41 @@ export const TeacherMeetings = ({ userProfile }: TeacherMeetingsProps) => {
                                 </TooltipContent>
                               </Tooltip>
                             )}
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleCancelMeeting(meeting.id)}
-                                  className="hover:bg-orange-50 dark:hover:bg-orange-950/20"
-                                >
-                                  <Ban className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Cancel meeting (keeps record)</p>
-                              </TooltipContent>
-                            </Tooltip>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleDeleteMeeting(meeting.id)}
-                                  className="hover:bg-red-50 dark:hover:bg-red-950/20"
-                                >
-                                  <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Delete meeting permanently</p>
-                              </TooltipContent>
-                            </Tooltip>
+                            {/* Only show cancel and delete buttons for meetings created by the current user */}
+                            {meeting.teacher_id === userProfile.id && (
+                              <>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleCancelMeeting(meeting.id)}
+                                      className="hover:bg-orange-50 dark:hover:bg-orange-950/20"
+                                    >
+                                      <Ban className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Cancel meeting (keeps record)</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleDeleteMeeting(meeting.id)}
+                                      className="hover:bg-red-50 dark:hover:bg-red-950/20"
+                                    >
+                                      <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Delete meeting permanently</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
