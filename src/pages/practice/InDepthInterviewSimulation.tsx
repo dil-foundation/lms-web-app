@@ -366,7 +366,10 @@ export default function InDepthInterviewSimulation() {
               <Button
                 variant="outline"
                 size="icon"
-                onClick={() => setSelectedPrompt(null)}
+                onClick={() => {
+                  stopAudio();
+                  setSelectedPrompt(null);
+                }}
                 className="absolute left-0 group w-10 h-10 sm:w-12 sm:h-12 rounded-2xl border-2 border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5 hover:text-secondary transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
               >
                 <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 group-hover:-translate-x-1 transition-transform duration-300" />
@@ -439,7 +442,10 @@ export default function InDepthInterviewSimulation() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setSelectedPrompt(null)}
+                    onClick={() => {
+                      stopAudio();
+                      setSelectedPrompt(null);
+                    }}
                     className="border-0 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border-gray-200/60 dark:border-gray-700/60 text-primary hover:bg-white/80 dark:hover:bg-gray-800/80 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
                   >
                     Change Prompt

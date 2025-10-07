@@ -372,7 +372,63 @@ class MeetingService {
       // Skip notifications for now (as requested)
       // await this.createMeetingNotifications(updatedMeeting);
 
-      return updatedMeeting;
+      // Fetch the complete meeting data with participant information
+      const { data: completeMeeting, error: fetchError } = await supabase
+        .from('zoom_meetings')
+        .select(`
+          *,
+          student:profiles!zoom_meetings_student_id_fkey(
+            first_name,
+            last_name
+          ),
+          participant:profiles!zoom_meetings_participant_id_fkey(
+            first_name,
+            last_name,
+            email
+          ),
+          course:courses!zoom_meetings_course_id_fkey(
+            title
+          ),
+          class:classes!zoom_meetings_class_id_fkey(
+            name,
+            code,
+            grade
+          ),
+          host:profiles!zoom_meetings_teacher_id_fkey(
+            first_name,
+            last_name,
+            email
+          )
+        `)
+        .eq('id', data.id)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching complete meeting data:', fetchError);
+        // Fall back to returning the updated meeting without joins
+        return updatedMeeting;
+      }
+
+      // Map the data to include formatted names (same as getTeacherMeetings)
+      const formattedMeeting: ZoomMeeting = {
+        ...completeMeeting,
+        student_name: completeMeeting.student 
+          ? `${completeMeeting.student.first_name} ${completeMeeting.student.last_name}`.trim()
+          : undefined,
+        participant_name: completeMeeting.participant
+          ? `${completeMeeting.participant.first_name || ''} ${completeMeeting.participant.last_name || ''}`.trim() || completeMeeting.participant.email
+          : undefined,
+        host_name: completeMeeting.host
+          ? `${completeMeeting.host.first_name || ''} ${completeMeeting.host.last_name || ''}`.trim() || completeMeeting.host.email
+          : undefined,
+        course_title: completeMeeting.class 
+          ? `${completeMeeting.class.name} (${completeMeeting.class.code})` 
+          : completeMeeting.course?.title || undefined,
+        class_name: completeMeeting.class?.name || undefined,
+        participant_names: []
+      };
+
+      return formattedMeeting;
     } catch (error) {
       console.error('Error creating meeting:', error);
       throw error;
@@ -405,7 +461,63 @@ class MeetingService {
         }
       }
 
-      return data;
+      // Fetch the complete meeting data with participant information
+      const { data: completeMeeting, error: fetchError } = await supabase
+        .from('zoom_meetings')
+        .select(`
+          *,
+          student:profiles!zoom_meetings_student_id_fkey(
+            first_name,
+            last_name
+          ),
+          participant:profiles!zoom_meetings_participant_id_fkey(
+            first_name,
+            last_name,
+            email
+          ),
+          course:courses!zoom_meetings_course_id_fkey(
+            title
+          ),
+          class:classes!zoom_meetings_class_id_fkey(
+            name,
+            code,
+            grade
+          ),
+          host:profiles!zoom_meetings_teacher_id_fkey(
+            first_name,
+            last_name,
+            email
+          )
+        `)
+        .eq('id', meetingId)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching complete meeting data:', fetchError);
+        // Fall back to returning the updated meeting without joins
+        return data;
+      }
+
+      // Map the data to include formatted names (same as getTeacherMeetings)
+      const formattedMeeting: ZoomMeeting = {
+        ...completeMeeting,
+        student_name: completeMeeting.student 
+          ? `${completeMeeting.student.first_name} ${completeMeeting.student.last_name}`.trim()
+          : undefined,
+        participant_name: completeMeeting.participant
+          ? `${completeMeeting.participant.first_name || ''} ${completeMeeting.participant.last_name || ''}`.trim() || completeMeeting.participant.email
+          : undefined,
+        host_name: completeMeeting.host
+          ? `${completeMeeting.host.first_name || ''} ${completeMeeting.host.last_name || ''}`.trim() || completeMeeting.host.email
+          : undefined,
+        course_title: completeMeeting.class 
+          ? `${completeMeeting.class.name} (${completeMeeting.class.code})` 
+          : completeMeeting.course?.title || undefined,
+        class_name: completeMeeting.class?.name || undefined,
+        participant_names: []
+      };
+
+      return formattedMeeting;
     } catch (error) {
       console.error('Error updating meeting:', error);
       throw error;
