@@ -2354,7 +2354,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             {/* Breadcrumb Navigation */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-4 min-w-0 flex-1">
               <Button 
                 variant="ghost" 
                 size="sm" 
@@ -2367,16 +2367,16 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                     navigate(`/dashboard/courses/${actualCourseId}`);
                   }
                 }}
-                className="text-muted-foreground hover:text-foreground transition-colors"
+                className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
               >
                 <ChevronLeft className="w-4 h-4 mr-1" />
                 {(profile?.role === 'admin' || profile?.role === 'teacher') ? 'Back to Course Builder' : 'Back to Course'}
               </Button>
-              <div className="h-4 w-px bg-border" />
-              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                <span className="font-medium">{currentModule?.title}</span>
-                <span>•</span>
-                <span>{currentLesson?.title}</span>
+              <div className="h-4 w-px bg-border flex-shrink-0" />
+              <div className="flex items-center space-x-2 text-sm text-muted-foreground min-w-0 flex-1 overflow-hidden">
+                <span className="font-medium truncate max-w-[200px]" title={currentModule?.title}>{currentModule?.title}</span>
+                <span className="flex-shrink-0">•</span>
+                <span className="truncate" title={currentLesson?.title}>{currentLesson?.title}</span>
               </div>
             </div>
             
@@ -2448,20 +2448,20 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                               : "bg-card border-border hover:border-primary/20"
                           )}
                         >
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center space-x-2">
+                          <div className="flex items-center justify-between mb-2 gap-2">
+                            <div className="flex items-center space-x-2 min-w-0 flex-1">
                               <BookOpen className={cn(
-                                "w-4 h-4",
+                                "w-4 h-4 flex-shrink-0",
                                 isCurrentModule ? "text-primary" : "text-muted-foreground"
                               )} />
                               <span className={cn(
-                                "text-sm font-medium",
+                                "text-sm font-medium truncate",
                                 isCurrentModule ? "text-primary" : "text-foreground"
-                              )}>
+                              )} title={module.title}>
                                 {module.title}
                               </span>
                             </div>
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-xs text-muted-foreground flex-shrink-0">
                               {moduleProgress}%
                             </span>
                           </div>
@@ -2488,13 +2488,13 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                                         : "text-muted-foreground hover:text-foreground"
                                     )}
                                   >
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center space-x-2">
-                                        <ClipboardList className="w-3 h-3" />
-                                        <span className="truncate">{lesson.title}</span>
+                                    <div className="flex items-center justify-between gap-2">
+                                      <div className="flex items-center space-x-2 min-w-0 flex-1">
+                                        <ClipboardList className="w-3 h-3 flex-shrink-0" />
+                                        <span className="truncate" title={lesson.title}>{lesson.title}</span>
                                       </div>
                                       {isCurrentLesson && (
-                                        <span className="text-xs text-muted-foreground">
+                                        <span className="text-xs text-muted-foreground flex-shrink-0">
                                           {lesson.contentItems.filter((item: any) => item.completed).length}/{lesson.contentItems.length}
                                         </span>
                                       )}
