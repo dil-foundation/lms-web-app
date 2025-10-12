@@ -1843,11 +1843,29 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                 </CardContent>
               </Card>
             )}
-            <div className="text-center">
-              <Button onClick={() => navigate('/dashboard/assignments')} className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300">
-                Go to Assignments
-              </Button>
-            </div>
+            {profile?.role === 'admin' || profile?.role === 'teacher' ? (
+              <Card className="bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-800 rounded-2xl">
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-3">
+                    <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                        Preview Mode
+                      </p>
+                      <p className="text-sm text-blue-700 dark:text-blue-300">
+                        Assignments can only be submitted by students. As {profile?.role === 'admin' ? 'an admin' : 'a teacher'}, you are viewing this in preview mode.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="text-center">
+                <Button onClick={() => navigate('/dashboard/assignments')} className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300">
+                  Go to Assignments
+                </Button>
+              </div>
+            )}
           </div>
         );
       case 'quiz':
@@ -2183,32 +2201,50 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                 );
               })}
               {!hasSubmitted && (
-                <Button 
-                  onClick={() => handleQuizSubmit()} 
-                  disabled={questions.length === 0 || questions.some((q: any) => {
-                    const userAnswer = userAnswers[q.id];
-                    const textAnswer = textAnswers[q.id];
-                    const mathAnswer = mathAnswers[q.id];
-                    const questionType = q.question_type || 'single_choice';
-                    
-                    if (questionType === 'text_answer') {
-                      // For text answer, the answer must not be empty
-                      return !textAnswer || textAnswer.trim() === '';
-                    } else if (questionType === 'math_expression') {
-                      // For math expression, temporarily allow empty answers
-                      return false; // Always allow submission for now
-                    } else if (questionType === 'multiple_choice') {
-                      // For multiple choice, at least one option must be selected
-                      return !Array.isArray(userAnswer) || userAnswer.length === 0;
-                    } else {
-                      // For single choice, exactly one option must be selected
-                      return !userAnswer || userAnswer === '';
-                    }
-                  })} 
-                  className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300"
-                >
-                  Submit Quiz
-                </Button>
+                profile?.role === 'admin' || profile?.role === 'teacher' ? (
+                  <Card className="bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-800 rounded-2xl">
+                    <CardContent className="pt-6">
+                      <div className="flex items-start gap-3">
+                        <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                            Preview Mode
+                          </p>
+                          <p className="text-sm text-blue-700 dark:text-blue-300">
+                            Quizzes can only be submitted by students. As {profile?.role === 'admin' ? 'an admin' : 'a teacher'}, you are viewing this in preview mode.
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Button 
+                    onClick={() => handleQuizSubmit()} 
+                    disabled={questions.length === 0 || questions.some((q: any) => {
+                      const userAnswer = userAnswers[q.id];
+                      const textAnswer = textAnswers[q.id];
+                      const mathAnswer = mathAnswers[q.id];
+                      const questionType = q.question_type || 'single_choice';
+                      
+                      if (questionType === 'text_answer') {
+                        // For text answer, the answer must not be empty
+                        return !textAnswer || textAnswer.trim() === '';
+                      } else if (questionType === 'math_expression') {
+                        // For math expression, temporarily allow empty answers
+                        return false; // Always allow submission for now
+                      } else if (questionType === 'multiple_choice') {
+                        // For multiple choice, at least one option must be selected
+                        return !Array.isArray(userAnswer) || userAnswer.length === 0;
+                      } else {
+                        // For single choice, exactly one option must be selected
+                        return !userAnswer || userAnswer === '';
+                      }
+                    })} 
+                    className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300"
+                  >
+                    Submit Quiz
+                  </Button>
+                )
               )}
               {hasSubmitted && currentContentItem.submission && (
                  <div className="p-4 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/20 border border-primary/30 dark:border-primary/20 shadow-lg">
