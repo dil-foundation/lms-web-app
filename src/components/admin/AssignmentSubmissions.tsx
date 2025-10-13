@@ -21,9 +21,9 @@ import { MathDrawingCanvas } from '@/components/quiz/MathDrawingCanvas';
 type SubmissionStatus = 'graded' | 'submitted' | 'not submitted';
 
 interface Student {
-  id: string;
-  name: string;
-  avatar_url?: string;
+  id: string | null;
+  name: string | null;
+  avatar_url?: string | null;
 }
 
 interface Submission {
@@ -947,18 +947,21 @@ export const AssignmentSubmissions = () => {
   };
 
   // Derived State
-  const submissionsWithStatus = allSubmissions.filter(s => s.status !== 'not submitted');
-  const studentsNotSubmitted = allSubmissions.filter(s => s.status === 'not submitted');
+  // Filter out submissions with null student data
+  const submissionsWithStatus = allSubmissions.filter(s => s.status !== 'not submitted' && s.student?.id && s.student?.name);
+  const studentsNotSubmitted = allSubmissions.filter(s => s.status === 'not submitted' && s.student?.id && s.student?.name);
 
   const filteredSubmissions = submissionsWithStatus.filter(s => 
-    s.student.name.toLowerCase().includes(searchTerm.toLowerCase())
+    s.student?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const filteredNotSubmitted = studentsNotSubmitted.filter(s => 
-    s.student.name.toLowerCase().includes(searchTerm.toLowerCase())
+    s.student?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
-  const totalStudents = allSubmissions.length;
+  // Only count students with valid data
+  const validStudents = allSubmissions.filter(s => s.student?.id && s.student?.name);
+  const totalStudents = validStudents.length;
   const submittedCount = submissionsWithStatus.length;
   const gradedCount = submissionsWithStatus.filter(s => s.status === 'graded').length;
   const pendingGrading = assignmentDetails?.type === 'assignment' ? submittedCount - gradedCount : 0;
