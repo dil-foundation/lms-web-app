@@ -102,6 +102,9 @@ const CourseCard = ({ course, onDelete }: { course: Course, onDelete: (course: C
   const navigate = useNavigate();
   const { user } = useAuth();
 
+  const isAdmin = user?.app_metadata?.role === 'admin';
+  const isTeacher = user?.app_metadata?.role === 'teacher';
+
   const canDelete = user && (
     user.app_metadata.role === 'admin' ||
     (user.app_metadata.role === 'teacher' && course.status === 'Draft' && user.id === course.authorId)
@@ -136,13 +139,23 @@ const CourseCard = ({ course, onDelete }: { course: Course, onDelete: (course: C
         </div>
       </CardContent>
       <CardFooter className="p-4 pt-0 mt-auto">
-        <Button 
-          onClick={() => navigate(`/dashboard/courses/builder/${course.id}`)}
-          className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-3 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:scale-105 rounded-xl"
-        >
-          <Edit3 className="w-4 h-4 mr-2" />
-          Edit Course
-        </Button>
+        {isAdmin ? (
+          <Button 
+            onClick={() => navigate(`/dashboard/courses/builder/${course.id}`)}
+            className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-3 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:scale-105 rounded-xl"
+          >
+            <Edit3 className="w-4 h-4 mr-2" />
+            Edit Course
+          </Button>
+        ) : (
+          <Button 
+            onClick={() => navigate(`/dashboard/courses/${course.id}`)}
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:scale-105 rounded-xl"
+          >
+            <Eye className="w-4 h-4 mr-2" />
+            View Course
+          </Button>
+        )}
       </CardFooter>
     </Card>
   )
@@ -152,6 +165,10 @@ const CourseManagement = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { preferences, setTeacherCourseView } = useViewPreferences();
+  
+  // Check user role for UI restrictions
+  const isAdmin = user?.app_metadata?.role === 'admin';
+  const isTeacher = user?.app_metadata?.role === 'teacher';
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -596,23 +613,35 @@ const CourseManagement = () => {
               </div>
             </div>
             
-            <div className="flex items-center gap-3">
-              <Button 
-                variant="outline"
-                onClick={() => setIsBulkUploadOpen(true)}
-                className="h-10 px-6 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800"
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                Bulk Upload
-              </Button>
-              <Button 
-                onClick={handleCreateCourse}
-                className="h-10 px-6 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
-              >
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Create Course
-              </Button>
-            </div>
+            {/* Only show action buttons for admins */}
+            {isAdmin && (
+              <div className="flex items-center gap-3">
+                <Button 
+                  variant="outline"
+                  onClick={() => setIsBulkUploadOpen(true)}
+                  className="h-10 px-6 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Bulk Upload
+                </Button>
+                <Button 
+                  onClick={handleCreateCourse}
+                  className="h-10 px-6 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                >
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Create Course
+                </Button>
+              </div>
+            )}
+            
+            {/* Show message for teachers */}
+            {isTeacher && (
+              <div className="flex items-center gap-3">
+                <div className="text-sm text-muted-foreground bg-muted/50 px-4 py-2 rounded-lg">
+                  <span className="font-medium">View Mode:</span> You can view and access course content. Course creation and editing is restricted to administrators.
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -775,12 +804,14 @@ const CourseManagement = () => {
             <div className="text-center py-12">
               <EmptyState
                   title="No Courses Found"
-                  description="You haven't created any courses yet. Get started by creating a new one."
+                  description={isAdmin ? "You haven't created any courses yet. Get started by creating a new one." : "No courses are available at the moment."}
               />
-              <Button onClick={handleCreateCourse} className="mt-4 h-10 px-6 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  Create Course
-              </Button>
+              {isAdmin && (
+                <Button onClick={handleCreateCourse} className="mt-4 h-10 px-6 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Create Course
+                </Button>
+              )}
             </div>
           )}
             </CardContent>
