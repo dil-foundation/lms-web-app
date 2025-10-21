@@ -53,6 +53,9 @@ export const CourseListView: React.FC<CourseListViewProps> = ({
 }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  
+  const isAdmin = user?.app_metadata?.role === 'admin';
+  const isTeacher = user?.app_metadata?.role === 'teacher';
 
   const getStatusColor = (status: CourseStatus) => {
     switch (status) {
@@ -72,7 +75,11 @@ export const CourseListView: React.FC<CourseListViewProps> = ({
   };
 
   const handleCourseClick = (course: Course) => {
-    navigate(`/dashboard/courses/builder/${course.id}`);
+    if (isAdmin) {
+      navigate(`/dashboard/courses/builder/${course.id}`);
+    } else {
+      navigate(`/dashboard/courses/${course.id}`);
+    }
   };
 
   const handleEdit = (e: React.MouseEvent, course: Course) => {
@@ -82,7 +89,7 @@ export const CourseListView: React.FC<CourseListViewProps> = ({
 
   const handleView = (e: React.MouseEvent, course: Course) => {
     e.stopPropagation();
-    navigate(`/dashboard/courses/builder/${course.id}`);
+    navigate(`/dashboard/courses/${course.id}`);
   };
 
   const handleDelete = (e: React.MouseEvent, course: Course) => {
@@ -153,15 +160,18 @@ export const CourseListView: React.FC<CourseListViewProps> = ({
                 <div className="flex items-center gap-2">
                   <Button
                     size="sm"
-                    variant="outline"
-                    className="h-8 text-xs"
+                    className={`h-8 text-xs ${
+                      isAdmin 
+                        ? 'bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white' 
+                        : 'bg-primary hover:bg-primary/90 text-primary-foreground'
+                    }`}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleCourseClick(course);
                     }}
                   >
                     <Play className="w-3 h-3 mr-1" />
-                    Manage
+                    {isAdmin ? 'Manage' : 'View Course'}
                   </Button>
                   
                   <DropdownMenu>
@@ -176,10 +186,17 @@ export const CourseListView: React.FC<CourseListViewProps> = ({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={(e) => handleEdit(e, course)}>
-                        <Edit className="w-4 h-4 mr-2" />
-                        Edit
-                      </DropdownMenuItem>
+                      {isAdmin ? (
+                        <DropdownMenuItem onClick={(e) => handleEdit(e, course)}>
+                          <Edit className="w-4 h-4 mr-2" />
+                          Edit
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem onClick={(e) => handleView(e, course)} disabled className="opacity-50">
+                          <Eye className="w-4 h-4 mr-2" />
+                          View Only
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem onClick={(e) => handleView(e, course)}>
                         <Eye className="w-4 h-4 mr-2" />
                         View

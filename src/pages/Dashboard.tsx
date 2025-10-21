@@ -15,6 +15,7 @@ import { APEX } from '@/components/ui/AIAssistant';
 import { requestNotificationPermission } from '@/utils/fcm';
 import { OfflineRouteGuard } from '@/components/auth/OfflineRouteGuard';
 import { OfflineAwareSuspense } from '@/components/ui/OfflineAwareSuspense';
+import { RoleGuard } from '@/components/auth/RoleGuard';
 
 const AIStudentLearn = lazy(() => import('@/components/dashboard/AIStudentLearn').then(module => ({ default: module.AIStudentLearn })));
 // Import StudentDashboard eagerly since it's needed for offline overview access
@@ -399,7 +400,16 @@ const Dashboard = () => {
                                             ) : (
                         <>
                           <Route path="/courses" element={<CourseManagement />} />
-                          <Route path="/courses/builder/:courseId" element={<CourseBuilder />} />
+                          <Route path="/courses/builder/new" element={
+                            <RoleGuard allowedRoles={['admin']}>
+                              <CourseBuilder />
+                            </RoleGuard>
+                          } />
+                          <Route path="/courses/builder/:courseId" element={
+                            <RoleGuard allowedRoles={['admin']}>
+                              <CourseBuilder />
+                            </RoleGuard>
+                          } />
                           <Route path="/students" element={<StudentsPage />} />
                           <Route path="/classes" element={<ClassManagement />} />
                           <Route path="/reports" element={<ReportsPage />} />
