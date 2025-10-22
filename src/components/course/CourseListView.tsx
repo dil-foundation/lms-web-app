@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 type CourseStatus = "Published" | "Draft" | "Under Review" | "Rejected";
 
@@ -53,9 +54,10 @@ export const CourseListView: React.FC<CourseListViewProps> = ({
 }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { profile } = useUserProfile();
   
-  const isAdmin = user?.app_metadata?.role === 'admin';
-  const isTeacher = user?.app_metadata?.role === 'teacher';
+  const isAdmin = profile?.role === 'admin';
+  const isTeacher = profile?.role === 'teacher';
 
   const getStatusColor = (status: CourseStatus) => {
     switch (status) {
