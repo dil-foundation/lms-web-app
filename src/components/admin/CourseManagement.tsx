@@ -46,6 +46,7 @@ import { toast } from "sonner"
 import { Skeleton } from "../ui/skeleton"
 import { EmptyState } from "../EmptyState"
 import { useAuth } from "@/hooks/useAuth"
+import { useUserProfile } from "@/hooks/useUserProfile"
 import { useViewPreferences } from '@/contexts/ViewPreferencesContext'
 import { ViewToggle } from '@/components/ui/ViewToggle'
 import { CourseTileView } from '@/components/course/CourseTileView'
@@ -101,9 +102,10 @@ interface Course {
 const CourseCard = ({ course, onDelete }: { course: Course, onDelete: (course: Course) => void }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { profile } = useUserProfile();
 
-  const isAdmin = user?.app_metadata?.role === 'admin';
-  const isTeacher = user?.app_metadata?.role === 'teacher';
+  const isAdmin = profile?.role === 'admin';
+  const isTeacher = profile?.role === 'teacher';
 
   const canDelete = user && (
     user.app_metadata.role === 'admin' ||
@@ -164,11 +166,12 @@ const CourseCard = ({ course, onDelete }: { course: Course, onDelete: (course: C
 const CourseManagement = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { profile } = useUserProfile();
   const { preferences, setTeacherCourseView } = useViewPreferences();
   
   // Check user role for UI restrictions
-  const isAdmin = user?.app_metadata?.role === 'admin';
-  const isTeacher = user?.app_metadata?.role === 'teacher';
+  const isAdmin = profile?.role === 'admin';
+  const isTeacher = profile?.role === 'teacher';
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
