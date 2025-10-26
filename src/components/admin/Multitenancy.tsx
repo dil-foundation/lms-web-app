@@ -139,6 +139,13 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
   const [activeTab, setActiveTab] = useState('countries');
   const [searchTerm, setSearchTerm] = useState('');
   
+  // Load ALL entities for dropdowns (not paginated)
+  const [allCountries, setAllCountries] = useState<CountryType[]>([]);
+  const [allRegions, setAllRegions] = useState<Region[]>([]);
+  const [allCities, setAllCities] = useState<City[]>([]);
+  const [allProjects, setAllProjects] = useState<Project[]>([]);
+  const [allBoards, setAllBoards] = useState<Board[]>([]);
+  
   // Countries specific state
   const [isCountryCreateDialogOpen, setIsCountryCreateDialogOpen] = useState(false);
   const [isCountryEditDialogOpen, setIsCountryEditDialogOpen] = useState(false);
@@ -1341,6 +1348,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
         await deleteRegion(regionInfo.id);
         toast.success('Region deleted successfully');
         
+        // Refresh dropdown data
+        await refreshAllEntitiesForDropdowns();
+        
         // Send notification to all admins
         if (country) {
           try {
@@ -1486,6 +1496,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
         await deleteCity(cityInfo.id);
         toast.success('City deleted successfully');
         
+        // Refresh dropdown data
+        await refreshAllEntitiesForDropdowns();
+        
         // Send notification to all admins
         if (region && country) {
           try {
@@ -1618,6 +1631,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
         await deleteProject(projectInfo.id);
         toast.success('Project deleted successfully');
         
+        // Refresh dropdown data
+        await refreshAllEntitiesForDropdowns();
+        
         // Send notification to all admins
         if (city) {
           try {
@@ -1735,6 +1751,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       try {
         await deleteBoard(boardInfo.id);
         toast.success('Board deleted successfully');
+        
+        // Refresh dropdown data
+        await refreshAllEntitiesForDropdowns();
         
         // Send notification to all admins
         if (project) {
@@ -1915,6 +1934,39 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     loadCountriesStats();
   }, [getCountriesWithStats]);
 
+  // Function to refresh all entity lists for dropdowns
+  const refreshAllEntitiesForDropdowns = async () => {
+    try {
+      // Load all countries
+      const countriesData = await MultitenancyService.getCountries();
+      setAllCountries(countriesData);
+
+      // Load all regions
+      const regionsData = await MultitenancyService.getRegions();
+      setAllRegions(regionsData);
+
+      // Load all cities
+      const citiesData = await MultitenancyService.getCities();
+      setAllCities(citiesData);
+
+      // Load all projects
+      const projectsData = await MultitenancyService.getProjects();
+      setAllProjects(projectsData);
+
+      // Load all boards
+      const boardsData = await MultitenancyService.getBoards();
+      setAllBoards(boardsData);
+    } catch (error) {
+      console.error('Failed to refresh entities for dropdowns:', error);
+      // Don't show error toast here as it might be annoying during normal operations
+    }
+  };
+
+  // Load ALL entities for dropdowns (bypassing pagination)
+  useEffect(() => {
+    refreshAllEntitiesForDropdowns();
+  }, []); // Run once on component mount
+
   // Handle search functionality
   const handleSearch = async (searchTerm: string) => {
     if (searchTerm.trim() === '') {
@@ -1967,6 +2019,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       });
     setIsRegionCreateDialogOpen(false);
     resetRegionForm();
+    
+    // Refresh dropdown data
+    await refreshAllEntitiesForDropdowns();
     
     // Get country name for notification
     const selectedCountry = countries.find(c => c.id === regionFormData.country);
@@ -2029,6 +2084,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       });
     setIsRegionEditDialogOpen(false);
     setEditingRegion(null);
+    
+    // Refresh dropdown data
+    await refreshAllEntitiesForDropdowns();
     resetRegionForm();
     
     // Get country name for notification
@@ -2142,6 +2200,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     setIsCityCreateDialogOpen(false);
     resetCityForm();
     
+    // Refresh dropdown data
+    await refreshAllEntitiesForDropdowns();
+    
     // Get region and country names for notification
     const selectedRegion = regions.find(r => r.id === cityFormData.region);
     const selectedCountry = countries.find(c => c.id === cityFormData.country);
@@ -2205,6 +2266,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
         description: cityFormData.description.trim()
       });
     setIsCityEditDialogOpen(false);
+    
+    // Refresh dropdown data
+    await refreshAllEntitiesForDropdowns();
     setEditingCity(null);
     resetCityForm();
     
@@ -2327,6 +2391,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     setIsProjectCreateDialogOpen(false);
     resetProjectForm();
     
+    // Refresh dropdown data
+    await refreshAllEntitiesForDropdowns();
+    
     // Get city name for notification
     const selectedCity = cities.find(c => c.id === projectFormData.city);
     if (selectedCity) {
@@ -2390,6 +2457,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
       });
     setIsProjectEditDialogOpen(false);
     setEditingProject(null);
+    
+    // Refresh dropdown data
+    await refreshAllEntitiesForDropdowns();
     resetProjectForm();
     
     // Get city name for notification
@@ -2515,6 +2585,9 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
     setIsBoardCreateDialogOpen(false);
     resetBoardForm();
     
+    // Refresh dropdown data
+    await refreshAllEntitiesForDropdowns();
+    
     // Get project name for notification
     const selectedProject = projects.find(p => p.id === boardFormData.project);
     if (selectedProject) {
@@ -2577,8 +2650,12 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
         project_id: boardFormData.project,
         description: boardFormData.description.trim()
       });
+      
     setIsBoardEditDialogOpen(false);
     setEditingBoard(null);
+    
+    // Refresh dropdown data
+    await refreshAllEntitiesForDropdowns();
     resetBoardForm();
     
     // Get project name for notification
@@ -5900,7 +5977,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectValue placeholder="Select a country" />
                 </SelectTrigger>
                 <SelectContent>
-                  {countries.map((country) => (
+                  {allCountries.map((country) => (
                     <SelectItem key={country.id} value={country.id}>
                       {country.name}
                     </SelectItem>
@@ -6021,7 +6098,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectValue placeholder="Select a country" />
                 </SelectTrigger>
                 <SelectContent>
-                  {countries.map((country) => (
+                  {allCountries.map((country) => (
                     <SelectItem key={country.id} value={country.id}>
                       {country.name}
                     </SelectItem>
@@ -6217,7 +6294,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectValue placeholder="Select a country" />
                 </SelectTrigger>
                 <SelectContent>
-                  {countries.map((country) => (
+                  {allCountries.map((country) => (
                     <SelectItem key={country.id} value={country.id}>
                       {country.name}
                     </SelectItem>
@@ -6244,7 +6321,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectValue placeholder={cityFormData.country ? "Select a region" : "Select country first"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {regions
+                  {allRegions
                     .filter(region => region.country_id === cityFormData.country)
                     .map((region) => (
                       <SelectItem key={region.id} value={region.id}>
@@ -6367,7 +6444,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectValue placeholder="Select a country" />
                 </SelectTrigger>
                 <SelectContent>
-                  {countries.map((country) => (
+                  {allCountries.map((country) => (
                     <SelectItem key={country.id} value={country.id}>
                       {country.name}
                     </SelectItem>
@@ -6394,7 +6471,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectValue placeholder={cityFormData.country ? "Select a region" : "Select country first"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {regions
+                  {allRegions
                     .filter(region => region.country_id === cityFormData.country)
                     .map((region) => (
                       <SelectItem key={region.id} value={region.id}>
@@ -6596,7 +6673,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectValue placeholder="Select a country" />
                 </SelectTrigger>
                 <SelectContent>
-                  {countries.map((country) => (
+                  {allCountries.map((country) => (
                     <SelectItem key={country.id} value={country.id}>
                       {country.name}
                     </SelectItem>
@@ -6623,7 +6700,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectValue placeholder={projectFormData.country ? "Select a region" : "Select country first"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {regions
+                  {allRegions
                     .filter(region => region.country_id === projectFormData.country)
                     .map((region) => (
                       <SelectItem key={region.id} value={region.id}>
@@ -6652,7 +6729,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectValue placeholder={projectFormData.region ? "Select a city" : "Select region first"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {cities
+                  {allCities
                     .filter(city => city.region_id === projectFormData.region && city.country_id === projectFormData.country)
                     .map((city) => (
                       <SelectItem key={city.id} value={city.id}>
@@ -6775,7 +6852,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectValue placeholder="Select a country" />
                 </SelectTrigger>
                 <SelectContent>
-                  {countries.map((country) => (
+                  {allCountries.map((country) => (
                     <SelectItem key={country.id} value={country.id}>
                       {country.name}
                     </SelectItem>
@@ -6799,10 +6876,10 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                 disabled={!projectFormData.country}
               >
                 <SelectTrigger id="edit-project-region" className={projectValidationErrors.region ? 'border-red-500 focus:border-red-500' : ''}>
-                  <SelectValue placeholder={projectFormData.country ? "Select a region" : "Select country first"} />
+                  <SelectValue placeholder={projectFormData.country ? "Select a region" : "Select region first"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {regions
+                  {allRegions
                     .filter(region => region.country_id === projectFormData.country)
                     .map((region) => (
                       <SelectItem key={region.id} value={region.id}>
@@ -6831,7 +6908,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectValue placeholder={projectFormData.region ? "Select a city" : "Select region first"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {cities
+                  {allCities
                     .filter(city => city.region_id === projectFormData.region && city.country_id === projectFormData.country)
                     .map((city) => (
                       <SelectItem key={city.id} value={city.id}>
@@ -7037,7 +7114,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectValue placeholder="Select a country" />
                 </SelectTrigger>
                 <SelectContent>
-                  {countries.map((country) => (
+                  {allCountries.map((country) => (
                     <SelectItem key={country.id} value={country.id}>
                       {country.name}
                     </SelectItem>
@@ -7064,7 +7141,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectValue placeholder={boardFormData.country ? "Select a region" : "Select country first"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {regions
+                  {allRegions
                     .filter(region => region.country_id === boardFormData.country)
                     .map((region) => (
                       <SelectItem key={region.id} value={region.id}>
@@ -7093,7 +7170,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectValue placeholder={boardFormData.region ? "Select a city" : "Select region first"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {cities
+                  {allCities
                     .filter(city => city.region_id === boardFormData.region && city.country_id === boardFormData.country)
                     .map((city) => (
                       <SelectItem key={city.id} value={city.id}>
@@ -7122,7 +7199,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectValue placeholder={boardFormData.city ? "Select a project" : "Select city first"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {projects
+                  {allProjects
                     .filter(project => project.city_id === boardFormData.city && project.region_id === boardFormData.region && project.country_id === boardFormData.country)
                     .map((project) => (
                       <SelectItem key={project.id} value={project.id}>
@@ -7245,7 +7322,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectValue placeholder="Select a country" />
                 </SelectTrigger>
                 <SelectContent>
-                  {countries.map((country) => (
+                  {allCountries.map((country) => (
                     <SelectItem key={country.id} value={country.id}>
                       {country.name}
                     </SelectItem>
@@ -7272,7 +7349,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectValue placeholder={boardFormData.country ? "Select a region" : "Select country first"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {regions
+                  {allRegions
                     .filter(region => region.country_id === boardFormData.country)
                     .map((region) => (
                       <SelectItem key={region.id} value={region.id}>
@@ -7301,7 +7378,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectValue placeholder={boardFormData.region ? "Select a city" : "Select region first"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {cities
+                  {allCities
                     .filter(city => city.region_id === boardFormData.region && city.country_id === boardFormData.country)
                     .map((city) => (
                       <SelectItem key={city.id} value={city.id}>
@@ -7330,7 +7407,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectValue placeholder={boardFormData.city ? "Select a project" : "Select city first"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {projects
+                  {allProjects
                     .filter(project => project.city_id === boardFormData.city && project.region_id === boardFormData.region && project.country_id === boardFormData.country)
                     .map((project) => (
                       <SelectItem key={project.id} value={project.id}>
@@ -7565,7 +7642,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectValue placeholder="Select a country" />
                 </SelectTrigger>
                 <SelectContent>
-                  {countries.map((country) => (
+                  {allCountries.map((country) => (
                     <SelectItem key={country.id} value={country.id}>
                       {country.name}
                     </SelectItem>
@@ -7592,7 +7669,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectValue placeholder={schoolFormData.country ? "Select a region" : "Select country first"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {regions
+                  {allRegions
                     .filter(region => region.country_id === schoolFormData.country)
                     .map((region) => (
                       <SelectItem key={region.id} value={region.id}>
@@ -7621,7 +7698,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectValue placeholder={schoolFormData.region ? "Select a city" : "Select region first"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {cities
+                  {allCities
                     .filter(city => city.region_id === schoolFormData.region && city.country_id === schoolFormData.country)
                     .map((city) => (
                       <SelectItem key={city.id} value={city.id}>
@@ -7650,7 +7727,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectValue placeholder={schoolFormData.city ? "Select a project" : "Select city first"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {projects
+                  {allProjects
                     .filter(project => project.city_id === schoolFormData.city && project.region_id === schoolFormData.region && project.country_id === schoolFormData.country)
                     .map((project) => (
                       <SelectItem key={project.id} value={project.id}>
@@ -7679,7 +7756,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectValue placeholder={schoolFormData.project ? "Select a board" : "Select project first"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {boards
+                  {allBoards
                     .filter(board => board.project_id === schoolFormData.project)
                     .map((board) => (
                       <SelectItem key={board.id} value={board.id}>
@@ -7886,7 +7963,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectValue placeholder="Select a country" />
                 </SelectTrigger>
                 <SelectContent>
-                  {countries.map((country) => (
+                  {allCountries.map((country) => (
                     <SelectItem key={country.id} value={country.id}>
                       {country.name}
                     </SelectItem>
@@ -7913,7 +7990,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectValue placeholder={schoolFormData.country ? "Select a region" : "Select country first"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {regions
+                  {allRegions
                     .filter(region => region.country_id === schoolFormData.country)
                     .map((region) => (
                       <SelectItem key={region.id} value={region.id}>
@@ -7942,7 +8019,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectValue placeholder={schoolFormData.region ? "Select a city" : "Select region first"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {cities
+                  {allCities
                     .filter(city => city.region_id === schoolFormData.region && city.country_id === schoolFormData.country)
                     .map((city) => (
                       <SelectItem key={city.id} value={city.id}>
@@ -7971,7 +8048,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectValue placeholder={schoolFormData.city ? "Select a project" : "Select city first"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {projects
+                  {allProjects
                     .filter(project => project.city_id === schoolFormData.city && project.region_id === schoolFormData.region && project.country_id === schoolFormData.country)
                     .map((project) => (
                       <SelectItem key={project.id} value={project.id}>
@@ -8000,7 +8077,7 @@ export const Multitenancy = ({ userProfile }: MultitenancyProps) => {
                   <SelectValue placeholder={schoolFormData.project ? "Select a board" : "Select project first"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {boards
+                  {allBoards
                     .filter(board => board.project_id === schoolFormData.project)
                     .map((board) => (
                       <SelectItem key={board.id} value={board.id}>
