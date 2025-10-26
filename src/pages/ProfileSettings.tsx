@@ -88,9 +88,7 @@ export default function ProfileSettings() {
   const { user, signOut } = useAuth();
   const { profile, loading, error, refreshProfile, refreshKey } = useUserProfile();
   const [searchParams] = useSearchParams();
-  
 
-  
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -131,6 +129,20 @@ export default function ProfileSettings() {
   const hasShownResetDialogRef = useRef(false);
   const resetDialogProcessedRef = useRef(false);
 
+  // Debug: Track loading state changes
+  useEffect(() => {
+    console.log('⏳ [LOADING STATE] loading changed to:', loading);
+    console.log('⏳ [LOADING STATE] Current showResetDialog:', showResetDialog);
+  }, [loading, showResetDialog]);
+
+  // Debug: Track dialog state changes
+  useEffect(() => {
+    console.log('🔍 [DIALOG STATE] showResetDialog changed to:', showResetDialog);
+    console.log('🔍 [DIALOG STATE] hasShownResetDialogRef.current:', hasShownResetDialogRef.current);
+    console.log('🔍 [DIALOG STATE] resetDialogProcessedRef.current:', resetDialogProcessedRef.current);
+    console.log('🔍 [DIALOG STATE] sessionStorage resetProcessed:', sessionStorage.getItem('profileSettings_resetProcessed'));
+  }, [showResetDialog]);
+
   const profileForm = useForm<ProfileFormData>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
@@ -158,56 +170,68 @@ export default function ProfileSettings() {
     },
   });
 
-  // Check for reset source parameter on component mount
+  // Check for reset source parameter - only open dialog after profile loads
   useEffect(() => {
-    // Prevent multiple dialog openings
-    if (hasShownResetDialogRef.current || showResetDialog || resetDialogProcessedRef.current) {
-      console.log('Dialog already shown, open, or processed, skipping...');
+    console.log('🚀 [MOUNT CHECK] useEffect triggered - checking reset source');
+    console.log('🚀 [MOUNT CHECK] loading:', loading);
+    console.log('🚀 [MOUNT CHECK] profile:', profile ? 'loaded' : 'null');
+    console.log('🚀 [MOUNT CHECK] hasShownResetDialogRef.current:', hasShownResetDialogRef.current);
+    
+    // Wait for profile to load before opening the dialog
+    if (loading) {
+      console.log('⏳ [MOUNT CHECK] Profile still loading, waiting...');
+      return;
+    }
+    
+    // Don't re-open if we've already shown it
+    if (hasShownResetDialogRef.current) {
+      console.log('⏭️ [MOUNT CHECK] Dialog already shown this session, skipping...');
       return;
     }
     
     const source = searchParams.get('source');
     const hasProcessedReset = sessionStorage.getItem('profileSettings_resetProcessed');
-    const dialogShownThisSession = sessionStorage.getItem('profileSettings_dialogShownThisSession');
+    console.log('🚀 [MOUNT CHECK] source:', source);
+    console.log('🚀 [MOUNT CHECK] hasProcessedReset:', hasProcessedReset);
     
-    // If we've already shown the dialog in this session, don't show it again
-    if (dialogShownThisSession === 'true') {
-      console.log('Dialog already shown this session, skipping...');
-      return;
-    }
-    
+    // Only check if we haven't processed the reset yet AND haven't shown the dialog
     if (source === 'reset' && !hasProcessedReset) {
-      console.log('Opening reset dialog - source=reset, no processed reset');
-      hasShownResetDialogRef.current = true;
-      resetDialogProcessedRef.current = true;
+      console.log('✅ [MOUNT CHECK] Conditions met - opening reset dialog');
+      console.log('✅ [MOUNT CHECK] Setting showResetDialog to true');
+      // Set both the state and the ref to prevent re-opening
       setShowResetDialog(true);
-      sessionStorage.setItem('profileSettings_shouldShowDialog', 'true');
-      sessionStorage.setItem('profileSettings_dialogShownThisSession', 'true');
-      // Clear the URL parameter to prevent showing dialog on refresh
-      const newUrl = new URL(window.location.href);
-      newUrl.searchParams.delete('source');
-      window.history.replaceState({}, '', newUrl.toString());
-    } else if (source === 'reset' && hasProcessedReset) {
-      // Check if we should still show the dialog (in case of remount)
-      const shouldShowDialog = sessionStorage.getItem('profileSettings_shouldShowDialog');
-      if (shouldShowDialog === 'true') {
-        console.log('Opening reset dialog - shouldShowDialog=true');
-        hasShownResetDialogRef.current = true;
-        resetDialogProcessedRef.current = true;
-        setShowResetDialog(true);
-        sessionStorage.removeItem('profileSettings_shouldShowDialog');
-        sessionStorage.setItem('profileSettings_dialogShownThisSession', 'true');
-      }
+      hasShownResetDialogRef.current = true;
+      console.log('✅ [MOUNT CHECK] Dialog state set, hasShownResetDialogRef set to true');
+    } else {
+      console.log('❌ [MOUNT CHECK] Conditions NOT met for opening dialog');
+      if (source !== 'reset') console.log('❌ [MOUNT CHECK] Reason: source is not "reset"');
+      if (hasProcessedReset) console.log('❌ [MOUNT CHECK] Reason: password already processed');
     }
-  }, [searchParams]);
+  }, [searchParams, loading, profile]);
   
-  // Cleanup effect to reset refs when component unmounts
+  // Cleanup effect - reset refs on unmount only if password was successfully set
   useEffect(() => {
+    console.log('🧹 [CLEANUP] Cleanup effect registered');
     return () => {
-      hasShownResetDialogRef.current = false;
-      resetDialogProcessedRef.current = false;
+      console.log('🧹 [CLEANUP] Component unmounting - running cleanup');
+      const hasProcessedReset = sessionStorage.getItem('profileSettings_resetProcessed');
+      const source = searchParams.get('source');
+      console.log('🧹 [CLEANUP] hasProcessedReset:', hasProcessedReset);
+      console.log('🧹 [CLEANUP] source:', source);
+      
+      // Only reset the refs if password was successfully processed
+      // This allows the user to navigate away and come back without seeing the dialog again
+      if (hasProcessedReset === 'true') {
+        console.log('🧹 [CLEANUP] Password was processed, keeping refs reset');
+        // Don't reset the refs - keep them as they are so dialog doesn't reopen
+      } else if (source === 'reset') {
+        console.log('🧹 [CLEANUP] Password NOT processed but source=reset, resetting refs so dialog can reopen');
+        // Reset refs so dialog can open again if user comes back without setting password
+        hasShownResetDialogRef.current = false;
+        resetDialogProcessedRef.current = false;
+      }
     };
-  }, []);
+  }, [searchParams]);
 
   // Check MFA status on component mount
   useEffect(() => {
@@ -232,9 +256,12 @@ export default function ProfileSettings() {
   }, [user]);
 
   useEffect(() => {
+    console.log('📋 [PROFILE EFFECT] Profile effect triggered');
+    console.log('📋 [PROFILE EFFECT] profile:', profile ? 'loaded' : 'null');
+    console.log('📋 [PROFILE EFFECT] Current showResetDialog:', showResetDialog);
     if (profile) {
-      console.log('Profile loaded:', profile);
-      console.log('Profile avatar_url:', profile.avatar_url);
+      console.log('📋 [PROFILE EFFECT] Profile data loaded:', profile);
+      console.log('📋 [PROFILE EFFECT] Profile avatar_url:', profile.avatar_url);
       profileForm.reset({
         firstName: profile.first_name || '',
         lastName: profile.last_name || '',
@@ -587,10 +614,14 @@ export default function ProfileSettings() {
       });
       setShowResetDialog(false);
       sessionStorage.setItem('profileSettings_resetProcessed', 'true'); // Set flag only after successful reset
-      sessionStorage.removeItem('profileSettings_shouldShowDialog');
-      sessionStorage.removeItem('profileSettings_dialogShownThisSession');
       resetPasswordForm.reset();
-      // Reset the refs to allow dialog to be opened again
+      
+      // Clear the URL parameter now that password is reset
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('source');
+      window.history.replaceState({}, '', newUrl.toString());
+      
+      // Reset the refs to allow dialog to be opened again in future
       hasShownResetDialogRef.current = false;
       resetDialogProcessedRef.current = false;
       
@@ -894,11 +925,19 @@ export default function ProfileSettings() {
     }
   };
 
+  // Debug: Track component renders
+  console.log('🎨 [RENDER] ProfileSettings rendering');
+  console.log('🎨 [RENDER] showResetDialog:', showResetDialog);
+  console.log('🎨 [RENDER] loading:', loading);
+  console.log('🎨 [RENDER] profile:', profile ? 'loaded' : 'null');
+
   if (loading) {
+    console.log('🔄 [RENDER] Showing loading state');
     return <ContentLoader message="Loading profile settings..." />;
   }
 
   if (error) {
+    console.log('❌ [RENDER] Showing error state');
   return (
       <div className="flex flex-col items-center justify-center p-8 h-screen text-center">
         <h2 className="text-xl font-semibold text-destructive mb-2">Error loading profile</h2>
@@ -910,6 +949,8 @@ export default function ProfileSettings() {
 
   const displayName = profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'User' : 'User';
 
+  console.log('✅ [RENDER] Rendering full component, displayName:', displayName);
+
   return (
     <div className="min-h-full bg-background">
       {/* Password Reset Dialog */}
@@ -917,21 +958,52 @@ export default function ProfileSettings() {
         key="reset-password-dialog"
         open={showResetDialog} 
                 onOpenChange={(open) => {
-          console.log('Dialog onOpenChange called with:', open);
+          console.log('🔔 [DIALOG EVENT] onOpenChange called with:', open);
+          console.log('🔔 [DIALOG EVENT] Current showResetDialog state:', showResetDialog);
+          console.log('🔔 [DIALOG EVENT] hasShownResetDialogRef.current:', hasShownResetDialogRef.current);
+          
+          // Check if this is a forced password reset scenario
+          const source = searchParams.get('source');
+          const hasProcessedReset = sessionStorage.getItem('profileSettings_resetProcessed');
+          console.log('🔔 [DIALOG EVENT] source:', source);
+          console.log('🔔 [DIALOG EVENT] hasProcessedReset:', hasProcessedReset);
+          
+          if (!open && source === 'reset' && !hasProcessedReset) {
+            // Prevent closing the dialog if password hasn't been set yet
+            console.log('🚫 [DIALOG EVENT] Preventing dialog close - password not yet set');
+            console.log('🚫 [DIALOG EVENT] Forcing dialog to stay open');
+            // Force the dialog to stay open
+            setShowResetDialog(true);
+            toast.info('Please set your password before continuing', {
+              description: 'This is required to complete your account setup.'
+            });
+            return;
+          }
+          
+          console.log('✅ [DIALOG EVENT] Allowing state change to:', open);
           setShowResetDialog(open);
+          
           if (!open) {
-            console.log('Dialog closing - resetting form and states');
+            console.log('🔄 [DIALOG EVENT] Dialog closing - resetting form and states');
             // Reset the form when dialog is closed
             resetPasswordForm.reset();
             setShowResetNewPassword(false);
             setShowResetConfirmPassword(false);
             setShowResetMFACode(false);
-            // Clear sessionStorage when dialog is closed manually
-            sessionStorage.removeItem('profileSettings_shouldShowDialog');
-            sessionStorage.removeItem('profileSettings_dialogShownThisSession');
-            // Reset the refs to allow dialog to be opened again
-            hasShownResetDialogRef.current = false;
-            resetDialogProcessedRef.current = false;
+            
+            // Only reset refs if password was actually set
+            // If hasProcessedReset is true, user successfully set password
+            // Otherwise, they might have closed it somehow - keep ref so it doesn't reopen
+            if (!hasProcessedReset) {
+              console.log('🔄 [DIALOG EVENT] Password not processed, keeping hasShownResetDialogRef to prevent reopening');
+              // Keep hasShownResetDialogRef.current = true so dialog doesn't immediately reopen
+            } else {
+              console.log('🔄 [DIALOG EVENT] Password was processed, resetting refs');
+              hasShownResetDialogRef.current = false;
+              resetDialogProcessedRef.current = false;
+            }
+          } else {
+            console.log('📂 [DIALOG EVENT] Dialog opening');
           }
         }}
       >
@@ -1032,7 +1104,20 @@ export default function ProfileSettings() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setShowResetDialog(false)}
+                onClick={() => {
+                  // Check if this is a forced password reset
+                  const source = searchParams.get('source');
+                  const hasProcessedReset = sessionStorage.getItem('profileSettings_resetProcessed');
+                  
+                  if (source === 'reset' && !hasProcessedReset) {
+                    toast.info('Please set your password before continuing', {
+                      description: 'This is required to complete your account setup.'
+                    });
+                    return;
+                  }
+                  
+                  setShowResetDialog(false);
+                }}
                 className="flex-1"
               >
                 Cancel
