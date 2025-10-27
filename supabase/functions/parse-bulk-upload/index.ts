@@ -502,14 +502,14 @@ function parseContentItems(course: any, sectionIndex: number, lessonIndex: numbe
     
     console.log(`🔍 Validating content item...`);
     console.log(`  Content Type: "${contentType}"`);
-    console.log(`  Valid types: ['video', 'attachment', 'assignment', 'quiz']`);
-    console.log(`  Is valid type: ${['video', 'attachment', 'assignment', 'quiz'].includes(contentType)}`);
+    console.log(`  Valid types: ['video', 'attachment', 'assignment', 'quiz', 'lesson_plan']`);
+    console.log(`  Is valid type: ${['video', 'attachment', 'assignment', 'quiz', 'lesson_plan'].includes(contentType)}`);
     console.log(`  Content Type exists: ${!!contentType}`);
     console.log(`  Content Type length: ${contentType?.length || 0}`);
     
-    if (contentType && ['video', 'attachment', 'assignment', 'quiz'].includes(contentType)) {
+    if (contentType && ['video', 'attachment', 'assignment', 'quiz', 'lesson_plan'].includes(contentType)) {
       const contentItem: CourseContentItem = {
-        type: contentType as 'video' | 'attachment' | 'assignment' | 'quiz',
+        type: contentType as 'video' | 'attachment' | 'assignment' | 'quiz' | 'lesson_plan',
         title: contentTitle,
         path: contentPath || undefined,
         dueDate: dueDate || undefined,

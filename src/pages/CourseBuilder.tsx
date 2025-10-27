@@ -95,7 +95,7 @@ interface CourseLesson {
 interface LessonContentItem {
   id: string;
   title: string;
-  content_type: 'video' | 'attachment' | 'assignment' | 'quiz';
+  content_type: 'video' | 'attachment' | 'assignment' | 'quiz' | 'lesson_plan';
   content_path?: string; // For video, attachment, assignment HTML
   quiz?: QuizData; // For quiz type
   due_date?: string; // Due date for assignments and quizzes
@@ -376,7 +376,7 @@ interface LessonItemProps {
 
 // #region ContentTypeSelector Component
 interface ContentTypeSelectorProps {
-  onSelect: (contentType: 'video' | 'assignment' | 'quiz' | 'attachment') => void;
+  onSelect: (contentType: 'video' | 'assignment' | 'quiz' | 'attachment' | 'lesson_plan') => void;
   onClose: () => void;
 }
 
@@ -421,6 +421,16 @@ const ContentTypeSelector = ({ onSelect, onClose }: ContentTypeSelectorProps) =>
       borderColor: 'border-green-200/50',
       iconBg: 'bg-green-500/10',
       iconColor: 'text-green-600'
+    },
+    {
+      type: 'lesson_plan' as const,
+      label: 'Lesson Plan',
+      description: 'Upload lesson plan documents and files',
+      icon: '📋',
+      color: 'from-indigo-500/10 to-indigo-600/10',
+      borderColor: 'border-indigo-200/50',
+      iconBg: 'bg-indigo-500/10',
+      iconColor: 'text-indigo-600'
     }
   ];
 
@@ -559,7 +569,7 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
       if (item.content_type === 'video') {
         setAttachmentInfo(null);
         getSignedUrl(item.content_path, 'video');
-      } else if (item.content_type === 'attachment') {
+      } else if (item.content_type === 'attachment' || item.content_type === 'lesson_plan') {
         setVideoUrl(null);
         getSignedUrl(item.content_path, 'attachment');
       }
@@ -578,13 +588,13 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
     }
   };
 
-  const handleTypeChangeRequest = (newType: 'video' | 'attachment' | 'assignment' | 'quiz') => {
+  const handleTypeChangeRequest = (newType: 'video' | 'attachment' | 'assignment' | 'quiz' | 'lesson_plan') => {
     let hasContent = false;
     if (item.content_type === 'quiz') {
       hasContent = (item.quiz?.questions?.length || 0) > 0;
     } else if (item.content_type === 'assignment') {
       hasContent = !!item.content_path && item.content_path !== '<p><br></p>';
-    } else { // Video or Attachment
+    } else { // Video, Attachment, or Lesson Plan
       hasContent = !!item.content_path;
     }
 
@@ -623,10 +633,34 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
     try {
       const { error } = await supabase.storage.from('dil-lms').upload(filePath, file);
       if (error) throw error;
-      onUpdate(lessonId, item.id, { content_path: filePath });
+      onUpdate(lessonId, item.id, { 
+        content_path: filePath,
+        title: file.name // Update title to show the actual file name
+      });
       toast.success('Attachment uploaded successfully!');
     } catch (error: any) {
       toast.error('Attachment upload failed.', { description: error.message });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleLessonPlanUpload = async (file: File) => {
+    if (!file) return;
+
+    setIsUploading(true);
+    const filePath = `lesson-plans/${courseId || 'new'}/${lessonId}/${item.id}/${crypto.randomUUID()}/${file.name}`;
+
+    try {
+      const { error } = await supabase.storage.from('dil-lms').upload(filePath, file);
+      if (error) throw error;
+      onUpdate(lessonId, item.id, { 
+        content_path: filePath,
+        title: file.name // Update title to show the actual file name
+      });
+      toast.success('Lesson plan uploaded successfully!');
+    } catch (error: any) {
+      toast.error('Lesson plan upload failed.', { description: error.message });
     } finally {
       setIsUploading(false);
     }
@@ -790,6 +824,64 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
             </div>
           </div>
         );
+      case 'lesson_plan':
+        if (attachmentInfo) {
+          return (
+            <div className="flex items-center justify-between p-3 rounded-lg bg-background border mt-2">
+              <div className="flex items-center gap-3">
+                <FileIcon className="h-6 w-6 text-muted-foreground" />
+                <a href={attachmentInfo.url} target="_blank" rel="noopener noreferrer" className="font-medium hover:underline">
+                  {attachmentInfo.name}
+                </a>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDownload(attachmentInfo.url, attachmentInfo.name)}
+                  disabled={isDownloading}
+                  className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                >
+                  <Download className="h-4 w-4 mr-1" />
+                  {isDownloading ? 'Downloading...' : 'Download'}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setAttachmentInfo(null);
+                    onUpdate(lessonId, item.id, { content_path: undefined });
+                  }}
+                >
+                  Remove
+                </Button>
+              </div>
+            </div>
+          );
+        }
+        return (
+          <div className="w-full">
+            <div
+              className={`w-full text-center p-6 border-2 border-dashed rounded-lg transition-colors cursor-pointer hover:border-primary/50 border-border`}
+              onClick={() => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.pdf,.doc,.docx,.xls,.xlsx,.zip';
+                input.onchange = (e) => {
+                  const file = (e.target as HTMLInputElement).files?.[0];
+                  if (file) handleLessonPlanUpload(file);
+                };
+                input.click();
+              }}
+            >
+              <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                <UploadCloud className="h-8 w-8" />
+                <p className="text-sm">{isUploading ? "Uploading..." : "Upload Lesson Plan (PDF, DOC, ZIP)"}</p>
+                <p className="text-xs text-muted-foreground">Max file size: 10 MB</p>
+              </div>
+            </div>
+          </div>
+        );
       case 'assignment':
         return (
           <div className="space-y-4">
@@ -937,6 +1029,7 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
       case 'assignment': return '📝';
       case 'quiz': return '❓';
       case 'attachment': return '📎';
+      case 'lesson_plan': return '📋';
       default: return '📄';
     }
   };
@@ -947,6 +1040,7 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
       case 'assignment': return 'bg-orange-50 border-orange-200 text-orange-700 dark:bg-orange-950 dark:border-orange-800 dark:text-orange-300';
       case 'quiz': return 'bg-purple-50 border-purple-200 text-purple-700 dark:bg-purple-950 dark:border-purple-800 dark:text-purple-300';
       case 'attachment': return 'bg-green-50 border-green-200 text-green-700 dark:bg-green-950 dark:border-green-800 dark:text-green-300';
+      case 'lesson_plan': return 'bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-950 dark:border-indigo-800 dark:text-indigo-300';
       default: return 'bg-gray-50 border-gray-200 text-gray-700 dark:bg-gray-950 dark:border-gray-800 dark:text-gray-300';
     }
   };
@@ -986,6 +1080,7 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
               <SelectItem value="attachment" className="rounded-xl hover:bg-green-50 hover:text-gray-900 dark:hover:bg-green-900/20 dark:hover:text-white transition-colors">📎 Attachment</SelectItem>
               <SelectItem value="assignment" className="rounded-xl hover:bg-orange-50 hover:text-gray-900 dark:hover:bg-orange-900/20 dark:hover:text-white transition-colors">📝 Assignment</SelectItem>
               <SelectItem value="quiz" className="rounded-xl hover:bg-purple-50 hover:text-gray-900 dark:hover:bg-purple-900/20 dark:hover:text-white transition-colors">❓ Quiz</SelectItem>
+              <SelectItem value="lesson_plan" className="rounded-xl hover:bg-indigo-50 hover:text-gray-900 dark:hover:bg-indigo-900/20 dark:hover:text-white transition-colors">📋 Lesson Plan</SelectItem>
             </SelectContent>
           </Select>
           {isRemovable && (
@@ -5901,10 +5996,17 @@ const CourseBuilder = () => {
       };
     });
   }, []);
-  const addContentItem = (lessonId: string, contentType: 'video' | 'assignment' | 'quiz' | 'attachment' = 'video') => {
+  const addContentItem = (lessonId: string, contentType: 'video' | 'assignment' | 'quiz' | 'attachment' | 'lesson_plan' = 'video') => {
+    const getDisplayName = (type: string) => {
+      switch (type) {
+        case 'lesson_plan': return 'Lesson Plan';
+        default: return type.charAt(0).toUpperCase() + type.slice(1);
+      }
+    };
+    
     const newContentItem: LessonContentItem = {
       id: `content-${Date.now()}`,
-      title: `New ${contentType.charAt(0).toUpperCase() + contentType.slice(1)}`,
+      title: `New ${getDisplayName(contentType)}`,
       content_type: contentType,
     };
     setCourseData(prev => ({
@@ -6025,7 +6127,7 @@ const CourseBuilder = () => {
     setShowContentTypeSelector(true);
   };
 
-  const handleContentTypeSelect = (contentType: 'video' | 'assignment' | 'quiz' | 'attachment') => {
+  const handleContentTypeSelect = (contentType: 'video' | 'assignment' | 'quiz' | 'attachment' | 'lesson_plan') => {
     if (selectedLessonId) {
       addContentItem(selectedLessonId, contentType);
       setShowContentTypeSelector(false);

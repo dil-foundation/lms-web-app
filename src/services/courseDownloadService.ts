@@ -592,9 +592,11 @@ export class CourseDownloadService {
     // Determine lesson type based on content items
     const hasVideo = lesson.contentItems?.some((item: any) => item.content_type === 'video');
     const hasQuiz = lesson.contentItems?.some((item: any) => item.content_type === 'quiz');
+    const hasLessonPlan = lesson.contentItems?.some((item: any) => item.content_type === 'lesson_plan');
     
     if (hasVideo) return 'video';
     if (hasQuiz) return 'quiz';
+    if (hasLessonPlan) return 'text'; // Treat lesson plans as text content for offline
     return 'text';
   }
 

@@ -880,8 +880,8 @@ serve(async (req) => {
               
               let contentPath = contentItem.path;
 
-               // Handle content download for video, attachment, assignment, and quiz types (if they have a path)
-               if (contentPath && (contentItem.type === 'video' || contentItem.type === 'attachment' || (contentItem.type === 'assignment' && contentPath) || contentItem.type === 'quiz')) {
+               // Handle content download for video, attachment, assignment, quiz, and lesson_plan types (if they have a path)
+               if (contentPath && (contentItem.type === 'video' || contentItem.type === 'attachment' || (contentItem.type === 'assignment' && contentPath) || contentItem.type === 'quiz' || contentItem.type === 'lesson_plan')) {
                  console.log(`\n=== CONTENT DOWNLOAD DEBUG ===`);
                  console.log(`Content Type: ${contentItem.type}`);
                  console.log(`Original Path: ${contentPath}`);
