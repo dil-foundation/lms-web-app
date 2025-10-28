@@ -215,7 +215,7 @@ const MOCK_USER_DATABASE = [
   { id: 'stu3', name: 'Zainab Omar', email: 'z.omar@example.com', role: 'student' },
 ];
 
-const MOCK_TEACHERS_FOR_SELECT = MOCK_USER_DATABASE.filter(u => u.role === 'teacher').map(u => ({ label: `${u.name} (${u.email})`, value: u.id }));
+const MOCK_TEACHERS_FOR_SELECT = MOCK_USER_DATABASE.filter(u => u.role === 'teacher' || u.role === 'content_creator').map(u => ({ label: `${u.name} (${u.email})`, value: u.id }));
 const MOCK_STUDENTS_FOR_SELECT = MOCK_USER_DATABASE.filter(u => u.role === 'student').map(u => ({ label: `${u.name} (${u.email})`, value: u.id }));
 
 // Mock Classes Data
@@ -3546,7 +3546,7 @@ const CourseBuilder = () => {
         setCountries(fetchedCountries);
         
         const teachers = fetchedProfiles
-          .filter(p => p.role === 'teacher')
+          .filter(p => p.role === 'teacher' || p.role === 'content_creator')
           .map(p => ({ 
             label: `${p.first_name} ${p.last_name}`, 
             value: p.id,
@@ -3637,7 +3637,7 @@ const CourseBuilder = () => {
             }
             
             const courseTeachers = data.members
-              .filter((m: any) => m.role === 'teacher' && m.profile)
+              .filter((m: any) => (m.role === 'teacher' || m.role === 'content_creator') && m.profile)
               .map((m: any) => ({ 
                 id: m.profile.id, 
                 name: `${m.profile.first_name} ${m.profile.last_name}`, 
@@ -4062,7 +4062,7 @@ const CourseBuilder = () => {
     // Send notifications for teacher changes
     try {
       const currentTeacherIds = currentDbMembers
-        ?.filter(member => member.role === 'teacher')
+        ?.filter(member => member.role === 'teacher' || member.role === 'content_creator')
         .map(member => member.user_id) || [];
       
       const newTeacherIds = courseToSave.teachers
@@ -4997,7 +4997,7 @@ const CourseBuilder = () => {
     // Send notifications for teacher changes
     try {
       const currentTeacherIds = currentDbMembers
-        ?.filter(member => member.role === 'teacher')
+        ?.filter(member => member.role === 'teacher' || member.role === 'content_creator')
         .map(member => member.user_id) || [];
       
       const newTeacherIds = courseToSave.teachers

@@ -1,5 +1,6 @@
 import { memo, useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { ThemeToggle } from '../header/ThemeToggle';
 import { NotificationToggle } from '../header/NotificationToggle';
 import { AuthButton } from '../header/AuthButton';
@@ -12,6 +13,7 @@ interface DashboardHeaderProps {
 
 export const DashboardHeader = memo(({ onToggle }: DashboardHeaderProps) => {
   const { user } = useAuth();
+  const { profile } = useUserProfile();
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -29,14 +31,16 @@ export const DashboardHeader = memo(({ onToggle }: DashboardHeaderProps) => {
         <Logo />
       </div>
 
-      {/* Center Toggle */}
-      <div className="flex items-center justify-center">
-        <AILMSToggle size="md" onToggle={onToggle} />
-      </div>
+      {/* Center Toggle - Hide for content_creator and view_only */}
+      {profile?.role !== 'content_creator' && profile?.role !== 'view_only' && (
+        <div className="flex items-center justify-center">
+          <AILMSToggle size="md" onToggle={onToggle} />
+        </div>
+      )}
 
       <div className="flex items-center space-x-4">
         <ThemeToggle />
-        {user && <NotificationToggle />}
+        {user && profile?.role !== 'view_only' && <NotificationToggle />}
         <AuthButton />
       </div>
     </div>

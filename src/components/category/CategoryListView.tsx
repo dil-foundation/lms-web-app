@@ -15,6 +15,7 @@ interface CategoryListViewProps {
   onView: (category: CourseCategory) => void;
   onDelete: (categoryId: number) => void;
   isDeleting?: (categoryId: number) => boolean;
+  isViewOnly?: boolean;
   className?: string;
 }
 
@@ -25,6 +26,7 @@ export const CategoryListView: React.FC<CategoryListViewProps> = ({
   onView,
   onDelete,
   isDeleting = () => false,
+  isViewOnly = false,
   className
 }) => {
   const handleView = (category: CourseCategory) => {
@@ -86,18 +88,20 @@ export const CategoryListView: React.FC<CategoryListViewProps> = ({
                         <Eye className="mr-2 h-4 w-4" />
                         View Details
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleEdit(category)}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit Category
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete Category
+                      {!isViewOnly && (
+                        <>
+                          <DropdownMenuItem onClick={() => handleEdit(category)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit Category
                           </DropdownMenuItem>
-                        </AlertDialogTrigger>
+                          <DropdownMenuSeparator />
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete Category
+                              </DropdownMenuItem>
+                            </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
                             <AlertDialogTitle>Delete Category</AlertDialogTitle>
@@ -129,6 +133,8 @@ export const CategoryListView: React.FC<CategoryListViewProps> = ({
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
+                        </>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>

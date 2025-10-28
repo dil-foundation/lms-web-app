@@ -51,7 +51,7 @@ interface User {
   firstName: string;
   lastName: string;
   email: string;
-  role: 'student' | 'teacher' | 'admin';
+  role: 'student' | 'teacher' | 'admin' | 'content_creator' | 'super_user' | 'view_only';
   status: 'active' | 'inactive' | 'unverified';
   joinedDate: string;
   lastActive: string;
@@ -64,7 +64,7 @@ const initialNewUserState = {
   firstName: '',
   lastName: '',
   email: '',
-  role: 'student' as 'student' | 'teacher' | 'admin',
+  role: 'student' as 'student' | 'teacher' | 'admin' | 'content_creator' | 'view_only',
   grade: '',
   teacherId: '',
 };
@@ -78,6 +78,8 @@ const initialValidationErrors = {
 };
 
 export const UsersManagement = () => {
+  console.log('🚀 UsersManagement: Component mounted/rendered');
+  
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -113,6 +115,8 @@ export const UsersManagement = () => {
     students: 0,
     teachers: 0,
     admins: 0,
+    content_creators: 0,
+    view_only: 0,
   });
   const [loadingStats, setLoadingStats] = useState(true);
   
@@ -129,21 +133,27 @@ export const UsersManagement = () => {
       const [
         { count: students, error: studentsError },
         { count: teachers, error: teachersError },
-        { count: admins, error: adminsError }
+        { count: admins, error: adminsError },
+        { count: content_creators, error: contentCreatorsError },
+        { count: view_only, error: viewOnlyError }
       ] = await Promise.all([
         supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
         supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'teacher'),
-        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'admin')
+        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'admin'),
+        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'content_creator'),
+        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'view_only')
       ]);
 
-      if (studentsError || teachersError || adminsError) {
-        throw studentsError || teachersError || adminsError;
+      if (studentsError || teachersError || adminsError || contentCreatorsError || viewOnlyError) {
+        throw studentsError || teachersError || adminsError || contentCreatorsError || viewOnlyError;
       }
       
       setStats({
         students: students || 0,
         teachers: teachers || 0,
         admins: admins || 0,
+        content_creators: content_creators || 0,
+        view_only: view_only || 0,
       });
 
     } catch (error: any) {
@@ -171,6 +181,8 @@ export const UsersManagement = () => {
   }, []);
 
   const fetchUsers = useCallback(async () => {
+    console.log('🔍 UsersManagement: fetchUsers called');
+    console.log('🔍 UsersManagement: Params:', { currentPage, rowsPerPage, searchTerm, roleFilter });
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('get-users', {
@@ -182,9 +194,12 @@ export const UsersManagement = () => {
         }
       });
       
+      console.log('🔍 UsersManagement: get-users response:', { data, error });
+      
       if (error) throw new Error(error.message);
       
       const { users: fetchedUsers, count } = data;
+      console.log('🔍 UsersManagement: Fetched users count:', count, 'Users:', fetchedUsers?.length);
 
       if (fetchedUsers) {
         const transformedUsers: User[] = fetchedUsers.map((user: any) => ({
@@ -768,6 +783,9 @@ export const UsersManagement = () => {
       case 'admin': return 'destructive';
       case 'teacher': return 'default';
       case 'student': return 'blue';
+      case 'content_creator': return 'outline';
+      case 'super_user': return 'destructive'; // Keep for display if super_user exists
+      case 'view_only': return 'secondary';
       default: return 'outline';
     }
   };
@@ -1073,7 +1091,7 @@ export const UsersManagement = () => {
                     <Label htmlFor="role">Role</Label>
                     <Select
                       value={newUser.role}
-                      onValueChange={(value: 'student' | 'teacher' | 'admin') => setNewUser(prev => ({ ...prev, role: value }))}
+                      onValueChange={(value: 'student' | 'teacher' | 'admin' | 'content_creator' | 'view_only') => setNewUser(prev => ({ ...prev, role: value }))}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select role" />
@@ -1082,6 +1100,8 @@ export const UsersManagement = () => {
                         <SelectItem value="student">Student</SelectItem>
                         <SelectItem value="teacher">Teacher</SelectItem>
                         <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="content_creator">Content Creator</SelectItem>
+                        <SelectItem value="view_only">View Only</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1162,7 +1182,7 @@ export const UsersManagement = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            {loadingStats ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">{stats.students + stats.teachers + stats.admins}</div>}
+            {loadingStats ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">{stats.students + stats.teachers + stats.admins + stats.content_creators + stats.view_only}</div>}
             <p className="text-xs text-muted-foreground">
               All users in the system
             </p>
@@ -1268,6 +1288,8 @@ export const UsersManagement = () => {
                 <SelectItem value="student">Students</SelectItem>
                 <SelectItem value="teacher">Teachers</SelectItem>
                 <SelectItem value="admin">Admins</SelectItem>
+                <SelectItem value="content_creator">Content Creators</SelectItem>
+                <SelectItem value="view_only">View Only</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -1444,7 +1466,7 @@ export const UsersManagement = () => {
               <Label htmlFor="edit-role">Role</Label>
               <Select
                 value={userToEdit?.role}
-                onValueChange={(value: 'student' | 'teacher' | 'admin') =>
+                onValueChange={(value: 'student' | 'teacher' | 'admin' | 'content_creator' | 'view_only') =>
                   setUserToEdit(prev => prev ? { ...prev, role: value } : null)
                 }
               >
@@ -1455,8 +1477,19 @@ export const UsersManagement = () => {
                   <SelectItem value="student">Student</SelectItem>
                   <SelectItem value="teacher">Teacher</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="content_creator">Content Creator</SelectItem>
+                  <SelectItem value="view_only">View Only</SelectItem>
+                  {/* Super User cannot be assigned through UI - must be done via database */}
+                  {userToEdit?.role === 'super_user' && (
+                    <SelectItem value="super_user" disabled>Super User (System Admin - Database Only)</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
+              {userToEdit?.role === 'super_user' && (
+                <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                  ⚠️ Super User role can only be changed via database. This is the system administrator account.
+                </p>
+              )}
             </div>
             {userToEdit?.role === 'student' && (
               <div className="grid gap-2">

@@ -19,9 +19,12 @@ import { CategoryCardView } from '@/components/category/CategoryCardView';
 import { CategoryTileView } from '@/components/category/CategoryTileView';
 import { CategoryListView } from '@/components/category/CategoryListView';
 import { PaginationControls } from '@/components/ui/PaginationControls';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 export const CourseCategories = () => {
   const { preferences, setCourseCategoriesView } = useViewPreferences();
+  const { profile } = useUserProfile();
+  const isViewOnly = profile?.role === 'view_only';
   const [categories, setCategories] = useState<CourseCategory[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -258,13 +261,15 @@ export const CourseCategories = () => {
                 <Clock className="h-3 w-3 mr-1" />
                 Live Data
               </Badge>
-              <Button
-                onClick={() => setIsCreateDialogOpen(true)}
-                className="bg-[#8DC63F] hover:bg-[#7AB82F] text-white"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Category
-              </Button>
+              {!isViewOnly && (
+                <Button
+                  onClick={() => setIsCreateDialogOpen(true)}
+                  className="bg-[#8DC63F] hover:bg-[#7AB82F] text-white"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Category
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -388,6 +393,7 @@ export const CourseCategories = () => {
               onView={openViewDialog}
               onDelete={handleDelete}
               isDeleting={() => submitting}
+              isViewOnly={isViewOnly}
             />
           )}
 
@@ -399,6 +405,7 @@ export const CourseCategories = () => {
               onView={openViewDialog}
               onDelete={handleDelete}
               isDeleting={() => submitting}
+              isViewOnly={isViewOnly}
             />
           )}
 
@@ -410,6 +417,7 @@ export const CourseCategories = () => {
               onView={openViewDialog}
               onDelete={handleDelete}
               isDeleting={() => submitting}
+              isViewOnly={isViewOnly}
             />
           )}
         </div>
@@ -541,7 +549,7 @@ export const CourseCategories = () => {
             <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
               Close
             </Button>
-            {viewingCategory && (
+            {viewingCategory && !isViewOnly && (
               <Button onClick={() => {
                 setIsViewDialogOpen(false);
                 openEditDialog(viewingCategory);

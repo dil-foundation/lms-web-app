@@ -14,6 +14,7 @@ interface CategoryCardViewProps {
   onView: (category: CourseCategory) => void;
   onDelete: (categoryId: number) => void;
   isDeleting?: (categoryId: number) => boolean;
+  isViewOnly?: boolean;
   className?: string;
 }
 
@@ -24,6 +25,7 @@ export const CategoryCardView: React.FC<CategoryCardViewProps> = ({
   onView,
   onDelete,
   isDeleting = () => false,
+  isViewOnly = false,
   className
 }) => {
   return (
@@ -57,18 +59,20 @@ export const CategoryCardView: React.FC<CategoryCardViewProps> = ({
                     <Eye className="mr-2 h-4 w-4" />
                     View Details
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onEdit(category)}>
-                    <Edit className="mr-2 h-4 w-4" />
-                    Edit Category
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete Category
+                  {!isViewOnly && (
+                    <>
+                      <DropdownMenuItem onClick={() => onEdit(category)}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit Category
                       </DropdownMenuItem>
-                    </AlertDialogTrigger>
+                      <DropdownMenuSeparator />
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete Category
+                          </DropdownMenuItem>
+                        </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
                         <AlertDialogTitle>Delete Category</AlertDialogTitle>
@@ -100,6 +104,8 @@ export const CategoryCardView: React.FC<CategoryCardViewProps> = ({
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -140,20 +146,22 @@ export const CategoryCardView: React.FC<CategoryCardViewProps> = ({
                 size="sm"
                 variant="outline"
                 onClick={() => onView(category)}
-                className="flex-1 h-8 text-xs hover:bg-primary hover:text-primary-foreground transition-all duration-200"
+                className={`h-8 text-xs hover:bg-primary hover:text-primary-foreground transition-all duration-200 ${isViewOnly ? 'w-full' : 'flex-1'}`}
               >
                 <Eye className="w-3 h-3 mr-1" />
                 View Details
               </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => onEdit(category)}
-                className="flex-1 h-8 text-xs hover:bg-blue-600 hover:text-white transition-all duration-200"
-              >
-                <Edit className="w-3 h-3 mr-1" />
-                Edit
-              </Button>
+              {!isViewOnly && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onEdit(category)}
+                  className="flex-1 h-8 text-xs hover:bg-blue-600 hover:text-white transition-all duration-200"
+                >
+                  <Edit className="w-3 h-3 mr-1" />
+                  Edit
+                </Button>
+              )}
             </div>
           </div>
         </Card>

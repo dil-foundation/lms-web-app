@@ -56,8 +56,8 @@ export const CourseTileView: React.FC<CourseTileViewProps> = ({
   const { user } = useAuth();
   const { profile } = useUserProfile();
   
-  const isAdmin = profile?.role === 'admin';
-  const isTeacher = profile?.role === 'teacher';
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'super_user';
+  const isTeacher = profile?.role === 'teacher' || profile?.role === 'content_creator';
 
   const getStatusColor = (status: CourseStatus) => {
     switch (status) {
@@ -70,9 +70,12 @@ export const CourseTileView: React.FC<CourseTileViewProps> = ({
   };
 
   const canDelete = (course: Course) => {
-    return user && (
-      user.app_metadata.role === 'admin' ||
-      (user.app_metadata.role === 'teacher' && course.status === 'Draft' && user.id === course.authorId)
+    // Content creators cannot delete courses, only admins and teachers can
+    if (profile?.role === 'content_creator') return false;
+    
+    return profile && (
+      isAdmin ||
+      (profile.role === 'teacher' && course.status === 'Draft' && user?.id === course.authorId)
     );
   };
 

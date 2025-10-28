@@ -28,6 +28,7 @@ import {
   TrendingUp,
   Target,
   Calendar,
+  Eye,
   BarChart3,
   GraduationCap,
   Sparkles,
@@ -39,6 +40,7 @@ import { ContentLoader } from '@/components/ContentLoader';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import StripeService from '@/services/stripeService';
 
 // This is a subset of the CourseData from CourseBuilder.
@@ -85,6 +87,8 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
   const [isCheckingPayment, setIsCheckingPayment] = useState(false);
   const hasProcessedStripeRef = useRef(false); // Prevent infinite re-processing
   const { user } = useAuth();
+  const { profile } = useUserProfile();
+  const isViewOnly = profile?.role === 'view_only';
 
   const courseId = propCourseId || paramId;
 
@@ -247,7 +251,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
       nextLessonTitle = firstUncompletedLesson?.title || allLessons[0]?.title || "First Lesson";
     }
 
-    const teacherProfile = data.members?.find((m: any) => m.role === 'teacher')?.profile;
+    const teacherProfile = data.members?.find((m: any) => m.role === 'teacher' || m.role === 'content_creator')?.profile;
     const previewTeacher = data.teachers?.[0];
 
     let teacherName: string;
@@ -368,7 +372,7 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
 
         if (error) throw error;
         if (data) {
-          const teacherProfile = data.members?.find((m: any) => m.role === 'teacher')?.profile;
+          const teacherProfile = data.members?.find((m: any) => m.role === 'teacher' || m.role === 'content_creator')?.profile;
           let instructorExtraData = {};
 
           if (teacherProfile) {
@@ -792,7 +796,14 @@ export const CourseOverview = ({ courseId: propCourseId, courseData: initialCour
                             className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-4 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
                             size="lg"
                           >
-                            {course.progress.percentage > 0 ? 'Continue Learning' : 'Start Learning'}
+                            {isViewOnly ? (
+                              <>
+                                <Eye className="w-5 h-5 mr-2" />
+                                Preview Course
+                              </>
+                            ) : (
+                              course.progress.percentage > 0 ? 'Continue Learning' : 'Start Learning'
+                            )}
                           </Button>
                         )}
 
