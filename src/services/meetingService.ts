@@ -770,17 +770,17 @@ class MeetingService {
   }
 
   /**
-   * Get available admins for scheduling meetings (NEW)
+   * Get available admins and super users for scheduling meetings (NEW)
    */
   async getAvailableAdmins(currentUserId: string): Promise<Array<{id: string, name: string, email: string}>> {
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('id, first_name, last_name, email')
-        .eq('role', 'admin');
+        .in('role', ['admin', 'super_user']);
 
       if (error) {
-        console.error('Error fetching admins:', error);
+        console.error('Error fetching admins and super users:', error);
         return [];
       }
 
@@ -794,7 +794,7 @@ class MeetingService {
         email: admin.email
       }));
     } catch (error) {
-      console.error('Error fetching available admins:', error);
+      console.error('Error fetching available admins and super users:', error);
       return [];
     }
   }

@@ -18,17 +18,17 @@ export interface MultitenancyNotificationData {
 
 class MultitenancyNotificationService {
   /**
-   * Get all admin users from the database
+   * Get all admin and super user users from the database
    */
   private static async getAllAdmins(): Promise<Array<{ id: string; name: string; email: string }>> {
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('id, first_name, last_name, email')
-        .eq('role', 'admin');
+        .in('role', ['admin', 'super_user']);
 
       if (error) {
-        console.error('Error fetching admin users:', error);
+        console.error('Error fetching admin and super user users:', error);
         return [];
       }
 
@@ -38,20 +38,20 @@ class MultitenancyNotificationService {
         email: admin.email || ''
       })) || [];
     } catch (error) {
-      console.error('Error getting admin users:', error);
+      console.error('Error getting admin and super user users:', error);
       return [];
     }
   }
 
   /**
-   * Send notification to all admins about multitenancy changes
+   * Send notification to all admins and super users about multitenancy changes
    */
   static async notifyAdmins(notificationData: MultitenancyNotificationData): Promise<void> {
     try {
       const admins = await this.getAllAdmins();
       
       if (admins.length === 0) {
-        console.warn('No admin users found to notify');
+        console.warn('No admin or super user users found to notify');
         return;
       }
 
@@ -65,7 +65,7 @@ class MultitenancyNotificationService {
       const title = `${entityTypeText} ${actionText.charAt(0).toUpperCase() + actionText.slice(1)}`;
       const body = `${entityTypeText} "${entityName}"${entityCode ? ` (${entityCode})` : ''} has been ${actionText}${parentText} by ${performedBy.name}`;
 
-      // Send notification to all admins
+      // Send notification to all admins and super users
       const adminIds = admins.map(admin => admin.id);
       
       await supabase.functions.invoke('send-notification', {
@@ -89,7 +89,7 @@ class MultitenancyNotificationService {
         }
       });
 
-      console.log(`✅ Notified ${adminIds.length} admins about ${entityType} ${action}`);
+      console.log(`✅ Notified ${adminIds.length} admins and super users about ${entityType} ${action}`);
     } catch (error) {
       console.error('Error sending multitenancy notifications:', error);
       // Don't throw error to avoid breaking the main operation

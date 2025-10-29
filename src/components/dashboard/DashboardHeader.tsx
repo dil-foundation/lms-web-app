@@ -40,7 +40,7 @@ export const DashboardHeader = memo(({ onToggle }: DashboardHeaderProps) => {
 
       <div className="flex items-center space-x-4">
         <ThemeToggle />
-        {user && profile?.role !== 'view_only' && <NotificationToggle />}
+        {user && profile?.role !== 'view_only' && profile?.role !== 'content_creator' && <NotificationToggle />}
         <AuthButton />
       </div>
     </div>

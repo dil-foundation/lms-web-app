@@ -57,7 +57,8 @@ export const CourseTileView: React.FC<CourseTileViewProps> = ({
   const { profile } = useUserProfile();
   
   const isAdmin = profile?.role === 'admin' || profile?.role === 'super_user';
-  const isTeacher = profile?.role === 'teacher' || profile?.role === 'content_creator';
+  const isContentCreator = profile?.role === 'content_creator';
+  const isTeacher = profile?.role === 'teacher';
 
   const getStatusColor = (status: CourseStatus) => {
     switch (status) {
@@ -80,7 +81,7 @@ export const CourseTileView: React.FC<CourseTileViewProps> = ({
   };
 
   const handleCourseClick = (course: Course) => {
-    if (isAdmin) {
+    if (isAdmin || isContentCreator) {
       navigate(`/dashboard/courses/builder/${course.id}`);
     } else {
       navigate(`/dashboard/courses/${course.id}`);
@@ -141,7 +142,7 @@ export const CourseTileView: React.FC<CourseTileViewProps> = ({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    {isAdmin ? (
+                    {(isAdmin || isContentCreator) ? (
                       <DropdownMenuItem onClick={(e) => handleEdit(e, course)}>
                         <Edit className="w-4 h-4 mr-2" />
                         Edit
@@ -202,7 +203,7 @@ export const CourseTileView: React.FC<CourseTileViewProps> = ({
                 <Button
                   size="sm"
                   className={`w-full h-7 text-xs ${
-                    isAdmin 
+                    (isAdmin || isContentCreator) 
                       ? 'bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white' 
                       : 'bg-primary hover:bg-primary/90 text-primary-foreground'
                   }`}
@@ -212,7 +213,7 @@ export const CourseTileView: React.FC<CourseTileViewProps> = ({
                   }}
                 >
                   <Play className="w-3 h-3 mr-1" />
-                  {isAdmin ? 'Manage' : 'View Course'}
+                  {(isAdmin || isContentCreator) ? 'Manage' : 'View Course'}
                 </Button>
               </div>
             </CardContent>

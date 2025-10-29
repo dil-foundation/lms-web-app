@@ -345,7 +345,7 @@ interface Profile {
   first_name: string;
   last_name: string;
   email: string;
-  role: 'admin' | 'teacher' | 'student';
+  role: 'admin' | 'teacher' | 'student' | 'content_creator' | 'super_user' | 'view_only';
   avatar_url?: string;
 }
 
@@ -1145,7 +1145,7 @@ interface LessonContainerProps {
   onRemoveContentItem: (lessonId: string, itemId: string) => void;
   onShowContentTypeSelector: (lessonId: string) => void;
   canReorderContent: boolean;
-  currentUserRole: 'admin' | 'teacher' | 'student' | null;
+  currentUserRole: 'admin' | 'teacher' | 'student' | 'content_creator' | 'super_user' | 'view_only' | null;
   courseStatus: 'Draft' | 'Published' | 'Under Review' | 'Rejected' | undefined;
 }
 
@@ -1229,7 +1229,7 @@ const LessonContainer = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovab
                     <span>Drag to reorder content items</span>
                   </div>
                 )}
-                {!canReorderContent && (currentUserRole === 'admin' || currentUserRole === 'teacher') && courseStatus === 'Published' && (
+                {!canReorderContent && (currentUserRole === 'admin' || currentUserRole === 'super_user' || currentUserRole === 'teacher' || currentUserRole === 'content_creator') && courseStatus === 'Published' && (
                   <div className="text-xs text-amber-600 dark:text-amber-400 mb-2 flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 rounded-lg border border-amber-200 dark:border-amber-800">
                     <Info className="w-3 h-3" />
                     <span>Content reordering is disabled for published courses. Unpublish the course to make changes.</span>
@@ -2200,7 +2200,7 @@ const CourseBuilder = () => {
   const [allTeachers, setAllTeachers] = useState<{ label: string; value: string; }[]>([]);
   const [allStudents, setAllStudents] = useState<{ label: string; value: string; }[]>([]);
   const [userProfiles, setUserProfiles] = useState<Profile[]>([]);
-  const [currentUserRole, setCurrentUserRole] = useState<'student' | 'teacher' | 'admin' | null>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<'student' | 'teacher' | 'admin' | 'content_creator' | 'super_user' | 'view_only' | null>(null);
   
   // Hierarchical data state
   const [countries, setCountries] = useState<Country[]>([]);
@@ -2275,19 +2275,17 @@ const CourseBuilder = () => {
     );
     
     // Update course data with teachers and students from selected classes
-    // BUT preserve any additional teachers/students that are not from classes
+    // BUT preserve any additional teachers/students that are not from ANY classes
     setCourseData(prev => {
-      // Get current class IDs to identify which members are from classes
-      const currentClassIds = prev.class_ids || [];
-      const currentClassObjects = dbClasses.filter(cls => currentClassIds.includes(cls.id));
-      const currentClassTeacherIds = currentClassObjects.flatMap(cls => cls.teachers.map(t => t.id));
-      const currentClassStudentIds = currentClassObjects.flatMap(cls => cls.students.map(s => s.id));
+      // Get ALL class teacher/student IDs from dbClasses (not just current ones)
+      const allClassTeacherIds = dbClasses.flatMap(cls => cls.teachers.map(t => t.id));
+      const allClassStudentIds = dbClasses.flatMap(cls => cls.students.map(s => s.id));
       
-      // Preserve teachers and students that are NOT from classes (additional members)
-      const additionalTeachers = prev.teachers.filter(teacher => !currentClassTeacherIds.includes(teacher.id));
-      const additionalStudents = prev.students.filter(student => !currentClassStudentIds.includes(student.id));
+      // Preserve teachers and students that are NOT from ANY classes (manually added members)
+      const additionalTeachers = prev.teachers.filter(teacher => !allClassTeacherIds.includes(teacher.id));
+      const additionalStudents = prev.students.filter(student => !allClassStudentIds.includes(student.id));
       
-      // Merge class members with additional members
+      // Merge NEW class members with additional members
       const mergedTeachers = [...uniqueTeachers, ...additionalTeachers];
       const mergedStudents = [...uniqueStudents, ...additionalStudents];
       
@@ -2298,6 +2296,16 @@ const CourseBuilder = () => {
       const finalStudents = mergedStudents.filter((student, index, self) => 
         index === self.findIndex(s => s.id === student.id)
       );
+      
+      console.log('Debug - Class selection update:', {
+        selectedClassIds: classIds,
+        uniqueTeachersFromClasses: uniqueTeachers.length,
+        uniqueStudentsFromClasses: uniqueStudents.length,
+        additionalTeachers: additionalTeachers.length,
+        additionalStudents: additionalStudents.length,
+        finalTeachers: finalTeachers.length,
+        finalStudents: finalStudents.length
+      });
       
       return {
         ...prev,
@@ -5589,7 +5597,7 @@ const CourseBuilder = () => {
         }
       }
 
-      // Send notifications to all admins about course submission for review
+      // Send notifications to all admins and super users about course submission for review
       try {
         await CourseNotificationService.notifyAdminsCourseSubmittedForReview({
           courseId: savedId,
@@ -5604,7 +5612,7 @@ const CourseBuilder = () => {
           }
         });
       } catch (notificationError) {
-        console.error('Error sending course submission notifications to admins:', notificationError);
+        console.error('Error sending course submission notifications to admins and super users:', notificationError);
         // Don't throw error to avoid breaking the main course operation
       }
       
@@ -6141,12 +6149,12 @@ const CourseBuilder = () => {
   };
 
   const canDelete = user && courseData.id && courseData.authorId && (
-    currentUserRole === 'admin' ||
+    currentUserRole === 'admin' || currentUserRole === 'super_user' ||
     (currentUserRole === 'teacher' && user.id === courseData.authorId && (courseData.status === 'Draft' || courseData.status === 'Rejected'))
   );
 
-  // Check if user can reorder content items (admin and teacher only, and only in draft mode)
-  const canReorderContent = (currentUserRole === 'admin' || currentUserRole === 'teacher') && 
+  // Check if user can reorder content items (admin, super_user, teacher, and content_creator only, and only in draft mode)
+  const canReorderContent = (currentUserRole === 'admin' || currentUserRole === 'super_user' || currentUserRole === 'teacher' || currentUserRole === 'content_creator') && 
                            (courseData.status === 'Draft' || courseData.status === 'Rejected');
 
   const isFormValid = Object.keys(validationErrors).length === 0;
@@ -6203,6 +6211,12 @@ const CourseBuilder = () => {
                         <span className="font-medium">You must submit this course for admin review and approval before it can be published.</span>
                     </div>
                 )}
+                {currentUserRole === 'content_creator' && courseData.status === 'Draft' && (
+                    <div className="flex items-center gap-2 mt-2 text-sm text-green-800 bg-green-100 border border-green-300 rounded-lg p-3 shadow-sm">
+                        <Info className="h-4 w-4 text-green-600 flex-shrink-0" />
+                        <span className="font-medium">You can publish this course directly when ready, or save it as a draft to continue editing later.</span>
+                    </div>
+                )}
               </div>
             </div>
           </div>
@@ -6252,8 +6266,45 @@ const CourseBuilder = () => {
               </>
             )}
 
+            {/* Content Creator Buttons */}
+            {currentUserRole === 'content_creator' && (
+              <>
+                {(courseData.status === 'Draft' || courseData.status === 'Rejected') && (
+                   <Button 
+                     onClick={handleSaveDraftClick} 
+                     disabled={isSaving}
+                     className="h-9 px-4 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                   >
+                    <Save className="w-4 h-4 mr-2" />
+                    {saveAction === 'draft' ? 'Saving...' : (courseData.id ? 'Update Draft' : 'Save Draft')}
+                  </Button>
+                )}
+                {courseData.status === 'Published' ? (
+                  <>
+                    <Button 
+                      onClick={handleUnpublishClick} 
+                      className="h-9 px-4 rounded-xl bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5" 
+                      disabled={isSaving}
+                    >
+                      {saveAction === 'unpublish' ? 'Unpublishing...' : 'Unpublish'}
+                    </Button>
+                  </>
+                ) : (
+                  (courseData.status === 'Draft' || courseData.status === 'Rejected') && (
+                    <Button 
+                      onClick={handlePublishClick} 
+                      className="h-9 px-4 rounded-xl bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5" 
+                      disabled={isSaving || !isFormValid}
+                    >
+                      {saveAction === 'publish' ? 'Publishing...' : 'Publish'}
+                    </Button>
+                  )
+                )}
+              </>
+            )}
+
             {/* Admin Buttons */}
-            {currentUserRole === 'admin' && (
+            {(currentUserRole === 'admin' || currentUserRole === 'super_user') && (
               <>
                 {(courseData.status === 'Draft' || courseData.status === 'Rejected') && (
                    <Button 
@@ -6324,19 +6375,19 @@ const CourseBuilder = () => {
 
       {/* Main Content */}
             <div className="flex-1">
-        {persistentFeedback && (currentUserRole === 'admin' || (currentUserRole === 'teacher' && courseData.status !== 'Under Review')) && (
+        {persistentFeedback && ((currentUserRole === 'admin' || currentUserRole === 'super_user') || ((currentUserRole === 'teacher' || currentUserRole === 'content_creator') && courseData.status !== 'Under Review')) && (
           <div className="p-6 pt-6 pb-0">
             <Alert variant="destructive">
               <Terminal className="h-4 w-4" />
               <AlertTitle>
-                {currentUserRole === 'admin' ? 'Requested Changes' : 'Submission Rejected'}
+                {(currentUserRole === 'admin' || currentUserRole === 'super_user') ? 'Requested Changes' : 'Submission Rejected'}
               </AlertTitle>
               <AlertDescription>
-                {currentUserRole === 'admin' ? (
+                {(currentUserRole === 'admin' || currentUserRole === 'super_user') ? (
                   <>
-                    <p className="font-semibold">You have requested the following changes from the teacher:</p>
+                    <p className="font-semibold">You have requested the following changes from the content creator:</p>
                     <p className="mt-2 p-2 bg-background rounded-md">{persistentFeedback}</p>
-                    <p className="mt-2 text-sm text-muted-foreground">The teacher must address this feedback and resubmit the course for it to be approved.</p>
+                    <p className="mt-2 text-sm text-muted-foreground">The content creator must address this feedback and resubmit the course for it to be approved.</p>
                   </>
                 ) : (
                   <>
