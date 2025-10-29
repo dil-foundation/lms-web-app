@@ -104,12 +104,14 @@ const CourseCard = ({ course, onDelete }: { course: Course, onDelete: (course: C
   const { user } = useAuth();
   const { profile } = useUserProfile();
 
-  const isAdmin = profile?.role === 'admin';
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'super_user';
+  const isContentCreator = profile?.role === 'content_creator';
   const isTeacher = profile?.role === 'teacher';
 
-  const canDelete = user && (
-    user.app_metadata.role === 'admin' ||
-    (user.app_metadata.role === 'teacher' && course.status === 'Draft' && user.id === course.authorId)
+  // Content creators cannot delete courses, only admins and teachers can
+  const canDelete = profile && (
+    (profile.role === 'admin' || profile.role === 'super_user') ||
+    (profile.role === 'teacher' && course.status === 'Draft' && user?.id === course.authorId)
   );
 
     return (
@@ -141,7 +143,7 @@ const CourseCard = ({ course, onDelete }: { course: Course, onDelete: (course: C
         </div>
       </CardContent>
       <CardFooter className="p-4 pt-0 mt-auto">
-        {isAdmin ? (
+        {(isAdmin || isContentCreator) ? (
           <Button 
             onClick={() => navigate(`/dashboard/courses/builder/${course.id}`)}
             className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-3 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:scale-105 rounded-xl"
@@ -170,8 +172,14 @@ const CourseManagement = () => {
   const { preferences, setTeacherCourseView } = useViewPreferences();
   
   // Check user role for UI restrictions
-  const isAdmin = profile?.role === 'admin';
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'super_user';
+  const isContentCreator = profile?.role === 'content_creator';
   const isTeacher = profile?.role === 'teacher';
+  
+  // Content creators can create/edit courses like admins
+  const canCreateCourses = isAdmin || isContentCreator;
+  
+  console.log('🔍 CourseManagement: Component rendered, role:', profile?.role, 'isAdmin:', isAdmin);
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -217,25 +225,26 @@ const CourseManagement = () => {
     setLoadingStats(true);
 
     try {
-      let role = user.app_metadata.role;
+      console.log('🔍 CourseManagement: fetchStats called, user:', user.id);
+      
+      // Get role from profiles table (not app_metadata which doesn't have it)
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
 
-      // If role is not in metadata, fetch it from the user's profile as a fallback.
-      if (!role) {
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single();
-
-        if (profileError) {
-          toast.error("Could not verify user role.", { description: profileError.message });
-          throw profileError;
-        }
-
-        role = profileData?.role;
+      if (profileError) {
+        console.error('❌ CourseManagement: Error fetching profile role:', profileError);
+        toast.error("Could not verify user role.", { description: profileError.message });
+        throw profileError;
       }
 
-      if (role === 'admin') {
+      const role = profileData?.role;
+      console.log('🔍 CourseManagement: User role from profile:', role);
+
+      if (role === 'admin' || role === 'super_user') {
+        console.log('📊 CourseManagement: Fetching admin/super_user stats');
         const [totalRes, publishedRes, draftRes, studentsRes] = await Promise.all([
             supabase.from('courses').select('id', { count: 'exact', head: true }),
             supabase.from('courses').select('id', { count: 'exact', head: true }).eq('status', 'Published'),
@@ -261,10 +270,12 @@ const CourseManagement = () => {
         };
         const studentsToSet = studentsRes.count || 0;
 
+        console.log('✅ CourseManagement: Admin stats fetched:', statsToSet, 'students:', studentsToSet);
         setStats(statsToSet);
         setTotalStudents(studentsToSet);
 
-      } else if (role === 'teacher') {
+      } else if (role === 'teacher' || role === 'content_creator') {
+        console.log('📊 CourseManagement: Fetching teacher/content_creator stats');
         // RLS will automatically filter to courses the teacher can access.
         const [totalRes, publishedRes, draftRes] = await Promise.all([
             supabase.from('courses').select('id', { count: 'exact', head: true }),
@@ -616,17 +627,20 @@ const CourseManagement = () => {
               </div>
             </div>
             
-            {/* Only show action buttons for admins */}
-            {isAdmin && (
+            {/* Show action buttons for admins and content creators */}
+            {canCreateCourses && (
               <div className="flex items-center gap-3">
-                <Button 
-                  variant="outline"
-                  onClick={() => setIsBulkUploadOpen(true)}
-                  className="h-10 px-6 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800"
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Bulk Upload
-                </Button>
+                {/* Only admins can do bulk upload */}
+                {isAdmin && (
+                  <Button 
+                    variant="outline"
+                    onClick={() => setIsBulkUploadOpen(true)}
+                    className="h-10 px-6 rounded-xl bg-background border border-input shadow-sm hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-accent/5 hover:text-foreground dark:hover:bg-gray-800"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Bulk Upload
+                  </Button>
+                )}
                 <Button 
                   onClick={handleCreateCourse}
                   className="h-10 px-6 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
@@ -637,8 +651,8 @@ const CourseManagement = () => {
               </div>
             )}
             
-            {/* Show message for teachers */}
-            {isTeacher && (
+            {/* Show message for teachers (view-only) */}
+            {isTeacher && !isContentCreator && (
               <div className="flex items-center gap-3">
                 <div className="text-sm text-muted-foreground bg-muted/50 px-4 py-2 rounded-lg">
                   <span className="font-medium">View Mode:</span> You can view and access course content. Course creation and editing is restricted to administrators.

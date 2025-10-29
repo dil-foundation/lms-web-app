@@ -1,7 +1,7 @@
 
 import { Home, BookOpen, FileQuestion, TrendingUp, Users, Settings, BarChart3, GraduationCap, ClipboardList, Award, UserCheck, Database, Shield, MessageSquare, Link, Eye, MessageCircle, Bot, Brain, Zap, Target, Sparkles, BookCheck, FileText, Cog, Settings2, ShieldCheck, Plug, Building2, Download, MapPin, Users2, MessageCircle as AIAssistant, Video, CreditCard } from 'lucide-react';
 
-export type UserRole = 'student' | 'teacher' | 'admin';
+export type UserRole = 'student' | 'teacher' | 'admin' | 'content_creator' | 'super_user' | 'view_only';
 
 export interface NavigationItem {
   title: string;
@@ -47,6 +47,31 @@ export const getRoleNavigation = (role?: UserRole): NavigationItem[] => {
         { title: 'Observation Reports', path: '/dashboard/observation-reports', icon: Eye },
         { title: 'Discussion', path: '/dashboard/discussion', icon: MessageSquare },
         { title: 'Assessments', path: '/dashboard/grade-assignments', icon: Award },
+      ];
+    
+    case 'content_creator':
+      return [
+        { title: 'Overview', path: '/dashboard', icon: Home },
+        { title: 'Courses', path: '/dashboard/courses', icon: BookOpen },
+        { title: 'Course Categories', path: '/dashboard/course-categories', icon: BookCheck },
+      ];
+    
+    case 'super_user':
+      return [
+        { title: 'Overview', path: '/dashboard', icon: Home },
+        { title: 'Users', path: '/dashboard/users', icon: Users },
+        { title: 'Courses', path: '/dashboard/courses', icon: BookOpen },
+        { title: 'Performance Analytics', path: '/dashboard/reports', icon: FileQuestion },
+        { title: 'Observation Reports', path: '/dashboard/observation-reports', icon: Eye },
+        { title: 'Discussion', path: '/dashboard/discussion', icon: MessageSquare },
+        { title: 'Assessments', path: '/dashboard/grade-assignments', icon: Award },
+        { title: 'System Settings', path: '/dashboard/admin-settings', icon: Settings },
+      ];
+    
+    case 'view_only':
+      return [
+        { title: 'Overview', path: '/dashboard', icon: Home },
+        { title: 'Courses', path: '/dashboard/courses', icon: BookOpen },
       ];
     
     default:
@@ -174,6 +199,86 @@ export const getCategorizedNavigation = (role?: UserRole, isAIMode?: boolean, is
         }
       ];
     
+    case 'content_creator':
+      return [
+        {
+          title: 'MAIN',
+          items: [
+            { title: 'Overview', path: '/dashboard', icon: Home },
+          ]
+        },
+        {
+          title: 'CONTENT',
+          items: [
+            { title: 'Courses', path: '/dashboard/courses', icon: BookOpen },
+            { title: 'Course Categories', path: '/dashboard/course-categories', icon: BookCheck },
+          ]
+        }
+      ];
+    
+    case 'super_user':
+      return [
+        {
+          title: 'MAIN',
+          items: [
+            { title: 'Overview', path: '/dashboard', icon: Home },
+            { title: 'IRIS', path: '/dashboard/iris', icon: Bot },
+          ]
+        },
+        {
+          title: 'MANAGEMENT',
+          items: [
+            { title: 'Users', path: '/dashboard/users', icon: Users },
+            { title: 'Classes', path: '/dashboard/classes', icon: Users2 },
+            { title: 'Courses', path: '/dashboard/courses', icon: BookOpen },
+            { title: 'Course Categories', path: '/dashboard/course-categories', icon: BookCheck },
+            { title: 'Assessments', path: '/dashboard/grade-assignments', icon: Award },
+            { title: 'Orders', path: '/dashboard/orders', icon: CreditCard },
+            { title: 'Messages', path: '/dashboard/messages', icon: MessageSquare },
+            { title: 'Discussion', path: '/dashboard/discussion', icon: MessageCircle },
+            ...(isZoomEnabled ? [{ title: 'Meetings', path: '/dashboard/meetings', icon: Video }] : []),
+          ]
+        },
+        {
+          title: 'ANALYTICS',
+          items: [
+            { title: 'Performance Analytics', path: '/dashboard/reports', icon: FileQuestion },
+          ]
+        },
+        {
+          title: 'OBSERVATION',
+          items: [
+            { title: 'Observation Reports', path: '/dashboard/observation-reports', icon: Eye },
+          ]
+        },
+        {
+          title: 'SYSTEM',
+          items: [
+            { title: 'Settings and Security', path: '/dashboard/admin-settings', icon: Settings },
+            { title: 'APEX Admin', path: '/dashboard/apex-admin', icon: AIAssistant },
+            { title: 'Integration APIs', path: '/dashboard/integration-apis', icon: Plug },
+            { title: 'Multitenancy', path: '/dashboard/multitenancy', icon: Building2 },
+          ]
+        }
+      ];
+    
+    case 'view_only':
+      return [
+        {
+          title: 'MAIN',
+          items: [
+            { title: 'Overview', path: '/dashboard', icon: Home },
+          ]
+        },
+        {
+          title: 'CONTENT',
+          items: [
+            { title: 'Courses', path: '/dashboard/courses', icon: BookOpen },
+            { title: 'Course Categories', path: '/dashboard/course-categories', icon: BookCheck },
+          ]
+        }
+      ];
+    
     default:
       return [
         {
@@ -259,6 +364,63 @@ export const getAICategorizedNavigation = (role: UserRole): NavigationCategory[]
         }
       ];
     
+    case 'content_creator':
+      return [
+        {
+          title: 'MAIN',
+          items: [
+            { title: 'Overview', path: '/dashboard', icon: Bot },
+          ]
+        },
+        {
+          title: 'EXPERIENCE',
+          items: [
+            { title: 'Learn', path: '/dashboard/ai-learn', icon: Target },
+            { title: 'Practice', path: '/dashboard/ai-practice', icon: Brain },
+          ]
+        }
+      ];
+    
+    case 'super_user':
+      return [
+        {
+          title: 'MAIN',
+          items: [
+            { title: 'Overview', path: '/dashboard', icon: Bot },
+          ]
+        },
+        {
+          title: 'EXPERIENCE',
+          items: [
+            { title: 'Learn', path: '/dashboard/ai-learn', icon: Target },
+            { title: 'Practice', path: '/dashboard/ai-practice', icon: Brain },
+          ]
+        },
+        {
+          title: 'ANALYTICS',
+          items: [
+            { title: 'Performance Analytics', path: '/dashboard/ai-reports', icon: BarChart3 },
+          ]
+        },
+        {
+          title: 'SYSTEM MANAGEMENT',
+          items: [
+            { title: 'AI Tutor Settings', path: '/dashboard/ai-tutor-settings', icon: Settings2 },
+            { title: 'AI Safety & Ethics', path: '/dashboard/ai-safety-ethics', icon: ShieldCheck },
+          ]
+        }
+      ];
+    
+    case 'view_only':
+      return [
+        {
+          title: 'MAIN',
+          items: [
+            { title: 'Overview', path: '/dashboard', icon: Bot },
+          ]
+        }
+      ];
+    
     default:
       return [
         {
@@ -279,6 +441,12 @@ export const getRoleDisplayName = (role: UserRole): string => {
       return 'Teacher';
     case 'admin':
       return 'Admin';
+    case 'content_creator':
+      return 'Content Creator';
+    case 'super_user':
+      return 'Super User';
+    case 'view_only':
+      return 'View Only';
     default:
       return 'User';
   }

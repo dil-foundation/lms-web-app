@@ -329,8 +329,8 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
 
   const actualCourseId = courseId || id;
 
-  // Check if user can reorder content (admin and teacher only, and only in draft mode)
-  const canReorderContent = (profile?.role === 'admin' || profile?.role === 'teacher') && 
+  // Check if user can reorder content (admin, super_user, teacher, content_creator only, and only in draft mode)
+  const canReorderContent = (profile?.role === 'admin' || profile?.role === 'super_user' || profile?.role === 'teacher' || profile?.role === 'content_creator') && 
                            (course?.status === 'Draft' || course?.status === 'Rejected');
 
   // Drag and drop sensors
@@ -646,6 +646,12 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
   const markContentAsComplete = useCallback(async (contentId: string, lessonId: string, courseId: string, duration?: number) => {
     if (!user) return;
     
+    // Skip progress tracking for view_only users
+    if (profile?.role === 'view_only') {
+      console.log('🔍 CourseContent: Skipping progress tracking for view_only user');
+      return;
+    }
+    
     // Skip database update when offline
     if (!navigator.onLine) {
       console.log('🔴 CourseContent: Offline - skipping progress update');
@@ -763,6 +769,11 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     if (!videoNode || !user || !currentContentItem || !currentLesson) return;
     const { currentTime, duration } = videoNode;
     if (!duration || !isFinite(duration) || duration === 0) return;
+
+    // Skip progress tracking for view_only users
+    if (profile?.role === 'view_only') {
+      return;
+    }
 
     const now = Date.now();
     if (now - lastUpdateTimeRef.current > 15000) {
@@ -1429,9 +1440,9 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         return;
       }
 
-      // Skip payment check for admins and teachers
-      if (profile?.role === 'admin' || profile?.role === 'teacher') {
-        console.log('🔓 [Access Control] Admin/Teacher access granted');
+      // Skip payment check for admins, super_users, teachers, and content_creators
+      if (profile?.role === 'admin' || profile?.role === 'super_user' || profile?.role === 'teacher' || profile?.role === 'content_creator') {
+        console.log('🔓 [Access Control] Admin/Super User/Teacher/Content Creator access granted');
         setIsCheckingAccess(false);
         return;
       }
@@ -1957,7 +1968,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                 </CardContent>
               </Card>
             )}
-            {profile?.role === 'admin' || profile?.role === 'teacher' ? (
+            {(profile?.role === 'admin' || profile?.role === 'super_user' || profile?.role === 'teacher' || profile?.role === 'content_creator' || profile?.role === 'view_only') ? (
               <Card className="bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-800 rounded-2xl">
                 <CardContent className="pt-6">
                   <div className="flex items-start gap-3">
@@ -1967,7 +1978,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                         Preview Mode
                       </p>
                       <p className="text-sm text-blue-700 dark:text-blue-300">
-                        Assignments can only be submitted by students. As {profile?.role === 'admin' ? 'an admin' : 'a teacher'}, you are viewing this in preview mode.
+                        Assignments can only be submitted by students. As {(profile?.role === 'admin' || profile?.role === 'super_user') ? 'an admin' : (profile?.role === 'content_creator') ? 'a content creator' : profile?.role === 'view_only' ? 'a viewer' : 'a teacher'}, you are viewing this in preview mode.
                       </p>
                     </div>
                   </div>
@@ -2315,7 +2326,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                 );
               })}
               {!hasSubmitted && (
-                profile?.role === 'admin' || profile?.role === 'teacher' ? (
+                (profile?.role === 'admin' || profile?.role === 'super_user' || profile?.role === 'teacher' || profile?.role === 'content_creator' || profile?.role === 'view_only') ? (
                   <Card className="bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-800 rounded-2xl">
                     <CardContent className="pt-6">
                       <div className="flex items-start gap-3">
@@ -2325,7 +2336,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                             Preview Mode
                           </p>
                           <p className="text-sm text-blue-700 dark:text-blue-300">
-                            Quizzes can only be submitted by students. As {profile?.role === 'admin' ? 'an admin' : 'a teacher'}, you are viewing this in preview mode.
+                            Quizzes can only be submitted by students. As {(profile?.role === 'admin' || profile?.role === 'super_user') ? 'an admin' : (profile?.role === 'content_creator') ? 'a content creator' : profile?.role === 'view_only' ? 'a viewer' : 'a teacher'}, you are viewing this in preview mode.
                           </p>
                         </div>
                       </div>
@@ -2561,18 +2572,18 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                 variant="ghost" 
                 size="sm" 
                 onClick={() => {
-                  if (profile?.role === 'admin') {
-                    // For admins, navigate back to the course builder page
+                  if (profile?.role === 'admin' || profile?.role === 'super_user') {
+                    // For admins and super users, navigate back to the course builder page
                     navigate(`/dashboard/courses/builder/${actualCourseId}`);
                   } else {
-                    // For teachers and students, navigate to the course overview page
+                    // For teachers, content creators, and students, navigate to the course overview page
                     navigate(`/dashboard/courses/${actualCourseId}`);
                   }
                 }}
                 className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
               >
                 <ChevronLeft className="w-4 h-4 mr-1" />
-                {profile?.role === 'admin' ? 'Back to Course Builder' : 'Back to Course'}
+                {(profile?.role === 'admin' || profile?.role === 'super_user') ? 'Back to Course Builder' : 'Back to Course'}
               </Button>
               <div className="h-4 w-px bg-border flex-shrink-0" />
               <div className="flex items-center space-x-2 text-sm text-muted-foreground min-w-0 flex-1 overflow-hidden">
@@ -2785,7 +2796,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                                           <span>Drag to reorder content items</span>
                                         </div>
                                       )}
-                                      {!canReorderContent && (profile?.role === 'admin' || profile?.role === 'teacher') && course?.status === 'Published' && (
+                                      {!canReorderContent && (profile?.role === 'admin' || profile?.role === 'super_user' || profile?.role === 'teacher' || profile?.role === 'content_creator') && course?.status === 'Published' && (
                                         <div className="text-xs text-amber-600 dark:text-amber-400 mb-2 flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 rounded-lg border border-amber-200 dark:border-amber-800">
                                           <Info className="w-3 h-3" />
                                           <span>Content reordering is disabled for published courses. Unpublish the course to make changes.</span>

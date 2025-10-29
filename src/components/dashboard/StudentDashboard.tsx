@@ -28,6 +28,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { offlineStateManager } from '@/utils/offlineStateManager';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { ContentLoader } from '../ContentLoader';
 
 type Profile = {
@@ -89,6 +90,8 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
   const [upcomingAssignments, setUpcomingAssignments] = useState<UpcomingAssignment[]>([]);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
+  const { profile } = useUserProfile();
+  const isViewOnly = profile?.role === 'view_only';
 
   // Register cleanup callback to clear cached data when going offline
   useEffect(() => {
@@ -448,11 +451,20 @@ export const StudentDashboard = ({ userProfile }: StudentDashboardProps) => {
                               className="h-7 px-3 text-xs hover:bg-primary hover:text-primary-foreground transition-all duration-200"
                               onClick={(e) => e.stopPropagation()}
                             >
-                              {course.progress && course.progress > 0 ? 'Continue' : 'Start'}
-                              {course.progress && course.progress > 0 ? (
-                                <Play className="w-3 h-3 ml-1" />
+                              {isViewOnly ? (
+                                <>
+                                  Preview
+                                  <Eye className="w-3 h-3 ml-1" />
+                                </>
                               ) : (
-                                <Eye className="w-3 h-3 ml-1" />
+                                <>
+                                  {course.progress && course.progress > 0 ? 'Continue' : 'Start'}
+                                  {course.progress && course.progress > 0 ? (
+                                    <Play className="w-3 h-3 ml-1" />
+                                  ) : (
+                                    <Eye className="w-3 h-3 ml-1" />
+                                  )}
+                                </>
                               )}
                             </Button>
                           </Link>

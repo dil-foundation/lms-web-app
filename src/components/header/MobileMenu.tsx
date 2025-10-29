@@ -7,12 +7,14 @@ import { Menu, X, LogOut, Settings, Users, Home } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { NotificationToggle } from './NotificationToggle';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export const MobileMenu = memo(() => {
   const [isOpen, setIsOpen] = useState(false);
   const { user, session } = useAuth();
+  const { profile } = useUserProfile();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -98,7 +100,7 @@ export const MobileMenu = memo(() => {
                 <Separator />
 
                 {/* Notifications Section */}
-                {user && (
+                {user && profile?.role !== 'view_only' && profile?.role !== 'content_creator' && (
                   <>
                     <div className="space-y-3">
                       <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">

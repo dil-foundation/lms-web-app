@@ -178,9 +178,10 @@ const StudentAuth = () => {
           return;
         }
 
+        // Allow only students to access student portal
         if (profile.role !== 'student') {
           await supabase.auth.signOut();
-          setAuthError(`Please use the ${profile.role} portal to log in.`);
+          setAuthError(`Access denied. Please use the ${profile.role} portal to log in.`);
           setIsLoading(false);
           return;
         }

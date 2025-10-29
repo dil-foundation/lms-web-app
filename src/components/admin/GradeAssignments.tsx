@@ -117,13 +117,13 @@ export const GradeAssignments = () => {
   
   const [itemsPerPage, setItemsPerPage] = useState(getDefaultItemsPerPage(preferences.assignmentView));
 
-  // Check if user is admin - derive stable role
-  const currentIsAdmin = profile?.role === 'admin';
+  // Check if user is admin (includes super_user)
+  const currentIsAdmin = profile?.role === 'admin' || profile?.role === 'super_user';
   
   // Once profile is defined, lock in the role (don't let it flicker)
   if (profile?.role && !stableRoleRef.current) {
-    stableRoleRef.current = profile.role === 'admin' ? 'admin' : 'teacher';
-    console.log('🔒 [GradeAssignments] Locked stable role:', stableRoleRef.current);
+    stableRoleRef.current = (profile.role === 'admin' || profile.role === 'super_user') ? 'admin' : 'teacher';
+    console.log('🔒 [GradeAssignments] Locked stable role:', stableRoleRef.current, 'from profile role:', profile.role);
   }
   
   // Use stable role if available, otherwise fall back to current

@@ -653,17 +653,17 @@ class CourseNotificationService {
   }
 
   /**
-   * Get all admin users from the database
+   * Get all admin and super user users from the database
    */
   private static async getAllAdmins(): Promise<Array<{ id: string; name: string; email: string }>> {
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('id, first_name, last_name, email')
-        .eq('role', 'admin');
+        .in('role', ['admin', 'super_user']);
 
       if (error) {
-        console.error('Error fetching admin users:', error);
+        console.error('Error fetching admin and super user users:', error);
         return [];
       }
 
@@ -673,27 +673,27 @@ class CourseNotificationService {
         email: admin.email || ''
       })) || [];
     } catch (error) {
-      console.error('Error getting admin users:', error);
+      console.error('Error getting admin and super user users:', error);
       return [];
     }
   }
 
   /**
-   * Send notifications to all admins when a course is submitted for review
+   * Send notifications to all admins and super users when a course is submitted for review
    */
   static async notifyAdminsCourseSubmittedForReview(notificationData: CourseNotificationData): Promise<void> {
     try {
       const { courseId, courseName, courseTitle, performedBy } = notificationData;
       
-      // Get all admin users
+      // Get all admin and super user users
       const admins = await this.getAllAdmins();
       
       if (admins.length === 0) {
-        console.warn('No admin users found to notify about course submission for review');
+        console.warn('No admin or super user users found to notify about course submission for review');
         return;
       }
 
-      // Send notifications to all admins
+      // Send notifications to all admins and super users
       for (const admin of admins) {
         try {
           await supabase.functions.invoke('send-notification', {
@@ -715,13 +715,13 @@ class CourseNotificationService {
             }
           });
         } catch (error) {
-          console.error(`Error sending course submission notification to admin ${admin.name}:`, error);
+          console.error(`Error sending course submission notification to admin/super user ${admin.name}:`, error);
         }
       }
 
-      console.log(`✅ Notified ${admins.length} admins about course submission for review`);
+      console.log(`✅ Notified ${admins.length} admins and super users about course submission for review`);
     } catch (error) {
-      console.error('Error sending course submission notifications to admins:', error);
+      console.error('Error sending course submission notifications to admins and super users:', error);
       // Don't throw error to avoid breaking the main course operation
     }
   }

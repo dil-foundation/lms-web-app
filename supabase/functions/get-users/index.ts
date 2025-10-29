@@ -22,6 +22,7 @@ serve(async (req) => {
     );
 
     const { page, rowsPerPage, searchTerm, roleFilter } = await req.json();
+    console.log('🔍 get-users function: Params received:', { page, rowsPerPage, searchTerm, roleFilter });
     const from = (page - 1) * rowsPerPage;
     const to = from + rowsPerPage - 1;
 
@@ -44,7 +45,9 @@ serve(async (req) => {
     }
 
     const { data: profiles, error: profilesError, count } = await query.range(from, to);
+    console.log('🔍 get-users function: Query result - count:', count, 'profiles:', profiles?.length);
     if (profilesError) {
+      console.error('❌ get-users function: Profile query error:', profilesError);
       // Return empty result instead of throwing error
       return new Response(JSON.stringify({ users: [], count: 0 }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -52,6 +55,7 @@ serve(async (req) => {
       });
     }
     if (!profiles) {
+      console.log('⚠️ get-users function: No profiles returned');
       return new Response(JSON.stringify({ users: [], count: 0 }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,

@@ -169,9 +169,10 @@ const TeacherAuth = () => {
           throw new Error('Could not fetch user profile.');
         }
 
+        // Allow only teachers to access teacher portal
         if (profile.role !== 'teacher') {
           await supabase.auth.signOut();
-          setAuthError(`Please use the ${profile.role} portal to log in.`);
+          setAuthError(`Access denied. Please use the ${profile.role} portal to log in.`);
           setIsLoading(false);
           return;
         }

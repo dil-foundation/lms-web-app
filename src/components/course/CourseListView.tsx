@@ -56,7 +56,8 @@ export const CourseListView: React.FC<CourseListViewProps> = ({
   const { user } = useAuth();
   const { profile } = useUserProfile();
   
-  const isAdmin = profile?.role === 'admin';
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'super_user';
+  const isContentCreator = profile?.role === 'content_creator';
   const isTeacher = profile?.role === 'teacher';
 
   const getStatusColor = (status: CourseStatus) => {
@@ -70,14 +71,17 @@ export const CourseListView: React.FC<CourseListViewProps> = ({
   };
 
   const canDelete = (course: Course) => {
-    return user && (
-      user.app_metadata.role === 'admin' ||
-      (user.app_metadata.role === 'teacher' && course.status === 'Draft' && user.id === course.authorId)
+    // Content creators cannot delete courses, only admins and teachers can
+    if (profile?.role === 'content_creator') return false;
+    
+    return profile && (
+      isAdmin ||
+      (profile.role === 'teacher' && course.status === 'Draft' && user?.id === course.authorId)
     );
   };
 
   const handleCourseClick = (course: Course) => {
-    if (isAdmin) {
+    if (isAdmin || isContentCreator) {
       navigate(`/dashboard/courses/builder/${course.id}`);
     } else {
       navigate(`/dashboard/courses/${course.id}`);
@@ -163,7 +167,7 @@ export const CourseListView: React.FC<CourseListViewProps> = ({
                   <Button
                     size="sm"
                     className={`h-8 text-xs ${
-                      isAdmin 
+                      (isAdmin || isContentCreator) 
                         ? 'bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white' 
                         : 'bg-primary hover:bg-primary/90 text-primary-foreground'
                     }`}
@@ -173,7 +177,7 @@ export const CourseListView: React.FC<CourseListViewProps> = ({
                     }}
                   >
                     <Play className="w-3 h-3 mr-1" />
-                    {isAdmin ? 'Manage' : 'View Course'}
+                    {(isAdmin || isContentCreator) ? 'Manage' : 'View Course'}
                   </Button>
                   
                   <DropdownMenu>
@@ -188,7 +192,7 @@ export const CourseListView: React.FC<CourseListViewProps> = ({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      {isAdmin ? (
+                      {(isAdmin || isContentCreator) ? (
                         <DropdownMenuItem onClick={(e) => handleEdit(e, course)}>
                           <Edit className="w-4 h-4 mr-2" />
                           Edit

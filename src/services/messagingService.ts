@@ -456,11 +456,11 @@ export const getStudentsForTeacherMessaging = async (teacherId: string, page: nu
       }
     }
 
-    // Get all admins
+    // Get all admins and super users
     const { data: admins, error: adminsError } = await supabase
       .from('profiles')
       .select('id, first_name, last_name, email, role, avatar_url')
-      .eq('role', 'admin');
+      .in('role', ['admin', 'super_user']);
 
     if (adminsError) throw adminsError;
 
@@ -672,11 +672,11 @@ export const searchStudentsForTeacherMessaging = async (teacherId: string, searc
       }
     }
 
-    // Get all admins
+    // Get all admins and super users
     const { data: admins, error: adminsError } = await supabase
       .from('profiles')
       .select('id, first_name, last_name, email, role, avatar_url')
-      .eq('role', 'admin');
+      .in('role', ['admin', 'super_user']);
 
     if (adminsError) throw adminsError;
 

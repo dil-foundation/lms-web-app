@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 type CourseStatus = "Published" | "Draft" | "Under Review" | "Rejected";
 
@@ -55,6 +56,10 @@ export const CourseCardView: React.FC<CourseCardViewProps> = ({
 }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { profile } = useUserProfile();
+  
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'super_user';
+  const isTeacher = profile?.role === 'teacher' || profile?.role === 'content_creator';
 
   const getStatusColor = (status: CourseStatus) => {
     switch (status) {
@@ -67,9 +72,12 @@ export const CourseCardView: React.FC<CourseCardViewProps> = ({
   };
 
   const canDelete = (course: Course) => {
-    return user && (
-      user.app_metadata.role === 'admin' ||
-      (user.app_metadata.role === 'teacher' && course.status === 'Draft' && user.id === course.authorId)
+    // Content creators cannot delete courses, only admins and teachers can
+    if (profile?.role === 'content_creator') return false;
+    
+    return profile && (
+      isAdmin ||
+      (profile.role === 'teacher' && course.status === 'Draft' && user?.id === course.authorId)
     );
   };
 
