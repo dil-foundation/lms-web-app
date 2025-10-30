@@ -87,7 +87,7 @@ import {
   sendMessageDeletedNotification,
   getConversationParticipants,
 } from '@/services/messagingService';
-import { UserRole } from '@/config/roleNavigation';
+import { UserRole, getRoleDisplayName } from '@/config/roleNavigation';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Message {
@@ -184,9 +184,15 @@ const getRoleIcon = (role: UserRole) => {
   switch (role) {
     case 'admin':
       return Shield;
+    case 'super_user':
+      return Shield;
     case 'teacher':
       return GraduationCap;
     case 'student':
+      return Users;
+    case 'content_creator':
+      return GraduationCap;
+    case 'view_only':
       return Users;
     default:
       return Users;
@@ -198,10 +204,16 @@ const getRoleColor = (role: UserRole) => {
   switch (role) {
     case 'admin':
       return 'text-red-500';
+    case 'super_user':
+      return 'text-red-600';
     case 'teacher':
       return 'text-[#1582B4]';
     case 'student':
       return 'text-green-500';
+    case 'content_creator':
+      return 'text-purple-500';
+    case 'view_only':
+      return 'text-blue-500';
     default:
       return 'text-gray-500';
   }
@@ -211,9 +223,15 @@ const getSelectedRoleColor = (role: UserRole) => {
   switch (role) {
     case 'admin':
       return 'text-white';
+    case 'super_user':
+      return 'text-white';
     case 'teacher':
       return 'text-white';
     case 'student':
+      return 'text-white';
+    case 'content_creator':
+      return 'text-white';
+    case 'view_only':
       return 'text-white';
     default:
       return 'text-white';
@@ -377,16 +395,16 @@ export default function MessagesPage() {
         return;
       }
       
-      // Only allow admin, teacher, and student roles to fetch users
-      if (profile.role !== 'admin' && profile.role !== 'teacher' && profile.role !== 'student') {
+      // Only allow admin, super_user, teacher, and student roles to fetch users
+      if (profile.role !== 'admin' && profile.role !== 'super_user' && profile.role !== 'teacher' && profile.role !== 'student') {
         return;
       }
       
       setUsersLoading(true);
       try {
         let result;
-        if (profile.role === 'admin') {
-          // Admin can message all users
+        if (profile.role === 'admin' || profile.role === 'super_user') {
+          // Admin and Super User can message all users
           if (userSearchQuery.trim()) {
             result = await searchUsersForMessaging(userSearchQuery, currentPage, 10);
           } else {
@@ -1285,8 +1303,8 @@ export default function MessagesPage() {
   const canDeleteConversation = (chat: Chat) => {
     if (!user?.id || !profile?.role) return false;
     
-    // Only admin can delete conversations
-    if (profile.role === 'admin') return true;
+    // Only admin and super_user can delete conversations
+    if (profile.role === 'admin' || profile.role === 'super_user') return true;
     
     // Students and teachers cannot delete conversations
     return false;
@@ -1568,7 +1586,7 @@ export default function MessagesPage() {
                                     );
                                   })()}
                                   <span className={`text-xs font-medium ${selectedChat?.id === chat.id ? 'text-primary dark:text-primary/90 bg-primary/10 dark:bg-primary/20 px-2 py-0.5 rounded-full' : 'text-muted-foreground bg-muted dark:bg-muted/50 px-2 py-0.5 rounded-full'}`}>
-                                    {chat.role.charAt(0).toUpperCase() + chat.role.slice(1)}
+                                    {getRoleDisplayName(chat.role)}
                                   </span>
                                 </div>
                               )}
@@ -1639,7 +1657,7 @@ export default function MessagesPage() {
                               );
                             })()}
                               <span className="text-sm font-medium text-primary dark:text-primary/90 bg-primary/10 dark:bg-primary/20 px-3 py-1 rounded-full">
-                              {selectedChat.role.charAt(0).toUpperCase() + selectedChat.role.slice(1)}
+                              {getRoleDisplayName(selectedChat.role)}
                             </span>
                           </div>
                         )}
@@ -1862,29 +1880,31 @@ export default function MessagesPage() {
               <SelectTrigger>
                 <SelectValue placeholder={profile?.role === 'student' ? "Select a teacher or fellow student" : "Select a user"} />
               </SelectTrigger>
-              <SelectContent>
-                <div 
-                  className={`overflow-y-auto ${
-                    usersLoading && currentPage === 1
-                      ? 'max-h-[120px]' // Small height when loading initially
-                      : availableUsers.length <= 3 
-                        ? 'max-h-[140px]' // Just enough for 3 users
-                        : availableUsers.length <= 6 
-                          ? 'max-h-[200px]' // Comfortable for 6 users
-                          : availableUsers.length <= 10
-                            ? 'max-h-[280px]' // Good for 10 users
-                            : 'max-h-[350px]' // Max height for many users
-                  }`}
-                  onScroll={(e) => {
-                    const target = e.currentTarget;
-                    
-                    if (target.scrollTop + target.clientHeight >= target.scrollHeight - 10) {
-                      if (hasMoreUsers && !usersLoading) {
-                        setCurrentPage(prev => prev + 1);
-                      }
+              <SelectContent 
+                className={`overflow-y-auto ${
+                  usersLoading && currentPage === 1
+                    ? 'max-h-[120px]' // Small height when loading initially
+                    : availableUsers.length <= 3 
+                      ? 'max-h-[140px]' // Just enough for 3 users
+                      : availableUsers.length <= 6 
+                        ? 'max-h-[200px]' // Comfortable for 6 users
+                        : availableUsers.length <= 10
+                          ? 'max-h-[280px]' // Good for 10 users
+                          : 'max-h-[350px]' // Max height for many users
+                }`}
+                onWheel={(e) => {
+                  // Allow wheel scrolling
+                  e.stopPropagation();
+                }}
+                onScroll={(e) => {
+                  const target = e.currentTarget;
+                  if (target.scrollTop + target.clientHeight >= target.scrollHeight - 10) {
+                    if (hasMoreUsers && !usersLoading) {
+                      setCurrentPage(prev => prev + 1);
                     }
-                  }}
-                >
+                  }
+                }}
+              >
                 {usersLoading && currentPage === 1 ? (
                   <div className="px-2 py-1.5 flex items-center justify-center">
                     <Loader2 className="h-4 w-4 animate-spin text-gray-500 dark:text-gray-400" />
@@ -1922,7 +1942,7 @@ export default function MessagesPage() {
                                   <>
                                     <RoleIcon className={`h-3 w-3 ${getRoleColor(user.role)} group-hover:text-gray-700 dark:group-hover:text-gray-300 group-focus:text-gray-700 dark:group-focus:text-gray-300`} />
                                     <span className={`text-xs font-medium ${getRoleColor(user.role)} px-1 rounded group-hover:text-gray-800 group-hover:bg-gray-100 dark:group-hover:text-white dark:group-hover:bg-gray-700 group-focus:text-gray-800 group-focus:bg-gray-100 dark:group-focus:text-white dark:group-focus:bg-gray-700`}>
-                                      {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                                      {getRoleDisplayName(user.role)}
                                     </span>
                                   </>
                                 ) : (
@@ -1949,7 +1969,6 @@ export default function MessagesPage() {
                     )}
                   </>
                 )}
-                </div>
               </SelectContent>
             </Select>
             <div className="flex justify-end gap-2">
