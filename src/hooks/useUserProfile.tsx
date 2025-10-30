@@ -104,12 +104,17 @@ export const useUserProfile = () => {
       }
 
       console.log('✅ useUserProfile: Profile data fetched:', data);
+      console.log('🔍 useUserProfile: USER ROLE:', data?.role);
+      console.log('🔍 useUserProfile: Full profile object:', JSON.stringify(data, null, 2));
       
       // Cache the result (both in memory and persistent storage)
       profileCache.set(cacheKey, { data, timestamp: Date.now() });
       saveProfileToStorage(user.id, data);
       setProfile(data);
       setError(null); // Clear any previous errors
+      
+      // Verify role after setting profile
+      console.log('🔍 useUserProfile: Profile state updated with role:', data?.role);
     } catch (err: any) {
       console.error('❌ useUserProfile: Error fetching profile:', err);
       setError(err.message);

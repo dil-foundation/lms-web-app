@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -92,8 +92,19 @@ export const GradeAssignments = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  
+  // Track if we've completed initial fetch to prevent race conditions
+  const hasFetchedRef = useRef(false);
+  // Track if a fetch is currently in progress to prevent overlapping fetches
+  const isFetchingRef = useRef(false);
+  // Track the role that initiated the current fetch
+  const fetchingAsAdminRef = useRef<boolean | null>(null);
+  // Track the stable role (once set, doesn't flicker back to undefined)
+  const stableRoleRef = useRef<'admin' | 'teacher' | null>(null);
+  
   // Get default items per page based on current view
   const getDefaultItemsPerPage = (view: string) => {
     switch (view) {
@@ -106,11 +117,52 @@ export const GradeAssignments = () => {
   
   const [itemsPerPage, setItemsPerPage] = useState(getDefaultItemsPerPage(preferences.assignmentView));
 
-  // Check if user is admin
-  const isAdmin = profile?.role === 'admin';
+  // Check if user is admin (includes super_user)
+  const currentIsAdmin = profile?.role === 'admin' || profile?.role === 'super_user';
+  
+  // Once profile is defined, lock in the role (don't let it flicker)
+  if (profile?.role && !stableRoleRef.current) {
+    stableRoleRef.current = (profile.role === 'admin' || profile.role === 'super_user') ? 'admin' : 'teacher';
+    console.log('🔒 [GradeAssignments] Locked stable role:', stableRoleRef.current, 'from profile role:', profile.role);
+  }
+  
+  // Use stable role if available, otherwise fall back to current
+  const isAdmin = stableRoleRef.current === 'admin';
+
+  // Debug: Log component mount and user/profile changes
+  useEffect(() => {
+    console.log('🚀 [GradeAssignments] Component state changed:', {
+      hasUser: !!user,
+      userId: user?.id,
+      hasProfile: profile !== undefined,
+      profileRole: profile?.role,
+      currentIsAdmin,
+      stableRole: stableRoleRef.current,
+      isAdmin,
+      loading,
+      assignmentsCount: assignments.length,
+      hasFetchedRef: hasFetchedRef.current,
+      isFetchingRef: isFetchingRef.current,
+      fetchingAsAdminRef: fetchingAsAdminRef.current
+    });
+  }, [user, profile, currentIsAdmin, isAdmin, loading, assignments.length]);
 
   const fetchCourses = useCallback(async () => {
-    if(!user) return;
+    console.log('🔍 [fetchCourses] Called with:', { 
+      hasUser: !!user, 
+      hasStableRole: !!stableRoleRef.current,
+      stableRole: stableRoleRef.current,
+      isAdmin,
+      profileRole: profile?.role 
+    });
+    
+    // Guard: Don't fetch if user isn't loaded or stable role isn't determined yet
+    if (!user || !stableRoleRef.current) {
+      console.log('⚠️ [fetchCourses] Blocked by guard - user or stable role not ready');
+      return;
+    }
+    
+    console.log('✅ [fetchCourses] Starting fetch as', isAdmin ? 'admin' : 'teacher');
     
     if (isAdmin) {
       // For admin, get all published courses
@@ -121,8 +173,9 @@ export const GradeAssignments = () => {
         .order('title');
       
       if(error) {
-        console.error("Error fetching courses for admin", error);
+        console.error("❌ [fetchCourses] Error fetching courses for admin", error);
       } else {
+        console.log('✅ [fetchCourses] Admin courses fetched:', data?.length || 0, 'courses');
         setCourses(data || []);
       }
     } else {
@@ -133,23 +186,71 @@ export const GradeAssignments = () => {
         .in('id', (await supabase.from('course_members').select('course_id').eq('user_id', user.id).eq('role', 'teacher')).data?.map(c => c.course_id) || [])
         
       if(error) {
-          console.error("Error fetching courses for teacher", error);
+          console.error("❌ [fetchCourses] Error fetching courses for teacher", error);
       } else {
+          console.log('✅ [fetchCourses] Teacher courses fetched:', data?.length || 0, 'courses');
           setCourses(data || []);
       }
     }
-  }, [user, isAdmin]);
+  }, [user, isAdmin]); // Removed 'profile' - using stableRoleRef instead
 
   const fetchAssignments = useCallback(async () => {
-    if (!user) return;
+    console.log('🔍 [fetchAssignments] Called with:', { 
+      hasUser: !!user, 
+      hasStableRole: !!stableRoleRef.current,
+      stableRole: stableRoleRef.current,
+      profileRole: profile?.role,
+      isAdmin,
+      hasFetched: hasFetchedRef.current,
+      isFetching: isFetchingRef.current,
+      fetchingAsAdmin: fetchingAsAdminRef.current,
+      searchTerm: debouncedSearchTerm,
+      selectedCourse,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Guard: Don't fetch if user isn't loaded or stable role isn't determined yet
+    if (!user || !stableRoleRef.current) {
+      console.log('⚠️ [fetchAssignments] Blocked by guard - user or stable role not ready');
+      return;
+    }
 
-    setLoading(true);
+    // Guard: Prevent overlapping fetches ONLY if the role hasn't changed
+    // If role changed (teacher → admin or admin → teacher), allow the new fetch
+    if (isFetchingRef.current && fetchingAsAdminRef.current === isAdmin) {
+      console.log('🚫 [fetchAssignments] Blocked - fetch already in progress with same role');
+      return;
+    }
+
+    // If role changed while a fetch is in progress, this new fetch will proceed
+    if (isFetchingRef.current && fetchingAsAdminRef.current !== isAdmin) {
+      console.log('🔄 [fetchAssignments] Role changed during fetch - allowing new fetch to proceed');
+    }
+
+    console.log('✅ [fetchAssignments] Starting fetch as', isAdmin ? 'admin' : 'teacher');
+    isFetchingRef.current = true;
+    fetchingAsAdminRef.current = isAdmin;
+    
+    // Capture the role at the START of this fetch (immutable for this fetch's lifetime)
+    const thisFetchIsForAdmin = isAdmin;
+    
+    // Use ref to check if we have data (avoids circular dependency)
+    // If we already have data, show refresh indicator instead of full loading
+    if (hasFetchedRef.current) {
+      console.log('🔄 [fetchAssignments] Setting refreshing state (already have data)');
+      setIsRefreshing(true);
+    } else {
+      console.log('⏳ [fetchAssignments] Setting loading state (first fetch)');
+      setLoading(true);
+    }
     setError(null);
 
     try {
       let data, rpcError;
+      const startTime = Date.now();
       
-      if (isAdmin) {
+      if (thisFetchIsForAdmin) {
+        console.log('📞 [fetchAssignments] Calling get_admin_assessments_data RPC');
         // Use admin function to get all assessments
         const result = await supabase.rpc('get_admin_assessments_data', {
           search_query: debouncedSearchTerm,
@@ -157,7 +258,13 @@ export const GradeAssignments = () => {
         });
         data = result.data;
         rpcError = result.error;
+        console.log(`📊 [fetchAssignments] Admin RPC returned in ${Date.now() - startTime}ms:`, {
+          dataCount: data?.length || 0,
+          hasError: !!rpcError,
+          error: rpcError
+        });
       } else {
+        console.log('📞 [fetchAssignments] Calling get_teacher_assessments_data RPC');
         // Use teacher function to get only their assessments
         const result = await supabase.rpc('get_teacher_assessments_data', {
           teacher_id: user.id,
@@ -166,12 +273,19 @@ export const GradeAssignments = () => {
         });
         data = result.data;
         rpcError = result.error;
+        console.log(`📊 [fetchAssignments] Teacher RPC returned in ${Date.now() - startTime}ms:`, {
+          dataCount: data?.length || 0,
+          hasError: !!rpcError,
+          error: rpcError
+        });
       }
       
       if (rpcError) {
+        console.error('❌ [fetchAssignments] RPC Error:', rpcError);
         throw rpcError;
       }
       
+      console.log('🔄 [fetchAssignments] Formatting', data?.length || 0, 'assignments');
       const formattedAssignments = (data || []).map((a: any) => ({
         ...a,
         due_date: a.due_date ? new Date(a.due_date).toLocaleDateString() : 'N/A',
@@ -180,19 +294,43 @@ export const GradeAssignments = () => {
         avg_score: Number(a.avg_score)
       }));
 
+      console.log('✅ [fetchAssignments] Fetch returned', formattedAssignments.length, 'assignments');
+      console.log('📝 [fetchAssignments] This fetch was initiated as:', thisFetchIsForAdmin ? 'admin' : 'teacher');
+      console.log('📝 [fetchAssignments] Current isAdmin state is:', isAdmin);
+      
+      // Critical: Only update state if this fetch matches the current role
+      // This prevents stale fetches from overwriting newer data
+      if (thisFetchIsForAdmin !== isAdmin) {
+        console.warn('⚠️ [fetchAssignments] IGNORING STALE RESULT - role changed during fetch');
+        console.warn('   Fetch was for:', thisFetchIsForAdmin ? 'admin' : 'teacher');
+        console.warn('   Current role:', isAdmin ? 'admin' : 'teacher');
+        console.warn('   NOT updating state with stale data');
+        return; // Don't update state with stale data
+      }
+      
+      console.log('✅ [fetchAssignments] Role still matches - setting assignments to state');
+      
       setAssignments(formattedAssignments);
+      hasFetchedRef.current = true;
+      console.log('✅ [fetchAssignments] Fetch complete successfully');
     } catch (err: any) {
+      console.error('❌ [fetchAssignments] Error:', err);
       setError(err.message);
     } finally {
+      console.log('🏁 [fetchAssignments] Finally block - resetting loading states and fetch flag');
+      isFetchingRef.current = false;
       setLoading(false);
+      setIsRefreshing(false);
     }
-  }, [user, debouncedSearchTerm, selectedCourse, isAdmin]);
+  }, [user, debouncedSearchTerm, selectedCourse, isAdmin]); // Removed 'profile' - using stableRoleRef instead
 
   useEffect(() => {
+    console.log('🔄 [useEffect-fetchCourses] Triggered');
     fetchCourses();
   }, [fetchCourses]);
 
   useEffect(() => {
+    console.log('🔄 [useEffect-fetchAssignments] Triggered');
     fetchAssignments();
   }, [fetchAssignments]);
   
@@ -213,6 +351,17 @@ export const GradeAssignments = () => {
     currentPage * itemsPerPage
   );
   const totalPages = Math.ceil(assignments.length / itemsPerPage);
+  
+  // Debug: Log pagination state
+  console.log('📄 [Render] Pagination state:', {
+    totalAssignments: assignments.length,
+    paginatedCount: paginatedAssignments.length,
+    currentPage,
+    totalPages,
+    itemsPerPage,
+    loading,
+    isRefreshing
+  });
 
   const handleItemsPerPageChange = (newItemsPerPage: number) => {
     setItemsPerPage(newItemsPerPage);
@@ -319,6 +468,12 @@ export const GradeAssignments = () => {
                 <div className="flex items-center gap-2">
                   <FileText className="h-5 w-5 text-primary" />
                   <h2 className="text-lg font-semibold">Assessments ({assignments.length})</h2>
+                  {isRefreshing && (
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                      <span>Refreshing...</span>
+                    </div>
+                  )}
                 </div>
                   <ViewToggle
                     currentView={preferences.assignmentView}

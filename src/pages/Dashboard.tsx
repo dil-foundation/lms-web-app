@@ -15,6 +15,7 @@ import { APEX } from '@/components/ui/AIAssistant';
 import { requestNotificationPermission } from '@/utils/fcm';
 import { OfflineRouteGuard } from '@/components/auth/OfflineRouteGuard';
 import { OfflineAwareSuspense } from '@/components/ui/OfflineAwareSuspense';
+import { RoleGuard } from '@/components/auth/RoleGuard';
 
 const AIStudentLearn = lazy(() => import('@/components/dashboard/AIStudentLearn').then(module => ({ default: module.AIStudentLearn })));
 // Import StudentDashboard eagerly since it's needed for offline overview access
@@ -118,8 +119,10 @@ const Dashboard = () => {
   }, [authLoading, user, navigate]);
 
   // Check for maintenance mode (only for students and teachers)
+  // Allow admin, super_user, content_creator, and view_only to bypass maintenance mode
   useEffect(() => {
-    if (!maintenanceLoading && isMaintenanceMode && profile?.role !== 'admin') {
+    const adminPortalRoles = ['admin', 'super_user', 'content_creator', 'view_only'];
+    if (!maintenanceLoading && isMaintenanceMode && !adminPortalRoles.includes(profile?.role || '')) {
       // Don't redirect, just show maintenance page
       return;
     }
@@ -132,6 +135,14 @@ const Dashboard = () => {
   }, [profile]);
 
   const currentRole = profile?.role as UserRole | undefined;
+  
+  // Debug logging for role
+  useEffect(() => {
+    console.log('🔍 Dashboard: Profile state changed');
+    console.log('🔍 Dashboard: profile?.role:', profile?.role);
+    console.log('🔍 Dashboard: currentRole:', currentRole);
+    console.log('🔍 Dashboard: Full profile:', profile);
+  }, [profile, currentRole]);
   
   const isLoading = authLoading || (user && profileLoading) || maintenanceLoading;
 
@@ -225,7 +236,10 @@ const Dashboard = () => {
     }
 
     // Check for maintenance mode (only for students and teachers)
-    if (!maintenanceLoading && isMaintenanceMode && profile?.role !== 'admin') {
+    // Allow admin portal users (admin, super_user, content_creator, view_only) to bypass maintenance mode
+    const adminPortalRoles = ['admin', 'super_user', 'content_creator', 'view_only'];
+    if (!maintenanceLoading && isMaintenanceMode && !adminPortalRoles.includes(profile?.role || '')) {
+      console.log('🚧 Dashboard: Maintenance mode active, blocking access for role:', profile?.role);
       return <MaintenancePage />;
     }
 
@@ -257,6 +271,9 @@ const Dashboard = () => {
           case 'student': return <AIStudentDashboard userProfile={finalProfile} />;
           case 'teacher': return <AITeacherDashboard userProfile={finalProfile} />;
           case 'admin': return <AIAdminDashboard userProfile={finalProfile} />;
+          case 'content_creator': return <AIAdminDashboard userProfile={finalProfile} />;
+          case 'super_user': return <AIAdminDashboard userProfile={finalProfile} />;
+          case 'view_only': return <AIStudentDashboard userProfile={finalProfile} />;
           default: return <RolePlaceholder title="AI Dashboard" description="Welcome to AI Mode" icon={BookOpen} />;
         }
       } else {
@@ -264,6 +281,9 @@ const Dashboard = () => {
         case 'student': return <StudentDashboard userProfile={finalProfile} />;
         case 'teacher': return <TeacherDashboard userProfile={finalProfile} />;
         case 'admin': return <AdminDashboard userProfile={finalProfile} />;
+        case 'content_creator': return <AdminDashboard userProfile={finalProfile} />;
+        case 'super_user': return <AdminDashboard userProfile={finalProfile} />;
+        case 'view_only': return <StudentDashboard userProfile={finalProfile} />;
         default: return <RolePlaceholder title="Dashboard" description="Welcome" icon={BookOpen} />;
         }
     }
@@ -399,7 +419,16 @@ const Dashboard = () => {
                                             ) : (
                         <>
                           <Route path="/courses" element={<CourseManagement />} />
-                          <Route path="/courses/builder/:courseId" element={<CourseBuilder />} />
+                          <Route path="/courses/builder/new" element={
+                            <RoleGuard allowedRoles={['admin', 'super_user', 'content_creator']}>
+                              <CourseBuilder />
+                            </RoleGuard>
+                          } />
+                          <Route path="/courses/builder/:courseId" element={
+                            <RoleGuard allowedRoles={['admin', 'super_user', 'content_creator']}>
+                              <CourseBuilder />
+                            </RoleGuard>
+                          } />
                           <Route path="/students" element={<StudentsPage />} />
                           <Route path="/classes" element={<ClassManagement />} />
                           <Route path="/reports" element={<ReportsPage />} />
@@ -414,7 +443,7 @@ const Dashboard = () => {
                       )}
                     </>
                   )}
-          {finalRole === 'admin' && (
+          {(finalRole === 'admin' || finalRole === 'super_user' || finalRole === 'content_creator' || finalRole === 'view_only') && (
                     <>
                       {isAIMode ? (
                         <>
@@ -461,6 +490,7 @@ const Dashboard = () => {
                           <Route path="/courses" element={<CourseManagement />} />
                           <Route path="/course-categories" element={<CourseCategories />} />
                           <Route path="/orders" element={<OrdersManagement />} />
+                          <Route path="/courses/builder/new" element={<CourseBuilder />} />
                           <Route path="/courses/builder/:courseId" element={<CourseBuilder />} />
                           <Route path="/reports" element={<ReportsOverview />} />
                           <Route path="/observation-reports" element={<ObservationReports />} />

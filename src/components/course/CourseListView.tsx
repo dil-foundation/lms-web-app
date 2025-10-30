@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 type CourseStatus = "Published" | "Draft" | "Under Review" | "Rejected";
 
@@ -53,6 +54,11 @@ export const CourseListView: React.FC<CourseListViewProps> = ({
 }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { profile } = useUserProfile();
+  
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'super_user';
+  const isContentCreator = profile?.role === 'content_creator';
+  const isTeacher = profile?.role === 'teacher';
 
   const getStatusColor = (status: CourseStatus) => {
     switch (status) {
@@ -65,14 +71,21 @@ export const CourseListView: React.FC<CourseListViewProps> = ({
   };
 
   const canDelete = (course: Course) => {
-    return user && (
-      user.app_metadata.role === 'admin' ||
-      (user.app_metadata.role === 'teacher' && course.status === 'Draft' && user.id === course.authorId)
+    // Content creators cannot delete courses, only admins and teachers can
+    if (profile?.role === 'content_creator') return false;
+    
+    return profile && (
+      isAdmin ||
+      (profile.role === 'teacher' && course.status === 'Draft' && user?.id === course.authorId)
     );
   };
 
   const handleCourseClick = (course: Course) => {
-    navigate(`/dashboard/courses/builder/${course.id}`);
+    if (isAdmin || isContentCreator) {
+      navigate(`/dashboard/courses/builder/${course.id}`);
+    } else {
+      navigate(`/dashboard/courses/${course.id}`);
+    }
   };
 
   const handleEdit = (e: React.MouseEvent, course: Course) => {
@@ -82,7 +95,7 @@ export const CourseListView: React.FC<CourseListViewProps> = ({
 
   const handleView = (e: React.MouseEvent, course: Course) => {
     e.stopPropagation();
-    navigate(`/dashboard/courses/builder/${course.id}`);
+    navigate(`/dashboard/courses/${course.id}`);
   };
 
   const handleDelete = (e: React.MouseEvent, course: Course) => {
@@ -153,15 +166,18 @@ export const CourseListView: React.FC<CourseListViewProps> = ({
                 <div className="flex items-center gap-2">
                   <Button
                     size="sm"
-                    variant="outline"
-                    className="h-8 text-xs"
+                    className={`h-8 text-xs ${
+                      (isAdmin || isContentCreator) 
+                        ? 'bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white' 
+                        : 'bg-primary hover:bg-primary/90 text-primary-foreground'
+                    }`}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleCourseClick(course);
                     }}
                   >
                     <Play className="w-3 h-3 mr-1" />
-                    Manage
+                    {(isAdmin || isContentCreator) ? 'Manage' : 'View Course'}
                   </Button>
                   
                   <DropdownMenu>
@@ -176,10 +192,17 @@ export const CourseListView: React.FC<CourseListViewProps> = ({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={(e) => handleEdit(e, course)}>
-                        <Edit className="w-4 h-4 mr-2" />
-                        Edit
-                      </DropdownMenuItem>
+                      {(isAdmin || isContentCreator) ? (
+                        <DropdownMenuItem onClick={(e) => handleEdit(e, course)}>
+                          <Edit className="w-4 h-4 mr-2" />
+                          Edit
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem onClick={(e) => handleView(e, course)} disabled className="opacity-50">
+                          <Eye className="w-4 h-4 mr-2" />
+                          View Only
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem onClick={(e) => handleView(e, course)}>
                         <Eye className="w-4 h-4 mr-2" />
                         View

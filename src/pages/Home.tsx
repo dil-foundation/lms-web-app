@@ -5,10 +5,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Brain, MessageCircle, Globe, Award, Languages, Target, ArrowRight, Sparkles, CheckCircle } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { APEX } from '@/components/ui/AIAssistant';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Home = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [currentPage, setCurrentPage] = useState(0);
   const [currentMobileTestimonial, setCurrentMobileTestimonial] = useState(0);
   const autoRotateInterval = useRef<NodeJS.Timeout | null>(null);
@@ -127,6 +129,14 @@ const Home = () => {
     }, 4000);
   };
 
+  const handleStartLearning = () => {
+    if (user) {
+      navigate('/dashboard');
+    } else {
+      navigate('/auth');
+    }
+  };
+
   return (
     <>
       <Header />
@@ -194,15 +204,14 @@ const Home = () => {
             <span className="text-white font-medium"> cultural context</span>.
           </p>
            
-           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 md:gap-6 justify-center animate-fade-in-delayed stagger-2 px-2 sm:px-4 max-w-lg sm:max-w-none mx-auto">
-             <Link to="/auth" className="w-full sm:w-auto group">
-               <Button size="lg" className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base md:text-lg px-6 sm:px-8 md:px-10 py-3 sm:py-4 md:py-5 rounded-xl md:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                 Start Learning
-                 <ArrowRight className="ml-2 md:ml-3 h-4 w-4 md:h-5 md:w-5 group-hover:translate-x-1 transition-transform duration-300" />
-               </Button>
-             </Link>
-             <Button variant="outline" size="lg" className="w-full sm:w-auto border-2 text-white hover:bg-[#1582B4]/90 hover:border-[#1582B4]/50 font-semibold text-base md:text-lg px-6 sm:px-8 md:px-10 py-3 sm:py-4 md:py-5 rounded-xl md:rounded-2xl transition-all duration-300 transform hover:-translate-y-1 shadow-sm hover:shadow-md" style={{ backgroundColor: '#1582B4', borderColor: '#1582B4' }}>
-               Watch Demo
+           <div className="flex justify-center animate-fade-in-delayed stagger-2 px-2 sm:px-4">
+             <Button 
+               size="lg" 
+               onClick={handleStartLearning}
+               className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base md:text-lg px-6 sm:px-8 md:px-10 py-3 sm:py-4 md:py-5 rounded-xl md:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group"
+             >
+               Start Learning
+               <ArrowRight className="ml-2 md:ml-3 h-4 w-4 md:h-5 md:w-5 group-hover:translate-x-1 transition-transform duration-300" />
              </Button>
            </div>
          </div>
@@ -950,7 +959,11 @@ const Home = () => {
               <p className="text-base sm:text-lg md:text-xl text-white/90 mb-6 sm:mb-8 max-w-2xl mx-auto tracking-wide leading-relaxed px-2">
                 Join thousands of learners who have already improved their English with our AI-powered platform.
               </p>
-              <Button size="lg" className="w-full sm:w-auto bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 text-white font-semibold text-base sm:text-lg px-6 sm:px-8 md:px-10 py-3 sm:py-4 md:py-6 rounded-xl hover-scale transition-all duration-300 shadow-lg hover:shadow-xl max-w-xs sm:max-w-none mx-auto">
+              <Button 
+                size="lg" 
+                onClick={handleStartLearning}
+                className="w-full sm:w-auto bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 text-white font-semibold text-base sm:text-lg px-6 sm:px-8 md:px-10 py-3 sm:py-4 md:py-6 rounded-xl hover-scale transition-all duration-300 shadow-lg hover:shadow-xl max-w-xs sm:max-w-none mx-auto"
+              >
                 Get Started Today
               </Button>
             </div>

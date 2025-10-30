@@ -1,6 +1,7 @@
 import { useState, useEffect, memo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { Logo } from './header/Logo';
 import { Navigation } from './header/Navigation';
 import { ThemeToggle } from './header/ThemeToggle';
@@ -11,6 +12,7 @@ import { MobileMenu } from './header/MobileMenu';
 export const Header = memo(() => {
   const location = useLocation();
   const { user, loading } = useAuth();
+  const { profile } = useUserProfile();
   const [isScrolled, setIsScrolled] = useState(false);
   
   // Hide mobile menu on dashboard pages since DashboardSidebar handles mobile navigation
@@ -41,7 +43,7 @@ export const Header = memo(() => {
           <div className="hidden md:flex items-center space-x-4">
             <Navigation />
             <ThemeToggle />
-            {user && <NotificationToggle />}
+            {user && profile?.role !== 'view_only' && profile?.role !== 'content_creator' && <NotificationToggle />}
             <AuthButton />
           </div>
 

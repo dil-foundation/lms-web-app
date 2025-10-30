@@ -73,6 +73,7 @@ const getBadgeVariant = (type: string): "default" | "destructive" | "outline" | 
         case 'quiz': return 'default';
         case 'assignment': return 'blue';
         case 'attachment': return 'outline';
+        case 'lesson_plan': return 'secondary';
         default: return 'secondary';
     }
 }
@@ -92,6 +93,7 @@ const getContentItemIcon = (item: any, currentContentItemId: string | null) => {
       case 'attachment': return <Paperclip className="w-5 h-5 text-gray-500" />;
       case 'assignment': return <ClipboardList className="w-5 h-5 text-primary" />;
       case 'quiz': return <HelpCircle className="w-5 h-5 text-primary" />;
+      case 'lesson_plan': return <ClipboardList className="w-5 h-5 text-indigo-500" />;
       default: return <Circle className="w-5 h-5 text-gray-400" />;
     }
 };
@@ -240,7 +242,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [openSectionIds, setOpenSectionIds] = useState<string[]>([]);
   const { user } = useAuth();
-  const { profile } = useUserProfile();
+  const { profile, loading: profileLoading } = useUserProfile();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const lastUpdateTimeRef = useRef(0);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -327,8 +329,8 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
 
   const actualCourseId = courseId || id;
 
-  // Check if user can reorder content (admin and teacher only, and only in draft mode)
-  const canReorderContent = (profile?.role === 'admin' || profile?.role === 'teacher') && 
+  // Check if user can reorder content (admin, super_user, teacher, content_creator only, and only in draft mode)
+  const canReorderContent = (profile?.role === 'admin' || profile?.role === 'super_user' || profile?.role === 'teacher' || profile?.role === 'content_creator') && 
                            (course?.status === 'Draft' || course?.status === 'Rejected');
 
   // Drag and drop sensors
@@ -339,20 +341,97 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     })
   );
 
+  // Filter out quiz, assignment, and lesson_plan content items when in offline mode
+  // Also hide lesson_plan content from students (only visible to teachers and admins)
+  const allContentItems = useMemo(() => {
+    const items = course?.modules.flatMap((m: any) => m.lessons.flatMap((l: any) => l.contentItems)) || [];
+    
+    console.log('🔍 CourseContent: Filtering content items', {
+      totalItems: items.length,
+      userRole: profile?.role,
+      profileLoading,
+      isOfflineMode,
+      items: items.map(item => ({ id: item.id, title: item.title, content_type: item.content_type }))
+    });
+    
+    // If profile is still loading, don't filter yet (show all content temporarily)
+    if (profileLoading) {
+      console.log('⏳ CourseContent: Profile still loading, showing all content temporarily');
+      return items;
+    }
+    
+    const filteredItems = items.filter((item: any) => {
+      console.log('🔍 CourseContent: Filtering item', {
+        id: item.id,
+        title: item.title,
+        content_type: item.content_type,
+        isOfflineMode,
+        userRole: profile?.role,
+        profileLoading
+      });
+      
+      // Hide quiz, assignment, and lesson_plan content when offline
+      if (isOfflineMode) {
+        const shouldHide = item.content_type !== 'quiz' && 
+               item.content_type !== 'assignment' && 
+               item.content_type !== 'lesson_plan';
+        if (item.content_type === 'lesson_plan') {
+          console.log('📴 CourseContent: Hiding lesson_plan due to offline mode');
+        }
+        console.log('📴 CourseContent: Offline mode - shouldHide:', shouldHide, 'for', item.content_type);
+        return shouldHide;
+      }
+      
+      // Hide lesson_plan content from students (only visible to teachers and admins)
+      if (item.content_type === 'lesson_plan') {
+        const isStudent = profile?.role === 'student' || !profile?.role;
+        console.log('👤 CourseContent: Lesson plan visibility check', {
+          itemTitle: item.title,
+          userRole: profile?.role,
+          isStudent,
+          shouldHide: isStudent
+        });
+        if (isStudent) {
+          console.log('🚫 CourseContent: Hiding lesson_plan from student');
+          return false;
+        }
+      }
+      
+      console.log('✅ CourseContent: Keeping item', item.title, item.content_type);
+      return true;
+    });
+    
+    console.log('🔍 CourseContent: Final filtered items', {
+      originalCount: items.length,
+      filteredCount: filteredItems.length,
+      items: filteredItems.map(item => ({ id: item.id, title: item.title, content_type: item.content_type }))
+    });
+    
+    return filteredItems;
+  }, [course, isOfflineMode, profile?.role, profileLoading]);
+
   const { currentModule, currentLesson, currentContentItem } = useMemo(() => {
     if (!course || !currentContentItemId) {
       return { currentModule: null, currentLesson: null, currentContentItem: null };
     }
-    for (const module of course.modules) {
-      for (const lesson of module.lessons) {
-        const contentItem = lesson.contentItems.find((item: any) => item.id === currentContentItemId);
-        if (contentItem) {
-          return { currentModule: module, currentLesson: lesson, currentContentItem: contentItem };
+    
+    // First, try to find the content item from the filtered allContentItems
+    const filteredItem = allContentItems.find((item: any) => item.id === currentContentItemId);
+    if (filteredItem) {
+      // Find the corresponding module and lesson for this content item
+      for (const module of course.modules) {
+        for (const lesson of module.lessons) {
+          const contentItem = lesson.contentItems.find((item: any) => item.id === currentContentItemId);
+          if (contentItem) {
+            return { currentModule: module, currentLesson: lesson, currentContentItem: contentItem };
+          }
         }
       }
     }
+    
+    // If not found in filtered items, return null (this will trigger a redirect)
     return { currentModule: null, currentLesson: null, currentContentItem: null };
-  }, [course, currentContentItemId]);
+  }, [course, currentContentItemId, allContentItems]);
 
   const { mainContentHtml, attachments } = useMemo(() => {
     if (currentContentItem?.content_type !== 'assignment' || !currentContentItem?.content_path || typeof currentContentItem.content_path !== 'string') {
@@ -567,6 +646,12 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
   const markContentAsComplete = useCallback(async (contentId: string, lessonId: string, courseId: string, duration?: number) => {
     if (!user) return;
     
+    // Skip progress tracking for view_only users
+    if (profile?.role === 'view_only') {
+      console.log('🔍 CourseContent: Skipping progress tracking for view_only user');
+      return;
+    }
+    
     // Skip database update when offline
     if (!navigator.onLine) {
       console.log('🔴 CourseContent: Offline - skipping progress update');
@@ -684,6 +769,11 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
     if (!videoNode || !user || !currentContentItem || !currentLesson) return;
     const { currentTime, duration } = videoNode;
     if (!duration || !isFinite(duration) || duration === 0) return;
+
+    // Skip progress tracking for view_only users
+    if (profile?.role === 'view_only') {
+      return;
+    }
 
     const now = Date.now();
     if (now - lastUpdateTimeRef.current > 15000) {
@@ -1196,7 +1286,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                     };
                     
                     // Debug: Verify the mapped item has signedUrl
-                    if (item.content_type === 'video' || item.content_type === 'attachment') {
+                    if (item.content_type === 'video' || item.content_type === 'attachment' || item.content_type === 'lesson_plan') {
                       console.log(`🔧 CourseContent: Mapped item result for ${item.content_type} ${item.id}:`, {
                         hasSignedUrl: !!mappedItem.signedUrl,
                         signedUrl: mappedItem.signedUrl,
@@ -1243,7 +1333,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
           for (const section of data.sections) {
             for (const lesson of section.lessons) {
               for (const item of lesson.contentItems) {
-                if ((item.content_type === 'video' || item.content_type === 'attachment') && item.content_path) {
+                if ((item.content_type === 'video' || item.content_type === 'attachment' || item.content_type === 'lesson_plan') && item.content_path) {
                   const { data: signedUrlData } = await supabase.storage.from('dil-lms').createSignedUrl(item.content_path, 3600);
                   item.signedUrl = signedUrlData?.signedUrl;
                 }
@@ -1297,8 +1387,21 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
           
           if (transformedCourse) {
             const allContentItems = transformedCourse.modules.flatMap((m: any) => m.lessons.flatMap((l: any) => l.contentItems));
-            const firstUncompleted = allContentItems.find((item: any) => !item.completed);
-            const itemToStartWith = firstUncompleted || allContentItems[0];
+            
+            // Filter content items based on user role (hide lesson_plan from students)
+            const filteredContentItems = allContentItems.filter((item: any) => {
+              // Hide lesson_plan content from students (only visible to teachers and admins)
+              if (item.content_type === 'lesson_plan') {
+                const isStudent = profile?.role === 'student' || !profile?.role;
+                if (isStudent) {
+                  return false;
+                }
+              }
+              return true;
+            });
+            
+            const firstUncompleted = filteredContentItems.find((item: any) => !item.completed);
+            const itemToStartWith = firstUncompleted || filteredContentItems[0];
              
              
             if (itemToStartWith) {
@@ -1337,9 +1440,9 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         return;
       }
 
-      // Skip payment check for admins and teachers
-      if (profile?.role === 'admin' || profile?.role === 'teacher') {
-        console.log('🔓 [Access Control] Admin/Teacher access granted');
+      // Skip payment check for admins, super_users, teachers, and content_creators
+      if (profile?.role === 'admin' || profile?.role === 'super_user' || profile?.role === 'teacher' || profile?.role === 'content_creator') {
+        console.log('🔓 [Access Control] Admin/Super User/Teacher/Content Creator access granted');
         setIsCheckingAccess(false);
         return;
       }
@@ -1428,31 +1531,53 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       videoNode.currentTime = currentContentItem.progressSeconds;
     }
   }, [currentContentItem]);
-
-  // Filter out quiz and assignment content items when in offline mode
-  const allContentItems = useMemo(() => {
-    const items = course?.modules.flatMap((m: any) => m.lessons.flatMap((l: any) => l.contentItems)) || [];
-    // Hide quiz and assignment content when offline
-    if (isOfflineMode) {
-      return items.filter((item: any) => item.content_type !== 'quiz' && item.content_type !== 'assignment');
-    }
-    return items;
-  }, [course, isOfflineMode]);
   const currentIndex = useMemo(() => allContentItems.findIndex((item: any) => item.id === currentContentItemId), [allContentItems, currentContentItemId]);
   const nextContentItem = currentIndex !== -1 ? allContentItems[currentIndex + 1] : null;
   const prevContentItem = currentIndex !== -1 ? allContentItems[currentIndex - 1] : null;
 
-  // Redirect to first available content if current item is quiz/assignment and we go offline
+  // Redirect to first available content if current item is quiz/assignment/lesson_plan and we go offline
+  // Also redirect if current item is lesson_plan and user is a student
+  // Also redirect if currentContentItem is null (filtered out content)
   useEffect(() => {
-    if (isOfflineMode && currentContentItem && (currentContentItem.content_type === 'quiz' || currentContentItem.content_type === 'assignment')) {
-      // Find the first available (non-quiz/assignment) content item
-      const firstAvailableItem = allContentItems.find((item: any) => item.content_type !== 'quiz' && item.content_type !== 'assignment');
+    console.log('🔄 CourseContent: Redirect check', {
+      isOfflineMode,
+      currentContentItem: currentContentItem ? {
+        id: currentContentItem.id,
+        title: currentContentItem.title,
+        content_type: currentContentItem.content_type
+      } : null,
+      currentContentItemId,
+      allContentItemsCount: allContentItems.length,
+      userRole: profile?.role
+    });
+    
+    const shouldRedirect = (isOfflineMode && currentContentItem && 
+        (currentContentItem.content_type === 'quiz' || 
+         currentContentItem.content_type === 'assignment' || 
+         currentContentItem.content_type === 'lesson_plan')) ||
+        (currentContentItem && currentContentItem.content_type === 'lesson_plan' && (profile?.role === 'student' || !profile?.role)) ||
+        (!currentContentItem && currentContentItemId && allContentItems.length > 0); // Redirect if current item was filtered out
+    
+    console.log('🔄 CourseContent: Should redirect?', shouldRedirect);
+    
+    if (shouldRedirect) {
+      // Find the first available content item
+      const firstAvailableItem = allContentItems.find((item: any) => 
+        item.content_type !== 'quiz' && 
+        item.content_type !== 'assignment' && 
+        item.content_type !== 'lesson_plan'
+      );
+      
+      console.log('🔄 CourseContent: First available item', firstAvailableItem);
+      
       if (firstAvailableItem) {
-        console.log('📴 Redirecting from', currentContentItem.content_type, 'to first available content');
+        console.log('📴 Redirecting from filtered/hidden content to first available content:', firstAvailableItem.title);
         setCurrentContentItemId(firstAvailableItem.id);
+      } else {
+        console.log('❌ No available content found for redirect');
       }
     }
-  }, [isOfflineMode, currentContentItem, allContentItems]);
+  }, [isOfflineMode, currentContentItem, allContentItems, profile?.role, currentContentItemId]);
 
   // Monitor online/offline status changes and check course availability
   useEffect(() => {
@@ -1599,8 +1724,8 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
   const renderContent = () => {
     if (!currentContentItem) return null;
     
-    // Hide quiz and assignment content when offline
-    if (isOfflineMode && (currentContentItem.content_type === 'quiz' || currentContentItem.content_type === 'assignment')) {
+    // Hide quiz, assignment, and lesson_plan content when offline
+    if (isOfflineMode && (currentContentItem.content_type === 'quiz' || currentContentItem.content_type === 'assignment' || currentContentItem.content_type === 'lesson_plan')) {
       return (
         <div className="flex items-center justify-center min-h-[400px]">
           <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg max-w-md">
@@ -1619,8 +1744,8 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
       );
     }
     
-    // AUTOMATIC FIX: If it's a video or attachment without signedUrl and we're offline, load it directly
-    if ((currentContentItem.content_type === 'video' || currentContentItem.content_type === 'attachment') && !currentContentItem.signedUrl && isOfflineMode) {
+    // AUTOMATIC FIX: If it's a video, attachment, or lesson_plan without signedUrl and we're offline, load it directly
+    if ((currentContentItem.content_type === 'video' || currentContentItem.content_type === 'attachment' || currentContentItem.content_type === 'lesson_plan') && !currentContentItem.signedUrl && isOfflineMode) {
       
       // Load content directly from IndexedDB
       const loadContentDirectly = async () => {
@@ -1641,7 +1766,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
               // Force a re-render by updating the state
               setCourse(prevCourse => ({ ...prevCourse }));
             }
-          } else if (currentContentItem.content_type === 'attachment') {
+          } else if (currentContentItem.content_type === 'attachment' || currentContentItem.content_type === 'lesson_plan') {
             // Get all assets for the current course
             const courseAssets = await dbUtils.getAssetsByCourse(actualCourseId);
             
@@ -1843,11 +1968,29 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                 </CardContent>
               </Card>
             )}
-            <div className="text-center">
-              <Button onClick={() => navigate('/dashboard/assignments')} className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300">
-                Go to Assignments
-              </Button>
-            </div>
+            {(profile?.role === 'admin' || profile?.role === 'super_user' || profile?.role === 'teacher' || profile?.role === 'content_creator' || profile?.role === 'view_only') ? (
+              <Card className="bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-800 rounded-2xl">
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-3">
+                    <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                        Preview Mode
+                      </p>
+                      <p className="text-sm text-blue-700 dark:text-blue-300">
+                        Assignments can only be submitted by students. As {(profile?.role === 'admin' || profile?.role === 'super_user') ? 'an admin' : (profile?.role === 'content_creator') ? 'a content creator' : profile?.role === 'view_only' ? 'a viewer' : 'a teacher'}, you are viewing this in preview mode.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="text-center">
+                <Button onClick={() => navigate('/dashboard/assignments')} className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300">
+                  Go to Assignments
+                </Button>
+              </div>
+            )}
           </div>
         );
       case 'quiz':
@@ -2183,32 +2326,50 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                 );
               })}
               {!hasSubmitted && (
-                <Button 
-                  onClick={() => handleQuizSubmit()} 
-                  disabled={questions.length === 0 || questions.some((q: any) => {
-                    const userAnswer = userAnswers[q.id];
-                    const textAnswer = textAnswers[q.id];
-                    const mathAnswer = mathAnswers[q.id];
-                    const questionType = q.question_type || 'single_choice';
-                    
-                    if (questionType === 'text_answer') {
-                      // For text answer, the answer must not be empty
-                      return !textAnswer || textAnswer.trim() === '';
-                    } else if (questionType === 'math_expression') {
-                      // For math expression, temporarily allow empty answers
-                      return false; // Always allow submission for now
-                    } else if (questionType === 'multiple_choice') {
-                      // For multiple choice, at least one option must be selected
-                      return !Array.isArray(userAnswer) || userAnswer.length === 0;
-                    } else {
-                      // For single choice, exactly one option must be selected
-                      return !userAnswer || userAnswer === '';
-                    }
-                  })} 
-                  className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300"
-                >
-                  Submit Quiz
-                </Button>
+                (profile?.role === 'admin' || profile?.role === 'super_user' || profile?.role === 'teacher' || profile?.role === 'content_creator' || profile?.role === 'view_only') ? (
+                  <Card className="bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-800 rounded-2xl">
+                    <CardContent className="pt-6">
+                      <div className="flex items-start gap-3">
+                        <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                            Preview Mode
+                          </p>
+                          <p className="text-sm text-blue-700 dark:text-blue-300">
+                            Quizzes can only be submitted by students. As {(profile?.role === 'admin' || profile?.role === 'super_user') ? 'an admin' : (profile?.role === 'content_creator') ? 'a content creator' : profile?.role === 'view_only' ? 'a viewer' : 'a teacher'}, you are viewing this in preview mode.
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Button 
+                    onClick={() => handleQuizSubmit()} 
+                    disabled={questions.length === 0 || questions.some((q: any) => {
+                      const userAnswer = userAnswers[q.id];
+                      const textAnswer = textAnswers[q.id];
+                      const mathAnswer = mathAnswers[q.id];
+                      const questionType = q.question_type || 'single_choice';
+                      
+                      if (questionType === 'text_answer') {
+                        // For text answer, the answer must not be empty
+                        return !textAnswer || textAnswer.trim() === '';
+                      } else if (questionType === 'math_expression') {
+                        // For math expression, temporarily allow empty answers
+                        return false; // Always allow submission for now
+                      } else if (questionType === 'multiple_choice') {
+                        // For multiple choice, at least one option must be selected
+                        return !Array.isArray(userAnswer) || userAnswer.length === 0;
+                      } else {
+                        // For single choice, exactly one option must be selected
+                        return !userAnswer || userAnswer === '';
+                      }
+                    })} 
+                    className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300"
+                  >
+                    Submit Quiz
+                  </Button>
+                )
               )}
               {hasSubmitted && currentContentItem.submission && (
                  <div className="p-4 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/20 border border-primary/30 dark:border-primary/20 shadow-lg">
@@ -2310,6 +2471,58 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
             </CardContent>
           </Card>
         );
+      case 'lesson_plan':
+        const handleLessonPlanInteraction = () => { 
+          if (currentContentItem && !currentContentItem.completed && currentLesson) 
+            markContentAsComplete(currentContentItem.id, currentLesson.id, actualCourseId); 
+        };
+        return (
+          <Card className="bg-gradient-to-br from-card to-card/50 dark:bg-card border border-gray-200/50 dark:border-gray-700/50 rounded-3xl shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
+                <ClipboardList className="w-5 h-5 text-indigo-600" />
+                Lesson Plan
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {currentContentItem.signedUrl ? (
+                <div className="flex items-center justify-between gap-4 p-4 border border-gray-200/50 dark:border-gray-600/50 rounded-2xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 dark:from-indigo-900/20 dark:to-indigo-800/20">
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-6 h-6 text-indigo-600" />
+                    <span className="font-medium text-gray-900 dark:text-gray-100">
+                      {currentContentItem.content_path?.split('/').pop() || 'Lesson Plan Document'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button asChild variant="outline" className="hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 transition-all duration-300">
+                      <a href={currentContentItem.signedUrl} target="_blank" rel="noopener noreferrer" onClick={handleLessonPlanInteraction}>
+                        View
+                      </a>
+                    </Button>
+                    <Button onClick={() => {
+                      handleLessonPlanInteraction();
+                      handleDownload(currentContentItem.signedUrl, currentContentItem.content_path?.split('/').pop() || 'lesson-plan');
+                    }} disabled={isDownloading} className="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 shadow-lg hover:shadow-xl transition-all duration-300">
+                      {isDownloading ? 'Downloading...' : 'Download'}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center p-8">
+                  <ClipboardList className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground text-lg font-medium">
+                    Lesson plan not available
+                    {isOfflineMode && (
+                      <span className="block text-sm mt-2 text-red-500">
+                        DEBUG: Offline mode - signedUrl missing for item {currentContentItem.id}
+                      </span>
+                    )}
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
       default: return <div className="text-muted-foreground">Unsupported content type.</div>;
     }
   };
@@ -2354,29 +2567,29 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             {/* Breadcrumb Navigation */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-4 min-w-0 flex-1">
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={() => {
-                  if (profile?.role === 'admin' || profile?.role === 'teacher') {
-                    // For admins and teachers, navigate back to the course builder page
+                  if (profile?.role === 'admin' || profile?.role === 'super_user') {
+                    // For admins and super users, navigate back to the course builder page
                     navigate(`/dashboard/courses/builder/${actualCourseId}`);
                   } else {
-                    // For students, navigate to the course overview page
+                    // For teachers, content creators, and students, navigate to the course overview page
                     navigate(`/dashboard/courses/${actualCourseId}`);
                   }
                 }}
-                className="text-muted-foreground hover:text-foreground transition-colors"
+                className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
               >
                 <ChevronLeft className="w-4 h-4 mr-1" />
-                {(profile?.role === 'admin' || profile?.role === 'teacher') ? 'Back to Course Builder' : 'Back to Course'}
+                {(profile?.role === 'admin' || profile?.role === 'super_user') ? 'Back to Course Builder' : 'Back to Course'}
               </Button>
-              <div className="h-4 w-px bg-border" />
-              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                <span className="font-medium">{currentModule?.title}</span>
-                <span>•</span>
-                <span>{currentLesson?.title}</span>
+              <div className="h-4 w-px bg-border flex-shrink-0" />
+              <div className="flex items-center space-x-2 text-sm text-muted-foreground min-w-0 flex-1 overflow-hidden">
+                <span className="font-medium truncate max-w-[200px]" title={currentModule?.title}>{currentModule?.title}</span>
+                <span className="flex-shrink-0">•</span>
+                <span className="truncate" title={currentLesson?.title}>{currentLesson?.title}</span>
               </div>
             </div>
             
@@ -2429,16 +2642,62 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                 <div className="space-y-2">
                   {course.modules.map((module: any) => {
                     const isCurrentModule = module.id === currentModule?.id;
-                    const moduleProgress = Math.round((module.lessons.reduce((acc: number, lesson: any) => 
-                      acc + lesson.contentItems.filter((item: any) => item.completed).length, 0) / 
-                      module.lessons.reduce((acc: number, lesson: any) => acc + lesson.contentItems.length, 0)) * 100);
+                    
+                    // Calculate module progress based on visible items only
+                    const totalVisibleItems = module.lessons.reduce((acc: number, lesson: any) => {
+                      return acc + lesson.contentItems.filter((item: any) => {
+                        // Hide quiz, assignment, and lesson_plan when offline
+                        if (isOfflineMode && (item.content_type === 'quiz' || item.content_type === 'assignment' || item.content_type === 'lesson_plan')) {
+                          return false;
+                        }
+                        // Hide lesson_plan content from students
+                        if (item.content_type === 'lesson_plan' && (profile?.role === 'student' || !profile?.role)) {
+                          return false;
+                        }
+                        return true;
+                      }).length;
+                    }, 0);
+                    
+                    const completedVisibleItems = module.lessons.reduce((acc: number, lesson: any) => {
+                      return acc + lesson.contentItems.filter((item: any) => {
+                        // Hide quiz, assignment, and lesson_plan when offline
+                        if (isOfflineMode && (item.content_type === 'quiz' || item.content_type === 'assignment' || item.content_type === 'lesson_plan')) {
+                          return false;
+                        }
+                        // Hide lesson_plan content from students
+                        if (item.content_type === 'lesson_plan' && (profile?.role === 'student' || !profile?.role)) {
+                          return false;
+                        }
+                        return item.completed;
+                      }).length;
+                    }, 0);
+                    
+                    const moduleProgress = totalVisibleItems > 0 ? Math.round((completedVisibleItems / totalVisibleItems) * 100) : 0;
                     
                     return (
                       <div key={module.id} className="group">
                         <button
                           onClick={() => {
-                            const firstItem = module.lessons[0]?.contentItems[0];
-                            if (firstItem) handleNavigation(firstItem);
+                            // Find first visible item in the module
+                            let firstVisibleItem = null;
+                            for (const lesson of module.lessons) {
+                              const visibleItems = lesson.contentItems.filter((item: any) => {
+                                // Hide quiz, assignment, and lesson_plan when offline
+                                if (isOfflineMode && (item.content_type === 'quiz' || item.content_type === 'assignment' || item.content_type === 'lesson_plan')) {
+                                  return false;
+                                }
+                                // Hide lesson_plan content from students
+                                if (item.content_type === 'lesson_plan' && (profile?.role === 'student' || !profile?.role)) {
+                                  return false;
+                                }
+                                return true;
+                              });
+                              if (visibleItems.length > 0) {
+                                firstVisibleItem = visibleItems[0];
+                                break;
+                              }
+                            }
+                            if (firstVisibleItem) handleNavigation(firstVisibleItem);
                           }}
                           className={cn(
                             "w-full text-left p-3 rounded-lg transition-all duration-200 border",
@@ -2448,20 +2707,20 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                               : "bg-card border-border hover:border-primary/20"
                           )}
                         >
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center space-x-2">
+                          <div className="flex items-center justify-between mb-2 gap-2">
+                            <div className="flex items-center space-x-2 min-w-0 flex-1">
                               <BookOpen className={cn(
-                                "w-4 h-4",
+                                "w-4 h-4 flex-shrink-0",
                                 isCurrentModule ? "text-primary" : "text-muted-foreground"
                               )} />
                               <span className={cn(
-                                "text-sm font-medium",
+                                "text-sm font-medium truncate",
                                 isCurrentModule ? "text-primary" : "text-foreground"
-                              )}>
+                              )} title={module.title}>
                                 {module.title}
                               </span>
                             </div>
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-xs text-muted-foreground flex-shrink-0">
                               {moduleProgress}%
                             </span>
                           </div>
@@ -2477,7 +2736,19 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                                 <div key={lesson.id} className="space-y-1">
                                   <button
                                     onClick={() => {
-                                      const firstItem = lesson.contentItems[0];
+                                      // Filter content items based on user role and offline status
+                                      const visibleItems = lesson.contentItems.filter((item: any) => {
+                                        // Hide quiz, assignment, and lesson_plan when offline
+                                        if (isOfflineMode && (item.content_type === 'quiz' || item.content_type === 'assignment' || item.content_type === 'lesson_plan')) {
+                                          return false;
+                                        }
+                                        // Hide lesson_plan content from students
+                                        if (item.content_type === 'lesson_plan' && (profile?.role === 'student' || !profile?.role)) {
+                                          return false;
+                                        }
+                                        return true;
+                                      });
+                                      const firstItem = visibleItems[0];
                                       if (firstItem) handleNavigation(firstItem);
                                     }}
                                     className={cn(
@@ -2488,16 +2759,31 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                                         : "text-muted-foreground hover:text-foreground"
                                     )}
                                   >
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center space-x-2">
-                                        <ClipboardList className="w-3 h-3" />
-                                        <span className="truncate">{lesson.title}</span>
+                                    <div className="flex items-center justify-between gap-2">
+                                      <div className="flex items-center space-x-2 min-w-0 flex-1">
+                                        <ClipboardList className="w-3 h-3 flex-shrink-0" />
+                                        <span className="truncate" title={lesson.title}>{lesson.title}</span>
                                       </div>
-                                      {isCurrentLesson && (
-                                        <span className="text-xs text-muted-foreground">
-                                          {lesson.contentItems.filter((item: any) => item.completed).length}/{lesson.contentItems.length}
-                                        </span>
-                                      )}
+                                      {isCurrentLesson && (() => {
+                                        // Calculate progress based on visible items only
+                                        const visibleItems = lesson.contentItems.filter((item: any) => {
+                                          // Hide quiz, assignment, and lesson_plan when offline
+                                          if (isOfflineMode && (item.content_type === 'quiz' || item.content_type === 'assignment' || item.content_type === 'lesson_plan')) {
+                                            return false;
+                                          }
+                                          // Hide lesson_plan content from students
+                                          if (item.content_type === 'lesson_plan' && (profile?.role === 'student' || !profile?.role)) {
+                                            return false;
+                                          }
+                                          return true;
+                                        });
+                                        const completedCount = visibleItems.filter((item: any) => item.completed).length;
+                                        return (
+                                          <span className="text-xs text-muted-foreground flex-shrink-0">
+                                            {completedCount}/{visibleItems.length}
+                                          </span>
+                                        );
+                                      })()}
                                     </div>
                                   </button>
                                   
@@ -2510,7 +2796,7 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                                           <span>Drag to reorder content items</span>
                                         </div>
                                       )}
-                                      {!canReorderContent && (profile?.role === 'admin' || profile?.role === 'teacher') && course?.status === 'Published' && (
+                                      {!canReorderContent && (profile?.role === 'admin' || profile?.role === 'super_user' || profile?.role === 'teacher' || profile?.role === 'content_creator') && course?.status === 'Published' && (
                                         <div className="text-xs text-amber-600 dark:text-amber-400 mb-2 flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 rounded-lg border border-amber-200 dark:border-amber-800">
                                           <Info className="w-3 h-3" />
                                           <span>Content reordering is disabled for published courses. Unpublish the course to make changes.</span>
@@ -2564,10 +2850,23 @@ export const CourseContent = ({ courseId }: CourseContentProps) => {
                                         // Render without drag and drop for students
                                         lesson.contentItems
                                           .filter((item: any) => {
-                                            // Hide quiz and assignment when offline
-                                            if (isOfflineMode && (item.content_type === 'quiz' || item.content_type === 'assignment')) {
+                                            // If profile is still loading, don't filter yet
+                                            if (profileLoading) {
+                                              return true;
+                                            }
+                                            
+                                            // Hide quiz, assignment, and lesson_plan when offline
+                                            if (isOfflineMode && (item.content_type === 'quiz' || item.content_type === 'assignment' || item.content_type === 'lesson_plan')) {
+                                              console.log('📴 CourseContent: Sidebar - Hiding item due to offline mode:', item.title, item.content_type);
                                               return false;
                                             }
+                                            
+                                            // Hide lesson_plan content from students (only visible to teachers and admins)
+                                            if (item.content_type === 'lesson_plan' && (profile?.role === 'student' || !profile?.role)) {
+                                              console.log('🚫 CourseContent: Sidebar - Hiding lesson_plan from student:', item.title, 'User role:', profile?.role);
+                                              return false;
+                                            }
+                                            
                                             return true;
                                           })
                                           .map((item: any, index: number) => {

@@ -10,8 +10,10 @@ import {
   Play,
   Calendar,
   User,
+  Eye,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 interface Course {
   id: string;
@@ -36,6 +38,8 @@ export const StudentCourseTileView: React.FC<StudentCourseTileViewProps> = ({
   className = "",
 }) => {
   const navigate = useNavigate();
+  const { profile } = useUserProfile();
+  const isViewOnly = profile?.role === 'view_only';
 
   const handleCourseClick = (course: Course) => {
     if (onCourseClick) {
@@ -141,12 +145,21 @@ export const StudentCourseTileView: React.FC<StudentCourseTileViewProps> = ({
                     handleCourseClick(course);
                   }}
                 >
-                  {course.progress === 100 ? (
-                    <BookOpen className="w-3 h-3 mr-1" />
+                  {isViewOnly ? (
+                    <>
+                      <Eye className="w-3 h-3 mr-1" />
+                      Preview
+                    </>
                   ) : (
-                    <Play className="w-3 h-3 mr-1" />
+                    <>
+                      {course.progress === 100 ? (
+                        <BookOpen className="w-3 h-3 mr-1" />
+                      ) : (
+                        <Play className="w-3 h-3 mr-1" />
+                      )}
+                      {course.progress === 100 ? 'Review' : 'Continue'}
+                    </>
                   )}
-                  {course.progress === 100 ? 'Review' : 'Continue'}
                 </Button>
               </div>
             </CardContent>

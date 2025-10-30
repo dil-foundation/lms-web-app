@@ -75,9 +75,11 @@ const AdminAuth = () => {
           throw new Error('Could not fetch user profile.');
         }
 
-        if (profile.role !== 'admin') {
+        // Allow admins, super_users, content_creators, and view_only users to access admin portal
+        const allowedRoles = ['admin', 'super_user', 'content_creator', 'view_only'];
+        if (!allowedRoles.includes(profile.role)) {
           await supabase.auth.signOut();
-          setAuthError('Access denied. You do not have permission to log in here.');
+          setAuthError(`Access denied. Please use the ${profile.role} portal to log in.`);
           setIsLoading(false);
           return;
         }

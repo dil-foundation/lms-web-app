@@ -75,7 +75,7 @@ export interface CourseLessonData {
 export interface CourseContentItemData {
   id: string;
   title: string;
-  content_type: 'video' | 'text' | 'quiz' | 'attachment';
+  content_type: 'video' | 'text' | 'quiz' | 'attachment' | 'lesson_plan';
   content_path?: string;
   signedUrl?: string; // For videos and attachments
   content?: string; // For text content
@@ -467,7 +467,7 @@ export class CourseDataLayer {
     for (const section of courseData.sections || []) {
       for (const lesson of section.lessons || []) {
         for (const item of lesson.contentItems || []) {
-          if ((item.content_type === 'video' || item.content_type === 'attachment') && item.content_path) {
+          if ((item.content_type === 'video' || item.content_type === 'attachment' || item.content_type === 'lesson_plan') && item.content_path) {
             try {
               const { data: signedUrlData } = await supabase.storage
                 .from('dil-lms')

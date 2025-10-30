@@ -229,8 +229,13 @@ serve(async (req) => {
             // Send push notification to student
             try {
               const amountPaid = (session.amount_total || 0) / 100;
-              const { data: notifData, error: notifError } = await supabaseClient.functions.invoke('send-notification', {
-                body: {
+              const notificationResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-notification`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+                },
+                body: JSON.stringify({
                   type: 'course_access_granted',
                   title: 'Course Purchase Successful! 🎉',
                   body: `You now have access to "${course.title}". Start learning now!`,
@@ -242,13 +247,13 @@ serve(async (req) => {
                     action_url: `/dashboard/courses/${courseId}/content`,
                   },
                   targetUsers: [userId],
-                }
+                }),
               });
 
-              if (notifError) {
-                console.error('⚠️ [Webhook] Error sending push notification:', notifError);
-              } else {
+              if (notificationResponse.ok) {
                 console.log('✅ [Webhook] Push notification sent to student for course purchase');
+              } else {
+                console.error('⚠️ [Webhook] Error sending push notification:', await notificationResponse.text());
               }
             } catch (notificationError) {
               console.error('⚠️ [Webhook] Error sending push notification:', notificationError);
@@ -366,20 +371,26 @@ serve(async (req) => {
                 try {
                   console.log('📧 [Webhook] Calling send-email function...');
                   
-                  const { data: emailData, error: emailError } = await supabaseClient.functions.invoke('send-email', {
-                    body: {
+                  const emailResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+                    },
+                    body: JSON.stringify({
                       to: userProfile.email,
                       subject: `Payment Confirmed - ${course.title}`,
                       html: emailHtml,
                       from: noReplyEmail,
                       fromName: appName,
-                    }
+                    }),
                   });
 
-                  if (emailError) {
-                    console.error('❌ [Webhook] Email service error:', emailError);
-                  } else {
+                  if (emailResponse.ok) {
+                    const emailData = await emailResponse.json();
                     console.log('✅ [Webhook] Email sent successfully:', emailData);
+                  } else {
+                    console.error('❌ [Webhook] Email service error:', await emailResponse.text());
                   }
                 } catch (emailSendError) {
                   console.error('❌ [Webhook] Failed to send email:', emailSendError);
@@ -465,8 +476,13 @@ serve(async (req) => {
         // Send push notification to student
         if (payment) {
           try {
-            const { data: notifData, error: notifError } = await supabaseClient.functions.invoke('send-notification', {
-              body: {
+            const notificationResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-notification`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+              },
+              body: JSON.stringify({
                 type: 'payment_refunded',
                 title: 'Refund Processed',
                 body: `Your refund of $${(payment.amount / 100).toFixed(2)} for ${payment.course?.title || 'a course'} has been processed.`,
@@ -478,13 +494,13 @@ serve(async (req) => {
                   payment_id: payment.id,
                 },
                 targetUsers: [payment.user_id],
-              }
+              }),
             });
 
-            if (notifError) {
-              console.error('⚠️ [Webhook] Error sending push notification:', notifError);
-            } else {
+            if (notificationResponse.ok) {
               console.log('✅ [Webhook] Push notification sent to student for refund');
+            } else {
+              console.error('⚠️ [Webhook] Error sending push notification:', await notificationResponse.text());
             }
           } catch (notificationError) {
             console.error('⚠️ [Webhook] Error sending push notification:', notificationError);

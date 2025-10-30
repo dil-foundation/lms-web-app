@@ -136,15 +136,9 @@ const SecurityService = {
         console.error('Error getting active sessions count:', sessionsError);
       }
 
-      // Get failed attempts count from access logs
-      const { data: failedAttempts, error: failedError } = await supabase
-        .from('access_logs')
-        .select('id', { count: 'exact' })
-        .eq('status', 'failed');
-
-      if (failedError) {
-        console.error('Error getting failed attempts count:', failedError);
-      }
+      // Removed: Failed attempts count query (not displayed in UI and causing RLS errors)
+      // This stat is tracked separately in the login_attempts table via LoginSecurityService
+      const failedAttempts = null;
 
       // Get actual 2FA adoption statistics from user profiles
       const { data: twoFAStats, error: twoFAError } = await supabase
@@ -163,7 +157,7 @@ const SecurityService = {
 
       return {
         active_sessions: activeSessionsCount || 0,
-        failed_attempts: failedAttempts?.length || 0,
+        failed_attempts: 0, // Not tracked here, use LoginSecurityService for login attempt tracking
         two_fa_enabled_percentage: twoFAEnabledPercentage,
         last_backup: lastBackup
       };

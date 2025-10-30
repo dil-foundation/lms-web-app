@@ -29,3 +29,8 @@ supabase/.temp/
 # Environment variables
 .env.development
 .env.production
+
+# Super user creation scripts (DO NOT COMMIT)
+create-super-user.sql
+create-super-user.js
+create-super-user.ts

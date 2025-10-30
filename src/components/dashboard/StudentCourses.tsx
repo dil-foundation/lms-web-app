@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/EmptyState';
-import { BookOpen, TrendingUp, Clock, Award, Play, CheckCircle, Sparkles, Users } from 'lucide-react';
+import { BookOpen, TrendingUp, Clock, Award, Play, CheckCircle, Sparkles, Users, Eye } from 'lucide-react';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { Badge } from '@/components/ui/badge';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
@@ -51,6 +52,8 @@ export const StudentCourses = ({ userProfile }: StudentCoursesProps) => {
   const [loading, setLoading] = useState(true);
   const { preferences, setStudentView } = useViewPreferences();
   const navigate = useNavigate();
+  const { profile } = useUserProfile();
+  const isViewOnly = profile?.role === 'view_only';
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -330,7 +333,12 @@ export const StudentCourses = ({ userProfile }: StudentCoursesProps) => {
                     className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white py-3 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:scale-105 rounded-xl"
                   >
                     <Link to={course.progress && course.progress > 0 ? `/dashboard/courses/${course.id}/content` : `/dashboard/courses/${course.id}`}>
-                      {course.progress === 100 ? (
+                      {isViewOnly ? (
+                        <>
+                          <Eye className="w-4 h-4 mr-2" />
+                          Preview Course
+                        </>
+                      ) : course.progress === 100 ? (
                         <>
                           <BookOpen className="w-4 h-4 mr-2" />
                           Review Course

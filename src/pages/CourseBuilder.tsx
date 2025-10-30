@@ -95,7 +95,7 @@ interface CourseLesson {
 interface LessonContentItem {
   id: string;
   title: string;
-  content_type: 'video' | 'attachment' | 'assignment' | 'quiz';
+  content_type: 'video' | 'attachment' | 'assignment' | 'quiz' | 'lesson_plan';
   content_path?: string; // For video, attachment, assignment HTML
   quiz?: QuizData; // For quiz type
   due_date?: string; // Due date for assignments and quizzes
@@ -215,7 +215,7 @@ const MOCK_USER_DATABASE = [
   { id: 'stu3', name: 'Zainab Omar', email: 'z.omar@example.com', role: 'student' },
 ];
 
-const MOCK_TEACHERS_FOR_SELECT = MOCK_USER_DATABASE.filter(u => u.role === 'teacher').map(u => ({ label: `${u.name} (${u.email})`, value: u.id }));
+const MOCK_TEACHERS_FOR_SELECT = MOCK_USER_DATABASE.filter(u => u.role === 'teacher' || u.role === 'content_creator').map(u => ({ label: `${u.name} (${u.email})`, value: u.id }));
 const MOCK_STUDENTS_FOR_SELECT = MOCK_USER_DATABASE.filter(u => u.role === 'student').map(u => ({ label: `${u.name} (${u.email})`, value: u.id }));
 
 // Mock Classes Data
@@ -345,7 +345,7 @@ interface Profile {
   first_name: string;
   last_name: string;
   email: string;
-  role: 'admin' | 'teacher' | 'student';
+  role: 'admin' | 'teacher' | 'student' | 'content_creator' | 'super_user' | 'view_only';
   avatar_url?: string;
 }
 
@@ -376,7 +376,7 @@ interface LessonItemProps {
 
 // #region ContentTypeSelector Component
 interface ContentTypeSelectorProps {
-  onSelect: (contentType: 'video' | 'assignment' | 'quiz' | 'attachment') => void;
+  onSelect: (contentType: 'video' | 'assignment' | 'quiz' | 'attachment' | 'lesson_plan') => void;
   onClose: () => void;
 }
 
@@ -421,6 +421,16 @@ const ContentTypeSelector = ({ onSelect, onClose }: ContentTypeSelectorProps) =>
       borderColor: 'border-green-200/50',
       iconBg: 'bg-green-500/10',
       iconColor: 'text-green-600'
+    },
+    {
+      type: 'lesson_plan' as const,
+      label: 'Lesson Plan',
+      description: 'Upload lesson plan documents and files',
+      icon: '📋',
+      color: 'from-indigo-500/10 to-indigo-600/10',
+      borderColor: 'border-indigo-200/50',
+      iconBg: 'bg-indigo-500/10',
+      iconColor: 'text-indigo-600'
     }
   ];
 
@@ -559,7 +569,7 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
       if (item.content_type === 'video') {
         setAttachmentInfo(null);
         getSignedUrl(item.content_path, 'video');
-      } else if (item.content_type === 'attachment') {
+      } else if (item.content_type === 'attachment' || item.content_type === 'lesson_plan') {
         setVideoUrl(null);
         getSignedUrl(item.content_path, 'attachment');
       }
@@ -578,13 +588,13 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
     }
   };
 
-  const handleTypeChangeRequest = (newType: 'video' | 'attachment' | 'assignment' | 'quiz') => {
+  const handleTypeChangeRequest = (newType: 'video' | 'attachment' | 'assignment' | 'quiz' | 'lesson_plan') => {
     let hasContent = false;
     if (item.content_type === 'quiz') {
       hasContent = (item.quiz?.questions?.length || 0) > 0;
     } else if (item.content_type === 'assignment') {
       hasContent = !!item.content_path && item.content_path !== '<p><br></p>';
-    } else { // Video or Attachment
+    } else { // Video, Attachment, or Lesson Plan
       hasContent = !!item.content_path;
     }
 
@@ -623,10 +633,34 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
     try {
       const { error } = await supabase.storage.from('dil-lms').upload(filePath, file);
       if (error) throw error;
-      onUpdate(lessonId, item.id, { content_path: filePath });
+      onUpdate(lessonId, item.id, { 
+        content_path: filePath,
+        title: file.name // Update title to show the actual file name
+      });
       toast.success('Attachment uploaded successfully!');
     } catch (error: any) {
       toast.error('Attachment upload failed.', { description: error.message });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleLessonPlanUpload = async (file: File) => {
+    if (!file) return;
+
+    setIsUploading(true);
+    const filePath = `lesson-plans/${courseId || 'new'}/${lessonId}/${item.id}/${crypto.randomUUID()}/${file.name}`;
+
+    try {
+      const { error } = await supabase.storage.from('dil-lms').upload(filePath, file);
+      if (error) throw error;
+      onUpdate(lessonId, item.id, { 
+        content_path: filePath,
+        title: file.name // Update title to show the actual file name
+      });
+      toast.success('Lesson plan uploaded successfully!');
+    } catch (error: any) {
+      toast.error('Lesson plan upload failed.', { description: error.message });
     } finally {
       setIsUploading(false);
     }
@@ -790,6 +824,64 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
             </div>
           </div>
         );
+      case 'lesson_plan':
+        if (attachmentInfo) {
+          return (
+            <div className="flex items-center justify-between p-3 rounded-lg bg-background border mt-2">
+              <div className="flex items-center gap-3">
+                <FileIcon className="h-6 w-6 text-muted-foreground" />
+                <a href={attachmentInfo.url} target="_blank" rel="noopener noreferrer" className="font-medium hover:underline">
+                  {attachmentInfo.name}
+                </a>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDownload(attachmentInfo.url, attachmentInfo.name)}
+                  disabled={isDownloading}
+                  className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                >
+                  <Download className="h-4 w-4 mr-1" />
+                  {isDownloading ? 'Downloading...' : 'Download'}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setAttachmentInfo(null);
+                    onUpdate(lessonId, item.id, { content_path: undefined });
+                  }}
+                >
+                  Remove
+                </Button>
+              </div>
+            </div>
+          );
+        }
+        return (
+          <div className="w-full">
+            <div
+              className={`w-full text-center p-6 border-2 border-dashed rounded-lg transition-colors cursor-pointer hover:border-primary/50 border-border`}
+              onClick={() => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.pdf,.doc,.docx,.xls,.xlsx,.zip';
+                input.onchange = (e) => {
+                  const file = (e.target as HTMLInputElement).files?.[0];
+                  if (file) handleLessonPlanUpload(file);
+                };
+                input.click();
+              }}
+            >
+              <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                <UploadCloud className="h-8 w-8" />
+                <p className="text-sm">{isUploading ? "Uploading..." : "Upload Lesson Plan (PDF, DOC, ZIP)"}</p>
+                <p className="text-xs text-muted-foreground">Max file size: 10 MB</p>
+              </div>
+            </div>
+          </div>
+        );
       case 'assignment':
         return (
           <div className="space-y-4">
@@ -937,6 +1029,7 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
       case 'assignment': return '📝';
       case 'quiz': return '❓';
       case 'attachment': return '📎';
+      case 'lesson_plan': return '📋';
       default: return '📄';
     }
   };
@@ -947,6 +1040,7 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
       case 'assignment': return 'bg-orange-50 border-orange-200 text-orange-700 dark:bg-orange-950 dark:border-orange-800 dark:text-orange-300';
       case 'quiz': return 'bg-purple-50 border-purple-200 text-purple-700 dark:bg-purple-950 dark:border-purple-800 dark:text-purple-300';
       case 'attachment': return 'bg-green-50 border-green-200 text-green-700 dark:bg-green-950 dark:border-green-800 dark:text-green-300';
+      case 'lesson_plan': return 'bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-950 dark:border-indigo-800 dark:text-indigo-300';
       default: return 'bg-gray-50 border-gray-200 text-gray-700 dark:bg-gray-950 dark:border-gray-800 dark:text-gray-300';
     }
   };
@@ -986,6 +1080,7 @@ const LessonContentItemComponent = memo(({ item, lessonId, sectionId, onUpdate, 
               <SelectItem value="attachment" className="rounded-xl hover:bg-green-50 hover:text-gray-900 dark:hover:bg-green-900/20 dark:hover:text-white transition-colors">📎 Attachment</SelectItem>
               <SelectItem value="assignment" className="rounded-xl hover:bg-orange-50 hover:text-gray-900 dark:hover:bg-orange-900/20 dark:hover:text-white transition-colors">📝 Assignment</SelectItem>
               <SelectItem value="quiz" className="rounded-xl hover:bg-purple-50 hover:text-gray-900 dark:hover:bg-purple-900/20 dark:hover:text-white transition-colors">❓ Quiz</SelectItem>
+              <SelectItem value="lesson_plan" className="rounded-xl hover:bg-indigo-50 hover:text-gray-900 dark:hover:bg-indigo-900/20 dark:hover:text-white transition-colors">📋 Lesson Plan</SelectItem>
             </SelectContent>
           </Select>
           {isRemovable && (
@@ -1050,7 +1145,7 @@ interface LessonContainerProps {
   onRemoveContentItem: (lessonId: string, itemId: string) => void;
   onShowContentTypeSelector: (lessonId: string) => void;
   canReorderContent: boolean;
-  currentUserRole: 'admin' | 'teacher' | 'student' | null;
+  currentUserRole: 'admin' | 'teacher' | 'student' | 'content_creator' | 'super_user' | 'view_only' | null;
   courseStatus: 'Draft' | 'Published' | 'Under Review' | 'Rejected' | undefined;
 }
 
@@ -1134,7 +1229,7 @@ const LessonContainer = memo(({ lesson, sectionId, onUpdate, onRemove, isRemovab
                     <span>Drag to reorder content items</span>
                   </div>
                 )}
-                {!canReorderContent && (currentUserRole === 'admin' || currentUserRole === 'teacher') && courseStatus === 'Published' && (
+                {!canReorderContent && (currentUserRole === 'admin' || currentUserRole === 'super_user' || currentUserRole === 'teacher' || currentUserRole === 'content_creator') && courseStatus === 'Published' && (
                   <div className="text-xs text-amber-600 dark:text-amber-400 mb-2 flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 rounded-lg border border-amber-200 dark:border-amber-800">
                     <Info className="w-3 h-3" />
                     <span>Content reordering is disabled for published courses. Unpublish the course to make changes.</span>
@@ -2105,7 +2200,7 @@ const CourseBuilder = () => {
   const [allTeachers, setAllTeachers] = useState<{ label: string; value: string; }[]>([]);
   const [allStudents, setAllStudents] = useState<{ label: string; value: string; }[]>([]);
   const [userProfiles, setUserProfiles] = useState<Profile[]>([]);
-  const [currentUserRole, setCurrentUserRole] = useState<'student' | 'teacher' | 'admin' | null>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<'student' | 'teacher' | 'admin' | 'content_creator' | 'super_user' | 'view_only' | null>(null);
   
   // Hierarchical data state
   const [countries, setCountries] = useState<Country[]>([]);
@@ -2180,19 +2275,17 @@ const CourseBuilder = () => {
     );
     
     // Update course data with teachers and students from selected classes
-    // BUT preserve any additional teachers/students that are not from classes
+    // BUT preserve any additional teachers/students that are not from ANY classes
     setCourseData(prev => {
-      // Get current class IDs to identify which members are from classes
-      const currentClassIds = prev.class_ids || [];
-      const currentClassObjects = dbClasses.filter(cls => currentClassIds.includes(cls.id));
-      const currentClassTeacherIds = currentClassObjects.flatMap(cls => cls.teachers.map(t => t.id));
-      const currentClassStudentIds = currentClassObjects.flatMap(cls => cls.students.map(s => s.id));
+      // Get ALL class teacher/student IDs from dbClasses (not just current ones)
+      const allClassTeacherIds = dbClasses.flatMap(cls => cls.teachers.map(t => t.id));
+      const allClassStudentIds = dbClasses.flatMap(cls => cls.students.map(s => s.id));
       
-      // Preserve teachers and students that are NOT from classes (additional members)
-      const additionalTeachers = prev.teachers.filter(teacher => !currentClassTeacherIds.includes(teacher.id));
-      const additionalStudents = prev.students.filter(student => !currentClassStudentIds.includes(student.id));
+      // Preserve teachers and students that are NOT from ANY classes (manually added members)
+      const additionalTeachers = prev.teachers.filter(teacher => !allClassTeacherIds.includes(teacher.id));
+      const additionalStudents = prev.students.filter(student => !allClassStudentIds.includes(student.id));
       
-      // Merge class members with additional members
+      // Merge NEW class members with additional members
       const mergedTeachers = [...uniqueTeachers, ...additionalTeachers];
       const mergedStudents = [...uniqueStudents, ...additionalStudents];
       
@@ -2203,6 +2296,16 @@ const CourseBuilder = () => {
       const finalStudents = mergedStudents.filter((student, index, self) => 
         index === self.findIndex(s => s.id === student.id)
       );
+      
+      console.log('Debug - Class selection update:', {
+        selectedClassIds: classIds,
+        uniqueTeachersFromClasses: uniqueTeachers.length,
+        uniqueStudentsFromClasses: uniqueStudents.length,
+        additionalTeachers: additionalTeachers.length,
+        additionalStudents: additionalStudents.length,
+        finalTeachers: finalTeachers.length,
+        finalStudents: finalStudents.length
+      });
       
       return {
         ...prev,
@@ -3451,7 +3554,7 @@ const CourseBuilder = () => {
         setCountries(fetchedCountries);
         
         const teachers = fetchedProfiles
-          .filter(p => p.role === 'teacher')
+          .filter(p => p.role === 'teacher' || p.role === 'content_creator')
           .map(p => ({ 
             label: `${p.first_name} ${p.last_name}`, 
             value: p.id,
@@ -3542,7 +3645,7 @@ const CourseBuilder = () => {
             }
             
             const courseTeachers = data.members
-              .filter((m: any) => m.role === 'teacher' && m.profile)
+              .filter((m: any) => (m.role === 'teacher' || m.role === 'content_creator') && m.profile)
               .map((m: any) => ({ 
                 id: m.profile.id, 
                 name: `${m.profile.first_name} ${m.profile.last_name}`, 
@@ -3967,7 +4070,7 @@ const CourseBuilder = () => {
     // Send notifications for teacher changes
     try {
       const currentTeacherIds = currentDbMembers
-        ?.filter(member => member.role === 'teacher')
+        ?.filter(member => member.role === 'teacher' || member.role === 'content_creator')
         .map(member => member.user_id) || [];
       
       const newTeacherIds = courseToSave.teachers
@@ -4902,7 +5005,7 @@ const CourseBuilder = () => {
     // Send notifications for teacher changes
     try {
       const currentTeacherIds = currentDbMembers
-        ?.filter(member => member.role === 'teacher')
+        ?.filter(member => member.role === 'teacher' || member.role === 'content_creator')
         .map(member => member.user_id) || [];
       
       const newTeacherIds = courseToSave.teachers
@@ -5494,7 +5597,7 @@ const CourseBuilder = () => {
         }
       }
 
-      // Send notifications to all admins about course submission for review
+      // Send notifications to all admins and super users about course submission for review
       try {
         await CourseNotificationService.notifyAdminsCourseSubmittedForReview({
           courseId: savedId,
@@ -5509,7 +5612,7 @@ const CourseBuilder = () => {
           }
         });
       } catch (notificationError) {
-        console.error('Error sending course submission notifications to admins:', notificationError);
+        console.error('Error sending course submission notifications to admins and super users:', notificationError);
         // Don't throw error to avoid breaking the main course operation
       }
       
@@ -5901,10 +6004,17 @@ const CourseBuilder = () => {
       };
     });
   }, []);
-  const addContentItem = (lessonId: string, contentType: 'video' | 'assignment' | 'quiz' | 'attachment' = 'video') => {
+  const addContentItem = (lessonId: string, contentType: 'video' | 'assignment' | 'quiz' | 'attachment' | 'lesson_plan' = 'video') => {
+    const getDisplayName = (type: string) => {
+      switch (type) {
+        case 'lesson_plan': return 'Lesson Plan';
+        default: return type.charAt(0).toUpperCase() + type.slice(1);
+      }
+    };
+    
     const newContentItem: LessonContentItem = {
       id: `content-${Date.now()}`,
-      title: `New ${contentType.charAt(0).toUpperCase() + contentType.slice(1)}`,
+      title: `New ${getDisplayName(contentType)}`,
       content_type: contentType,
     };
     setCourseData(prev => ({
@@ -6025,7 +6135,7 @@ const CourseBuilder = () => {
     setShowContentTypeSelector(true);
   };
 
-  const handleContentTypeSelect = (contentType: 'video' | 'assignment' | 'quiz' | 'attachment') => {
+  const handleContentTypeSelect = (contentType: 'video' | 'assignment' | 'quiz' | 'attachment' | 'lesson_plan') => {
     if (selectedLessonId) {
       addContentItem(selectedLessonId, contentType);
       setShowContentTypeSelector(false);
@@ -6039,12 +6149,12 @@ const CourseBuilder = () => {
   };
 
   const canDelete = user && courseData.id && courseData.authorId && (
-    currentUserRole === 'admin' ||
+    currentUserRole === 'admin' || currentUserRole === 'super_user' ||
     (currentUserRole === 'teacher' && user.id === courseData.authorId && (courseData.status === 'Draft' || courseData.status === 'Rejected'))
   );
 
-  // Check if user can reorder content items (admin and teacher only, and only in draft mode)
-  const canReorderContent = (currentUserRole === 'admin' || currentUserRole === 'teacher') && 
+  // Check if user can reorder content items (admin, super_user, teacher, and content_creator only, and only in draft mode)
+  const canReorderContent = (currentUserRole === 'admin' || currentUserRole === 'super_user' || currentUserRole === 'teacher' || currentUserRole === 'content_creator') && 
                            (courseData.status === 'Draft' || courseData.status === 'Rejected');
 
   const isFormValid = Object.keys(validationErrors).length === 0;
@@ -6101,6 +6211,12 @@ const CourseBuilder = () => {
                         <span className="font-medium">You must submit this course for admin review and approval before it can be published.</span>
                     </div>
                 )}
+                {currentUserRole === 'content_creator' && courseData.status === 'Draft' && (
+                    <div className="flex items-center gap-2 mt-2 text-sm text-green-800 bg-green-100 border border-green-300 rounded-lg p-3 shadow-sm">
+                        <Info className="h-4 w-4 text-green-600 flex-shrink-0" />
+                        <span className="font-medium">You can publish this course directly when ready, or save it as a draft to continue editing later.</span>
+                    </div>
+                )}
               </div>
             </div>
           </div>
@@ -6150,8 +6266,45 @@ const CourseBuilder = () => {
               </>
             )}
 
+            {/* Content Creator Buttons */}
+            {currentUserRole === 'content_creator' && (
+              <>
+                {(courseData.status === 'Draft' || courseData.status === 'Rejected') && (
+                   <Button 
+                     onClick={handleSaveDraftClick} 
+                     disabled={isSaving}
+                     className="h-9 px-4 rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                   >
+                    <Save className="w-4 h-4 mr-2" />
+                    {saveAction === 'draft' ? 'Saving...' : (courseData.id ? 'Update Draft' : 'Save Draft')}
+                  </Button>
+                )}
+                {courseData.status === 'Published' ? (
+                  <>
+                    <Button 
+                      onClick={handleUnpublishClick} 
+                      className="h-9 px-4 rounded-xl bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5" 
+                      disabled={isSaving}
+                    >
+                      {saveAction === 'unpublish' ? 'Unpublishing...' : 'Unpublish'}
+                    </Button>
+                  </>
+                ) : (
+                  (courseData.status === 'Draft' || courseData.status === 'Rejected') && (
+                    <Button 
+                      onClick={handlePublishClick} 
+                      className="h-9 px-4 rounded-xl bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5" 
+                      disabled={isSaving || !isFormValid}
+                    >
+                      {saveAction === 'publish' ? 'Publishing...' : 'Publish'}
+                    </Button>
+                  )
+                )}
+              </>
+            )}
+
             {/* Admin Buttons */}
-            {currentUserRole === 'admin' && (
+            {(currentUserRole === 'admin' || currentUserRole === 'super_user') && (
               <>
                 {(courseData.status === 'Draft' || courseData.status === 'Rejected') && (
                    <Button 
@@ -6222,19 +6375,19 @@ const CourseBuilder = () => {
 
       {/* Main Content */}
             <div className="flex-1">
-        {persistentFeedback && (currentUserRole === 'admin' || (currentUserRole === 'teacher' && courseData.status !== 'Under Review')) && (
+        {persistentFeedback && ((currentUserRole === 'admin' || currentUserRole === 'super_user') || ((currentUserRole === 'teacher' || currentUserRole === 'content_creator') && courseData.status !== 'Under Review')) && (
           <div className="p-6 pt-6 pb-0">
             <Alert variant="destructive">
               <Terminal className="h-4 w-4" />
               <AlertTitle>
-                {currentUserRole === 'admin' ? 'Requested Changes' : 'Submission Rejected'}
+                {(currentUserRole === 'admin' || currentUserRole === 'super_user') ? 'Requested Changes' : 'Submission Rejected'}
               </AlertTitle>
               <AlertDescription>
-                {currentUserRole === 'admin' ? (
+                {(currentUserRole === 'admin' || currentUserRole === 'super_user') ? (
                   <>
-                    <p className="font-semibold">You have requested the following changes from the teacher:</p>
+                    <p className="font-semibold">You have requested the following changes from the content creator:</p>
                     <p className="mt-2 p-2 bg-background rounded-md">{persistentFeedback}</p>
-                    <p className="mt-2 text-sm text-muted-foreground">The teacher must address this feedback and resubmit the course for it to be approved.</p>
+                    <p className="mt-2 text-sm text-muted-foreground">The content creator must address this feedback and resubmit the course for it to be approved.</p>
                   </>
                 ) : (
                   <>

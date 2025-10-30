@@ -14,6 +14,7 @@ interface CategoryTileViewProps {
   onView: (category: CourseCategory) => void;
   onDelete: (categoryId: number) => void;
   isDeleting?: (categoryId: number) => boolean;
+  isViewOnly?: boolean;
   className?: string;
 }
 
@@ -24,6 +25,7 @@ export const CategoryTileView: React.FC<CategoryTileViewProps> = ({
   onView,
   onDelete,
   isDeleting = () => false,
+  isViewOnly = false,
   className
 }) => {
   const handleView = (category: CourseCategory) => {
@@ -59,18 +61,20 @@ export const CategoryTileView: React.FC<CategoryTileViewProps> = ({
                     <Eye className="mr-2 h-3 w-3" />
                     View Details
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleEdit(category)}>
-                    <Edit className="mr-2 h-3 w-3" />
-                    Edit Category
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                        <Trash2 className="mr-2 h-3 w-3" />
-                        Delete Category
+                  {!isViewOnly && (
+                    <>
+                      <DropdownMenuItem onClick={() => handleEdit(category)}>
+                        <Edit className="mr-2 h-3 w-3" />
+                        Edit Category
                       </DropdownMenuItem>
-                    </AlertDialogTrigger>
+                      <DropdownMenuSeparator />
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                            <Trash2 className="mr-2 h-3 w-3" />
+                            Delete Category
+                          </DropdownMenuItem>
+                        </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
                         <AlertDialogTitle>Delete Category</AlertDialogTitle>
@@ -102,6 +106,8 @@ export const CategoryTileView: React.FC<CategoryTileViewProps> = ({
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>

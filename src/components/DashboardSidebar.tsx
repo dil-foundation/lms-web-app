@@ -41,9 +41,11 @@ export const DashboardSidebar = ({
           <div className="w-32">
             <Logo />
           </div>
-          <div className="flex items-center justify-center">
-            <AILMSToggle size="sm" />
-          </div>
+          {userRole !== 'content_creator' && userRole !== 'view_only' && (
+            <div className="flex items-center justify-center">
+              <AILMSToggle size="sm" />
+            </div>
+          )}
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon">

@@ -247,14 +247,9 @@ export const useNetworkStatus = () => {
 
   // Set up event listeners and periodic checks
   useEffect(() => {
-    // Initial check - skip connectivity test for faster startup
+    // Initial check - use basic navigator.onLine for fast startup
+    // Event listeners will handle any subsequent changes
     updateNetworkStatus(true);
-
-    // Follow-up check after 2 seconds to verify actual connectivity
-    const initialCheckTimeout = setTimeout(() => {
-      console.log('🔍 Network: Performing initial connectivity verification...');
-      updateNetworkStatus(false);
-    }, 2000);
 
     // Listen to online/offline events
     const handleOnline = () => {
@@ -284,13 +279,15 @@ export const useNetworkStatus = () => {
       connection.addEventListener('change', handleConnectionChange);
     }
 
-    // Periodic connectivity check (every 30 seconds to catch false positives from navigator.onLine)
-    // IMPORTANT: Always run the test regardless of navigator.onLine to catch cases where
-    // navigator.onLine incorrectly reports true when there's no actual internet
-    intervalRef.current = setInterval(() => {
-      console.log('⏰ Network: Periodic connectivity check...');
-      updateNetworkStatus(false); // Always perform full connectivity test
-    }, 30000); // Check every 30 seconds
+    // Periodic connectivity check DISABLED to prevent unnecessary network requests
+    // The online/offline event listeners and connection change events are sufficient
+    // for detecting network status changes in modern browsers
+    // 
+    // If needed, users can manually refresh network status via refreshNetworkStatus()
+    // intervalRef.current = setInterval(() => {
+    //   console.log('⏰ Network: Periodic connectivity check...');
+    //   updateNetworkStatus(false);
+    // }, 30000);
 
     // Cleanup
     return () => {
@@ -307,10 +304,6 @@ export const useNetworkStatus = () => {
       
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
-      }
-      
-      if (initialCheckTimeout) {
-        clearTimeout(initialCheckTimeout);
       }
     };
   }, [updateNetworkStatus, refreshNetworkStatus]);
