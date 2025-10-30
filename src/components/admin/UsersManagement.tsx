@@ -77,6 +77,14 @@ const initialValidationErrors = {
   teacherId: '',
 };
 
+// Helper function to format role names for display
+const formatRoleName = (role: string): string => {
+  return role
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
 export const UsersManagement = () => {
   console.log('🚀 UsersManagement: Component mounted/rendered');
   
@@ -785,7 +793,7 @@ export const UsersManagement = () => {
       case 'student': return 'blue';
       case 'content_creator': return 'outline';
       case 'super_user': return 'destructive'; // Keep for display if super_user exists
-      case 'view_only': return 'secondary';
+      case 'view_only': return 'info'; // Better contrast with blue background and white text
       default: return 'outline';
     }
   };
@@ -1339,7 +1347,7 @@ export const UsersManagement = () => {
                       </TableCell>
                       <TableCell>
                         <Badge variant={getRoleBadgeVariant(user.role)}>
-                          {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                          {formatRoleName(user.role)}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -1366,16 +1374,22 @@ export const UsersManagement = () => {
                               <Edit className="mr-2 h-4 w-4" />
                               <span>Edit User</span>
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleResetPassword(user)}>
-                              Reset Password
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={() => setTimeout(() => setUserToDelete(user), 100)}
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              <span>Delete User</span>
-                            </DropdownMenuItem>
+                            {/* Hide reset password option for super users */}
+                            {user.role !== 'super_user' && (
+                              <DropdownMenuItem onClick={() => handleResetPassword(user)}>
+                                Reset Password
+                              </DropdownMenuItem>
+                            )}
+                            {/* Hide delete user option for super users */}
+                            {user.role !== 'super_user' && (
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onClick={() => setTimeout(() => setUserToDelete(user), 100)}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                <span>Delete User</span>
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>

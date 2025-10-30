@@ -233,7 +233,15 @@ export default function DiscussionsPage() {
         }
       }
 
-      const participantsToInsert = newDiscussion.participants.map((role: string) => ({
+      // Expand 'admin' to include both 'admin' and 'super_user' for complete access
+      const expandedParticipants = newDiscussion.participants.flatMap((role: string) => {
+        if (role === 'admin') {
+          return ['admin', 'super_user'];
+        }
+        return [role];
+      });
+      
+      const participantsToInsert = expandedParticipants.map((role: string) => ({
         discussion_id: discussionData.id,
         role,
       }));
@@ -811,7 +819,7 @@ export default function DiscussionsPage() {
                   </div>
                   
                   {/* Action Menu */}
-                  {!isProfileLoading && (user?.id === discussion.creator_id || profile?.role === 'admin') && (
+                  {!isProfileLoading && (user?.id === discussion.creator_id || profile?.role === 'admin' || profile?.role === 'super_user') && (
                     <div className="flex justify-end mt-3">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -868,7 +876,7 @@ export default function DiscussionsPage() {
                 }}
                 onEdit={(discussion) => setEditingDiscussion(discussion)}
                 onDelete={(discussionId) => setDiscussionToDelete({ id: discussionId })}
-                canModerate={!isProfileLoading && (profile?.role === 'admin' || profile?.role === 'teacher')}
+                canModerate={!isProfileLoading && (profile?.role === 'admin' || profile?.role === 'super_user' || profile?.role === 'teacher')}
               />
             )}
 
@@ -884,7 +892,7 @@ export default function DiscussionsPage() {
                 onPin={(discussionId) => {
                   // Handle pin functionality
                 }}
-                canModerate={!isProfileLoading && (profile?.role === 'admin' || profile?.role === 'teacher')}
+                canModerate={!isProfileLoading && (profile?.role === 'admin' || profile?.role === 'super_user' || profile?.role === 'teacher')}
               />
             )}
           </div>

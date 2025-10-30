@@ -5,7 +5,7 @@ export interface UserForMessaging {
   first_name?: string;
   last_name?: string;
   email: string;
-  role: 'admin' | 'teacher' | 'student';
+  role: 'admin' | 'teacher' | 'student' | 'super_user';
   avatar_url?: string;
   isOnline?: boolean;
 }
@@ -29,7 +29,7 @@ export interface ConversationParticipant {
   id: string;
   conversation_id: string;
   user_id: string;
-  role: 'participant' | 'admin' | 'moderator' | 'teacher' | 'student';
+  role: 'participant' | 'admin' | 'moderator' | 'teacher' | 'student' | 'super_user';
   joined_at: string;
   left_at?: string;
   is_muted: boolean;
@@ -40,14 +40,14 @@ export interface ConversationParticipant {
     first_name?: string;
     last_name?: string;
     email: string;
-    role: 'admin' | 'teacher' | 'student';
+    role: 'admin' | 'teacher' | 'student' | 'super_user';
     avatar_url?: string;
   };
   profiles?: {
     first_name?: string;
     last_name?: string;
     email?: string;
-    role?: 'admin' | 'teacher' | 'student';
+    role?: 'admin' | 'teacher' | 'student' | 'super_user';
     avatar_url?: string;
   };
 }
@@ -364,15 +364,17 @@ export const getUsersForAdminMessaging = async (page: number = 1, limit: number 
   const from = (page - 1) * limit;
   const to = from + limit - 1;
 
-  // Get total count
+  // Get total count (exclude view_only and content_creator roles)
   const { count } = await supabase
     .from('profiles')
-    .select('*', { count: 'exact', head: true });
+    .select('*', { count: 'exact', head: true })
+    .not('role', 'in', '(view_only,content_creator)');
 
-  // Get data
+  // Get data (exclude view_only and content_creator roles)
   const { data: users, error } = await supabase
     .from('profiles')
     .select('id, first_name, last_name, email, role, avatar_url')
+    .not('role', 'in', '(view_only,content_creator)')
     .range(from, to)
     .order('first_name');
 
@@ -589,6 +591,7 @@ export const searchUsersForMessaging = async (searchTerm: string, page: number =
     .from('profiles')
     .select('id, first_name, last_name, email, role, avatar_url')
     .or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`)
+    .not('role', 'in', '(view_only,content_creator)')
     .range(from, to)
     .order('first_name');
 

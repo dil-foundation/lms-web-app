@@ -48,6 +48,14 @@ interface User {
   total_count: number;
 }
 
+// Helper function to format role names for display
+const formatRoleName = (role: string): string => {
+  return role
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
 const UserMFAManagement = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -279,8 +287,8 @@ const UserMFAManagement = () => {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline" className="capitalize">
-                    {user.role}
+                  <Badge variant="outline">
+                    {formatRoleName(user.role)}
                   </Badge>
                 </TableCell>
                 <TableCell>

@@ -59,6 +59,7 @@ export const CourseTileView: React.FC<CourseTileViewProps> = ({
   const isAdmin = profile?.role === 'admin' || profile?.role === 'super_user';
   const isContentCreator = profile?.role === 'content_creator';
   const isTeacher = profile?.role === 'teacher';
+  const isViewOnly = profile?.role === 'view_only';
 
   const getStatusColor = (status: CourseStatus) => {
     switch (status) {
@@ -130,47 +131,49 @@ export const CourseTileView: React.FC<CourseTileViewProps> = ({
                 >
                   {course.status}
                 </Badge>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-5 w-5 p-0 hover:bg-white/20 text-white"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <MoreHorizontal className="w-3 h-3" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    {(isAdmin || isContentCreator) ? (
-                      <DropdownMenuItem onClick={(e) => handleEdit(e, course)}>
-                        <Edit className="w-4 h-4 mr-2" />
-                        Edit
-                      </DropdownMenuItem>
-                    ) : (
-                      <DropdownMenuItem onClick={(e) => handleView(e, course)} disabled className="opacity-50">
-                        <Eye className="w-4 h-4 mr-2" />
-                        View Only
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem onClick={(e) => handleView(e, course)}>
-                      <Eye className="w-4 h-4 mr-2" />
-                      View
-                    </DropdownMenuItem>
-                    {canDelete(course) && (
-                      <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem 
-                          onClick={(e) => handleDelete(e, course)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Delete
+                {!isViewOnly && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-5 w-5 p-0 hover:bg-white/20 text-white"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MoreHorizontal className="w-3 h-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {(isAdmin || isContentCreator) ? (
+                        <DropdownMenuItem onClick={(e) => handleEdit(e, course)}>
+                          <Edit className="w-4 h-4 mr-2" />
+                          Edit
                         </DropdownMenuItem>
-                      </>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                      ) : (
+                        <DropdownMenuItem onClick={(e) => handleView(e, course)} disabled className="opacity-50">
+                          <Eye className="w-4 h-4 mr-2" />
+                          View Only
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem onClick={(e) => handleView(e, course)}>
+                        <Eye className="w-4 h-4 mr-2" />
+                        View
+                      </DropdownMenuItem>
+                      {canDelete(course) && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={(e) => handleDelete(e, course)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </div>
             </CardHeader>
             
