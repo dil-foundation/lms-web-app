@@ -662,10 +662,63 @@ export const UsersManagement = () => {
           body: formData,
         });
 
-
-
         if (error) {
           supabaseError = error;
+          // Try to extract response data from error object
+          try {
+            if (error.context instanceof Response) {
+              const responseText = await error.context.clone().text();
+              const parsed = JSON.parse(responseText);
+              if (parsed.errors) {
+                responseData = parsed;
+              } else if (parsed.error && typeof parsed.error === 'string') {
+                // Check if error field contains nested parsing errors
+                const wrappedMatch = parsed.error.match(/Failed to parse XLSX file: (.+)/);
+                if (wrappedMatch) {
+                  try {
+                    const nestedParsed = JSON.parse(wrappedMatch[1]);
+                    if (nestedParsed.parsingErrors) {
+                      responseData = {
+                        success: false,
+                        totalRows: 0,
+                        createdUsers: 0,
+                        errors: nestedParsed.parsingErrors,
+                        message: 'Validation failed: Missing required fields'
+                      };
+                    }
+                  } catch {
+                    // Not a parsing error
+                  }
+                }
+              }
+            } else if (error.message) {
+              try {
+                // Try direct parse first
+                const parsed = JSON.parse(error.message);
+                if (parsed.errors || parsed.parsingErrors) {
+                  responseData = parsed.errors ? parsed : { errors: parsed.parsingErrors, success: false, totalRows: 0, createdUsers: 0, message: 'Validation failed: Missing required fields' };
+                }
+              } catch {
+                // If direct parse fails, check if it's wrapped in error message
+                // e.g., "Failed to parse XLSX file: {\"parsingErrors\":[...]}"
+                const wrappedMatch = error.message.match(/Failed to parse XLSX file: (.+)/);
+                if (wrappedMatch) {
+                  try {
+                    const nestedParsed = JSON.parse(wrappedMatch[1]);
+                    if (nestedParsed.parsingErrors || nestedParsed.errors) {
+                      responseData = nestedParsed.errors 
+                        ? nestedParsed 
+                        : { errors: nestedParsed.parsingErrors, success: false, totalRows: 0, createdUsers: 0, message: 'Validation failed: Missing required fields' };
+                    }
+                  } catch {
+                    // Not JSON, continue with normal error handling
+                  }
+                }
+              }
+            }
+          } catch {
+            // Continue with normal error handling
+          }
         } else {
           responseData = data;
         }
@@ -679,10 +732,86 @@ export const UsersManagement = () => {
         console.log('=== END CAUGHT ERROR ===');
         
         supabaseError = caughtError;
+        
+        // Try to extract response data from caught error
+        try {
+          if (caughtError.context instanceof Response) {
+            const responseText = await caughtError.context.clone().text();
+            const parsed = JSON.parse(responseText);
+            if (parsed.errors) {
+              responseData = parsed;
+            } else if (parsed.error && typeof parsed.error === 'string') {
+              // Check if error field contains nested parsing errors
+              const wrappedMatch = parsed.error.match(/Failed to parse XLSX file: (.+)/);
+              if (wrappedMatch) {
+                try {
+                  const nestedParsed = JSON.parse(wrappedMatch[1]);
+                  if (nestedParsed.parsingErrors) {
+                    responseData = {
+                      success: false,
+                      totalRows: 0,
+                      createdUsers: 0,
+                      errors: nestedParsed.parsingErrors,
+                      message: 'Validation failed: Missing required fields'
+                    };
+                  }
+                } catch {
+                  // Not a parsing error
+                }
+              }
+            }
+          } else if (caughtError.message) {
+            try {
+              // Try direct parse first
+              const parsed = JSON.parse(caughtError.message);
+              if (parsed.errors || parsed.parsingErrors) {
+                responseData = parsed.errors ? parsed : { errors: parsed.parsingErrors, success: false, totalRows: 0, createdUsers: 0, message: 'Validation failed: Missing required fields' };
+              }
+            } catch {
+              // If direct parse fails, check if it's wrapped in error message
+              const wrappedMatch = caughtError.message.match(/Failed to parse XLSX file: (.+)/);
+              if (wrappedMatch) {
+                try {
+                  const nestedParsed = JSON.parse(wrappedMatch[1]);
+                  if (nestedParsed.parsingErrors || nestedParsed.errors) {
+                    responseData = nestedParsed.errors 
+                      ? nestedParsed 
+                      : { errors: nestedParsed.parsingErrors, success: false, totalRows: 0, createdUsers: 0, message: 'Validation failed: Missing required fields' };
+                  }
+                } catch {
+                  // Not JSON, continue
+                }
+              }
+            }
+          }
+        } catch {
+          // Continue with normal error handling
+        }
       }
 
       // If we have response data, process it
       if (responseData) {
+        // Check if responseData has an error field with nested parsing errors
+        if (responseData.error && typeof responseData.error === 'string') {
+          const wrappedMatch = responseData.error.match(/Failed to parse XLSX file: (.+)/);
+          if (wrappedMatch) {
+            try {
+              const nestedParsed = JSON.parse(wrappedMatch[1]);
+              if (nestedParsed.parsingErrors) {
+                responseData = {
+                  success: false,
+                  totalRows: 0,
+                  createdUsers: 0,
+                  errors: nestedParsed.parsingErrors,
+                  message: 'Validation failed: Missing required fields'
+                };
+              }
+            } catch {
+              // Not a parsing error, continue with original responseData
+            }
+          }
+        }
+        
         setUploadResult(responseData);
         
         if (responseData.createdUsers > 0) {
@@ -725,18 +854,36 @@ export const UsersManagement = () => {
         }
       } else if (supabaseError) {
         // Try to extract response data from error context
-
-        
         try {
-          if (typeof supabaseError.context === 'string') {
+          if (supabaseError.context instanceof Response) {
+            const responseText = await supabaseError.context.clone().text();
+            responseData = JSON.parse(responseText);
+          } else if (typeof supabaseError.context === 'string') {
             responseData = JSON.parse(supabaseError.context);
           } else if (supabaseError.context && typeof supabaseError.context === 'object') {
-            // Check if it's a Response object
-                          if (supabaseError.context instanceof Response) {
-                const responseText = await supabaseError.context.text();
-                responseData = JSON.parse(responseText);
-            } else {
-              responseData = supabaseError.context;
+            responseData = supabaseError.context;
+          } else if (supabaseError.message) {
+            try {
+              // Try direct parse first
+              const parsed = JSON.parse(supabaseError.message);
+              if (parsed.errors || parsed.parsingErrors) {
+                responseData = parsed.errors ? parsed : { errors: parsed.parsingErrors, success: false, totalRows: 0, createdUsers: 0, message: 'Validation failed: Missing required fields' };
+              }
+            } catch {
+              // If direct parse fails, check if it's wrapped in error message
+              const wrappedMatch = supabaseError.message.match(/Failed to parse XLSX file: (.+)/);
+              if (wrappedMatch) {
+                try {
+                  const nestedParsed = JSON.parse(wrappedMatch[1]);
+                  if (nestedParsed.parsingErrors || nestedParsed.errors) {
+                    responseData = nestedParsed.errors 
+                      ? nestedParsed 
+                      : { errors: nestedParsed.parsingErrors, success: false, totalRows: 0, createdUsers: 0, message: 'Validation failed: Missing required fields' };
+                  }
+                } catch {
+                  // Not JSON, continue
+                }
+              }
             }
           }
         } catch (parseError) {
@@ -745,8 +892,11 @@ export const UsersManagement = () => {
         
         if (responseData && responseData.errors) {
           setUploadResult(responseData);
-          toast.error("Upload completed with errors", { 
-            description: `Created ${responseData.createdUsers} users with ${responseData.errors?.length || 0} errors.` 
+          const errorCount = responseData.errors?.length || 0;
+          toast.error("Upload failed with validation errors", { 
+            description: errorCount > 0 
+              ? `Found ${errorCount} validation error${errorCount > 1 ? 's' : ''}. Please fix them and try again.`
+              : 'Please check the errors and try again.'
           });
         } else {
           throw supabaseError;
@@ -756,11 +906,61 @@ export const UsersManagement = () => {
       // Try to extract response data from the error
       let responseData = null;
       try {
-        if (error.context) {
+        if (error.context instanceof Response) {
+          const responseText = await error.context.clone().text();
+          const parsed = JSON.parse(responseText);
+          if (parsed.errors) {
+            responseData = parsed;
+          } else if (parsed.error && typeof parsed.error === 'string') {
+            // Check if error field contains nested parsing errors
+            const wrappedMatch = parsed.error.match(/Failed to parse XLSX file: (.+)/);
+            if (wrappedMatch) {
+              try {
+                const nestedParsed = JSON.parse(wrappedMatch[1]);
+                if (nestedParsed.parsingErrors) {
+                  responseData = {
+                    success: false,
+                    totalRows: 0,
+                    createdUsers: 0,
+                    errors: nestedParsed.parsingErrors,
+                    message: 'Validation failed: Missing required fields'
+                  };
+                }
+              } catch {
+                // Not a parsing error
+              }
+            }
+          } else {
+            responseData = parsed;
+          }
+        } else if (error.context) {
           if (typeof error.context === 'string') {
             responseData = JSON.parse(error.context);
           } else if (error.context && typeof error.context === 'object') {
             responseData = error.context;
+          }
+        } else if (error.message) {
+          try {
+            // Try direct parse first
+            const parsed = JSON.parse(error.message);
+            if (parsed.errors || parsed.parsingErrors) {
+              responseData = parsed.errors ? parsed : { errors: parsed.parsingErrors, success: false, totalRows: 0, createdUsers: 0, message: 'Validation failed: Missing required fields' };
+            }
+          } catch {
+            // If direct parse fails, check if it's wrapped in error message
+            const wrappedMatch = error.message.match(/Failed to parse XLSX file: (.+)/);
+            if (wrappedMatch) {
+              try {
+                const nestedParsed = JSON.parse(wrappedMatch[1]);
+                if (nestedParsed.parsingErrors || nestedParsed.errors) {
+                  responseData = nestedParsed.errors 
+                    ? nestedParsed 
+                    : { errors: nestedParsed.parsingErrors, success: false, totalRows: 0, createdUsers: 0, message: 'Validation failed: Missing required fields' };
+                }
+              } catch {
+                // Not JSON, continue
+              }
+            }
           }
         }
       } catch (parseError) {
@@ -769,11 +969,14 @@ export const UsersManagement = () => {
       
       if (responseData && responseData.errors) {
         setUploadResult(responseData);
-        toast.error("Upload completed with errors", { 
-          description: `Created ${responseData.createdUsers} users with ${responseData.errors?.length || 0} errors.` 
+        const errorCount = responseData.errors?.length || 0;
+        toast.error("Upload failed with validation errors", { 
+          description: errorCount > 0 
+            ? `Found ${errorCount} validation error${errorCount > 1 ? 's' : ''}. Please fix them and try again.`
+            : 'Please check the errors and try again.'
         });
       } else {
-        toast.error("Upload failed", { description: error.message });
+        toast.error("Upload failed", { description: error.message || 'An unexpected error occurred' });
       }
     } finally {
       setIsUploading(false);
@@ -849,6 +1052,61 @@ export const UsersManagement = () => {
 
         if (error) {
           supabaseError = error;
+          // Try to extract response data from error object
+          try {
+            if (error.context instanceof Response) {
+              const responseText = await error.context.clone().text();
+              const parsed = JSON.parse(responseText);
+              if (parsed.errors) {
+                responseData = parsed;
+              } else if (parsed.error && typeof parsed.error === 'string') {
+                // Check if error field contains nested parsing errors
+                const wrappedMatch = parsed.error.match(/Failed to parse XLSX file: (.+)/);
+                if (wrappedMatch) {
+                  try {
+                    const nestedParsed = JSON.parse(wrappedMatch[1]);
+                    if (nestedParsed.parsingErrors) {
+                      responseData = {
+                        success: false,
+                        totalRows: 0,
+                        createdUsers: 0,
+                        errors: nestedParsed.parsingErrors,
+                        message: 'Validation failed: Missing required fields'
+                      };
+                    }
+                  } catch {
+                    // Not a parsing error
+                  }
+                }
+              }
+            } else if (error.message) {
+              try {
+                // Try direct parse first
+                const parsed = JSON.parse(error.message);
+                if (parsed.errors || parsed.parsingErrors) {
+                  responseData = parsed.errors ? parsed : { errors: parsed.parsingErrors, success: false, totalRows: 0, createdUsers: 0, message: 'Validation failed: Missing required fields' };
+                }
+              } catch {
+                // If direct parse fails, check if it's wrapped in error message
+                // e.g., "Failed to parse XLSX file: {\"parsingErrors\":[...]}"
+                const wrappedMatch = error.message.match(/Failed to parse XLSX file: (.+)/);
+                if (wrappedMatch) {
+                  try {
+                    const nestedParsed = JSON.parse(wrappedMatch[1]);
+                    if (nestedParsed.parsingErrors || nestedParsed.errors) {
+                      responseData = nestedParsed.errors 
+                        ? nestedParsed 
+                        : { errors: nestedParsed.parsingErrors, success: false, totalRows: 0, createdUsers: 0, message: 'Validation failed: Missing required fields' };
+                    }
+                  } catch {
+                    // Not JSON, continue with normal error handling
+                  }
+                }
+              }
+            }
+          } catch {
+            // Continue with normal error handling
+          }
         } else {
           responseData = data;
         }
@@ -862,10 +1120,86 @@ export const UsersManagement = () => {
         console.log('=== END CAUGHT ERROR ===');
         
         supabaseError = caughtError;
+        
+        // Try to extract response data from caught error
+        try {
+          if (caughtError.context instanceof Response) {
+            const responseText = await caughtError.context.clone().text();
+            const parsed = JSON.parse(responseText);
+            if (parsed.errors) {
+              responseData = parsed;
+            } else if (parsed.error && typeof parsed.error === 'string') {
+              // Check if error field contains nested parsing errors
+              const wrappedMatch = parsed.error.match(/Failed to parse XLSX file: (.+)/);
+              if (wrappedMatch) {
+                try {
+                  const nestedParsed = JSON.parse(wrappedMatch[1]);
+                  if (nestedParsed.parsingErrors) {
+                    responseData = {
+                      success: false,
+                      totalRows: 0,
+                      createdUsers: 0,
+                      errors: nestedParsed.parsingErrors,
+                      message: 'Validation failed: Missing required fields'
+                    };
+                  }
+                } catch {
+                  // Not a parsing error
+                }
+              }
+            }
+          } else if (caughtError.message) {
+            try {
+              // Try direct parse first
+              const parsed = JSON.parse(caughtError.message);
+              if (parsed.errors || parsed.parsingErrors) {
+                responseData = parsed.errors ? parsed : { errors: parsed.parsingErrors, success: false, totalRows: 0, createdUsers: 0, message: 'Validation failed: Missing required fields' };
+              }
+            } catch {
+              // If direct parse fails, check if it's wrapped in error message
+              const wrappedMatch = caughtError.message.match(/Failed to parse XLSX file: (.+)/);
+              if (wrappedMatch) {
+                try {
+                  const nestedParsed = JSON.parse(wrappedMatch[1]);
+                  if (nestedParsed.parsingErrors || nestedParsed.errors) {
+                    responseData = nestedParsed.errors 
+                      ? nestedParsed 
+                      : { errors: nestedParsed.parsingErrors, success: false, totalRows: 0, createdUsers: 0, message: 'Validation failed: Missing required fields' };
+                  }
+                } catch {
+                  // Not JSON, continue
+                }
+              }
+            }
+          }
+        } catch {
+          // Continue with normal error handling
+        }
       }
 
       // Process response data similar to existing bulk upload
       if (responseData) {
+        // Check if responseData has an error field with nested parsing errors
+        if (responseData.error && typeof responseData.error === 'string') {
+          const wrappedMatch = responseData.error.match(/Failed to parse XLSX file: (.+)/);
+          if (wrappedMatch) {
+            try {
+              const nestedParsed = JSON.parse(wrappedMatch[1]);
+              if (nestedParsed.parsingErrors) {
+                responseData = {
+                  success: false,
+                  totalRows: 0,
+                  createdUsers: 0,
+                  errors: nestedParsed.parsingErrors,
+                  message: 'Validation failed: Missing required fields'
+                };
+              }
+            } catch {
+              // Not a parsing error, continue with original responseData
+            }
+          }
+        }
+        
         setUploadPasswordResult(responseData);
         
         if (responseData.createdUsers > 0) {
@@ -908,16 +1242,37 @@ export const UsersManagement = () => {
           });
         }
       } else if (supabaseError) {
-        // Handle error similar to existing implementation
+        // Try to extract response data from error context
         try {
-          if (typeof supabaseError.context === 'string') {
+          if (supabaseError.context instanceof Response) {
+            const responseText = await supabaseError.context.clone().text();
+            responseData = JSON.parse(responseText);
+          } else if (typeof supabaseError.context === 'string') {
             responseData = JSON.parse(supabaseError.context);
           } else if (supabaseError.context && typeof supabaseError.context === 'object') {
-            if (supabaseError.context instanceof Response) {
-              const responseText = await supabaseError.context.text();
-              responseData = JSON.parse(responseText);
-            } else {
-              responseData = supabaseError.context;
+            responseData = supabaseError.context;
+          } else if (supabaseError.message) {
+            try {
+              // Try direct parse first
+              const parsed = JSON.parse(supabaseError.message);
+              if (parsed.errors || parsed.parsingErrors) {
+                responseData = parsed.errors ? parsed : { errors: parsed.parsingErrors, success: false, totalRows: 0, createdUsers: 0, message: 'Validation failed: Missing required fields' };
+              }
+            } catch {
+              // If direct parse fails, check if it's wrapped in error message
+              const wrappedMatch = supabaseError.message.match(/Failed to parse XLSX file: (.+)/);
+              if (wrappedMatch) {
+                try {
+                  const nestedParsed = JSON.parse(wrappedMatch[1]);
+                  if (nestedParsed.parsingErrors || nestedParsed.errors) {
+                    responseData = nestedParsed.errors 
+                      ? nestedParsed 
+                      : { errors: nestedParsed.parsingErrors, success: false, totalRows: 0, createdUsers: 0, message: 'Validation failed: Missing required fields' };
+                  }
+                } catch {
+                  // Not JSON, continue
+                }
+              }
             }
           }
         } catch (parseError) {
@@ -926,8 +1281,11 @@ export const UsersManagement = () => {
         
         if (responseData && responseData.errors) {
           setUploadPasswordResult(responseData);
-          toast.error("Upload completed with errors", { 
-            description: `Created ${responseData.createdUsers} users with ${responseData.errors?.length || 0} errors.` 
+          const errorCount = responseData.errors?.length || 0;
+          toast.error("Upload failed with validation errors", { 
+            description: errorCount > 0 
+              ? `Found ${errorCount} validation error${errorCount > 1 ? 's' : ''}. Please fix them and try again.`
+              : 'Please check the errors and try again.'
           });
         } else {
           throw supabaseError;
@@ -937,11 +1295,61 @@ export const UsersManagement = () => {
       // Try to extract response data from the error
       let responseData = null;
       try {
-        if (error.context) {
+        if (error.context instanceof Response) {
+          const responseText = await error.context.clone().text();
+          const parsed = JSON.parse(responseText);
+          if (parsed.errors) {
+            responseData = parsed;
+          } else if (parsed.error && typeof parsed.error === 'string') {
+            // Check if error field contains nested parsing errors
+            const wrappedMatch = parsed.error.match(/Failed to parse XLSX file: (.+)/);
+            if (wrappedMatch) {
+              try {
+                const nestedParsed = JSON.parse(wrappedMatch[1]);
+                if (nestedParsed.parsingErrors) {
+                  responseData = {
+                    success: false,
+                    totalRows: 0,
+                    createdUsers: 0,
+                    errors: nestedParsed.parsingErrors,
+                    message: 'Validation failed: Missing required fields'
+                  };
+                }
+              } catch {
+                // Not a parsing error
+              }
+            }
+          } else {
+            responseData = parsed;
+          }
+        } else if (error.context) {
           if (typeof error.context === 'string') {
             responseData = JSON.parse(error.context);
           } else if (error.context && typeof error.context === 'object') {
             responseData = error.context;
+          }
+        } else if (error.message) {
+          try {
+            // Try direct parse first
+            const parsed = JSON.parse(error.message);
+            if (parsed.errors || parsed.parsingErrors) {
+              responseData = parsed.errors ? parsed : { errors: parsed.parsingErrors, success: false, totalRows: 0, createdUsers: 0, message: 'Validation failed: Missing required fields' };
+            }
+          } catch {
+            // If direct parse fails, check if it's wrapped in error message
+            const wrappedMatch = error.message.match(/Failed to parse XLSX file: (.+)/);
+            if (wrappedMatch) {
+              try {
+                const nestedParsed = JSON.parse(wrappedMatch[1]);
+                if (nestedParsed.parsingErrors || nestedParsed.errors) {
+                  responseData = nestedParsed.errors 
+                    ? nestedParsed 
+                    : { errors: nestedParsed.parsingErrors, success: false, totalRows: 0, createdUsers: 0, message: 'Validation failed: Missing required fields' };
+                }
+              } catch {
+                // Not JSON, continue
+              }
+            }
           }
         }
       } catch (parseError) {
@@ -950,11 +1358,14 @@ export const UsersManagement = () => {
       
       if (responseData && responseData.errors) {
         setUploadPasswordResult(responseData);
-        toast.error("Upload completed with errors", { 
-          description: `Created ${responseData.createdUsers} users with ${responseData.errors?.length || 0} errors.` 
+        const errorCount = responseData.errors?.length || 0;
+        toast.error("Upload failed with validation errors", { 
+          description: errorCount > 0 
+            ? `Found ${errorCount} validation error${errorCount > 1 ? 's' : ''}. Please fix them and try again.`
+            : 'Please check the errors and try again.'
         });
       } else {
-        toast.error("Upload failed", { description: error.message });
+        toast.error("Upload failed", { description: error.message || 'An unexpected error occurred' });
       }
     } finally {
       setIsUploadingWithPasswords(false);
